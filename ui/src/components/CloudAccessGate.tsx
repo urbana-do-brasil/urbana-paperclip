@@ -14,6 +14,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CloudSignIn } from "@/components/CloudSignIn";
 import { clearCloudSignInAttempt } from "@/lib/cloud-sign-in";
+import { LanguageSelector } from "./LanguageSelector";
+import { useTranslation } from "../i18n";
 
 const RECONNECT_INTERVAL_MS = 5_000;
 
@@ -49,17 +51,18 @@ export function CloudAccessError({
 }
 
 function NoBoardAccessPage() {
+  const { t } = useTranslation();
   return (
     <div className="mx-auto max-w-xl py-10">
       <Card className="block p-6">
-        <h1 className="text-xl font-semibold">No organization access</h1>
+        <h1 className="text-xl font-semibold">{t("app.noAccess.title")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This account is signed in, but it does not have an active organization membership or instance-admin access on
-          this Paperclip instance.
+          {t("app.noAccess.description")}
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
-          Use an organization invite or sign in with an account that already belongs to this org.
+          {t("app.noAccess.next")}
         </p>
+        <div className="mt-4"><LanguageSelector /></div>
       </Card>
     </div>
   );

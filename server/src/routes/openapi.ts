@@ -7,6 +7,7 @@ import {
 import { Router } from "express";
 import { subscriptionPriceSchema, mergeSubscriptionsSchema } from "@paperclipai/shared";
 import { z } from "zod";
+import { localePreferenceSchema, updateLocalePreferenceSchema } from "@paperclipai/shared/locale-preference";
 import {
   gitHubRepositoryPageQuerySchema,
   toggleAllGitHubRepositoriesSchema,
@@ -7109,6 +7110,25 @@ registry.registerPath({
 });
 
 // ─── Auth / profile ──────────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: "get",
+  path: "/api/auth/locale-preference",
+  tags: ["auth"],
+  summary: "Get the authenticated user's language preference",
+  description: "Personal, instance-wide preference. Defaults to pt-BR without creating a row. Requires a real authenticated board user, without requiring organization membership. Does not accept account selectors or query parameters.",
+  responses: { 200: r.ok(localePreferenceSchema), 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden },
+});
+
+registry.registerPath({
+  method: "put",
+  path: "/api/auth/locale-preference",
+  tags: ["auth"],
+  summary: "Save the authenticated user's language preference",
+  description: "Accepts only pt-BR or en for the caller. Session mutations require a trusted browser origin. Preference and private personal audit commit atomically; repeated values do not produce additional events. Never publishes into organization activity feeds.",
+  request: { body: jsonBody(updateLocalePreferenceSchema) },
+  responses: { 200: r.ok(localePreferenceSchema), 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden },
+});
 
 registry.registerPath({
   method: "get",

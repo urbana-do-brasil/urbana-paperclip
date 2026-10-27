@@ -4,6 +4,86 @@
       "title": "Create your first organization",
       "description": "Get started by creating an organization.",
       "newCompany": "New Organization"
+    },
+    "cloudCreateUnavailable": "Organizations are created in Paperclip Cloud. This instance cannot reach it right now. Try again from your Cloud portfolio.",
+    "noAccess": {
+      "title": "No organization access",
+      "description": "This account is signed in, but it does not have an active organization membership or instance-admin access on this Paperclip instance.",
+      "next": "Use an organization invite or sign in with an account that already belongs to this organization."
     }
+  },
+  "format": {
+    "monthAbbreviation": "mo",
+    "justNow": "just now"
+  },
+  "locale": {
+    "label": "Language",
+    "description": "Your language choice follows your account. Without an account, it stays in this browser.",
+    "readError": "Could not load your language preference. The last confirmed choice or Portuguese is being used.",
+    "saveError": "Could not save the language. Your previous choice is unchanged. Select a language to try again.",
+    "saving": "Saving language…",
+    "loading": "Loading language…",
+    "retry": "Try loading again"
+  },
+  "profile": {
+    "settings": "Settings",
+    "title": "Profile",
+    "updateError": "Failed to update profile.",
+    "selectOrganization": "Select an organization before uploading a profile avatar.",
+    "uploadError": "Failed to upload avatar.",
+    "removeError": "Failed to remove avatar.",
+    "loading": "Loading profile...",
+    "loadError": "Failed to load profile.",
+    "storageOrganization": "Stored in Paperclip file storage for {{name}}.",
+    "storageHint": "Select an organization to upload an avatar into Paperclip storage.",
+    "description": "Control how your account appears in the sidebar and other board surfaces.",
+    "changePhoto": "Change photo",
+    "uploadPhoto": "Upload photo",
+    "remove": "Remove",
+    "noEmail": "No email",
+    "avatarHint": "Click the avatar to upload a new image.",
+    "displayName": "Display name",
+    "nameHint": "Shown in the sidebar account footer and comment author surfaces.",
+    "email": "Email",
+    "emailHint": "Email is managed by your auth session and is read-only here.",
+    "saving": "Saving...",
+    "save": "Save profile",
+    "board": "Board"
+  },
+  "inboxPolicy": {
+    "openTitle": "Any of my agents",
+    "openDescription": "Let any agent you manage archive tasks out of your inbox.",
+    "allowlistTitle": "Only chosen agents",
+    "allowlistDescription": "Restrict inbox tidying to the agents you pick below.",
+    "disabledTitle": "Off",
+    "disabledDescription": "Agents can never archive tasks from your inbox.",
+    "loadError": "Failed to load inbox agent policy.",
+    "loading": "Loading inbox agent policy…",
+    "title": "Let agents tidy my inbox",
+    "description": "Choose whether the agents you manage may archive tasks out of your inbox on your behalf. You can undo any archive, and every agent archive is attributed in the task’s properties.",
+    "ariaLabel": "Inbox agent archiving policy",
+    "allowedAgents": "Agents allowed to tidy my inbox",
+    "noAgents": "You don’t manage any agents yet.",
+    "saveError": "Failed to save inbox agent policy.",
+    "saved": "Saved",
+    "save": "Save"
+  },
+  "agentPicker": {
+    "selectOne": "Select agent…",
+    "selectMultiple": "Select agents",
+    "empty": "No agents yet.",
+    "filter": "Filter agents",
+    "selectName": "Select {{name}}",
+    "allowName": "Allow {{name}}",
+    "noMatches": "No matches.",
+    "selected_one": "{{count}} agent selected",
+    "selected_other": "{{count}} agents selected",
+    "selectedCount_one": "{{count}} selected",
+    "selectedCount_other": "{{count}} selected",
+    "noneSelected": "No agents selected",
+    "more_one": "and {{count}} more",
+    "more_other": "and {{count}} more",
+    "cancel": "Cancel",
+    "done": "Done"
   }
 }

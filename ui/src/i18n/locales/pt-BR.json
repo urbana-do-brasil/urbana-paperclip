@@ -1,9 +1,92 @@
 {
   "app": {
     "noCompanies": {
-      "title": "Crie sua primeira empresa",
-      "description": "Comece criando uma empresa.",
-      "newCompany": "Nova empresa"
+      "title": "Crie sua primeira organização",
+      "description": "Comece criando uma organização.",
+      "newCompany": "Nova organização"
+    },
+    "cloudCreateUnavailable": "As organizações são criadas no Paperclip Cloud. Esta instância não consegue acessá-lo no momento. Tente novamente pelo seu portfólio no Cloud.",
+    "noAccess": {
+      "title": "Sem acesso a organizações",
+      "description": "Esta conta está autenticada, mas não tem vínculo ativo com uma organização nem acesso de administração desta instância do Paperclip.",
+      "next": "Use um convite de organização ou entre com uma conta que já pertença a esta organização."
     }
+  },
+  "format": {
+    "monthAbbreviation": "mês",
+    "justNow": "agora mesmo"
+  },
+  "locale": {
+    "label": "Idioma",
+    "description": "O idioma acompanha sua conta. Sem conta, a escolha fica neste navegador.",
+    "readError": "Não foi possível carregar seu idioma. A última escolha confirmada ou o português está em uso.",
+    "saveError": "Não foi possível salvar o idioma. Sua escolha anterior foi mantida. Selecione um idioma para tentar novamente.",
+    "saving": "Salvando idioma…",
+    "loading": "Carregando idioma…",
+    "retry": "Tentar carregar novamente"
+  },
+  "profile": {
+    "settings": "Configurações",
+    "title": "Perfil",
+    "updateError": "Não foi possível atualizar o perfil.",
+    "selectOrganization": "Selecione uma organização antes de enviar uma foto de perfil.",
+    "uploadError": "Não foi possível enviar a foto.",
+    "removeError": "Não foi possível remover a foto.",
+    "loading": "Carregando perfil...",
+    "loadError": "Não foi possível carregar o perfil.",
+    "storageOrganization": "Armazenada nos arquivos do Paperclip da organização {{name}}.",
+    "storageHint": "Selecione uma organização para enviar uma foto para o armazenamento do Paperclip.",
+    "description": "Controle como sua conta aparece na barra lateral e nas outras áreas da plataforma.",
+    "changePhoto": "Alterar foto",
+    "uploadPhoto": "Enviar foto",
+    "remove": "Remover",
+    "noEmail": "Sem e-mail",
+    "avatarHint": "Clique na foto de perfil para enviar uma nova imagem.",
+    "displayName": "Nome de exibição",
+    "nameHint": "Exibido na barra lateral e na identificação de autores de comentários.",
+    "email": "E-mail",
+    "emailHint": "O e-mail é gerenciado pela sua sessão de autenticação e não pode ser alterado aqui.",
+    "saving": "Salvando...",
+    "save": "Salvar perfil",
+    "board": "Painel"
+  },
+  "inboxPolicy": {
+    "openTitle": "Qualquer um dos meus agentes",
+    "openDescription": "Permita que qualquer agente que você gerencia arquive tarefas da sua caixa de entrada.",
+    "allowlistTitle": "Somente agentes escolhidos",
+    "allowlistDescription": "Restrinja a organização da caixa de entrada aos agentes que você selecionar abaixo.",
+    "disabledTitle": "Desativado",
+    "disabledDescription": "Os agentes não podem arquivar tarefas da sua caixa de entrada.",
+    "loadError": "Não foi possível carregar a política de agentes da caixa de entrada.",
+    "loading": "Carregando política de agentes da caixa de entrada…",
+    "title": "Permitir que agentes organizem minha caixa de entrada",
+    "description": "Escolha se os agentes que você gerencia podem arquivar tarefas da sua caixa de entrada em seu nome. Você pode desfazer qualquer arquivamento, e o agente responsável é identificado nas propriedades da tarefa.",
+    "ariaLabel": "Política de arquivamento por agentes na caixa de entrada",
+    "allowedAgents": "Agentes autorizados a organizar minha caixa de entrada",
+    "noAgents": "Você ainda não gerencia nenhum agente.",
+    "saveError": "Não foi possível salvar a política de agentes da caixa de entrada.",
+    "saved": "Salvo",
+    "save": "Salvar"
+  },
+  "agentPicker": {
+    "selectOne": "Selecione um agente…",
+    "selectMultiple": "Selecionar agentes",
+    "empty": "Ainda não há agentes.",
+    "filter": "Filtrar agentes",
+    "selectName": "Selecionar {{name}}",
+    "allowName": "Permitir {{name}}",
+    "noMatches": "Nenhum resultado.",
+    "selected_one": "{{count}} agente selecionado",
+    "selected_many": "{{count}} agentes selecionados",
+    "selected_other": "{{count}} agentes selecionados",
+    "selectedCount_one": "{{count}} selecionado",
+    "selectedCount_many": "{{count}} selecionados",
+    "selectedCount_other": "{{count}} selecionados",
+    "noneSelected": "Nenhum agente selecionado",
+    "more_one": "e mais {{count}}",
+    "more_many": "e mais {{count}}",
+    "more_other": "e mais {{count}}",
+    "cancel": "Cancelar",
+    "done": "Concluir"
   }
 }

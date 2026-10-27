@@ -1,3 +1,4 @@
+import { LanguageSelector } from "./LanguageSelector";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -244,6 +245,7 @@ export function SidebarAccountMenu({
                   onClick={closeNavigationChrome}
                 />
               ) : null}
+              <div className="px-2 py-2"><LanguageSelector /></div>
               <MenuAction
                 label="Documentation"
                 icon={BookOpen}

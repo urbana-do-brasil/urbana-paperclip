@@ -1,0 +1,62 @@
+import { test, expect } from "@playwright/test";
+
+test("language preference: first visit, real account, forms, reload, another browser/account and organization", async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, locale: "en-US" });
+  const page = await context.newPage();
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/auth");
+  await expect(page.getByRole("combobox", { name: "Idioma", exact: true })).toHaveValue("pt-BR");
+  await page.getByRole("combobox", { name: "Idioma", exact: true }).selectOption("en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+  const account = { name: "Locale Browser Alice", email: "locale-browser-alice@example.test", password: "locale-browser-fixture-password" };
+  const signup = await context.request.post("/api/auth/sign-up/email", { headers: { origin: baseURL! }, data: account });
+  expect(signup.status()).toBe(200);
+  expect(await (await context.request.get("/api/auth/locale-preference")).json()).toEqual({ locale: "pt-BR", source: "default" });
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
+  await expect(page.getByRole("heading", { name: "Sem acesso a organizações", exact: true })).toBeVisible();
+  // This user has no organization: a confirmed personal save still succeeds.
+  await page.getByRole("combobox", { name: "Idioma", exact: true }).selectOption("en");
+  await expect(page.getByRole("heading", { name: "No organization access", exact: true })).toBeVisible();
+  expect(await (await context.request.get("/api/auth/locale-preference")).json()).toEqual({ locale: "en", source: "user" });
+  await page.getByRole("combobox", { name: "Language", exact: true }).selectOption("pt-BR");
+  await expect(page.getByRole("heading", { name: "Sem acesso a organizações", exact: true })).toBeVisible();
+  const organizations = await (await context.request.post("/__fixture/organizations")).json() as Array<{ id: string; issuePrefix: string }>;
+  await page.goto(`/${organizations[0].issuePrefix}/company/settings/instance/profile`);
+  await expect(page.getByRole("heading", { name: "Perfil", exact: true })).toBeVisible();
+  const draft = page.getByLabel("Nome de exibição", { exact: true });
+  await draft.fill("Unsaved original draft");
+  await page.getByRole("combobox", { name: "Idioma", exact: true }).selectOption("en");
+  await expect(page.getByRole("heading", { name: "Profile", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Display name", { exact: true })).toHaveValue("Unsaved original draft");
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "Language", exact: true })).toHaveValue("en");
+  await page.goto(`/${organizations[1].issuePrefix}/company/settings/instance/profile`);
+  await expect(page.getByRole("combobox", { name: "Language", exact: true })).toHaveValue("en");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: "dark" });
+  const mobileSelector = page.getByRole("combobox", { name: "Language", exact: true });
+  await expect(mobileSelector).toBeVisible();
+  await mobileSelector.selectOption("pt-BR");
+  await expect(page.getByRole("heading", { name: "Perfil", exact: true })).toBeVisible();
+  await page.getByRole("combobox", { name: "Idioma", exact: true }).selectOption("en");
+  await expect(page.getByRole("heading", { name: "Profile", exact: true })).toBeVisible();
+
+  const otherBrowser = await browser.newContext({ baseURL });
+  const signin = await otherBrowser.request.post("/api/auth/sign-in/email", { headers: { origin: baseURL! }, data: { email: account.email, password: account.password } });
+  expect(signin.status()).toBe(200);
+  const secondPage = await otherBrowser.newPage();
+  await secondPage.goto(`/${organizations[0].issuePrefix}/company/settings/instance/profile`);
+  await expect(secondPage.getByRole("combobox", { name: "Language", exact: true })).toHaveValue("en");
+
+  await context.request.post("/api/auth/sign-out", { headers: { origin: baseURL! }, data: {} });
+  const bob = await context.request.post("/api/auth/sign-up/email", { headers: { origin: baseURL! }, data: { ...account, name: "Locale Browser Bob", email: "locale-browser-bob@example.test" } });
+  expect(bob.status()).toBe(200);
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
+  expect(await (await context.request.get("/api/auth/locale-preference")).json()).toEqual({ locale: "pt-BR", source: "default" });
+  expect(pageErrors).toEqual([]);
+  await otherBrowser.close(); await context.close();
+});

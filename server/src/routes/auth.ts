@@ -7,7 +7,10 @@ import {
   currentUserProfileSchema,
   updateCurrentUserProfileSchema,
 } from "@paperclipai/shared";
-import { unauthorized } from "../errors.js";
+import { badRequest, forbidden, unauthorized } from "../errors.js";
+import { updateLocalePreferenceSchema } from "@paperclipai/shared/locale-preference";
+import { localePreferenceService } from "../services/locale-preference.js";
+import { boardMutationGuard } from "../middleware/board-mutation-guard.js";
 import { validate } from "../middleware/validate.js";
 import { resolveSentryDsns } from "../sentry-dsn.js";
 
@@ -35,8 +38,28 @@ async function loadCurrentUserProfile(db: Db, userId: string) {
   });
 }
 
-export function authRoutes(db: Db) {
+export function authRoutes(db: Db): Router {
   const router = Router();
+  const localePreferences = localePreferenceService(db);
+
+  router.use("/locale-preference", (req, res, next) => {
+    if (req.actor.type === "none") throw unauthorized("Board authentication required");
+    if (req.actor.type !== "board" || !req.actor.userId || req.actor.source === "local_implicit") {
+      throw forbidden("Authenticated user context required");
+    }
+    if (Object.keys(req.query).length) throw badRequest("Locale preference does not accept query parameters");
+    res.setHeader("Cache-Control", "private, no-store");
+    next();
+  }, boardMutationGuard());
+
+  router.get("/locale-preference", async (req, res) => {
+    res.json(await localePreferences.get(req.actor.userId!));
+  });
+
+  router.put("/locale-preference", validate(updateLocalePreferenceSchema), async (req, res) => {
+    const { locale } = updateLocalePreferenceSchema.parse(req.body);
+    res.json(await localePreferences.save(req.actor.userId!, locale));
+  });
 
   router.get("/get-session", async (req, res) => {
     if (req.actor.type !== "board" || !req.actor.userId) {

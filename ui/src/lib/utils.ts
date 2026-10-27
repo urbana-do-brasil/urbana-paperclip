@@ -1,7 +1,12 @@
+import { createLocaleFormatters } from "@paperclipai/shared/localized-format";
+import { resolveLocale } from "@paperclipai/shared/localization";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { deriveAgentUrlKey, deriveProjectUrlKey, normalizeProjectUrlKey, hasNonAsciiContent } from "@paperclipai/shared";
 import type { BillingType, FinanceDirection, FinanceEventKind } from "@paperclipai/shared";
+import { i18n, t } from "../i18n";
+
+const formatters = () => createLocaleFormatters(resolveLocale(i18n.language));
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,16 +39,11 @@ export function asFiniteNumber(value: unknown, fallback: number) {
 }
 
 export function formatCents(cents: number, currency = "USD"): string {
-  // Older finance writes accepted arbitrary three-character codes. Keep those
-  // amounts readable without passing an invalid currency to Intl.
-  if (!/^[a-z]{3}$/i.test(currency)) {
-    return `${currency} ${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
-  return (cents / 100).toLocaleString("en-US", { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatters().cents(cents, currency);
 }
 
 export function formatNumber(n: number, options?: Intl.NumberFormatOptions): string {
-  return n.toLocaleString("en-US", options);
+  return formatters().number(n, options);
 }
 
 /**
@@ -52,11 +52,11 @@ export function formatNumber(n: number, options?: Intl.NumberFormatOptions): str
  */
 export function formatProjectBudget(budget: { amountCents: number; windowKind: string }): string {
   const amount = formatCents(budget.amountCents);
-  return budget.windowKind === "calendar_month_utc" ? `${amount}/mo` : amount;
+  return budget.windowKind === "calendar_month_utc" ? `${amount}/${t("format.monthAbbreviation")}` : amount;
 }
 
 export function formatDate(date: Date | string): string {
-  return new Date(date).toLocaleDateString("en-US", {
+  return formatters().date(date, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -65,9 +65,10 @@ export function formatDate(date: Date | string): string {
 
 export function formatDateTime(
   date: Date | string,
-  options: { includeSeconds?: boolean; includeYear?: boolean } = {},
+  options: { includeSeconds?: boolean; includeYear?: boolean; timeZone?: string } = {},
 ): string {
-  return new Date(date).toLocaleString("en-US", {
+  return formatters().date(date, {
+    timeZone: options.timeZone,
     month: "short",
     day: "numeric",
     ...(options.includeYear === false ? {} : { year: "numeric" as const }),
@@ -78,7 +79,7 @@ export function formatDateTime(
 }
 
 export function formatShortDate(date: Date | string): string {
-  return new Date(date).toLocaleString("en-US", {
+  return formatters().date(date, {
     month: "short",
     day: "numeric",
   });
@@ -88,39 +89,23 @@ export function relativeTime(date: Date | string): string {
   const now = Date.now();
   const then = new Date(date).getTime();
   const diffSec = Math.round((now - then) / 1000);
-  if (diffSec < 60) return "just now";
+  if (diffSec < 60) return t("format.justNow");
   const diffMin = Math.round(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 60) return formatters().relative(-diffMin, "minute");
   const diffHr = Math.round(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffHr < 24) return formatters().relative(-diffHr, "hour");
   const diffDay = Math.round(diffHr / 24);
-  if (diffDay < 30) return `${diffDay}d ago`;
+  if (diffDay < 30) return formatters().relative(-diffDay, "day");
   return formatDate(date);
 }
 
 export function formatTokens(n: number): string {
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return String(n);
+  return formatters().tokens(n);
 }
 
-/** Humanize a millisecond duration into a compact `1h 2m`, `45m 12s`, `12s` string. */
+/** Presentation only; the stored duration remains milliseconds. */
 export function formatDurationMs(ms: number): string {
-  if (!Number.isFinite(ms) || ms <= 0) return "0s";
-  const totalSeconds = Math.round(ms / 1000);
-  if (totalSeconds < 60) return `${totalSeconds}s`;
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  if (minutes < 60) return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  if (hours < 24) {
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
-  }
-  const days = Math.floor(hours / 24);
-  const remainingHours = hours % 24;
-  return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
+  return formatters().duration(ms);
 }
 
 /** Map a raw provider slug to a display-friendly name. */
@@ -284,5 +269,5 @@ export function projectWorkspaceUrl(
 
 /** Preserve sub-cent inference charges instead of showing a misleading $0.00. */
 export function formatDetailedCents(cents: string | number): string {
-  return (Number(cents) / 100).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 9 });
+  return formatters().cents(Number(cents), "USD", 9);
 }

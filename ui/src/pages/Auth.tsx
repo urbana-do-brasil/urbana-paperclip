@@ -1,3 +1,4 @@
+import { LanguageSelector } from "../components/LanguageSelector";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "@/lib/router";
@@ -110,6 +111,8 @@ export function AuthPage() {
           <div className="mb-8">
             <PaperclipLockup className="h-5 w-auto" />
           </div>
+
+          <div className="mb-6"><LanguageSelector /></div>
 
           <h1 className="text-xl font-semibold">
             {mode === "sign_in" ? "Sign in to Paperclip" : "Create your Paperclip account"}

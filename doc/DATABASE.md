@@ -248,6 +248,27 @@ executor; other migrations remain transactional
 per file. Apply these migrations through `pnpm db:migrate` using a direct
 connection, before enabling the new server and UI.
 
+## Personal language preference
+
+`user_locale_preferences` stores an authenticated user's `pt-BR` or `en`
+preference independently of organizations. A missing row means PT-BR without
+backfill. Its `user_id` primary key references Better Auth's user table without
+adding columns to that table. `user_locale_preference_events` records private
+audit events only when the persisted preference changes. Both writes commit
+together; repeated values leave timestamps unchanged. Both tables cascade on
+account deletion. These are personal, instance-wide exceptions to company
+scoping and never publish to organization feeds. Local/signed-out choices stay
+in browser storage and never create synthetic users or write either table.
+
+`GET/PUT /api/auth/locale-preference` reads/writes only the caller. The PUT body
+is strictly `{ "locale": "pt-BR" | "en" }`; no account selector or query parameter
+is accepted. The response is `{ locale, source: "user" | "default" }`. Invalid
+input returns 400, absent/deleted accounts 401, and agents or synthetic local
+actors 403. Session writes use the existing trusted browser-origin guard.
+Responses are `private, no-store`. Account row locking serializes saves,
+including the first save, without organization membership. No public API exposes
+the private audit history.
+
 ## Migration snapshots
 
 `drizzle-kit generate` diffs `packages/db/src/schema/` against the newest snapshot in `packages/db/src/migrations/meta/`. That snapshot must describe the schema that every migration produces when they run in order. A snapshot that drifts from the schema makes the *next* migration wrong, because `generate` folds the drift into it. The drift can add a column that an earlier migration already created, which makes that migration fail on a fresh database. It can also drop a column that the schema still uses.

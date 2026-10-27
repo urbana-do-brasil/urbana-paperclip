@@ -1,0 +1,921 @@
+{
+  "schemaVersion": 1,
+  "change": "localize-paperclip-pt-br",
+  "discoveryCommit": "a09d8b56e2ebcc22ea12082e8f8758b1938e1436",
+  "status": "partial",
+  "locales": [
+    "pt-BR",
+    "en"
+  ],
+  "notice": "Cobertura parcial: a fundação e a jornada inicial de preferência foram implementadas e verificadas. Outras jornadas, documentação pública e runtimes de agentes permanecem pendentes; o fallback inglês não aprova tradução.",
+  "requiredStates": [
+    "success",
+    "empty",
+    "loading",
+    "failure",
+    "permission-denied"
+  ],
+  "requiredVariants": [
+    "authenticated",
+    "local_trusted",
+    "light",
+    "dark",
+    "desktop",
+    "mobile",
+    "applicable-feature-flags"
+  ],
+  "groups": [
+    {
+      "id": "preferences",
+      "tasks": "2",
+      "label": "Preferência de idioma",
+      "sources": [
+        "ui/src/pages/ProfileSettings.tsx",
+        "server/src/routes/auth.ts",
+        "ui/src/i18n/",
+        "packages/db/src/schema/user_locale_preferences.ts",
+        "server/src/services/locale-preference.ts",
+        "ui/src/context/LocaleContext.tsx",
+        "ui/src/components/LanguageSelector.tsx",
+        "ui/src/components/CloudAccessGate.tsx"
+      ],
+      "status": "initial-journey-verified",
+      "evidence": [
+        "server/src/__tests__/locale-preference.integration.test.ts",
+        "ui/src/context/LocaleContext.test.tsx",
+        "tests/localization-browser/locale.spec.ts"
+      ],
+      "limits": "Jornada inicial apenas. Metadados de erro compartilhados, demais textos web, CLI, entrega pública da ajuda e comunicação dos agentes dependem dos grupos 3 a 7."
+    },
+    {
+      "id": "errors",
+      "tasks": "3.1",
+      "label": "Erros próprios",
+      "sources": [
+        "server/src/middleware/error-handler.ts",
+        "ui/src/api/",
+        "cli/src/client/"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "entry",
+      "tasks": "3.2",
+      "label": "Autenticação, convites e onboarding",
+      "sources": [
+        "ui/src/pages/Auth.tsx",
+        "ui/src/components/OnboardingWizard.tsx",
+        "ui/src/App.tsx"
+      ],
+      "status": "pending",
+      "evidence": [],
+      "partialSources": [
+        "ui/src/components/CloudAccessGate.tsx: NoBoardAccessPage e seletor em Auth; demais estados continuam pendentes."
+      ]
+    },
+    {
+      "id": "navigation",
+      "tasks": "3.3",
+      "label": "Navegação e controles compartilhados",
+      "sources": [
+        "ui/src/components/Sidebar.tsx",
+        "ui/src/components/SidebarAccountMenu.tsx",
+        "ui/src/components/Layout.tsx",
+        "ui/src/components/Layout.production.tsx",
+        "ui/src/components/SidebarAccountMenu.production.tsx"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "tasks",
+      "tasks": "3.4",
+      "label": "Tarefas, conversas, Inbox e busca",
+      "sources": [
+        "ui/src/pages/Issues.tsx",
+        "ui/src/pages/IssueDetail.tsx",
+        "ui/src/pages/Inbox.tsx",
+        "ui/src/pages/Search.tsx"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "projects",
+      "tasks": "3.5",
+      "label": "Organizações, projetos, metas e workspaces",
+      "sources": [
+        "ui/src/pages/Companies.tsx",
+        "ui/src/pages/Projects.tsx",
+        "ui/src/pages/Goals.tsx",
+        "ui/src/pages/Workspaces.tsx"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "agents",
+      "tasks": "3.6",
+      "label": "Agentes e execução",
+      "sources": [
+        "ui/src/pages/Agents.tsx",
+        "ui/src/pages/AgentDetail.tsx",
+        "ui/src/pages/AgentDetail.production.tsx"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "reporting",
+      "tasks": "3.7",
+      "label": "Dashboard, custos, orçamento, timeline e auditoria",
+      "sources": [
+        "ui/src/pages/Dashboard.tsx",
+        "ui/src/pages/Costs.tsx",
+        "ui/src/pages/Timeline.tsx",
+        "ui/src/pages/audit/"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "administration",
+      "tasks": "3.8",
+      "label": "Aprovações, acesso, segredos e configurações",
+      "sources": [
+        "ui/src/pages/Approvals.tsx",
+        "ui/src/pages/CompanyAccess.tsx",
+        "ui/src/pages/Secrets.tsx",
+        "ui/src/pages/CompanySettings.tsx"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "catalogs",
+      "tasks": "3.9",
+      "label": "Skills, ferramentas e apps",
+      "sources": [
+        "ui/src/pages/CompanySkills.tsx",
+        "ui/src/pages/SkillStudio.tsx",
+        "ui/src/pages/tools/",
+        "ui/src/pages/apps/"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "experimental",
+      "tasks": "3.10",
+      "label": "Rotinas, pipelines, casos e status cards",
+      "sources": [
+        "ui/src/pages/Routines.tsx",
+        "ui/src/pages/Pipelines.tsx",
+        "ui/src/pages/Cases.tsx",
+        "ui/src/pages/StatusCards/"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "plugins",
+      "tasks": "3.11",
+      "label": "Plugins próprios e host UI",
+      "sources": [
+        "ui/src/pages/PluginManager.tsx",
+        "ui/src/pages/PluginSettings.tsx",
+        "packages/plugins/"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "cli-admin",
+      "tasks": "4.2",
+      "label": "CLI de instalação e administração",
+      "sources": [
+        "cli/src/index.ts",
+        "scripts/install.sh",
+        "cli/src/commands/"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "cli-operations",
+      "tasks": "4.3",
+      "label": "CLI de operação",
+      "sources": [
+        "cli/src/commands/client/",
+        "cli/src/commands/pipelines.ts",
+        "cli/src/commands/routines.ts"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "help-start",
+      "tasks": "5.2",
+      "label": "Documentação de início e operação",
+      "sources": [
+        "docs/start/",
+        "docs/guides/board-operator/"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "help-admin",
+      "tasks": "5.3",
+      "label": "Documentação administrativa",
+      "sources": [
+        "docs/deploy/",
+        "docs/cli/",
+        "docs/adapters/",
+        "docs/built-in-agents.md"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "help-delivery",
+      "tasks": "5.1,5.4",
+      "label": "Acesso e distribuição da ajuda",
+      "sources": [
+        "docs/docs.json",
+        "ui/src/components/SidebarAccountMenu.tsx",
+        "ui/src/App.tsx"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "agent-language",
+      "tasks": "6",
+      "label": "Comunicação dos agentes",
+      "sources": [
+        "server/src/services/heartbeat/run-preparation.ts",
+        "server/src/adapters/registry.ts",
+        "packages/adapter-utils/src/server-utils.ts",
+        "packages/adapters/"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "integration",
+      "tasks": "7",
+      "label": "Qualidade integrada e aceitação",
+      "sources": [
+        ".github/workflows/pr.yml",
+        "package.json",
+        "ui/src/i18n/locale-validation.test.ts",
+        "doc/localization/coverage.json"
+      ],
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "sourceIndexes": {
+    "routeDeclarations": {
+      "source": "ui/src/App.tsx",
+      "paths": [
+        "*",
+        ":companyPrefix",
+        ":pluginRoutePath/*",
+        "activity",
+        "activity/*",
+        "activity/budgets",
+        "activity/costs",
+        "activity/runs",
+        "activity/timeline",
+        "agents",
+        "agents/:agentId",
+        "agents/:agentId/:tab",
+        "agents/:agentId/runs/:runId",
+        "agents/new",
+        "approvals",
+        "approvals/:approvalId",
+        "approvals/all",
+        "approvals/pending",
+        "apps",
+        "apps/:connectionId",
+        "apps/:connectionId/:tab",
+        "apps/advanced",
+        "apps/advanced/:tab",
+        "apps/advanced/audit",
+        "apps/advanced/gateways",
+        "apps/advanced/profiles/:profileId",
+        "apps/advanced/profiles/:profileId/edit",
+        "apps/advanced/profiles/new",
+        "apps/advanced/run-your-own",
+        "apps/app/:applicationId",
+        "apps/app/:applicationId/:tab",
+        "apps/assistant-connection",
+        "apps/attention",
+        "apps/browse",
+        "apps/byo",
+        "apps/chat/:endpointId",
+        "apps/chat/:endpointId/:tab",
+        "apps/chat/:endpointId/reviews/:reviewId",
+        "apps/chat/connect",
+        "apps/connect",
+        "apps/connect/:appKey",
+        "apps/connect/:appKey/:stage",
+        "apps/connections",
+        "apps/gateways",
+        "apps/gateways/:gatewayId",
+        "apps/gateways/:gatewayId/:tab",
+        "apps/review",
+        "apps/vercel-connect",
+        "artifacts",
+        "assistant-connections",
+        "audit",
+        "audit/*",
+        "audit/activity",
+        "audit/budgets",
+        "audit/costs",
+        "audit/runs",
+        "audit/timeline",
+        "auth",
+        "board-chat",
+        "board-claim/:token",
+        "budgets",
+        "cases",
+        "cases/:caseIdentifier",
+        "chat-identity/confirm",
+        "chats",
+        "chats/:agentRef",
+        "cli-auth/:id",
+        "companies",
+        "company/export/*",
+        "company/import",
+        "company/settings",
+        "company/settings/:settingsRoutePath/*",
+        "company/settings/access",
+        "company/settings/cloud-upstream",
+        "company/settings/environments",
+        "company/settings/instance",
+        "company/settings/instance/access",
+        "company/settings/instance/adapters",
+        "company/settings/instance/environments",
+        "company/settings/instance/environments/:environmentId/edit",
+        "company/settings/instance/environments/new",
+        "company/settings/instance/experimental",
+        "company/settings/instance/general",
+        "company/settings/instance/heartbeats",
+        "company/settings/instance/plugins",
+        "company/settings/instance/plugins/:pluginId",
+        "company/settings/instance/profile",
+        "company/settings/invites",
+        "company/settings/members",
+        "company/settings/secrets",
+        "company/settings/tools",
+        "company/settings/tools/:tab",
+        "costs",
+        "dashboard",
+        "dashboard/live",
+        "decisions",
+        "decisions/queues/:key",
+        "design-guide",
+        "dev/task-chat-lab",
+        "dot-connect/:id",
+        "execution-workspaces/:workspaceId",
+        "execution-workspaces/:workspaceId/configuration",
+        "execution-workspaces/:workspaceId/issues",
+        "execution-workspaces/:workspaceId/routines",
+        "execution-workspaces/:workspaceId/runtime-logs",
+        "execution-workspaces/:workspaceId/services",
+        "goals",
+        "goals/:goalId",
+        "inbox",
+        "inbox/all",
+        "inbox/blocked",
+        "inbox/mine",
+        "inbox/new",
+        "inbox/recent",
+        "inbox/requests",
+        "inbox/unread",
+        "instance",
+        "instance/settings",
+        "instance/settings/*",
+        "instance/settings/adapters",
+        "invite/:token",
+        "issues",
+        "issues/:issueId",
+        "issues/active",
+        "issues/all",
+        "issues/backlog",
+        "issues/done",
+        "issues/recent",
+        "learnings",
+        "mcp-connect/:id",
+        "mcp-device",
+        "oauth-handoff",
+        "onboarding",
+        "org",
+        "pipelines",
+        "pipelines/:pipelineId",
+        "pipelines/:pipelineId/add",
+        "pipelines/:pipelineId/cases/:caseId",
+        "pipelines/:pipelineId/items/:caseId",
+        "pipelines/:pipelineId/settings",
+        "plugins/:pluginId",
+        "projects",
+        "projects/:projectId",
+        "projects/:projectId/budget",
+        "projects/:projectId/configuration",
+        "projects/:projectId/issues",
+        "projects/:projectId/issues/:filter",
+        "projects/:projectId/overview",
+        "projects/:projectId/workspaces",
+        "projects/:projectId/workspaces/:workspaceId",
+        "review-queue",
+        "routines",
+        "routines/:routineId",
+        "routines/:routineId/:section",
+        "runs",
+        "search",
+        "settings",
+        "settings/*",
+        "skills/*",
+        "skills/:skillId/studio",
+        "skills/sources",
+        "skills/sources/:sourceId",
+        "skills/studio",
+        "skills/studio/:skillId",
+        "skills/studio/new",
+        "status",
+        "status-cards",
+        "status-cards/:cardId",
+        "status/:cardId",
+        "tasks",
+        "tests/perf/long-thread",
+        "timeline",
+        "tools",
+        "tools/:tab",
+        "u/:userSlug",
+        "ux-lab/bootstrap-setup",
+        "ux-lab/cross-issue-collaboration",
+        "ux-lab/responsible-user-denial",
+        "workspaces"
+      ],
+      "limitation": "Caminhos literais declarados; não expandem parents nem provam alcançabilidade. Rotas index/dinâmicas exigem revisão."
+    },
+    "cli": {
+      "source": "cli/src/index.ts",
+      "registrations": [
+        "registerAccessCommands",
+        "registerActivityCommands",
+        "registerAdapterCommands",
+        "registerAgentCommands",
+        "registerApprovalCommands",
+        "registerAssetCommands",
+        "registerCompanyCommands",
+        "registerConnectionIntentCommands",
+        "registerContextCommands",
+        "registerCostCommands",
+        "registerDashboardCommands",
+        "registerEmailCommands",
+        "registerEnvLabCommands",
+        "registerFeedbackCommands",
+        "registerGoalCommands",
+        "registerIssueCommands",
+        "registerManagedAgentCommands",
+        "registerMcpCommands",
+        "registerPipelineCommands",
+        "registerPluginCommands",
+        "registerProjectCommands",
+        "registerPromptCommands",
+        "registerRoutineApiCommands",
+        "registerRoutineCommands",
+        "registerRuntimeCommands",
+        "registerSecretCommands",
+        "registerServiceCommands",
+        "registerSkillCommands",
+        "registerSkillsCommands",
+        "registerTeamCommands",
+        "registerTokenCommands",
+        "registerWorkspaceCommands",
+        "registerWorktreeCommands"
+      ],
+      "commandFiles": [
+        "cli/src/commands/allowed-hostname.ts",
+        "cli/src/commands/auth-bootstrap-ceo.ts",
+        "cli/src/commands/channels.ts",
+        "cli/src/commands/client/access.ts",
+        "cli/src/commands/client/activity.ts",
+        "cli/src/commands/client/adapter.ts",
+        "cli/src/commands/client/agent.ts",
+        "cli/src/commands/client/approval.ts",
+        "cli/src/commands/client/asset.ts",
+        "cli/src/commands/client/auth.ts",
+        "cli/src/commands/client/common.ts",
+        "cli/src/commands/client/company.ts",
+        "cli/src/commands/client/connect.ts",
+        "cli/src/commands/client/connections.ts",
+        "cli/src/commands/client/context.ts",
+        "cli/src/commands/client/cost.ts",
+        "cli/src/commands/client/dashboard.ts",
+        "cli/src/commands/client/email.ts",
+        "cli/src/commands/client/feedback.ts",
+        "cli/src/commands/client/goal.ts",
+        "cli/src/commands/client/issue.ts",
+        "cli/src/commands/client/plugin.ts",
+        "cli/src/commands/client/project.ts",
+        "cli/src/commands/client/prompt.ts",
+        "cli/src/commands/client/routine-api.ts",
+        "cli/src/commands/client/run.ts",
+        "cli/src/commands/client/secrets.ts",
+        "cli/src/commands/client/skill.ts",
+        "cli/src/commands/client/skills.ts",
+        "cli/src/commands/client/teams.ts",
+        "cli/src/commands/client/token.ts",
+        "cli/src/commands/client/workspace.ts",
+        "cli/src/commands/client/zip.ts",
+        "cli/src/commands/configure.ts",
+        "cli/src/commands/db-backup.ts",
+        "cli/src/commands/doctor.ts",
+        "cli/src/commands/env-lab.ts",
+        "cli/src/commands/env.ts",
+        "cli/src/commands/git-workspace.ts",
+        "cli/src/commands/heartbeat-run.ts",
+        "cli/src/commands/install.ts",
+        "cli/src/commands/managed-agent.ts",
+        "cli/src/commands/mcp.ts",
+        "cli/src/commands/onboard.ts",
+        "cli/src/commands/pipelines.ts",
+        "cli/src/commands/routines.ts",
+        "cli/src/commands/run.ts",
+        "cli/src/commands/runtime.ts",
+        "cli/src/commands/service.ts",
+        "cli/src/commands/test-drive.ts",
+        "cli/src/commands/uninstall.ts",
+        "cli/src/commands/update.ts",
+        "cli/src/commands/worktree-lib.ts",
+        "cli/src/commands/worktree-merge-history-lib.ts",
+        "cli/src/commands/worktree.ts"
+      ]
+    },
+    "documentation": {
+      "source": "docs/docs.json",
+      "topics": [
+        {
+          "slug": "adapters/adapter-ui-parser",
+          "source": "docs/adapters/adapter-ui-parser.md",
+          "status": "pending"
+        },
+        {
+          "slug": "adapters/claude-local",
+          "source": "docs/adapters/claude-local.md",
+          "status": "pending"
+        },
+        {
+          "slug": "adapters/codex-local",
+          "source": "docs/adapters/codex-local.md",
+          "status": "pending"
+        },
+        {
+          "slug": "adapters/creating-an-adapter",
+          "source": "docs/adapters/creating-an-adapter.md",
+          "status": "pending"
+        },
+        {
+          "slug": "adapters/external-adapters",
+          "source": "docs/adapters/external-adapters.md",
+          "status": "pending"
+        },
+        {
+          "slug": "adapters/http",
+          "source": "docs/adapters/http.md",
+          "status": "pending"
+        },
+        {
+          "slug": "adapters/overview",
+          "source": "docs/adapters/overview.md",
+          "status": "pending"
+        },
+        {
+          "slug": "adapters/process",
+          "source": "docs/adapters/process.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/activity",
+          "source": "docs/api/activity.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/agents",
+          "source": "docs/api/agents.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/approvals",
+          "source": "docs/api/approvals.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/authentication",
+          "source": "docs/api/authentication.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/companies",
+          "source": "docs/api/companies.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/costs",
+          "source": "docs/api/costs.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/dashboard",
+          "source": "docs/api/dashboard.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/goals-and-projects",
+          "source": "docs/api/goals-and-projects.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/issues",
+          "source": "docs/api/issues.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/overview",
+          "source": "docs/api/overview.md",
+          "status": "pending"
+        },
+        {
+          "slug": "api/secrets",
+          "source": "docs/api/secrets.md",
+          "status": "pending"
+        },
+        {
+          "slug": "cli/control-plane-commands",
+          "source": "docs/cli/control-plane-commands.md",
+          "status": "pending"
+        },
+        {
+          "slug": "cli/overview",
+          "source": "docs/cli/overview.md",
+          "status": "pending"
+        },
+        {
+          "slug": "cli/setup-commands",
+          "source": "docs/cli/setup-commands.md",
+          "status": "pending"
+        },
+        {
+          "slug": "deploy/database",
+          "source": "docs/deploy/database.md",
+          "status": "pending"
+        },
+        {
+          "slug": "deploy/deployment-modes",
+          "source": "docs/deploy/deployment-modes.md",
+          "status": "pending"
+        },
+        {
+          "slug": "deploy/docker",
+          "source": "docs/deploy/docker.md",
+          "status": "pending"
+        },
+        {
+          "slug": "deploy/environment-variables",
+          "source": "docs/deploy/environment-variables.md",
+          "status": "pending"
+        },
+        {
+          "slug": "deploy/local-development",
+          "source": "docs/deploy/local-development.md",
+          "status": "pending"
+        },
+        {
+          "slug": "deploy/overview",
+          "source": "docs/deploy/overview.md",
+          "status": "pending"
+        },
+        {
+          "slug": "deploy/secrets",
+          "source": "docs/deploy/secrets.md",
+          "status": "pending"
+        },
+        {
+          "slug": "deploy/storage",
+          "source": "docs/deploy/storage.md",
+          "status": "pending"
+        },
+        {
+          "slug": "deploy/tailscale-private-access",
+          "source": "docs/deploy/tailscale-private-access.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/agent-developer/comments-and-communication",
+          "source": "docs/guides/agent-developer/comments-and-communication.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/agent-developer/cost-reporting",
+          "source": "docs/guides/agent-developer/cost-reporting.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/agent-developer/handling-approvals",
+          "source": "docs/guides/agent-developer/handling-approvals.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/agent-developer/heartbeat-protocol",
+          "source": "docs/guides/agent-developer/heartbeat-protocol.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/agent-developer/how-agents-work",
+          "source": "docs/guides/agent-developer/how-agents-work.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/agent-developer/skills-store",
+          "source": "docs/guides/agent-developer/skills-store.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/agent-developer/task-workflow",
+          "source": "docs/guides/agent-developer/task-workflow.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/agent-developer/writing-a-skill",
+          "source": "docs/guides/agent-developer/writing-a-skill.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/activity-log",
+          "source": "docs/guides/board-operator/activity-log.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/approvals",
+          "source": "docs/guides/board-operator/approvals.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/costs-and-budgets",
+          "source": "docs/guides/board-operator/costs-and-budgets.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/creating-a-company",
+          "source": "docs/guides/board-operator/creating-a-company.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/dashboard",
+          "source": "docs/guides/board-operator/dashboard.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/delegation",
+          "source": "docs/guides/board-operator/delegation.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/editing-first-task-texts",
+          "source": "docs/guides/board-operator/editing-first-task-texts.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/execution-workspaces-and-runtime-services",
+          "source": "docs/guides/board-operator/execution-workspaces-and-runtime-services.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/experimental-features",
+          "source": "docs/guides/board-operator/experimental-features.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/importing-and-exporting",
+          "source": "docs/guides/board-operator/importing-and-exporting.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/managing-agents",
+          "source": "docs/guides/board-operator/managing-agents.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/managing-tasks",
+          "source": "docs/guides/board-operator/managing-tasks.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/org-structure",
+          "source": "docs/guides/board-operator/org-structure.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/status-cards",
+          "source": "docs/guides/board-operator/status-cards.md",
+          "status": "pending"
+        },
+        {
+          "slug": "start/architecture",
+          "source": "docs/start/architecture.md",
+          "status": "pending"
+        },
+        {
+          "slug": "start/core-concepts",
+          "source": "docs/start/core-concepts.md",
+          "status": "pending"
+        },
+        {
+          "slug": "start/quickstart",
+          "source": "docs/start/quickstart.md",
+          "status": "pending"
+        },
+        {
+          "slug": "start/what-is-paperclip",
+          "source": "docs/start/what-is-paperclip.md",
+          "status": "pending"
+        },
+        {
+          "slug": "guides/board-operator/language",
+          "source": "docs/guides/board-operator/language.md",
+          "portugueseSource": "docs/pt-BR/guides/board-operator/language.md",
+          "status": "pending-public-help-delivery"
+        }
+      ]
+    },
+    "adapters": {
+      "source": "server/src/adapters/registry.ts",
+      "types": [
+        "acpx_local",
+        "claude_local",
+        "codex_local",
+        "cursor",
+        "cursor_cloud",
+        "gemini_local",
+        "grok_local",
+        "kimi_local",
+        "openclaw_gateway",
+        "opencode_local",
+        "paperclip_runner",
+        "pi_local"
+      ],
+      "packages": [
+        "claude-local",
+        "codex-local",
+        "cursor-cloud",
+        "cursor-local",
+        "gemini-local",
+        "grok-local",
+        "hermes",
+        "hermes-gateway",
+        "kimi-local",
+        "openclaw-gateway",
+        "opencode-local",
+        "pi-local"
+      ],
+      "qualification": "pending"
+    },
+    "featureFlags": {
+      "sources": [
+        "ui/src/App.tsx",
+        "ui/src/components/Sidebar.tsx"
+      ],
+      "names": [
+        "enableCases",
+        "enableCombinedInboxTasks",
+        "enableConferenceRoomChat",
+        "enableDecisions",
+        "enableGoalsSidebarLink",
+        "enableIsolatedWorkspaces",
+        "enablePipelines",
+        "enableStatusCards"
+      ],
+      "review": "pending"
+    }
+  },
+  "exclusions": [
+    {
+      "scope": "Conteúdo escrito por usuários, respostas históricas, logs brutos e dados de provedores",
+      "reason": "Preservar conteúdo original; localizar apenas a apresentação própria."
+    },
+    {
+      "scope": "doc/plans/** e openspec/**",
+      "reason": "Planejamento e evidências internas não são documentação de uso distribuída."
+    },
+    {
+      "scope": "Documentação exclusiva de desenvolvimento e prompts exclusivamente técnicos",
+      "reason": "Fora do escopo de leitura de usuários/administradores; classificar exceções por tópico quando necessário."
+    }
+  ]
+}

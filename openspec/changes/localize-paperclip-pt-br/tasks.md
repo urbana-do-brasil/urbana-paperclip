@@ -1,0 +1,71 @@
+# Tasks
+
+Referências normativas: as seis specs em `specs/`; abordagem em `design.md`. Os checkboxes abaixo registram o progresso do apply. Evidências e limites da verificação estão em `doc/localization/verification.md`. No planejamento original, nenhum teste de produto, migration, chamada de modelo ou implantação havia sido executado.
+
+Os comandos e arquivos novos citados são entregas propostas, não recursos já existentes. Usar a instalação e os checks definidos pelo repositório; não enfraquecer sua política de lockfile para viabilizar testes.
+
+Dependências: grupo 1 precede 2; grupos 3, 4 e 5 podem avançar após a fundação pertinente; grupo 6 depende da preferência/API de 2 e dos contratos de 1. O grupo 7 depende de todos os grupos anteriores. Dentro de um grupo, depender apenas do que o item realmente consome, sem impor cadeia entre áreas independentes.
+
+Os grupos web/CLI abaixo delimitam escopo funcional, não autorizam diffs ilimitados. Antes de executar um item que exceda uma sessão revisável, desdobrá-lo em checkboxes menores por jornada/rota ou comando, mantendo o escopo e a verificação do item original. Não marcar um grupo como coberto enquanto houver subtarefa pendente. O inventário é ampliado em cada lote; não é uma auditoria exaustiva de todo o repositório antes de iniciar código.
+
+## 1. Fundação e verificações da localização
+
+- [x] 1.1 Criar manifesto compacto de cobertura a partir das rotas de `App.tsx`, variantes de shell, registro da CLI, navegação documental e adapters; registrar grupos, estados/flags e exclusões conhecidas, além de glossário inicial. Verificar que cada área dos grupos seguintes tem uma entrada e que itens pendentes permanecem explícitos; não exigir revisão completa de todos os literais nesta etapa. Specs: `localization-quality`, `localized-help`, `agent-interaction-language`.
+- [x] 1.2 Definir contrato compartilhado de locale, distinguir padrão PT-BR de referência inglesa, registrar os dois catálogos e adaptar os validadores existentes para placeholders, conteúdo e plurais. Verificar com testes de `ui/src/i18n/` e contrato compartilhado, incluindo fixtures com chave ausente/extra, tradução vazia, payload inseguro e formas plurais legítimas. Specs: `locale-preferences`, `localized-web-interface`, `localization-quality`.
+- [x] 1.3 Centralizar os formatadores de apresentação e documentar o limite entre locale, moeda e timezone. Verificar exemplos independentes em PT-BR/inglês para números, quantidades, datas, durações e USD; confirmar que conversões/parsers técnicos e valores originais não mudaram. Spec: `localized-web-interface`.
+
+## 2. Primeira jornada completa de preferência de idioma
+
+- [x] 2.1 Adicionar tabela/migration e API própria de preferência individual, mantendo contratos de auth existentes, e documentar o endpoint e a exceção de escopo por usuário. Incluir auditoria pessoal transacional própria, privada e sem organização, aprovada em `audit-preference-decision.md`; verificar atomicidade e ausência de eventos extras em salvamentos repetidos. Verificar migrations em bancos descartáveis vazio/existente e integração HTTP para default, gravação, repetição, concorrência, invalidez, falta de login, agente negado e tentativa de outra conta. Spec: `locale-preferences`.
+- [x] 2.2 Implementar provider e seletor acessível no perfil/menu, incluindo modo local, cache por identidade e tratamento de leitura/save. Verificar em testes de componente o switch sem recarga, formulário preservado, falhas, resposta assíncrona obsoleta, login/logout e isolamento entre contas e preferência local. Specs: `locale-preferences`, `localized-web-interface`.
+- [x] 2.3 Traduzir a jornada inicial de perfil/seleção e estado sem organizações e acrescentar guia curto nos dois idiomas. Verificar por browser em ambiente descartável: primeiro acesso PT-BR, inglês explícito, reload, novo contexto da mesma conta, outra conta e mudança de organização; registrar a feature como parcial. Specs: `locale-preferences`, `localized-web-interface`, `localized-help`.
+
+## 3. Cobertura web por jornadas
+
+Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, incluir catálogos en/PT-BR, ajustar documentação se o comportamento exigir e atualizar o manifesto com fontes/estados/verificação. Usar testes existentes mais cenários novos quando necessários; não criar teste por troca estática de palavra. Rodar suites pertinentes e token gates quando houver mudança em UI.
+
+- [ ] 3.1 Acrescentar metadados aditivos de mensagens a erros próprios e apresentação localizada em clientes, preservando status, códigos, detalhes permitidos e redaction. Verificar middleware/clientes com erro conhecido, falha de validação, erro de provedor e fixture sensível; confirmar compatibilidade do payload anterior. Specs: `localized-web-interface`, `localized-cli`.
+- [ ] 3.2 Migrar autenticação, convites, recuperação/claim e onboarding além da jornada inicial. Verificar estados de sucesso/falha nos dois idiomas, inclusive páginas sem sessão e conteúdo inserido por usuário preservado. Spec: `localized-web-interface`.
+- [ ] 3.3 Migrar navegação, menus de conta, breadcrumbs, diálogos e componentes comuns nas variantes de shell. Verificar teclado, nomes acessíveis, tema claro/escuro e viewport móvel nos dois idiomas, sem alterar destinos e ações. Spec: `localized-web-interface`.
+- [ ] 3.4 Migrar tarefas, detalhe/conversa, Inbox, filas de atenção e busca em lotes por jornada. Verificar criação/edição, estados vazios e falhas, conteúdo histórico preservado e variantes relevantes de flags nos dois idiomas. Spec: `localized-web-interface`.
+- [ ] 3.5 Migrar organizações, projetos, metas e workspaces em lotes por jornada. Verificar criação/configuração, troca de organização, labels de estado e permissões nas duas línguas sem alterar valores ou contratos. Spec: `localized-web-interface`.
+- [ ] 3.6 Migrar cadastro/configuração de agentes e visualizações de execução, incluindo descrições próprias e estados de ferramentas. Verificar fluxo de configuração e execução nas duas línguas, mantendo prompts técnicos e logs brutos originais. Spec: `localized-web-interface`.
+- [ ] 3.7 Migrar dashboard, custos, orçamento, timeline, atividade e auditoria em lotes por jornada. Verificar amostras com datas, timezone, percentuais e moeda original, pluralização e erros nos dois idiomas. Spec: `localized-web-interface`.
+- [ ] 3.8 Migrar aprovações, acesso, segredos e configurações pessoais/de instância além do seletor. Verificar os controles e estados de negação nos dois idiomas e confirmar que nenhuma tradução amplia permissões ou revela valores secretos. Spec: `localized-web-interface`.
+- [ ] 3.9 Migrar skills, ferramentas, apps e catálogos, incluindo descrições embutidas controladas pela aplicação. Verificar navegação/configuração nos dois idiomas e distinguir metadados próprios de conteúdo arbitrário vindo de fontes externas. Spec: `localized-web-interface`.
+- [ ] 3.10 Migrar rotinas, pipelines, casos, status cards e demais fluxos experimentais registrados, em lotes por rota. Verificar os estados alcançáveis de cada flag relevante em ambos os idiomas; registrar superfícies restantes sem exclusões silenciosas. Spec: `localized-web-interface`.
+- [ ] 3.11 Migrar UI hospedeira de plugins e conteúdo humano de plugins distribuídos no produto, além das superfícies próprias adicionais encontradas no fechamento do mapa de rotas. Verificar cada superfície nos dois idiomas e documentar limites de plugins externos não controlados. Specs: `localized-web-interface`, `localization-quality`.
+
+## 4. CLI bilíngue
+
+- [ ] 4.1 Implementar resolução antecipada de `--lang`, `PAPERCLIP_LANG`, perfil local e default, sem rede, incluindo catálogo e persistência local. Verificar precedência, perfil isolado, idioma inválido antes de mutação e ajuda offline; documentar a independência da preferência web. Spec: `localized-cli`.
+- [ ] 4.2 Migrar help/erros do parser e mensagens de instalação, atualização, onboarding, configuração, serviço e diagnóstico, incluindo entrypoints de instalação que apresentem texto humano. Verificar transcrições PT-BR/en com fixtures, códigos de saída e tratamento de falhas, sem executar mutações reais de host. Spec: `localized-cli`.
+- [ ] 4.3 Migrar mensagens humanas dos comandos de operação de empresas, agentes, tarefas, projetos, aprovações, acesso, skills, conexões, execução e demais grupos registrados, em lotes por comando. Verificar um caso de sucesso/falha por operação distinta e cobertura de help sem traduzir flags ou identificadores. Spec: `localized-cli`.
+- [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
+
+## 5. Documentação acessível pela aplicação
+
+- [ ] 5.1 Criar mapa de tópicos/slugs e fontes de documentação pública e registrar exclusões de material interno; implementar rota de ajuda com Markdown seguro, navegação por idioma e deep links no bundle. Verificar tópico PT-BR/en, acesso sem login, ausência de consultas privadas, markup não executável e recursos empacotados. Spec: `localized-help`.
+- [ ] 5.2 Traduzir início, conceitos e guias de operação da interface, em lotes por jornada, mantendo equivalentes ingleses. Verificar paridade de tópicos, glossário, links e uma revisão humana dos exemplos e da equivalência de instruções. Spec: `localized-help`.
+- [ ] 5.3 Traduzir guias de instalação, configuração, administração, CLI, agentes e adapters destinados aos operadores, em lotes por tópico. Verificar comandos, variáveis e links preservados, exemplos contra fixtures/ambiente descartável e lacunas eventualmente existentes na documentação de origem. Spec: `localized-help`.
+- [ ] 5.4 Conectar Documentation ao idioma efetivo, adicionar troca de idioma por tópico e fallback inglês identificado. Verificar navegação da aplicação para ajuda, link direto compartilhado, idioma explícito sem alterar conta e check que reprova um guia PT-BR ausente. Specs: `localized-help`, `localization-quality`.
+
+## 6. Comunicação dos agentes no idioma escolhido
+
+- [ ] 6.1 Resolver locale/origem no contexto de criação da execução e preservar o snapshot em retomadas e delegações. Verificar requesters distintos, modo local, rotina sem autor, overrides explícitos, duas organizações, retries e múltiplas mensagens sem associação ambígua ou mudança de ownership. Spec: `agent-interaction-language`.
+- [ ] 6.2 Propagar locale no caminho nativo e adapters suportados, renderizar diretriz de comunicação humana e conciliar inglês simplificado. Verificar deterministicamente os prompts/contratos em PT-BR/en, retomadas e herança, preservando instruções técnicas e configuração do agente. Spec: `agent-interaction-language`.
+- [ ] 6.3 Integrar o idioma às interações humanas estruturadas e respostas de apresentação do sistema, sem retraduzir o histórico. Verificar perguntas, opções, confirmações, mensagens de erro e um fluxo compartilhado por duas contas de idiomas diferentes. Specs: `agent-interaction-language`, `localized-web-interface`.
+- [ ] 6.4 Documentar política e matriz de suporte por runtime e qualificar comunicação real com credenciais autorizadas e dados descartáveis. Verificar respostas e interações em PT-BR/en por runtime/modelo declarado, registrar falhas/limites e não aprovar um runtime apenas pelo conteúdo da fixture de prompt. Specs: `agent-interaction-language`, `localization-quality`.
+
+## 7. Integração e aceitação integral
+
+- [ ] 7.1 Integrar checks de catálogos, fontes e documentação ao comando de qualidade e à CI pertinente, sem credenciais de IA. Verificar execução limpa e falha deliberada para chave removida, placeholder inválido, rótulo próprio hardcoded, campo JSON alterado e guia ausente; manter exceções justificadas e específicas. Spec: `localization-quality`.
+- [ ] 7.2 Reconciliar o mapa final com rotas/flags, comandos, tópicos e runtimes atuais; resolver toda lacuna própria encontrada. Verificar que não restam itens do escopo pendentes, exclusões sem justificativa ou fallback contado como cobertura, com evidência de estado/idioma para cada superfície. Todas as specs.
+- [ ] 7.3 Executar a regressão integrada em estado descartável: `pnpm -r typecheck`, `pnpm test:run`, `pnpm build`, gates de UI pertinentes e jornadas de browser nos dois idiomas. Verificar seleção/persistência entre contextos/contas, preservação de conteúdo, CLI estruturada, ajuda instalada e comunicação de agentes; registrar comandos e resultados reais. Todas as specs.
+- [ ] 7.4 Obter revisão final por pessoa ou agente independente comparando as seis specs com entrega e evidências, corrigir falhas e repetir somente os checks afetados. Verificar parecer final e documentação operacional de rollout/rollback compatível; nenhum resultado de teste ou suporte de runtime pode ficar presumido. Todas as specs.
+
+## Workflow follow-up
+
+- Revisar este planejamento antes de iniciar `$openspec-apply-change localize-paperclip-pt-br`.
+- Sincronizar/arquivar a mudança somente depois de implementação, verificações e revisão final; arquivamento não é uma tarefa de implementação.
+- Publicação ou implantação futura seguem a autorização e os procedimentos próprios da equipe.

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { i18n } from "../i18n";
 
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
@@ -79,7 +80,8 @@ function optionByTitle(container: HTMLElement, title: string) {
 describe("InboxAgentPolicyControl", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockAgentsApi.list.mockResolvedValue([

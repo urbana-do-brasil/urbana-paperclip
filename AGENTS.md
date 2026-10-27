@@ -79,6 +79,11 @@ keyed by user and announcement so they persist across companies. Their audit
 context must still validate company membership. The announcement publication-ID
 registry is instance-level feed metadata; it contains no company or user data.
 
+User locale preferences and their private audit events are also instance-wide
+personal state, keyed by a real authenticated user. They must work before the
+first organization exists. Save both in one transaction, never accept another
+user's ID, and never publish personal locale events to organization activity feeds.
+
 2. Keep contracts synchronized.
 If you change schema/API behavior, update all impacted layers:
 - `packages/db` schema and exports
