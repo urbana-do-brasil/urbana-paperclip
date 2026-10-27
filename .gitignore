@@ -56,6 +56,14 @@ diagnostics/
 /.idea/
 /.agents/
 
+# Share OpenSpec's generated Codex workflows; keep other local agent files ignored.
+!/.agents/
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/openspec-*/
+!/.agents/skills/.openspec-target
+
 # Doc maintenance cursor
 .doc-review-cursor
 
