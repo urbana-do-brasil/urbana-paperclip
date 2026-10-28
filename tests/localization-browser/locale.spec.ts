@@ -33,6 +33,14 @@ test("language preference: first visit, real account, forms, reload, another bro
   await expect(page.getByLabel("Display name", { exact: true })).toHaveValue("Unsaved original draft");
   await page.reload();
   await expect(page.getByRole("combobox", { name: "Language", exact: true })).toHaveValue("en");
+  const helpPage = await context.newPage();
+  const helpApiRequests: string[] = [];
+  helpPage.on("request", (request) => { if (new URL(request.url()).pathname.startsWith("/api/")) helpApiRequests.push(request.url()); });
+  await helpPage.goto("/help/pt-BR/guides/board-operator/language");
+  await expect(helpPage.getByRole("heading", { name: "Escolha seu idioma", exact: true })).toBeVisible();
+  expect(await (await context.request.get("/api/auth/locale-preference")).json()).toEqual({ locale: "en", source: "user" });
+  expect(helpApiRequests).toEqual([]);
+  await helpPage.close();
   await page.goto(`/${organizations[1].issuePrefix}/company/settings/instance/profile`);
   await expect(page.getByRole("combobox", { name: "Language", exact: true })).toHaveValue("en");
   await page.setViewportSize({ width: 390, height: 844 });

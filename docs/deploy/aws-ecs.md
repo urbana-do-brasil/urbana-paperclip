@@ -410,7 +410,7 @@ curl -sf https://$PAPERCLIP_DOMAIN/api/health
 
 ## Post-Deploy Security Hardening
 
-After the first user has signed up (which grants admin role), lock down the instance:
+After establishing the first instance administrator through the supported bootstrap flow, lock down the instance. Creating an account by itself does not grant administrator access:
 
 ```bash
 # Disable public sign-up (prevents unauthorized users from creating accounts)

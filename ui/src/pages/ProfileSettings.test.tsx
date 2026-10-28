@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sanitizeAssetNamespace } from "@paperclipai/shared";
 import { ProfileSettings } from "./ProfileSettings";
+import { ApiError } from "../api/client";
 
 const mockAuthApi = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -100,6 +101,23 @@ describe("ProfileSettings", () => {
     expect(container.textContent).toContain("Jane Example");
     expect(container.textContent).not.toContain("Keyboard shortcuts");
     expect(container.querySelector('[aria-label="Toggle keyboard shortcuts"]')).toBeNull();
+    await act(async () => root.unmount());
+  });
+
+  it("updates an existing error explanation when language changes without rewriting the technical error", async () => {
+    const original = new ApiError("Validation error", 400, { error: "Validation error", messageKey: "validation", details: [{ path: ["name"] }] });
+    mockAuthApi.updateProfile.mockRejectedValueOnce(original);
+    const root = createRoot(container);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    await act(async () => root.render(<QueryClientProvider client={client}><ProfileSettings /></QueryClientProvider>));
+    await flushReact();
+    await act(async () => container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+    await flushReact();
+    expect(container.textContent).toContain("The submitted data is invalid. Check the fields and try again.");
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    expect(container.textContent).toContain("Os dados enviados são inválidos. Revise os campos e tente novamente.");
+    expect(original.message).toBe("Validation error");
+    expect(original.status).toBe(400);
     await act(async () => root.unmount());
   });
 

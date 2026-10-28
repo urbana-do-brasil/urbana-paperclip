@@ -63,6 +63,8 @@ describe("personal locale HTTP contract and real PostgreSQL", () => {
 
   it("rejects invalid bodies and account selectors without changing either account", async () => {
     for (const locale of ["es", "", "pt-br", null, 1, {}, ["en"]]) expect((await save(locale)).status).toBe(400);
+    const invalidLocale = await save("es");
+    expect(invalidLocale.body).toMatchObject({ error: "Validation error", messageKey: "validation" });
     for (const body of [{}, { locale: "en", userId: "locale-bob" }, { locale: "en", companyId: "other" }]) {
       expect((await request(app()).put("/api/auth/locale-preference").set("Origin", "http://localhost:3100").send(body)).status).toBe(400);
     }
@@ -86,6 +88,7 @@ describe("personal locale HTTP contract and real PostgreSQL", () => {
       expect((await request(app(actor)).get("/api/auth/locale-preference")).status).toBe(status);
       expect((await save("en", actor)).status).toBe(status);
     }
+    expect((await request(app({ type: "none" })).get("/api/auth/locale-preference")).body).toMatchObject({ error: "Board authentication required", messageKey: "locale_auth_required" });
     expect((await request(app()).put("/api/auth/locale-preference").set("Origin", "https://attacker.example").send({ locale: "en" })).status).toBe(403);
     expect(await events()).toHaveLength(2);
   });

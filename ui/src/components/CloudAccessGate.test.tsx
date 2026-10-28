@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CloudAccessGate } from "./CloudAccessGate";
 import { queryKeys } from "@/lib/queryKeys";
 import { ApiUnavailableError } from "@/api/response";
+import { i18n } from "../i18n";
 
 vi.mock("@/lib/router", () => ({
   useLocation: () => ({ pathname: "/CON/agents/conan/instructions", search: "?tab=edit", hash: "#draft" }),
@@ -40,7 +41,8 @@ describe("CloudAccessGate restart recovery", () => {
   let failure: () => Response;
   const fetchMock = vi.fn();
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.useFakeTimers();
     failingPath = null;
     failure = () => new Response("<!doctype html><h1>Restarting</h1>", { status: 200 });
@@ -233,5 +235,34 @@ describe("CloudAccessGate restart recovery", () => {
     expect(container.querySelector("textarea")).toBeNull();
     expect(container.querySelector("[data-redirect]")?.getAttribute("data-redirect"))
       .toBe("/auth?next=%2FCON%2Fagents%2Fconan%2Finstructions%3Ftab%3Dedit");
+  });
+
+  it("localizes recovery while preserving an open draft", async () => {
+    await render();
+    const editor = container.querySelector("textarea")!;
+    editor.value = "Draft <original>";
+    failingPath = "/api/health";
+    failure = () => new Response("Bad gateway", { status: 502 });
+    await client.refetchQueries({ queryKey: queryKeys.health });
+    await flushReact();
+    await i18n.changeLanguage("pt-BR");
+    await flushReact();
+    expect(container.querySelector('[role="status"]')?.textContent).toContain("Conexão interrompida. Reconectando automaticamente");
+    expect(container.querySelector("textarea")).toBe(editor);
+    expect(editor.value).toBe("Draft <original>");
+    await i18n.changeLanguage("en");
+    await flushReact();
+    expect(container.querySelector('[role="status"]')?.textContent).toContain("Connection interrupted. Reconnecting automatically");
+    expect(editor.value).toBe("Draft <original>");
+  });
+
+  it("localizes blocking failures and retry in Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    failingPath = "/api/health";
+    failure = () => Response.json({ error: "Forbidden" }, { status: 403 });
+    await render();
+    expect(container.querySelector('[role="status"]')?.textContent).toContain("Não foi possível carregar o Paperclip");
+    expect(container.querySelector("button")?.textContent).toBe("Tentar novamente");
+    expect(container.querySelector("textarea")).toBeNull();
   });
 });

@@ -4,7 +4,8 @@ import { getStoredBoardCredential, loginBoardCli } from "../../client/board-auth
 import { buildCliCommandLabel } from "../../client/command-label.js";
 import { readConfig } from "../../config/store.js";
 import { readContext, resolveProfile, type ClientContextProfile } from "../../client/context.js";
-import { ApiRequestError, PaperclipApiClient } from "../../client/http.js";
+import { ApiRequestError, PaperclipApiClient, formatApiRequestError } from "../../client/http.js";
+import { cliMessage, getCliLocale, isCliJsonRequested } from "../../localization/index.js";
 
 export interface BaseClientOptions {
   config?: string;
@@ -288,7 +289,10 @@ function readKeyFromProfileEnv(profile: ClientContextProfile): string | undefine
 export function handleCommandError(error: unknown): never {
   if (error instanceof ApiRequestError) {
     const detailSuffix = error.details !== undefined ? ` details=${JSON.stringify(error.details)}` : "";
-    console.error(pc.red(`API error ${error.status}: ${error.message}${detailSuffix}`));
+    const structured = isCliJsonRequested();
+    const label = structured ? "API error" : cliMessage("apiError");
+    const message = structured ? error.message : formatApiRequestError(error, getCliLocale());
+    console.error(pc.red(`${label} ${error.status}: ${message}${detailSuffix}`));
     process.exit(1);
   }
 

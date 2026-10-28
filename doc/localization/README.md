@@ -5,9 +5,9 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **6 de 33 tarefas**:
-a fundação e a primeira jornada de preferência de idioma foram implementadas e
-verificadas. Os checkboxes em [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md)
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **16 de 41 tarefas**.
+A contagem inclui o desdobramento das jornadas de autenticação e convites;
+subtarefas concluídas não encerram automaticamente seu grupo. Os checkboxes em [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md)
 são a fonte de progresso; [verification.md](verification.md) reúne os resultados
 e os limites dos testes. A entrega ainda não foi implantada.
 
@@ -15,16 +15,42 @@ e os limites dos testes. A entrega ainda não foi implantada.
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Pendente; o próximo passo é **3.1**, sobre metadados de erros e apresentação localizada em clientes. |
-| 4. CLI bilíngue | Pendente. |
-| 5. Ajuda e documentação pública bilíngue | Pendente; os guias curtos de idioma já existem no repositório. |
-| 6. Comunicação dos agentes | Pendente, incluindo qualificação dos runtimes suportados. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), login/cadastro (3.2a) e entrada/convites/claims (3.2b, incluindo CLI, chat e bootstrap) verificados; onboarding e demais jornadas pendentes. |
+| 4. CLI bilíngue | Resolução e persistência de idioma (4.1) verificadas; tradução dos comandos e regressão completa pendentes. |
+| 5. Ajuda e documentação pública bilíngue | Link local, idioma por tópico e fallback (5.4) verificados; 66 pares documentais presentes. Correção do gate, build final, revisão humana e validação operacional pendentes. |
+| 6. Comunicação dos agentes | 6.1 parcial: snapshots, retomadas, retry, recuperação, Dot e delegação com testes focados; última propagação de interação sem teste específico, regressão de autorizações e novo typecheck pendentes.6.2–6.4 pendentes. |
 | 7. Integração, regressão e revisão final | Pendente; inclui os checks globais e a revisão independente. |
 
-No item 3.1, preservar status, códigos, detalhes permitidos e redaction; testar
-erro conhecido, falha de validação, erro de provedor, dados sensíveis e
-compatibilidade do payload existente. Atualizar o mapa conforme cada jornada for
-verificada. O arquivo de tarefas mantém a lista detalhada e suas dependências.
+## Checkpoint para retomada — 2026-10-28
+
+O trabalho foi interrompido a pedido do usuário para preservar os créditos.
+Nenhum teste/build ficou em execução; o swap temporário foi removido.
+Este lote está pronto para checkpoint na branch de trabalho e não foi implantado.
+
+Retomar nesta ordem:
+
+1. **Fechar 6.1 com segurança:** testar especificamente a propagação em
+   `server/src/services/question-response-delivery.ts`; revisar e executar a
+   regressão de autorização de `durableChatRequest.failedRunRetry` em
+   `queue.ts`. O teste focado de retry passou, mas não substitui a regressão.
+   Repetir o typecheck completo do servidor após essas últimas alterações.
+2. **Fechar 5.1:** corrigir o gate `scripts/check-localized-help.mjs`, que hoje
+   verifica presença/slug duplicado, mas pode aprovar uma fonte fora dos globs
+   distribuídos. O teste negativo deve cobrir também essa falsa aprovação.
+   Verificar os 66 tópicos no build final e recursos/links da ajuda instalada.
+3. **Consolidar os lotes web:** typecheck/build UI, token gates e browser sobre
+   o código atual. As jornadas de entrada passaram em testes focados, mas os
+   últimos lotes são posteriores ao último build/browser aprovado.
+4. **Continuar 3.2c (onboarding)** e depois os demais lotes web/CLI. Não há
+   implementação de onboarding nesta continuação. OAuth/MCP e configurações
+   autenticadas de acesso estão explicitamente no grupo3.8.
+5. Manter5.2/5.3 abertas até revisão humana dos guias e qualificação operacional.
+   As tarefas6.2–6.4 ainda exigem propagação de diretrizes e qualificação real
+   dos runtimes com credenciais autorizadas. O grupo7 continua pendente.
+
+Não interpretar16/41 como percentual da tradução: os itens têm tamanhos
+muito diferentes e a contagem inclui subtarefas e seus grupos pais.
+O arquivo de tarefas mantém a lista detalhada e suas dependências.
 
 ## Cobertura
 
@@ -104,3 +130,17 @@ pnpm --filter @paperclipai/ui exec vitest run src/i18n src/lib/project-budget-fo
 Os testes usam exemplos fixos em ambos os idiomas, incluindo USD, percentuais,
 instantes que mudam de dia em São Paulo, durações e fixtures negativas dos
 catálogos. A aceitação integral depende das demais tarefas OpenSpec.
+
+## Entrega da ajuda pública
+
+O manifesto é `ui/src/help/topics.json`, com66 tópicos e pares em `docs/` e
+`docs/pt-BR/`. As rotas `/help/pt-BR/...` e `/help/en/...` usam o idioma da URL,
+sem alterar a preferência da conta, e abrem sem login. O link Documentação
+nos dois menus usa o idioma efetivo da interface.
+
+O conteúdo público é carregado no bundle Vite, separado dos providers da
+aplicação. HTML/MDX arbitrário não é executado; links e imagens passam por
+allowlists. Planos internos e a fixture de desenvolvimento MCP não são
+incluídos. `scripts/check-localized-help.mjs` confirma os pares de fontes,
+mas ainda precisa da correção descrita no checkpoint; aprovação desse script
+não equivale à tradução revisada nem à validação do pacote instalado.

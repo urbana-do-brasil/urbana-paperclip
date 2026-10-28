@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InviteLandingPage } from "./InviteLanding";
 import { queryKeys } from "../lib/queryKeys";
+import { i18n } from "../i18n";
 
 const getInviteMock = vi.hoisted(() => vi.fn());
 const acceptInviteMock = vi.hoisted(() => vi.fn());
@@ -81,7 +82,8 @@ async function flushReact() {
 describe("InviteLandingPage", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     localStorage.clear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -122,6 +124,86 @@ describe("InviteLandingPage", () => {
     signUpEmailMock.mockResolvedValue(undefined);
     setSelectedCompanyIdMock.mockReset();
   });
+
+  it("switches languages without changing the invite, user content, or form draft", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(() => root.render(
+      <MemoryRouter initialEntries={["/invite/pcp_invite_test"]}>
+        <QueryClientProvider client={queryClient}><Routes><Route path="/invite/:token" element={<InviteLandingPage />} /></Routes></QueryClientProvider>
+      </MemoryRouter>,
+    ));
+    await flushReact(); await flushReact();
+    expect(container.textContent).toContain("Entrar em Acme Robotics");
+    expect(container.querySelector('img[alt="Logo de Acme Robotics"]')).not.toBeNull();
+    expect(container.textContent).toContain("Welcome aboard.");
+    expect(container.querySelector('label[for="invite-name"]')?.textContent).toContain("Nome");
+    const name = container.querySelector('input[name="name"]') as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    await act(() => { setter.call(name, "Ana <Silva>"); name.dispatchEvent(new Event("input", { bubbles: true })); });
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("Join Acme Robotics");
+    expect(container.querySelector('img[alt="Acme Robotics logo"]')).not.toBeNull();
+    expect(container.querySelector('label[for="invite-name"]')?.textContent).toContain("Name");
+    expect(name.value).toBe("Ana <Silva>");
+    expect(localStorage.getItem("paperclip:pending-invite-token")).toBe("pcp_invite_test");
+    expect(getInviteMock).toHaveBeenCalledWith("pcp_invite_test");
+    await act(() => root.unmount());
+  });
+
+  it.each([["pt-BR", "Enviar solicitação", "Segredo de reivindicação"], ["en", "Submit request", "Claim secret"]])(
+    "preserves agent invite data and claim instructions in %s", async (locale, submitLabel, claimLabel) => {
+      await i18n.changeLanguage(locale);
+      getInviteMock.mockResolvedValue({ companyId: "company-1", companyName: "Acme", inviteType: "company_join", allowedJoinTypes: "agent", expiresAt: "2027-03-07T00:10:00Z" });
+      acceptInviteMock.mockResolvedValue({ status: "pending_approval", claimSecret: "secret+123", claimApiKeyPath: "/api/claim/a%2Fb", onboarding: { textInstructions: { url: "https://example.test/instructions?a=1" } } });
+      const root = createRoot(container);
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      await act(() => root.render(<MemoryRouter initialEntries={["/invite/pcp_invite_test"]}><QueryClientProvider client={client}><Routes><Route path="/invite/:token" element={<InviteLandingPage />} /></Routes></QueryClientProvider></MemoryRouter>));
+      await flushReact(); await flushReact();
+      const name = container.querySelector("input")!;
+      const capabilities = container.querySelector("textarea")!;
+      const inputSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      const textareaSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
+      await act(() => {
+        inputSetter.call(name, "Agent <A>"); name.dispatchEvent(new Event("input", { bubbles: true }));
+        textareaSetter.call(capabilities, "Keep <data>"); capabilities.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      const button = Array.from(container.querySelectorAll("button")).find((item) => item.textContent === submitLabel)!;
+      await act(() => button.click()); await flushReact(); await flushReact();
+      expect(acceptInviteMock).toHaveBeenCalledWith("pcp_invite_test", { requestType: "agent", agentName: "Agent <A>", adapterType: "claude_local", capabilities: "Keep <data>" });
+      expect(container.textContent).toContain(claimLabel);
+      expect(container.textContent).toContain("secret+123");
+      expect(container.textContent).toContain("POST /api/claim/a%2Fb");
+      expect(container.textContent).toContain("https://example.test/instructions?a=1");
+      await act(() => root.unmount());
+    },
+  );
+
+  it.each([["pt-BR", "Não foi possível concluir a solicitação.", "Detalhes"], ["en", "The request could not be completed.", "Details"]])(
+    "displays unrecognized authentication details safely in %s", async (locale, failure, details) => {
+      await i18n.changeLanguage(locale);
+      signUpEmailMock.mockRejectedValueOnce(new Error("Provider <raw>"));
+      const root = createRoot(container);
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      await act(() => root.render(<MemoryRouter initialEntries={["/invite/pcp_invite_test"]}><QueryClientProvider client={client}><Routes><Route path="/invite/:token" element={<InviteLandingPage />} /></Routes></QueryClientProvider></MemoryRouter>));
+      await flushReact(); await flushReact();
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      await act(() => {
+        for (const [field, value] of [["name", "Ana"], ["email", "ana@example.test"], ["password", "draft-password"]]) {
+          const input = container.querySelector(`input[name="${field}"]`) as HTMLInputElement;
+          setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      });
+      await act(() => container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+      await flushReact(); await flushReact();
+      const alert = container.querySelector('[role="alert"]')!;
+      expect(alert.textContent).toContain(`${failure} ${details}: Provider <raw>`);
+      expect(alert.querySelector("raw")).toBeNull();
+      expect(container.querySelector('input[name="email"]')?.getAttribute("aria-describedby")).toBe(alert.id);
+      await act(() => root.unmount());
+    },
+  );
 
   afterEach(() => {
     container.remove();

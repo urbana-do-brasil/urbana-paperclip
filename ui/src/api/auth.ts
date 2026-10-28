@@ -8,6 +8,7 @@ import {
 import { redactUrlSecrets } from "@/lib/redact-url-secrets";
 import { tenantSessionRecovery } from "@/lib/tenant-session-recovery";
 import { readApiJson } from "./response";
+import { parseApiErrorMessage, type ApiErrorMessage } from "@paperclipai/shared/api-error-messages";
 
 type AuthErrorBody =
   | {
@@ -26,6 +27,7 @@ export class AuthApiError extends Error {
   status: number;
   code: string | null;
   body: unknown;
+  presentation?: ApiErrorMessage;
 
   constructor(message: string, status: number, body: unknown, code: string | null = null) {
     super(message);
@@ -33,6 +35,7 @@ export class AuthApiError extends Error {
     this.status = status;
     this.code = code;
     this.body = body;
+    this.presentation = parseApiErrorMessage(body);
   }
 }
 

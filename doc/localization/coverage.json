@@ -7,7 +7,7 @@
     "pt-BR",
     "en"
   ],
-  "notice": "Cobertura parcial: a fundação e a jornada inicial de preferência foram implementadas e verificadas. Outras jornadas, documentação pública e runtimes de agentes permanecem pendentes; o fallback inglês não aprova tradução.",
+  "notice": "Cobertura parcial. Entrada/autenticação, preferência, metadados de erros e resolução de idioma da CLI verificados em seus lotes. Os 66 tópicos públicos têm pares de fontes; revisão humana e validação operacional pendentes. Demais jornadas e comunicação efetiva dos agentes não estão concluídas.",
   "requiredStates": [
     "success",
     "empty",
@@ -45,7 +45,7 @@
         "ui/src/context/LocaleContext.test.tsx",
         "tests/localization-browser/locale.spec.ts"
       ],
-      "limits": "Jornada inicial apenas. Metadados de erro compartilhados, demais textos web, CLI, entrega pública da ajuda e comunicação dos agentes dependem dos grupos 3 a 7."
+      "limits": "Jornada inicial verificada. Demais jornadas web, tradução integral da CLI e comunicação dos agentes permanecem nos grupos 3 a 7."
     },
     {
       "id": "errors",
@@ -56,8 +56,14 @@
         "ui/src/api/",
         "cli/src/client/"
       ],
-      "status": "pending",
-      "evidence": []
+      "status": "foundation-verified",
+      "evidence": [
+        "packages/shared/src/api-error-messages.test.ts",
+        "server/src/__tests__/error-handler.test.ts",
+        "ui/src/api/error-presentation.test.ts",
+        "cli/src/__tests__/locale-api-error.integration.test.ts"
+      ],
+      "limits": "Contrato e apresentação inicial verificados. Cada jornada posterior deve mapear seus erros próprios; não significa tradução de todos os erros do produto."
     },
     {
       "id": "entry",
@@ -68,11 +74,20 @@
         "ui/src/components/OnboardingWizard.tsx",
         "ui/src/App.tsx"
       ],
-      "status": "pending",
-      "evidence": [],
+      "status": "partial",
+      "evidence": [
+        "ui/src/pages/Auth.test.tsx",
+        "ui/src/pages/InviteLanding.test.tsx",
+        "ui/src/pages/BoardClaim.test.tsx",
+        "ui/src/pages/CliAuth.test.tsx",
+        "ui/src/pages/apps/chat/ChatIdentityConfirm.test.tsx",
+        "ui/src/components/BootstrapPendingPage.test.tsx",
+        "ui/src/components/CloudAccessGate.test.tsx"
+      ],
       "partialSources": [
-        "ui/src/components/CloudAccessGate.tsx: NoBoardAccessPage e seletor em Auth; demais estados continuam pendentes."
-      ]
+        "Auth, CloudSignIn, InviteLanding, BoardClaim, CliAuth, ChatIdentityConfirm, BootstrapPendingPage e CloudAccessGate localizados e verificados em testes focados. Onboarding3.2c pendente."
+      ],
+      "limits": "OAuth/MCP e configuração autenticada de membros/acesso pertencem ao grupo3.8; não estão excluídos."
     },
     {
       "id": "navigation",
@@ -86,7 +101,10 @@
         "ui/src/components/SidebarAccountMenu.production.tsx"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [],
+      "partialSources": [
+        "PaperclipLoading e alt de CompanyPatternIcon localizados durante as jornadas de entrada; navegação geral permanece pendente."
+      ]
     },
     {
       "id": "tasks",
@@ -147,10 +165,15 @@
         "ui/src/pages/Approvals.tsx",
         "ui/src/pages/CompanyAccess.tsx",
         "ui/src/pages/Secrets.tsx",
-        "ui/src/pages/CompanySettings.tsx"
+        "ui/src/pages/CompanySettings.tsx",
+        "ui/src/pages/InstanceAccess.tsx",
+        "ui/src/pages/JoinRequestQueue.tsx",
+        "ui/src/pages/apps/PaperclipCloudOAuthHandoff.tsx",
+        "ui/src/pages/McpConnect.tsx"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [],
+      "limits": "Inclui OAuth/MCP e configuração autenticada de membros/acesso. As traduções de páginas públicas do grupo3.2 não aprovam estas superfícies."
     },
     {
       "id": "catalogs",
@@ -222,8 +245,12 @@
         "docs/start/",
         "docs/guides/board-operator/"
       ],
-      "status": "pending",
-      "evidence": []
+      "status": "source-pairs-present-review-pending",
+      "evidence": [
+        "ui/src/help/topics.json",
+        "scripts/check-localized-help.mjs"
+      ],
+      "limits": "Presença dos pares não prova semântica, comandos executáveis ou links resolvidos; revisão humana e qualificação operacional pendentes."
     },
     {
       "id": "help-admin",
@@ -235,20 +262,35 @@
         "docs/adapters/",
         "docs/built-in-agents.md"
       ],
-      "status": "pending",
-      "evidence": []
+      "status": "source-pairs-present-review-pending",
+      "evidence": [
+        "ui/src/help/topics.json",
+        "scripts/check-localized-help.mjs"
+      ],
+      "limits": "Presença dos pares não prova semântica, comandos executáveis ou links resolvidos; revisão humana e qualificação operacional pendentes."
     },
     {
       "id": "help-delivery",
       "tasks": "5.1,5.4",
       "label": "Acesso e distribuição da ajuda",
       "sources": [
-        "docs/docs.json",
+        "ui/src/help/topics.json",
+        "ui/src/help/content.ts",
+        "ui/src/help/HelpPage.tsx",
+        "ui/src/main.tsx",
         "ui/src/components/SidebarAccountMenu.tsx",
-        "ui/src/App.tsx"
+        "ui/src/components/SidebarAccountMenu.production.tsx"
       ],
-      "status": "pending",
-      "evidence": []
+      "status": "language-navigation-verified-packaging-in-review",
+      "evidence": [
+        "ui/src/help/content.test.ts",
+        "ui/src/help/HelpPage.test.tsx",
+        "ui/src/components/SidebarAccountMenu.test.tsx",
+        "tests/localization-browser/help.spec.ts",
+        "tests/localization-browser/locale.spec.ts",
+        "scripts/__tests__/check-localized-help.test.mjs"
+      ],
+      "limits": "5.4 verificada;5.1 ainda aberta: gate não garante fonte empacotada, e build/browser finais dos66 tópicos pendentes. Revisão read-only não identificou outra falha concreta no renderer, sem qualificar pacote final."
     },
     {
       "id": "agent-language",
@@ -260,8 +302,13 @@
         "packages/adapter-utils/src/server-utils.ts",
         "packages/adapters/"
       ],
-      "status": "pending",
-      "evidence": []
+      "status": "snapshot-in-review",
+      "evidence": [
+        "server/src/__tests__/communication-locale.integration.test.ts",
+        "server/src/__tests__/communication-locale-dot.test.ts",
+        "server/src/services/heartbeat/queue.test.ts"
+      ],
+      "limits": "6.1 parcial. Testes focados cobrem snapshots, deferred, retry, delegação, recuperação e Dot. Correção question-response-delivery sem teste específico; regressão de autoridade durable-chat e novo typecheck pendentes após últimas mudanças.6.2–6.4 não implementadas nem qualificadas por modelos reais."
     },
     {
       "id": "integration",
@@ -275,6 +322,24 @@
       ],
       "status": "pending",
       "evidence": []
+    },
+    {
+      "id": "cli-preferences",
+      "tasks": "4.1",
+      "label": "Resolução e persistência de idioma da CLI",
+      "sources": [
+        "cli/src/localization/index.ts",
+        "cli/src/client/context.ts",
+        "cli/src/commands/client/context.ts",
+        "cli/src/index.ts"
+      ],
+      "status": "verified",
+      "evidence": [
+        "cli/src/__tests__/locale.test.ts",
+        "cli/src/__tests__/locale-packaged.test.ts",
+        "cli/src/__tests__/data-dir.test.ts"
+      ],
+      "limits": "Não aprova os textos e comandos dos itens4.2–4.4. Preferência local independente da web."
     }
   ],
   "sourceIndexes": {
@@ -559,298 +624,407 @@
       ]
     },
     "documentation": {
-      "source": "docs/docs.json",
+      "source": "ui/src/help/topics.json",
+      "discoverySources": [
+        "docs/docs.json",
+        "docs/built-in-agents.md"
+      ],
       "topics": [
+        {
+          "slug": "api/secrets-remote-import",
+          "source": "docs/api/secrets-remote-import.md",
+          "portugueseSource": "docs/pt-BR/api/secrets-remote-import.md",
+          "status": "source-pair-present-review-pending"
+        },
+        {
+          "slug": "api/routines",
+          "source": "docs/api/routines.md",
+          "portugueseSource": "docs/pt-BR/api/routines.md",
+          "status": "source-pair-present-review-pending"
+        },
+        {
+          "slug": "deploy/dev-plane-restart-hygiene",
+          "source": "docs/deploy/dev-plane-restart-hygiene.md",
+          "portugueseSource": "docs/pt-BR/deploy/dev-plane-restart-hygiene.md",
+          "status": "source-pair-present-review-pending"
+        },
+        {
+          "slug": "built-in-agents",
+          "source": "docs/built-in-agents.md",
+          "portugueseSource": "docs/pt-BR/built-in-agents.md",
+          "status": "source-pair-present-review-pending"
+        },
         {
           "slug": "adapters/adapter-ui-parser",
           "source": "docs/adapters/adapter-ui-parser.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/adapters/adapter-ui-parser.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "adapters/claude-local",
           "source": "docs/adapters/claude-local.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/adapters/claude-local.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "adapters/codex-local",
           "source": "docs/adapters/codex-local.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/adapters/codex-local.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "adapters/creating-an-adapter",
           "source": "docs/adapters/creating-an-adapter.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/adapters/creating-an-adapter.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "adapters/external-adapters",
           "source": "docs/adapters/external-adapters.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/adapters/external-adapters.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "adapters/http",
           "source": "docs/adapters/http.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/adapters/http.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "adapters/overview",
           "source": "docs/adapters/overview.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/adapters/overview.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "adapters/process",
           "source": "docs/adapters/process.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/adapters/process.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/activity",
           "source": "docs/api/activity.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/activity.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/agents",
           "source": "docs/api/agents.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/agents.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/approvals",
           "source": "docs/api/approvals.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/approvals.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/authentication",
           "source": "docs/api/authentication.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/authentication.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/companies",
           "source": "docs/api/companies.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/companies.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/costs",
           "source": "docs/api/costs.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/costs.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/dashboard",
           "source": "docs/api/dashboard.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/dashboard.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/goals-and-projects",
           "source": "docs/api/goals-and-projects.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/goals-and-projects.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/issues",
           "source": "docs/api/issues.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/issues.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/overview",
           "source": "docs/api/overview.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/overview.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "api/secrets",
           "source": "docs/api/secrets.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/api/secrets.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "cli/control-plane-commands",
           "source": "docs/cli/control-plane-commands.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/cli/control-plane-commands.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "cli/overview",
           "source": "docs/cli/overview.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/cli/overview.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "cli/setup-commands",
           "source": "docs/cli/setup-commands.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/cli/setup-commands.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "deploy/database",
           "source": "docs/deploy/database.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/deploy/database.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "deploy/deployment-modes",
           "source": "docs/deploy/deployment-modes.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/deploy/deployment-modes.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "deploy/docker",
           "source": "docs/deploy/docker.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/deploy/docker.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "deploy/environment-variables",
           "source": "docs/deploy/environment-variables.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/deploy/environment-variables.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "deploy/local-development",
           "source": "docs/deploy/local-development.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/deploy/local-development.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "deploy/overview",
           "source": "docs/deploy/overview.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/deploy/overview.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "deploy/secrets",
           "source": "docs/deploy/secrets.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/deploy/secrets.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "deploy/storage",
           "source": "docs/deploy/storage.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/deploy/storage.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "deploy/tailscale-private-access",
           "source": "docs/deploy/tailscale-private-access.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/deploy/tailscale-private-access.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/agent-developer/comments-and-communication",
           "source": "docs/guides/agent-developer/comments-and-communication.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/agent-developer/comments-and-communication.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/agent-developer/cost-reporting",
           "source": "docs/guides/agent-developer/cost-reporting.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/agent-developer/cost-reporting.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/agent-developer/handling-approvals",
           "source": "docs/guides/agent-developer/handling-approvals.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/agent-developer/handling-approvals.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/agent-developer/heartbeat-protocol",
           "source": "docs/guides/agent-developer/heartbeat-protocol.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/agent-developer/heartbeat-protocol.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/agent-developer/how-agents-work",
           "source": "docs/guides/agent-developer/how-agents-work.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/agent-developer/how-agents-work.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/agent-developer/skills-store",
           "source": "docs/guides/agent-developer/skills-store.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/agent-developer/skills-store.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/agent-developer/task-workflow",
           "source": "docs/guides/agent-developer/task-workflow.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/agent-developer/task-workflow.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/agent-developer/writing-a-skill",
           "source": "docs/guides/agent-developer/writing-a-skill.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/agent-developer/writing-a-skill.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/activity-log",
           "source": "docs/guides/board-operator/activity-log.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/activity-log.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/approvals",
           "source": "docs/guides/board-operator/approvals.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/approvals.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/costs-and-budgets",
           "source": "docs/guides/board-operator/costs-and-budgets.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/costs-and-budgets.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/creating-a-company",
           "source": "docs/guides/board-operator/creating-a-company.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/creating-a-company.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/dashboard",
           "source": "docs/guides/board-operator/dashboard.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/dashboard.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/delegation",
           "source": "docs/guides/board-operator/delegation.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/delegation.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/editing-first-task-texts",
           "source": "docs/guides/board-operator/editing-first-task-texts.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/editing-first-task-texts.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/execution-workspaces-and-runtime-services",
           "source": "docs/guides/board-operator/execution-workspaces-and-runtime-services.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/execution-workspaces-and-runtime-services.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/experimental-features",
           "source": "docs/guides/board-operator/experimental-features.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/experimental-features.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/importing-and-exporting",
           "source": "docs/guides/board-operator/importing-and-exporting.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/importing-and-exporting.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/managing-agents",
           "source": "docs/guides/board-operator/managing-agents.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/managing-agents.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/managing-tasks",
           "source": "docs/guides/board-operator/managing-tasks.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/managing-tasks.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/org-structure",
           "source": "docs/guides/board-operator/org-structure.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/org-structure.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/status-cards",
           "source": "docs/guides/board-operator/status-cards.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/guides/board-operator/status-cards.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "start/architecture",
           "source": "docs/start/architecture.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/start/architecture.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "start/core-concepts",
           "source": "docs/start/core-concepts.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/start/core-concepts.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "start/quickstart",
           "source": "docs/start/quickstart.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/start/quickstart.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "start/what-is-paperclip",
           "source": "docs/start/what-is-paperclip.md",
-          "status": "pending"
+          "portugueseSource": "docs/pt-BR/start/what-is-paperclip.md",
+          "status": "source-pair-present-review-pending"
         },
         {
           "slug": "guides/board-operator/language",
           "source": "docs/guides/board-operator/language.md",
           "portugueseSource": "docs/pt-BR/guides/board-operator/language.md",
-          "status": "pending-public-help-delivery"
+          "status": "source-pair-present-review-pending"
+        },
+        {
+          "slug": "companies/companies-spec",
+          "source": "docs/companies/companies-spec.md",
+          "portugueseSource": "docs/pt-BR/companies/companies-spec.md",
+          "status": "source-pair-present-review-pending"
+        },
+        {
+          "slug": "adapters/gemini-local",
+          "source": "docs/adapters/gemini-local.md",
+          "portugueseSource": "docs/pt-BR/adapters/gemini-local.md",
+          "status": "source-pair-present-review-pending"
+        },
+        {
+          "slug": "adapters/kimi-local",
+          "source": "docs/adapters/kimi-local.md",
+          "portugueseSource": "docs/pt-BR/adapters/kimi-local.md",
+          "status": "source-pair-present-review-pending"
+        },
+        {
+          "slug": "deploy/aws-ecs",
+          "source": "docs/deploy/aws-ecs.md",
+          "portugueseSource": "docs/pt-BR/deploy/aws-ecs.md",
+          "status": "source-pair-present-review-pending"
         }
       ]
     },
@@ -916,6 +1090,18 @@
     {
       "scope": "Documentação exclusiva de desenvolvimento e prompts exclusivamente técnicos",
       "reason": "Fora do escopo de leitura de usuários/administradores; classificar exceções por tópico quando necessário."
+    },
+    {
+      "scope": "docs/guides/agent-developer/mcp-fixture-smoke.md",
+      "reason": "Procedimento de teste de fixtures MCP para desenvolvimento; fora da navegação pública e dos guias operacionais. Não é evidência de qualificação de runtime."
     }
-  ]
+  ],
+  "checkpoint": {
+    "date": "2026-10-28",
+    "completedTasks": 16,
+    "totalTasks": 41,
+    "branch": "codex/localize-paperclip-pt-br",
+    "deployed": false,
+    "reason": "Checks paused at the user’s request to limit credit usage; consult README.md and verification.md before resuming."
+  }
 }

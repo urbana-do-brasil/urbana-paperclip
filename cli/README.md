@@ -276,6 +276,35 @@ Paperclip is a full control plane, not a wrapper. Before you build any of this y
 
 <br/>
 
+## CLI language / Idioma da CLI
+
+The CLI defaults to Brazilian Portuguese (`pt-BR`), regardless of the system or
+browser language. Its language is a local CLI preference and does not change or
+synchronize the signed-in user's web preference. Select English for one command
+with `paperclipai --lang en --help`, or use `PAPERCLIP_LANG=en paperclipai --help`.
+`--lang` takes precedence over `PAPERCLIP_LANG`, the selected context profile and
+the `pt-BR` default, in that order. The option affects only the current command.
+
+To persist a choice in one local profile, use:
+
+```sh
+paperclipai context set --profile work --locale en
+paperclipai context set --profile pessoal --locale pt-BR
+paperclipai context show --profile work --json
+```
+
+The profiles are independent. Both selection and help work offline without a
+running server. Only `pt-BR` and `en` are accepted. Translation of individual
+command descriptions, prompts and operation messages is being delivered in
+stages; some English text remains until those command groups are migrated.
+
+A CLI usa `pt-BR` por padrão. A opção `--lang` vale apenas para a execução e
+tem prioridade sobre `PAPERCLIP_LANG`, o idioma do perfil local e o padrão. Para
+salvar o idioma em um perfil, use `paperclipai context set --locale pt-BR` (ou
+`--locale en`). Essa escolha não altera nem sincroniza o idioma da conta web.
+Ajuda e seleção funcionam sem servidor ou autenticação; a tradução dos demais
+comandos está em andamento.
+
 ## Quickstart
 
 Open source. Self-hosted. No Paperclip account required.

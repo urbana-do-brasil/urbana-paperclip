@@ -28,22 +28,23 @@ export function CloudAccessError({
   retrying: boolean;
   onRetry: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-16">
       <RefreshCw className="size-6 text-muted-foreground" aria-hidden="true" />
       <div className="flex flex-col gap-2" role="status">
         <h1 className="text-xl font-semibold">
-          {temporary ? "Reconnecting to Paperclip" : "Unable to load Paperclip"}
+          {temporary ? t("cloudAccess.reconnecting") : t("cloudAccess.unable")}
         </h1>
         <p className="text-sm text-muted-foreground">
           {temporary
-            ? "The server may be restarting or your connection was interrupted. We’ll try again every few seconds and reconnect automatically."
-            : "We couldn’t check your access to this instance. Try again, or contact your instance administrator if this continues."}
+            ? t("cloudAccess.temporary")
+            : t("cloudAccess.failure")}
         </p>
       </div>
       <div>
         <Button variant="outline" onClick={onRetry} disabled={retrying}>
-          {retrying ? "Connecting…" : "Try again"}
+          {retrying ? t("cloudAccess.connecting") : t("cloudAccess.retry")}
         </Button>
       </div>
     </div>
@@ -69,6 +70,7 @@ function NoBoardAccessPage() {
 }
 
 export function CloudAccessGate({ allowMembershipRequest = false }: { allowMembershipRequest?: boolean } = {}) {
+  const { t } = useTranslation();
   const location = useLocation();
   const queryClient = useQueryClient();
   const [hasOpenedBoard, setHasOpenedBoard] = useState(false);
@@ -217,7 +219,7 @@ export function CloudAccessGate({ allowMembershipRequest = false }: { allowMembe
     <>
       {isReconnecting && (
         <div role="status" className="bg-muted px-4 py-2 text-center text-sm text-muted-foreground">
-          Connection interrupted. Reconnecting automatically…
+          {t("cloudAccess.interrupted")}
         </div>
       )}
       <Outlet />

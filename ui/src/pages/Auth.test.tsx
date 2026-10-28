@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
 import { queryKeys } from "../lib/queryKeys";
 import { AuthPage } from "./Auth";
 
@@ -90,7 +91,8 @@ function renderAuthPage(container: HTMLElement) {
 describe("AuthPage", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     getSessionMock.mockResolvedValue(null);
@@ -144,6 +146,16 @@ describe("AuthPage", () => {
     await act(() => root.unmount());
   });
 
+  it("localizes the accessible loading status while waiting for deployment metadata", async () => {
+    await i18n.changeLanguage("pt-BR");
+    healthMock.mockReturnValue(new Promise(() => {}));
+    const { root } = await mount();
+    expect(container.querySelector('[role="status"]')?.textContent).toBe("Carregando…");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.querySelector('[role="status"]')?.textContent).toBe("Loading…");
+    await act(() => root.unmount());
+  });
+
   it("fails closed when deployment metadata cannot be loaded", async () => {
     healthMock.mockRejectedValue(new Error("offline"));
     const { root } = await mount();
@@ -169,6 +181,93 @@ describe("AuthPage", () => {
     expect(beginCloudSignInMock).not.toHaveBeenCalled();
     await act(() => root.unmount());
   });
+
+  it("switches login language without clearing a draft and localizes identified errors", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const { root } = await mount();
+    expect(container.querySelector("h1")?.textContent).toBe("Entre no Paperclip");
+    expect(container.querySelector('label[for="email"]')?.textContent).toBe("E-mail");
+    const email = container.querySelector('input[name="email"]') as HTMLInputElement;
+    const password = container.querySelector('input[name="password"]') as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    await act(() => {
+      setter.call(email, "alice@example.test"); email.dispatchEvent(new Event("input", { bubbles: true }));
+      setter.call(password, "draft-password"); password.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const known = Object.assign(new Error("Validation error"), { body: { error: "Validation error", messageKey: "validation" } });
+    signInEmailMock.mockRejectedValueOnce(known);
+    await act(() => { container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    await flushReact(); await flushReact();
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Os dados enviados são inválidos");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.querySelector("h1")?.textContent).toBe("Sign in to Paperclip");
+    expect(container.querySelector('input[name="email"]')).toBe(email);
+    expect(container.querySelector('input[name="password"]')).toBe(password);
+    expect(email.value).toBe("alice@example.test");
+    expect(password.value).toBe("draft-password");
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("The submitted data is invalid");
+    await act(() => root.unmount());
+  });
+
+  it("presents Cloud recovery in Portuguese without modifying the destination", async () => {
+    await i18n.changeLanguage("pt-BR");
+    healthMock.mockResolvedValue({ cloud: { managed: true, managedBy: "paperclip-cloud", cloudBaseUrl: "https://my.paperclip.app", stackSlug: "team" } });
+    beginCloudSignInMock.mockReturnValue(false);
+    const { root } = await mount("/auth?next=%2FTEST%2Fissues%2FTEST-1");
+    await vi.waitFor(() => expect(container.textContent).toContain("Continuar para o Paperclip Cloud"));
+    const link = container.querySelector("a")!;
+    const url = new URL(link.href);
+    expect(url.origin).toBe("https://my.paperclip.app");
+    expect(url.searchParams.get("returnTo")).toBe("/TEST/issues/TEST-1");
+    await act(() => root.unmount());
+  });
+
+  it.each([
+    ["pt-BR", "Criar conta", "Crie sua conta no Paperclip", "Nome", "Não foi possível concluir a solicitação.", "Detalhes"],
+    ["en", "Create one", "Create your Paperclip account", "Name", "The request could not be completed.", "Details"],
+  ])("preserves sign-up data and provider details in %s", async (locale, switchLabel, title, nameLabel, failure, detail) => {
+    await i18n.changeLanguage(locale);
+    const { root } = await mount();
+    const switchButton = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === switchLabel)!;
+    await act(() => switchButton.click());
+    expect(container.querySelector("h1")?.textContent).toBe(title);
+    expect(container.querySelector('label[for="name"]')?.textContent).toBe(nameLabel);
+    const name = container.querySelector('input[name="name"]') as HTMLInputElement;
+    const email = container.querySelector('input[name="email"]') as HTMLInputElement;
+    const password = container.querySelector('input[name="password"]') as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    await act(() => {
+      for (const [input, value] of [[name, "Ana <Silva>"], [email, "ana@example.test"], [password, "draft-password"]] as const) {
+        setter.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+    signUpEmailMock.mockRejectedValueOnce(new Error("Provider: account unavailable <raw>"));
+    await act(() => container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+    await flushReact(); await flushReact();
+    expect(signUpEmailMock).toHaveBeenCalledWith({ name: "Ana <Silva>", email: "ana@example.test", password: "draft-password" });
+    const alert = container.querySelector('[role="alert"]')!;
+    expect(alert.textContent).toContain(`${failure} ${detail}: Provider: account unavailable <raw>`);
+    expect(alert.querySelector("raw")).toBeNull();
+    for (const input of [name, email, password]) {
+      expect(input.getAttribute("aria-describedby")).toBe(alert.id);
+      expect(input.getAttribute("aria-invalid")).toBe("true");
+    }
+    expect(name.value).toBe("Ana <Silva>");
+    expect(password.value).toBe("draft-password");
+    await act(() => root.unmount());
+  });
+
+  it.each([["pt-BR", "Não foi possível verificar o acesso."], ["en", "Unable to check sign-in."]])(
+    "localizes health failures in %s", async (locale, message) => {
+      await i18n.changeLanguage(locale);
+      healthMock.mockRejectedValue(new Error("offline"));
+      const { root } = await mount();
+      await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain(message));
+      expect(container.querySelector("form")).toBeNull();
+      await act(() => root.unmount());
+    },
+  );
 
   it("exposes password-manager metadata and a11y attributes on the sign-in form", async () => {
     const { root } = await mount();

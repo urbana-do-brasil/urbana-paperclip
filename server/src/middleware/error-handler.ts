@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { Db } from "@paperclipai/db";
 import { ZodError } from "zod";
 import { HttpError } from "../errors.js";
+import { apiErrorMessageFields } from "@paperclipai/shared/api-error-messages";
 import { trackErrorHandlerCrash } from "@paperclipai/shared/telemetry";
 import { getTelemetryClient } from "../telemetry.js";
 import { captureException } from "../sentry.js";
@@ -189,6 +190,9 @@ export function errorHandler(
         ? { error: "Internal server error" }
         : {
             error: sanitizeSecretSensitiveResponse(req, err.message),
+            // Sensitive routes keep their existing disclosure boundary even
+            // when a caller accidentally attaches presentation metadata.
+            ...(!isSecretSensitiveHttpRequest(req.method, req.originalUrl) ? apiErrorMessageFields(err.presentation) : {}),
             ...(typeof responseDetails?.code === "string"
               ? { code: responseDetails.code }
               : {}),
@@ -235,6 +239,7 @@ export function errorHandler(
     res.status(400).json({
       error: "Validation error",
       details: sanitizeSecretSensitiveResponse(req, zodIssues),
+      ...(!isSecretSensitiveHttpRequest(req.method, req.originalUrl) ? apiErrorMessageFields({ key: "validation" }) : {}),
     });
     return;
   }

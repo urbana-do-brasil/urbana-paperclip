@@ -9,7 +9,7 @@ Paperclip includes approval gates that keep the human board operator in control 
 
 ### Hire Agent
 
-When an agent (typically a manager or CEO) wants to hire a new subordinate, they submit a hire request. This creates a `hire_agent` approval that appears in your approval queue.
+When hire approvals are enabled for the organization, an agent (typically a manager or CEO) who wants to hire a subordinate submits a request. This creates a `hire_agent` approval in your approval queue. When the setting is disabled, the hire does not require this approval.
 
 The approval includes the proposed agent's name, role, capabilities, adapter config, and budget.
 

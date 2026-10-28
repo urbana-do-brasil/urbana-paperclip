@@ -1,5 +1,6 @@
 import { LanguageSelector } from "../components/LanguageSelector";
 import { useTranslation } from "../i18n";
+import { formatUiError } from "../api/error-presentation";
 import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, LoaderCircle, Save, Trash2, UserRoundPen } from "lucide-react";
@@ -31,7 +32,7 @@ export function ProfileSettings() {
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<Error | null>(null);
   const sessionQuery = useQuery({
     queryKey: queryKeys.auth.session,
     queryFn: () => authApi.getSession(),
@@ -83,7 +84,7 @@ export function ProfileSettings() {
       setImage(profile.image ?? "");
     },
     onError: (error) => {
-      setActionError(error instanceof Error ? error.message : t("profile.updateError"));
+      setActionError(error instanceof Error ? error : new Error(t("profile.updateError")));
     },
   });
 
@@ -106,7 +107,7 @@ export function ProfileSettings() {
       setImage(profile.image ?? "");
     },
     onError: (error) => {
-      setActionError(error instanceof Error ? error.message : t("profile.uploadError"));
+      setActionError(error instanceof Error ? error : new Error(t("profile.uploadError")));
     },
   });
 
@@ -118,7 +119,7 @@ export function ProfileSettings() {
       setImage(profile.image ?? "");
     },
     onError: (error) => {
-      setActionError(error instanceof Error ? error.message : t("profile.removeError"));
+      setActionError(error instanceof Error ? error : new Error(t("profile.removeError")));
     },
   });
 
@@ -129,7 +130,7 @@ export function ProfileSettings() {
   if (sessionQuery.error || !sessionQuery.data) {
     return (
       <div className="text-sm text-destructive">
-        {sessionQuery.error instanceof Error ? sessionQuery.error.message : t("profile.loadError")}
+        {sessionQuery.error instanceof Error ? formatUiError(sessionQuery.error) : t("profile.loadError")}
       </div>
     );
   }
@@ -156,7 +157,7 @@ export function ProfileSettings() {
 
       {actionError ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {actionError}
+          {formatUiError(actionError)}
         </div>
       ) : null}
 

@@ -5,6 +5,7 @@ import {
 } from "@/lib/tenant-session-recovery";
 import { __inflightGetCount, api, detachInflightGet } from "./client";
 import { toolsApi } from "./tools";
+import { i18n } from "../i18n";
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -93,6 +94,24 @@ describe("tenant-session recovery", () => {
       status: 401,
       message: "unauthorized",
     });
+  });
+});
+
+describe("communication locale transport", () => {
+  it("sends the selected locale on mutations without changing credentials", async () => {
+    const previous = i18n.language;
+    try {
+      await i18n.changeLanguage("en");
+      fetchMock.mockResolvedValue(jsonResponse({}));
+      await api.post("/locale-wake", {});
+      const init = fetchMock.mock.calls[0]![1] as RequestInit;
+      expect(new Headers(init.headers).get("X-Paperclip-Communication-Locale")).toBe("en");
+      expect(init.credentials).toBe("include");
+      await api.get("/locale-read");
+      expect(new Headers((fetchMock.mock.calls[1]![1] as RequestInit).headers).has("X-Paperclip-Communication-Locale")).toBe(false);
+    } finally {
+      await i18n.changeLanguage(previous);
+    }
   });
 });
 

@@ -1,4 +1,5 @@
 import { enrichPromotedWakeContext } from "../domain/context.js";
+import { DEFAULT_USER_LOCALE, isSupportedLocale } from "@paperclipai/shared/localization";
 import {
   decideQueuedCommentAction,
   decideReleaseRecovery,
@@ -412,6 +413,11 @@ async function promoteDeferredWake(
   delete promotedPayload["queuedCommentInterrupt"];
 
   const promotedContextSeed: Record<string, unknown> = { ...workingCandidate.deferredContextSeed };
+  if (!isSupportedLocale(promotedContextSeed.communicationLocale) ||
+      !["explicit", "user", "origin", "default"].includes(String(promotedContextSeed.communicationLocaleSource))) {
+    promotedContextSeed.communicationLocale = DEFAULT_USER_LOCALE;
+    promotedContextSeed.communicationLocaleSource = "default";
+  }
   if (pauseHold.activePauseHold) {
     promotedContextSeed.treeHoldInteraction = true;
     promotedContextSeed.activeTreeHold = {
@@ -831,8 +837,13 @@ export function createAdmitWakeBehindIssueExecution(deps: {
     // Each resolved card has its own immutable decision and continuation. Never
     // merge it with comments or another card, in either arrival order.
     const interactionReceipt = Boolean(input.contextSnapshot.interactionId || input.payload?.interactionId);
+    const activeContext = parseObject(input.activeExecutionRun.contextSnapshot);
+    const activeLocale = isSupportedLocale(activeContext.communicationLocale) ? activeContext.communicationLocale : DEFAULT_USER_LOCALE;
+    const incomingLocale = isSupportedLocale(input.contextSnapshot.communicationLocale) ? input.contextSnapshot.communicationLocale : DEFAULT_USER_LOCALE;
+    const languageAttributed = input.requestedByActorType === "user" || ["explicit", "origin", "user"].includes(String(input.contextSnapshot.communicationLocaleSource));
+    const differsFromActiveLanguage = languageAttributed && activeLocale !== incomingLocale;
     const decision = decideWakeAdmission({
-      allowRunCoalescing: interactionReceipt || parseObject(input.activeExecutionRun.contextSnapshot).interactionId
+      allowRunCoalescing: interactionReceipt || activeContext.interactionId || differsFromActiveLanguage
         ? false : input.allowRunCoalescing,
       sameDurableActor,
       isSameExecutionAgent,
@@ -875,7 +886,10 @@ export function createAdmitWakeBehindIssueExecution(deps: {
     // existing deferred wake, so the coalesce path (the common path) never
     // pays for this query.
     const existingDeferred =
-      (interactionReceipt || input.allowRunCoalescing === false)
+      // Human comment receipts keep their own author and language. They may
+      // still merge into a compatible active run, but not into an arbitrary
+      // previously deferred receipt belonging to another interaction.
+      (interactionReceipt || input.allowRunCoalescing === false || (input.requestedByActorType === "user" && Boolean(input.wakeCommentId)))
         ? null
         : await deps.reader.findExistingDeferredWake(scope, {
             companyId: input.companyId,
@@ -891,7 +905,10 @@ export function createAdmitWakeBehindIssueExecution(deps: {
               : {}),
           });
 
-    if (existingDeferred && !existingDeferred.payload?.interactionId && !existingDeferred.deferredContext.interactionId) {
+    const deferredLocale = existingDeferred && isSupportedLocale(existingDeferred.deferredContext.communicationLocale)
+      ? existingDeferred.deferredContext.communicationLocale : DEFAULT_USER_LOCALE;
+    if (existingDeferred && !existingDeferred.payload?.interactionId && !existingDeferred.deferredContext.interactionId &&
+        (!languageAttributed || deferredLocale === incomingLocale)) {
       const mergedDeferredContext = deps.helpers.mergeCoalescedContextSnapshot(
         existingDeferred.deferredContext,
         input.contextSnapshot,

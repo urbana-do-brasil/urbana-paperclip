@@ -1,3 +1,6 @@
+import { useTranslation } from "../i18n";
+import { resolveLocale } from "@paperclipai/shared/localization";
+import { HELP_HOME, helpHref } from "../help/paths";
 import { LanguageSelector } from "./LanguageSelector";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -29,7 +32,6 @@ import { ThemeToggle } from "./ThemeToggle";
 import { SidebarServerInfo } from "./SidebarServerInfo";
 
 const INVITES_PATH = "/company/settings/members?tab=invites";
-const DOCS_URL = "https://docs.paperclip.ing/";
 const FEEDBACK_URL = "https://paperclip.ing/feedback";
 
 interface SidebarAccountMenuProps {
@@ -120,6 +122,8 @@ export function SidebarAccountMenu({
   onOpenChange,
   forceExpanded = false,
 }: SidebarAccountMenuProps) {
+  const { i18n } = useTranslation();
+  const locale = resolveLocale(i18n.language);
   const cloud = useCloudInstance();
   const isCloud = Boolean(cloud);
   // Invites live on the Members page (or in Cloud's People settings). Hide the
@@ -247,9 +251,9 @@ export function SidebarAccountMenu({
               ) : null}
               <div className="px-2 py-2"><LanguageSelector /></div>
               <MenuAction
-                label="Documentation"
+                label={locale === "pt-BR" ? "Documentação" : "Documentation"}
                 icon={BookOpen}
-                href={DOCS_URL}
+                href={helpHref(locale, HELP_HOME)}
                 external
                 onClick={() => setOpen(false)}
               />

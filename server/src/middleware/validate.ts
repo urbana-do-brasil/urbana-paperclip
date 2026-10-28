@@ -42,7 +42,9 @@ export function validateIssueMutationBody(schema: ZodSchema) {
       ) {
         // Same body shape as the generic Zod 400 response, so the
         // field-specific details are preserved verbatim.
-        throw unprocessable("Validation error", err.issues);
+        const failure = unprocessable("Validation error", err.issues);
+        failure.presentation = { key: "validation" };
+        throw failure;
       }
       throw err;
     }

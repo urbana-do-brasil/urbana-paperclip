@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiConnectionError, ApiRequestError, PaperclipApiClient } from "../client/http.js";
+import { ApiConnectionError, ApiRequestError, PaperclipApiClient, formatApiRequestError } from "../client/http.js";
 
 describe("PaperclipApiClient", () => {
   afterEach(() => {
@@ -58,6 +58,26 @@ describe("PaperclipApiClient", () => {
       message: "Issue checkout conflict",
       details: { issueId: "1" },
     } satisfies Partial<ApiRequestError>);
+  });
+
+  it("offers localized human presentation without changing structured errors or message-based behavior", async () => {
+    const body = { error: "Board authentication required", code: "existing", messageKey: "locale_auth_required", details: { reason: "original" } };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 401 })));
+    const client = new PaperclipApiClient({ apiBase: "http://localhost:3100" });
+    const error = await client.post("/api/auth/locale-preference", {}).then(
+      () => { throw new Error("Expected request to fail"); },
+      (err) => err as ApiRequestError,
+    );
+    expect(error).toBeInstanceOf(ApiRequestError);
+    expect(error.status).toBe(401);
+    expect(error.message).toBe("Board authentication required");
+    expect(error.body).toEqual(body);
+    expect(error.details).toEqual(body.details);
+    expect(formatApiRequestError(error, "pt-BR")).toBe("Entre na sua conta para alterar a preferência de idioma.");
+    expect(formatApiRequestError(error, "en")).toBe("Sign in to manage your language preference.");
+    const external = new ApiRequestError(502, "Vendor: diagnostic", undefined, { error: "Vendor: diagnostic" });
+    expect(formatApiRequestError(external, "pt-BR")).toBe("Não foi possível concluir a solicitação. Detalhes: Vendor: diagnostic");
+    expect(external.message).toBe("Vendor: diagnostic");
   });
 
   it("throws ApiConnectionError with recovery guidance when fetch fails", async () => {

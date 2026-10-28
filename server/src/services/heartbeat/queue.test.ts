@@ -1,5 +1,5 @@
 import type { Db } from "@paperclipai/db";
-import { agents, agentWakeupRequests, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRuns, issues } from "@paperclipai/db";
+import { agents, agentWakeupRequests, authUsers, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRuns, issues, issueThreadInteractions, userLocalePreferences } from "@paperclipai/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
@@ -8,6 +8,11 @@ import type { createWakeQueue } from "../../modules/wake-queue/index.js";
 import { createHeartbeatRunState } from "./run-state.js";
 import { createHeartbeatRunPreparation } from "./run-preparation.js";
 import { createHeartbeatQueue, type HeartbeatQueueDependencies } from "./queue.js";
+import express from "express";
+import request from "supertest";
+import { captureLocalCommunicationLocale } from "../../middleware/communication-locale.js";
+import { queueIssueAssignmentWakeup } from "../issue-assignment-wakeup.js";
+import { issueThreadInteractionService } from "../issue-thread-interactions.js";
 
 type Run = typeof heartbeatRuns.$inferSelect;
 function callbacks(db: Db) {
@@ -169,6 +174,113 @@ describe.skipIf(!support.supported)("heartbeat queue database wiring", () => {
     await createHeartbeatQueue(db, callbacks(db)).releaseRunClaimedJustBeforeSuppression(run.id);
     const [current] = await db.select().from(issues).where(eq(issues.id, issue.id));
     expect(current.executionRunId).toBe(newOwner.id);
+  });
+
+  it("persists distinct requester languages without coalescing or changing execution ownership", async () => {
+    const { agent, company } = await fixture();
+    // Remove the fixture's unrelated active execution; task drain prevents the
+    // two queued runs below from dispatching or invoking any provider.
+    await db.delete(issues).where(eq(issues.companyId, company.id));
+    await db.delete(heartbeatRuns).where(eq(heartbeatRuns.companyId, company.id));
+    const now = new Date();
+    await db.insert(authUsers).values(["queue-locale-pt", "queue-locale-en"].map((id) => ({ id, name: id, email: `${id}@example.test`, createdAt: now, updatedAt: now }))).onConflictDoNothing();
+    await db.insert(userLocalePreferences).values([{ userId: "queue-locale-pt", locale: "pt-BR" }, { userId: "queue-locale-en", locale: "en" }]).onConflictDoUpdate({ target: userLocalePreferences.userId, set: { locale: sql`excluded.locale` } });
+    const deps = callbacks(db);
+    deps.getAgent.mockResolvedValue(agent);
+    deps.getSchedulingSuppression.mockResolvedValue({ suppressed: true, reason: "task_drain" } as Awaited<ReturnType<HeartbeatQueueDependencies["getSchedulingSuppression"]>>);
+    const queue = createHeartbeatQueue(db, deps);
+    const pt = await queue.enqueueWakeup(agent.id, { source: "on_demand", requestedByActorType: "user", requestedByActorId: "queue-locale-pt" });
+    const en = await queue.enqueueWakeup(agent.id, { source: "on_demand", requestedByActorType: "user", requestedByActorId: "queue-locale-en" });
+    expect(pt?.id).toBeTruthy(); expect(en?.id).toBeTruthy(); expect(pt?.id).not.toBe(en?.id);
+    expect(pt?.contextSnapshot).toMatchObject({ communicationLocale: "pt-BR", communicationLocaleSource: "user" });
+    expect(en?.contextSnapshot).toMatchObject({ communicationLocale: "en", communicationLocaleSource: "user" });
+    const rows = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.companyId, company.id));
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.agentId === agent.id && row.companyId === company.id && row.status === "queued")).toBe(true);
+    expect(deps.executeRun).not.toHaveBeenCalled();
+  });
+
+  it("persists the local board browser language through the HTTP request context", async () => {
+    const { agent, company } = await fixture();
+    await db.delete(issues).where(eq(issues.companyId, company.id));
+    await db.delete(heartbeatRuns).where(eq(heartbeatRuns.companyId, company.id));
+    const deps = callbacks(db);
+    deps.getAgent.mockResolvedValue(agent);
+    deps.getSchedulingSuppression.mockResolvedValue({ suppressed: true, reason: "task_drain" } as Awaited<ReturnType<HeartbeatQueueDependencies["getSchedulingSuppression"]>>);
+    const queue = createHeartbeatQueue(db, deps);
+    const app = express();
+    app.use((req, _res, next) => { req.actor = { type: "board", source: "local_implicit", userId: "local-board", isInstanceAdmin: true }; next(); });
+    app.use(captureLocalCommunicationLocale);
+    app.post("/wake", async (_req, res, next) => {
+      try {
+        const run = await queue.enqueueWakeup(agent.id, { source: "on_demand", requestedByActorType: "user", requestedByActorId: "local-board" });
+        res.json(run);
+      } catch (error) { next(error); }
+    });
+    const response = await request(app).post("/wake").set("X-Paperclip-Communication-Locale", "en");
+    expect(response.status).toBe(200);
+    expect(response.body.contextSnapshot).toMatchObject({ communicationLocale: "en", communicationLocaleSource: "user" });
+    const [stored] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, response.body.id));
+    expect(stored.contextSnapshot).toMatchObject({ communicationLocale: "en", communicationLocaleSource: "user" });
+    expect(stored.companyId).toBe(company.id); expect(stored.agentId).toBe(agent.id);
+  });
+
+  it("inherits a delegated run language without changing the target agent or company", async () => {
+    const { run, agent, company } = await fixture("succeeded");
+    await db.delete(issues).where(eq(issues.companyId, company.id));
+    await db.update(heartbeatRuns).set({ contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "user" } }).where(eq(heartbeatRuns.id, run.id));
+    const [child] = await db.insert(agents).values({ companyId: company.id, name: "Delegated agent", role: "engineer", status: "idle", adapterType: "process", adapterConfig: {} }).returning();
+    const deps = callbacks(db);
+    deps.getAgent.mockResolvedValue(child);
+    deps.getSchedulingSuppression.mockResolvedValue({ suppressed: true, reason: "task_drain" });
+    const delegated = await createHeartbeatQueue(db, deps).enqueueWakeup(child.id, {
+      source: "on_demand", requestedByActorType: "agent", requestedByActorId: agent.id,
+      communicationOriginRunId: run.id, contextSnapshot: { responsibleUserId: "delegation-owner" },
+    });
+    expect(delegated).toMatchObject({ companyId: company.id, agentId: child.id, responsibleUserId: "delegation-owner",
+      contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "origin" } });
+    expect(deps.executeRun).not.toHaveBeenCalled();
+  });
+
+  it("uses the assigning run instead of the task's old origin, and falls back to the old origin when no run is supplied", async () => {
+    const { run: historical, agent, company, issue } = await fixture("succeeded");
+    await db.update(heartbeatRuns).set({ contextSnapshot: { communicationLocale: "pt-BR", communicationLocaleSource: "user" } }).where(eq(heartbeatRuns.id, historical.id));
+    const [current] = await db.insert(heartbeatRuns).values({ companyId: company.id, agentId: agent.id, status: "succeeded", contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "user" } }).returning();
+    await db.update(issues).set({ originRunId: historical.id, executionRunId: null, executionAgentNameKey: null, executionLockedAt: null, responsibleUserId: "task-owner" }).where(eq(issues.id, issue.id));
+    const deps = callbacks(db);
+    deps.getAgent.mockResolvedValue(agent);
+    deps.instanceSettings.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: false } as Awaited<ReturnType<HeartbeatQueueDependencies["instanceSettings"]["getExperimental"]>>);
+    deps.getSchedulingSuppression.mockResolvedValue({ suppressed: true, reason: "task_drain" });
+    const queue = createHeartbeatQueue(db, deps);
+    const assignment = { heartbeat: { wakeup: queue.enqueueWakeup }, issue, reason: "issue_assigned", mutation: "create", contextSource: "issue.create", requestedByActorType: "agent" as const, requestedByActorId: agent.id };
+    const delegated = await queueIssueAssignmentWakeup({ ...assignment, communicationOriginRunId: current.id }) as Run;
+    expect(delegated).toMatchObject({ companyId: company.id, agentId: agent.id, responsibleUserId: "task-owner", contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "origin" } });
+    // A separate task permits independent admission while the first is queued.
+    const [fallbackIssue] = await db.insert(issues).values({ companyId: company.id, title: "Fallback task", status: "todo", assigneeAgentId: agent.id, responsibleUserId: "task-owner", originRunId: historical.id }).returning();
+    const fallback = await queueIssueAssignmentWakeup({ ...assignment, issue: fallbackIssue }) as Run;
+    expect(fallback).toMatchObject({ companyId: company.id, agentId: agent.id, responsibleUserId: "task-owner", contextSnapshot: { communicationLocale: "pt-BR", communicationLocaleSource: "origin" } });
+    expect(deps.executeRun).not.toHaveBeenCalled();
+  });
+
+  it("uses the persisted interaction source for a merged-PR continuation instead of the task's historical origin", async () => {
+    const { run: historical, agent, company, issue } = await fixture("succeeded");
+    await db.update(heartbeatRuns).set({ contextSnapshot: { communicationLocale: "pt-BR", communicationLocaleSource: "user" } }).where(eq(heartbeatRuns.id, historical.id));
+    const [source] = await db.insert(heartbeatRuns).values({ companyId: company.id, agentId: agent.id, status: "succeeded", contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "user" } }).returning();
+    await db.update(issues).set({ status: "in_review", originRunId: historical.id, executionRunId: null, executionAgentNameKey: null, executionLockedAt: null, responsibleUserId: "task-owner" }).where(eq(issues.id, issue.id));
+    await db.insert(issueThreadInteractions).values({ companyId: company.id, issueId: issue.id, sourceRunId: source.id,
+      kind: "request_confirmation", status: "pending", continuationPolicy: "wake_assignee_on_accept", requestedResolverPolicy: "board_only", effectiveResolverPolicy: "board_only",
+      title: "Merge paperclipai/paperclip#39?", payload: { version: 1, prompt: "Merge the PR?" } });
+    const deps = callbacks(db);
+    deps.getAgent.mockResolvedValue(agent);
+    deps.instanceSettings.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: false } as Awaited<ReturnType<HeartbeatQueueDependencies["instanceSettings"]["getExperimental"]>>);
+    deps.getSchedulingSuppression.mockResolvedValue({ suppressed: true, reason: "task_drain" });
+    const queue = createHeartbeatQueue(db, deps);
+    const service = issueThreadInteractionService(db, { wakeup: queue.enqueueWakeup, resolvePullRequestState: async () => "merged" });
+    expect(await service.sweepMergedPullRequestConfirmations([{ companyId: company.id, owner: "paperclipai", repo: "paperclip", number: 39 }])).toMatchObject({ accepted: 1, woken: 1 });
+    const successors = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.companyId, company.id));
+    const successor = successors.find(row => row.id !== historical.id && row.id !== source.id);
+    expect(successor).toMatchObject({ companyId: company.id, agentId: agent.id, responsibleUserId: "task-owner", contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "origin" } });
+    expect(deps.executeRun).not.toHaveBeenCalled();
   });
 
   it("cancels at the daily run cap before claiming or dispatching", async () => {

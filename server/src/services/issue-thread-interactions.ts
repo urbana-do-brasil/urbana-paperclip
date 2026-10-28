@@ -182,6 +182,7 @@ type InteractionWakeup = (
     allowRunCoalescing?: boolean;
     requestedByActorType: "system";
     requestedByActorId: string;
+    communicationOriginRunId?: string | null;
     contextSnapshot: Record<string, unknown>;
   },
 ) => Promise<unknown>;
@@ -3009,6 +3010,7 @@ export function issueThreadInteractionService(
           allowRunCoalescing: false,
           requestedByActorType: "system",
           requestedByActorId: "system:pr-merged",
+          communicationOriginRunId: resolved.interaction.sourceRunId ?? null,
           contextSnapshot: {
             issueId: wakeIssue.id,
             taskId: wakeIssue.id,

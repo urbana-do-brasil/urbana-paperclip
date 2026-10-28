@@ -25,6 +25,7 @@ pnpm dev --bind lan
 
 Legacy aliases still map to `authenticated/private + bind=lan`:
 
+```sh
 pnpm dev --authenticated-private
 pnpm dev --tailscale-auth
 ```

@@ -1,6 +1,7 @@
 import { agentAppearanceSchema } from "../agent-appearance.js";
 import { aiRuntimeConnectionBindingSchema as aiConnectionBindingSchema } from "../ai-connection-router.js";
 import { z } from "zod";
+import { SUPPORTED_LOCALES } from "../localization.js";
 import {
   AGENT_ICON_NAMES,
   AGENT_ROLES,
@@ -225,6 +226,7 @@ export const agentMineInboxQuerySchema = z.object({
 export type AgentMineInboxQuery = z.infer<typeof agentMineInboxQuerySchema>;
 
 export const wakeAgentSchema = z.object({
+  communicationLocale: z.enum(SUPPORTED_LOCALES).optional(),
   source: z
     .enum(["timer", "assignment", "on_demand", "automation"])
     .optional()

@@ -1,0 +1,653 @@
+[
+  {
+    "slug": "api/secrets-remote-import",
+    "group": "api",
+    "title": { "en": "Secrets Remote Import", "pt-BR": "Importação remota de segredos" },
+    "source": "docs/api/secrets-remote-import.md",
+    "portugueseSource": "docs/pt-BR/api/secrets-remote-import.md"
+  },
+  {
+    "slug": "api/routines",
+    "group": "api",
+    "title": { "en": "Routines", "pt-BR": "Rotinas" },
+    "source": "docs/api/routines.md",
+    "portugueseSource": "docs/pt-BR/api/routines.md"
+  },
+  {
+    "slug": "deploy/dev-plane-restart-hygiene",
+    "group": "deployment",
+    "title": { "en": "Dev-Plane Deploy & Restart Hygiene", "pt-BR": "Cuidados com implantação e reinício do plano de controle" },
+    "source": "docs/deploy/dev-plane-restart-hygiene.md",
+    "portugueseSource": "docs/pt-BR/deploy/dev-plane-restart-hygiene.md"
+  },
+  {
+    "slug": "built-in-agents",
+    "group": "agents",
+    "title": {
+      "en": "Built-in Agents",
+      "pt-BR": "Agentes integrados"
+    },
+    "source": "docs/built-in-agents.md",
+    "portugueseSource": "docs/pt-BR/built-in-agents.md"
+  },
+  {
+    "slug": "adapters/adapter-ui-parser",
+    "group": "adapters",
+    "title": {
+      "en": "Adapter UI Parser Contract",
+      "pt-BR": "Contrato do parser de interface do adapter"
+    },
+    "source": "docs/adapters/adapter-ui-parser.md",
+    "portugueseSource": "docs/pt-BR/adapters/adapter-ui-parser.md"
+  },
+  {
+    "slug": "adapters/claude-local",
+    "group": "adapters",
+    "title": {
+      "en": "Claude Code",
+      "pt-BR": "Claude Code"
+    },
+    "source": "docs/adapters/claude-local.md",
+    "portugueseSource": "docs/pt-BR/adapters/claude-local.md"
+  },
+  {
+    "slug": "adapters/codex-local",
+    "group": "adapters",
+    "title": {
+      "en": "Codex",
+      "pt-BR": "Codex"
+    },
+    "source": "docs/adapters/codex-local.md",
+    "portugueseSource": "docs/pt-BR/adapters/codex-local.md"
+  },
+  {
+    "slug": "adapters/creating-an-adapter",
+    "group": "adapters",
+    "title": {
+      "en": "Creating an Adapter",
+      "pt-BR": "Criação de um adapter"
+    },
+    "source": "docs/adapters/creating-an-adapter.md",
+    "portugueseSource": "docs/pt-BR/adapters/creating-an-adapter.md"
+  },
+  {
+    "slug": "adapters/external-adapters",
+    "group": "adapters",
+    "title": {
+      "en": "External Adapters",
+      "pt-BR": "Adapters externos"
+    },
+    "source": "docs/adapters/external-adapters.md",
+    "portugueseSource": "docs/pt-BR/adapters/external-adapters.md"
+  },
+  {
+    "slug": "adapters/http",
+    "group": "adapters",
+    "title": {
+      "en": "HTTP Adapter",
+      "pt-BR": "Adapter HTTP"
+    },
+    "source": "docs/adapters/http.md",
+    "portugueseSource": "docs/pt-BR/adapters/http.md"
+  },
+  {
+    "slug": "adapters/overview",
+    "group": "adapters",
+    "title": {
+      "en": "Adapters Overview",
+      "pt-BR": "Visão geral dos adapters"
+    },
+    "source": "docs/adapters/overview.md",
+    "portugueseSource": "docs/pt-BR/adapters/overview.md"
+  },
+  {
+    "slug": "adapters/process",
+    "group": "adapters",
+    "title": {
+      "en": "Process Adapter",
+      "pt-BR": "Adapter de processo"
+    },
+    "source": "docs/adapters/process.md",
+    "portugueseSource": "docs/pt-BR/adapters/process.md"
+  },
+  {
+    "slug": "api/activity",
+    "group": "api",
+    "title": {
+      "en": "Activity",
+      "pt-BR": "Atividade"
+    },
+    "source": "docs/api/activity.md",
+    "portugueseSource": "docs/pt-BR/api/activity.md"
+  },
+  {
+    "slug": "api/agents",
+    "group": "api",
+    "title": {
+      "en": "Agents",
+      "pt-BR": "Agentes"
+    },
+    "source": "docs/api/agents.md",
+    "portugueseSource": "docs/pt-BR/api/agents.md"
+  },
+  {
+    "slug": "api/approvals",
+    "group": "api",
+    "title": {
+      "en": "Approvals",
+      "pt-BR": "Aprovações"
+    },
+    "source": "docs/api/approvals.md",
+    "portugueseSource": "docs/pt-BR/api/approvals.md"
+  },
+  {
+    "slug": "api/authentication",
+    "group": "api",
+    "title": {
+      "en": "Authentication",
+      "pt-BR": "Autenticação"
+    },
+    "source": "docs/api/authentication.md",
+    "portugueseSource": "docs/pt-BR/api/authentication.md"
+  },
+  {
+    "slug": "api/companies",
+    "group": "api",
+    "title": {
+      "en": "Companies",
+      "pt-BR": "Organizações"
+    },
+    "source": "docs/api/companies.md",
+    "portugueseSource": "docs/pt-BR/api/companies.md"
+  },
+  {
+    "slug": "api/costs",
+    "group": "api",
+    "title": {
+      "en": "Costs",
+      "pt-BR": "Custos"
+    },
+    "source": "docs/api/costs.md",
+    "portugueseSource": "docs/pt-BR/api/costs.md"
+  },
+  {
+    "slug": "api/dashboard",
+    "group": "api",
+    "title": {
+      "en": "Dashboard",
+      "pt-BR": "Painel"
+    },
+    "source": "docs/api/dashboard.md",
+    "portugueseSource": "docs/pt-BR/api/dashboard.md"
+  },
+  {
+    "slug": "api/goals-and-projects",
+    "group": "api",
+    "title": {
+      "en": "Goals and Projects",
+      "pt-BR": "Metas e projetos"
+    },
+    "source": "docs/api/goals-and-projects.md",
+    "portugueseSource": "docs/pt-BR/api/goals-and-projects.md"
+  },
+  {
+    "slug": "api/issues",
+    "group": "api",
+    "title": {
+      "en": "Issues",
+      "pt-BR": "Tarefas"
+    },
+    "source": "docs/api/issues.md",
+    "portugueseSource": "docs/pt-BR/api/issues.md"
+  },
+  {
+    "slug": "api/overview",
+    "group": "api",
+    "title": {
+      "en": "API Overview",
+      "pt-BR": "Visão geral da API"
+    },
+    "source": "docs/api/overview.md",
+    "portugueseSource": "docs/pt-BR/api/overview.md"
+  },
+  {
+    "slug": "api/secrets",
+    "group": "api",
+    "title": {
+      "en": "Secrets",
+      "pt-BR": "Segredos"
+    },
+    "source": "docs/api/secrets.md",
+    "portugueseSource": "docs/pt-BR/api/secrets.md"
+  },
+  {
+    "slug": "cli/control-plane-commands",
+    "group": "cli",
+    "title": {
+      "en": "Control-Plane Commands",
+      "pt-BR": "Comandos do plano de controle"
+    },
+    "source": "docs/cli/control-plane-commands.md",
+    "portugueseSource": "docs/pt-BR/cli/control-plane-commands.md"
+  },
+  {
+    "slug": "cli/overview",
+    "group": "cli",
+    "title": {
+      "en": "CLI Overview",
+      "pt-BR": "Visão geral da CLI"
+    },
+    "source": "docs/cli/overview.md",
+    "portugueseSource": "docs/pt-BR/cli/overview.md"
+  },
+  {
+    "slug": "cli/setup-commands",
+    "group": "cli",
+    "title": {
+      "en": "Setup Commands",
+      "pt-BR": "Comandos de configuração"
+    },
+    "source": "docs/cli/setup-commands.md",
+    "portugueseSource": "docs/pt-BR/cli/setup-commands.md"
+  },
+  {
+    "slug": "deploy/database",
+    "group": "deployment",
+    "title": {
+      "en": "Database",
+      "pt-BR": "Banco de dados"
+    },
+    "source": "docs/deploy/database.md",
+    "portugueseSource": "docs/pt-BR/deploy/database.md"
+  },
+  {
+    "slug": "deploy/deployment-modes",
+    "group": "deployment",
+    "title": {
+      "en": "Deployment Modes",
+      "pt-BR": "Modos de implantação"
+    },
+    "source": "docs/deploy/deployment-modes.md",
+    "portugueseSource": "docs/pt-BR/deploy/deployment-modes.md"
+  },
+  {
+    "slug": "deploy/docker",
+    "group": "deployment",
+    "title": {
+      "en": "Docker",
+      "pt-BR": "Docker"
+    },
+    "source": "docs/deploy/docker.md",
+    "portugueseSource": "docs/pt-BR/deploy/docker.md"
+  },
+  {
+    "slug": "deploy/environment-variables",
+    "group": "deployment",
+    "title": {
+      "en": "Environment Variables",
+      "pt-BR": "Variáveis de ambiente"
+    },
+    "source": "docs/deploy/environment-variables.md",
+    "portugueseSource": "docs/pt-BR/deploy/environment-variables.md"
+  },
+  {
+    "slug": "deploy/local-development",
+    "group": "deployment",
+    "title": {
+      "en": "Local Development",
+      "pt-BR": "Desenvolvimento local"
+    },
+    "source": "docs/deploy/local-development.md",
+    "portugueseSource": "docs/pt-BR/deploy/local-development.md"
+  },
+  {
+    "slug": "deploy/overview",
+    "group": "deployment",
+    "title": {
+      "en": "Deployment Overview",
+      "pt-BR": "Visão geral da implantação"
+    },
+    "source": "docs/deploy/overview.md",
+    "portugueseSource": "docs/pt-BR/deploy/overview.md"
+  },
+  {
+    "slug": "deploy/secrets",
+    "group": "deployment",
+    "title": {
+      "en": "Secrets Management",
+      "pt-BR": "Gerenciamento de segredos"
+    },
+    "source": "docs/deploy/secrets.md",
+    "portugueseSource": "docs/pt-BR/deploy/secrets.md"
+  },
+  {
+    "slug": "deploy/storage",
+    "group": "deployment",
+    "title": {
+      "en": "Storage",
+      "pt-BR": "Armazenamento"
+    },
+    "source": "docs/deploy/storage.md",
+    "portugueseSource": "docs/pt-BR/deploy/storage.md"
+  },
+  {
+    "slug": "deploy/tailscale-private-access",
+    "group": "deployment",
+    "title": {
+      "en": "Tailscale Private Access",
+      "pt-BR": "Acesso privado com Tailscale"
+    },
+    "source": "docs/deploy/tailscale-private-access.md",
+    "portugueseSource": "docs/pt-BR/deploy/tailscale-private-access.md"
+  },
+  {
+    "slug": "guides/agent-developer/comments-and-communication",
+    "group": "agents",
+    "title": {
+      "en": "Comments and Communication",
+      "pt-BR": "Comentários e comunicação"
+    },
+    "source": "docs/guides/agent-developer/comments-and-communication.md",
+    "portugueseSource": "docs/pt-BR/guides/agent-developer/comments-and-communication.md"
+  },
+  {
+    "slug": "guides/agent-developer/cost-reporting",
+    "group": "agents",
+    "title": {
+      "en": "Cost Reporting",
+      "pt-BR": "Relato de custos"
+    },
+    "source": "docs/guides/agent-developer/cost-reporting.md",
+    "portugueseSource": "docs/pt-BR/guides/agent-developer/cost-reporting.md"
+  },
+  {
+    "slug": "guides/agent-developer/handling-approvals",
+    "group": "agents",
+    "title": {
+      "en": "Handling Approvals",
+      "pt-BR": "Tratamento de aprovações"
+    },
+    "source": "docs/guides/agent-developer/handling-approvals.md",
+    "portugueseSource": "docs/pt-BR/guides/agent-developer/handling-approvals.md"
+  },
+  {
+    "slug": "guides/agent-developer/heartbeat-protocol",
+    "group": "agents",
+    "title": {
+      "en": "Heartbeat Protocol",
+      "pt-BR": "Protocolo de heartbeat"
+    },
+    "source": "docs/guides/agent-developer/heartbeat-protocol.md",
+    "portugueseSource": "docs/pt-BR/guides/agent-developer/heartbeat-protocol.md"
+  },
+  {
+    "slug": "guides/agent-developer/how-agents-work",
+    "group": "agents",
+    "title": {
+      "en": "How Agents Work",
+      "pt-BR": "Como funcionam os agentes"
+    },
+    "source": "docs/guides/agent-developer/how-agents-work.md",
+    "portugueseSource": "docs/pt-BR/guides/agent-developer/how-agents-work.md"
+  },
+  {
+    "slug": "guides/agent-developer/skills-store",
+    "group": "agents",
+    "title": {
+      "en": "The Skills Store",
+      "pt-BR": "Loja de skills"
+    },
+    "source": "docs/guides/agent-developer/skills-store.md",
+    "portugueseSource": "docs/pt-BR/guides/agent-developer/skills-store.md"
+  },
+  {
+    "slug": "guides/agent-developer/task-workflow",
+    "group": "agents",
+    "title": {
+      "en": "Task Workflow",
+      "pt-BR": "Fluxo de tarefas"
+    },
+    "source": "docs/guides/agent-developer/task-workflow.md",
+    "portugueseSource": "docs/pt-BR/guides/agent-developer/task-workflow.md"
+  },
+  {
+    "slug": "guides/agent-developer/writing-a-skill",
+    "group": "agents",
+    "title": {
+      "en": "Writing a Skill",
+      "pt-BR": "Como criar uma skill"
+    },
+    "source": "docs/guides/agent-developer/writing-a-skill.md",
+    "portugueseSource": "docs/pt-BR/guides/agent-developer/writing-a-skill.md"
+  },
+  {
+    "slug": "guides/board-operator/activity-log",
+    "group": "operator",
+    "title": {
+      "en": "Activity Log",
+      "pt-BR": "Registro de atividades"
+    },
+    "source": "docs/guides/board-operator/activity-log.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/activity-log.md"
+  },
+  {
+    "slug": "guides/board-operator/approvals",
+    "group": "operator",
+    "title": {
+      "en": "Approvals",
+      "pt-BR": "Aprovações"
+    },
+    "source": "docs/guides/board-operator/approvals.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/approvals.md"
+  },
+  {
+    "slug": "guides/board-operator/costs-and-budgets",
+    "group": "operator",
+    "title": {
+      "en": "Costs and Budgets",
+      "pt-BR": "Custos e orçamentos"
+    },
+    "source": "docs/guides/board-operator/costs-and-budgets.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/costs-and-budgets.md"
+  },
+  {
+    "slug": "guides/board-operator/creating-a-company",
+    "group": "operator",
+    "title": {
+      "en": "Creating a Company",
+      "pt-BR": "Criação de uma organização"
+    },
+    "source": "docs/guides/board-operator/creating-a-company.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/creating-a-company.md"
+  },
+  {
+    "slug": "guides/board-operator/dashboard",
+    "group": "operator",
+    "title": {
+      "en": "Dashboard",
+      "pt-BR": "Painel"
+    },
+    "source": "docs/guides/board-operator/dashboard.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/dashboard.md"
+  },
+  {
+    "slug": "guides/board-operator/delegation",
+    "group": "operator",
+    "title": {
+      "en": "How Delegation Works",
+      "pt-BR": "Como funciona a delegação"
+    },
+    "source": "docs/guides/board-operator/delegation.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/delegation.md"
+  },
+  {
+    "slug": "guides/board-operator/editing-first-task-texts",
+    "group": "operator",
+    "title": {
+      "en": "Editing the First-Task Texts",
+      "pt-BR": "Edição dos textos da primeira tarefa"
+    },
+    "source": "docs/guides/board-operator/editing-first-task-texts.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/editing-first-task-texts.md"
+  },
+  {
+    "slug": "guides/board-operator/execution-workspaces-and-runtime-services",
+    "group": "operator",
+    "title": {
+      "en": "Execution Workspaces And Runtime Services",
+      "pt-BR": "Espaços de execução e serviços de runtime"
+    },
+    "source": "docs/guides/board-operator/execution-workspaces-and-runtime-services.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/execution-workspaces-and-runtime-services.md"
+  },
+  {
+    "slug": "guides/board-operator/experimental-features",
+    "group": "operator",
+    "title": {
+      "en": "Experimental Features",
+      "pt-BR": "Recursos experimentais"
+    },
+    "source": "docs/guides/board-operator/experimental-features.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/experimental-features.md"
+  },
+  {
+    "slug": "guides/board-operator/importing-and-exporting",
+    "group": "operator",
+    "title": {
+      "en": "Importing & Exporting Companies",
+      "pt-BR": "Importação e exportação de organizações"
+    },
+    "source": "docs/guides/board-operator/importing-and-exporting.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/importing-and-exporting.md"
+  },
+  {
+    "slug": "guides/board-operator/managing-agents",
+    "group": "operator",
+    "title": {
+      "en": "Managing Agents",
+      "pt-BR": "Gerenciamento de agentes"
+    },
+    "source": "docs/guides/board-operator/managing-agents.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/managing-agents.md"
+  },
+  {
+    "slug": "guides/board-operator/managing-tasks",
+    "group": "operator",
+    "title": {
+      "en": "Managing Tasks",
+      "pt-BR": "Gerenciamento de tarefas"
+    },
+    "source": "docs/guides/board-operator/managing-tasks.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/managing-tasks.md"
+  },
+  {
+    "slug": "guides/board-operator/org-structure",
+    "group": "operator",
+    "title": {
+      "en": "Org Structure",
+      "pt-BR": "Estrutura organizacional"
+    },
+    "source": "docs/guides/board-operator/org-structure.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/org-structure.md"
+  },
+  {
+    "slug": "guides/board-operator/status-cards",
+    "group": "operator",
+    "title": {
+      "en": "Status Cards",
+      "pt-BR": "Cartões de status"
+    },
+    "source": "docs/guides/board-operator/status-cards.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/status-cards.md"
+  },
+  {
+    "slug": "start/architecture",
+    "group": "introduction",
+    "title": {
+      "en": "Architecture",
+      "pt-BR": "Arquitetura"
+    },
+    "source": "docs/start/architecture.md",
+    "portugueseSource": "docs/pt-BR/start/architecture.md"
+  },
+  {
+    "slug": "start/core-concepts",
+    "group": "introduction",
+    "title": {
+      "en": "Core Concepts",
+      "pt-BR": "Conceitos básicos"
+    },
+    "source": "docs/start/core-concepts.md",
+    "portugueseSource": "docs/pt-BR/start/core-concepts.md"
+  },
+  {
+    "slug": "start/quickstart",
+    "group": "introduction",
+    "title": {
+      "en": "Quickstart",
+      "pt-BR": "Início rápido"
+    },
+    "source": "docs/start/quickstart.md",
+    "portugueseSource": "docs/pt-BR/start/quickstart.md"
+  },
+  {
+    "slug": "start/what-is-paperclip",
+    "group": "introduction",
+    "title": {
+      "en": "What is Paperclip?",
+      "pt-BR": "O que é o Paperclip?"
+    },
+    "source": "docs/start/what-is-paperclip.md",
+    "portugueseSource": "docs/pt-BR/start/what-is-paperclip.md"
+  },
+  {
+    "slug": "guides/board-operator/language",
+    "group": "operator",
+    "title": {
+      "en": "Choose your language",
+      "pt-BR": "Escolha seu idioma"
+    },
+    "source": "docs/guides/board-operator/language.md",
+    "portugueseSource": "docs/pt-BR/guides/board-operator/language.md"
+  },
+  {
+    "slug": "companies/companies-spec",
+    "group": "standards",
+    "title": {
+      "en": "Agent Companies Specification",
+      "pt-BR": "Especificação Agent Companies"
+    },
+    "source": "docs/companies/companies-spec.md",
+    "portugueseSource": "docs/pt-BR/companies/companies-spec.md"
+  },
+  {
+    "slug": "adapters/gemini-local",
+    "group": "adapters",
+    "title": {
+      "en": "Gemini CLI",
+      "pt-BR": "Gemini CLI"
+    },
+    "source": "docs/adapters/gemini-local.md",
+    "portugueseSource": "docs/pt-BR/adapters/gemini-local.md"
+  },
+  {
+    "slug": "adapters/kimi-local",
+    "group": "adapters",
+    "title": {
+      "en": "Kimi Code CLI",
+      "pt-BR": "Kimi Code CLI"
+    },
+    "source": "docs/adapters/kimi-local.md",
+    "portugueseSource": "docs/pt-BR/adapters/kimi-local.md"
+  },
+  {
+    "slug": "deploy/aws-ecs",
+    "group": "deployment",
+    "title": {
+      "en": "AWS ECS Fargate",
+      "pt-BR": "Implantação no AWS ECS"
+    },
+    "source": "docs/deploy/aws-ecs.md",
+    "portugueseSource": "docs/pt-BR/deploy/aws-ecs.md"
+  }
+]

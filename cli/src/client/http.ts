@@ -1,16 +1,25 @@
 import { URL } from "node:url";
+import { formatApiErrorMessage, parseApiErrorMessage, type ApiErrorMessage } from "@paperclipai/shared/api-error-messages";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
 
 export class ApiRequestError extends Error {
   status: number;
   details?: unknown;
   body?: unknown;
+  presentation?: ApiErrorMessage;
 
   constructor(status: number, message: string, details?: unknown, body?: unknown) {
     super(message);
     this.status = status;
     this.details = details;
     this.body = body;
+    this.presentation = parseApiErrorMessage(body);
   }
+}
+
+/** Human-facing only: JSON, status, detail, and message remain unchanged. */
+export function formatApiRequestError(error: ApiRequestError, locale: SupportedLocale): string {
+  return formatApiErrorMessage(error.presentation, error.message, locale);
 }
 
 export class ApiConnectionError extends Error {

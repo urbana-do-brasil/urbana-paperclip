@@ -1,4 +1,7 @@
 import { spekoToolsForSession } from "../voice/speko-agent-tools.js";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
+import { readCommunicationLocaleSnapshot } from "./communication-locale.js";
+import { DEFAULT_USER_LOCALE } from "@paperclipai/shared/localization";
 import { githubConfiguredInstructionSources } from "../chat-github-review-policy.js";
 import { CONFIGURED_ENVIRONMENT_KEYS } from "../../vendor/paperclip-runner/index.js";
 import { ASSIGNED_MCP_SERVER_NAME } from "../mcp-tool-names.js";
@@ -809,6 +812,8 @@ export async function resolveRunScopedMentionedSkillKeys(input: {
 
 
 export interface WakeupOptions {
+  /** Explicit human choice, validated before any execution is admitted. */
+  communicationLocale?: SupportedLocale;
   /** Set only by authenticated board wake routes; never copied from caller payloads. */
   manualUserWake?: boolean;
   /** Internal resume of a queue with persisted board interruption intent. */
@@ -835,6 +840,8 @@ export interface WakeupOptions {
   idempotencyKey?: string | null;
   requestedByActorType?: "user" | "agent" | "system";
   requestedByActorId?: string | null;
+  /** Trusted initiating run, supplied by the server after actor authentication. */
+  communicationOriginRunId?: string | null;
   contextSnapshot?: Record<string, unknown>;
   issueStateGuard?: {
     statuses: string[];
@@ -1857,6 +1864,17 @@ export function mergeCoalescedContextSnapshot(
     ...existing,
     ...incoming,
   };
+  // A merged wake cannot change the language of an already-created run.
+  // Per-comment records preserve the origin of each coalesced interaction.
+  const originalLocale = readCommunicationLocaleSnapshot(existing) ?? {
+    communicationLocale: DEFAULT_USER_LOCALE, communicationLocaleSource: "default",
+  };
+  Object.assign(merged, originalLocale);
+  const oldMessages = parseObject(existing.communicationLocaleByCommentId);
+  const newMessages = parseObject(incoming.communicationLocaleByCommentId);
+  if (Object.keys(oldMessages).length || Object.keys(newMessages).length) {
+    merged.communicationLocaleByCommentId = { ...oldMessages, ...newMessages };
+  }
   // Only executeRun can mint this proof. Coalescence may retain an unchanged
   // admitted proof, but must never accept a new marker from an incoming wake.
   delete merged[PAPERCLIP_EXTERNAL_CHAT_EXECUTION_BOUND_KEY];

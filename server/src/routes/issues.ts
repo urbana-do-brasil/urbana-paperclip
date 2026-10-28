@@ -2488,7 +2488,7 @@ async function queueResolvedInteractionContinuationWakeup(input: {
     payload?: unknown;
     result?: unknown;
   };
-  actor: { actorType: "user" | "agent"; actorId: string };
+  actor: { actorType: "user" | "agent"; actorId: string; runId?: string | null };
   source: string;
   forceFreshSession?: boolean;
   workspaceRefreshReason?: string | null;
@@ -2661,6 +2661,7 @@ async function queueResolvedInteractionContinuationWakeup(input: {
       allowRunCoalescing: !hasExternalPromptBinding,
       requestedByActorType: input.actor.actorType,
       requestedByActorId: input.actor.actorId,
+      communicationOriginRunId: input.actor.runId ?? input.interaction.sourceRunId ?? null,
       contextSnapshot: {
         issueId: input.issue.id,
         taskId: input.issue.id,
@@ -4770,6 +4771,7 @@ export function issueRoutes(
         contextSnapshot: decision.contextSnapshot,
         requestedByActorType: input.actor.actorType,
         requestedByActorId: input.actor.actorId,
+        communicationOriginRunId: input.actor.runId ?? null,
       })
       .catch((error: unknown) => {
         if (isReviewPathRecoveryIdempotencyConflict(error)) return null;
@@ -12615,6 +12617,7 @@ export function issueRoutes(
           reason: "issue_assigned",
           mutation: "create",
           contextSource: "issue.create",
+          communicationOriginRunId: actor.runId ?? null,
           requestedByActorType: actor.actorType,
           requestedByActorId: actor.actorId,
         });
@@ -12857,6 +12860,7 @@ export function issueRoutes(
           reason: "issue_assigned",
           mutation: "create",
           contextSource: "issue.child_create",
+          communicationOriginRunId: actor.runId ?? null,
           requestedByActorType: actor.actorType,
           requestedByActorId: actor.actorId,
         });
@@ -13117,6 +13121,7 @@ export function issueRoutes(
             reason: "issue_assigned",
             mutation: "accepted_plan_decomposition",
             contextSource: "issue.accepted_plan_decomposition",
+            communicationOriginRunId: actor.runId ?? null,
             requestedByActorType: actor.actorType,
             requestedByActorId: actor.actorId,
           });
@@ -15336,6 +15341,7 @@ export function issueRoutes(
           { agentId: string; wakeup: WakeupRequest }
         >();
         const addWakeup = (agentId: string, wakeup: WakeupRequest) => {
+          if (actor.actorType === "agent" && actor.runId) wakeup.communicationOriginRunId = actor.runId;
           const wakeIssueId =
             wakeup.payload &&
             typeof wakeup.payload === "object" &&
@@ -15955,6 +15961,7 @@ export function issueRoutes(
             payload: { issueId: issue.id, mutation: "checkout" },
             requestedByActorType: actor.actorType,
             requestedByActorId: actor.actorId,
+            communicationOriginRunId: actor.runId ?? null,
             contextSnapshot: { issueId: issue.id, source: "issue.checkout" },
           })
           .catch((err) =>
@@ -16757,6 +16764,7 @@ export function issueRoutes(
             idempotencyKey: `interaction-pending:${interaction.id}`,
             requestedByActorType: actor.actorType,
             requestedByActorId: actor.actorId,
+            communicationOriginRunId: actor.runId ?? interaction.sourceRunId ?? null,
             contextSnapshot: {
               issueId: issue.id,
               taskId: issue.id,
@@ -17106,6 +17114,7 @@ export function issueRoutes(
           reason: "issue_assigned",
           mutation: "interaction_accept",
           contextSource: "issue.interaction.accept",
+          communicationOriginRunId: actor.runId ?? interaction.sourceRunId ?? null,
           requestedByActorType: actor.actorType,
           requestedByActorId: actor.actorId,
         });
@@ -18813,6 +18822,7 @@ export function issueRoutes(
           { agentId: string; wakeup: WakeupRequest }
         >();
         const addWakeup = (agentId: string, wakeup: WakeupRequest) => {
+          if (actor.actorType === "agent" && actor.runId) wakeup.communicationOriginRunId = actor.runId;
           const wakeIssueId =
             wakeup.payload &&
             typeof wakeup.payload === "object" &&

@@ -657,7 +657,7 @@ describe("issue thread interaction routes", () => {
       effectiveResolverPolicy: "anyone",
       idempotencyKey: null,
       sourceCommentId: null,
-      sourceRunId: null,
+      sourceRunId: "stored-origin-run",
       payload: { version: 1, questions: [] },
       result: null,
       createdAt: "2026-07-25T12:00:00.000Z",
@@ -686,6 +686,7 @@ describe("issue thread interaction routes", () => {
       ASSIGNEE_AGENT_ID,
       expect.objectContaining({
         reason: "interaction_pending",
+        communicationOriginRunId: "stored-origin-run",
         idempotencyKey: "interaction-pending:interaction-addressed",
         payload: expect.objectContaining({
           issueId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",

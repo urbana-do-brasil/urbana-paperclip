@@ -2,6 +2,8 @@ import { registerRuntimeCommands } from "./commands/runtime.js";
 import { registerEmailCommands } from "./commands/client/email.js";
 import { registerMcpCommands } from "./commands/mcp.js";
 import { Command } from "commander";
+import { cliMessage, getCliLocale, isCliJsonRequested, localizeHelpTitle, parseCliLocale, resolveCliLocale, setCliCommandLineShape, setCliLocale } from "./localization/index.js";
+import { ApiRequestError, formatApiRequestError } from "./client/http.js";
 import { warnIfUnsupportedNodeVersion } from "@paperclipai/shared/node-version";
 import { onboard } from "./commands/onboard.js";
 import { doctor } from "./commands/doctor.js";
@@ -61,6 +63,8 @@ import {
   type TestDriveOptions,
 } from "./commands/test-drive.js";
 
+let localeBootstrapError: Error | undefined;
+
 const program = new Command();
 const DATA_DIR_OPTION_HELP =
   "Paperclip data directory root (isolates state from ~/.paperclip)";
@@ -69,8 +73,11 @@ program.enablePositionalOptions();
 
 program
   .name("paperclipai")
-  .description("Paperclip CLI — setup, diagnose, and configure your instance")
-  .version(cliVersion);
+  .description(cliMessage("description"))
+  .version(cliVersion, "-V, --version", cliMessage("versionOption"))
+  .option("--lang <locale>", cliMessage("languageOption"), parseCliLocale)
+  .helpOption("-h, --help", cliMessage("helpCommand"))
+  .configureHelp({ styleTitle: localizeHelpTitle });
 
 program
   .command("install")
@@ -282,7 +289,40 @@ auth
 registerClientAuthCommands(auth);
 registerMcpCommands(program);
 
+// Commander positional options are scoped to each command. Registering the
+// same execution-only switch in every scope allows it before or after the
+// command without rewriting argv or touching arguments after `--`.
+function registerLanguageOptionOnChildren(command: Command): void {
+  for (const child of command.commands) {
+    child.option("--lang <locale>", cliMessage("languageOption"), parseCliLocale);
+    registerLanguageOptionOnChildren(child);
+  }
+}
+registerLanguageOptionOnChildren(program);
+
+// Resolve after registration so the early scan can distinguish option values
+// from flags, but before Commander prints help or invokes any action.
+setCliCommandLineShape(program);
+try { setCliLocale(resolveCliLocale(process.argv.slice(2), process.env, program)); }
+catch (error) { localeBootstrapError = error instanceof Error ? error : new Error(String(error)); }
+program.description(cliMessage("description"));
+function applyLanguageHelp(command: Command): void {
+  command.helpOption("-h, --help", cliMessage("helpCommand"));
+  for (const option of command.options) {
+    if (option.long === "--lang") option.description = cliMessage("languageOption");
+    if (option.long === "--version") option.description = cliMessage("versionOption");
+    if (command.parent?.name() === "context" && command.name() === "set" && option.long === "--locale") option.description = cliMessage("localeOption");
+  }
+  for (const child of command.commands) applyLanguageHelp(child);
+}
+applyLanguageHelp(program);
+
 async function main(): Promise<void> {
+  if (localeBootstrapError) {
+    console.error(localeBootstrapError.message);
+    process.exitCode = 1;
+    return;
+  }
   warnIfUnsupportedNodeVersion(process.versions.node, (message) => console.warn(message));
 
   let failed = false;
@@ -290,7 +330,9 @@ async function main(): Promise<void> {
     await program.parseAsync();
   } catch (err) {
     failed = true;
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(err instanceof ApiRequestError && !isCliJsonRequested()
+      ? formatApiRequestError(err, getCliLocale())
+      : err instanceof Error ? err.message : String(err));
   } finally {
     await flushTelemetry();
   }

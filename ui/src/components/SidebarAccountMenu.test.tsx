@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { i18n } from "../i18n";
+
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -127,7 +129,8 @@ function boardAccess(
 describe("SidebarAccountMenu", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockAuthApi.getSession.mockResolvedValue({
@@ -153,6 +156,20 @@ describe("SidebarAccountMenu", () => {
     document.body.innerHTML = "";
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it.each([SidebarAccountMenu, ProductionSidebarAccountMenu])("opens local help in the selected language (%#)", async (AccountMenu) => {
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => root.render(<QueryClientProvider client={queryClient}><TooltipProvider><AccountMenu deploymentMode="local_trusted" open /></TooltipProvider></QueryClientProvider>));
+    await flushReact();
+    let link = Array.from(document.body.querySelectorAll("a")).find((item) => item.textContent?.includes("Documentation"));
+    expect(link?.getAttribute("href")).toBe("/help/en/start/what-is-paperclip");
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    link = Array.from(document.body.querySelectorAll("a")).find((item) => item.textContent?.includes("Documentação"));
+    expect(link?.getAttribute("href")).toBe("/help/pt-BR/start/what-is-paperclip");
+    expect(link?.getAttribute("target")).toBe("_blank");
+    await act(async () => root.unmount());
   });
 
   describe.each([SidebarAccountMenu, ProductionSidebarAccountMenu])("staging commit (%#)", (AccountMenu) => {

@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 import path from "node:path";
 const port = 3197;
 export default defineConfig({
-  testDir: ".", testMatch: "locale.spec.ts", workers: 1, timeout: 60_000,
+  testDir: ".", testMatch: ["locale.spec.ts", "help.spec.ts"], workers: 1, timeout: 60_000,
   use: { baseURL: `http://127.0.0.1:${port}`, locale: "en-US", headless: true, screenshot: "only-on-failure" },
   outputDir: "/tmp/paperclip-locale-browser-results",
   reporter: "list",

@@ -1,4 +1,5 @@
 import { cancellationRequestId } from "../services/native-runtime/native-cancellation-request.js";
+import { isSupportedLocale } from "@paperclipai/shared/localization";
 import { agentEnvironmentTestService } from "../services/agent-environment-test.js";
 import { createAgentLifecycle } from "../services/agent-lifecycle.js";
 
@@ -5701,6 +5702,9 @@ export function agentRoutes(
     opts: WakeupRouteOpts,
   ): Promise<void> => {
     const id = req.params.id as string;
+    if (req.actor.type === "agent" && req.body.communicationLocale !== undefined) {
+      throw forbidden("Only a human can choose the communication locale");
+    }
     const agent = await getAccessibleResource(req, res, svc.getById(id), "Agent not found");
     if (!agent) return;
 
@@ -5732,6 +5736,7 @@ export function agentRoutes(
         (opts.source ?? "on_demand") !== "on_demand" ||
         (req.body.triggerDetail ?? "manual") !== "manual" ||
         req.body.forceFreshSession === true ||
+        req.body.communicationLocale !== undefined ||
         req.body.debug
       ) {
         throw badRequest(
@@ -5887,6 +5892,7 @@ export function agentRoutes(
       );
     }
     const run = await heartbeat.wakeup(id, {
+      ...(req.body.communicationLocale !== undefined ? { communicationLocale: req.body.communicationLocale } : {}),
       failedRunId: req.body.failedRunId ?? null,
       ...(req.actor.type === "board" && !req.body.failedRunId ? { manualUserWake: true } : {}),
       source: opts.source,
@@ -5898,6 +5904,7 @@ export function agentRoutes(
       idempotencyKey: req.body.idempotencyKey ?? null,
       requestedByActorType: req.actor.type === "agent" ? "agent" : "user",
       requestedByActorId: req.actor.type === "agent" ? req.actor.agentId ?? null : req.actor.userId ?? null,
+      communicationOriginRunId: req.actor.type === "agent" ? req.actor.runId ?? null : null,
       contextSnapshot: {
         ...retryConversationContext,
         // Only the selected server-owned run can carry review authority into
@@ -6007,7 +6014,10 @@ export function agentRoutes(
       forceFreshSession: unknown;
       triggerDetail: unknown;
       debug: unknown;
+      communicationLocale: unknown;
     }>;
+    if (body.communicationLocale !== undefined && !isSupportedLocale(body.communicationLocale)) throw badRequest("Unsupported communication locale");
+    if (body.communicationLocale !== undefined && req.actor.type === "agent") throw forbidden("Only a human can choose the communication locale");
     const contextSnapshot: Record<string, unknown> = {
       triggeredBy: req.actor.type,
       originIdentityContextId: req.actor.identityContextId ?? null,
@@ -6026,11 +6036,13 @@ export function agentRoutes(
       }
     }
     const wakeOpts: Parameters<typeof heartbeat.wakeup>[1] = {
+      ...(isSupportedLocale(body.communicationLocale) ? { communicationLocale: body.communicationLocale } : {}),
       ...(req.actor.type === "board" ? { manualUserWake: true } : {}),
       source: "on_demand",
       triggerDetail: typeof body.triggerDetail === "string" ? body.triggerDetail as "manual" | "system" | "ping" | "callback" : "manual",
       requestedByActorType: req.actor.type === "agent" ? "agent" : "user",
       requestedByActorId: req.actor.type === "agent" ? req.actor.agentId ?? null : req.actor.userId ?? null,
+      communicationOriginRunId: req.actor.type === "agent" ? req.actor.runId ?? null : null,
       contextSnapshot,
     };
     if (typeof body.reason === "string" && body.reason.length > 0) {

@@ -474,6 +474,8 @@ describe("durable inbound chat scheduler receipts", () => {
 
   it("preserves exact retry provenance and a deeply frozen server-only selector", async () => {
     const f = await retryFixture();
+    const [failed] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.failedRunId));
+    await db.update(heartbeatRuns).set({ contextSnapshot: { ...failed.contextSnapshot, communicationLocale: "en", communicationLocaleSource: "user" } }).where(eq(heartbeatRuns.id, f.failedRunId));
     f.register();
     expect(Object.isFrozen(f.request.failedRunRetry)).toBe(true);
     const run = await f.wake();
@@ -483,6 +485,9 @@ describe("durable inbound chat scheduler receipts", () => {
       wakeupRequestId: f.actionId,
       contextSnapshot: f.context,
     });
+    // The requester has no saved English preference; this is the same
+    // interaction and retains the source run's language rather than defaulting.
+    expect(run?.contextSnapshot).toMatchObject({ communicationLocale: "en", communicationLocaleSource: "user" });
     expect(f.authority).toHaveBeenCalledTimes(1);
     expect(f.authority.mock.calls[0][1]).toMatchObject({ phase: "admission" });
     await f.wake();
