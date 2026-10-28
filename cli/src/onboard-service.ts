@@ -19,6 +19,8 @@ import {
 } from "./services/service-manager.js";
 import { buildLocalAppUrl, buildLocalHealthUrl } from "./utils/health-url.js";
 import { packageVersion } from "./version.js";
+import { setupMessage } from "./localization/setup.js";
+import { localizeDoctorCheckPresentation } from "./localization/doctor-checks.js";
 
 export type OnboardServiceOptions = {
   yes?: boolean;
@@ -96,22 +98,19 @@ export async function handoffToOnboardedService(
   const deps = { ...defaultDashboardDependencies, ...dependencies };
   const runtime = await deps.waitUntilReady();
   const dashboardUrl = resolveOnboardServiceDashboardUrl(config, runtime);
-  deps.info(`Paperclip dashboard: ${pc.cyan(dashboardUrl)}`);
+  deps.info(setupMessage("onboardDashboardTitle", { url: pc.cyan(dashboardUrl) }));
 
   if (!runtime) {
-    deps.warn(
-      `The background service started, but the dashboard is not ready yet. ` +
-        `Open ${dashboardUrl} after checking \`paperclipai service logs\`.`,
-    );
+    deps.warn(setupMessage("onboardDashboardNotReady", { url: dashboardUrl }));
     return;
   }
 
   if (!deps.isInteractive() || envDisablesBrowser()) return;
 
   if (await deps.openDashboard(dashboardUrl)) {
-    deps.success("Sent the Paperclip dashboard to your browser.");
+    deps.success(setupMessage("onboardDashboardOpened"));
   } else {
-    deps.warn(`Could not open a browser automatically. Open ${dashboardUrl} manually.`);
+    deps.warn(setupMessage("onboardDashboardOpenFailed", { url: dashboardUrl }));
   }
 }
 
@@ -148,7 +147,7 @@ const defaultDependencies: OnboardServiceDependencies = {
       return {
         ok: false,
         installedNow: false,
-        reason: `no executable exists at ${shimPath} (PAPERCLIP_SHIM_PATH), and it is outside the managed install store`,
+        reason: setupMessage("onboardServiceShimOutsideStore", { path: shimPath }),
       };
     }
     let manifest: InstallManifest | null = null;
@@ -168,9 +167,7 @@ const defaultDependencies: OnboardServiceDependencies = {
         return {
           ok: false,
           installedNow: false,
-          reason:
-            `this build reports version ${packageVersion}, which is not an installable release; ` +
-            "run `paperclipai install` (or `paperclipai install --repo <repo> --ref <ref>` for source builds) first",
+          reason: setupMessage("onboardBuildNotInstallable", { version: packageVersion }),
         };
       }
     } catch (error) {
@@ -186,19 +183,19 @@ const defaultDependencies: OnboardServiceDependencies = {
     return {
       ok: false,
       installedNow: false,
-      reason: `the managed install completed but no executable shim appeared at ${shimPath}`,
+      reason: setupMessage("onboardServiceShimMissing", { path: shimPath }),
     };
   },
   confirm: async () => {
     const answer = await p.confirm({
-      message: "Install Paperclip as a background service?",
+      message: setupMessage("onboardInstallServiceMessage"),
       initialValue: true,
     });
     return !p.isCancel(answer) && answer === true;
   },
   confirmLinger: async () => {
     const answer = await p.confirm({
-      message: "Allow Paperclip to keep running after logout? This may request system authorization.",
+      message: setupMessage("onboardEnableLingerMessage"),
       initialValue: false,
     });
     return !p.isCancel(answer) && answer === true;
@@ -219,16 +216,16 @@ export async function handleOnboardService(
   const explicitlyRequested = options.installService === true;
   const canPrompt = options.yes !== true && deps.isInteractive();
   if (!explicitlyRequested && !canPrompt) {
-    deps.info(
-      "Background service not installed. Use `paperclipai onboard --install-service` or `paperclipai service install` to opt in.",
-    );
+    deps.info(setupMessage("onboardServiceOptIn"));
     return false;
   }
 
   const instanceId = resolvePaperclipInstanceId();
   const detection = await deps.detect(instanceId);
   if (!detection.supported) {
-    if (explicitlyRequested) deps.warn(detection.reason);
+    if (explicitlyRequested) {
+      deps.warn(localizeDoctorCheckPresentation({ name: "Background service", message: detection.reason }).message);
+    }
     return false;
   }
 
@@ -240,21 +237,20 @@ export async function handleOnboardService(
   // instead of installing a corpse.
   const shim = await deps.ensureServiceShim();
   if (!shim.ok) {
-    deps.warn(
-      `Background service not installed: ${shim.reason ?? "the managed install could not be completed"}. ` +
-        "Run `paperclipai install`, then `paperclipai service install`.",
-    );
+    deps.warn(setupMessage("onboardServiceInstallFailed", {
+      reason: shim.reason ?? setupMessage("onboardServiceCouldNotComplete"),
+    }));
     return false;
   }
   if (shim.installedNow) {
-    deps.success("Installed the managed paperclipai payload and command shim for the service.");
+    deps.success(setupMessage("onboardServicePayloadInstalled"));
   }
 
   await detection.manager.install({ startNow: true, startOnLogin: true });
   if (!explicitlyRequested && detection.manager.enableLinger && await deps.confirmLinger()) {
     await detection.manager.enableLinger();
   }
-  deps.success(`Installed and started ${detection.manager.serviceName}.`);
+  deps.success(setupMessage("onboardServiceInstalled", { serviceName: detection.manager.serviceName }));
   return true;
 }
 

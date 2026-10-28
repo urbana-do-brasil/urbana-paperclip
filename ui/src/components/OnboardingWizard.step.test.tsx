@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { ApiError } from "../api/client";
 import { queryKeys } from "../lib/queryKeys";
 import { ONBOARDING_AGENT_STEP } from "../lib/onboarding-route";
@@ -167,7 +168,8 @@ describe("OnboardingWizard — which step it lands on", () => {
     }
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

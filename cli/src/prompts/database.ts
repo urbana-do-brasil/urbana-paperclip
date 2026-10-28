@@ -5,6 +5,7 @@ import {
   resolveDefaultEmbeddedPostgresDir,
   resolvePaperclipInstanceId,
 } from "../config/home.js";
+import { setupMessage } from "../localization/setup.js";
 
 export async function promptDatabase(current?: DatabaseConfig): Promise<DatabaseConfig> {
   const instanceId = resolvePaperclipInstanceId();
@@ -23,16 +24,16 @@ export async function promptDatabase(current?: DatabaseConfig): Promise<Database
   };
 
   const mode = await p.select({
-    message: "Database mode",
+    message: setupMessage("dbModeMessage"),
     options: [
-      { value: "embedded-postgres" as const, label: "Embedded PostgreSQL (managed locally)", hint: "recommended" },
-      { value: "postgres" as const, label: "PostgreSQL (external server)" },
+      { value: "embedded-postgres" as const, label: setupMessage("dbEmbeddedOption"), hint: setupMessage("recommendedHint") },
+      { value: "postgres" as const, label: setupMessage("dbExternalOption") },
     ],
     initialValue: base.mode,
   });
 
   if (p.isCancel(mode)) {
-    p.cancel("Setup cancelled.");
+    p.cancel(setupMessage("setupCancelled"));
     process.exit(0);
   }
 
@@ -47,48 +48,48 @@ export async function promptDatabase(current?: DatabaseConfig): Promise<Database
     // that will actually be submitted — the typed input, or the default.
     const connectionStringDefault = base.connectionString ?? "";
     const value = await p.text({
-      message: "PostgreSQL connection string",
+      message: setupMessage("dbConnectionMessage"),
       defaultValue: connectionStringDefault,
       placeholder: "postgres://user:pass@localhost:5432/paperclip",
       validate: (val) => {
         const candidate = val || connectionStringDefault;
-        if (!candidate) return "Connection string is required for PostgreSQL mode";
-        if (!candidate.startsWith("postgres")) return "Must be a postgres:// or postgresql:// URL";
+        if (!candidate) return setupMessage("dbConnectionRequired");
+        if (!candidate.startsWith("postgres")) return setupMessage("dbConnectionScheme");
       },
     });
 
     if (p.isCancel(value)) {
-      p.cancel("Setup cancelled.");
+      p.cancel(setupMessage("setupCancelled"));
       process.exit(0);
     }
 
     connectionString = value;
   } else {
     const dataDir = await p.text({
-      message: "Embedded PostgreSQL data directory",
+      message: setupMessage("dbDataDirMessage"),
       defaultValue: base.embeddedPostgresDataDir || defaultEmbeddedDir,
       placeholder: defaultEmbeddedDir,
     });
 
     if (p.isCancel(dataDir)) {
-      p.cancel("Setup cancelled.");
+      p.cancel(setupMessage("setupCancelled"));
       process.exit(0);
     }
 
     embeddedPostgresDataDir = dataDir || defaultEmbeddedDir;
 
     const portValue = await p.text({
-      message: "Embedded PostgreSQL port",
+      message: setupMessage("dbPortMessage"),
       defaultValue: embeddedPortDefault,
       placeholder: "54329",
       validate: (val) => {
         const n = Number(val || embeddedPortDefault);
-        if (!Number.isInteger(n) || n < 1 || n > 65535) return "Port must be an integer between 1 and 65535";
+        if (!Number.isInteger(n) || n < 1 || n > 65535) return setupMessage("dbPortInvalid");
       },
     });
 
     if (p.isCancel(portValue)) {
-      p.cancel("Setup cancelled.");
+      p.cancel(setupMessage("setupCancelled"));
       process.exit(0);
     }
 
@@ -97,57 +98,57 @@ export async function promptDatabase(current?: DatabaseConfig): Promise<Database
   }
 
   const backupEnabled = await p.confirm({
-    message: "Enable automatic database backups?",
+    message: setupMessage("dbBackupsMessage"),
     initialValue: base.backup.enabled,
   });
   if (p.isCancel(backupEnabled)) {
-    p.cancel("Setup cancelled.");
+    p.cancel(setupMessage("setupCancelled"));
     process.exit(0);
   }
 
   const backupDirDefault = base.backup.dir || defaultBackupDir;
   const backupDirInput = await p.text({
-    message: "Backup directory",
+    message: setupMessage("dbBackupDirMessage"),
     defaultValue: backupDirDefault,
     placeholder: defaultBackupDir,
-    validate: (val) => ((val || backupDirDefault).trim().length === 0 ? "Backup directory is required" : undefined),
+    validate: (val) => ((val || backupDirDefault).trim().length === 0 ? setupMessage("dbBackupDirRequired") : undefined),
   });
   if (p.isCancel(backupDirInput)) {
-    p.cancel("Setup cancelled.");
+    p.cancel(setupMessage("setupCancelled"));
     process.exit(0);
   }
 
   const backupIntervalDefault = String(base.backup.intervalMinutes || 60);
   const backupRetentionDefault = String(base.backup.retentionDays || 30);
   const backupIntervalInput = await p.text({
-    message: "Backup interval (minutes)",
+    message: setupMessage("dbBackupIntervalMessage"),
     defaultValue: backupIntervalDefault,
     placeholder: "60",
     validate: (val) => {
       const n = Number(val || backupIntervalDefault);
-      if (!Number.isInteger(n) || n < 1) return "Interval must be a positive integer";
-      if (n > 10080) return "Interval must be 10080 minutes (7 days) or less";
+      if (!Number.isInteger(n) || n < 1) return setupMessage("dbBackupIntervalInvalid");
+      if (n > 10080) return setupMessage("dbBackupIntervalMax");
       return undefined;
     },
   });
   if (p.isCancel(backupIntervalInput)) {
-    p.cancel("Setup cancelled.");
+    p.cancel(setupMessage("setupCancelled"));
     process.exit(0);
   }
 
   const backupRetentionInput = await p.text({
-    message: "Backup retention (days)",
+    message: setupMessage("dbBackupRetentionMessage"),
     defaultValue: backupRetentionDefault,
     placeholder: "30",
     validate: (val) => {
       const n = Number(val || backupRetentionDefault);
-      if (!Number.isInteger(n) || n < 1) return "Retention must be a positive integer";
-      if (n > 3650) return "Retention must be 3650 days or less";
+      if (!Number.isInteger(n) || n < 1) return setupMessage("dbBackupRetentionInvalid");
+      if (n > 3650) return setupMessage("dbBackupRetentionMax");
       return undefined;
     },
   });
   if (p.isCancel(backupRetentionInput)) {
-    p.cancel("Setup cancelled.");
+    p.cancel(setupMessage("setupCancelled"));
     process.exit(0);
   }
 

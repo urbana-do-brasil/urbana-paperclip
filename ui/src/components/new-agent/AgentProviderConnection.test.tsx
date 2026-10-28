@@ -2,7 +2,8 @@
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { AgentProviderConnection } from "./AgentProviderConnection";
 import { defaultAiConnectionName } from "../ai-connections/model";
 import { ApiError } from "@/api/client";
@@ -38,6 +39,9 @@ vi.mock("../AgentConfigForm", () => ({
 let root: Root;
 let host: HTMLDivElement;
 let client: QueryClient;
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
 afterEach(() => {
   flushSync(() => root?.unmount());
   host?.remove();

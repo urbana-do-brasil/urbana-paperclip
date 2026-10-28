@@ -5,6 +5,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { resolvePaperclipHomeDir, resolvePaperclipInstanceId } from "../config/home.js";
+import { adminOperationMessage } from "../localization/admin-operations.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -56,7 +57,7 @@ export const defaultCommandRunner: CommandRunner = async (command, args, options
 
 function escapeSystemd(value: string): string {
   if (/\r|\n/.test(value)) {
-    throw new Error("Systemd service values must not contain line breaks");
+    throw new Error(adminOperationMessage("serviceLineBreaksInvalid"));
   }
   return value
     .replaceAll("\\", "\\\\")
@@ -180,13 +181,13 @@ async function writeIfChanged(filePath: string, contents: string): Promise<boole
   const directoryPath = path.dirname(filePath);
   await fs.mkdir(directoryPath, { recursive: true, mode: 0o700 });
   const directoryStat = await fs.lstat(directoryPath);
-  if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink()) throw new Error(`Refusing to write service definition through unsafe directory ${directoryPath}.`);
+  if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink()) throw new Error(adminOperationMessage("serviceUnsafeDirectory", { path: directoryPath }));
   const currentUid = process.getuid?.();
-  if (currentUid !== undefined && directoryStat.uid !== currentUid) throw new Error(`Refusing to write service definition in directory not owned by the current user: ${directoryPath}.`);
+  if (currentUid !== undefined && directoryStat.uid !== currentUid) throw new Error(adminOperationMessage("serviceDirectoryOwnership", { path: directoryPath }));
   try {
     const stat = await fs.lstat(filePath);
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink > 1) throw new Error(`Refusing to replace unsafe service definition ${filePath}.`);
-    if (currentUid !== undefined && stat.uid !== currentUid) throw new Error(`Refusing to replace service definition not owned by the current user: ${filePath}.`);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink > 1) throw new Error(adminOperationMessage("serviceUnsafeDefinition", { path: filePath }));
+    if (currentUid !== undefined && stat.uid !== currentUid) throw new Error(adminOperationMessage("serviceDefinitionOwnership", { path: filePath }));
     if (await fs.readFile(filePath, "utf8") === contents) return false;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
@@ -364,5 +365,5 @@ export async function assertForegroundRunAllowed(instanceId: string, force = fal
   const detection = await detector({ instanceId });
   if (!detection.supported) return;
   const status = await detection.manager.status();
-  if (status.active) throw new Error(`Paperclip instance '${instanceId}' is already running as ${status.serviceName}. Use 'paperclipai service status --instance ${instanceId}' or pass --force to bypass this safety check.`);
+  if (status.active) throw new Error(adminOperationMessage("serviceAlreadyRunning", { instance: instanceId, name: status.serviceName }));
 }

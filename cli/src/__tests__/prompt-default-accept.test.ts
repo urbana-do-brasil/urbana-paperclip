@@ -5,6 +5,8 @@ import { promptSecrets } from "../prompts/secrets.js";
 import { promptServer } from "../prompts/server.js";
 import { promptStorage } from "../prompts/storage.js";
 import type { DatabaseConfig } from "../config/schema.js";
+import { setupMessage } from "../localization/setup.js";
+import { setCliLocale } from "../localization/index.js";
 
 vi.mock("@clack/prompts", () => ({
   text: vi.fn(),
@@ -29,8 +31,14 @@ type CapturedTextOptions = {
   defaultValue?: string;
   validate?: (value: string | undefined) => string | Error | undefined;
 };
+type CapturedSelectOptions = {
+  message: string;
+  options: Array<{ value: unknown; label: string; hint?: string }>;
+};
 
 const capturedText: CapturedTextOptions[] = [];
+const capturedSelect: CapturedSelectOptions[] = [];
+const capturedConfirm: Array<{ message: string }> = [];
 
 /**
  * Emulates @clack/core submit semantics for pressing Enter without typing:
@@ -52,7 +60,8 @@ function pressEnterOnEveryTextPrompt() {
 
 function queueSelects(values: unknown[]) {
   const remaining = [...values];
-  vi.mocked(p.select).mockImplementation(async () => {
+  vi.mocked(p.select).mockImplementation(async (opts) => {
+    capturedSelect.push(opts as unknown as CapturedSelectOptions);
     if (remaining.length === 0) throw new Error("unexpected select prompt");
     return remaining.shift() as never;
   });
@@ -79,9 +88,15 @@ const dbFixture: DatabaseConfig = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  setCliLocale("pt-BR");
   capturedText.length = 0;
+  capturedSelect.length = 0;
+  capturedConfirm.length = 0;
   vi.mocked(p.isCancel).mockReturnValue(false);
-  vi.mocked(p.confirm).mockImplementation(async (opts) => (opts.initialValue ?? false) as never);
+  vi.mocked(p.confirm).mockImplementation(async (opts) => {
+    capturedConfirm.push(opts as unknown as { message: string });
+    return (opts.initialValue ?? false) as never;
+  });
   pressEnterOnEveryTextPrompt();
 });
 
@@ -103,7 +118,7 @@ describe("promptDatabase accepts defaults", () => {
     queueSelects(["embedded-postgres"]);
     await promptDatabase();
 
-    const port = validatorFor("Embedded PostgreSQL port");
+    const port = validatorFor(setupMessage("dbPortMessage"));
     expect(port("")).toBeUndefined();
     expect(port(undefined)).toBeUndefined();
     expect(port("54329")).toBeUndefined();
@@ -111,19 +126,19 @@ describe("promptDatabase accepts defaults", () => {
     expect(port("70000")).toBeTruthy();
     expect(port("abc")).toBeTruthy();
 
-    const interval = validatorFor("Backup interval (minutes)");
+    const interval = validatorFor(setupMessage("dbBackupIntervalMessage"));
     expect(interval("")).toBeUndefined();
     expect(interval("60")).toBeUndefined();
     expect(interval("0")).toBeTruthy();
     expect(interval("999999")).toBeTruthy();
 
-    const retention = validatorFor("Backup retention (days)");
+    const retention = validatorFor(setupMessage("dbBackupRetentionMessage"));
     expect(retention("")).toBeUndefined();
     expect(retention("30")).toBeUndefined();
     expect(retention("0")).toBeTruthy();
     expect(retention("99999")).toBeTruthy();
 
-    const backupDir = validatorFor("Backup directory");
+    const backupDir = validatorFor(setupMessage("dbBackupDirMessage"));
     expect(backupDir("")).toBeUndefined();
     expect(backupDir("   ")).toBeTruthy();
   });
@@ -139,9 +154,9 @@ describe("promptDatabase accepts defaults", () => {
   it("still requires a connection string when no saved default exists", async () => {
     queueSelects(["postgres"]);
 
-    await expect(promptDatabase()).rejects.toThrow(/Connection string is required/);
+    await expect(promptDatabase()).rejects.toThrow(setupMessage("dbConnectionRequired"));
 
-    const connection = validatorFor("PostgreSQL connection string");
+    const connection = validatorFor(setupMessage("dbConnectionMessage"));
     expect(connection("postgres://user:pass@localhost:5432/paperclip")).toBeUndefined();
     expect(connection("mysql://nope")).toBeTruthy();
   });
@@ -155,7 +170,7 @@ describe("promptServer accepts defaults", () => {
 
     expect(server.port).toBe(3100);
 
-    const port = validatorFor("Server port");
+    const port = validatorFor(setupMessage("serverPortMessage"));
     expect(port("")).toBeUndefined();
     expect(port("8443")).toBeUndefined();
     expect(port("0")).toBeTruthy();
@@ -181,7 +196,8 @@ describe("promptServer accepts defaults", () => {
   it("still rejects accepting a non-loopback saved host in local_trusted mode", async () => {
     queueSelects(["custom", "local_trusted"]);
 
-    await expect(promptServer({ currentServer: { host: "0.0.0.0" } })).rejects.toThrow(/loopback/);
+    await expect(promptServer({ currentServer: { host: "0.0.0.0" } }))
+      .rejects.toThrow(setupMessage("serverLoopbackRequired"));
   });
 
   it("accepts the saved public base URL default when reconfiguring a public deployment", async () => {
@@ -198,9 +214,9 @@ describe("promptServer accepts defaults", () => {
   it("still requires a public base URL when no saved default exists", async () => {
     queueSelects(["custom", "authenticated", "public"]);
 
-    await expect(promptServer()).rejects.toThrow(/Public base URL is required/);
+    await expect(promptServer()).rejects.toThrow(setupMessage("serverPublicUrlRequired"));
 
-    const url = validatorFor("Public base URL");
+    const url = validatorFor(setupMessage("serverPublicUrlMessage"));
     expect(url("https://paperclip.example.com")).toBeUndefined();
     expect(url("ftp://paperclip.example.com")).toBeTruthy();
     expect(url("not a url")).toBeTruthy();
@@ -216,7 +232,7 @@ describe("promptStorage accepts defaults", () => {
     expect(storage.provider).toBe("local_disk");
     expect(storage.localDisk.baseDir).toBeTruthy();
 
-    const baseDir = validatorFor("Local storage base directory");
+    const baseDir = validatorFor(setupMessage("storageDirMessage"));
     expect(baseDir("")).toBeUndefined();
     expect(baseDir("   ")).toBeTruthy();
   });
@@ -229,8 +245,8 @@ describe("promptStorage accepts defaults", () => {
     expect(storage.s3.bucket).toBe("paperclip");
     expect(storage.s3.region).toBe("us-east-1");
 
-    expect(validatorFor("S3 bucket")("   ")).toBeTruthy();
-    expect(validatorFor("S3 region")("   ")).toBeTruthy();
+    expect(validatorFor(setupMessage("storageBucketMessage"))("   ")).toBeTruthy();
+    expect(validatorFor(setupMessage("storageRegionMessage"))("   ")).toBeTruthy();
   });
 });
 
@@ -243,9 +259,46 @@ describe("promptSecrets accepts defaults", () => {
     expect(secrets.provider).toBe("local_encrypted");
     expect(secrets.localEncrypted.keyFilePath).toBeTruthy();
 
-    const keyPath = validatorFor("Local encrypted key file path");
+    const keyPath = validatorFor(setupMessage("secretsKeyFileMessage"));
     expect(keyPath("")).toBeUndefined();
     expect(keyPath("   ")).toBeTruthy();
+  });
+});
+
+describe("setup prompt localization", () => {
+  it.each(["pt-BR", "en"] as const)("shows localized configuration prompts in %s", async (locale) => {
+    setCliLocale(locale);
+    queueSelects(["postgres", "file", "aws_secrets_manager", "local_disk", "loopback"]);
+
+    await promptDatabase(dbFixture);
+    await import("../prompts/llm.js").then(({ promptLlm }) => promptLlm());
+    const { promptLogging } = await import("../prompts/logging.js");
+    const { promptSecrets } = await import("../prompts/secrets.js");
+    await promptLogging();
+    await promptSecrets();
+    await promptStorage();
+    await promptServer();
+
+    const expected = locale === "pt-BR"
+      ? {
+          select: ["Modo do banco de dados", "Modo de registro de logs", "Provedor de segredos", "Provedor de armazenamento", "Acesso"],
+          firstOption: "PostgreSQL integrado (gerenciado localmente)",
+          connection: "String de conexão do PostgreSQL",
+          llm: "Configurar um provedor de LLM agora?",
+          secretsWarningTitle: "Atenção",
+        }
+      : {
+          select: ["Database mode", "Logging mode", "Secrets provider", "Storage provider", "Reachability"],
+          firstOption: "Embedded PostgreSQL (managed locally)",
+          connection: "PostgreSQL connection string",
+          llm: "Configure an LLM provider now?",
+          secretsWarningTitle: "Heads up",
+        };
+    expect(capturedSelect.map((prompt) => prompt.message)).toEqual(expected.select);
+    expect(capturedSelect[0]?.options[0]?.label).toBe(expected.firstOption);
+    expect(capturedText.map((prompt) => prompt.message)).toContain(expected.connection);
+    expect(capturedConfirm.map((prompt) => prompt.message)).toContain(expected.llm);
+    expect(p.note).toHaveBeenCalledWith(expect.any(String), expected.secretsWarningTitle);
   });
 });
 
@@ -259,7 +312,7 @@ describe("invalid saved or derived defaults are still validated", () => {
 
     await expect(
       promptServer({ currentServer: { port: 70000 as never } }),
-    ).rejects.toThrow(/integer between 1 and 65535/);
+    ).rejects.toThrow(setupMessage("serverPortInvalid"));
   });
 
   it("rejects accepting a non-integer saved embedded PostgreSQL port", async () => {
@@ -267,7 +320,7 @@ describe("invalid saved or derived defaults are still validated", () => {
 
     await expect(
       promptDatabase({ ...dbFixture, mode: "embedded-postgres", embeddedPostgresPort: 12.5 as never }),
-    ).rejects.toThrow(/Port must be an integer/);
+    ).rejects.toThrow(setupMessage("dbPortInvalid"));
   });
 
   it("rejects accepting an invalid saved public base URL", async () => {
@@ -278,7 +331,7 @@ describe("invalid saved or derived defaults are still validated", () => {
         currentServer: { host: "0.0.0.0", port: 8443 },
         currentAuth: { publicBaseUrl: "not a url" },
       }),
-    ).rejects.toThrow(/valid URL/);
+    ).rejects.toThrow(setupMessage("serverPublicUrlInvalid"));
   });
 
   it("rejects accepting a whitespace-only saved S3 bucket", async () => {
@@ -290,6 +343,6 @@ describe("invalid saved or derived defaults are still validated", () => {
         localDisk: { baseDir: "" },
         s3: { bucket: "   ", region: "us-east-1", endpoint: "", forcePathStyle: false },
       } as never),
-    ).rejects.toThrow(/Bucket is required/);
+    ).rejects.toThrow(setupMessage("storageBucketRequired"));
   });
 });

@@ -3,12 +3,18 @@ import { isLoopbackHost, type BindMode } from "@paperclipai/shared";
 import type { AuthConfig, ServerConfig } from "../config/schema.js";
 import { parseHostnameCsv } from "../config/hostnames.js";
 import { buildCustomServerConfig, buildPresetServerConfig, inferConfiguredBind } from "../config/server-bind.js";
+import { setupMessage } from "../localization/setup.js";
 
-const TAILNET_BIND_WARNING =
-  "No Tailscale address was detected during setup. The saved config will stay on loopback until Tailscale is available or PAPERCLIP_TAILNET_BIND_HOST is set.";
+function localizeHostnameError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message === "Hostname is required") return setupMessage("hostnameRequired");
+  const invalidHostname = message.match(/^Invalid hostname: (.*)$/);
+  if (invalidHostname) return setupMessage("hostnameInvalid", { hostname: invalidHostname[1] ?? "" });
+  return message;
+}
 
 function cancelled(): never {
-  p.cancel("Setup cancelled.");
+  p.cancel(setupMessage("setupCancelled"));
   process.exit(0);
 }
 
@@ -21,27 +27,27 @@ export async function promptServer(opts?: {
   const currentBind = inferConfiguredBind(currentServer);
 
   const bindSelection = await p.select({
-    message: "Reachability",
+    message: setupMessage("serverReachabilityMessage"),
     options: [
       {
         value: "loopback" as const,
-        label: "Trusted local",
-        hint: "Recommended for first run: localhost only, no login friction",
+        label: setupMessage("serverTrustedLocalLabel"),
+        hint: setupMessage("serverTrustedLocalHint"),
       },
       {
         value: "lan" as const,
-        label: "Private network",
-        hint: "Broad private bind for LAN, VPN, or legacy --tailscale-auth style access",
+        label: setupMessage("serverPrivateNetworkLabel"),
+        hint: setupMessage("serverPrivateNetworkHint"),
       },
       {
         value: "tailnet" as const,
-        label: "Tailnet",
-        hint: "Private authenticated access using the machine's detected Tailscale address",
+        label: setupMessage("serverTailnetLabel"),
+        hint: setupMessage("serverTailnetHint"),
       },
       {
         value: "custom" as const,
-        label: "Custom",
-        hint: "Choose exact auth mode, exposure, and host manually",
+        label: setupMessage("serverCustomLabel"),
+        hint: setupMessage("serverCustomHint"),
       },
     ],
     initialValue: currentBind,
@@ -52,7 +58,7 @@ export async function promptServer(opts?: {
 
   const portDefault = String(currentServer?.port ?? 3100);
   const portStr = await p.text({
-    message: "Server port",
+    message: setupMessage("serverPortMessage"),
     defaultValue: portDefault,
     placeholder: "3100",
     validate: (val) => {
@@ -61,7 +67,7 @@ export async function promptServer(opts?: {
       // that will actually be submitted — the typed input, or the default.
       const n = Number(val || portDefault);
       if (isNaN(n) || n < 1 || n > 65535 || !Number.isInteger(n)) {
-        return "Must be an integer between 1 and 65535";
+        return setupMessage("serverPortInvalid");
       }
     },
   });
@@ -80,7 +86,7 @@ export async function promptServer(opts?: {
 
   if (bind === "lan" || bind === "tailnet") {
     const allowedHostnamesInput = await p.text({
-      message: "Allowed private hostnames (comma-separated, optional)",
+      message: setupMessage("serverAllowedHostsMessage"),
       defaultValue: (currentServer?.allowedHostnames ?? []).join(", "),
       placeholder:
         bind === "tailnet"
@@ -91,7 +97,7 @@ export async function promptServer(opts?: {
           parseHostnameCsv(val ?? "");
           return;
         } catch (err) {
-          return err instanceof Error ? err.message : "Invalid hostname list";
+          return localizeHostnameError(err);
         }
       },
     });
@@ -104,23 +110,23 @@ export async function promptServer(opts?: {
       serveUi,
     });
     if (bind === "tailnet" && isLoopbackHost(preset.server.host)) {
-      p.log.warn(TAILNET_BIND_WARNING);
+      p.log.warn(setupMessage("serverTailnetWarning"));
     }
     return preset;
   }
 
   const deploymentModeSelection = await p.select({
-    message: "Auth mode",
+    message: setupMessage("serverAuthModeMessage"),
     options: [
       {
         value: "local_trusted",
-        label: "Local trusted",
-        hint: "No login required; only safe with loopback-only or similarly trusted access",
+        label: setupMessage("serverLocalTrustedLabel"),
+        hint: setupMessage("serverLocalTrustedHint"),
       },
       {
         value: "authenticated",
-        label: "Authenticated",
-        hint: "Login required; supports both private-network and public deployments",
+        label: setupMessage("serverAuthenticatedLabel"),
+        hint: setupMessage("serverAuthenticatedHint"),
       },
     ],
     initialValue: currentServer?.deploymentMode ?? "authenticated",
@@ -132,17 +138,17 @@ export async function promptServer(opts?: {
   let exposure: ServerConfig["exposure"] = "private";
   if (deploymentMode === "authenticated") {
     const exposureSelection = await p.select({
-      message: "Exposure profile",
+      message: setupMessage("serverExposureMessage"),
       options: [
         {
           value: "private",
-          label: "Private network",
-          hint: "Private access only, with automatic URL handling",
+          label: setupMessage("serverPrivateExposureLabel"),
+          hint: setupMessage("serverPrivateExposureHint"),
         },
         {
           value: "public",
-          label: "Public internet",
-          hint: "Internet-facing deployment with explicit public URL requirements",
+          label: setupMessage("serverPublicExposureLabel"),
+          hint: setupMessage("serverPublicExposureHint"),
         },
       ],
       initialValue: currentServer?.exposure ?? "private",
@@ -156,14 +162,14 @@ export async function promptServer(opts?: {
     currentServer?.host ??
     (deploymentMode === "local_trusted" ? "127.0.0.1" : "0.0.0.0");
   const host = await p.text({
-    message: "Bind host",
+    message: setupMessage("serverBindHostMessage"),
     defaultValue: defaultHost,
     placeholder: defaultHost,
     validate: (val) => {
       const candidate = (val || defaultHost).trim();
-      if (!candidate) return "Host is required";
+      if (!candidate) return setupMessage("serverHostRequired");
       if (deploymentMode === "local_trusted" && !isLoopbackHost(candidate)) {
-        return "Local trusted mode requires a loopback host such as 127.0.0.1";
+        return setupMessage("serverLoopbackRequired");
       }
     },
   });
@@ -173,7 +179,7 @@ export async function promptServer(opts?: {
   let allowedHostnames: string[] = [];
   if (deploymentMode === "authenticated" && exposure === "private") {
     const allowedHostnamesInput = await p.text({
-      message: "Allowed private hostnames (comma-separated, optional)",
+      message: setupMessage("serverAllowedHostsMessage"),
       defaultValue: (currentServer?.allowedHostnames ?? []).join(", "),
       placeholder: "dotta-macbook-pro, your-host.tailnet.ts.net",
       validate: (val) => {
@@ -181,7 +187,7 @@ export async function promptServer(opts?: {
           parseHostnameCsv(val ?? "");
           return;
         } catch (err) {
-          return err instanceof Error ? err.message : "Invalid hostname list";
+          return localizeHostnameError(err);
         }
       },
     });
@@ -194,20 +200,20 @@ export async function promptServer(opts?: {
   if (deploymentMode === "authenticated" && exposure === "public") {
     const publicBaseUrlDefault = currentAuth?.publicBaseUrl ?? "";
     const urlInput = await p.text({
-      message: "Public base URL",
+      message: setupMessage("serverPublicUrlMessage"),
       defaultValue: publicBaseUrlDefault,
       placeholder: "https://paperclip.example.com",
       validate: (val) => {
         const candidate = (val || publicBaseUrlDefault).trim();
-        if (!candidate) return "Public base URL is required for public exposure";
+        if (!candidate) return setupMessage("serverPublicUrlRequired");
         try {
           const url = new URL(candidate);
           if (url.protocol !== "http:" && url.protocol !== "https:") {
-            return "URL must start with http:// or https://";
+            return setupMessage("serverPublicUrlScheme");
           }
           return;
         } catch {
-          return "Enter a valid URL";
+          return setupMessage("serverPublicUrlInvalid");
         }
       },
     });

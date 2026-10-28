@@ -5,6 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
+import { adminOperationMessage } from "../localization/admin-operations.js";
 import { isSupportedNodeVersion, MINIMUM_NODE_VERSION } from "@paperclipai/shared/node-version";
 import {
   addManagedPathBlock,
@@ -63,9 +64,9 @@ export function resolveGitInstallWorkspacePackages(checkoutPath: string): Releas
 
   const visit = (packageName: string): void => {
     if (visited.has(packageName)) return;
-    if (visiting.has(packageName)) throw new Error(`Circular workspace dependency while staging ${packageName}.`);
+    if (visiting.has(packageName)) throw new Error(adminOperationMessage("installWorkspaceCircular", { package: packageName }));
     const entry = packageByName.get(packageName);
-    if (!entry) throw new Error(`Git install cannot stage workspace dependency ${packageName}; it is missing from scripts/release-package-manifest.json.`);
+    if (!entry) throw new Error(adminOperationMessage("installWorkspaceMissing", { package: packageName }));
     visiting.add(packageName);
     const packageJson = JSON.parse(fs.readFileSync(path.join(checkoutPath, entry.dir, "package.json"), "utf8")) as Record<string, unknown>;
     for (const section of ["dependencies", "optionalDependencies", "peerDependencies"] as const) {
@@ -86,7 +87,7 @@ export function resolveGitInstallWorkspacePackages(checkoutPath: string): Releas
 
 export function assertSupportedNodeVersion(): void {
   if (!isSupportedNodeVersion(process.versions.node)) {
-    throw new Error(`Installing or updating Paperclip requires Node.js ${MINIMUM_NODE_VERSION} or newer (found ${process.version} at ${process.execPath}). Put a supported Node bin directory first on PATH and run 'npx paperclipai@latest install --yes' to re-pin an existing managed install.`);
+    throw new Error(adminOperationMessage("installNodeUnsupported", { minimum: MINIMUM_NODE_VERSION, version: process.version, path: process.execPath }));
   }
 }
 
@@ -94,11 +95,11 @@ export function resolveNpmInstallRequest(options: InstallOptions): {
   spec: string;
   channel: InstallChannel;
 } {
-  if (options.canary && options.version) throw new Error("Choose either --canary or --version, not both.");
+  if (options.canary && options.version) throw new Error(adminOperationMessage("installChooseSource"));
   if (options.version) {
     const version = options.version.trim();
     if (!EXACT_VERSION_PATTERN.test(version)) {
-      throw new Error(`--version requires an exact published version, received '${options.version}'.`);
+      throw new Error(adminOperationMessage("installVersionExact", { value: options.version }));
     }
     return { spec: version, channel: "pinned" };
   }
@@ -107,14 +108,14 @@ export function resolveNpmInstallRequest(options: InstallOptions): {
 
 function parseResolvedVersion(stdout: string): string {
   const trimmed = stdout.trim();
-  if (!trimmed) throw new Error("npm returned an empty version response.");
+  if (!trimmed) throw new Error(adminOperationMessage("installVersionEmpty"));
   try {
     const parsed = JSON.parse(trimmed) as unknown;
     if (typeof parsed === "string") return parsed;
   } catch {
     if (EXACT_VERSION_PATTERN.test(trimmed)) return trimmed;
   }
-  throw new Error(`npm returned an unexpected version response: ${trimmed}`);
+  throw new Error(adminOperationMessage("installVersionUnexpected", { detail: trimmed }));
 }
 
 export async function resolvePublishedVersion(spec: string, runCommand: CommandRunner): Promise<string> {
@@ -128,12 +129,12 @@ export async function resolvePublishedVersion(spec: string, runCommand: CommandR
 
 export function resolveGitInstallRequest(options: InstallOptions): { repo: string; ref: string; pinned: boolean } | null {
   if (!options.ref && !options.repo) return null;
-  if (!options.ref) throw new Error("--repo requires --ref.");
-  if (options.canary || options.version) throw new Error("--ref cannot be combined with --canary or --version.");
+  if (!options.ref) throw new Error(adminOperationMessage("installRepoNeedsRef"));
+  if (options.canary || options.version) throw new Error(adminOperationMessage("installRefConflict"));
   const repo = (options.repo ?? DEFAULT_GITHUB_REPO).trim();
   const ref = options.ref.trim();
-  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) throw new Error(`--repo must be an owner/name GitHub repository, received '${repo}'.`);
-  if (!ref || ref.startsWith("-") || /[\0\r\n]/.test(ref)) throw new Error(`Invalid GitHub ref '${options.ref}'.`);
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) throw new Error(adminOperationMessage("installRepoInvalid", { repo }));
+  if (!ref || ref.startsWith("-") || /[\0\r\n]/.test(ref)) throw new Error(adminOperationMessage("installRefInvalid", { ref: options.ref }));
   return { repo, ref, pinned: /^[0-9a-f]{7,40}$/i.test(ref) };
 }
 
@@ -160,8 +161,8 @@ async function runGitHubCurl(
 export async function resolveGitHubRef(repo: string, ref: string, runCommand: CommandRunner): Promise<string> {
   const result = await runGitHubCurl(["--fail", "--silent", "--show-error", "--location", "--header", "Accept: application/vnd.github+json", "--header", "User-Agent: paperclipai-install", `https://api.github.com/repos/${repo}/commits/${encodeURIComponent(ref)}`], runCommand, { maxBuffer: 4 * 1024 * 1024 });
   let sha: unknown;
-  try { sha = (JSON.parse(result.stdout) as { sha?: unknown }).sha; } catch { throw new Error(`GitHub returned an invalid response while resolving ${repo}@${ref}.`); }
-  if (typeof sha !== "string" || !/^[0-9a-f]{40}$/i.test(sha)) throw new Error(`GitHub did not return a full commit SHA for ${repo}@${ref}.`);
+  try { sha = (JSON.parse(result.stdout) as { sha?: unknown }).sha; } catch { throw new Error(adminOperationMessage("installGithubResponseInvalid", { repo, ref })); }
+  if (typeof sha !== "string" || !/^[0-9a-f]{40}$/i.test(sha)) throw new Error(adminOperationMessage("installGithubShaMissing", { repo, ref }));
   return sha.toLowerCase();
 }
 
@@ -171,11 +172,11 @@ function payloadEntrypoint(payloadPath: string): string {
 
 export async function smokePayload(payloadPath: string, expectedVersion: string, runCommand: CommandRunner): Promise<void> {
   const entrypoint = payloadEntrypoint(payloadPath);
-  if (!fs.existsSync(entrypoint)) throw new Error(`Installed package is missing its CLI entrypoint: ${entrypoint}`);
+  if (!fs.existsSync(entrypoint)) throw new Error(adminOperationMessage("installEntrypointMissing", { path: entrypoint }));
   const result = await runCommand(process.execPath, [entrypoint, "--version"], { maxBuffer: 1024 * 1024 });
   const reportedVersion = result.stdout.trim().split(/\s+/)[0];
   if (reportedVersion !== expectedVersion) {
-    throw new Error(`Installed CLI smoke check reported ${reportedVersion || "no version"}; expected ${expectedVersion}.`);
+    throw new Error(adminOperationMessage("installSmokeMismatch", { reported: reportedVersion || "no version", expected: expectedVersion }));
   }
 }
 
@@ -193,7 +194,7 @@ export async function installNpmPayload(
   fs.mkdirSync(sourceRoot, { recursive: true, mode: 0o700 });
   const sourceStat = fs.lstatSync(sourceRoot);
   if (!sourceStat.isDirectory() || sourceStat.isSymbolicLink()) {
-    throw new Error(`Refusing to install into unsafe payload root ${sourceRoot}.`);
+    throw new Error(adminOperationMessage("installUnsafePayload", { path: sourceRoot }));
   }
   fs.chmodSync(paths.cliRoot, 0o700);
   fs.chmodSync(paths.installsRoot, 0o700);
@@ -254,7 +255,7 @@ export async function installGitPayload(repo: string, sha: string, runCommand: C
   fs.mkdirSync(sourceRoot, { recursive: true, mode: 0o700 });
   const sourceStat = fs.lstatSync(sourceRoot);
   if (!sourceStat.isDirectory() || sourceStat.isSymbolicLink()) {
-    throw new Error(`Refusing to install into unsafe payload root ${sourceRoot}.`);
+    throw new Error(adminOperationMessage("installUnsafePayload", { path: sourceRoot }));
   }
   fs.chmodSync(paths.cliRoot, 0o700);
   fs.chmodSync(paths.installsRoot, 0o700);
@@ -297,7 +298,7 @@ export async function installGitPayload(repo: string, sha: string, runCommand: C
     const cliTarball = tarballs.find((entry) => entry === `paperclipai-${metadata.version}.tgz`);
     const workspaceTarballs = tarballs.filter((entry) => entry !== cliTarball);
     if (!cliTarball || workspaceTarballs.length !== workspacePackages.length) {
-      throw new Error(`Git install packaging produced ${workspaceTarballs.length} workspace tarballs; expected ${workspacePackages.length}.`);
+      throw new Error(adminOperationMessage("installWorkspaceTarballsMismatch", { actual: workspaceTarballs.length, expected: workspacePackages.length }));
     }
     await runCommand("npm", ["install", "--prefix", stagedPayload, path.join(stagingRoot, cliTarball), ...workspaceTarballs.map((entry) => path.join(stagingRoot, entry)), "--no-audit", "--no-fund"], { cwd: stagingRoot, maxBuffer: 32 * 1024 * 1024 });
     await smokePayload(stagedPayload, metadata.version, runCommand);
@@ -327,31 +328,31 @@ async function ensureShimOnPath(options: InstallOptions): Promise<void> {
   const manualInstruction = `export PATH="$HOME/.local/bin:$PATH"`;
   const rcPath = shellRcPath();
   if (!process.stdin.isTTY || !process.stdout.isTTY || !rcPath) {
-    console.log(pc.yellow(`Add Paperclip to PATH for this shell:\n  ${manualInstruction}`));
+    console.log(pc.yellow(adminOperationMessage("installPathManual", { command: manualInstruction })));
     return;
   }
-  const confirmed = options.yes === true ? true : await p.confirm({ message: `Add ~/.local/bin to PATH in ${rcPath}?`, initialValue: true });
+  const confirmed = options.yes === true ? true : await p.confirm({ message: adminOperationMessage("installPathQuestion", { path: rcPath }), initialValue: true });
   if (p.isCancel(confirmed) || !confirmed) {
-    console.log(pc.yellow(`PATH was not changed. Run:\n  ${manualInstruction}`));
+    console.log(pc.yellow(adminOperationMessage("installPathSkipped", { command: manualInstruction })));
     return;
   }
   const changed = addManagedPathBlock(rcPath);
-  console.log(changed ? pc.green(`Updated ${rcPath}.`) : pc.dim(`${rcPath} already contains the PATH block.`));
+  console.log(changed ? pc.green(adminOperationMessage("installPathUpdated", { path: rcPath })) : pc.dim(adminOperationMessage("installPathExists", { path: rcPath })));
 }
 
 async function confirmGitInstall(options: InstallOptions, repo: string, ref: string): Promise<void> {
-  const warning = `Installing ${repo}@${ref} executes dependency and build scripts from that repository.`;
-  console.log(pc.yellow(`Warning: ${warning}`));
+  const warning = adminOperationMessage("installGitWarning", { repo, ref });
+  console.log(pc.yellow(warning));
   if (options.yes === true) return;
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    throw new Error(`${warning} Re-run with --yes to consent in non-interactive environments.`);
+    throw new Error(adminOperationMessage("installGitConsentRequired", { repo, ref }));
   }
   const confirmed = await p.confirm({
-    message: `${warning} Continue?`,
+    message: adminOperationMessage("installGitConfirm", { repo, ref }),
     initialValue: false,
   });
   if (p.isCancel(confirmed) || !confirmed) {
-    throw new Error("Git-ref install cancelled before downloading or executing repository code.");
+    throw new Error(adminOperationMessage("installGitCancelled"));
   }
 }
 
@@ -378,13 +379,13 @@ export async function installCommand(
       writeManagedShim(paths); pruneInstallPayloads(nextManifest, paths); return payload;
     }, paths);
     await ensureShimOnPath(options);
-    console.log(pc.green(`${installed.reused ? "Activated cached" : "Installed"} paperclipai git payload ${sha.slice(0, 12)}.`));
+    console.log(pc.green(adminOperationMessage(installed.reused ? "installGitCached" : "installGitDone", { sha: sha.slice(0, 12) })));
     return;
   }
   const request = resolveNpmInstallRequest(options);
-  console.log(`Resolving paperclipai@${request.spec} from ${PUBLIC_NPM_REGISTRY}...`);
+  console.log(adminOperationMessage("installNpmResolving", { spec: request.spec, registry: PUBLIC_NPM_REGISTRY }));
   const version = await resolvePublishedVersion(request.spec, runCommand);
-  console.log(`Installing paperclipai@${version}...`);
+  console.log(adminOperationMessage("installNpmInstalling", { version }));
 
   const paths = resolveInstallStorePaths();
   const installed = await withInstallStoreLock(async () => {
@@ -414,7 +415,7 @@ export async function installCommand(
   }, paths);
   await ensureShimOnPath(options);
 
-  console.log(pc.green(`${installed.reused ? "Activated cached" : "Installed"} paperclipai ${version} (${request.channel}).`));
-  console.log(pc.dim(`Payload: ${installed.payloadPath}`));
-  console.log(`Run ${pc.cyan("paperclipai --version")} to verify the managed install.`);
+  console.log(pc.green(adminOperationMessage(installed.reused ? "installNpmCached" : "installNpmDone", { version, channel: request.channel })));
+  console.log(pc.dim(adminOperationMessage("installPayload", { path: installed.payloadPath })));
+  console.log(adminOperationMessage("installVerify", { command: pc.cyan("paperclipai --version") }));
 }

@@ -1,4 +1,5 @@
 import { cn } from "../../lib/utils";
+import { useTranslation } from "@/i18n";
 
 /**
  * The agent arc — create the agent, connect it, review — is the part of the
@@ -6,18 +7,6 @@ import { cn } from "../../lib/utils";
  * Cloud before the tenant is ever reached, so it is not one of these steps.
  */
 export const AGENT_ARC_TOTAL_STEPS = 3;
-
-/**
- * What each segment goes to. These are the labels assistive tech reads, in
- * place of a bare number: the wizard has its own step numbering, and two
- * controls both announcing "Step 1" while meaning different steps is worse
- * than no number at all. The strip's own "Step N of 3" line carries the count.
- */
-export const AGENT_ARC_STEP_LABELS = [
-  "Create your first agent",
-  "Connect a model",
-  "Review",
-] as const;
 
 /** Wizard step numbers that make up the arc, in order. */
 export const AGENT_ARC_WIZARD_STEPS = [3, 4, 5] as const;
@@ -32,14 +21,6 @@ export const AGENT_ARC_WIZARD_STEPS = [3, 4, 5] as const;
  * see `onboardingStepPositionFor`.
  */
 export const ONBOARDING_WIZARD_STEPS = [1, 3, 4, 5] as const;
-
-/** Destinations for the full walk, in the same order. */
-export const ONBOARDING_STEP_LABELS = [
-  "Name your organization",
-  "Create your first agent",
-  "Connect a model",
-  "Review",
-] as const;
 
 /**
  * Position in the full walk: how many of its steps are at or behind `step`.
@@ -91,7 +72,7 @@ export function agentArcStepFor(wizardStep: number): number | null {
 export function Stepper({
   step,
   total = AGENT_ARC_TOTAL_STEPS,
-  labels = AGENT_ARC_STEP_LABELS,
+  labels,
   canJumpToStep,
   onJumpToStep,
 }: {
@@ -107,6 +88,19 @@ export function Stepper({
   canJumpToStep?: (target: number) => boolean;
   onJumpToStep?: (target: number) => void;
 }) {
+  const { t } = useTranslation();
+  const resolvedLabels = labels ?? (total === ONBOARDING_WIZARD_STEPS.length
+    ? [
+        t("onboarding.organizationQuestion"),
+        t("onboarding.createAgentTitle"),
+        t("onboarding.connectModelTitle"),
+        t("onboarding.review"),
+      ]
+    : [
+        t("onboarding.createAgentTitle"),
+        t("onboarding.connectModelTitle"),
+        t("onboarding.review"),
+      ]);
   return (
     <div className="mb-11 flex items-center justify-center gap-2">
       {Array.from({ length: total }, (_, index) => index + 1).map((segment) => {
@@ -115,7 +109,7 @@ export function Stepper({
           <button
             key={segment}
             type="button"
-            aria-label={labels[segment - 1] ?? `Step ${segment}`}
+            aria-label={resolvedLabels[segment - 1] ?? t("onboarding.progressStep", { step: segment, total })}
             aria-current={segment === step ? "step" : undefined}
             disabled={!jumpable}
             onClick={() => jumpable && onJumpToStep?.(segment)}
@@ -134,7 +128,7 @@ export function Stepper({
       })}
       {/* Out of flow, so it neither takes a row nor picks up the gap. */}
       <span className="sr-only">
-        Step {step} of {total}
+        {t("onboarding.progressStep", { step, total })}
       </span>
     </div>
   );

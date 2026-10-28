@@ -25,7 +25,7 @@ Os grupos web/CLI abaixo delimitam escopo funcional, não autorizam diffs ilimit
 Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, incluir catálogos en/PT-BR, ajustar documentação se o comportamento exigir e atualizar o manifesto com fontes/estados/verificação. Usar testes existentes mais cenários novos quando necessários; não criar teste por troca estática de palavra. Rodar suites pertinentes e token gates quando houver mudança em UI.
 
 - [x] 3.1 Acrescentar metadados aditivos de mensagens a erros próprios e apresentação localizada em clientes, preservando status, códigos, detalhes permitidos e redaction. Verificar middleware/clientes com erro conhecido, falha de validação, erro de provedor e fixture sensível; confirmar compatibilidade do payload anterior. Specs: `localized-web-interface`, `localized-cli`.
-- [ ] 3.2 Migrar autenticação, convites, recuperação/claim e onboarding além da jornada inicial. Verificar estados de sucesso/falha nos dois idiomas, inclusive páginas sem sessão e conteúdo inserido por usuário preservado. Spec: `localized-web-interface`.
+- [x] 3.2 Migrar autenticação, convites, recuperação/claim e onboarding além da jornada inicial. Verificar estados de sucesso/falha nos dois idiomas, inclusive páginas sem sessão e conteúdo inserido por usuário preservado. Spec: `localized-web-interface`.
   - [x] 3.2a Localizar login/cadastro e autenticação gerenciada, com estados e acessibilidade.
   - [x] 3.2b Localizar convites, recuperação, claim e aceitação de acesso, preservando tokens e URLs.
     - [x] 3.2b1 Localizar as rotas públicas InviteLanding e BoardClaim e seus estados de sucesso/falha em PT-BR/en, preservando tokens, URLs e dados de usuário.
@@ -33,9 +33,15 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
       - [x] 3.2b2a Localizar autorização da CLI em CliAuth e verificar estados, códigos e URLs nos dois idiomas.
       - [x] 3.2b2b Localizar confirmação de identidade de chat e verificar vínculo, acesso e redirecionamentos nos dois idiomas.
       - [x] 3.2b2c Localizar bootstrap inicial e os estados restantes de CloudAccessGate/BootstrapPendingPage, preservando comandos e controles de acesso.
-  - [ ] 3.2c Localizar as jornadas de onboarding e seus estados/variantes, preservando dados e ações.
-- [ ] 3.3 Migrar navegação, menus de conta, breadcrumbs, diálogos e componentes comuns nas variantes de shell. Verificar teclado, nomes acessíveis, tema claro/escuro e viewport móvel nos dois idiomas, sem alterar destinos e ações. Spec: `localized-web-interface`.
+  - [x] 3.2c Localizar as jornadas de onboarding e seus estados/variantes, preservando dados e ações.
+- [x] 3.3 Migrar navegação, menus de conta, breadcrumbs, diálogos e componentes comuns nas variantes de shell. Verificar teclado, nomes acessíveis, tema claro/escuro e viewport móvel nos dois idiomas, sem alterar destinos e ações. Spec: `localized-web-interface`.
 - [ ] 3.4 Migrar tarefas, detalhe/conversa, Inbox, filas de atenção e busca em lotes por jornada. Verificar criação/edição, estados vazios e falhas, conteúdo histórico preservado e variantes relevantes de flags nos dois idiomas. Spec: `localized-web-interface`.
+  - [x] 3.4a Localizar a moldura da página Tasks e o seletor de visualizações, preservando URLs, filtros e preferências ao alternar entre Inbox e coleção.
+  - [ ] 3.4b Localizar coleção de tarefas, modos lista/kanban, filtros, ordenação, estados vazios/carregamento/erro e criação/edição.
+  - [ ] 3.4c Localizar detalhe da tarefa, propriedades, relações, anexos e estados de execução; preservar IDs e dados dinâmicos.
+  - [ ] 3.4d Localizar comentários, conversa, perguntas e ações de interação/execução na tarefa sem traduzir o histórico existente.
+  - [ ] 3.4e Localizar Inbox e filas de atenção, incluindo aprovações, falhas e solicitações de acesso que aparecem nesses fluxos.
+  - [ ] 3.4f Localizar a busca global e seus resultados/filtros; preservar sintaxe, operadores e destinos.
 - [ ] 3.5 Migrar organizações, projetos, metas e workspaces em lotes por jornada. Verificar criação/configuração, troca de organização, labels de estado e permissões nas duas línguas sem alterar valores ou contratos. Spec: `localized-web-interface`.
 - [ ] 3.6 Migrar cadastro/configuração de agentes e visualizações de execução, incluindo descrições próprias e estados de ferramentas. Verificar fluxo de configuração e execução nas duas línguas, mantendo prompts técnicos e logs brutos originais. Spec: `localized-web-interface`.
 - [ ] 3.7 Migrar dashboard, custos, orçamento, timeline, atividade e auditoria em lotes por jornada. Verificar amostras com datas, timezone, percentuais e moeda original, pluralização e erros nos dois idiomas. Spec: `localized-web-interface`.
@@ -47,20 +53,20 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
 ## 4. CLI bilíngue
 
 - [x] 4.1 Implementar resolução antecipada de `--lang`, `PAPERCLIP_LANG`, perfil local e default, sem rede, incluindo catálogo e persistência local. Verificar precedência, perfil isolado, idioma inválido antes de mutação e ajuda offline; documentar a independência da preferência web. Spec: `localized-cli`.
-- [ ] 4.2 Migrar help/erros do parser e mensagens de instalação, atualização, onboarding, configuração, serviço e diagnóstico, incluindo entrypoints de instalação que apresentem texto humano. Verificar transcrições PT-BR/en com fixtures, códigos de saída e tratamento de falhas, sem executar mutações reais de host. Spec: `localized-cli`.
+- [x] 4.2 Migrar help/erros do parser e mensagens de instalação, atualização, onboarding, configuração, serviço e diagnóstico, incluindo entrypoints de instalação que apresentem texto humano. Verificar transcrições PT-BR/en com fixtures, códigos de saída e tratamento de falhas, sem executar mutações reais de host. Spec: `localized-cli`.
 - [ ] 4.3 Migrar mensagens humanas dos comandos de operação de empresas, agentes, tarefas, projetos, aprovações, acesso, skills, conexões, execução e demais grupos registrados, em lotes por comando. Verificar um caso de sucesso/falha por operação distinta e cobertura de help sem traduzir flags ou identificadores. Spec: `localized-cli`.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação
 
-- [ ] 5.1 Criar mapa de tópicos/slugs e fontes de documentação pública e registrar exclusões de material interno; implementar rota de ajuda com Markdown seguro, navegação por idioma e deep links no bundle. Verificar tópico PT-BR/en, acesso sem login, ausência de consultas privadas, markup não executável e recursos empacotados. Spec: `localized-help`.
+- [x] 5.1 Criar mapa de tópicos/slugs e fontes de documentação pública e registrar exclusões de material interno; implementar rota de ajuda com Markdown seguro, navegação por idioma e deep links no bundle. Verificar tópico PT-BR/en, acesso sem login, ausência de consultas privadas, markup não executável e recursos empacotados. Spec: `localized-help`.
 - [ ] 5.2 Traduzir início, conceitos e guias de operação da interface, em lotes por jornada, mantendo equivalentes ingleses. Verificar paridade de tópicos, glossário, links e uma revisão humana dos exemplos e da equivalência de instruções. Spec: `localized-help`.
 - [ ] 5.3 Traduzir guias de instalação, configuração, administração, CLI, agentes e adapters destinados aos operadores, em lotes por tópico. Verificar comandos, variáveis e links preservados, exemplos contra fixtures/ambiente descartável e lacunas eventualmente existentes na documentação de origem. Spec: `localized-help`.
 - [x] 5.4 Conectar Documentation ao idioma efetivo, adicionar troca de idioma por tópico e fallback inglês identificado. Verificar navegação da aplicação para ajuda, link direto compartilhado, idioma explícito sem alterar conta e check que reprova um guia PT-BR ausente. Specs: `localized-help`, `localization-quality`.
 
 ## 6. Comunicação dos agentes no idioma escolhido
 
-- [ ] 6.1 Resolver locale/origem no contexto de criação da execução e preservar o snapshot em retomadas e delegações. Verificar requesters distintos, modo local, rotina sem autor, overrides explícitos, duas organizações, retries e múltiplas mensagens sem associação ambígua ou mudança de ownership. Spec: `agent-interaction-language`.
+- [x] 6.1 Resolver locale/origem no contexto de criação da execução e preservar o snapshot em retomadas e delegações. Verificar requesters distintos, modo local, rotina sem autor, overrides explícitos, duas organizações, retries e múltiplas mensagens sem associação ambígua ou mudança de ownership. Spec: `agent-interaction-language`.
 - [ ] 6.2 Propagar locale no caminho nativo e adapters suportados, renderizar diretriz de comunicação humana e conciliar inglês simplificado. Verificar deterministicamente os prompts/contratos em PT-BR/en, retomadas e herança, preservando instruções técnicas e configuração do agente. Spec: `agent-interaction-language`.
 - [ ] 6.3 Integrar o idioma às interações humanas estruturadas e respostas de apresentação do sistema, sem retraduzir o histórico. Verificar perguntas, opções, confirmações, mensagens de erro e um fluxo compartilhado por duas contas de idiomas diferentes. Specs: `agent-interaction-language`, `localized-web-interface`.
 - [ ] 6.4 Documentar política e matriz de suporte por runtime e qualificar comunicação real com credenciais autorizadas e dados descartáveis. Verificar respostas e interações em PT-BR/en por runtime/modelo declarado, registrar falhas/limites e não aprovar um runtime apenas pelo conteúdo da fixture de prompt. Specs: `agent-interaction-language`, `localization-quality`.

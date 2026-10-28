@@ -5,6 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
+import { adminOperationMessage } from "../localization/admin-operations.js";
 import { assertManagedShimWritable, writeManagedShim, buildNextManifest, flipCurrentAtomic, isManagedExecutable, pruneInstallPayloads, readInstallManifest, resolveInstallStorePaths, withInstallStoreLock, writeInstallManifestAtomic, type InstallChannel, type InstallManifest, type InstallRecord, type InstallStorePaths } from "../install-store.js";
 import { dbBackupCommand } from "./db-backup.js";
 import { assertSupportedNodeVersion, installGitPayload, installNpmPayload, PUBLIC_NPM_REGISTRY, resolveGitHubRef, resolvePublishedVersion, type CommandRunner } from "./install.js";
@@ -50,7 +51,7 @@ function isDatabaseUnreachableError(error: unknown): boolean {
 
 async function runPreUpdateBackup(options: UpdateOptions, backup: () => Promise<void>, hasInstanceData = hasPaperclipInstanceData): Promise<void> {
   if (!hasInstanceData()) {
-    const message = "Skipping the pre-update backup because this Paperclip instance has not been onboarded and has no data to back up.";
+    const message = adminOperationMessage("updateBackupSkipped");
     if (options.json) console.error(message); else console.log(pc.yellow(message));
     return;
   }
@@ -59,7 +60,7 @@ async function runPreUpdateBackup(options: UpdateOptions, backup: () => Promise<
   } catch (error) {
     if (isDatabaseUnreachableError(error)) {
       throw new Error(
-        "The Paperclip database is not running or reachable, so the pre-update backup cannot be taken. Start the service with `paperclipai service start` and retry, or skip the backup with `paperclipai update --no-backup`.",
+        adminOperationMessage("updateDatabaseUnavailable"),
         { cause: error },
       );
     }
@@ -116,7 +117,7 @@ export function compareVersions(left: string, right: string): number {
 
 export function resolveUpdateRequest(manifest: InstallManifest | null, options: Pick<UpdateOptions, "canary" | "latest" | "version">): { spec: string; channel: InstallChannel; explicit: boolean } {
   const selected = Number(Boolean(options.canary)) + Number(Boolean(options.latest)) + Number(Boolean(options.version));
-  if (selected > 1) throw new Error("Choose only one of --latest, --canary, or --version.");
+  if (selected > 1) throw new Error(adminOperationMessage("updateChooseTarget"));
   if (options.version) return { spec: options.version.trim(), channel: "pinned", explicit: true };
   if (options.canary) return { spec: "canary", channel: "canary", explicit: true };
   if (options.latest) return { spec: "latest", channel: "latest", explicit: true };
@@ -127,10 +128,10 @@ export function resolveUpdateRequest(manifest: InstallManifest | null, options: 
 
 export function rollbackManagedInstall(paths = resolveInstallStorePaths()): InstallManifest {
   const manifest = readInstallManifest(paths);
-  if (!manifest) throw new Error("No managed install was found to roll back.");
+  if (!manifest) throw new Error(adminOperationMessage("updateNoInstall"));
   const target = manifest.previous[0];
-  if (!target) throw new Error("No previous managed payload is available for rollback.");
-  if (!fs.existsSync(target.payloadPath)) throw new Error(`Previous payload is missing: ${target.payloadPath}`);
+  if (!target) throw new Error(adminOperationMessage("updateNoPrevious"));
+  if (!fs.existsSync(target.payloadPath)) throw new Error(adminOperationMessage("updatePreviousMissing", { path: target.payloadPath }));
   const current: InstallRecord = { source: manifest.source, version: manifest.version, channel: manifest.channel, payloadPath: manifest.payloadPath, repo: manifest.repo, ref: manifest.ref, sha: manifest.sha, installedAt: manifest.installedAt };
   const next: InstallManifest = { schemaVersion: manifest.schemaVersion, ...target, previous: [current, ...manifest.previous.slice(1)].slice(0, 2) };
   const oldTarget = fs.readlinkSync(paths.currentPath);
@@ -157,11 +158,11 @@ async function rollbackAfterServiceValidationFailure(
     await restartActiveService(rolledBack.version);
   } catch (restartError) {
     throw new Error(
-      `${payloadLabel} failed service validation and was rolled back to ${rolledBack.version}, but the rolled-back service also failed to restart.`,
+      adminOperationMessage("updateServiceRollbackBothFailed", { payload: payloadLabel, version: rolledBack.version }),
       { cause: new AggregateError([validationError, restartError]) },
     );
   }
-  throw new Error(`${payloadLabel} failed service validation and was rolled back to ${rolledBack.version}.`, { cause: validationError });
+  throw new Error(adminOperationMessage("updateServiceRollbackDone", { payload: payloadLabel, version: rolledBack.version }), { cause: validationError });
 }
 
 export async function updateCommand(options: UpdateOptions, overrides: Partial<Dependencies> = {}): Promise<void> {
@@ -171,26 +172,26 @@ export async function updateCommand(options: UpdateOptions, overrides: Partial<D
   const mode = detectInstallMode(executablePath, paths);
   const manifest = readInstallManifest(paths);
   if (options.rollback) {
-    if (mode !== "managed") throw new Error("--rollback is only available for managed installs.");
-    if (options.dryRun) { emit(options, { mode, action: "rollback", dryRun: true, target: manifest?.previous[0]?.version ?? null }, `Would roll back to ${manifest?.previous[0]?.version ?? "the previous payload"}.`); return; }
+    if (mode !== "managed") throw new Error(adminOperationMessage("updateRollbackManagedOnly"));
+    if (options.dryRun) { emit(options, { mode, action: "rollback", dryRun: true, target: manifest?.previous[0]?.version ?? null }, adminOperationMessage("updateRollbackWould", { version: manifest?.previous[0]?.version ?? adminOperationMessage("updatePreviousPayloadLabel") })); return; }
     const next = await withInstallStoreLock(async () => rollbackManagedInstall(paths), paths);
     const restarted = await (overrides.restartActiveService ?? restartActiveManagedService)(next.version);
-    emit(options, { mode, action: "rollback", version: next.version, restarted }, pc.green(`Rolled back to paperclipai ${next.version}${restarted ? " and restarted the active service" : ""}. Database migrations are not reversed; restore the pre-update backup if needed.`));
+    emit(options, { mode, action: "rollback", version: next.version, restarted }, pc.green(adminOperationMessage(restarted ? "updateRollbackWithService" : "updateRollbackNoService", { version: next.version })));
     return;
   }
-  if (mode === "npx") { emit(options, { mode, action: "install" }, "This is an ephemeral npx install. Run `paperclipai install`, then use `paperclipai update` from the managed shim."); return; }
-  if (mode === "source" || mode === "unknown") { emit(options, { mode, action: "manual" }, "This appears to be a source checkout. Update it with `git pull` followed by `pnpm install`; Paperclip will not mutate the repository."); return; }
+  if (mode === "npx") { emit(options, { mode, action: "install" }, adminOperationMessage("updateNpxGuidance")); return; }
+  if (mode === "source" || mode === "unknown") { emit(options, { mode, action: "manual" }, adminOperationMessage("updateSourceGuidance")); return; }
   if (!options.check && !options.dryRun) assertSupportedNodeVersion();
   const request = resolveUpdateRequest(mode === "managed" ? manifest : null, options);
   if (mode === "managed" && manifest?.source === "git") {
-    if (!manifest.repo || !manifest.ref || !manifest.sha) throw new Error("Managed git install metadata is incomplete.");
-    if (/^[0-9a-f]{7,40}$/i.test(manifest.ref)) { emit(options, { mode, source: "git", pinned: true, sha: manifest.sha }, `Git install is pinned at ${manifest.sha.slice(0, 12)}.`); return; }
+    if (!manifest.repo || !manifest.ref || !manifest.sha) throw new Error(adminOperationMessage("updateSourceMetadataMissing"));
+    if (/^[0-9a-f]{7,40}$/i.test(manifest.ref)) { emit(options, { mode, source: "git", pinned: true, sha: manifest.sha }, adminOperationMessage("updateGitPinned", { sha: manifest.sha.slice(0, 12) })); return; }
     const targetSha = await resolveGitHubRef(manifest.repo, manifest.ref, runCommand);
-    if (targetSha === manifest.sha) { emit(options, { mode, source: "git", changed: false, sha: targetSha, ref: manifest.ref }, `${manifest.repo}@${manifest.ref} is already at ${targetSha.slice(0, 12)}.`); return; }
-    if (options.check || options.dryRun) { emit(options, { mode, source: "git", changed: true, currentSha: manifest.sha, targetSha, ref: manifest.ref, dryRun: Boolean(options.dryRun) }, `Git update available: ${manifest.sha.slice(0, 12)} → ${targetSha.slice(0, 12)}.`); if (options.check) process.exitCode = 10; return; }
+    if (targetSha === manifest.sha) { emit(options, { mode, source: "git", changed: false, sha: targetSha, ref: manifest.ref }, adminOperationMessage("updateGitCurrent", { repo: manifest.repo, ref: manifest.ref, sha: targetSha.slice(0, 12) })); return; }
+    if (options.check || options.dryRun) { emit(options, { mode, source: "git", changed: true, currentSha: manifest.sha, targetSha, ref: manifest.ref, dryRun: Boolean(options.dryRun) }, adminOperationMessage("updateGitAvailable", { current: manifest.sha.slice(0, 12), target: targetSha.slice(0, 12) })); if (options.check) process.exitCode = 10; return; }
     if (options.yes !== true) {
-      const confirmed = await (overrides.confirm ?? defaultConfirm)(`Update from ${manifest.repo}@${manifest.ref} and execute build scripts from commit ${targetSha.slice(0, 12)}?`);
-      if (!confirmed) throw new Error("Git update cancelled. Re-run with --yes to confirm executing build scripts from the updated commit.");
+      const confirmed = await (overrides.confirm ?? defaultConfirm)(adminOperationMessage("updateGitQuestion", { repo: manifest.repo, ref: manifest.ref, sha: targetSha.slice(0, 12) }));
+      if (!confirmed) throw new Error(adminOperationMessage("updateGitCancelled"));
     }
     if (options.backup !== false) await runPreUpdateBackup(options, overrides.backup ?? (() => dbBackupCommand({})), overrides.hasInstanceData);
     const installed = await withInstallStoreLock(async () => {
@@ -210,19 +211,19 @@ export async function updateCommand(options: UpdateOptions, overrides: Partial<D
         paths,
         overrides.restartActiveService ?? restartActiveManagedService,
         error,
-        "Updated git payload",
+        adminOperationMessage("updateGitPayloadLabel"),
       );
     }
-    emit(options, { mode, source: "git", changed: true, currentSha: manifest.sha, targetSha, reused: installed.reused, restarted }, pc.yellow(`Updated unreleased git payload ${manifest.sha.slice(0, 12)} → ${targetSha.slice(0, 12)} from ${manifest.repo}@${manifest.ref}${restarted ? " and restarted the active service" : ""}.`));
+    emit(options, { mode, source: "git", changed: true, currentSha: manifest.sha, targetSha, reused: installed.reused, restarted }, pc.yellow(adminOperationMessage("updateGitDone", { current: manifest.sha.slice(0, 12), target: targetSha.slice(0, 12), repo: manifest.repo, ref: manifest.ref, restart: restarted ? adminOperationMessage("updateServiceRestarted") : "" })));
     return;
   }
   const targetVersion = await resolvePublishedVersion(request.spec, runCommand);
   const currentVersion = manifest?.version ?? (mode === "global-npm" ? packageVersion : undefined);
   const comparison = currentVersion ? compareVersions(targetVersion, currentVersion) : 1;
-  if (options.check) { emit(options, { mode, currentVersion: currentVersion ?? null, targetVersion, updateAvailable: comparison > 0, downgrade: comparison < 0, channel: request.channel }, comparison > 0 ? `Update available: ${targetVersion}` : comparison < 0 ? `Target ${targetVersion} is older than ${currentVersion}.` : `paperclipai ${targetVersion} is current.`); if (comparison > 0) process.exitCode = 10; return; }
+  if (options.check) { emit(options, { mode, currentVersion: currentVersion ?? null, targetVersion, updateAvailable: comparison > 0, downgrade: comparison < 0, channel: request.channel }, comparison > 0 ? adminOperationMessage("updateAvailable", { version: targetVersion }) : comparison < 0 ? adminOperationMessage("updateTargetOlder", { target: targetVersion, current: currentVersion ?? "unknown" }) : adminOperationMessage("updateAlreadyCurrent", { version: targetVersion })); if (comparison > 0) process.exitCode = 10; return; }
   if (mode === "global-npm") {
-    if (comparison < 0 && options.yes !== true) { const confirmed = await (overrides.confirm ?? defaultConfirm)(`Downgrade paperclipai from ${currentVersion} to ${targetVersion}?`); if (!confirmed) throw new Error("Downgrade cancelled. Re-run with --yes to confirm explicitly."); }
-    const args = ["install", "-g", `paperclipai@${targetVersion}`, `--registry=${PUBLIC_NPM_REGISTRY}`, `--@paperclipai:registry=${PUBLIC_NPM_REGISTRY}`]; console.log(`Running: npm ${args.join(" ")}`);
+    if (comparison < 0 && options.yes !== true) { const confirmed = await (overrides.confirm ?? defaultConfirm)(adminOperationMessage("updateDowngradeQuestion", { current: currentVersion ?? "unknown", target: targetVersion })); if (!confirmed) throw new Error(adminOperationMessage("updateDowngradeCancelled")); }
+    const args = ["install", "-g", `paperclipai@${targetVersion}`, `--registry=${PUBLIC_NPM_REGISTRY}`, `--@paperclipai:registry=${PUBLIC_NPM_REGISTRY}`]; console.log(adminOperationMessage("updateRunningNpm", { args: args.join(" ") }));
     if (!options.dryRun) {
       const npmConfigDir = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-npm-"));
       const npmUserConfigPath = path.join(npmConfigDir, "npmrc");
@@ -242,12 +243,12 @@ export async function updateCommand(options: UpdateOptions, overrides: Partial<D
         fs.rmSync(npmConfigDir, { recursive: true, force: true });
       }
     }
-    emit(options, { mode, action: "update", targetVersion, dryRun: Boolean(options.dryRun), command: ["npm", ...args] }, options.dryRun ? "Dry run complete." : pc.green(`Updated global npm install to ${targetVersion}.`)); return;
+    emit(options, { mode, action: "update", targetVersion, dryRun: Boolean(options.dryRun), command: ["npm", ...args] }, options.dryRun ? adminOperationMessage("updateDryRunComplete") : pc.green(adminOperationMessage("updateGlobalDone", { version: targetVersion }))); return;
   }
-  if (!manifest) throw new Error("Managed install metadata is missing.");
-  if (comparison === 0) { emit(options, { mode, currentVersion, targetVersion, changed: false }, `paperclipai ${targetVersion} is already active.`); return; }
-  if (comparison < 0 && options.yes !== true) { const confirmed = await (overrides.confirm ?? defaultConfirm)(`Downgrade paperclipai from ${currentVersion} to ${targetVersion}?`); if (!confirmed) throw new Error("Downgrade cancelled. Re-run with --yes to confirm explicitly."); }
-  if (options.dryRun) { emit(options, { mode, currentVersion, targetVersion, action: comparison < 0 ? "downgrade" : "update", backup: options.backup !== false, dryRun: true }, `Would ${comparison < 0 ? "downgrade" : "update"} paperclipai ${currentVersion} → ${targetVersion}${options.backup === false ? " without a backup" : " after a database backup"}.`); return; }
+  if (!manifest) throw new Error(adminOperationMessage("updateManagedMetadataMissing"));
+  if (comparison === 0) { emit(options, { mode, currentVersion, targetVersion, changed: false }, adminOperationMessage("updateAlreadyActive", { version: targetVersion })); return; }
+  if (comparison < 0 && options.yes !== true) { const confirmed = await (overrides.confirm ?? defaultConfirm)(adminOperationMessage("updateDowngradeQuestion", { current: currentVersion ?? "unknown", target: targetVersion })); if (!confirmed) throw new Error(adminOperationMessage("updateDowngradeCancelled")); }
+  if (options.dryRun) { const backup = options.backup === false ? adminOperationMessage("updateWithoutBackup") : adminOperationMessage("updateAfterBackup"); emit(options, { mode, currentVersion, targetVersion, action: comparison < 0 ? "downgrade" : "update", backup: options.backup !== false, dryRun: true }, adminOperationMessage(comparison < 0 ? "updateWouldDowngrade" : "updateWouldUpdate", { current: currentVersion ?? "unknown", target: targetVersion, backup })); return; }
   if (options.backup !== false) await runPreUpdateBackup(options, overrides.backup ?? (() => dbBackupCommand({})), overrides.hasInstanceData);
   const installed = await withInstallStoreLock(async () => {
     assertManagedShimWritable(paths);
@@ -266,8 +267,8 @@ export async function updateCommand(options: UpdateOptions, overrides: Partial<D
       paths,
       overrides.restartActiveService ?? restartActiveManagedService,
       error,
-      "Updated payload",
+      adminOperationMessage("updatePayloadLabel"),
     );
   }
-  emit(options, { mode, currentVersion, targetVersion, changed: true, reused: installed.reused, restarted }, pc.green(`Updated paperclipai ${currentVersion} → ${targetVersion}${restarted ? " and restarted the active service" : ""}. Run \`paperclipai update --rollback\` for an instant payload rollback.`));
+  emit(options, { mode, currentVersion, targetVersion, changed: true, reused: installed.reused, restarted }, pc.green(adminOperationMessage("updateDone", { current: currentVersion ?? "unknown", target: targetVersion, restart: restarted ? adminOperationMessage("updateServiceRestarted") : "" })));
 }

@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Layout } from "./Layout";
+import { i18n } from "../i18n";
 
 const mockHealthApi = vi.hoisted(() => ({
   get: vi.fn(),
@@ -298,7 +299,8 @@ async function flushReact() {
 describe("Layout", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     currentPathname = "/PAP/dashboard";
@@ -368,6 +370,28 @@ describe("Layout", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("localizes the shared layout navigation affordances in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockSidebarState.isMobile = true;
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <Layout />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    expect(container.querySelector('a[href="#main-content"]')?.textContent?.trim())
+      .toBe("Ir para o conteúdo principal");
+    expect(container.querySelector('button[aria-label="Fechar barra lateral"]')).not.toBeNull();
+
+    await act(async () => root.unmount());
   });
 
   it("scopes the Streamlined task-detail surface while preserving balanced horizontal gutters", async () => {

@@ -311,6 +311,71 @@ describeEmbeddedPostgres("question response delivery", () => {
     expect(second).toMatchObject({ mode: "wake_fallback", duplicate: true });
   });
 
+  it("propagates the persisted same-company source run into the answer wake", async () => {
+    const seeded = await seed();
+    const [persistedInteraction] = await db
+      .select()
+      .from(issueThreadInteractions)
+      .where(eq(issueThreadInteractions.id, seeded.interaction.id));
+    const [persistedSourceRun] = await db
+      .select()
+      .from(heartbeatRuns)
+      .where(eq(heartbeatRuns.id, seeded.sourceRunId));
+
+    expect(persistedInteraction).toMatchObject({
+      companyId: seeded.companyId,
+      createdByAgentId: seeded.agentId,
+      sourceRunId: seeded.sourceRunId,
+    });
+    expect(persistedSourceRun).toMatchObject({
+      companyId: seeded.companyId,
+      agentId: seeded.agentId,
+    });
+
+    const continuationRunId = randomUUID();
+    const wakeup = vi.fn().mockImplementation(async () => {
+      const [run] = await db
+        .insert(heartbeatRuns)
+        .values({
+          id: continuationRunId,
+          companyId: seeded.companyId,
+          agentId: seeded.agentId,
+          invocationSource: "automation",
+          status: "queued",
+          runtimeMode: "native",
+          driverKind: "codex",
+          contextSnapshot: {
+            issueId: seeded.issueId,
+            interactionId: seeded.interaction.id,
+            sourceRunId: seeded.sourceRunId,
+            source: "issue.interaction.respond",
+          },
+        })
+        .returning();
+      if (!run) throw new Error("Expected queued continuation run");
+      return run;
+    });
+    const outcome = await questionResponseDeliveryService(db, {
+      heartbeat: { wakeup } as never,
+    }).deliver(seeded.interaction.id);
+
+    expect(wakeup).toHaveBeenCalledWith(
+      seeded.agentId,
+      expect.objectContaining({
+        communicationOriginRunId: seeded.sourceRunId,
+        payload: expect.objectContaining({ sourceRunId: seeded.sourceRunId }),
+        contextSnapshot: expect.objectContaining({
+          sourceRunId: seeded.sourceRunId,
+        }),
+      }),
+    );
+    expect(outcome).toMatchObject({
+      status: "fallback_queued",
+      mode: "wake_fallback",
+      targetRunId: continuationRunId,
+    });
+  });
+
   it.each(["native", "legacy"] as const)(
     "never mixes an external-chat question response into another live chat run in %s mode",
     async (runtimeMode) => {

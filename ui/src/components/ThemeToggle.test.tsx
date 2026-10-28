@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeToggle } from "./ThemeToggle";
+import { i18n } from "../i18n";
 
 const mockToggleTheme = vi.hoisted(() => vi.fn());
 const mockTheme = vi.hoisted(() => ({ value: "dark" as "dark" | "light" }));
@@ -27,7 +28,8 @@ async function flushReact() {
 describe("ThemeToggle", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockTheme.value = "dark";
@@ -55,6 +57,31 @@ describe("ThemeToggle", () => {
       button?.click();
     });
     expect(mockToggleTheme).toHaveBeenCalledTimes(1);
+
+    await act(async () => root.unmount());
+  });
+
+  it("localizes the accessible theme action in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    await act(async () => root.render(<ThemeToggle variant="menu-action" />));
+    await flushReact();
+
+    const button = container.querySelector("button");
+    expect(button?.getAttribute("aria-label")).toBe("Mudar para o tema claro");
+    expect(container.textContent).toContain("Alternar a aparência do aplicativo.");
+
+    await act(async () => root.unmount());
+  });
+
+  it("localizes the dark-theme action in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockTheme.value = "light";
+    const root = createRoot(container);
+    await act(async () => root.render(<ThemeToggle />));
+    await flushReact();
+
+    expect(container.querySelector("button")?.getAttribute("aria-label")).toBe("Mudar para o tema escuro");
 
     await act(async () => root.unmount());
   });

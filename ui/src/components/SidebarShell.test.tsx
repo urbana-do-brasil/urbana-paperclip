@@ -4,6 +4,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SidebarShell, SIDEBAR_RAIL_WIDTH } from "./SidebarShell";
+import { SidebarShell as ProductionSidebarShell } from "./SidebarShell.production";
+import { i18n } from "../i18n";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -18,7 +20,8 @@ describe("SidebarShell", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     window.localStorage.clear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -46,6 +49,32 @@ describe("SidebarShell", () => {
   function handle() {
     return container.querySelector('[role="separator"]') as HTMLDivElement | null;
   }
+
+  it("localizes the resize handle label in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    act(() => {
+      root.render(
+        <SidebarShell open resizable storageKey="test.sidebar.width">
+          <div>Barra lateral</div>
+        </SidebarShell>,
+      );
+    });
+
+    expect(handle()?.getAttribute("aria-label")).toBe("Redimensionar barra lateral");
+  });
+
+  it("localizes the production resize handle label in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    act(() => {
+      root.render(
+        <ProductionSidebarShell open resizable storageKey="test.sidebar.width">
+          <div>Barra lateral</div>
+        </ProductionSidebarShell>,
+      );
+    });
+
+    expect(handle()?.getAttribute("aria-label")).toBe("Redimensionar barra lateral");
+  });
 
   it("uses a persisted width when expanded", () => {
     window.localStorage.setItem("test.sidebar.width", "320");

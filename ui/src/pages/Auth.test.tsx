@@ -243,7 +243,7 @@ describe("AuthPage", () => {
       }
     });
     signUpEmailMock.mockRejectedValueOnce(new Error("Provider: account unavailable <raw>"));
-    await act(() => container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+    await act(() => { container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
     await flushReact(); await flushReact();
     expect(signUpEmailMock).toHaveBeenCalledWith({ name: "Ana <Silva>", email: "ana@example.test", password: "draft-password" });
     const alert = container.querySelector('[role="alert"]')!;

@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CommandPalette } from "./CommandPalette";
 import { queryKeys } from "../lib/queryKeys";
+import { i18n } from "../i18n";
 
 function act(callback: () => void | Promise<void>) {
   let result: void | Promise<void> | undefined;
@@ -103,19 +104,24 @@ vi.mock("./Identity", () => ({
 vi.mock("@/components/ui/command", () => ({
   CommandDialog: ({ open, children }: { open: boolean; children: ReactNode }) => (open ? <div>{children}</div> : null),
   CommandEmpty: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  CommandGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  CommandGroup: ({ children, heading }: { children: ReactNode; heading?: string }) => (
+    <div>{heading ? <h2>{heading}</h2> : null}{children}</div>
+  ),
   CommandInput: ({
     value,
+    placeholder,
     onValueChange,
     onKeyDown,
   }: {
     value: string;
+    placeholder?: string;
     onValueChange: (value: string) => void;
     onKeyDown?: KeyboardEventHandler<HTMLInputElement>;
   }) => (
     <div>
       <input
         aria-label="Command search"
+        placeholder={placeholder}
         value={value}
         onChange={(event) => onValueChange(event.currentTarget.value)}
         onKeyDown={onKeyDown}
@@ -192,7 +198,8 @@ function renderWithQueryClient(
 describe("CommandPalette", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     dialogState.openNewIssue.mockReset();
@@ -261,6 +268,26 @@ describe("CommandPalette", () => {
       expect(container.textContent).toContain("Create new task");
     });
     expect(container.textContent).not.toContain("Open file in this issue");
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("localizes the search palette and its page actions in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const { root } = renderWithQueryClient(<CommandPalette />, container);
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }));
+    });
+
+    await waitForAssertion(() => {
+      expect(container.querySelector('input[placeholder="Buscar tarefas, agentes e projetos..."]')).not.toBeNull();
+      expect(container.textContent).toContain("Criar nova tarefa");
+      expect(container.textContent).toContain("Páginas");
+      expect(container.textContent).toContain("Tarefas");
+    });
 
     act(() => {
       root.unmount();

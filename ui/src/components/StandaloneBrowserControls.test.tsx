@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ToastProvider } from "../context/ToastContext";
 import { StandaloneBrowserControls } from "./StandaloneBrowserControls";
+import { i18n } from "../i18n";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -75,7 +76,8 @@ describe("StandaloneBrowserControls", () => {
   let container: HTMLDivElement;
   const originalMatchMedia = window.matchMedia;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     Object.defineProperty(navigator, "standalone", { configurable: true, value: true });
@@ -162,6 +164,30 @@ describe("StandaloneBrowserControls", () => {
     await flushReact();
 
     expect(container.querySelector('[aria-label="Refresh"]')).not.toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("localizes accessible mobile browser controls in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <TooltipProvider>
+          <ToastProvider>
+            <StandaloneBrowserControls mobile />
+          </ToastProvider>
+        </TooltipProvider>,
+      );
+    });
+    await flushReact();
+
+    expect(container.querySelector('[aria-label="Atualizar"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Compartilhar"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Abrir no navegador"]')).not.toBeNull();
 
     await act(async () => {
       root.unmount();

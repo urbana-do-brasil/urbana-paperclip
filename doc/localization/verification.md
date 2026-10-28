@@ -3,7 +3,7 @@
 Change: `localize-paperclip-pt-br`.
 Branch: `codex/localize-paperclip-pt-br`.
 Base: `a09d8b56e2ebcc22ea12082e8f8758b1938e1436`.
-Progresso OpenSpec: **6/33**; grupos 1 e 2 implementados.
+Progresso OpenSpec: **23/47**; grupos 1 e 2, jornadas 3.1–3.3, subetapa 3.4a e tarefa 4.2 verificados.
 
 ## Entrega verificada
 
@@ -163,19 +163,146 @@ Evidências adicionais:
   criação de interação HTTP1/1; retry de chat focado1/1. Essas execuções foram
   incrementais; não representam uma regressão global limpa do estado final.
 
-Pendências exatas de6.1:
+### Retomada — validação da tarefa 6.1
 
-1. `server/src/services/question-response-delivery.ts` agora passa
-   `interaction.sourceRunId` persistido; falta teste específico desse caller.
-2. `server/src/services/heartbeat/queue.ts` valida binding/WeakSet/escopo do
-   `durableChatRequest` antes de usar `failedRunRetry.failedRunId` para locale;
-   o teste `durable-chat-wakeup.test.ts -t 'preserves exact retry provenance'`
-   passou, mas é necessária regressão de autorização/idempotência/empresa.
-3. Reexecutar o typecheck completo e as suites afetadas após essas correções,
-   usando estado descartável e coordenando memória. Os arquivos alterados
-   depois do typecheck incluem routes/issues.ts, issue-assignment-wakeup.ts,
-   issue-thread-interactions.ts, question-response-delivery.ts e queue.ts.
+A tarefa 6.1 foi concluída depois de validar as alterações finais de propagação
+de origem e locale. Execuções com PostgreSQL embutido foram iniciadas como
+usuário sem privilégios, pois esse banco recusa execução como `root`.
 
-Próxima verificação UI: typecheck/build/gates e browser sobre o código atual,
-após correção do gate e consolidação dos66 tópicos. Nenhum runtime de IA foi
-qualificado e a tradução integral do produto continua pendente.
+- `server/src/__tests__/question-response-delivery.test.ts`: **36/36**. A nova
+  regressão verifica o `sourceRunId` persistido da interação, o escopo da mesma
+  empresa/agente e a propagação do ID exato para a execução de resposta.
+- `server/src/__tests__/durable-chat-wakeup.test.ts`: **46/46**. A regressão de
+  mensagens adiadas verifica recibos independentes PT-BR/en, associação de
+  comentário/locale e replay idempotente; também cobre autorização do retry,
+  identidade do ator e binding do recibo.
+- `server/src/services/heartbeat/queue.test.ts`: **14/14**, incluindo herança
+  de origem e locale na retomada e delegação.
+- `GOMEMLIMIT=3500MiB GOGC=25 GOMAXPROCS=1
+  NODE_OPTIONS=--max-old-space-size=4096 CARGO_BUILD_JOBS=1 pnpm --filter
+  @paperclipai/server typecheck`: aprovado. Foi necessário habilitar 4 GiB de
+  swap temporário; o processo o desativou e removeu ao terminar.
+
+O teste antigo de recibo esperava que mensagens humanas diferentes fossem
+mescladas. Foi atualizado para o contrato vigente: cada mensagem mantém seu
+próprio recibo e idioma, sem alterar o replay. Nenhum dado de produção ou
+credencial de provedor foi usado.
+
+Nenhum runtime de IA foi qualificado e a tradução integral do produto continua
+pendente. O build/browser final da ajuda e as verificações dos lotes web/CLI
+seguem pendentes e serão registrados depois da consolidação desses lotes.
+
+### Continuação — onboarding web (3.2c)
+
+- O wizard e suas variantes, lançamento por rota, etapas de credencial/modelo,
+  login local e status de conexão do adapter usam os catálogos PT-BR/inglês.
+  O título da tarefa inicial é localizado somente ao criar uma nova tarefa;
+  retomar um fluxo existente preserva a tarefa e o título já persistidos.
+- Seis arquivos focados passaram: **166/166** (`App.onboarding-launcher`,
+  `AdapterLoginChrome`, `OnboardingWizard.step`, `OnboardingWizard`,
+  `useLocalAiLogin` e `AgentProviderConnection`).
+- `pnpm --filter @paperclipai/ui typecheck`: aprovado. Foram corrigidos dois
+  callbacks de teste que retornavam o booleano de `dispatchEvent`, incompatível
+  com o contrato de `act`; o comportamento dos formulários não mudou.
+- Validação estática encontrou 107 referências `onboarding.*`, todas presentes
+  nos dois catálogos; parse dos catálogos e `git diff --check` passaram.
+
+O grupo 3.2 está concluído em seus estados e variantes verificados. As demais
+jornadas web continuam pendentes. Build final da UI, token gates e browser das
+jornadas combinadas ficam para a consolidação global.
+
+### Continuação — distribuição da ajuda pública (5.1)
+
+- `node scripts/check-localized-help.mjs`: aprovado para **66 tópicos** com
+  fontes EN/PT-BR. `node --test scripts/__tests__/check-localized-help.test.mjs`:
+  **3/3**, incluindo fontes existentes fora dos globs e o guia interno excluído.
+- `pnpm --filter @paperclipai/ui build`: aprovado. Uma varredura do bundle
+  gerado encontrou **132/132** caminhos de fonte da lista de tópicos. O build
+  ainda emite avisos do otimizador CSS para `::highlight(...)` e de tamanho de
+  alguns chunks; não impediram a compilação.
+- Browser: `pnpm exec playwright test --config
+  tests/localization-browser/playwright.config.ts
+  tests/localization-browser/help.spec.ts`: **1/1**. A jornada confirma links
+  PT-BR/en, anchors, layout móvel/tema escuro, usuário sem sessão e nenhuma
+  chamada a `/api/`.
+- `ui/src/help/content.test.ts` e `ui/src/help/HelpPage.test.tsx`: **8/8**,
+  incluindo HTML/script não executável, allowlist de links e fallback
+  explicitamente identificado.
+
+A tarefa 5.1 está concluída. A revisão semântica humana e a validação
+operacional dos conteúdos traduzidos continuam pendentes nas tarefas 5.2/5.3;
+presença e empacotamento não substituem essa revisão.
+
+### Continuação — navegação e controles compartilhados (3.3)
+
+- As variantes padrão e de produção da navegação, menus de organização/conta,
+  shells, breadcrumbs e layout foram migradas. A cobertura compartilhada inclui
+  paleta de comandos, atalhos de teclado, informações do servidor, Worktree,
+  aviso de reinício, controles de navegador standalone e tema.
+- A seção de tarefas recentes também foi traduzida, incluindo nomes acessíveis
+  dinâmicos, ações e diálogo de renomeação. Conteúdo de tarefa/organização,
+  caminhos, nomes de arquivos e mensagens de erro retornadas pelo servidor
+  permanecem intactos.
+- Testes focados de **17 arquivos passaram: 229/229**. Incluem teclado/atalhos,
+  nomes acessíveis em português e inglês, navegação móvel nos dois idiomas,
+  ações do tema claro/escuro nos dois idiomas, diálogos compartilhados e
+  validação de paridade dos catálogos.
+- `pnpm --filter @paperclipai/ui typecheck`: aprovado. `git diff --check`:
+  aprovado. O aviso do Vitest sobre `__dirname` em `configLoader: 'native'` é
+  informativo e não afetou a execução.
+- Destinos, callbacks de navegação e ações existentes foram mantidos. Os
+  diálogos de criação de tarefas/projetos/metas/agentes e navegações específicas
+  de tarefas, projetos, agentes, administração, apps e superfícies experimentais
+  seguem classificados nas tarefas 3.4–3.11 em `coverage.json`.
+
+O teste de paridade encontrou uma forma plural preexistente ausente em PT-BR
+(`savedKeyCount_many`); ela foi adicionada ao catálogo durante esta etapa. A
+verificação cobre os componentes compartilhados, não uma regressão de browser
+da aplicação completa. Build e browser integrados continuam reservados à
+consolidação final das jornadas.
+
+### Continuação — seletor de visualizações Tasks (3.4a)
+
+- A moldura Tasks usa o idioma ativo nos breadcrumbs, no botão de criar tarefa,
+  no rótulo enviado ao Inbox integrado e no estado sem organização/empresa.
+- O seletor de visualizações traduz grupos, nomes, descrições e seu nome
+  acessível em inglês/PT-BR. A seleção continua usando as mesmas chaves de URL;
+  não alterei filtros, preferências locais, destinos nem a lógica que escolhe
+  entre Inbox e coleção.
+- `TaskViewsMenu.test.tsx`, `task-views.test.ts`, `Issues.test.tsx` e
+  `locale-validation.test.ts`: **33/33 testes passaram**. O teste do menu
+  seleciona uma visualização em ambos os idiomas e confirma o mesmo callback.
+- `pnpm --filter @paperclipai/ui typecheck` e `git diff --check`: aprovados.
+
+A subetapa 3.4a foi concluída. A coleção com lista/kanban e filtros (3.4b),
+detalhe (3.4c), conversa/interações (3.4d), Inbox/filas (3.4e) e busca (3.4f)
+continuam pendentes. O grupo 3.4 permanece aberto.
+
+### Continuação — conclusão da CLI de instalação e administração (4.2)
+
+- Help e mensagens próprias do parser, instalação/atualização, serviço,
+  diagnóstico, onboarding, configuração e inspeção de variáveis de ambiente
+  agora usam PT-BR ou inglês. O instalador shell segue `PAPERCLIP_LANG` e usa
+  PT-BR por padrão; nomes de comandos, flags, variáveis e conteúdo exportado
+  permanecem estáveis.
+- A bateria focada mais recente passou em **116/116 testes**, em 10 arquivos da
+  CLI: parser, setup, diagnósticos, help, operações administrativas, instalação,
+  atualização, serviço e transcrições de onboarding/prompts em PT-BR e inglês.
+- `pnpm --filter paperclipai typecheck`: aprovado com 4 GiB de swap temporário,
+  desativado e removido automaticamente ao final. A primeira tentativa sem swap
+  foi encerrada pelo sistema com código 137; após habilitar o swap, não houve
+  erros de TypeScript.
+- `node --test scripts/__tests__/install-sh-localization.test.mjs`: **3/3**.
+  `scripts/test-install-sh-docker.sh` também passou, incluindo ShellCheck e o
+  fluxo de bootstrap em contêiner descartável. Stubs e diretórios temporários
+  foram usados; nenhuma instalação foi feita no host.
+- A auditoria dos prompts de database, LLM, logging, secrets, storage e server
+  não encontrou mensagens humanas em inglês fora de nomes próprios de
+  provedores/produtos e exemplos técnicos. O handoff do serviço no onboarding
+  também apresenta mensagens no idioma selecionado.
+- `git diff --check`: aprovado. As saídas estruturadas, códigos de saída e
+  stdout/stderr de subprocessos permanecem preservados; a validação de todos os
+  contratos de automação continua na tarefa 4.4.
+
+Com esses testes e a auditoria final, a tarefa 4.2 foi concluída. As tarefas
+4.3/4.4 seguem pendentes.

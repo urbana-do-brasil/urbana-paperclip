@@ -172,6 +172,28 @@ describe("SidebarAccountMenu", () => {
     await act(async () => root.unmount());
   });
 
+  it.each([SidebarAccountMenu, ProductionSidebarAccountMenu])("localizes account controls in PT-BR (%#)", async (AccountMenu) => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => root.render(
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider><AccountMenu deploymentMode="authenticated" open /></TooltipProvider>
+      </QueryClientProvider>,
+    ));
+    await flushReact();
+
+    expect(container.querySelector('button[aria-label="Abrir menu da conta"]')).not.toBeNull();
+    expect(document.body.textContent).toContain("Documentação");
+    expect(document.body.textContent).toContain("Sair");
+    expect(document.body.textContent).not.toContain("Sign out");
+    if (AccountMenu === SidebarAccountMenu) {
+      expect(document.body.textContent).toContain("Configurações");
+    }
+
+    await act(async () => root.unmount());
+  });
+
   describe.each([SidebarAccountMenu, ProductionSidebarAccountMenu])("staging commit (%#)", (AccountMenu) => {
     const commit = "8751e2de4626ff5e7355fe28b30509991cfff920";
 

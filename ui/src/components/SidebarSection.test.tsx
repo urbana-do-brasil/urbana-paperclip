@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarNavExpandedProvider } from "./SidebarNavItem";
 import { Plus } from "lucide-react";
+import { i18n } from "../i18n";
 
 const sidebarState = vi.hoisted(() => ({
   isMobile: false,
@@ -57,7 +58,8 @@ describe("SidebarSection", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot> | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     sidebarState.isMobile = false;
     sidebarState.collapsed = false;
     sidebarState.peeking = false;
@@ -76,6 +78,20 @@ describe("SidebarSection", () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+  });
+
+  it("localizes the collapsible section accessibility label in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const currentRoot = createRoot(container);
+    root = currentRoot;
+
+    await act(async () => currentRoot.render(
+      <SidebarSection label="Projetos" collapsible={{ open: true, onOpenChange: vi.fn() }}>
+        <a href="/projects">Projetos</a>
+      </SidebarSection>,
+    ));
+
+    expect(container.querySelector('button[aria-label="Recolher Projetos"]')).not.toBeNull();
   });
 
   it("keeps static and collapsible section labels on the same text column", async () => {

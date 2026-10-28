@@ -20,6 +20,8 @@ import {
 import { loadPaperclipEnvFile } from "../config/env.js";
 import { printPaperclipCliBanner } from "../utils/banner.js";
 import { printUpdateNotice } from "../update-notice.js";
+import { adminOperationMessage, localizeDoctorCheckName } from "../localization/admin-operations.js";
+import { localizeDoctorCheckPresentation } from "../localization/doctor-checks.js";
 
 const STATUS_ICON = {
   pass: pc.green("✓"),
@@ -56,9 +58,9 @@ export async function doctor(opts: {
     const readResult: CheckResult = {
       name: "Config file",
       status: "fail",
-      message: `Could not read config: ${err instanceof Error ? err.message : String(err)}`,
+      message: adminOperationMessage("doctorReadConfig", { detail: err instanceof Error ? err.message : String(err) }),
       canRepair: false,
-      repairHint: "Run `paperclipai configure --section database` or `paperclipai onboard`",
+      repairHint: adminOperationMessage("doctorReadConfigHint"),
     };
     results.push(readResult);
     printResult(readResult);
@@ -145,10 +147,11 @@ export async function doctor(opts: {
 }
 
 function printResult(result: CheckResult): void {
+  const presentation = localizeDoctorCheckPresentation(result);
   const icon = STATUS_ICON[result.status];
-  p.log.message(`${icon} ${pc.bold(result.name)}: ${result.message}`);
-  if (result.status !== "pass" && result.repairHint) {
-    p.log.message(`  ${pc.dim(result.repairHint)}`);
+  p.log.message(`${icon} ${pc.bold(localizeDoctorCheckName(result.name))}: ${presentation.message}`);
+  if (result.status !== "pass" && presentation.repairHint) {
+    p.log.message(`  ${pc.dim(presentation.repairHint)}`);
   }
 }
 
@@ -162,7 +165,7 @@ async function maybeRepair(
   let shouldRepair = opts.yes;
   if (!shouldRepair) {
     const answer = await p.confirm({
-      message: `Repair "${result.name}"?`,
+      message: adminOperationMessage("doctorRepairQuestion", { name: localizeDoctorCheckName(result.name) }),
       initialValue: true,
     });
     if (p.isCancel(answer)) return false;
@@ -172,10 +175,10 @@ async function maybeRepair(
   if (shouldRepair) {
     try {
       await result.repair();
-      p.log.success(`Repaired: ${result.name}`);
+      p.log.success(adminOperationMessage("doctorRepaired", { name: localizeDoctorCheckName(result.name) }));
       return true;
     } catch (err) {
-      p.log.error(`Repair failed: ${err instanceof Error ? err.message : String(err)}`);
+      p.log.error(adminOperationMessage("doctorRepairFailed", { detail: err instanceof Error ? err.message : String(err) }));
     }
   }
   return false;
@@ -204,19 +207,16 @@ function printSummary(results: CheckResult[]): { passed: number; warned: number;
   const warned = results.filter((r) => r.status === "warn").length;
   const failed = results.filter((r) => r.status === "fail").length;
 
-  const parts: string[] = [];
-  parts.push(pc.green(`${passed} passed`));
-  if (warned) parts.push(pc.yellow(`${warned} warnings`));
-  if (failed) parts.push(pc.red(`${failed} failed`));
-
-  p.note(parts.join(", "), "Summary");
+  const warnings = warned ? `, ${adminOperationMessage("doctorWarnings", { count: warned })}` : "";
+  const failures = failed ? `, ${adminOperationMessage("doctorFailures", { count: failed })}` : "";
+  p.note(adminOperationMessage("doctorCounts", { passed, warnings, failures }), adminOperationMessage("doctorSummary"));
 
   if (failed > 0) {
-    p.outro(pc.red("Some checks failed. Fix the issues above and re-run doctor."));
+    p.outro(pc.red(adminOperationMessage("doctorSomeFailed")));
   } else if (warned > 0) {
-    p.outro(pc.yellow("All critical checks passed with some warnings."));
+    p.outro(pc.yellow(adminOperationMessage("doctorWarningsOnly")));
   } else {
-    p.outro(pc.green("All checks passed!"));
+    p.outro(pc.green(adminOperationMessage("doctorAllPassed")));
   }
 
   return { passed, warned, failed };

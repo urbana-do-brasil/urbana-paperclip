@@ -2,7 +2,8 @@
 
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 
 import type React from "react";
 import {
@@ -35,6 +36,10 @@ async function act(callback: () => void | Promise<void>) {
 }
 
 let roots: Root[] = [];
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 afterEach(async () => {
   for (const root of roots) {

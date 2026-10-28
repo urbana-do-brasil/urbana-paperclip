@@ -621,15 +621,15 @@ export function OnboardingRoutePage() {
   }
 
   const title = matchedCompany
-    ? `Add another agent to ${matchedCompany.name}`
+    ? t("onboarding.route.addAgentTitle", { company: matchedCompany.name })
     : companies.length > 0
-      ? "Create another organization"
-      : "Create your first organization";
+      ? t("onboarding.route.createAnotherOrganizationTitle")
+      : t("onboarding.route.createFirstOrganizationTitle");
   const description = matchedCompany
-    ? "Run onboarding again to add an agent and a starter task for this organization."
+    ? t("onboarding.route.addAgentDescription")
     : companies.length > 0
-      ? "Run onboarding again to create another organization and seed its first agent."
-      : "Get started by creating an organization and your first agent.";
+      ? t("onboarding.route.createAnotherOrganizationDescription")
+      : t("onboarding.route.createFirstOrganizationDescription");
 
   return (
     <div className="mx-auto max-w-xl py-10">
@@ -667,7 +667,9 @@ export function OnboardingRoutePage() {
                     : openOnboarding()
               }
             >
-              {matchedCompany ? "Add Agent" : "Start Onboarding"}
+              {matchedCompany
+                ? t("onboarding.route.addAgent")
+                : t("onboarding.route.start")}
             </Button>
           )}
         </div>

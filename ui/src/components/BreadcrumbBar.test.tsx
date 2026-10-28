@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BreadcrumbProvider, useBreadcrumbs } from "../context/BreadcrumbContext";
 import { BreadcrumbBar } from "./BreadcrumbBar";
+import { i18n } from "../i18n";
 
 const viewport = vi.hoisted(() => ({ isMobile: false }));
 
@@ -62,7 +63,7 @@ function TaskBreadcrumbs({
 
   useEffect(() => {
     setBreadcrumbs([
-      { label: "Tasks", href: sourceHref },
+      { label: i18n.t("navigation.tasks"), href: sourceHref },
       {
         label: "Hire your first engineer and create a hiring plan",
         identifier,
@@ -101,7 +102,8 @@ describe("BreadcrumbBar", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     viewport.isMobile = false;
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -271,5 +273,30 @@ describe("BreadcrumbBar", () => {
     expect(rightControl?.className).toContain("size-9");
     expect(rightControl?.className).not.toContain("rounded-none");
     expect(rightControl?.className).not.toContain("h-full");
+  });
+
+  it("localizes mobile sidebar and task properties controls in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    viewport.isMobile = true;
+    await act(async () => {
+      root.render(
+        <BreadcrumbProvider>
+          <TaskBreadcrumbs taskDetailLayout identifier="TES-1" />
+        </BreadcrumbProvider>,
+      );
+    });
+
+    expect(container.querySelector('button[aria-label="Abrir barra lateral"]')).not.toBeNull();
+    expect(container.textContent).toContain("TES-1");
+
+    viewport.isMobile = false;
+    await act(async () => {
+      root.render(
+        <BreadcrumbProvider>
+          <TaskBreadcrumbs taskDetailLayout />
+        </BreadcrumbProvider>,
+      );
+    });
+    expect(container.querySelector('button[aria-label="Ocultar propriedades"]')).not.toBeNull();
   });
 });

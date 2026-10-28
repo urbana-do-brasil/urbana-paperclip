@@ -6,6 +6,8 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
+import { Sidebar as ProductionSidebar } from "./Sidebar.production";
+import { i18n } from "../i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const mockHeartbeatsApi = vi.hoisted(() => ({
@@ -100,6 +102,10 @@ vi.mock("./SidebarCompanyMenu", () => ({
   SidebarCompanyMenu: () => <div>Company menu</div>,
 }));
 
+vi.mock("./SidebarCompanyMenu.production", () => ({
+  SidebarCompanyMenu: () => <div>Company menu</div>,
+}));
+
 vi.mock("./SidebarAgents", () => ({
   SidebarAgents: ({ streamlined }: { streamlined?: boolean }) => (
     <div data-testid="sidebar-agents" data-streamlined={String(streamlined)}>
@@ -108,11 +114,19 @@ vi.mock("./SidebarAgents", () => ({
   ),
 }));
 
+vi.mock("./SidebarAgents.production", () => ({
+  SidebarAgents: () => <div data-testid="sidebar-agents">Active agents</div>,
+}));
+
 vi.mock("./SidebarProjects", () => ({
   SidebarProjects: () => <div data-testid="sidebar-projects">Classic projects</div>,
 }));
 
 vi.mock("./SidebarStarredProjects", () => ({
+  SidebarStarredProjects: () => <div data-testid="sidebar-starred-projects" />,
+}));
+
+vi.mock("./SidebarStarredProjects.production", () => ({
   SidebarStarredProjects: () => <div data-testid="sidebar-starred-projects" />,
 }));
 
@@ -154,7 +168,28 @@ describe("Sidebar", () => {
     return root;
   }
 
-  beforeEach(() => {
+  async function renderProductionSidebar() {
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    flushSync(() => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <ProductionSidebar />
+          </TooltipProvider>
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    return root;
+  }
+
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockHeartbeatsApi.liveRunsForCompany.mockResolvedValue([]);
@@ -202,6 +237,25 @@ describe("Sidebar", () => {
     flushSync(() => {
       root.unmount();
     });
+  });
+
+  it.each([
+    ["standard", false],
+    ["production", true],
+  ])("localizes primary navigation in PT-BR in the %s sidebar", async (_variant, production) => {
+    await i18n.changeLanguage("pt-BR");
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableStreamlinedUi: false });
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    const navText = container.querySelector("nav")?.textContent ?? "";
+
+    expect(navText).toContain("Buscar");
+    expect(navText).toContain("Painel");
+    expect(navText).toContain("Caixa de entrada");
+    expect(navText).toContain("Tarefas");
+    expect(navText).toContain("Organização");
+    expect(navText).not.toContain("Search");
+
+    flushSync(() => root.unmount());
   });
 
   it("renders plugin sidebar launchers inside the Work section", async () => {

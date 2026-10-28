@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SidebarServerInfo } from "./SidebarServerInfo";
+import { i18n } from "../i18n";
 
 const mockHealthApi = vi.hoisted(() => ({
   get: vi.fn(),
@@ -62,7 +63,8 @@ describe("SidebarServerInfo", () => {
     await flushReact();
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockHealthApi.get.mockReset();
@@ -135,6 +137,21 @@ describe("SidebarServerInfo", () => {
     expect(container.textContent).toContain("abcdef1");
     expect(container.textContent).toContain("Add server info debug view");
     expect(container.textContent).toContain("Clean checkout");
+  });
+
+  it("localizes server status in PT-BR while preserving technical values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockEnabledSettings(true);
+    mockHealthApi.get.mockResolvedValue({ status: "ok", serverInfo: { git: { available: false } } });
+
+    await render();
+
+    expect(container.textContent).toContain("Servidor");
+    expect(container.textContent).toContain("Última reinicialização");
+    expect(container.textContent).toContain("Commit em execução");
+    expect(container.textContent).toContain("Estado do checkout");
+    expect(container.textContent).toContain("Indisponível");
+    expect(container.textContent).not.toContain("Health unavailable");
   });
 
   it("polls health while the drawer is open and the dev server is active", async () => {

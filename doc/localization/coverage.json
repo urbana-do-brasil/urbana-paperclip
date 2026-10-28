@@ -7,7 +7,7 @@
     "pt-BR",
     "en"
   ],
-  "notice": "Cobertura parcial. Entrada/autenticação, preferência, metadados de erros e resolução de idioma da CLI verificados em seus lotes. Os 66 tópicos públicos têm pares de fontes; revisão humana e validação operacional pendentes. Demais jornadas e comunicação efetiva dos agentes não estão concluídas.",
+  "notice": "Cobertura parcial. Preferência de idioma, entrada/autenticação, navegação e controles compartilhados (3.3), metadados de erros, CLI 4.1/4.2 e distribuição da ajuda pública foram verificados em seus lotes. As jornadas web restantes, comandos operacionais, revisão semântica dos guias e comunicação efetiva dos agentes continuam pendentes.",
   "requiredStates": [
     "success",
     "empty",
@@ -71,10 +71,26 @@
       "label": "Autenticação, convites e onboarding",
       "sources": [
         "ui/src/pages/Auth.tsx",
+        "ui/src/pages/InviteLanding.tsx",
+        "ui/src/pages/BoardClaim.tsx",
+        "ui/src/pages/CliAuth.tsx",
+        "ui/src/pages/apps/chat/ChatIdentityConfirm.tsx",
+        "ui/src/components/CloudSignIn.tsx",
+        "ui/src/components/CloudAccessGate.tsx",
+        "ui/src/components/BootstrapPendingPage.tsx",
         "ui/src/components/OnboardingWizard.tsx",
+        "ui/src/components/OnboardingWizardVariant.tsx",
+        "ui/src/components/AdapterLoginChrome.tsx",
+        "ui/src/components/onboarding/CredentialModeLink.tsx",
+        "ui/src/components/onboarding/FooterNav.tsx",
+        "ui/src/components/onboarding/ModelSourceTiles.tsx",
+        "ui/src/components/onboarding/SavedProviderKeySelect.tsx",
+        "ui/src/components/onboarding/Stepper.tsx",
+        "ui/src/components/ai-connections/useLocalAiLogin.tsx",
+        "ui/src/components/new-agent/AgentProviderConnection.tsx",
         "ui/src/App.tsx"
       ],
-      "status": "partial",
+      "status": "journey-verified",
       "evidence": [
         "ui/src/pages/Auth.test.tsx",
         "ui/src/pages/InviteLanding.test.tsx",
@@ -82,10 +98,13 @@
         "ui/src/pages/CliAuth.test.tsx",
         "ui/src/pages/apps/chat/ChatIdentityConfirm.test.tsx",
         "ui/src/components/BootstrapPendingPage.test.tsx",
-        "ui/src/components/CloudAccessGate.test.tsx"
-      ],
-      "partialSources": [
-        "Auth, CloudSignIn, InviteLanding, BoardClaim, CliAuth, ChatIdentityConfirm, BootstrapPendingPage e CloudAccessGate localizados e verificados em testes focados. Onboarding3.2c pendente."
+        "ui/src/components/CloudAccessGate.test.tsx",
+        "ui/src/App.onboarding-launcher.test.tsx",
+        "ui/src/components/OnboardingWizard.step.test.tsx",
+        "ui/src/components/OnboardingWizard.test.tsx",
+        "ui/src/components/AdapterLoginChrome.test.tsx",
+        "ui/src/components/ai-connections/useLocalAiLogin.test.tsx",
+        "ui/src/components/new-agent/AgentProviderConnection.test.tsx"
       ],
       "limits": "OAuth/MCP e configuração autenticada de membros/acesso pertencem ao grupo3.8; não estão excluídos."
     },
@@ -95,15 +114,57 @@
       "label": "Navegação e controles compartilhados",
       "sources": [
         "ui/src/components/Sidebar.tsx",
+        "ui/src/components/Sidebar.production.tsx",
         "ui/src/components/SidebarAccountMenu.tsx",
+        "ui/src/components/SidebarAccountMenu.production.tsx",
+        "ui/src/components/SidebarCompanyMenu.tsx",
+        "ui/src/components/SidebarCompanyMenu.production.tsx",
+        "ui/src/components/SidebarNavItem.tsx",
+        "ui/src/components/SidebarNavItem.production.tsx",
+        "ui/src/components/SidebarSection.tsx",
+        "ui/src/components/SidebarShell.tsx",
+        "ui/src/components/SidebarShell.production.tsx",
         "ui/src/components/Layout.tsx",
         "ui/src/components/Layout.production.tsx",
-        "ui/src/components/SidebarAccountMenu.production.tsx"
+        "ui/src/components/BreadcrumbBar.tsx",
+        "ui/src/components/BreadcrumbBar.production.tsx",
+        "ui/src/components/CommandPalette.tsx",
+        "ui/src/components/KeyboardShortcutsCheatsheet.tsx",
+        "ui/src/components/SidebarRecentTasks.tsx",
+        "ui/src/components/MobileBottomNav.tsx",
+        "ui/src/components/ThemeToggle.tsx",
+        "ui/src/components/SidebarServerInfo.tsx",
+        "ui/src/components/WorktreeBanner.tsx",
+        "ui/src/components/DevRestartBanner.tsx",
+        "ui/src/components/StandaloneBrowserControls.tsx"
       ],
-      "status": "pending",
-      "evidence": [],
+      "status": "journey-verified",
+      "evidence": [
+        "ui/src/components/Sidebar.test.tsx",
+        "ui/src/components/SidebarAccountMenu.test.tsx",
+        "ui/src/components/SidebarCompanyMenu.test.tsx",
+        "ui/src/components/SidebarSection.test.tsx",
+        "ui/src/components/SidebarNavItem.test.tsx",
+        "ui/src/components/SidebarShell.test.tsx",
+        "ui/src/components/SidebarServerInfo.test.tsx",
+        "ui/src/components/ThemeToggle.test.tsx",
+        "ui/src/components/MobileBottomNav.test.tsx",
+        "ui/src/components/Layout.test.tsx",
+        "ui/src/components/BreadcrumbBar.test.tsx",
+        "ui/src/components/SidebarRecentTasks.test.tsx",
+        "ui/src/components/CommandPalette.test.tsx",
+        "ui/src/components/KeyboardShortcutsCheatsheet.test.tsx",
+        "ui/src/components/StandaloneBrowserControls.test.tsx",
+        "ui/src/components/DevRestartBanner.test.tsx",
+        "ui/src/i18n/locale-validation.test.ts"
+      ],
+      "limits": "Destinos e ações foram preservados. Nomes de tarefas, organizações, projetos, agentes, arquivos, commits e plugins são conteúdo dinâmico e permanecem originais. Diálogos de criação/configuração e navegações contextuais de tarefas, projetos, agentes, administração, apps e superfícies experimentais serão verificados nos grupos funcionais correspondentes.",
       "partialSources": [
-        "PaperclipLoading e alt de CompanyPatternIcon localizados durante as jornadas de entrada; navegação geral permanece pendente."
+        "ui/src/components/SidebarAgents.tsx e SidebarAgents.production.tsx, SidebarProjects.tsx, SidebarStarredProjects.tsx e SidebarStarredProjects.production.tsx: navegação de agentes e projetos nas tarefas 3.5/3.6.",
+        "SidebarAgentChats.tsx e AgentConversationsSidebar.tsx: navegação/conversas associadas a tarefas 3.4 e agentes 3.6.",
+        "ui/src/components/NewIssueDialog.tsx: tarefa 3.4; NewProjectDialog.tsx e NewGoalDialog.tsx: tarefa 3.5; NewAgentDialog.tsx: tarefa 3.6.",
+        "CompanySettingsSidebar.tsx, AppsSidebar.tsx, AppConnectionSidebar.tsx, SkillsContextualSidebar.tsx, RoutineContextualSidebar.tsx e navegações de apps/plugins: grupos 3.8–3.11.",
+        "BreadcrumbBar localiza controles do shell; rótulos de páginas e títulos de conteúdo são fornecidos pela jornada correspondente."
       ]
     },
     {
@@ -112,12 +173,23 @@
       "label": "Tarefas, conversas, Inbox e busca",
       "sources": [
         "ui/src/pages/Issues.tsx",
+        "ui/src/components/TaskViewsMenu.tsx",
+        "ui/src/lib/task-views.ts",
         "ui/src/pages/IssueDetail.tsx",
         "ui/src/pages/Inbox.tsx",
         "ui/src/pages/Search.tsx"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [
+        "ui/src/components/TaskViewsMenu.test.tsx",
+        "ui/src/lib/task-views.test.ts",
+        "ui/src/pages/Issues.test.tsx",
+        "ui/src/i18n/locale-validation.test.ts"
+      ],
+      "partialSources": [
+        "3.4a (moldura da página Tasks, breadcrumbs, estados sem organização e seletor de visualizações) verificada em PT-BR/en; 3.4b–3.4f seguem pendentes.",
+        "IssueDetail.tsx, Inbox.tsx e Search.tsx ainda aguardam suas jornadas; a coleção/lista/kanban e seus controles seguem pendentes em 3.4b."
+      ]
     },
     {
       "id": "projects",
@@ -219,11 +291,42 @@
       "label": "CLI de instalação e administração",
       "sources": [
         "cli/src/index.ts",
+        "cli/src/localization/admin-help.ts",
+        "cli/src/localization/admin-operations.ts",
+        "cli/src/localization/setup.ts",
+        "cli/src/localization/doctor-checks.ts",
+        "cli/src/localization/commander-errors.ts",
+        "cli/src/commands/install.ts",
+        "cli/src/commands/update.ts",
+        "cli/src/commands/service.ts",
+        "cli/src/commands/uninstall.ts",
+        "cli/src/commands/doctor.ts",
+        "cli/src/commands/onboard.ts",
+        "cli/src/commands/configure.ts",
+        "cli/src/commands/env.ts",
         "scripts/install.sh",
-        "cli/src/commands/"
+        "cli/src/prompts/",
+        "cli/src/onboard-service.ts"
       ],
-      "status": "pending",
-      "evidence": []
+      "status": "installation-admin-verified",
+      "evidence": [
+        "cli/src/__tests__/commander-errors.test.ts",
+        "cli/src/__tests__/setup-localization.test.ts",
+        "cli/src/__tests__/doctor-checks-localization.test.ts",
+        "cli/src/__tests__/admin-operations-localization.test.ts",
+        "cli/src/__tests__/localized-admin-help.test.ts",
+        "cli/src/__tests__/install-command.test.ts",
+        "cli/src/__tests__/update-command.test.ts",
+        "cli/src/__tests__/service-manager.test.ts",
+        "cli/src/__tests__/doctor.test.ts",
+        "cli/src/__tests__/service-health-check.test.ts",
+        "cli/src/__tests__/update-notice.test.ts",
+        "scripts/__tests__/install-sh-localization.test.mjs",
+        "scripts/test-install-sh-docker.sh",
+        "cli/src/__tests__/prompt-default-accept.test.ts",
+        "cli/src/__tests__/onboard-service.test.ts"
+      ],
+      "limits": "Help/parser, instalação shell, instalação/atualização/serviço/doctor, onboarding e configuração passaram nos testes focados PT-BR/en. 4.3/4.4 permanecem pendentes; esta evidência não qualifica todos os contratos de saída estruturada."
     },
     {
       "id": "cli-operations",
@@ -281,7 +384,7 @@
         "ui/src/components/SidebarAccountMenu.tsx",
         "ui/src/components/SidebarAccountMenu.production.tsx"
       ],
-      "status": "language-navigation-verified-packaging-in-review",
+      "status": "language-navigation-and-packaging-verified",
       "evidence": [
         "ui/src/help/content.test.ts",
         "ui/src/help/HelpPage.test.tsx",
@@ -290,7 +393,7 @@
         "tests/localization-browser/locale.spec.ts",
         "scripts/__tests__/check-localized-help.test.mjs"
       ],
-      "limits": "5.4 verificada;5.1 ainda aberta: gate não garante fonte empacotada, e build/browser finais dos66 tópicos pendentes. Revisão read-only não identificou outra falha concreta no renderer, sem qualificar pacote final."
+      "limits": "5.1 e 5.4 verificadas, incluindo 132 arquivos-fonte distribuídos, navegação pública PT-BR/en e renderização segura. Revisão semântica humana e validação operacional permanecem pendentes em 5.2/5.3."
     },
     {
       "id": "agent-language",
@@ -302,13 +405,15 @@
         "packages/adapter-utils/src/server-utils.ts",
         "packages/adapters/"
       ],
-      "status": "snapshot-in-review",
+      "status": "interaction-snapshot-verified",
       "evidence": [
         "server/src/__tests__/communication-locale.integration.test.ts",
         "server/src/__tests__/communication-locale-dot.test.ts",
+        "server/src/__tests__/question-response-delivery.test.ts",
+        "server/src/__tests__/durable-chat-wakeup.test.ts",
         "server/src/services/heartbeat/queue.test.ts"
       ],
-      "limits": "6.1 parcial. Testes focados cobrem snapshots, deferred, retry, delegação, recuperação e Dot. Correção question-response-delivery sem teste específico; regressão de autoridade durable-chat e novo typecheck pendentes após últimas mudanças.6.2–6.4 não implementadas nem qualificadas por modelos reais."
+      "limits": "6.1 verificada com snapshots por requester, entrega de interação, associação de mensagens adiadas, replay idempotente, retry, delegação e recuperação; typecheck do servidor passou. 6.2–6.4 ainda não foram implementadas nem qualificadas com modelos reais."
     },
     {
       "id": "integration",

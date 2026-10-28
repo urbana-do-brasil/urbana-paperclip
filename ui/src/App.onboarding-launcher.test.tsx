@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import {
   ONBOARDING_AGENT_STEP,
 } from "./lib/onboarding-route";
@@ -132,7 +133,8 @@ describe("the onboarding launcher's Add Agent button", () => {
     return button!;
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -160,6 +162,27 @@ describe("the onboarding launcher's Add Agent button", () => {
       addAgentButton().dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
+    expect(dialogState.openOnboarding).toHaveBeenCalledWith({
+      initialStep: ONBOARDING_AGENT_STEP,
+      companyId: "company-1",
+    });
+  });
+
+  it("localizes the existing-company launcher in PT-BR and keeps its target", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockGoalsApi.list.mockResolvedValue([COMPANY_GOAL]);
+    await render();
+    await settle();
+
+    expect(container.textContent).toContain("Adicionar outro agente a Acme");
+    expect(container.textContent).toContain("Execute a configuração inicial novamente");
+    const button = [...container.querySelectorAll("button")].find((b) =>
+      b.textContent?.includes("Adicionar agente"),
+    );
+    expect(button).toBeDefined();
+    await act(async () => {
+      button!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
     expect(dialogState.openOnboarding).toHaveBeenCalledWith({
       initialStep: ONBOARDING_AGENT_STEP,
       companyId: "company-1",

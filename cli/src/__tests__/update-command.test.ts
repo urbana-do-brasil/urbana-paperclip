@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { writeManagedShim, flipCurrentAtomic, initializeInstallStore, payloadPathFor, readInstallManifest, resolveInstallStorePaths, writeInstallManifestAtomic, type InstallManifest, type InstallRecord } from "../install-store.js";
 import type { CommandRunner } from "../commands/install.js";
 import { compareVersions, detectInstallMode, resolveUpdateRequest, rollbackManagedInstall, updateCommand } from "../commands/update.js";
+import { setCliLocale } from "../localization/index.js";
 
 let root: string;
 let previousHome: string | undefined;
@@ -20,6 +21,7 @@ function createPayload(payloadPath: string, version: string): string {
   return entrypoint;
 }
 beforeEach(() => {
+  setCliLocale("en");
   root = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-update-"));
   previousHome = process.env.HOME;
   previousPaperclipHome = process.env.PAPERCLIP_HOME;
@@ -27,6 +29,7 @@ beforeEach(() => {
   process.env.PAPERCLIP_HOME = path.join(root, "paperclip");
 });
 afterEach(() => {
+  setCliLocale("pt-BR");
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
   if (previousHome === undefined) delete process.env.HOME; else process.env.HOME = previousHome;
@@ -84,6 +87,37 @@ describe("update command", () => {
     } finally {
       Object.defineProperty(process.versions, "node", nodeVersion);
     }
+  });
+
+  it("localizes update dry-run output while preserving structured output fields", async () => {
+    const paths = resolveInstallStorePaths(); initializeInstallStore(paths);
+    const payload = payloadPathFor(paths, "npm", "1.0.0");
+    const executablePath = createPayload(payload, "1.0.0");
+    flipCurrentAtomic(payload, paths);
+    writeInstallManifestAtomic({ schemaVersion: 1, ...record(payload, "1.0.0"), previous: [] }, paths);
+    const runCommand = vi.fn(async () => ({ stdout: '"2.0.0"', stderr: "" }));
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    setCliLocale("pt-BR");
+    await updateCommand({ dryRun: true, backup: false }, { paths, executablePath, runCommand });
+    expect(String(log.mock.calls.at(-1)?.[0])).toContain("seria atualizado para 2.0.0 sem backup");
+
+    log.mockClear();
+    setCliLocale("en");
+    await updateCommand({ dryRun: true, backup: false }, { paths, executablePath, runCommand });
+    expect(String(log.mock.calls.at(-1)?.[0])).toContain("Would update paperclipai 1.0.0");
+
+    log.mockClear();
+    setCliLocale("pt-BR");
+    await updateCommand({ dryRun: true, backup: false, json: true }, { paths, executablePath, runCommand });
+    expect(JSON.parse(String(log.mock.calls.at(-1)?.[0]))).toMatchObject({
+      mode: "managed",
+      currentVersion: "1.0.0",
+      targetVersion: "2.0.0",
+      action: "update",
+      backup: false,
+      dryRun: true,
+    });
   });
 
   it("orders SemVer prerelease identifiers numerically", () => {

@@ -195,7 +195,7 @@ describe("InviteLandingPage", () => {
           setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true }));
         }
       });
-      await act(() => container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+      await act(() => { container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
       await flushReact(); await flushReact();
       const alert = container.querySelector('[role="alert"]')!;
       expect(alert.textContent).toContain(`${failure} ${details}: Provider <raw>`);

@@ -268,7 +268,7 @@ describe.skipIf(!support.supported)("heartbeat queue database wiring", () => {
     const [source] = await db.insert(heartbeatRuns).values({ companyId: company.id, agentId: agent.id, status: "succeeded", contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "user" } }).returning();
     await db.update(issues).set({ status: "in_review", originRunId: historical.id, executionRunId: null, executionAgentNameKey: null, executionLockedAt: null, responsibleUserId: "task-owner" }).where(eq(issues.id, issue.id));
     await db.insert(issueThreadInteractions).values({ companyId: company.id, issueId: issue.id, sourceRunId: source.id,
-      kind: "request_confirmation", status: "pending", continuationPolicy: "wake_assignee_on_accept", requestedResolverPolicy: "board_only", effectiveResolverPolicy: "board_only",
+      kind: "request_confirmation", status: "pending", continuationPolicy: "wake_assignee_on_accept", requestedResolverPolicy: "human_only", effectiveResolverPolicy: "human_only",
       title: "Merge paperclipai/paperclip#39?", payload: { version: 1, prompt: "Merge the PR?" } });
     const deps = callbacks(db);
     deps.getAgent.mockResolvedValue(agent);
