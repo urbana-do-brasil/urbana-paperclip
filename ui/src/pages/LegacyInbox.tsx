@@ -2390,7 +2390,7 @@ export function Inbox() {
                 visibleColumnSet={visibleIssueColumnSet}
                 onToggleColumn={toggleIssueColumn}
                 onResetColumns={() => setIssueColumns(DEFAULT_INBOX_ISSUE_COLUMNS)}
-                title="Choose which inbox columns stay visible"
+                titleKey="taskCollection.columns.chooseInboxColumns"
                 iconOnly
               />
               <Popover>
@@ -2494,7 +2494,7 @@ export function Inbox() {
                 visibleColumnSet={visibleIssueColumnSet}
                 onToggleColumn={toggleIssueColumn}
                 onResetColumns={() => setIssueColumns(DEFAULT_INBOX_ISSUE_COLUMNS)}
-                title="Choose which inbox columns stay visible"
+                titleKey="taskCollection.columns.chooseInboxColumns"
                 iconOnly
               />
               {canMarkAllRead && (

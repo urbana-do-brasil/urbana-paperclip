@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import type { Issue, IssueStatus } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getKanbanColumnTone, KanbanBoard, resolveKanbanTargetStatus } from "./KanbanBoard";
+import { i18n } from "../i18n";
 
 vi.mock("@/lib/router", () => ({
   Link: ({
@@ -106,11 +107,12 @@ function renderBoard(
 }
 
 describe("KanbanBoard", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("pt-BR");
     document.body.innerHTML = "";
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     while (mountedRoots.length > 0) {
       const root = mountedRoots.pop();
       if (root) {
@@ -118,6 +120,67 @@ describe("KanbanBoard", () => {
       }
     }
     document.body.innerHTML = "";
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("localizes empty board, status columns, and keyboard drag guidance in both languages", async () => {
+    const { container, render } = renderBoard({ issues: [] });
+
+    expect(container.textContent).toContain("Nenhuma tarefa para exibir no quadro.");
+    expect(container.textContent).toContain("A fazer");
+    expect(container.textContent).toContain("Em andamento");
+    expect(container.textContent).toContain("Em revisão");
+    expect(container.textContent).toContain("Bloqueada");
+    expect(container.textContent).toContain("Concluída");
+    expect(container.textContent).toContain("Cancelada");
+
+    render({ issues: [createIssue(1, "todo")] });
+    const draggable = container.querySelector<HTMLElement>("[aria-describedby]");
+    const descriptionId = draggable?.getAttribute("aria-describedby")?.split(" ")[0];
+    expect(descriptionId ? document.getElementById(descriptionId)?.textContent : "").toContain(
+      "Para mover uma tarefa, pressione Espaço.",
+    );
+    act(() => {
+      draggable?.dispatchEvent(new KeyboardEvent("keydown", {
+        key: " ",
+        code: "Space",
+        bubbles: true,
+        cancelable: true,
+      }));
+    });
+    expect(container.textContent).toContain("Movendo PAP-1 — Issue 1.");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", {
+        key: "Escape",
+        code: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }));
+    });
+    expect(container.textContent).toContain("O movimento de PAP-1 — Issue 1 foi cancelado.");
+
+    await i18n.changeLanguage("en");
+    render({ issues: [] });
+    expect(container.textContent).toContain("No tasks to display on the board.");
+    expect(container.textContent).toContain("In Progress");
+    expect(container.textContent).toContain("In Review");
+    render({ issues: [createIssue(1, "todo")] });
+    const englishDraggable = container.querySelector<HTMLElement>("[aria-describedby]");
+    const englishDescriptionId = englishDraggable?.getAttribute("aria-describedby")?.split(" ")[0];
+    expect(englishDescriptionId ? document.getElementById(englishDescriptionId)?.textContent : "").toContain(
+      "To move a task, press Space.",
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    act(() => {
+      englishDraggable?.dispatchEvent(new KeyboardEvent("keydown", {
+        key: " ",
+        code: "Space",
+        bubbles: true,
+        cancelable: true,
+      }));
+    });
+    expect(container.textContent).toContain("Started moving PAP-1 — Issue 1.");
   });
 
   it("limits visible cards and reveals more cards per column", () => {
@@ -128,13 +191,13 @@ describe("KanbanBoard", () => {
       revealIncrement: 50,
     });
 
-    expect(container.textContent).toContain("Showing 50 of 60");
-    expect(container.textContent).toContain("Show 10 more");
+    expect(container.textContent).toContain("Exibindo 50 de 60");
+    expect(container.textContent).toContain("Mostrar mais 10");
     expect(container.textContent).toContain("Issue 50");
     expect(container.textContent).not.toContain("Issue 51");
 
     const showMoreButton = Array.from(container.querySelectorAll("button")).find((button) =>
-      button.textContent?.includes("Show 10 more"),
+      button.textContent?.includes("Mostrar mais 10"),
     );
     expect(showMoreButton).toBeTruthy();
 
@@ -143,7 +206,7 @@ describe("KanbanBoard", () => {
     });
 
     expect(container.textContent).toContain("Issue 60");
-    expect(container.textContent).not.toContain("Show 10 more");
+    expect(container.textContent).not.toContain("Mostrar mais 10");
   });
 
   it("resets visible counts when the column page size changes", () => {
@@ -155,7 +218,7 @@ describe("KanbanBoard", () => {
     });
 
     const showMoreButton = Array.from(container.querySelectorAll("button")).find((button) =>
-      button.textContent?.includes("Show 10 more"),
+      button.textContent?.includes("Mostrar mais 10"),
     );
     expect(showMoreButton).toBeTruthy();
 
@@ -171,8 +234,8 @@ describe("KanbanBoard", () => {
       revealIncrement: 10,
     });
 
-    expect(container.textContent).toContain("Showing 10 of 60");
-    expect(container.textContent).toContain("Show 10 more");
+    expect(container.textContent).toContain("Exibindo 10 de 60");
+    expect(container.textContent).toContain("Mostrar mais 10");
     expect(container.textContent).toContain("Issue 10");
     expect(container.textContent).not.toContain("Issue 11");
   });
@@ -183,7 +246,7 @@ describe("KanbanBoard", () => {
       collapsedStatuses: ["done"],
     });
 
-    expect(container.textContent).toContain("Done");
+    expect(container.textContent).toContain("Concluída");
     expect(container.textContent).toContain("3");
     expect(container.textContent).not.toContain("Issue 1");
   });
@@ -219,7 +282,7 @@ describe("KanbanBoard", () => {
     expect(container.textContent).toContain("PAP-1");
     expect(container.textContent).toContain("Issue 1");
     expect(container.textContent).toContain("Codex");
-    expect(container.textContent).toContain("Live");
+    expect(container.textContent).toContain("Em execução");
   });
 
   it("resolves drop targets from status rails and cards", () => {

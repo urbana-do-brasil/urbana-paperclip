@@ -516,7 +516,7 @@ function ColumnConfigurationMatrix() {
                 });
               }}
               onResetColumns={() => setColumns(DEFAULT_INBOX_ISSUE_COLUMNS)}
-              title="Choose which issue columns stay visible"
+              titleKey="taskCollection.columns.chooseColumns"
             />
           </div>
           <div className="space-y-2">

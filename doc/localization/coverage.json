@@ -173,7 +173,20 @@
       "label": "Tarefas, conversas, Inbox e busca",
       "sources": [
         "ui/src/pages/Issues.tsx",
+        "ui/src/components/NewIssueDialog.tsx",
+        "ui/src/components/task-chat/ComposerWorktreePicker.tsx",
         "ui/src/components/TaskViewsMenu.tsx",
+        "ui/src/components/IssuesList.tsx",
+        "ui/src/components/LegacyIssuesList.tsx",
+        "ui/src/components/CollectionToolbar.tsx",
+        "ui/src/components/IssueFiltersPopover.tsx",
+        "ui/src/components/IssueColumns.tsx",
+        "ui/src/components/IssueRow.tsx",
+        "ui/src/components/StatusIcon.tsx",
+        "ui/src/api/error-presentation.ts",
+        "ui/src/lib/timeAgo.ts",
+        "ui/src/lib/task-date-groups.ts",
+        "ui/src/components/KanbanBoard.tsx",
         "ui/src/lib/task-views.ts",
         "ui/src/pages/IssueDetail.tsx",
         "ui/src/pages/Inbox.tsx",
@@ -182,13 +195,26 @@
       "status": "pending",
       "evidence": [
         "ui/src/components/TaskViewsMenu.test.tsx",
+        "ui/src/components/NewIssueDialog.test.tsx",
+        "ui/src/components/IssuesList.test.tsx",
+        "ui/src/components/CollectionToolbar.test.tsx",
+        "ui/src/components/IssueFiltersPopover.test.tsx",
+        "ui/src/components/IssueColumns.test.tsx",
+        "ui/src/components/IssueRow.test.tsx",
+        "ui/src/components/StatusIcon.test.tsx",
+        "ui/src/api/error-presentation.test.ts",
+        "ui/src/lib/recovery-display.test.ts",
+        "ui/src/lib/recovery-lineage.test.ts",
+        "ui/src/lib/task-date-groups.test.ts",
+        "ui/src/components/KanbanBoard.test.tsx",
         "ui/src/lib/task-views.test.ts",
         "ui/src/pages/Issues.test.tsx",
+        "ui/src/pages/Inbox.test.tsx",
         "ui/src/i18n/locale-validation.test.ts"
       ],
       "partialSources": [
-        "3.4a (moldura da página Tasks, breadcrumbs, estados sem organização e seletor de visualizações) verificada em PT-BR/en; 3.4b–3.4f seguem pendentes.",
-        "IssueDetail.tsx, Inbox.tsx e Search.tsx ainda aguardam suas jornadas; a coleção/lista/kanban e seus controles seguem pendentes em 3.4b."
+        "3.4a (moldura da página Tasks, breadcrumbs, estados sem organização e seletor de visualizações), 3.4b1–3.4b2 (barra, filtros, ordenação/agrupamento, colunas e preferências), 3.4b3a–3.4b3c (linhas, hierarquia, checklists, resumos, grupos por data, estados e limites), 3.4b4 (quadro, colunas, cartões e arrastar/soltar) e 3.4b5a (conteúdo, avisos, anexos e contexto do diálogo de criação) verificadas em PT-BR/en; 3.4b5b–3.4f seguem pendentes.",
+        "IssueDetail.tsx, Inbox.tsx e Search.tsx ainda aguardam suas jornadas. O menu de filtros, o seletor de colunas e alguns componentes compartilhados usados no Inbox estão localizados, mas os demais conteúdos dessas páginas continuam pendentes. Os controles compartilhados e o envio do formulário permanecem pendentes em 3.4b5b."
       ]
     },
     {
@@ -1203,10 +1229,10 @@
   ],
   "checkpoint": {
     "date": "2026-10-28",
-    "completedTasks": 16,
-    "totalTasks": 41,
+    "completedTasks": 33,
+    "totalTasks": 61,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Checks paused at the user’s request to limit credit usage; consult README.md and verification.md before resuming."
+    "reason": "3.4b2, 3.4b3a–3.4b4 and 3.4b5a completed; next implement 3.4b5b, then 3.4b5c and the remaining OpenSpec tasks. Consult README.md and verification.md for evidence and known limits."
   }
 }

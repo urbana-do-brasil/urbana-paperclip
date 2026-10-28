@@ -38,6 +38,20 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
 - [ ] 3.4 Migrar tarefas, detalhe/conversa, Inbox, filas de atenção e busca em lotes por jornada. Verificar criação/edição, estados vazios e falhas, conteúdo histórico preservado e variantes relevantes de flags nos dois idiomas. Spec: `localized-web-interface`.
   - [x] 3.4a Localizar a moldura da página Tasks e o seletor de visualizações, preservando URLs, filtros e preferências ao alternar entre Inbox e coleção.
   - [ ] 3.4b Localizar coleção de tarefas, modos lista/kanban, filtros, ordenação, estados vazios/carregamento/erro e criação/edição.
+    - [x] 3.4b1 Localizar barra/ações da coleção, busca local e alternância lista/kanban nas variantes simplificada e legada, verificando nomes acessíveis.
+    - [x] 3.4b2 Localizar filtros, ordenação, agrupamento, colunas e preferências da coleção sem alterar seus parâmetros ou persistência.
+      - [x] 3.4b2a Localizar o menu de filtros e suas opções estáticas nas superfícies que reutilizam o componente, preservando valores, IDs e callbacks.
+      - [x] 3.4b2b Localizar controles de ordenação e agrupamento nas variantes simplificada e legada, preservando valores e preferências.
+      - [x] 3.4b2c Localizar seletor de colunas e preferências de visualização sem alterar a persistência.
+    - [ ] 3.4b3 Localizar linhas, hierarquia, resumos, grupos por data e estados vazio/carregando/erro na coleção.
+      - [x] 3.4b3a Localizar conteúdo e nomes acessíveis das linhas de tarefa, preservando dados e identificadores dinâmicos.
+      - [x] 3.4b3b Localizar hierarquia, checklists, resumos de progresso e grupos por data sem alterar relações ou contagens.
+      - [x] 3.4b3c Localizar estados vazios, carregamento, falhas e limites de resultado da coleção.
+    - [x] 3.4b4 Localizar quadro kanban, colunas, cartões, carregamento e estados de arrastar/soltar.
+    - [ ] 3.4b5 Localizar criação de tarefas e validação do formulário acionadas pela coleção, preservando defaults e dados de usuário.
+      - [x] 3.4b5a Localizar conteúdo, avisos, documentos/anexos e estados de acesso/workspace do diálogo sem alterar dados herdados ou fornecidos pelo usuário.
+      - [ ] 3.4b5b Localizar controles compartilhados do compositor de criação e seletores, preservando defaults, ações e valores técnicos.
+      - [ ] 3.4b5c Localizar estados de envio, erros, alertas de anexos e confirmação de criação, preservando comportamento idempotente e contratos da tarefa.
   - [ ] 3.4c Localizar detalhe da tarefa, propriedades, relações, anexos e estados de execução; preservar IDs e dados dinâmicos.
   - [ ] 3.4d Localizar comentários, conversa, perguntas e ações de interação/execução na tarefa sem traduzir o histórico existente.
   - [ ] 3.4e Localizar Inbox e filas de atenção, incluindo aprovações, falhas e solicitações de acesso que aparecem nesses fluxos.

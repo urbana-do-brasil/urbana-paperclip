@@ -2533,7 +2533,7 @@ function StreamlinedInbox({
                   }));
                 }}
                 onResetColumns={() => setIssueColumns(DEFAULT_INBOX_ISSUE_COLUMNS)}
-                title="Choose which columns stay visible"
+                titleKey="taskCollection.columns.chooseColumns"
                 iconOnly
               />
               <Popover>
@@ -2658,7 +2658,7 @@ function StreamlinedInbox({
                   }));
                 }}
                 onResetColumns={() => setIssueColumns(DEFAULT_INBOX_ISSUE_COLUMNS)}
-                title="Choose which columns stay visible"
+                titleKey="taskCollection.columns.chooseColumns"
                 iconOnly
                 rowPresentation={streamlinedUiEnabled ? "task" : "legacy"}
               />

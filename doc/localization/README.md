@@ -5,17 +5,18 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **23 de 47 tarefas**.
-A contagem inclui o desdobramento das jornadas de autenticação e convites;
-subtarefas concluídas não encerram automaticamente seu grupo. Os checkboxes em [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md)
-são a fonte de progresso; [verification.md](verification.md) reúne os resultados
-e os limites dos testes. A entrega ainda não foi implantada.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **33 de 61 tarefas**.
+A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
+automaticamente seu grupo. Os checkboxes em
+[tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
+de progresso; [verification.md](verification.md) reúne resultados e limites.
+A entrega ainda não foi implantada.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3) e moldura/seletor Tasks (3.4a) verificados; coleção, detalhe, conversas, Inbox e busca seguem pendentes. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), controles da coleção (3.4b1–3.4b2), linhas (3.4b3a), hierarquia/checklists/resumos/grupos por data (3.4b3b), estados da coleção (3.4b3c), quadro kanban (3.4b4) e conteúdo/estados do diálogo (3.4b5a) verificados; controles/envio da criação, detalhe, conversas, Inbox e busca seguem pendentes. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |
@@ -23,16 +24,16 @@ e os limites dos testes. A entrega ainda não foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28
 
-O trabalho foi retomado após o checkpoint anterior. As tarefas 3.2, 3.3, 3.4a, 5.1,
-6.1 e 4.2 foram verificadas. Navegação e controles compartilhados já estão
-bilíngues nas variantes de shell. A CLI de instalação/administração está bilíngue,
-incluindo os prompts detalhados de configuração e o handoff do serviço. As
-alterações seguem no working tree, sem novo commit ou implantação. O swap
-temporário usado no typecheck foi desativado e removido.
+O trabalho foi retomado após o checkpoint anterior. As tarefas 3.2, 3.3, 3.4a,
+3.4b1, 3.4b2a, 3.4b2b, 3.4b2c, 3.4b3a, 3.4b3b, 3.4b3c, 3.4b4, 3.4b5a, 5.1, 6.1 e 4.2 foram verificadas. A barra,
+busca, criação principal, alternância de lista/kanban, filtros,
+ordenação/agrupamento, colunas, preferências, linhas, hierarquia/resumos e
+estados da coleção, quadro kanban e conteúdo/estados básicos do diálogo de criação estão localizados. Os controles compartilhados e o envio continuam em progresso. As alterações seguem no working tree, sem novo commit ou implantação. O swap
+temporário usado no typecheck anterior foi desativado e removido.
 
 Próximos passos:
 
-1. Completar as jornadas 3.4b–3.4f e seguir por 3.5–3.11; repetir UI build, gates de
+1. Completar 3.4b5b–3.4f, depois seguir por 3.5–3.11; repetir UI build, gates de
    tokens e browser sobre a consolidação das jornadas antes da aceitação global.
 2. Migrar os comandos operacionais (4.3) e verificar os contratos de saída estruturada,
    stdout/stderr e subprocessos (4.4).
@@ -43,7 +44,7 @@ Próximos passos:
 5. Integrar checks, reconciliar cobertura e executar aceitação/revisão final
    nas tarefas 7.1–7.4. A mudança ainda não está pronta para arquivamento.
 
-Não interprete a contagem de 23/47 como percentual da tradução: os itens têm
+Não interprete a contagem de 33/61 como percentual da tradução: os itens têm
 tamanhos muito diferentes e a contagem inclui subtarefas e seus grupos pais.
 O arquivo de tarefas mantém a lista detalhada e suas dependências.
 

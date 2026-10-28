@@ -4,10 +4,20 @@ const DAY = 24 * HOUR;
 const WEEK = 7 * DAY;
 const MONTH = 30 * DAY;
 
-export function timeAgo(date: Date | string): string {
+export function timeAgo(date: Date | string, locale?: string): string {
   const now = Date.now();
   const then = new Date(date).getTime();
   const seconds = Math.round((now - then) / 1000);
+
+  if (locale && !locale.toLowerCase().startsWith("en")) {
+    const relativeTime = new Intl.RelativeTimeFormat(locale, { numeric: "auto", style: "short" });
+    if (seconds < MINUTE) return relativeTime.format(-Math.max(0, seconds), "second");
+    if (seconds < HOUR) return relativeTime.format(-Math.floor(seconds / MINUTE), "minute");
+    if (seconds < DAY) return relativeTime.format(-Math.floor(seconds / HOUR), "hour");
+    if (seconds < WEEK) return relativeTime.format(-Math.floor(seconds / DAY), "day");
+    if (seconds < MONTH) return relativeTime.format(-Math.floor(seconds / WEEK), "week");
+    return relativeTime.format(-Math.floor(seconds / MONTH), "month");
+  }
 
   if (seconds < MINUTE) return "just now";
   if (seconds < HOUR) {

@@ -14,6 +14,8 @@ import {
 } from "./IssuesList";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { taskCollectionPreferencesStorageKey } from "../lib/task-collection-preferences";
+import { i18n } from "../i18n";
+import { ApiError } from "../api/client";
 
 const companyState = vi.hoisted(() => ({
   selectedCompanyId: "company-1",
@@ -126,6 +128,7 @@ vi.mock("./IssueRow", () => ({
     issue,
     desktopMetaLeading,
     desktopTrailing,
+    titleSuffix,
     titleClassName,
     checklistStepNumber,
     checklistCurrentStep,
@@ -141,6 +144,7 @@ vi.mock("./IssueRow", () => ({
     issue: Issue;
     desktopMetaLeading?: ReactNode;
     desktopTrailing?: ReactNode;
+    titleSuffix?: ReactNode;
     titleClassName?: string;
     checklistStepNumber?: number | string | null;
     checklistCurrentStep?: boolean;
@@ -165,7 +169,7 @@ vi.mock("./IssueRow", () => ({
       data-current-step={checklistCurrentStep ? "true" : undefined}
       data-title-class={titleClassName ?? undefined}
     >
-      <span>{issue.title}</span>
+      <span>{issue.title}{titleSuffix}</span>
       {leadingControl}
       {externalObjectSummary ? (
         <span data-testid="external-object-summary">{externalObjectSummary.total}</span>
@@ -338,7 +342,8 @@ function renderWithQueryClient(node: ReactNode, container: HTMLDivElement) {
 describe("IssuesList", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("pt-BR");
     container = document.createElement("div");
     document.body.appendChild(container);
     dialogState.openNewIssue.mockReset();
@@ -368,6 +373,162 @@ describe("IssuesList", () => {
     setDocumentScrollMetrics({ innerHeight: 600, scrollY: 0, scrollHeight: 2400 });
     mockExternalObjectsApi.getIssueSummaries.mockResolvedValue({ summaries: {} });
     localStorage.clear();
+  });
+
+  it("localizes collection toolbar labels in streamlined and legacy variants", async () => {
+    await i18n.changeLanguage("pt-BR");
+
+    for (const enableStreamlinedUi of [true, false]) {
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({
+        enableIsolatedWorkspaces: false,
+        enableExternalObjects: false,
+        enableStreamlinedUi,
+      });
+
+      const { root } = renderWithQueryClient(
+        <IssuesList
+          issues={[]}
+          agents={[]}
+          projects={[]}
+          viewStateKey={`paperclip:test-issues-${enableStreamlinedUi ? "streamlined" : "legacy"}`}
+          rowPresentation="task"
+          toolbarPresentation="collection"
+          onUpdateIssue={() => undefined}
+        />,
+        container,
+      );
+
+      await waitForAssertion(() => {
+        const search = container.querySelector<HTMLInputElement>('input[data-page-search-target="true"]');
+        expect(search?.getAttribute("aria-label")).toBe("Buscar tarefas...");
+        expect(search?.placeholder).toBe("Buscar tarefas...");
+        expect(container.querySelector('[role="group"][aria-label="Modo de visualização"]')).not.toBeNull();
+        expect(container.querySelector('button[aria-label="Visualização em lista"]')).not.toBeNull();
+        expect(container.querySelector('button[aria-label="Visualização em quadro"]')).not.toBeNull();
+        if (enableStreamlinedUi) {
+          expect(container.querySelector('button[aria-label="Nova tarefa"]')).not.toBeNull();
+        } else {
+          expect(Array.from(container.querySelectorAll("button")).some((button) => (
+            button.textContent?.includes("Nova tarefa")
+          ))).toBe(true);
+        }
+
+        const toolbar = container.querySelector('[role="toolbar"]');
+        if (enableStreamlinedUi) {
+          expect(toolbar?.getAttribute("aria-label")).toBe("Controles da coleção de tarefas");
+        } else {
+          expect(toolbar).toBeNull();
+        }
+      });
+
+      act(() => root.unmount());
+    }
+  });
+
+  it("localizes empty, loading, and failure states in both collection variants", async () => {
+    for (const locale of ["pt-BR", "en"] as const) {
+      await i18n.changeLanguage(locale);
+      const expected = locale === "pt-BR"
+        ? {
+          empty: "Nenhuma tarefa corresponde aos filtros ou à busca atuais.",
+          loading: "Carregando tarefas...",
+          failure: "Os dados enviados são inválidos. Revise os campos e tente novamente.",
+        }
+        : {
+          empty: "No tasks match the current filters or search.",
+          loading: "Loading tasks...",
+          failure: "The submitted data is invalid. Check the fields and try again.",
+        };
+
+      for (const enableStreamlinedUi of [true, false]) {
+        mockInstanceSettingsApi.getExperimental.mockResolvedValue({
+          enableIsolatedWorkspaces: false,
+          enableExternalObjects: false,
+          enableStreamlinedUi,
+        });
+        const viewStateKey = `paperclip:test-collection-states-${locale}-${enableStreamlinedUi ? "streamlined" : "legacy"}`;
+
+        const empty = renderWithQueryClient(
+          <IssuesList
+            issues={[]}
+            agents={[]}
+            projects={[]}
+            viewStateKey={viewStateKey}
+            onUpdateIssue={() => undefined}
+          />,
+          container,
+        );
+        await waitForAssertion(() => {
+          expect(container.textContent).toContain(expected.empty);
+        });
+        act(() => empty.root.unmount());
+
+        const loading = renderWithQueryClient(
+          <IssuesList
+            issues={[]}
+            agents={[]}
+            projects={[]}
+            viewStateKey={`${viewStateKey}-loading`}
+            isLoading
+            onUpdateIssue={() => undefined}
+          />,
+          container,
+        );
+        await waitForAssertion(() => {
+          const status = container.querySelector(`[role="status"][aria-label="${expected.loading}"]`);
+          expect(status?.textContent).toContain(expected.loading);
+        });
+        act(() => loading.root.unmount());
+
+        const failure = new ApiError("Validation error", 400, {
+          error: "Validation error",
+          messageKey: "validation",
+        });
+        const failed = renderWithQueryClient(
+          <IssuesList
+            issues={[]}
+            agents={[]}
+            projects={[]}
+            viewStateKey={`${viewStateKey}-failure`}
+            error={failure}
+            onUpdateIssue={() => undefined}
+          />,
+          container,
+        );
+        await waitForAssertion(() => {
+          expect(container.querySelector('[role="alert"]')?.textContent).toBe(expected.failure);
+          expect(container.textContent).not.toContain(expected.empty);
+        });
+        act(() => failed.root.unmount());
+      }
+    }
+  });
+
+  it("localizes incremental loading feedback and preserves task counts in both variants", async () => {
+    for (const enableStreamlinedUi of [true, false]) {
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({
+        enableIsolatedWorkspaces: false,
+        enableExternalObjects: false,
+        enableStreamlinedUi,
+      });
+      const { root } = renderWithQueryClient(
+        <IssuesList
+          issues={[createIssue({ id: `loading-more-${enableStreamlinedUi}` })]}
+          agents={[]}
+          projects={[]}
+          viewStateKey={`paperclip:test-loading-more-${enableStreamlinedUi ? "streamlined" : "legacy"}`}
+          hasMoreIssues
+          isLoadingMoreIssues
+          onUpdateIssue={() => undefined}
+        />,
+        container,
+      );
+
+      await waitForAssertion(() => {
+        expect(container.querySelector('[role="status"]')?.textContent).toContain("Carregando mais tarefas...");
+      });
+      act(() => root.unmount());
+    }
   });
 
   afterEach(() => {
@@ -488,6 +649,7 @@ describe("IssuesList", () => {
   });
 
   it("reserves a disclosure column after each ancestor guide in canonical task trees", async () => {
+    await i18n.changeLanguage("en");
     const parent = createIssue({ id: "parent", identifier: "PAP-1", title: "Parent task" });
     const child = createIssue({ id: "child", identifier: "PAP-2", parentId: parent.id, title: "Child task" });
     const { root } = renderWithQueryClient(
@@ -529,7 +691,7 @@ describe("IssuesList", () => {
     );
 
     await waitForAssertion(() => {
-      expect(container.querySelector("[role='toolbar'][aria-label='Task controls']")).not.toBeNull();
+      expect(container.querySelector("[role='toolbar'][aria-label='Controles da coleção de tarefas']")).not.toBeNull();
     });
 
     act(() => root.unmount());
@@ -728,6 +890,7 @@ describe("IssuesList", () => {
   });
 
   it("uses workspace group defaults when creating an issue from a grouped section", async () => {
+    await i18n.changeLanguage("en");
     localStorage.setItem(
       "paperclip:test-issues:company-1",
       JSON.stringify({ groupBy: "workspace", sortField: "updated", sortDir: "desc" }),
@@ -792,6 +955,7 @@ describe("IssuesList", () => {
   });
 
   it("renders the opt-in sub-issue progress summary with workflow next-up linking", async () => {
+    await i18n.changeLanguage("en");
     const doneIssue = createIssue({
       id: "issue-done",
       identifier: "PAP-1",
@@ -862,7 +1026,205 @@ describe("IssuesList", () => {
     });
   });
 
+  it("localizes progress summaries in both list variants without changing the counts", async () => {
+    await i18n.changeLanguage("pt-BR");
+    for (const enableStreamlinedUi of [true, false]) {
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({
+        enableIsolatedWorkspaces: false,
+        enableExternalObjects: false,
+        enableStreamlinedUi,
+      });
+      const issues = [
+        createIssue({ id: "done", identifier: "PAP-1", status: "done" }),
+        createIssue({ id: "next", identifier: "PAP-2", status: "todo" }),
+        createIssue({ id: "blocked", identifier: "PAP-3", status: "blocked" }),
+        createIssue({ id: "cancelled", identifier: "PAP-4", status: "cancelled" }),
+      ];
+      const { root } = renderWithQueryClient(
+        <IssuesList
+          issues={issues}
+          agents={[]}
+          projects={[]}
+          viewStateKey="paperclip:test-issues"
+          showProgressSummary
+          onUpdateIssue={() => undefined}
+        />,
+        container,
+      );
+
+      await waitForAssertion(() => {
+        const progress = container.querySelector('[role="progressbar"]');
+        expect(progress?.getAttribute("aria-label")).toBe("Progresso de conclusão das subtarefas");
+        expect(progress?.getAttribute("aria-valuenow")).toBe("1");
+        expect(progress?.getAttribute("aria-valuemax")).toBe("3");
+        expect(container.textContent).toContain("1/3 concluídas");
+        expect(container.textContent).toContain("0 em andamento");
+        expect(container.textContent).toContain("1 bloqueada");
+        expect(container.textContent).toContain("Próxima tarefa");
+      });
+
+      act(() => root.unmount());
+    }
+  });
+
+  it("localizes hierarchy controls and checklist dependencies while preserving their targets", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const parent = createIssue({
+      id: "parent",
+      identifier: "PAP-1",
+      title: "Parent task",
+      status: "todo",
+    });
+    const child = createIssue({
+      id: "child",
+      identifier: "PAP-2",
+      parentId: parent.id,
+      title: "Child task",
+      status: "blocked",
+      blockedBy: [{
+        id: "blocker",
+        identifier: "PAP-3",
+        title: "Active blocker",
+        status: "todo",
+        priority: "medium",
+        assigneeAgentId: null,
+        assigneeUserId: null,
+      }],
+    });
+    const blocker = createIssue({
+      id: "blocker",
+      identifier: "PAP-3",
+      title: "Active blocker",
+      status: "todo",
+    });
+    const { root } = renderWithQueryClient(
+      <IssuesList
+        issues={[parent, child, blocker]}
+        agents={[]}
+        projects={[]}
+        viewStateKey="paperclip:test-issues"
+        defaultSortField="workflow"
+        rowPresentation="task"
+        onUpdateIssue={() => undefined}
+      />,
+      container,
+    );
+
+    let parentRow: Element | undefined;
+    await waitForAssertion(() => {
+      const rows = Array.from(container.querySelectorAll('[data-testid="issue-row"]'));
+      parentRow = rows.find((row) => row.textContent?.includes("Parent task"));
+      expect(parentRow?.querySelector('button[aria-label="Recolher subtarefas"]')).not.toBeNull();
+      expect(container.textContent).toContain("bloqueada por PAP-3 · etapa");
+    });
+
+    const collapseButton = parentRow?.querySelector<HTMLButtonElement>('button[aria-label="Recolher subtarefas"]');
+    await act(async () => {
+      collapseButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    await waitForAssertion(() => {
+      const rows = Array.from(container.querySelectorAll('[data-testid="issue-row"]'));
+      parentRow = rows.find((row) => row.textContent?.includes("Parent task"));
+      expect(parentRow?.querySelector('button[aria-label="Expandir subtarefas"]')).not.toBeNull();
+      expect(parentRow?.textContent).toContain("(1 subtarefa)");
+    });
+
+    act(() => root.unmount());
+  });
+
+  it("localizes the missing-parent group label and preserves dynamic parent titles", async () => {
+    await i18n.changeLanguage("pt-BR");
+    localStorage.setItem(
+      "paperclip:test-issues:company-1",
+      JSON.stringify({ groupBy: "parent", sortField: "updated", sortDir: "desc" }),
+    );
+    const parent = createIssue({ id: "parent", identifier: "PAP-1", title: "Nome da tarefa pai" });
+    const child = createIssue({
+      id: "child",
+      identifier: "PAP-2",
+      parentId: parent.id,
+      title: "Título escrito pelo usuário",
+    });
+    const { root } = renderWithQueryClient(
+      <IssuesList
+        issues={[parent, child]}
+        agents={[]}
+        projects={[]}
+        viewStateKey="paperclip:test-issues"
+        onUpdateIssue={() => undefined}
+      />,
+      container,
+    );
+
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Sem tarefa pai");
+      expect(container.textContent).toContain("Nome da tarefa pai");
+      expect(container.textContent).toContain("Título escrito pelo usuário");
+      expect(container.textContent).not.toContain("No Parent");
+    });
+
+    act(() => root.unmount());
+  });
+
+  it("localizes task date separators in both list presentations", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 12);
+    const threeDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 12);
+    const tenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 10, 12);
+
+    const { root } = renderWithQueryClient(
+      <IssuesList
+        issues={[
+          createIssue({ id: "today", title: "Today", updatedAt: today }),
+          createIssue({ id: "yesterday", title: "Yesterday", updatedAt: yesterday }),
+        ]}
+        agents={[]}
+        projects={[]}
+        viewStateKey="paperclip:test-issues"
+        rowPresentation="task"
+        onUpdateIssue={() => undefined}
+      />,
+      container,
+    );
+    await waitForAssertion(() => {
+      expect(Array.from(container.querySelectorAll("[data-issues-date-separator]"))
+        .map((element) => element.getAttribute("aria-label"))).toEqual(["Hoje", "Ontem"]);
+    });
+    act(() => root.unmount());
+
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({
+      enableIsolatedWorkspaces: false,
+      enableExternalObjects: false,
+      enableStreamlinedUi: false,
+    });
+    const legacy = renderWithQueryClient(
+      <IssuesList
+        issues={[
+          createIssue({ id: "today-legacy", title: "Today", updatedAt: today }),
+          createIssue({ id: "mid-legacy", title: "Mid", updatedAt: threeDaysAgo }),
+          createIssue({ id: "old-legacy", title: "Old", updatedAt: tenDaysAgo }),
+        ]}
+        agents={[]}
+        projects={[]}
+        viewStateKey="paperclip:test-issues-legacy"
+        onUpdateIssue={() => undefined}
+      />,
+      container,
+    );
+    await waitForAssertion(() => {
+      expect(Array.from(container.querySelectorAll("[data-issues-date-separator]"))
+        .map((element) => element.getAttribute("aria-label")))
+        .toEqual(["Há mais de um dia", "Há mais de uma semana"]);
+    });
+    act(() => legacy.root.unmount());
+  });
+
   it("adds checklist affordances for workflow-sorted sub-issue lists", async () => {
+    await i18n.changeLanguage("en");
     const issueDone = createIssue({
       id: "issue-done",
       identifier: "PAP-1",
@@ -933,7 +1295,7 @@ describe("IssuesList", () => {
     });
 
     const sortButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.getAttribute("title") === "Sort",
+      (button) => button.getAttribute("aria-label") === "Ordenar tarefas",
     );
     expect(sortButton).toBeTruthy();
     act(() => {
@@ -943,11 +1305,11 @@ describe("IssuesList", () => {
       const labels = Array.from(document.body.querySelectorAll("button")).map((b) => b.textContent ?? "");
       // Status sort option renders, but the Priority option is gated off (PAP-411).
       expect(labels.some((text) => text.includes("Status"))).toBe(true);
-      expect(labels.some((text) => text.includes("Priority"))).toBe(false);
+      expect(labels.some((text) => text.includes("Prioridade"))).toBe(false);
     });
 
     const groupButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.getAttribute("title") === "Group",
+      (button) => button.getAttribute("aria-label") === "Agrupar tarefas",
     );
     expect(groupButton).toBeTruthy();
     act(() => {
@@ -956,7 +1318,7 @@ describe("IssuesList", () => {
     await waitForAssertion(() => {
       const labels = Array.from(document.body.querySelectorAll("button")).map((b) => b.textContent ?? "");
       expect(labels.some((text) => text.includes("Status"))).toBe(true);
-      expect(labels.some((text) => text.includes("Priority"))).toBe(false);
+      expect(labels.some((text) => text.includes("Prioridade"))).toBe(false);
     });
 
     act(() => {
@@ -964,7 +1326,72 @@ describe("IssuesList", () => {
     });
   });
 
+  it("localizes sorting and grouping while preserving their stored values in both list variants", async () => {
+    await i18n.changeLanguage("pt-BR");
+
+    for (const enableStreamlinedUi of [true, false]) {
+      localStorage.clear();
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({
+        enableIsolatedWorkspaces: false,
+        enableExternalObjects: false,
+        enableStreamlinedUi,
+      });
+      const viewStateKey = `paperclip:test-sort-group-${enableStreamlinedUi ? "streamlined" : "legacy"}`;
+
+      const { root } = renderWithQueryClient(
+        <IssuesList
+          issues={[createIssue({ id: `issue-${enableStreamlinedUi ? "streamlined" : "legacy"}` })]}
+          agents={[]}
+          projects={[]}
+          viewStateKey={viewStateKey}
+          rowPresentation="task"
+          onUpdateIssue={() => undefined}
+        />,
+        container,
+      );
+
+      const persistedState = () => {
+        const storageKey = enableStreamlinedUi
+          ? taskCollectionPreferencesStorageKey({ companyId: "company-1", collectionKey: viewStateKey })
+          : `${viewStateKey}:company-1`;
+        const raw = localStorage.getItem(storageKey);
+        if (raw === null) return null;
+        const parsed = JSON.parse(raw) as { viewState?: Record<string, unknown>; sortField?: string; groupBy?: string };
+        return enableStreamlinedUi ? parsed.viewState ?? null : parsed;
+      };
+
+      const sortButton = container.querySelector<HTMLButtonElement>('button[aria-label="Ordenar tarefas"]');
+      expect(sortButton).not.toBeNull();
+      act(() => sortButton?.click());
+      await waitForAssertion(() => {
+        expect(Array.from(document.body.querySelectorAll("button")).some(
+          (button) => button.textContent?.trim() === "Data de criação",
+        )).toBe(true);
+      });
+      const createdOption = Array.from(document.body.querySelectorAll("button"))
+        .find((button) => button.textContent?.trim() === "Data de criação");
+      act(() => createdOption?.click());
+      await waitForAssertion(() => expect(persistedState()?.sortField).toBe("created"));
+
+      const groupButton = container.querySelector<HTMLButtonElement>('button[aria-label="Agrupar tarefas"]');
+      expect(groupButton).not.toBeNull();
+      act(() => groupButton?.click());
+      await waitForAssertion(() => {
+        expect(Array.from(document.body.querySelectorAll("button")).some(
+          (button) => button.textContent?.trim() === "Responsável",
+        )).toBe(true);
+      });
+      const responsibleOption = Array.from(document.body.querySelectorAll("button"))
+        .find((button) => button.textContent?.trim() === "Responsável");
+      act(() => responsibleOption?.click());
+      await waitForAssertion(() => expect(persistedState()?.groupBy).toBe("assignee"));
+
+      act(() => root.unmount());
+    }
+  });
+
   it("hides the workflow blocker chip when a sub-issue is blocked only by its previous sibling", async () => {
+    await i18n.changeLanguage("en");
     const firstChild = createIssue({
       id: "issue-first-child",
       identifier: "PAP-1",
@@ -1018,6 +1445,7 @@ describe("IssuesList", () => {
   });
 
   it("collapses multiple workflow blocker chips to the first blocker and a count", async () => {
+    await i18n.changeLanguage("en");
     const issueDone = createIssue({
       id: "issue-done",
       identifier: "PAP-1",
@@ -1194,6 +1622,7 @@ describe("IssuesList", () => {
   });
 
   it("shows waiting on blockers when every remaining sub-issue is blocked", async () => {
+    await i18n.changeLanguage("en");
     const { root } = renderWithQueryClient(
       <IssuesList
         issues={[
@@ -1250,7 +1679,7 @@ describe("IssuesList", () => {
       container,
     );
 
-    const input = container.querySelector('input[aria-label="Search tasks"]') as HTMLInputElement | null;
+    const input = container.querySelector('input[aria-label="Buscar tarefas..."]') as HTMLInputElement | null;
     expect(input).not.toBeNull();
     const valueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
     expect(valueSetter).toBeTypeOf("function");
@@ -1312,7 +1741,7 @@ describe("IssuesList", () => {
     );
 
     await waitForAssertion(() => {
-      expect(container.textContent).toContain("Showing up to 200 matches. Refine the search to narrow further.");
+      expect(container.textContent).toContain("Exibindo até 200 resultados. Refine a busca para restringir ainda mais.");
     });
 
     act(() => {
@@ -1457,7 +1886,7 @@ describe("IssuesList", () => {
     });
 
     const pageSizeButton = Array.from(container.querySelectorAll("button")).find((button) =>
-      button.getAttribute("title") === "Cards per column",
+      button.getAttribute("aria-label") === "Cartões por coluna",
     );
     expect(pageSizeButton).toBeTruthy();
 
@@ -1468,7 +1897,7 @@ describe("IssuesList", () => {
     let option25: HTMLButtonElement | undefined;
     await waitForAssertion(() => {
       option25 = Array.from(document.body.querySelectorAll("button")).find((button) =>
-        button.textContent?.includes("25 per column"),
+        button.textContent?.includes("25 por coluna"),
       );
       expect(option25).toBeTruthy();
     });
@@ -1523,7 +1952,7 @@ describe("IssuesList", () => {
     );
 
     await waitForAssertion(() => {
-      expect(container.textContent).toContain("Some board columns are showing up to 200 tasks. Refine filters or search to reveal the rest.");
+      expect(container.textContent).toContain("Algumas colunas do quadro exibem até 200 tarefas. Refine os filtros ou a busca para revelar as demais.");
     });
 
     act(() => {
@@ -1553,7 +1982,7 @@ describe("IssuesList", () => {
 
     await waitForAssertion(() => {
       expect(container.querySelectorAll('[data-testid="issue-row"]')).toHaveLength(100);
-      expect(container.textContent).toContain("Rendering 100 of 220 tasks");
+      expect(container.textContent).toContain("Exibindo 100 de 220 tarefas");
     });
 
     act(() => {
@@ -1595,7 +2024,7 @@ describe("IssuesList", () => {
 
     await waitForAssertion(() => {
       expect(container.querySelectorAll('[data-testid="issue-row"]')).toHaveLength(250);
-      expect(container.textContent).toContain("Rendering 250 of 420 tasks");
+      expect(container.textContent).toContain("Exibindo 250 de 420 tarefas");
     });
 
     act(() => {
@@ -1767,7 +2196,7 @@ describe("IssuesList", () => {
 
     await waitForAssertion(() => {
       const columnsButton = Array.from(document.body.querySelectorAll("button")).find(
-        (button) => button.getAttribute("title") === "Columns",
+        (button) => button.getAttribute("aria-label") === "Colunas",
       );
       expect(columnsButton).not.toBeUndefined();
       expect(container.textContent).toContain("PAP-9");
@@ -1825,6 +2254,7 @@ describe("IssuesList", () => {
   });
 
   it("preserves stored grouping across refresh when initial assignees are applied", async () => {
+    await i18n.changeLanguage("en");
     localStorage.setItem(
       "paperclip:test-issues:company-1",
       JSON.stringify({ groupBy: "status", sortField: "updated", sortDir: "desc" }),
@@ -2047,7 +2477,7 @@ describe("IssuesList", () => {
 
     await act(async () => {
       const filterButton = Array.from(document.body.querySelectorAll("button")).find(
-        (button) => button.getAttribute("title") === "Filter",
+        (button) => button.getAttribute("title") === "Filtro",
       );
       filterButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await Promise.resolve();
@@ -2055,14 +2485,14 @@ describe("IssuesList", () => {
 
     await waitForAssertion(() => {
       const toggle = Array.from(document.body.querySelectorAll("label")).find(
-        (label) => label.textContent?.includes("Hide routine runs"),
+        (label) => label.textContent?.includes("Ocultar execuções de rotina"),
       );
       expect(toggle).not.toBeUndefined();
     });
 
     await act(async () => {
       const toggle = Array.from(document.body.querySelectorAll("label")).find(
-        (label) => label.textContent?.includes("Hide routine runs"),
+        (label) => label.textContent?.includes("Ocultar execuções de rotina"),
       );
       toggle?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await Promise.resolve();
@@ -2091,13 +2521,13 @@ describe("IssuesList", () => {
     );
 
     await waitForAssertion(() => {
-      const input = container.querySelector('input[aria-label="Search tasks"]') as HTMLInputElement | null;
+      const input = container.querySelector('input[aria-label="Buscar tarefas..."]') as HTMLInputElement | null;
       expect(input).not.toBeNull();
       input?.focus();
       expect(document.activeElement).toBe(input);
     });
 
-    const input = container.querySelector('input[aria-label="Search tasks"]') as HTMLInputElement;
+    const input = container.querySelector('input[aria-label="Buscar tarefas..."]') as HTMLInputElement;
     act(() => {
       input.dispatchEvent(new KeyboardEvent("keydown", {
         key: "Enter",
@@ -2127,13 +2557,13 @@ describe("IssuesList", () => {
     );
 
     await waitForAssertion(() => {
-      const input = container.querySelector('input[aria-label="Search tasks"]') as HTMLInputElement | null;
+      const input = container.querySelector('input[aria-label="Buscar tarefas..."]') as HTMLInputElement | null;
       expect(input).not.toBeNull();
       input?.focus();
       expect(document.activeElement).toBe(input);
     });
 
-    const input = container.querySelector('input[aria-label="Search tasks"]') as HTMLInputElement;
+    const input = container.querySelector('input[aria-label="Buscar tarefas..."]') as HTMLInputElement;
     act(() => {
       input.dispatchEvent(new KeyboardEvent("keydown", {
         key: "Escape",
@@ -2207,6 +2637,7 @@ describe("IssuesList", () => {
   });
 
   it("draws local-calendar separators between date-sorted rows", async () => {
+    await i18n.changeLanguage("en");
     const now = new Date();
     const hourAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
     const threeDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 12);
@@ -2290,6 +2721,7 @@ describe("IssuesList", () => {
   });
 
   it("does not synthesize an empty Yesterday group", async () => {
+    await i18n.changeLanguage("en");
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
     const tenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 10, 12);
@@ -2321,6 +2753,7 @@ describe("IssuesList", () => {
   });
 
   it("places separators around expanded nested rows in visible order", async () => {
+    await i18n.changeLanguage("en");
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
     const threeDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 12);
@@ -2361,6 +2794,7 @@ describe("IssuesList", () => {
   });
 
   it("emits one Today heading when all rows share today's calendar group", async () => {
+    await i18n.changeLanguage("en");
     const now = new Date();
     const todayMorning = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9);
     const todayNoon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);

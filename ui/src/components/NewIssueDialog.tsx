@@ -1,6 +1,7 @@
 import { usePrimaryAgentPresentation } from "./primary-agent/PrimaryAgentPresentation";
 import { useWorkspaceIsolationControls } from "@/hooks/useWorkspaceIsolationControls";
 import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties, type DragEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AgentEnvConfig, EnvBinding, IssueWorkMode } from "@paperclipai/shared";
 import { useDialog } from "../context/DialogContext";
@@ -277,6 +278,7 @@ function isWorkModeEscapeShortcut(e: Pick<KeyboardEvent, "key" | "metaKey">) {
 }
 
 export function NewIssueDialog() {
+  const { t } = useTranslation();
   const { visible: workspaceIsolationControlsVisible } = useWorkspaceIsolationControls();
   const { newIssueOpen, newIssueDefaults, closeNewIssue } = useDialog();
   const visualViewportLayout = useVisualViewportLayout(newIssueOpen);
@@ -403,8 +405,8 @@ export function NewIssueDialog() {
   const privateParentProject = privacyParent?.project?.visibility === "private" ? privacyParent.project : null;
   const inheritedPrivateProject = privateParentProject ?? (!isPrivate && currentProject?.visibility === "private" ? currentProject : null);
   const inheritedPrivacyReason = privacyParent?.visibility === "private"
-    ? `Subtask of private task ${privacyParent.title || newIssueDefaults.parentTitle || parentIssueLabel}`
-    : inheritedPrivateProject ? `In private project ${inheritedPrivateProject.name}` : undefined;
+    ? t("taskCreation.dialog.privateParent", { title: privacyParent.title || newIssueDefaults.parentTitle || parentIssueLabel })
+    : inheritedPrivateProject ? t("taskCreation.dialog.privateProject", { name: inheritedPrivateProject.name }) : undefined;
   const effectivePrivate = isPrivate || inheritsPrivateAccess
     || orderedProjects.some(project => project.id === projectId && project.visibility === "private");
 
@@ -1136,7 +1138,7 @@ export function NewIssueDialog() {
           }
         }}
       >
-        <DialogTitle className="sr-only">{isSubIssueMode ? "New sub-task" : "New task"}</DialogTitle>
+        <DialogTitle className="sr-only">{t(isSubIssueMode ? "taskCreation.dialog.newSubTask" : "taskCreation.dialog.newTask")}</DialogTitle>
         <div
           ref={dialogBodyRef}
           className={cn("min-h-0 overflow-y-auto overscroll-contain", isFileDragOver && "bg-accent/20")}
@@ -1150,11 +1152,11 @@ export function NewIssueDialog() {
               workMode={workMode}
               onWorkModeChange={setWorkMode}
               disabled={createIssue.isPending || !effectiveCompanyId}
-              placeholder="Describe a task…"
+              placeholder={t("taskCreation.dialog.describeTask")}
               mobile={isMobile}
               mentions={mentionOptions}
               onImageUpload={async (file) => {
-                if (!effectiveCompanyId) throw new Error("No organization selected");
+                if (!effectiveCompanyId) throw new Error(t("taskCreation.selectors.noOrganization"));
                 const asset = await assetsApi.uploadImage(effectiveCompanyId, file, "issues/drafts");
                 return asset.contentPath;
               }}
@@ -1195,7 +1197,7 @@ export function NewIssueDialog() {
                     }
                   },
                 },
-                submitLabel: isSubIssueMode ? "Create sub-task" : "Create task",
+                submitLabel: t(isSubIssueMode ? "taskCreation.dialog.createSubTask" : "taskCreation.dialog.createTask"),
                 canSubmitWithoutBody: Boolean(title.trim()),
                 onSelectFiles: stageFiles,
                 runSettings: composerSettings,
@@ -1205,7 +1207,7 @@ export function NewIssueDialog() {
                     <div className="mb-3 flex flex-col gap-2 text-xs">
                       {hasTitle ? (
                         <input
-                          aria-label="Task title"
+                          aria-label={t("taskCreation.dialog.taskTitle")}
                           value={title}
                           disabled={createIssue.isPending}
                           className="w-full bg-transparent text-sm text-foreground outline-none"
@@ -1221,7 +1223,7 @@ export function NewIssueDialog() {
                           <div className="max-w-full rounded-md border border-border bg-muted/30 px-2.5 py-1.5 text-xs text-muted-foreground">
                             <div className="flex items-center gap-1.5">
                               <ListTree className="h-3.5 w-3.5 shrink-0" />
-                              <span className="shrink-0">Sub-task of</span>
+                              <span className="shrink-0">{t("taskCreation.dialog.subTaskOf")}</span>
                               <span className="font-medium text-foreground">{parentIssueLabel}</span>
                             </div>
                             {newIssueDefaults.parentTitle ? (
@@ -1236,21 +1238,20 @@ export function NewIssueDialog() {
                   <>
                     {parentPrivacyUnresolved ? (
                       <div role={parentPrivacyError ? "alert" : "status"} className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{parentPrivacyError ? "Couldn't check parent access." : "Checking parent access…"}</span>
-                        {parentPrivacyError ? <Button variant="ghost" size="sm" onClick={() => void refetchParentPrivacy()}>Retry</Button> : null}
+                        <span>{parentPrivacyError ? t("taskCreation.dialog.parentAccessError") : t("taskCreation.dialog.checkingParentAccess")}</span>
+                        {parentPrivacyError ? <Button variant="ghost" size="sm" onClick={() => void refetchParentPrivacy()}>{t("taskCreation.dialog.retry")}</Button> : null}
                       </div>
                     ) : null}
                     {worktreeSelectionIncomplete && !worktreesLoading ? (
                       <p role="alert" className="mb-2 text-xs text-destructive">
-                        {worktreesError ? "Couldn't check the selected worktree. Retry in Worktrees or choose New worktree."
-                          : "The selected worktree is no longer available. Choose another worktree or start a new one."}
+                        {worktreesError ? t("taskCreation.dialog.worktreeUnavailable") : t("taskCreation.dialog.worktreeMissing")}
                       </p>
                     ) : null}
                     {stagedFiles.length > 0 ? (
                       <div className="mt-4 space-y-3 rounded-lg border border-border/70 p-3">
                         {stagedDocuments.length > 0 ? (
                           <div className="space-y-2">
-                            <div className="text-xs font-medium text-muted-foreground">Documents</div>
+                            <div className="text-xs font-medium text-muted-foreground">{t("taskCreation.dialog.documents")}</div>
                             <div className="space-y-2">
                               {stagedDocuments.map((file) => (
                                 <div
@@ -1280,7 +1281,7 @@ export function NewIssueDialog() {
                                     className="shrink-0 text-muted-foreground"
                                     onClick={() => removeStagedFile(file.id)}
                                     disabled={createIssue.isPending}
-                                    title="Remove document"
+                                    title={t("taskCreation.dialog.removeDocument")}
                                   >
                                     <X className="h-3.5 w-3.5" />
                                   </Button>
@@ -1292,7 +1293,7 @@ export function NewIssueDialog() {
 
                         {stagedAttachments.length > 0 ? (
                           <div className="space-y-2">
-                            <div className="text-xs font-medium text-muted-foreground">Attachments</div>
+                            <div className="text-xs font-medium text-muted-foreground">{t("taskCreation.dialog.attachments")}</div>
                             <div className="space-y-2">
                               {stagedAttachments.map((file) => (
                                 <div
@@ -1314,7 +1315,7 @@ export function NewIssueDialog() {
                                     className="shrink-0 text-muted-foreground"
                                     onClick={() => removeStagedFile(file.id)}
                                     disabled={createIssue.isPending}
-                                    title="Remove attachment"
+                                    title={t("taskCreation.dialog.removeAttachment")}
                                   >
                                     <X className="h-3.5 w-3.5" />
                                   </Button>
@@ -1332,10 +1333,11 @@ export function NewIssueDialog() {
                       >
                         <Flag className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-300" />
                         <span className="leading-snug">
-                          Assigning implies executable intent - leave status as{" "}
-                          <span className="font-medium">Backlog</span> only to deliberately park this. The assignee will
-                          not be woken until status moves to <span className="font-medium">Todo</span> or{" "}
-                          <span className="font-medium">In Progress</span>.
+                          {t("taskCreation.dialog.assignedBacklog", {
+                            backlog: t("taskCollection.filters.status.backlog"),
+                            todo: t("taskCollection.filters.status.todo"),
+                            inProgress: t("taskCollection.filters.status.inProgress"),
+                          })}
                         </span>
                       </div>
                     ) : null}
@@ -1343,12 +1345,12 @@ export function NewIssueDialog() {
                     {selectedAssigneeAgent?.status === "paused" ? (
                       <div data-testid="new-issue-paused-assignee-note" className="mx-4 mb-2">
                         <InlineBanner tone="warning" icon={PauseCircle} compact>
-                          <span className="font-medium">{selectedAssigneeAgent.name}</span> is paused and will not start
-                          work on this task until it is resumed
-                          {selectedAssigneeAgent.pauseReason === "import"
-                            ? " — it arrived paused from an organization import"
-                            : ""}
-                          . You can resume it from the task page after creating the task.
+                          {t("taskCreation.dialog.pausedAssignee", {
+                            agent: selectedAssigneeAgent.name,
+                            importReason: selectedAssigneeAgent.pauseReason === "import"
+                              ? t("taskCreation.dialog.pausedImportReason")
+                              : "",
+                          })}
                         </InlineBanner>
                       </div>
                     ) : null}
@@ -1360,8 +1362,7 @@ export function NewIssueDialog() {
                       >
                         <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-300" />
                         <span className="leading-snug">
-                          Low-trust review agent. It can only act inside its assigned review boundary; task, project, or
-                          run policy defines the concrete scope.
+                          {t("taskCreation.dialog.lowTrustAssignee")}
                         </span>
                       </div>
                     ) : null}
@@ -1369,8 +1370,9 @@ export function NewIssueDialog() {
                     {showParentWorkspaceWarning ? (
                       <div className="mb-2">
                         <InlineBanner tone="warning" compact>
-                          This sub-task will no longer use the parent task workspace
-                          {parentExecutionWorkspaceLabel ? ` (${parentExecutionWorkspaceLabel})` : ""}.
+                          {t("taskCreation.dialog.parentWorkspaceWarning", {
+                            workspaceSuffix: parentExecutionWorkspaceLabel ? ` (${parentExecutionWorkspaceLabel})` : "",
+                          })}
                         </InlineBanner>
                       </div>
                     ) : null}
@@ -1386,30 +1388,30 @@ export function NewIssueDialog() {
                       value={projectId}
                       options={projectOptions}
                       recentOptionIds={recentProjectIds}
-                      placeholder="Project"
-                      mobileTitle="Select project"
+                      placeholder={t("taskCreation.selectors.project")}
+                      mobileTitle={t("taskCreation.selectors.selectProject")}
                       modal
                       className="h-8 min-w-0 flex-1 gap-1.5 border-0 bg-transparent px-2 text-xs shadow-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-0 sm:max-w-64 sm:flex-none"
                       disabled={createIssue.isPending}
                       triggerDataSlot="new-issue-compact-control"
                       contentStyle={entityPickerViewportStyle}
-                      noneLabel="No project"
+                      noneLabel={t("taskCreation.selectors.noProject")}
                       noneAtTop
-                      searchPlaceholder="Search projects..."
-                      emptyMessage="No projects found."
+                      searchPlaceholder={t("taskCreation.selectors.searchProjects")}
+                      emptyMessage={t("taskCreation.selectors.noProjects")}
                       onChange={handleProjectChange}
                       renderTriggerValue={(option) =>
                         option && currentProject ? (
                           <>
                             <Folder className="size-3.5 shrink-0" style={{ color: currentProject.color ?? "var(--project-seed)" }} aria-hidden />
                             <span className="truncate">{option.label}</span>
-                            {currentProject.visibility === "private" ? <Lock className="size-3 shrink-0 text-muted-foreground" aria-label="Private project" /> : null}
+                            {currentProject.visibility === "private" ? <Lock className="size-3 shrink-0 text-muted-foreground" aria-label={t("taskCreation.selectors.privateProject")} /> : null}
                             <ChevronDown className="size-3 shrink-0 text-muted-foreground" aria-hidden />
                           </>
                         ) : (
                           <>
                             <Folder className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                            <span className="truncate text-muted-foreground">Project</span>
+                            <span className="truncate text-muted-foreground">{t("taskCreation.selectors.project")}</span>
                             <ChevronDown className="size-3 shrink-0 text-muted-foreground" aria-hidden />
                           </>
                         )
@@ -1421,7 +1423,7 @@ export function NewIssueDialog() {
                           <>
                             <Folder className="size-4 shrink-0" style={{ color: project?.color ?? "var(--project-seed)" }} aria-hidden />
                             <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                            {project?.visibility === "private" ? <Lock className="size-3.5 shrink-0 text-muted-foreground" aria-label="Private project" /> : null}
+                            {project?.visibility === "private" ? <Lock className="size-3.5 shrink-0 text-muted-foreground" aria-label={t("taskCreation.selectors.privateProject")} /> : null}
                           </>
                         );
                       }}

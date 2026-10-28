@@ -7,6 +7,7 @@ import type { Issue } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IssueRow } from "./IssueRow";
 import { StatusIcon } from "./StatusIcon";
+import { i18n } from "../i18n";
 
 vi.mock("@/lib/router", () => ({
   Link: ({
@@ -88,7 +89,8 @@ function createIssue(overrides: Partial<Issue> = {}): Issue {
 describe("IssueRow", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -195,6 +197,49 @@ describe("IssueRow", () => {
     const archiveButton = container.querySelector<HTMLButtonElement>('button[aria-label="Archive"]');
     expect(archiveButton?.className).toContain("py-1");
     expect(archiveButton?.className).not.toContain("h-5");
+
+    act(() => root.unmount());
+  });
+
+  it("localizes row labels while preserving the issue identifier and title", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const issue = createIssue({
+      identifier: "PAP-42",
+      title: "Resumo privado do usuário",
+      status: "blocked",
+      blockedBy: [{
+        id: "blocker-1",
+        identifier: "PAP-43",
+        title: "Tarefa em espera",
+        status: "backlog",
+        priority: "high",
+        assigneeAgentId: "agent-99",
+        assigneeUserId: null,
+      }],
+    });
+
+    act(() => {
+      root.render(
+        <IssueRow
+          issue={issue}
+          presentation="task"
+          unreadState="visible"
+          onMarkRead={() => undefined}
+          onArchive={() => undefined}
+        />,
+      );
+    });
+
+    const link = container.querySelector<HTMLAnchorElement>("a[data-inbox-issue-link]");
+    expect(link?.textContent).toContain("Abrir tarefa: PAP-42 — Resumo privado do usuário");
+    expect(link?.textContent).not.toContain("Open task");
+    expect(container.querySelector('button[aria-label="Marcar como lido"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Arquivar"]')).not.toBeNull();
+    expect(container.textContent).toContain("Bloqueada por tarefa parada");
+    expect(container.querySelector('[data-testid="issue-row-parked-blocker"]')?.getAttribute("title"))
+      .toContain("Há pelo menos uma tarefa bloqueadora");
+    expect(container.querySelector("svg[aria-label]")?.getAttribute("aria-label")).toBe("Bloqueada");
 
     act(() => root.unmount());
   });
@@ -786,7 +831,17 @@ describe("IssueRow", () => {
     it("stays calm while the next attempt is still ahead", () => {
       const chip = renderChip(recoveryIssue(at(3 * 60_000)));
       expect(chip?.getAttribute("data-recovery-state")).toBe("in_progress");
-      expect(chip?.getAttribute("aria-label")).toContain("next try in 3m");
+      expect(chip?.getAttribute("aria-label")).toContain("next try in 3 min.");
+    });
+
+    it("localizes recovery labels and retry summaries into Brazilian Portuguese", async () => {
+      await i18n.changeLanguage("pt-BR");
+      const chip = renderChip(recoveryIssue(at(3 * 60_000)));
+
+      expect(chip?.getAttribute("aria-label"))
+        .toBe("Recuperação em andamento · 1/5 — Tentativa 1 de 5 · próxima tentativa em 3 min");
+      expect(chip?.getAttribute("title"))
+        .toContain("Abra a tarefa de origem para agir.");
     });
 
     it("warns once the stored attempt came due and never ran", () => {
@@ -796,7 +851,7 @@ describe("IssueRow", () => {
       expect(chip?.getAttribute("data-recovery-state")).toBe("needed");
       const label = chip?.getAttribute("aria-label") ?? "";
       expect(label).toContain("Recovery needed");
-      expect(label).toContain("retry missed 5m ago");
+      expect(label).toContain("retry missed 5 min. ago");
       expect(label).not.toContain("next try");
     });
 

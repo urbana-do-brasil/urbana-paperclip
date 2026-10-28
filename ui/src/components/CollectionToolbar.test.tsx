@@ -52,6 +52,7 @@ describe("CollectionToolbar", () => {
     root = createRoot(container);
     flushSync(() => root?.render(<CollectionToolbar search={<span>Search</span>} />));
 
+    expect(container.querySelector('[role="toolbar"]')?.getAttribute("aria-label")).toBe("Controles da coleção");
     expect(container.querySelector('[data-slot="collection-toolbar-context"]')).toBeNull();
     expect(container.querySelector('[data-slot="collection-toolbar-controls"]')).toBeNull();
     expect(container.querySelector('[data-slot="collection-toolbar-actions"]')).toBeNull();

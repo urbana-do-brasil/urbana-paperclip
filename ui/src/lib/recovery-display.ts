@@ -15,6 +15,16 @@ export type RecoveryDisplayState =
 
 export type ActiveRecoveryDisplayState = Exclude<RecoveryDisplayState, "resolved">;
 
+export type RecoveryTranslationValues = {
+  attempt?: number;
+  count?: number;
+  duration?: string;
+  identifier?: string;
+  maxAttempts?: number;
+};
+
+export type RecoveryTranslator = (key: string, values?: RecoveryTranslationValues) => string;
+
 export const RECOVERY_CHIP_DEFAULT_TONE: Record<
   ActiveRecoveryDisplayState,
   { className: string; icon: typeof TriangleAlert; label: string }
@@ -117,9 +127,10 @@ export function recoveryChipLabel(
   state: ActiveRecoveryDisplayState,
   kind: IssueRecoveryActionKind,
   lineage?: RecoveryRetryLineage | null,
+  translate?: RecoveryTranslator,
 ): string {
   if (kind === "workspace_validation" && state === "needed") {
-    return "Workspace recovery needed";
+    return translate?.("taskCollection.rows.recovery.workspaceNeeded") || "Workspace recovery needed";
   }
   if (
     state === "in_progress" &&
@@ -127,7 +138,17 @@ export function recoveryChipLabel(
     lineage.maxAttempts !== null &&
     lineage.attempt > 0
   ) {
-    return `Recovery in progress · ${Math.min(lineage.attempt, lineage.maxAttempts)}/${lineage.maxAttempts}`;
+    const attempt = Math.min(lineage.attempt, lineage.maxAttempts);
+    return translate?.("taskCollection.rows.recovery.inProgressAttempts", {
+      attempt,
+      maxAttempts: lineage.maxAttempts,
+    }) || `Recovery in progress · ${attempt}/${lineage.maxAttempts}`;
   }
-  return RECOVERY_CHIP_DEFAULT_TONE[state].label;
+  const keyByState: Record<ActiveRecoveryDisplayState, string> = {
+    needed: "taskCollection.rows.recovery.needed",
+    in_progress: "taskCollection.rows.recovery.inProgress",
+    observe_only: "taskCollection.rows.recovery.observeOnly",
+    escalated: "taskCollection.rows.recovery.escalated",
+  };
+  return translate?.(keyByState[state]) || RECOVERY_CHIP_DEFAULT_TONE[state].label;
 }

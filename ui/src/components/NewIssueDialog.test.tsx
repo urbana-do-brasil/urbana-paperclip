@@ -10,6 +10,7 @@ import { trackRecentAssignee, trackRecentAssigneeUser } from "../lib/recent-assi
 import { getLastProjectId, trackRecentProject } from "../lib/recent-projects";
 import { rememberComposerEffort } from "../lib/recent-composer-effort";
 import { NewIssueDialog } from "./NewIssueDialog";
+import { i18n } from "../i18n";
 
 const primaryState = vi.hoisted(() => ({ primaryAgentId: null as string | null, loading: false }));
 vi.mock("./primary-agent/PrimaryAgentPresentation", () => ({ usePrimaryAgentPresentation: () => primaryState }));
@@ -353,7 +354,8 @@ describe("NewIssueDialog", () => {
   let originalVisualViewportDescriptor: PropertyDescriptor | undefined;
   let originalInnerHeightDescriptor: PropertyDescriptor | undefined;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     primaryState.primaryAgentId = null;
     primaryState.loading = false;
     vi.useRealTimers();
@@ -405,7 +407,7 @@ describe("NewIssueDialog", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     globalThis.ResizeObserver = originalResizeObserver!;
     if (originalVisualViewportDescriptor) {
       Object.defineProperty(window, "visualViewport", originalVisualViewportDescriptor);
@@ -418,6 +420,49 @@ describe("NewIssueDialog", () => {
       Reflect.deleteProperty(window, "innerHeight");
     }
     document.body.innerHTML = "";
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("localizes the creation dialog and worktree picker in PT-BR and English", async () => {
+    const expected = {
+      "pt-BR": {
+        title: "Nova tarefa",
+        description: "Descreva uma tarefa…",
+        create: "Criar tarefa",
+        worktreeLabel: "Árvores de trabalho",
+        newWorktree: "Nova árvore de trabalho",
+        noWorktrees: "Ainda não há árvores de trabalho.",
+      },
+      en: {
+        title: "New task",
+        description: "Describe a task…",
+        create: "Create task",
+        worktreeLabel: "Worktrees",
+        newWorktree: "New worktree",
+        noWorktrees: "No existing worktrees yet.",
+      },
+    } as const;
+
+    for (const locale of ["pt-BR", "en"] as const) {
+      await i18n.changeLanguage(locale);
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: true });
+      mockProjectsApi.list.mockResolvedValue([
+        { id: "project-1", name: "Alpha", executionWorkspacePolicy: { enabled: true, defaultMode: "shared_workspace" }, workspaces: [{ id: "source-1", isPrimary: true }] },
+      ]);
+      mockExecutionWorkspacesApi.listSummaries.mockResolvedValue([]);
+      dialogState.newIssueDefaults = { projectId: "project-1" };
+
+      const { root } = renderDialog(container);
+      await waitForAssertion(() => {
+        expect(container.querySelector("h2")?.textContent).toBe(expected[locale].title);
+        expect(container.querySelector(`textarea[aria-label="${expected[locale].description}"]`)).not.toBeNull();
+        expect(container.querySelector(`[aria-label="${expected[locale].create}"]`)).not.toBeNull();
+        expect(container.querySelector(`[aria-label="${expected[locale].worktreeLabel}"]`)).not.toBeNull();
+        expect(container.querySelector('[cmdk-item][data-value="isolated_workspace"]')?.textContent).toContain(expected[locale].newWorktree);
+        expect(container.textContent).toContain(expected[locale].noWorktrees);
+      });
+      act(() => root.unmount());
+    }
   });
 
   const defaultAgents = [

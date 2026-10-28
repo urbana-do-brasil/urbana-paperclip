@@ -1,5 +1,6 @@
 import type { IssueRecoveryAction, IssueScheduledRetry } from "@paperclipai/shared";
 import { formatMonitorOffset } from "./issue-monitor";
+import type { RecoveryTranslator } from "./recovery-display";
 
 /**
  * Which bounded retry budget the server is currently spending on a recovery action.
@@ -223,21 +224,77 @@ export function formatRecoveryRetryOffset(lineage: RecoveryRetryLineage): string
  * One compact sentence fragment shared by the card and the blocker chips so every surface
  * reports the same attempt count and due time.
  */
-export function formatRecoveryLineageSummary(lineage: RecoveryRetryLineage): string | null {
+function localizedRetryDuration(value: string, translate: RecoveryTranslator): string {
+  const unitKeys: Record<string, string> = {
+    s: "durationSeconds",
+    m: "durationMinutes",
+    h: "durationHours",
+    d: "durationDay",
+  };
+  const parts = Array.from(value.matchAll(/(\d+)([smhd])/g));
+  if (parts.length === 0) return value;
+  return parts.map(([token, countText, unit]) => {
+    const count = Number(countText);
+    const key = unitKeys[unit];
+    if (!key) return token;
+    return translate(`taskCollection.rows.recovery.${key}`, { count });
+  }).join(" ");
+}
+
+function localizedRetryOffset(value: string, translate: RecoveryTranslator): string {
+  if (value === "now") return translate("taskCollection.rows.recovery.retryOffsetNow");
+  const inMatch = value.match(/^in (.+)$/);
+  if (inMatch) {
+    return translate("taskCollection.rows.recovery.retryOffsetIn", {
+      duration: localizedRetryDuration(inMatch[1], translate),
+    });
+  }
+  const agoMatch = value.match(/^(.+) ago$/);
+  if (agoMatch) {
+    return translate("taskCollection.rows.recovery.retryOffsetAgo", {
+      duration: localizedRetryDuration(agoMatch[1], translate),
+    });
+  }
+  return value;
+}
+
+export function formatRecoveryLineageSummary(
+  lineage: RecoveryRetryLineage,
+  translate?: RecoveryTranslator,
+): string | null {
   const parts: string[] = [];
-  const attempt = formatRecoveryAttemptLabel(lineage);
+  const attempt = lineage.maxAttempts === null
+    ? null
+    : translate?.("taskCollection.rows.recovery.attempt", {
+      attempt: Math.min(lineage.attempt, lineage.maxAttempts),
+      maxAttempts: lineage.maxAttempts,
+    }) ?? formatRecoveryAttemptLabel(lineage);
   if (attempt) parts.push(attempt);
-  const offset = formatRecoveryRetryOffset(lineage);
+  const rawOffset = formatRecoveryRetryOffset(lineage);
+  const offset = rawOffset && translate ? localizedRetryOffset(rawOffset, translate) : rawOffset;
   if (lineage.liveRunId) {
-    parts.push("attempt running now");
+    parts.push(translate?.("taskCollection.rows.recovery.attemptRunning") ?? "attempt running now");
   } else if (lineage.retryExpired) {
     // Never "next try 5m ago": a due time in the past is a missed attempt, and phrasing it as
     // an upcoming one is exactly the false healthy state this helper exists to prevent.
-    parts.push(offset ? `retry missed ${offset}` : "retry missed");
+    if (rawOffset && translate) {
+      const duration = localizedRetryDuration(rawOffset.replace(/^(?:in )|(?: ago)$/g, ""), translate);
+      parts.push(translate("taskCollection.rows.recovery.retryMissedIn", { duration }));
+    } else {
+      parts.push(offset ? `retry missed ${offset}` : "retry missed");
+    }
   } else if (offset) {
-    parts.push(offset === "now" ? "next try now" : `next try ${offset}`);
+    if (translate) {
+      parts.push(rawOffset === "now"
+        ? translate("taskCollection.rows.recovery.nextTryNow")
+        : translate("taskCollection.rows.recovery.nextTryIn", {
+          duration: localizedRetryDuration((rawOffset ?? "").replace(/^in /, ""), translate),
+        }));
+    } else {
+      parts.push(offset === "now" ? "next try now" : `next try ${offset}`);
+    }
   } else if (lineage.exhausted) {
-    parts.push("retries used up");
+    parts.push(translate?.("taskCollection.rows.recovery.retriesUsed") ?? "retries used up");
   }
   return parts.length > 0 ? parts.join(" · ") : null;
 }

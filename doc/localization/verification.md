@@ -3,7 +3,7 @@
 Change: `localize-paperclip-pt-br`.
 Branch: `codex/localize-paperclip-pt-br`.
 Base: `a09d8b56e2ebcc22ea12082e8f8758b1938e1436`.
-Progresso OpenSpec: **23/47**; grupos 1 e 2, jornadas 3.1–3.3, subetapa 3.4a e tarefa 4.2 verificados.
+Progresso OpenSpec: **33/61**; grupos 1 e 2, jornadas 3.1–3.3, etapas 3.4a–3.4b5a e tarefa 4.2 verificadas.
 
 ## Entrega verificada
 
@@ -306,3 +306,178 @@ continuam pendentes. O grupo 3.4 permanece aberto.
 
 Com esses testes e a auditoria final, a tarefa 4.2 foi concluída. As tarefas
 4.3/4.4 seguem pendentes.
+
+### Continuação — barra e busca da coleção de tarefas (3.4b1)
+
+- A busca e os nomes acessíveis da alternância lista/kanban agora usam os
+  catálogos PT-BR/inglês tanto na lista simplificada quanto na legada. A barra
+  compartilhada também localiza seu nome acessível padrão; a ação principal de
+  criar tarefa foi adaptada sem alterar os defaults enviados ao diálogo.
+- Os testes focados passaram: **72/72 em 4 arquivos** (`IssuesList.test.tsx`,
+  `CollectionToolbar.test.tsx`, `task-views.test.ts` e
+  `locale-validation.test.ts`). Asserções cobrem busca, criação, nomes de modo
+  acessíveis e presença/ausência do role toolbar nas duas variantes.
+- `pnpm typecheck` em `ui/`: aprovado. `openspec instructions apply` confirmou
+  o inventário atual de 52 tarefas. As saídas do Vitest incluíram avisos de
+  `act(...)` do harness manual de renderização já usado pela suite; não houve
+  falhas. `git diff --check` foi repetido após consolidar este registro.
+
+O lote 3.4b1 foi concluído. O menu de filtros e ordenação/agrupamento estão
+registrados nas subetapas 3.4b2a/3.4b2b abaixo; colunas/preferências (3.4b2c),
+linhas/estados da lista (3.4b3), quadro kanban (3.4b4) e formulário de criação
+(3.4b5) continuam pendentes. O grupo 3.4b e a feature global permanecem parciais.
+
+### Continuação — menu de filtros (3.4b2a)
+
+- O menu localiza nomes de filtros, status, filtros rápidos, responsável,
+  criador, projeto, etiquetas, visibilidade, objetos externos, buscas e nomes
+  acessíveis em PT-BR/inglês. As categorias/status de aprovação do Inbox também
+  usam chaves locais, pois o componente de filtros é compartilhado com essas
+  páginas. Valores de filtro, IDs, conteúdo dinâmico e callbacks foram mantidos.
+- `IssueFiltersPopover.test.tsx` e `locale-validation.test.ts`: **18/18 testes
+  passaram**. A regressão cobre as buscas acessíveis em PT-BR e seleção de
+  categoria do Inbox com o mesmo ID/callback. `pnpm typecheck` em `ui/` passou.
+- O Vitest manteve avisos `act(...)` do harness manual de renderização e o
+  aviso de configuração nativa do Vite; os testes foram aprovados.
+
+O lote 3.4b2a foi concluído. Ordenação/agrupamento está registrado na
+subetapa 3.4b2b abaixo; colunas/preferências (3.4b2c) e os lotes 3.4b3–3.4f
+continuam pendentes.
+
+### Continuação — ordenação e agrupamento (3.4b2b)
+
+- Os menus de ordenação e agrupamento agora traduzem opções e nomes acessíveis
+  nas variantes simplificada e legada. Os IDs de ordenação/agrupamento não
+  mudaram.
+- `IssuesList.test.tsx` e `locale-validation.test.ts`: **61/61 testes passaram**.
+  O teste escolhe ordenação por data de criação e agrupamento por responsável
+  nas duas variantes e confirma que `created` e `assignee` continuam sendo os
+  valores gravados nas preferências locais.
+- `pnpm typecheck` em `ui/`: aprovado. A verificação focada não executou build
+  completo nem browser; esses checks ficam para a consolidação das jornadas.
+
+O lote 3.4b2b foi concluído. O seletor de colunas e as preferências visuais
+(3.4b2c) estão registrados abaixo; os lotes 3.4b3–3.4f continuam pendentes.
+
+### Continuação — colunas e preferências da coleção (3.4b2c)
+
+- O seletor de colunas traduz botão, títulos, nomes, descrições, estado de
+  data e redefinição. As preferências de aninhamento, densidade dos cartões,
+  faixas do quadro e quantidade por coluna também estão localizadas nas duas
+  variantes da coleção. O componente compartilhado de colunas atualiza esses
+  rótulos no Inbox; o restante da jornada Inbox continua pendente.
+- `IssuesList.test.tsx`, `IssueColumns.test.tsx`, `Inbox.test.tsx` e
+  `locale-validation.test.ts`: **108/108 testes passaram**. Os testes conferem
+  opções em PT-BR, callback de coluna com o ID `assignee`, toggle de separadores
+  e preferência existente de cartões por coluna. `pnpm typecheck` em `ui/`:
+  aprovado.
+- A troca de rótulos não alterou valores gravados nem callbacks. O build/browser
+  completo das jornadas está reservado à consolidação posterior.
+
+A subtarefa 3.4b2c foi concluída e o grupo 3.4b2 está completo. O conteúdo
+acessível das linhas (3.4b3a), hierarquia/checklists/resumos/grupos por data
+(3.4b3b) e estados (3.4b3c) estão registrados abaixo; kanban detalhado (3.4b4), criação (3.4b5), detalhe,
+conversa/interações, Inbox completo e busca (3.4c–3.4f) continuam pendentes.
+
+### Continuação — conteúdo e acessibilidade das linhas (3.4b3a)
+
+- As linhas localizam nome acessível da tarefa, ações de arquivar/marcar como
+  lida, aviso de bloqueio por tarefa no backlog, estados e resumos de execução/
+  recuperação. As colunas localizam valores de fallback (responsável, criador,
+  projeto e subtarefa), dica de filtro por espaço de trabalho e o rótulo de
+  atividade relativa. IDs, títulos, identificadores, nomes fornecidos pelo
+  usuário, contagens e callbacks foram mantidos.
+- O componente compartilhado de status agora localiza rótulos, aria-labels,
+  razões dinâmicas de bloqueio e o seletor de status; os estados e valores
+  enviados aos callbacks permanecem iguais. O timestamp das linhas usa
+  formatação relativa PT-BR, mantendo a apresentação compacta existente em
+  inglês.
+- Os testes focados passaram: **122/122 em 5 arquivos** (IssueRow,
+  IssueColumns, StatusIcon, recovery-display e recovery-lineage).
+  locale-validation.test.ts: **12/12**; pnpm typecheck em ui/ passou.
+  pnpm check:tokens e pnpm check:token-gates passaram. O teste de catálogo
+  inicialmente apontou a categoria plural CLDR many ausente em PT-BR; as
+  chaves foram completadas e a validação repetida passou.
+- git diff --check e parse JSON do manifesto serão repetidos ao fechar o lote.
+  Não foram executados build completo nem testes de browser; ficam para a
+  consolidação posterior.
+
+A subtarefa 3.4b3a está concluída.
+
+### Continuação — hierarquia, checklists e resumos (3.4b3b)
+
+- A coleção localiza rótulos de hierarquia e checklists, relações de dependência,
+  controles de expandir/recolher, estados pausados e resumos de progresso. Os
+  separadores por data usam o idioma efetivo; quantidades, IDs, relações,
+  destinos e valores aria de progresso permanecem inalterados.
+- O resumo opcional de custo e os totais usam formatadores com locale explícito.
+  PT-BR e inglês mantêm seus formatos próprios, sem alterar valores ou moeda.
+- `IssuesList.test.tsx` e `LegacyIssuesList` verificam os resumos e separadores
+  em ambas as apresentações, nomes de dependência e preservação do ID de
+  destino. A execução focada passou: **189/189 testes em 8 arquivos**.
+- `pnpm typecheck`, `pnpm check:tokens`, `pnpm check:token-gates` e
+  `git diff --check` passaram. O build completo e a validação em browser ficam
+  para a consolidação posterior.
+
+A subtarefa 3.4b3b está concluída. O próximo lote é 3.4b3c: estados vazios,
+carregamento, falhas e limites de resultado da coleção.
+
+### Continuação — estados da coleção (3.4b3c)
+
+- As duas variantes da lista localizam o estado sem resultados, o nome acessível
+  do skeleton de carregamento, os alertas de falha, os limites de busca e de
+  colunas e a indicação de carregamento incremental. Quantidades e limites
+  numéricos continuam intactos; uma falha não apresenta também um falso estado
+  vazio.
+- Erros conhecidos usam `formatUiError` para apresentar o texto no idioma atual.
+  A apresentação preserva os detalhes originais de erros desconhecidos sem
+  tentar traduzir texto fornecido por provedores ou serviços externos.
+- `IssuesList.test.tsx` verifica estados vazios, carregamento e falhas em PT-BR
+  e inglês, nas variantes simplificada e legada, além das mensagens de limite e
+  dos totais de renderização. A execução focada passou: **85/85 testes em 5
+  arquivos**, incluindo validação dos catálogos e do formatador de erros.
+- `pnpm typecheck`, `pnpm check:tokens`, `pnpm check:token-gates`, parse dos JSON
+  e `git diff --check` passaram. Build completo e browser permanecem para a
+  consolidação posterior.
+
+A subtarefa 3.4b3c está concluída. O próximo lote é 3.4b4: quadro kanban,
+colunas, cartões, carregamento e estados de arrastar/soltar.
+
+### Continuação — quadro kanban (3.4b4)
+
+- Os sete status do quadro usam os rótulos localizados existentes. A mensagem
+  de quadro vazio, nomes acessíveis de status, badges de próxima etapa e
+  atividade/subtarefas, controles de revelar cartões e contadores de coluna
+  acompanham PT-BR e inglês sem alterar status, títulos, IDs ou contagens.
+- O quadro agora oferece movimentação por teclado e anúncios localizados para
+  início, destino, conclusão, cancelamento e movimento sem alteração. Os
+  testes confirmam as instruções acessíveis, início/cancelamento nos dois
+  idiomas e os valores de destino existentes.
+- `KanbanBoard.test.tsx`, `IssuesList.test.tsx`, `StatusIcon.test.tsx` e
+  `locale-validation.test.ts`: **91/91 testes passaram**. `pnpm typecheck`,
+  `pnpm check:tokens` e `pnpm check:token-gates` passaram. O aviso do Vitest
+  sobre `__dirname` na configuração do Vite continuou sem afetar os testes.
+- O build completo e browser permanecem reservados para a consolidação das
+  jornadas.
+
+A subtarefa 3.4b4 está concluída. O próximo lote é 3.4b5a: conteúdo, avisos,
+anexos e estados de acesso/workspace no diálogo de criação.
+
+### Continuação — conteúdo e estados do diálogo de criação (3.4b5a)
+
+- Título acessível, campo de descrição, criação de subtarefa, contexto da tarefa
+  pai, status, avisos de acesso/execução, anexos e seletores de projeto/worktree
+  agora usam PT-BR ou inglês conforme o locale. Nomes, títulos, IDs, nomes de
+  branch e conteúdo de arquivos continuam sendo valores dinâmicos originais.
+- O seletor de worktrees traduz modos, descrições, grupos, busca e estados de
+  carregamento/erro/vazio. O teste percorre as duas línguas sem alterar os
+  valores de modo ou workspace enviados ao formulário.
+- `NewIssueDialog.test.tsx` e `locale-validation.test.ts`: **96/96 testes
+  passaram**. `pnpm typecheck`, validação dos catálogos e `git diff --check`
+  passaram. Não houve alteração nos defaults herdados nem nos dados enviados.
+- Estados de envio, toasts de sucesso/falha e controles compartilhados do
+  compositor ficam no lote seguinte; build completo e browser permanecem para
+  a consolidação.
+
+A subtarefa 3.4b5a está concluída. Próximo lote: 3.4b5b, controles compartilhados
+do compositor e seletores; depois 3.4b5c tratará envio, erros e confirmação.
