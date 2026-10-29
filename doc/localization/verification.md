@@ -2734,4 +2734,6 @@ da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado;
 nenhum diagnóstico foi reportado nos arquivos alterados. Gates de tokens, diff e
 OpenSpec estrito passaram. Progresso real conforme as caixas do OpenSpec:
-**229/246 tarefas**. Próxima: 3.10, rotinas, pipelines, casos e status cards.
+**229/246 tarefas** no checkpoint da 3.9f5, antes da decomposição de 3.10.
+Após dividir a etapa em 3.10a–g, o progresso atual é **229/253 tarefas**.
+Próxima: 3.10a, coleção de rotinas.
