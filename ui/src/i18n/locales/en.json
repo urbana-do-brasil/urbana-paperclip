@@ -1078,7 +1078,9 @@
             "invalidFields": "Cron fields must use valid numbers, ranges, lists, wildcards, or steps.",
             "valid": "Valid cron.",
             "noUpcomingFires": "Valid cron, but no upcoming fires were found."
-          }
+          },
+          "timeZone": "Time zone",
+          "save": "Save schedule"
         },
         "countEmpty": "No triggers yet",
         "count_one": "{{count}} trigger",
@@ -1094,7 +1096,9 @@
         "kinds": {
           "schedule": "Schedule",
           "webhook": "Webhook",
-          "api": "API"
+          "api": "API",
+          "apiTrigger": "API trigger",
+          "githubWebhook": "GitHub webhook"
         },
         "signingMode": {
           "title": "Signing mode",
@@ -1129,7 +1133,78 @@
         "webhookUrlHelp": "Send a POST request with Content-Type: application/json. Keep this URL private when signing is disabled.",
         "delete": "Delete",
         "rotateSecret": "Rotate secret",
-        "saveTrigger": "Save trigger"
+        "saveTrigger": "Save trigger",
+        "errors": {
+          "draftSave": "Couldn’t save your draft in this browser. Keep this page open and try again.",
+          "saveTrigger": "Couldn’t save the trigger. Please try again.",
+          "saveSchedule": "Couldn’t save schedule.",
+          "replaceKey": "Couldn’t replace the key."
+        },
+        "setup": {
+          "triggerUnavailable": "This trigger is no longer available.",
+          "triggerReady": "This trigger is ready.",
+          "backToTriggers": "Back to triggers"
+        },
+        "connectionUnavailable": "Connection status is unavailable. Retrying…",
+        "emptyDescription": "Run this routine on a schedule or when another app sends a webhook.",
+        "removed": "was removed.",
+        "undo": "Undo",
+        "secretKey": "Secret key",
+        "authorizationHeaderValue": "Authorization header value",
+        "keyHidden": "The secret key is hidden.",
+        "replaceKey": "Replace key",
+        "hideKey": "Hide key",
+        "noAuthUrlSecret": "This webhook uses its URL as the shared secret.",
+        "hmacInstructions": "Sign the timestamp, a period, and the exact JSON body with HMAC-SHA256. Send X-Paperclip-Timestamp and X-Paperclip-Signature: sha256=<signature>.",
+        "checkConnection": "Check connection",
+        "replaceDialog": {
+          "title": "Replace the webhook key?",
+          "description": "The old key will stop working. Update your sending app with the new key."
+        },
+        "connectionDialog": {
+          "description": "This webhook is already enabled. Events sent now can start the routine. Send an event from your app to check delivery."
+        },
+        "connectionResults": {
+          "received": "Event received · Authentication passed",
+          "rejected": "Event arrived, but authentication failed. Check the key in your app.",
+          "waiting": "Waiting for an event from your app…"
+        },
+        "summaries": {
+          "setupUnfinished": "Setup unfinished · Events only test the connection",
+          "paused": "Paused",
+          "api": "Run through the API",
+          "authenticationFailed": "Authentication failed · Check the key in your app",
+          "receivingEvents": "Receiving events",
+          "ready": "Ready · Waiting for an event"
+        },
+        "resumeSetup": "Resume setup",
+        "apiDescription": "This trigger starts the routine through the API.",
+        "pauseTrigger": "Pause trigger",
+        "enableTrigger": "Enable trigger",
+        "card": {
+          "ariaLabel": "{{kind}} trigger",
+          "close": "Close",
+          "edit": "Edit {{kind}}",
+          "remove": "Remove {{kind}}",
+          "kindNouns": {
+            "schedule": "schedule",
+            "webhook": "webhook",
+            "api": "API"
+          }
+        },
+        "cron": {
+          "everyMinutes_one": "Every {{count}} minute",
+          "everyMinutes_other": "Every {{count}} minutes",
+          "everyHoursAtMinute_one": "Every {{count}} hour at :{{minute}}",
+          "everyHoursAtMinute_other": "Every {{count}} hours at :{{minute}}",
+          "everyHourAtMinute": "Every hour at :{{minute}}",
+          "everyDayAt": "Every day at {{time}}",
+          "weekdaysAt": "Every weekday at {{time}}",
+          "weekendsAt": "Every weekend at {{time}}",
+          "weekdayAt": "Every {{day}} at {{time}}",
+          "selectedWeekdaysAt": "Every {{days}} at {{time}}",
+          "dayOfMonthAt": "Day {{day}} of every month at {{time}}"
+        }
       },
       "delivery": {
         "concurrencyAria": "Concurrency policy",

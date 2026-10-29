@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { ScheduleEditor } from "./ScheduleEditor";
 import { buildRoutineTriggerPatch } from "../lib/routine-trigger-patch";
-import { describeCron } from "../lib/cron-readable";
+import { describeCronLocalized } from "../lib/cron-readable";
 import { useTranslation } from "@/i18n";
 
 const signingModes = ["app_webhook", "bearer", "hmac_sha256", "github_hmac", "none"];
@@ -69,7 +69,9 @@ export function RoutineTriggerCard({
     : trigger.kind === "webhook"
       ? t("routines.detail.triggers.kinds.webhook")
       : t("routines.detail.triggers.kinds.api");
-  const humanCron = trigger.kind === "schedule" ? describeCron(draft.cronExpression) : null;
+  const humanCron = trigger.kind === "schedule"
+    ? describeCronLocalized(draft.cronExpression, (key, options) => t(key, options), i18n.resolvedLanguage ?? i18n.language)
+    : null;
   const lastResultFailed = /fail|error/i.test(trigger.lastResult ?? "");
   const lastResultLabel = trigger.lastResult?.startsWith("Created execution issue ")
     ? t("routines.detail.triggers.taskCreated")
@@ -85,7 +87,7 @@ export function RoutineTriggerCard({
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2 text-sm font-medium">
             <KindIcon className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{trigger.label ?? trigger.kind}</span>
+            <span className="truncate">{trigger.label ?? kindLabel}</span>
           </div>
           {humanCron ? (
             <p id={`cron-readable-${trigger.id}`} className="text-xs text-muted-foreground">

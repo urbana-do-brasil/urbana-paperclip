@@ -1117,7 +1117,9 @@
             "invalidFields": "Os campos cron devem usar números, intervalos, listas, curingas ou passos válidos.",
             "valid": "Expressão cron válida.",
             "noUpcomingFires": "Expressão cron válida, mas não há próximas execuções."
-          }
+          },
+          "timeZone": "Fuso horário",
+          "save": "Salvar agendamento"
         },
         "countEmpty": "Ainda não há gatilhos",
         "count_one": "{{count}} gatilho",
@@ -1134,7 +1136,9 @@
         "kinds": {
           "schedule": "Agendamento",
           "webhook": "Webhook",
-          "api": "API"
+          "api": "API",
+          "apiTrigger": "Gatilho de API",
+          "githubWebhook": "Webhook do GitHub"
         },
         "signingMode": {
           "title": "Modo de assinatura",
@@ -1169,7 +1173,80 @@
         "webhookUrlHelp": "Envie uma solicitação POST com Content-Type: application/json. Mantenha esta URL privada quando a assinatura estiver desativada.",
         "delete": "Excluir",
         "rotateSecret": "Trocar segredo",
-        "saveTrigger": "Salvar gatilho"
+        "saveTrigger": "Salvar gatilho",
+        "errors": {
+          "draftSave": "Não foi possível salvar o rascunho neste navegador. Mantenha esta página aberta e tente novamente.",
+          "saveTrigger": "Não foi possível salvar o gatilho. Tente novamente.",
+          "saveSchedule": "Não foi possível salvar o agendamento.",
+          "replaceKey": "Não foi possível trocar a chave."
+        },
+        "setup": {
+          "triggerUnavailable": "Este gatilho não está mais disponível.",
+          "triggerReady": "Este gatilho está pronto.",
+          "backToTriggers": "Voltar aos gatilhos"
+        },
+        "connectionUnavailable": "Status da conexão indisponível. Tentando novamente…",
+        "emptyDescription": "Execute esta rotina em um horário programado ou quando outro app enviar um webhook.",
+        "removed": "foi removido.",
+        "undo": "Desfazer",
+        "secretKey": "Chave secreta",
+        "authorizationHeaderValue": "Valor do cabeçalho Authorization",
+        "keyHidden": "A chave secreta está oculta.",
+        "replaceKey": "Trocar chave",
+        "hideKey": "Ocultar chave",
+        "noAuthUrlSecret": "Este webhook usa a própria URL como segredo compartilhado.",
+        "hmacInstructions": "Assine o timestamp, um ponto e o corpo JSON exato com HMAC-SHA256. Envie X-Paperclip-Timestamp e X-Paperclip-Signature: sha256=<signature>.",
+        "checkConnection": "Verificar conexão",
+        "replaceDialog": {
+          "title": "Trocar a chave do webhook?",
+          "description": "A chave antiga deixará de funcionar. Atualize a chave no app que envia os eventos."
+        },
+        "connectionDialog": {
+          "description": "Este webhook já está ativo. Os eventos enviados agora podem iniciar a rotina. Envie um evento do app para verificar a entrega."
+        },
+        "connectionResults": {
+          "received": "Evento recebido · Autenticação aprovada",
+          "rejected": "O evento chegou, mas a autenticação falhou. Confira a chave no app.",
+          "waiting": "Aguardando um evento do app…"
+        },
+        "summaries": {
+          "setupUnfinished": "Configuração incompleta · Os eventos apenas testam a conexão",
+          "paused": "Pausado",
+          "api": "Executar pela API",
+          "authenticationFailed": "Falha na autenticação · Confira a chave no app",
+          "receivingEvents": "Recebendo eventos",
+          "ready": "Pronto · aguardando um evento"
+        },
+        "resumeSetup": "Retomar configuração",
+        "apiDescription": "Este gatilho inicia a rotina pela API.",
+        "pauseTrigger": "Pausar gatilho",
+        "enableTrigger": "Ativar gatilho",
+        "card": {
+          "ariaLabel": "Gatilho de {{kind}}",
+          "close": "Fechar",
+          "edit": "Editar {{kind}}",
+          "remove": "Remover {{kind}}",
+          "kindNouns": {
+            "schedule": "agendamento",
+            "webhook": "webhook",
+            "api": "API"
+          }
+        },
+        "cron": {
+          "everyMinutes_one": "A cada {{count}} minuto",
+          "everyMinutes_many": "A cada {{count}} minutos",
+          "everyMinutes_other": "A cada {{count}} minutos",
+          "everyHoursAtMinute_one": "A cada {{count}} hora, no minuto :{{minute}}",
+          "everyHoursAtMinute_many": "A cada {{count}} horas, no minuto :{{minute}}",
+          "everyHoursAtMinute_other": "A cada {{count}} horas, no minuto :{{minute}}",
+          "everyHourAtMinute": "A cada hora, no minuto :{{minute}}",
+          "everyDayAt": "Todos os dias às {{time}}",
+          "weekdaysAt": "Dias úteis às {{time}}",
+          "weekendsAt": "Fins de semana às {{time}}",
+          "weekdayAt": "Toda {{day}} às {{time}}",
+          "selectedWeekdaysAt": "{{days}} às {{time}}",
+          "dayOfMonthAt": "Dia {{day}} de cada mês às {{time}}"
+        }
       },
       "delivery": {
         "concurrencyAria": "Política de concorrência",
