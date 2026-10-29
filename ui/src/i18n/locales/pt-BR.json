@@ -1435,7 +1435,19 @@
     "modelId": "ID do modelo",
     "modelIdPlaceholder": "Informe o ID ou alias do modelo",
     "refreshing": "Atualizando…",
-    "refreshModels": "Atualizar modelos"
+    "refreshModels": "Atualizar modelos",
+    "defaultWithModel": "Padrão ({{model}})",
+    "search": "Buscar modelos…",
+    "searchCreatable": "Buscar modelos… (digite para criar)",
+    "detecting": "Detectando…",
+    "detectFromConfig": "Detectar pela configuração",
+    "redetectFromConfig": "Detectar novamente pela configuração",
+    "current": "atual",
+    "detected": "detectado",
+    "config": "configuração",
+    "useManualModel": "Usar modelo informado manualmente",
+    "noModelDetected": "Nenhum modelo detectado. Informe um modelo no formato provedor/modelo.",
+    "noModelsFound": "Nenhum modelo encontrado."
   },
   "agentDetailNavigation": {
     "agents": "Agentes",
@@ -1484,6 +1496,16 @@
       "changed": "Alterado",
       "noTrackedChanges": "nenhuma alteração registrada"
     },
+    "adapter": {
+      "section": "Adaptador",
+      "type": "Tipo de adaptador",
+      "typeHint": "Como este agente é executado: CLI local (Claude/Codex/OpenCode), OpenClaw Gateway, processo iniciado ou webhook HTTP genérico.",
+      "comingSoon": "Em breve",
+      "experimental": "Experimental",
+      "environmentTestFailed": "Falha ao testar o ambiente",
+      "modelLoadFailed": "Falha ao carregar os modelos do adaptador."
+    },
+    "configurationHeading": "Configuração",
     "identity": {
       "section": "Identidade do agente",
       "name": "Nome",

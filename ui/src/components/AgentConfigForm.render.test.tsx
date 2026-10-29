@@ -273,6 +273,7 @@ async function renderForm(
     environmentVariablesPlacement?: "configuration" | "secrets";
     hideInlineSave?: boolean;
     hidePromptTemplate?: boolean;
+    showAdapterTypeField?: boolean;
     onDirtyChange?: (dirty: boolean) => void;
     onSaveActionChange?: (save: (() => void) | null) => void;
     onCancelActionChange?: (cancel: (() => void) | null) => void;
@@ -307,7 +308,7 @@ async function renderForm(
               onDirtyChange={options.onDirtyChange}
               onSaveActionChange={options.onSaveActionChange}
               onCancelActionChange={options.onCancelActionChange}
-              showAdapterTypeField={false}
+              showAdapterTypeField={options.showAdapterTypeField ?? false}
               showAdapterTestEnvironmentButton={options.showAdapterTestEnvironmentButton ?? false}
             />
           </TooltipProvider>
@@ -876,12 +877,15 @@ describe("AgentConfigForm environment selector", () => {
         reportsTo: "manager-1",
         adapterConfig: { promptTemplate: "Use {{ agent.name }} for the current task." },
       },
-      { hidePromptTemplate: false },
+      { hidePromptTemplate: false, showAdapterTypeField: true },
     );
     roots.push(result.root);
 
     const text = result.container.textContent ?? "";
     expect(text).toContain("Identidade do agente");
+    expect(text).toContain("Adaptador");
+    expect(text).toContain("Tipo de adaptador");
+    expect(text).toContain("Configuração");
     expect(text).toContain("Nome");
     expect(text).toContain("Cargo");
     expect(text).toContain("Reporta-se a Ana Diretora");

@@ -2127,7 +2127,11 @@ export function ConfigurationTab({
         environmentVariablesPlacement="configuration"
         compactTestFeedback
         sectionOrder={["identity", "adapter", "configuration", "environment", "environment-variables", "run-policy"]}
-        sectionTitles={{ adapter: "Adapter", configuration: "Configuration", identity: t("agentConfiguration.identity.section") }}
+        sectionTitles={{
+          adapter: t("agentConfiguration.adapter.section"),
+          configuration: t("agentConfiguration.configurationHeading"),
+          identity: t("agentConfiguration.identity.section"),
+        }}
         canConfigureProviderTrace={canConfigureProviderTrace}
       /> : null}
 
