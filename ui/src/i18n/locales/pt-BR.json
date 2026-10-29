@@ -1770,6 +1770,27 @@
     }
   },
   "caseManagement": {
+    "detail": {
+      "caseFallback": "Caso",
+      "notFound": "Caso não encontrado.",
+      "backToCases": "← Voltar para casos",
+      "moreActions": "Mais ações do caso",
+      "copyMarkdown": "Copiar como Markdown",
+      "overview": "Visão geral",
+      "properties": "Propriedades",
+      "activity": "Atividade",
+      "description": "Descrição",
+      "attachments_one": "Anexo ({{formattedCount}})",
+      "attachments_other": "Anexos ({{formattedCount}})",
+      "attachments_many": "Anexos ({{formattedCount}})",
+      "markdown": {
+        "key": "Chave",
+        "type": "Tipo",
+        "status": "Status",
+        "labels": "Rótulos",
+        "none": "nenhum"
+      }
+    },
     "identity": {
       "caseId": "ID do caso",
       "caseKey": "chave do caso",

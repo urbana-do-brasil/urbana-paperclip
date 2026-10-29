@@ -37,15 +37,16 @@ import { PropertyChip, PropertyRow, PropertySection } from "@/components/issue-p
 import { IssueDocumentsSection } from "@/components/IssueDocumentsSection";
 import { CaseCopyableToken, CaseIdentifierKey } from "@/components/CaseIdentifierKey";
 import { copyTextToClipboard } from "@/lib/clipboard";
-import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
+import { cn, formatNumber } from "@/lib/utils";
 
-const STATUS_LABEL: Record<CaseStatus, string> = {
-  draft: "Draft",
-  in_progress: "In progress",
-  in_review: "In review",
-  approved: "Approved",
-  done: "Done",
-  cancelled: "Cancelled",
+const STATUS_LABEL_KEY: Record<CaseStatus, string> = {
+  draft: "caseManagement.collection.statuses.draft",
+  in_progress: "caseManagement.collection.statuses.inProgress",
+  in_review: "caseManagement.collection.statuses.inReview",
+  approved: "caseManagement.collection.statuses.approved",
+  done: "caseManagement.collection.statuses.done",
+  cancelled: "caseManagement.collection.statuses.cancelled",
 };
 
 const PRIMARY_FIELD_KEYS = ["name", "title", "body", "description"] as const;
@@ -194,6 +195,7 @@ function CaseStatusPicker({
   onChange: (next: CaseStatus) => void;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -202,9 +204,9 @@ function CaseStatusPicker({
           type="button"
           disabled={disabled}
           className="inline-flex items-center gap-1 rounded-md hover:bg-accent/50 disabled:opacity-50"
-          aria-label="Change case status"
+          aria-label={t("caseManagement.collection.changeStatus")}
         >
-          <StatusBadge status={status} />
+          <StatusBadge status={status} label={t(STATUS_LABEL_KEY[status])} />
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
       </PopoverTrigger>
@@ -219,7 +221,7 @@ function CaseStatusPicker({
             }}
             className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left hover:bg-accent"
           >
-            <StatusBadge status={s} />
+            <StatusBadge status={s} label={t(STATUS_LABEL_KEY[s])} />
             {s === status && <Check className="h-4 w-4 text-muted-foreground" />}
           </button>
         ))}
@@ -446,6 +448,7 @@ function CasePropertiesContent({
 }
 
 export function CaseDetail() {
+  const { t } = useTranslation();
   const { caseIdentifier } = useParams<{ caseIdentifier: string }>();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
@@ -493,10 +496,10 @@ export function CaseDetail() {
 
   useEffect(() => {
     setBreadcrumbs([
-      { label: "Cases", href: caseHref() },
-      { label: caseData ? `${caseData.identifier} — ${caseData.title}` : (caseIdentifier ?? "Case") },
+      { label: t("caseManagement.collection.title"), href: caseHref() },
+      { label: caseData ? `${caseData.identifier} — ${caseData.title}` : (caseIdentifier ?? t("caseManagement.detail.caseFallback")) },
     ]);
-  }, [setBreadcrumbs, caseData, caseIdentifier, caseHref]);
+  }, [setBreadcrumbs, caseData, caseIdentifier, caseHref, t]);
 
   const events = useMemo(() => eventsQuery.data ?? [], [eventsQuery.data]);
   const caseDocumentSubject = useMemo(() => {
@@ -588,9 +591,9 @@ export function CaseDetail() {
   if (caseQuery.isError || !caseData) {
     return (
       <div className="mx-auto max-w-md py-16 text-center">
-        <p className="text-sm text-muted-foreground">Case not found.</p>
+        <p className="text-sm text-muted-foreground">{t("caseManagement.detail.notFound")}</p>
         <Link to={caseHref()} className="mt-2 inline-block text-sm text-primary hover:underline">
-          ← Back to cases
+          {t("caseManagement.detail.backToCases")}
         </Link>
       </div>
     );
@@ -602,10 +605,10 @@ export function CaseDetail() {
     const markdown = [
       `# ${currentCase.identifier} ${currentCase.title}`,
       "",
-      `- Key: ${currentCase.key ?? "none"}`,
-      `- Type: ${currentCase.caseType}`,
-      `- Status: ${STATUS_LABEL[currentCase.status]}`,
-      currentCase.labels.length > 0 ? `- Labels: ${currentCase.labels.map((label) => label.name).join(", ")}` : "- Labels: none",
+      `- ${t("caseManagement.detail.markdown.key")}: ${currentCase.key ?? t("caseManagement.detail.markdown.none")}`,
+      `- ${t("caseManagement.detail.markdown.type")}: ${currentCase.caseType}`,
+      `- ${t("caseManagement.detail.markdown.status")}: ${t(STATUS_LABEL_KEY[currentCase.status])}`,
+      `- ${t("caseManagement.detail.markdown.labels")}: ${currentCase.labels.length > 0 ? currentCase.labels.map((label) => label.name).join(", ") : t("caseManagement.detail.markdown.none")}`,
     ].join("\n");
     void copyTextToClipboard(markdown).then(() => {
       setCopied(true);
@@ -629,7 +632,7 @@ export function CaseDetail() {
             />
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon-xs" aria-label="More case actions" title="More case actions">
+                <Button variant="ghost" size="icon-xs" aria-label={t("caseManagement.detail.moreActions")} title={t("caseManagement.detail.moreActions")}>
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
@@ -640,7 +643,7 @@ export function CaseDetail() {
                   onClick={() => copyCaseToClipboard(caseData)}
                 >
                   {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  Copy as markdown
+                  {t("caseManagement.detail.copyMarkdown")}
                 </button>
                 <button
                   type="button"
@@ -650,7 +653,7 @@ export function CaseDetail() {
                   }}
                 >
                   <SlidersHorizontal className="h-3 w-3" />
-                  Properties
+                  {t("caseManagement.detail.properties")}
                 </button>
               </PopoverContent>
             </Popover>
@@ -666,10 +669,10 @@ export function CaseDetail() {
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList variant="line" className="w-full justify-start gap-1">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="properties">Properties</TabsTrigger>
+          <TabsTrigger value="overview">{t("caseManagement.detail.overview")}</TabsTrigger>
+          <TabsTrigger value="properties">{t("caseManagement.detail.properties")}</TabsTrigger>
           <TabsTrigger value="activity">
-            Activity{events.length > 0 && <span className="ml-1 text-muted-foreground">{events.length}</span>}
+            {t("caseManagement.detail.activity")}{events.length > 0 && <span className="ml-1 text-muted-foreground">{formatNumber(events.length)}</span>}
           </TabsTrigger>
         </TabsList>
 
@@ -684,7 +687,7 @@ export function CaseDetail() {
 
           {description ? (
             <section className="space-y-2">
-              <h2 className="text-sm font-semibold">Description</h2>
+              <h2 className="text-sm font-semibold">{t("caseManagement.detail.description")}</h2>
               <Card className="px-4 py-3">
                 <CaseFieldValue value={description} />
               </Card>
@@ -693,7 +696,7 @@ export function CaseDetail() {
 
           {caseData.attachments.length > 0 && (
             <section className="space-y-2">
-              <h2 className="text-sm font-semibold">Attachments ({caseData.attachments.length})</h2>
+              <h2 className="text-sm font-semibold">{t("caseManagement.detail.attachments", { count: caseData.attachments.length, formattedCount: formatNumber(caseData.attachments.length) })}</h2>
               <CaseAttachmentsGallery attachments={caseData.attachments} />
             </section>
           )}

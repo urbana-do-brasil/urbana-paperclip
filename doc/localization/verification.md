@@ -3016,3 +3016,21 @@ A contagem foi reconciliada com `openspec instructions apply --json`, que conta
 as tarefas principais e as subtarefas. O progresso real é **253/277**; registros
 anteriores apresentam a contagem manual usada nos checkpoints anteriores.
 Próxima: 3.10e2, detalhe e propriedades de casos.
+
+O detalhe 3.10e2 foi dividido em e2a (moldura, status, abas e cópia Markdown)
+e e2b (propriedades, rótulos, tarefas e relações). A CLI do OpenSpec conta
+**253/279 tarefas**; próxima: 3.10e2a.
+
+
+## Casos — moldura e cópia do detalhe (3.10e2a)
+
+Breadcrumbs, estado de erro, status, abas, ações e rótulos humanos da cópia
+Markdown agora seguem PT-BR/en. Títulos, identificadores, chaves, tipos e
+rótulos fornecidos permanecem intactos ao trocar o idioma e copiar o caso.
+
+`CaseDetail.test.tsx`, `Cases.test.tsx` e `locale-validation.test.ts` passaram
+em **39/39 testes**. Gates de tokens, JSON, `git diff --check` e OpenSpec estrito
+passaram. O typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso da CLI OpenSpec: **254/279**; próxima: 3.10e2b, propriedades e
+relações.

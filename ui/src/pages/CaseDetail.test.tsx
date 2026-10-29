@@ -4,8 +4,9 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { AnchorHTMLAttributes } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CaseDetail as CaseDetailData, CaseSummary } from "@/api/cases";
+import { i18n } from "@/i18n";
 import { CaseDetail } from "./CaseDetail";
 
 function act(callback: () => void) {
@@ -209,7 +210,11 @@ function renderPage(container: HTMLDivElement) {
 
 describe("CaseDetail", () => {
   let container: HTMLDivElement;
-  beforeEach(() => {
+  let previousLanguage = "pt-BR";
+  beforeAll(() => { previousLanguage = i18n.language; });
+  afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     panelState.openPanel.mockClear();
@@ -279,7 +284,7 @@ describe("CaseDetail", () => {
 
     await waitForAssertion(() => {
       expect(mockCopyTextToClipboard).toHaveBeenCalledWith("PAP-C7");
-      expect(caseIdButton!.parentElement?.textContent).toContain("Copiado");
+      expect(caseIdButton!.parentElement?.textContent).toContain("Copied");
     });
 
     act(() => root.unmount());
@@ -306,7 +311,7 @@ describe("CaseDetail", () => {
 
     await waitForAssertion(() => {
       expect(mockCopyTextToClipboard).toHaveBeenCalledWith("v2026.707/hermes-agent-post");
-      expect(keyButton!.parentElement?.textContent).toContain("Copiado");
+      expect(keyButton!.parentElement?.textContent).toContain("Copied");
     });
 
     act(() => root.unmount());
@@ -407,7 +412,7 @@ describe("CaseDetail", () => {
 
     await waitForAssertion(() => {
       expect(mockCopyTextToClipboard).toHaveBeenCalledWith("v2026.707/hermes-agent-post");
-      expect(keyValue!.parentElement?.textContent).toContain("Copiado");
+      expect(keyValue!.parentElement?.textContent).toContain("Copied");
     });
 
     const titleValue = Array.from(panelContainer.querySelectorAll("button")).find((button) =>
@@ -456,6 +461,54 @@ describe("CaseDetail", () => {
       expect(text).not.toContain("Legacy runbook field");
     });
 
+    act(() => root.unmount());
+  });
+
+  it("localizes the detail shell and copied Markdown while preserving case data", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Hermes agent launch post");
+      expect(container.textContent).toContain("Visão geral");
+      expect(container.textContent).toContain("Propriedades");
+      expect(container.textContent).toContain("Atividade");
+      expect(container.querySelector('button[aria-label="Alterar o status do caso"]')?.textContent).toContain("Em revisão");
+    });
+    const actions = container.querySelector<HTMLButtonElement>('button[aria-label="Mais ações do caso"]');
+    expect(actions).toBeTruthy();
+    act(() => actions!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => expect(document.body.textContent).toContain("Copiar como Markdown"));
+    const copy = Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.includes("Copiar como Markdown"));
+    act(() => copy!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => {
+      expect(mockCopyTextToClipboard).toHaveBeenLastCalledWith(expect.stringContaining("- Status: Em revisão"));
+      expect(mockCopyTextToClipboard).toHaveBeenLastCalledWith(expect.stringContaining("- Chave: v2026.707/hermes-agent-post"));
+      expect(mockCopyTextToClipboard).toHaveBeenLastCalledWith(expect.stringContaining("- Tipo: blog_post"));
+    });
+    await i18n.changeLanguage("en");
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Overview");
+      expect(container.querySelector('button[aria-label="Change case status"]')?.textContent).toContain("In review");
+      expect(document.body.textContent).toContain("Copy as markdown");
+    });
+    const englishCopy = Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.includes("Copy as markdown"));
+    act(() => englishCopy!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => {
+      expect(mockCopyTextToClipboard).toHaveBeenLastCalledWith(expect.stringContaining("- Status: In review"));
+      expect(mockCopyTextToClipboard).toHaveBeenLastCalledWith(expect.stringContaining("- Type: blog_post"));
+    });
+    act(() => root.unmount());
+  });
+
+  it("localizes the missing case state", async () => {
+    mockCasesApi.get.mockRejectedValue(new Error("server detail"));
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Caso não encontrado.");
+      expect(container.textContent).toContain("Voltar para casos");
+      expect(container.textContent).not.toContain("server detail");
+    });
     act(() => root.unmount());
   });
 });

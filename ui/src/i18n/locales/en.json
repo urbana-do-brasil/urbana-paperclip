@@ -1726,6 +1726,26 @@
     }
   },
   "caseManagement": {
+    "detail": {
+      "caseFallback": "Case",
+      "notFound": "Case not found.",
+      "backToCases": "← Back to cases",
+      "moreActions": "More case actions",
+      "copyMarkdown": "Copy as markdown",
+      "overview": "Overview",
+      "properties": "Properties",
+      "activity": "Activity",
+      "description": "Description",
+      "attachments_one": "Attachments ({{formattedCount}})",
+      "attachments_other": "Attachments ({{formattedCount}})",
+      "markdown": {
+        "key": "Key",
+        "type": "Type",
+        "status": "Status",
+        "labels": "Labels",
+        "none": "none"
+      }
+    },
     "identity": {
       "caseId": "case ID",
       "caseKey": "case key",
