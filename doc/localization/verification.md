@@ -1382,6 +1382,20 @@ sem confirmação acompanha o idioma atual.
 
 `CompanyImport.test.tsx` e `locale-validation.test.ts` passaram em **41/41
 execuções**. Typecheck direcionado, `check:tokens`, `check:token-gates`,
-`git diff --check` e validação OpenSpec estrita passaram. Com isso, 3.6d2c2b e
-3.6d2c2 estão concluídas; progresso: **121/156**. Próxima tarefa: perfis Claude
-Managed e AWS AgentCore (3.6d2c2b3).
+`git diff --check` e validação OpenSpec estrita passaram. O lote de Dot está
+concluído; a próxima tarefa é localizar os perfis Claude Managed e AWS
+AgentCore (3.6d2c2b3).
+
+### Continuação — perfis Claude Managed e AWS AgentCore (3.6d2c2b3)
+
+Os campos de perfil, limite de gastos por sessão, limites de iterações/tokens/
+tempo e confirmações de retenção agora acompanham o idioma selecionado. Os IDs
+de perfil, USD, limites e flags de confirmação permanecem iguais; os avisos
+preservam a informação sobre ZDR/HIPAA e os 90 dias de retenção do Memory.
+
+`config-fields.test.tsx` e `locale-validation.test.ts` passaram em **39/39**.
+Typecheck direcionado, `check:tokens`, `check:token-gates`, `git diff --check`
+e validação OpenSpec estrita passaram. A tarefa b3 está concluída. Os grupos
+3.6d2c2b e 3.6d2c2 seguem abertos enquanto b4 (permissões e ciclo de vida do
+Runner) está pendente; os pais foram reabertos para refletir esse estado. O
+progresso reconciliado é **120/156**. Próxima tarefa: 3.6d2c2b4.

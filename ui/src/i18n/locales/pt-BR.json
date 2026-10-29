@@ -1597,6 +1597,28 @@
         "revokeConnection": "Revogar conexão",
         "waitingForMailboxChallenge": "Aguardando o Dot ler e confirmar o desafio simples da caixa postal.",
         "connectionFailed": "Falha na conexão"
+      },
+      "claudeManaged": {
+        "profile": "Perfil do Managed Agent",
+        "profileHint": "ID ou chave de perfil qualificado no escopo da empresa. A identidade do recurso remoto vem do perfil armazenado, não da configuração deste agente.",
+        "sessionSpendCeiling": "Limite de gastos por sessão (USD)",
+        "sessionSpendCeilingHint": "Limite máximo opcional por agente. Mantenha 1.00 para usar um padrão conservador.",
+        "acknowledgeRetention": "Confirmo que entendi a retenção gerenciada",
+        "retentionHint": "Claude Managed é um serviço beta com estado persistente e não pode ser usado nos modos ZDR ou HIPAA."
+      },
+      "awsAgentCore": {
+        "profile": "Perfil do AgentCore",
+        "profileHint": "ID ou chave de perfil qualificado no escopo da empresa. A identidade do harness, do Memory, do IAM e do armazenamento de contexto vem do perfil armazenado.",
+        "estimatedSessionCeiling": "Limite estimado por sessão (USD)",
+        "estimatedSessionCeilingHint": "Estimativa do Paperclip; a AWS não oferece um limite monetário rígido por sessão.",
+        "maximumIterations": "Máximo de iterações",
+        "maximumIterationsHint": "Faixa validada: 1–8. Valores inválidos fazem o sistema adotar o limite seguro 8.",
+        "maximumOutputTokens": "Máximo de tokens de saída",
+        "maximumOutputTokensHint": "Faixa validada: 1–4096.",
+        "invocationTimeout": "Tempo limite da invocação (segundos)",
+        "invocationTimeoutHint": "Faixa validada: 1–300 segundos.",
+        "acknowledgeRetention": "Confirmo a retenção de 90 dias do Memory",
+        "retentionHint": "O perfil qualificado do AgentCore mantém os eventos do Memory de curto prazo por exatamente 90 dias."
       }
     },
     "identity": {

@@ -1555,6 +1555,28 @@
         "revokeConnection": "Revoke connection",
         "waitingForMailboxChallenge": "Waiting for Dot to read and confirm the harmless mailbox challenge.",
         "connectionFailed": "Connection failed"
+      },
+      "claudeManaged": {
+        "profile": "Managed Agent profile",
+        "profileHint": "Company-scoped qualified profile ID or key. Remote resource identity is loaded from the stored profile, not this agent config.",
+        "sessionSpendCeiling": "Session spend ceiling (USD)",
+        "sessionSpendCeilingHint": "Optional per-agent hard ceiling. Leave 1.00 to use a conservative default.",
+        "acknowledgeRetention": "Acknowledge managed retention",
+        "retentionHint": "Claude Managed is a stateful beta service and is not eligible for ZDR or HIPAA modes."
+      },
+      "awsAgentCore": {
+        "profile": "AgentCore profile",
+        "profileHint": "Company-scoped qualified profile ID or key. Harness, Memory, IAM, and context-store identity come from the stored profile.",
+        "estimatedSessionCeiling": "Estimated session ceiling (USD)",
+        "estimatedSessionCeilingHint": "Paperclip estimate; AWS does not provide a per-session currency hard stop.",
+        "maximumIterations": "Maximum iterations",
+        "maximumIterationsHint": "Qualified range is 1–8. Invalid values fail closed to 8.",
+        "maximumOutputTokens": "Maximum output tokens",
+        "maximumOutputTokensHint": "Qualified range is 1–4096.",
+        "invocationTimeout": "Invocation timeout (seconds)",
+        "invocationTimeoutHint": "Qualified range is 1–300 seconds.",
+        "acknowledgeRetention": "Acknowledge 90-day Memory retention",
+        "retentionHint": "The qualified AgentCore profile retains short-term Memory events for exactly 90 days."
       }
     },
     "identity": {

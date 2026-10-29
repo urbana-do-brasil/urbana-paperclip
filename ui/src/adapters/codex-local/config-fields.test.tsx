@@ -12,10 +12,19 @@ import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 import { CodexLocalConfigFields } from "./config-fields";
 
-beforeAll(() => { Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); });
+beforeAll(() => {
+  Object.assign(globalThis, {
+    IS_REACT_ACT_ENVIRONMENT: true,
+    ResizeObserver: class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  });
+});
 afterEach(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 
-async function renderMarkup(node: ReactNode, expand?: string, inspect?: (container: HTMLElement) => void): Promise<string> {
+async function renderMarkup(node: ReactNode, expand?: string, inspect?: (container: HTMLElement) => void | Promise<void>): Promise<string> {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
@@ -23,7 +32,7 @@ async function renderMarkup(node: ReactNode, expand?: string, inspect?: (contain
   if (expand) await act(async () => {
     container.querySelector(`[aria-label="${expand}"]`)?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
   });
-  inspect?.(container);
+  await inspect?.(container);
   const html = container.innerHTML + Array.from(document.body.children).filter(child => child !== container).map(child => child.outerHTML).join("");
   await act(async () => root.unmount());
   container.remove();
@@ -69,6 +78,14 @@ async function renderCodexLocal(config: Record<string, unknown>): Promise<string
       />
     </TooltipProvider>,
   );
+}
+
+async function focusFieldHint(container: HTMLElement, labelText: string): Promise<void> {
+  const label = Array.from(container.querySelectorAll("label, span"))
+    .find(element => element.textContent?.trim() === labelText);
+  const trigger = label?.parentElement?.querySelector("button");
+  if (!trigger) throw new Error(`Could not find help tooltip for ${labelText}`);
+  await act(async () => trigger.focus());
 }
 
 describe("Codex local configuration localization", () => {
@@ -163,6 +180,60 @@ describe("Paperclip Runner Codex configuration", () => {
     expect(html).toContain("Claude Managed");
     expect(html).toContain("AWS AgentCore");
     expect(html).not.toContain("Bypass sandbox");
+  });
+
+  it("localizes Claude Managed and AgentCore profiles, limits, and retention warnings without changing saved values", async () => {
+    for (const locale of ["pt-BR", "en"] as const) {
+      await i18n.changeLanguage(locale);
+
+      const claudeConfig = {
+        provider: "claude_managed",
+        managedProfileId: "managed-primary-review",
+        maxSessionListCostUsd: 2.75,
+        managedAgentsRetentionAcknowledged: true,
+      };
+      const claudeHtml = await renderRunner(claudeConfig, undefined, async container => {
+        const label = i18n.t("agentConfiguration.runner.claudeManaged.acknowledgeRetention");
+        await focusFieldHint(container, label);
+        expect(document.body.textContent).toContain(i18n.t("agentConfiguration.runner.claudeManaged.retentionHint"));
+      });
+      expect(claudeHtml).toContain(i18n.t("agentConfiguration.runner.claudeManaged.profile"));
+      expect(claudeHtml).toContain(i18n.t("agentConfiguration.runner.claudeManaged.sessionSpendCeiling"));
+      const claudeDocument = new DOMParser().parseFromString(claudeHtml, "text/html");
+      expect(Array.from(claudeDocument.querySelectorAll("input"), input => input.value))
+        .toEqual(expect.arrayContaining(["managed-primary-review", "2.75"]));
+      expect(claudeDocument.querySelector(`[role="switch"][aria-label="${i18n.t("agentConfiguration.runner.claudeManaged.acknowledgeRetention")}"]`)
+        ?.getAttribute("aria-checked")).toBe("true");
+
+      const agentCoreConfig = {
+        provider: "aws_agentcore",
+        agentCoreProfileId: "agentcore-primary-review",
+        maxEstimatedSessionCostUsd: 3.25,
+        maxIterations: 6,
+        maxOutputTokens: 2_048,
+        timeoutSeconds: 180,
+        agentCoreRetentionAcknowledged: true,
+      };
+      const agentCoreHtml = await renderRunner(agentCoreConfig, undefined, async container => {
+        const label = i18n.t("agentConfiguration.runner.awsAgentCore.acknowledgeRetention");
+        await focusFieldHint(container, label);
+        expect(document.body.textContent).toContain(i18n.t("agentConfiguration.runner.awsAgentCore.retentionHint"));
+      });
+      for (const key of [
+        "profile",
+        "estimatedSessionCeiling",
+        "maximumIterations",
+        "maximumOutputTokens",
+        "invocationTimeout",
+      ] as const) {
+        expect(agentCoreHtml).toContain(i18n.t(`agentConfiguration.runner.awsAgentCore.${key}`));
+      }
+      const agentCoreDocument = new DOMParser().parseFromString(agentCoreHtml, "text/html");
+      expect(Array.from(agentCoreDocument.querySelectorAll("input"), input => input.value))
+        .toEqual(expect.arrayContaining(["agentcore-primary-review", "3.25", "6", "2048", "180"]));
+      expect(agentCoreDocument.querySelector(`[role="switch"][aria-label="${i18n.t("agentConfiguration.runner.awsAgentCore.acknowledgeRetention")}"]`)
+        ?.getAttribute("aria-checked")).toBe("true");
+    }
   });
 
   it("renders OpenCode's bounded permission modes", async () => {

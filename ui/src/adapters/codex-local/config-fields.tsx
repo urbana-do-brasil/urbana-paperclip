@@ -324,8 +324,8 @@ export function CodexLocalConfigFields({
       {runnerManaged && runnerProvider === "claude_managed" && (
         <>
           <Field
-            label="Managed Agent profile"
-            hint="Company-scoped qualified profile ID or key. Remote resource identity is loaded from the stored profile, not this agent config."
+            label={t("agentConfiguration.runner.claudeManaged.profile")}
+            hint={t("agentConfiguration.runner.claudeManaged.profileHint")}
           >
             <DraftInput
               value={String(runnerSchemaValue("managedProfileId", ""))}
@@ -338,8 +338,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field
-            label="Session spend ceiling (USD)"
-            hint="Optional per-agent hard ceiling. Leave 1.00 to use a conservative default."
+            label={t("agentConfiguration.runner.claudeManaged.sessionSpendCeiling")}
+            hint={t("agentConfiguration.runner.claudeManaged.sessionSpendCeilingHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("maxSessionListCostUsd", 1))}
@@ -352,8 +352,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <ToggleField
-            label="Acknowledge managed retention"
-            hint="Claude Managed is a stateful beta service and is not eligible for ZDR or HIPAA modes."
+            label={t("agentConfiguration.runner.claudeManaged.acknowledgeRetention")}
+            hint={t("agentConfiguration.runner.claudeManaged.retentionHint")}
             checked={
               runnerSchemaValue("managedAgentsRetentionAcknowledged", false) ===
               true
@@ -370,8 +370,8 @@ export function CodexLocalConfigFields({
       {runnerManaged && runnerProvider === "aws_agentcore" && (
         <>
           <Field
-            label="AgentCore profile"
-            hint="Company-scoped qualified profile ID or key. Harness, Memory, IAM, and context-store identity come from the stored profile."
+            label={t("agentConfiguration.runner.awsAgentCore.profile")}
+            hint={t("agentConfiguration.runner.awsAgentCore.profileHint")}
           >
             <DraftInput
               value={String(runnerSchemaValue("agentCoreProfileId", ""))}
@@ -384,8 +384,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field
-            label="Estimated session ceiling (USD)"
-            hint="Paperclip estimate; AWS does not provide a per-session currency hard stop."
+            label={t("agentConfiguration.runner.awsAgentCore.estimatedSessionCeiling")}
+            hint={t("agentConfiguration.runner.awsAgentCore.estimatedSessionCeilingHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("maxEstimatedSessionCostUsd", 1))}
@@ -398,8 +398,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field
-            label="Maximum iterations"
-            hint="Qualified range is 1–8. Invalid values fail closed to 8."
+            label={t("agentConfiguration.runner.awsAgentCore.maximumIterations")}
+            hint={t("agentConfiguration.runner.awsAgentCore.maximumIterationsHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("maxIterations", 8))}
@@ -413,8 +413,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field
-            label="Maximum output tokens"
-            hint="Qualified range is 1–4096."
+            label={t("agentConfiguration.runner.awsAgentCore.maximumOutputTokens")}
+            hint={t("agentConfiguration.runner.awsAgentCore.maximumOutputTokensHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("maxOutputTokens", 4_096))}
@@ -428,8 +428,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field configSection="runPolicy"
-            label="Invocation timeout (seconds)"
-            hint="Qualified range is 1–300 seconds."
+            label={t("agentConfiguration.runner.awsAgentCore.invocationTimeout")}
+            hint={t("agentConfiguration.runner.awsAgentCore.invocationTimeoutHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("timeoutSeconds", 300))}
@@ -443,8 +443,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <ToggleField
-            label="Acknowledge 90-day Memory retention"
-            hint="The qualified AgentCore profile retains short-term Memory events for exactly 90 days."
+            label={t("agentConfiguration.runner.awsAgentCore.acknowledgeRetention")}
+            hint={t("agentConfiguration.runner.awsAgentCore.retentionHint")}
             checked={
               runnerSchemaValue("agentCoreRetentionAcknowledged", false) ===
               true
