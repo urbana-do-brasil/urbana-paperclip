@@ -4679,10 +4679,10 @@ export interface ReviewQueueRow {
   fields: Record<string, unknown> | null;
 }
 
-const REVIEW_QUEUE_SECTION_LABELS: Record<ReviewQueueKind, string> = {
-  suggestion: "Suggestions to review",
-  review: "Final calls",
-  headsUp: "Heads-up",
+const REVIEW_QUEUE_SECTION_KEYS: Record<ReviewQueueKind, string> = {
+  suggestion: "pipelineManagement.reviewQueue.sections.suggestions",
+  review: "pipelineManagement.reviewQueue.sections.finalCalls",
+  headsUp: "pipelineManagement.reviewQueue.sections.headsUp",
 };
 
 const REVIEW_QUEUE_SECTION_ORDER: ReviewQueueKind[] = ["suggestion", "review", "headsUp"];
@@ -4697,9 +4697,11 @@ function humanizeFieldLabel(key: string) {
 export function buildReviewQueueRows({
   attention,
   reviewCases,
+  t,
 }: {
   attention: PipelineAttentionFeed | null | undefined;
   reviewCases: PipelineReviewCaseRow[];
+  t: TFunction;
 }): ReviewQueueRow[] {
   const rows = new Map<string, ReviewQueueRow>();
   const reviewStageCaseIds = new Set<string>([
@@ -4718,7 +4720,10 @@ export function buildReviewQueueRows({
       title: entry.case.title,
       prompt:
         entry.suggestion.rationale?.trim() ||
-        `${entry.case.pipeline.name} thinks ${entry.case.title} is ready to move forward.`,
+        t("pipelineManagement.reviewQueue.prompts.suggestionReady", {
+          pipelineName: entry.case.pipeline.name,
+          itemTitle: entry.case.title,
+        }),
       kind: "suggestion",
       createdAt: entry.suggestion.createdAt ?? entry.case.updatedAt ?? null,
       expectedVersion: entry.case.version ?? null,
@@ -4739,7 +4744,7 @@ export function buildReviewQueueRows({
       title: entry.case.title,
       prompt:
         entry.case.summary?.trim() ||
-        `Decide whether ${entry.case.title} is ready to move forward.`,
+        t("pipelineManagement.reviewQueue.prompts.reviewDecision", { itemTitle: entry.case.title }),
       kind: "review",
       createdAt: entry.case.updatedAt ?? entry.case.createdAt ?? null,
       expectedVersion: entry.review.expectedVersion ?? entry.case.version ?? null,
@@ -4760,8 +4765,8 @@ export function buildReviewQueueRows({
       pipelineName: entry.case.pipeline.name,
       title: entry.case.title,
       prompt: upstreamTitle
-        ? `${upstreamTitle} changed upstream. Take a quick look before work continues.`
-        : `${entry.case.title} needs a quick look before work continues.`,
+        ? t("pipelineManagement.reviewQueue.prompts.upstreamChanged", { upstreamTitle })
+        : t("pipelineManagement.reviewQueue.prompts.needsQuickLook", { itemTitle: entry.case.title }),
       kind: "headsUp",
       createdAt: entry.drift.createdAt ?? entry.case.updatedAt ?? null,
       expectedVersion: entry.case.version ?? null,
@@ -4792,7 +4797,7 @@ export function buildReviewQueueRows({
       prompt:
         pendingSuggestion?.rationale?.trim() ||
         entry.case.summary?.trim() ||
-        `Decide whether ${entry.case.title} is ready to move forward.`,
+        t("pipelineManagement.reviewQueue.prompts.reviewDecision", { itemTitle: entry.case.title }),
       kind: "review",
       createdAt: entry.case.updatedAt ?? entry.case.createdAt ?? null,
       expectedVersion: typeof entry.case.version === "number" ? entry.case.version : null,
@@ -4811,11 +4816,12 @@ export function buildReviewQueueRows({
 }
 
 function ReviewQueueStatusChip({ failed }: { failed: boolean }) {
+  const { t } = useTranslation();
   if (!failed) return null;
   return (
     <Badge variant="outline" className="border-amber-200 bg-amber-50 font-semibold text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-300">
       <AlertTriangle className="h-3 w-3" />
-      Needs attention
+      {t("pipelineManagement.reviewQueue.status.needsAttention")}
     </Badge>
   );
 }
@@ -4827,7 +4833,7 @@ function reviewQueueFieldEntries(fields: Record<string, unknown> | null | undefi
     .slice(0, 6);
 }
 
-function ReviewQueueDetailDialog({
+export function ReviewQueueDetailDialog({
   row,
   open,
   pending,
@@ -4842,6 +4848,7 @@ function ReviewQueueDetailDialog({
   onApprove: (note: string) => void;
   onRequestChanges: (note: string) => void;
 }) {
+  const { t } = useTranslation();
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -4855,22 +4862,28 @@ function ReviewQueueDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl" closeLabel={t("pipelineManagement.reviewQueue.close")}>
         <DialogHeader>
-          <DialogTitle>{row?.title ?? "Review item"}</DialogTitle>
+          <DialogTitle>{row?.title ?? t("pipelineManagement.reviewQueue.dialog.titleFallback")}</DialogTitle>
           <DialogDescription>
-            {row ? `${row.pipelineName} is waiting for your decision.` : "Review the item and decide what happens next."}
+            {row
+              ? t("pipelineManagement.reviewQueue.dialog.pipelineWaiting", { pipelineName: row.pipelineName })
+              : t("pipelineManagement.reviewQueue.dialog.fallbackDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5">
           <section className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">What is being decided</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("pipelineManagement.reviewQueue.dialog.whatIsBeingDecided")}
+            </p>
             <p className="text-sm text-foreground">{row?.prompt}</p>
           </section>
 
           <section className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Item preview</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("pipelineManagement.reviewQueue.dialog.itemPreview")}
+            </p>
             {fields.length > 0 ? (
               <div className="divide-y divide-border rounded-md border border-border">
                 {fields.map(([key, value]) => (
@@ -4882,7 +4895,7 @@ function ReviewQueueDetailDialog({
               </div>
             ) : (
               <p className="rounded-md border border-border px-3 py-3 text-sm text-muted-foreground">
-                No preview details yet.
+                {t("pipelineManagement.reviewQueue.dialog.noPreviewDetails")}
               </p>
             )}
           </section>
@@ -4893,18 +4906,20 @@ function ReviewQueueDetailDialog({
               className="inline-block text-sm font-medium text-primary hover:underline"
               onClick={() => onOpenChange(false)}
             >
-              Open the full item
+              {t("pipelineManagement.reviewQueue.dialog.openFullItem")}
             </Link>
           ) : null}
 
           {canDecide ? (
             <label className="block space-y-1.5 text-sm font-medium">
-              <span>Note</span>
+              <span>{t("pipelineManagement.reviewQueue.dialog.note")}</span>
               <Textarea
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 rows={3}
-                placeholder={requestChangesRequiresNote ? "Required when requesting changes." : "Optional note."}
+                placeholder={requestChangesRequiresNote
+                  ? t("pipelineManagement.reviewQueue.dialog.requiredNote")
+                  : t("pipelineManagement.reviewQueue.dialog.optionalNote")}
               />
             </label>
           ) : null}
@@ -4912,7 +4927,7 @@ function ReviewQueueDetailDialog({
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            Cancel
+            {t("pipelineManagement.reviewQueue.cancel")}
           </Button>
           {canDecide ? (
             <>
@@ -4922,11 +4937,13 @@ function ReviewQueueDetailDialog({
                 onClick={() => onRequestChanges(trimmedNote)}
                 disabled={pending || (requestChangesRequiresNote && !trimmedNote)}
               >
-                {row?.kind === "suggestion" ? "Not yet" : "Request changes"}
+                {row?.kind === "suggestion"
+                  ? t("pipelineManagement.reviewQueue.actions.notYet")
+                  : t("pipelineManagement.reviewQueue.actions.requestChanges")}
               </Button>
               <Button type="button" onClick={() => onApprove(trimmedNote)} disabled={pending}>
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                Approve
+                {t("pipelineManagement.reviewQueue.actions.approve")}
               </Button>
             </>
           ) : null}
@@ -4965,13 +4982,19 @@ function ReviewQueueSection({
   onRequestChanges: (row: ReviewQueueRow) => void;
   onOpenItem: (row: ReviewQueueRow) => void;
 }) {
+  const { t } = useTranslation();
   if (rows.length === 0) return null;
 
   return (
     <section className="space-y-2">
       <div className="flex items-baseline justify-between border-b border-border pb-2">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-        <span className="text-xs text-muted-foreground">{formatNumber(rows.length)} item{rows.length === 1 ? "" : "s"}</span>
+        <span className="text-xs text-muted-foreground">
+          {t("pipelineManagement.reviewQueue.itemCount", {
+            count: rows.length,
+            formattedCount: formatNumber(rows.length),
+          })}
+        </span>
       </div>
       <div className="divide-y divide-border">
         {rows.map((row) => {
@@ -5007,7 +5030,7 @@ function ReviewQueueSection({
                 {showSelection ? (
                   <input
                     type="checkbox"
-                    aria-label={`Select ${row.title}`}
+                    aria-label={t("pipelineManagement.reviewQueue.selectItem", { itemTitle: row.title })}
                     checked={selected}
                     disabled={!selectable || pending}
                     onClick={(event) => event.stopPropagation()}
@@ -5029,7 +5052,7 @@ function ReviewQueueSection({
 
               <div className="flex items-center gap-2">
                 <span className="hidden whitespace-nowrap text-xs text-muted-foreground sm:inline">
-                  {row.createdAt ? relativeTime(row.createdAt) : "recently"}
+                  {row.createdAt ? relativeTime(row.createdAt) : t("pipelineManagement.reviewQueue.recently")}
                 </span>
                 {row.kind === "suggestion" ? (
                   <>
@@ -5037,13 +5060,13 @@ function ReviewQueueSection({
                       event.stopPropagation();
                       onApprove(row);
                     }}>
-                      Approve
+                      {t("pipelineManagement.reviewQueue.actions.approve")}
                     </Button>
                     <Button type="button" size="sm" variant="outline" disabled={pending} onClick={(event) => {
                       event.stopPropagation();
                       onDecline(row);
                     }}>
-                      Not yet
+                      {t("pipelineManagement.reviewQueue.actions.notYet")}
                     </Button>
                   </>
                 ) : row.kind === "review" ? (
@@ -5052,13 +5075,13 @@ function ReviewQueueSection({
                       event.stopPropagation();
                       onApprove(row);
                     }}>
-                      Approve
+                      {t("pipelineManagement.reviewQueue.actions.approve")}
                     </Button>
                     <Button type="button" size="sm" variant="outline" disabled={pending} onClick={(event) => {
                       event.stopPropagation();
                       onRequestChanges(row);
                     }}>
-                      Request changes
+                      {t("pipelineManagement.reviewQueue.actions.requestChanges")}
                     </Button>
                   </>
                 ) : null}
@@ -5072,6 +5095,7 @@ function ReviewQueueSection({
 }
 
 export function ReviewQueue() {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const navigate = useNavigate();
@@ -5084,8 +5108,8 @@ export function ReviewQueue() {
   const [detailRow, setDetailRow] = useState<ReviewQueueRow | null>(null);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Review queue" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("pipelineManagement.reviewQueue.title") }]);
+  }, [setBreadcrumbs, t]);
 
   const attentionQuery = useQuery({
     queryKey: selectedCompanyId ? queryKeys.pipelines.attention(selectedCompanyId) : ["pipelines", "attention", "none"],
@@ -5104,8 +5128,9 @@ export function ReviewQueue() {
       buildReviewQueueRows({
         attention: attentionQuery.data,
         reviewCases: reviewCasesQuery.data ?? [],
+        t,
       }),
-    [attentionQuery.data, reviewCasesQuery.data],
+    [attentionQuery.data, reviewCasesQuery.data, t],
   );
 
   const visibleRows = rows.filter((row) => !hiddenRowIds.has(row.id));
@@ -5296,7 +5321,7 @@ export function ReviewQueue() {
   }, [activeRowId, decideRow, openItem, visibleRows]);
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={Hexagon} message="Select an organization to view the review queue." />;
+    return <EmptyState icon={Hexagon} message={t("pipelineManagement.reviewQueue.selectOrganization")} />;
   }
 
   if (attentionQuery.isLoading || reviewCasesQuery.isLoading) {
@@ -5309,9 +5334,9 @@ export function ReviewQueue() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-normal text-foreground">Review queue</h1>
+          <h1 className="text-2xl font-semibold tracking-normal text-foreground">{t("pipelineManagement.reviewQueue.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Needs your attention ({formatNumber(visibleRows.length)})
+            {t("pipelineManagement.reviewQueue.needsAttention", { formattedCount: formatNumber(visibleRows.length) })}
           </p>
         </div>
         <Button
@@ -5320,22 +5345,25 @@ export function ReviewQueue() {
           onClick={() => bulkApprove.mutate(selectedRows)}
         >
           {bulkApprove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          Approve {formatNumber(selectedCount)} item{selectedCount === 1 ? "" : "s"}
+          {t("pipelineManagement.reviewQueue.bulkApprove", {
+            count: selectedCount,
+            formattedCount: formatNumber(selectedCount),
+          })}
         </Button>
       </div>
 
       {attentionQuery.error || reviewCasesQuery.error ? (
-        <p className="text-sm text-amber-700 dark:text-amber-300">Some items need attention. Try again in a moment.</p>
+        <p className="text-sm text-amber-700 dark:text-amber-300">{t("pipelineManagement.reviewQueue.loadError")}</p>
       ) : null}
 
       {visibleRows.length === 0 ? (
-        <EmptyState icon={Check} message="Nothing needs you right now." />
+        <EmptyState icon={Check} message={t("pipelineManagement.reviewQueue.empty")} />
       ) : (
         <div className="space-y-6">
           {groupedRows.map((group) => (
             <ReviewQueueSection
               key={group.kind}
-              title={REVIEW_QUEUE_SECTION_LABELS[group.kind]}
+              title={t(REVIEW_QUEUE_SECTION_KEYS[group.kind])}
               rows={group.rows}
               activeRowId={activeRowId}
               failedRowIds={failedRowIds}
@@ -5361,7 +5389,13 @@ export function ReviewQueue() {
       )}
 
       <p className="text-xs text-muted-foreground">
-        Shortcuts: <span className="font-semibold">j</span>/<span className="font-semibold">k</span> or arrow keys move, <span className="font-semibold">Enter</span> opens item, <span className="font-semibold">a</span> approves.
+        {t("pipelineManagement.reviewQueue.shortcuts.label")}{" "}
+        <span className="font-semibold">j</span>/<span className="font-semibold">k</span>{" "}
+        {t("pipelineManagement.reviewQueue.shortcuts.move")}, {" "}
+        <span className="font-semibold">Enter</span>{" "}
+        {t("pipelineManagement.reviewQueue.shortcuts.openItem")}, {" "}
+        <span className="font-semibold">a</span>{" "}
+        {t("pipelineManagement.reviewQueue.shortcuts.approve")}.
       </p>
 
       <ReviewQueueDetailDialog

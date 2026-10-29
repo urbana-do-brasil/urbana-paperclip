@@ -6,9 +6,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { i18n } from "@/i18n";
-import type { PipelineCaseDetail, PipelineDetail, PipelineListItem } from "../api/pipelines";
+import type { PipelineAttentionFeed, PipelineCaseDetail, PipelineDetail, PipelineListItem } from "../api/pipelines";
 import { queryKeys } from "../lib/queryKeys";
-import { PipelineBoardMoveDialog, PipelineItemDetailView, Pipelines, PipelinesIndexTable } from "./Pipelines";
+import {
+  PipelineBoardMoveDialog,
+  PipelineItemDetailView,
+  Pipelines,
+  PipelinesIndexTable,
+  ReviewQueue,
+  ReviewQueueDetailDialog,
+  type ReviewQueueRow,
+} from "./Pipelines";
 
 const mocks = vi.hoisted(() => ({
   queryData: new Map<string, unknown>(),
@@ -223,26 +231,132 @@ const pageMessages = {
         generic: "Este item precisa de atenção antes de ser enviado.",
       },
     },
+    reviewQueue: {
+      title: "Fila de revisão",
+      sections: {
+        suggestions: "Sugestões para revisar",
+        finalCalls: "Decisões finais",
+        headsUp: "Avisos",
+      },
+      prompts: {
+        suggestionReady: "{{pipelineName}} considera que {{itemTitle}} está pronto para avançar.",
+        reviewDecision: "Decida se {{itemTitle}} está pronto para avançar.",
+        upstreamChanged: "{{upstreamTitle}} mudou no fluxo de origem. Confira antes de o trabalho continuar.",
+        needsQuickLook: "{{itemTitle}} precisa de uma rápida revisão antes de o trabalho continuar.",
+      },
+      status: { needsAttention: "Precisa de atenção" },
+      dialog: {
+        titleFallback: "Revisar item",
+        pipelineWaiting: "{{pipelineName}} aguarda sua decisão.",
+        fallbackDescription: "Revise o item e decida o que acontece em seguida.",
+        whatIsBeingDecided: "O que está sendo decidido",
+        itemPreview: "Prévia do item",
+        noPreviewDetails: "Ainda não há detalhes para a prévia.",
+        openFullItem: "Abrir o item completo",
+        note: "Nota",
+        requiredNote: "Obrigatória ao solicitar alterações.",
+        optionalNote: "Nota opcional.",
+      },
+      actions: { approve: "Aprovar", notYet: "Ainda não", requestChanges: "Solicitar alterações" },
+      close: "Fechar",
+      cancel: "Cancelar",
+      itemCount_one: "{{formattedCount}} item",
+      itemCount_other: "{{formattedCount}} itens",
+      selectItem: "Selecionar {{itemTitle}}",
+      recently: "recentemente",
+      selectOrganization: "Selecione uma organização para ver a fila de revisão.",
+      needsAttention: "Precisa da sua atenção ({{formattedCount}})",
+      bulkApprove_zero: "Aprovar nenhum item",
+      bulkApprove_one: "Aprovar {{formattedCount}} item",
+      bulkApprove_other: "Aprovar {{formattedCount}} itens",
+      loadError: "Alguns itens precisam de atenção. Tente novamente em instantes.",
+      empty: "Nada precisa da sua atenção agora.",
+      shortcuts: {
+        label: "Atalhos:",
+        move: "ou as setas navegam pelos itens",
+        openItem: "abre o item",
+        approve: "aprova",
+      },
+    },
+  },
+};
+
+const englishReviewQueueMessages = {
+  pipelineManagement: {
+    reviewQueue: {
+      title: "Review queue",
+      sections: { suggestions: "Suggestions to review", finalCalls: "Final calls", headsUp: "Heads-up" },
+      prompts: {
+        suggestionReady: "{{pipelineName}} thinks {{itemTitle}} is ready to move forward.",
+        reviewDecision: "Decide whether {{itemTitle}} is ready to move forward.",
+        upstreamChanged: "{{upstreamTitle}} changed upstream. Take a quick look before work continues.",
+        needsQuickLook: "{{itemTitle}} needs a quick look before work continues.",
+      },
+      status: { needsAttention: "Needs attention" },
+      dialog: {
+        titleFallback: "Review item",
+        pipelineWaiting: "{{pipelineName}} is waiting for your decision.",
+        fallbackDescription: "Review the item and decide what happens next.",
+        whatIsBeingDecided: "What is being decided",
+        itemPreview: "Item preview",
+        noPreviewDetails: "No preview details yet.",
+        openFullItem: "Open the full item",
+        note: "Note",
+        requiredNote: "Required when requesting changes.",
+        optionalNote: "Optional note.",
+      },
+      actions: { approve: "Approve", notYet: "Not yet", requestChanges: "Request changes" },
+      close: "Close",
+      cancel: "Cancel",
+      itemCount_one: "{{formattedCount}} item",
+      itemCount_other: "{{formattedCount}} items",
+      selectItem: "Select {{itemTitle}}",
+      recently: "recently",
+      selectOrganization: "Select an organization to view the review queue.",
+      needsAttention: "Needs your attention ({{formattedCount}})",
+      bulkApprove_zero: "Approve no items",
+      bulkApprove_one: "Approve {{formattedCount}} item",
+      bulkApprove_other: "Approve {{formattedCount}} items",
+      loadError: "Some items need attention. Try again in a moment.",
+      empty: "Nothing needs you right now.",
+      shortcuts: {
+        label: "Shortcuts:",
+        move: "or arrow keys move",
+        openItem: "opens item",
+        approve: "approves",
+      },
+    },
   },
 };
 
 let previousLanguage = "pt-BR";
 let previousPortugueseTranslation: unknown;
+let previousEnglishTranslation: unknown;
 const mountedRoots: Root[] = [];
 
 async function useTestPortugueseResources() {
   previousLanguage = i18n.language;
   previousPortugueseTranslation = i18n.getResourceBundle("pt-BR", "translation");
+  previousEnglishTranslation = i18n.getResourceBundle("en", "translation");
   i18n.addResourceBundle("pt-BR", "translation", pageMessages, true, true);
   await i18n.changeLanguage("pt-BR");
 }
 
 async function restoreI18n() {
   i18n.removeResourceBundle("pt-BR", "translation");
+  i18n.removeResourceBundle("en", "translation");
   if (previousPortugueseTranslation !== undefined) {
     i18n.addResourceBundle("pt-BR", "translation", previousPortugueseTranslation as Record<string, unknown>, true, true);
   }
+  if (previousEnglishTranslation !== undefined) {
+    i18n.addResourceBundle("en", "translation", previousEnglishTranslation as Record<string, unknown>, true, true);
+  }
   await i18n.changeLanguage(previousLanguage);
+}
+
+async function useTestEnglishReviewQueueResources() {
+  i18n.addResourceBundle("en", "translation", englishReviewQueueMessages, true, true);
+  await i18n.changeLanguage("en");
 }
 
 function queryKey(key: unknown[]) {
@@ -542,5 +656,143 @@ describe("Pipelines localization", () => {
     expect(html).toContain("Revisão localizada");
     expect(html).toContain("Solicitar alterações");
     expect(html).toContain("Trabalho vinculado");
+  });
+
+  it("localizes the review queue in Portuguese and English while preserving server-provided copy", async () => {
+    const caseRef = (id: string, title: string, pipelineName: string) => ({
+      id,
+      caseKey: null,
+      title,
+      summary: null,
+      version: 2,
+      terminalKind: null,
+      updatedAt: null,
+      createdAt: null,
+      pipeline: { id: `pipeline-${id}`, key: `key-${id}`, name: pipelineName },
+      stage: { id: `stage-${id}`, key: "review", name: "USER REVIEW STAGE", kind: "review" },
+    });
+    const attention = {
+      suggestions: [{
+        case: caseRef("suggestion-1", "USER SUGGESTED ITEM", "USER SUGGESTION PIPELINE"),
+        suggestion: {
+          id: "suggestion-1",
+          fromStageKey: "working",
+          fromStageName: "USER WORKING STAGE",
+          toStageKey: "done",
+          toStageName: "USER DONE STAGE",
+          rationale: "",
+          confidence: 0.9,
+          createdAt: null,
+          suggestedBy: null,
+        },
+      }],
+      reviews: [{
+        case: caseRef("review-1", "USER REVIEW ITEM", "USER REVIEW PIPELINE"),
+        review: {
+          expectedVersion: 2,
+          approveToStageKey: "done",
+          rejectToStageKey: "cancelled",
+          requestChangesToStageKey: "working",
+          requireRejectReason: true,
+          requireRequestChangesReason: true,
+          reviewerKind: "person",
+        },
+      }],
+      headsUp: [{
+        case: caseRef("drift-1", "USER DRIFTED ITEM", "USER DRIFT PIPELINE"),
+        drift: {
+          eventId: "event-1",
+          createdAt: null,
+          previousVersion: 1,
+          version: 2,
+          upstream: {
+            caseId: "upstream-1",
+            caseKey: null,
+            title: "USER UPSTREAM ITEM",
+            pipelineId: "upstream-pipeline",
+            pipelineName: "USER SOURCE PIPELINE",
+          },
+        },
+      }],
+      counts: { suggestions: 1, reviews: 1, headsUp: 1 },
+    } as unknown as PipelineAttentionFeed;
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.attention("company-1")), { data: attention, isLoading: false });
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.reviewCases("company-1")), { data: [], isLoading: false });
+
+    const portuguese = renderToStaticMarkup(createElement(ReviewQueue));
+    expect(portuguese).toContain("Fila de revisão");
+    expect(portuguese).toContain("Sugestões para revisar");
+    expect(portuguese).toContain("Decisões finais");
+    expect(portuguese).toContain("Avisos");
+    expect(portuguese).toContain("USER SUGGESTION PIPELINE considera que USER SUGGESTED ITEM está pronto para avançar.");
+    expect(portuguese).toContain("Decida se USER REVIEW ITEM está pronto para avançar.");
+    expect(portuguese).toContain("USER UPSTREAM ITEM mudou no fluxo de origem.");
+    expect(portuguese).toContain("Aprovar nenhum item");
+    expect(portuguese).toContain("Atalhos:");
+
+    await useTestEnglishReviewQueueResources();
+    const english = renderToStaticMarkup(createElement(ReviewQueue));
+    expect(english).toContain("Review queue");
+    expect(english).toContain("Suggestions to review");
+    expect(english).toContain("Final calls");
+    expect(english).toContain("Heads-up");
+    expect(english).toContain("USER SUGGESTION PIPELINE thinks USER SUGGESTED ITEM is ready to move forward.");
+    expect(english).toContain("Decide whether USER REVIEW ITEM is ready to move forward.");
+    expect(english).toContain("USER UPSTREAM ITEM changed upstream.");
+    expect(english).toContain("Approve no items");
+    expect(english).toContain("Shortcuts:");
+  });
+
+  it("localizes ReviewQueue detail actions and keeps pipeline, prompt, and field values unchanged", async () => {
+    const row: ReviewQueueRow = {
+      id: "review:item-1",
+      caseId: "item-1",
+      pipelineId: "pipeline-1",
+      pipelineName: "USER PIPELINE NAME",
+      title: "USER ITEM TITLE",
+      prompt: "USER PROVIDED REVIEW PROMPT",
+      kind: "review",
+      createdAt: null,
+      expectedVersion: 4,
+      suggestionId: null,
+      requireRejectReason: true,
+      requireRequestChangesReason: true,
+      fields: { custom_label: "USER FIELD VALUE" },
+    };
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    mountedRoots.push(root);
+    const renderDialog = () => createElement(ReviewQueueDetailDialog, {
+      row,
+      open: true,
+      pending: false,
+      onOpenChange: vi.fn(),
+      onApprove: vi.fn(),
+      onRequestChanges: vi.fn(),
+    });
+    flushSync(() => root.render(renderDialog()));
+
+    const portuguese = document.body.textContent ?? "";
+    expect(portuguese).toContain("USER ITEM TITLE");
+    expect(portuguese).toContain("USER PIPELINE NAME aguarda sua decisão.");
+    expect(portuguese).toContain("O que está sendo decidido");
+    expect(portuguese).toContain("Prévia do item");
+    expect(portuguese).toContain("USER PROVIDED REVIEW PROMPT");
+    expect(portuguese).toContain("USER FIELD VALUE");
+    expect(portuguese).toContain("Solicitar alterações");
+    expect(portuguese).toContain("Aprovar");
+    expect(document.body.innerHTML).toContain("placeholder=\"Obrigatória ao solicitar alterações.\"");
+
+    await useTestEnglishReviewQueueResources();
+    flushSync(() => root.render(renderDialog()));
+    const english = document.body.textContent ?? "";
+    expect(english).toContain("USER PIPELINE NAME is waiting for your decision.");
+    expect(english).toContain("What is being decided");
+    expect(english).toContain("Item preview");
+    expect(english).toContain("USER PROVIDED REVIEW PROMPT");
+    expect(english).toContain("Request changes");
+    expect(english).toContain("Approve");
+    expect(document.body.innerHTML).toContain("placeholder=\"Required when requesting changes.\"");
   });
 });

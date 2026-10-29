@@ -2061,6 +2061,59 @@
       "unableToSendQueuedMessages": "Unable to send queued messages",
       "updateReviewFailed": "Could not update the review"
     },
+    "reviewQueue": {
+      "title": "Review queue",
+      "sections": {
+        "suggestions": "Suggestions to review",
+        "finalCalls": "Final calls",
+        "headsUp": "Heads-up"
+      },
+      "prompts": {
+        "suggestionReady": "{{pipelineName}} thinks {{itemTitle}} is ready to move forward.",
+        "reviewDecision": "Decide whether {{itemTitle}} is ready to move forward.",
+        "upstreamChanged": "{{upstreamTitle}} changed upstream. Take a quick look before work continues.",
+        "needsQuickLook": "{{itemTitle}} needs a quick look before work continues."
+      },
+      "status": {
+        "needsAttention": "Needs attention"
+      },
+      "dialog": {
+        "titleFallback": "Review item",
+        "pipelineWaiting": "{{pipelineName}} is waiting for your decision.",
+        "fallbackDescription": "Review the item and decide what happens next.",
+        "whatIsBeingDecided": "What is being decided",
+        "itemPreview": "Item preview",
+        "noPreviewDetails": "No preview details yet.",
+        "openFullItem": "Open the full item",
+        "note": "Note",
+        "requiredNote": "Required when requesting changes.",
+        "optionalNote": "Optional note."
+      },
+      "actions": {
+        "approve": "Approve",
+        "notYet": "Not yet",
+        "requestChanges": "Request changes"
+      },
+      "close": "Close",
+      "cancel": "Cancel",
+      "itemCount_one": "{{formattedCount}} item",
+      "itemCount_other": "{{formattedCount}} items",
+      "selectItem": "Select {{itemTitle}}",
+      "recently": "recently",
+      "selectOrganization": "Select an organization to view the review queue.",
+      "needsAttention": "Needs your attention ({{formattedCount}})",
+      "bulkApprove_zero": "Approve no items",
+      "bulkApprove_one": "Approve {{formattedCount}} item",
+      "bulkApprove_other": "Approve {{formattedCount}} items",
+      "loadError": "Some items need attention. Try again in a moment.",
+      "empty": "Nothing needs you right now.",
+      "shortcuts": {
+        "label": "Shortcuts:",
+        "move": "or arrow keys move",
+        "openItem": "opens item",
+        "approve": "approves"
+      }
+    },
     "waitingChildren": {
       "ariaLabel": "Waiting child items",
       "items_one": "Waiting on {{waiting}} of {{total}} child item",

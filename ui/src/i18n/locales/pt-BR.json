@@ -2112,6 +2112,61 @@
       "unableToSendQueuedMessages": "Não foi possível enviar as mensagens na fila",
       "updateReviewFailed": "Não foi possível atualizar a revisão"
     },
+    "reviewQueue": {
+      "title": "Fila de revisão",
+      "sections": {
+        "suggestions": "Sugestões para revisar",
+        "finalCalls": "Decisões finais",
+        "headsUp": "Avisos"
+      },
+      "prompts": {
+        "suggestionReady": "{{pipelineName}} considera que {{itemTitle}} está pronto para avançar.",
+        "reviewDecision": "Decida se {{itemTitle}} está pronto para avançar.",
+        "upstreamChanged": "{{upstreamTitle}} mudou no fluxo de origem. Confira antes de o trabalho continuar.",
+        "needsQuickLook": "{{itemTitle}} precisa de uma rápida revisão antes de o trabalho continuar."
+      },
+      "status": {
+        "needsAttention": "Precisa de atenção"
+      },
+      "dialog": {
+        "titleFallback": "Revisar item",
+        "pipelineWaiting": "{{pipelineName}} aguarda sua decisão.",
+        "fallbackDescription": "Revise o item e decida o que acontece em seguida.",
+        "whatIsBeingDecided": "O que está sendo decidido",
+        "itemPreview": "Prévia do item",
+        "noPreviewDetails": "Ainda não há detalhes para a prévia.",
+        "openFullItem": "Abrir o item completo",
+        "note": "Nota",
+        "requiredNote": "Obrigatória ao solicitar alterações.",
+        "optionalNote": "Nota opcional."
+      },
+      "actions": {
+        "approve": "Aprovar",
+        "notYet": "Ainda não",
+        "requestChanges": "Solicitar alterações"
+      },
+      "close": "Fechar",
+      "cancel": "Cancelar",
+      "itemCount_one": "{{formattedCount}} item",
+      "itemCount_other": "{{formattedCount}} itens",
+      "itemCount_many": "{{formattedCount}} itens",
+      "selectItem": "Selecionar {{itemTitle}}",
+      "recently": "recentemente",
+      "selectOrganization": "Selecione uma organização para ver a fila de revisão.",
+      "needsAttention": "Precisa da sua atenção ({{formattedCount}})",
+      "bulkApprove_zero": "Aprovar nenhum item",
+      "bulkApprove_one": "Aprovar {{formattedCount}} item",
+      "bulkApprove_other": "Aprovar {{formattedCount}} itens",
+      "bulkApprove_many": "Aprovar {{formattedCount}} itens",
+      "loadError": "Alguns itens precisam de atenção. Tente novamente em instantes.",
+      "empty": "Nada precisa da sua atenção agora.",
+      "shortcuts": {
+        "label": "Atalhos:",
+        "move": "ou as setas navegam pelos itens",
+        "openItem": "abre o item",
+        "approve": "aprova"
+      }
+    },
     "waitingChildren": {
       "ariaLabel": "Itens filhos aguardando",
       "items_one": "{{waiting}} de {{total}} item filho aguardando",

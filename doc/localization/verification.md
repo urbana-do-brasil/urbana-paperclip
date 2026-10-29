@@ -2941,3 +2941,20 @@ foram encerrados por limite de memória (SIGKILL/código 137).
 
 Progresso: **247/269 tarefas**. 3.10d foi decomposta em d1 (fila de revisão) e
 d2 (learnings). Próxima: 3.10d1.
+
+
+## Pipelines — fila de revisão (3.10d1)
+
+A fila de revisão agora acompanha PT-BR/en nos títulos, seções, prompts de
+fallback, status de atenção, contagens, seleção, ações, prévia do item, notas,
+estados de organização/erro/vazio e atalhos de teclado. Rationale e resumos não
+vazios, títulos, nomes, valores e campos fornecidos pela API permanecem intactos.
+
+`Pipelines.i18n.test.tsx` e `Pipelines.test.ts` passaram em **17/17 testes**;
+com `locale-validation.test.ts`, a bateria foi **29/29**. `check:tokens`,
+`check:token-gates`, validação JSON e `git diff --check` passaram. O typecheck da
+UI ainda aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+
+Progresso: **248/269 tarefas**. Próxima: 3.10d2, learnings e formatação de
+atividade.
