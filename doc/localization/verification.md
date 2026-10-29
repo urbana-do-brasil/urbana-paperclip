@@ -1668,3 +1668,21 @@ direcionado dos módulos e testes alterados passou. `check:tokens`,
 passaram. O typecheck completo continua bloqueado pelo erro preexistente no
 protótipo Storybook descrito em 3.7c1. Progresso: **143/173**; próxima tarefa:
 3.7c3, detalhamento por agente, usuário, projeto e modelo.
+
+### Continuação — detalhamento de custos (3.7c3)
+
+Custos por agente, usuário, projeto e modelo agora acompanham PT-BR/en, incluindo
+rótulos acessíveis, estados vazios, tokens em cache, contagens de execuções,
+tipos de cobrança e custos sem preço. Nomes e IDs de agentes, usuários, projetos,
+provedores e modelos, além de contagens e valores de origem, foram preservados;
+contagens visíveis respeitam o locale ativo.
+
+`Costs.test.tsx`, `SubscriptionCostCard.test.tsx` e
+`locale-validation.test.ts` passaram em **57/57 testes**, incluindo troca de
+idioma em runtime, estados vazios, pluralização e preservação de nomes, IDs,
+contagens e valores. O typecheck direcionado dos módulos e testes alterados,
+`check:tokens`, `check:token-gates`, `git diff --check`, JSON e validação
+OpenSpec estrita passaram. O typecheck completo continua com a falha
+preexistente de `SETUP_LOGIN_HINTS` no protótipo Storybook, documentada em
+3.7c1. Progresso: **144/173**; próxima tarefa: 3.7c4, provedores, billers, cotas
+e janelas de uso.
