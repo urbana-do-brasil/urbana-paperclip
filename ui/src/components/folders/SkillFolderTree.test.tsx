@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
 
+import { act as reactAct } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import type { FolderListResult } from "@paperclipai/shared";
-import { SkillFolderRail } from "./SkillFolderTree";
+import { MoveToFolderDialog, SkillFolderRail } from "./SkillFolderTree";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 function pointerEvent(type: string, clientX: number) {
   const event = new MouseEvent(type, { bubbles: true, clientX });
@@ -57,7 +63,8 @@ describe("SkillFolderRail", () => {
   let root: Root;
   const onSelect = vi.fn<(selection: string) => void>();
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     window.localStorage.clear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -82,10 +89,11 @@ describe("SkillFolderRail", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root.unmount());
     container.remove();
     window.localStorage.clear();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("uses the wider default and persists drag resizing", () => {
@@ -102,6 +110,48 @@ describe("SkillFolderRail", () => {
 
     expect(rail.style.width).toBe("320px");
     expect(window.localStorage.getItem("paperclip.skills.folderRail.width")).toBe("320");
+  });
+
+  it("localizes the skill folder rail and keeps user folder names unchanged", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+
+    expect(container.querySelector('[aria-label="Pastas de skills"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Redimensionar pastas de skills"]')).not.toBeNull();
+    expect(container.textContent).toContain("Todas as skills");
+    expect(container.textContent).toContain("Minhas skills");
+    expect(container.textContent).toContain("Ainda não há pastas da organização.");
+    expect(container.textContent).toContain("Sem pasta");
+    const mySkills = Array.from(container.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Minhas skills"),
+    );
+    await reactAct(async () => { flushSync(() => mySkills?.click()); });
+    expect(container.textContent).toContain("Ada");
+  });
+
+  it("localizes the destination picker while preserving folder paths", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    flushSync(() => {
+      root.render(
+        <MoveToFolderDialog
+          open
+          onOpenChange={vi.fn()}
+          result={result}
+          title='Mover "Code review"'
+          subtitle="Escolha uma pasta de destino."
+          currentFolderId="personal-root"
+          onMove={vi.fn()}
+          onCreateFolder={vi.fn(async () => null)}
+        />,
+      );
+    });
+
+    expect(document.body.textContent).toContain('Mover "Code review"');
+    expect(document.body.querySelector('input[placeholder="Buscar pastas"]')).not.toBeNull();
+    expect(document.body.textContent).toContain("Minhas skills");
+    expect(document.body.textContent).toContain("Ada");
+    expect(document.body.textContent).toContain("Sem pasta");
+    expect(document.body.textContent).toContain("Escolha uma pasta de destino.");
+    expect(document.body.textContent).toContain("Mover para cá");
   });
 
   it("keeps virtual and folder counts on the same grid column", () => {

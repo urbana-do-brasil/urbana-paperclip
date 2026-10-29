@@ -115,4 +115,17 @@ describe("skillFolderPathDisplayFallback", () => {
     expect(skillFolderPathDisplayFallback("bundled/review-pr")).toBe("Bundled / Review Pr");
     expect(skillFolderPathDisplayFallback(null)).toBeNull();
   });
+
+  it("translates reserved roots without changing user folder names", () => {
+    const labels = {
+      organization: "Organização",
+      mySkills: "Minhas skills",
+      projects: "Projetos",
+      bundled: "Incluídas",
+    };
+
+    expect(skillFolderPathDisplayFallback("my/ada/code-review", labels)).toBe("Minhas skills / Ada / Code Review");
+    expect(skillFolderPathDisplayFallback("Organization / Reporting / QBR", labels)).toBe("Organização / Reporting / QBR");
+    expect(skillFolderPathDisplayFallback("projects/roadmap", labels)).toBe("Projetos / Roadmap");
+  });
 });

@@ -171,25 +171,45 @@ export function skillFolderDisplayPath(
   return labels.join(" / ");
 }
 
+export interface SkillFolderPathLabels {
+  organization: string;
+  mySkills: string;
+  projects: string;
+  bundled: string;
+}
+
+const DEFAULT_SKILL_FOLDER_PATH_LABELS: SkillFolderPathLabels = {
+  organization: "Organization",
+  mySkills: "My Skills",
+  projects: "Projects",
+  bundled: "Bundled",
+};
+
 function humanizeFolderPathSegment(segment: string): string {
   return segment
     .replace(/[-_]+/g, " ")
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-export function skillFolderPathDisplayFallback(folderPath: string | null | undefined): string | null {
+export function skillFolderPathDisplayFallback(
+  folderPath: string | null | undefined,
+  rootLabels: SkillFolderPathLabels = DEFAULT_SKILL_FOLDER_PATH_LABELS,
+): string | null {
   if (!folderPath) return null;
-  if (folderPath.includes(" / ")) return folderPath;
 
-  const segments = folderPath.split("/").filter(Boolean);
+  const segments = folderPath.includes(" / ")
+    ? folderPath.split(" / ").filter(Boolean)
+    : folderPath.split("/").filter(Boolean);
   if (segments.length === 0) return null;
 
   const root = segments[0]?.toLowerCase();
+  const hasDisplaySeparator = folderPath.includes(" / ");
   const labels = segments.map(humanizeFolderPathSegment);
-  if (root === "my") labels[0] = "My Skills";
-  else if (root === "projects") labels[0] = "Projects";
-  else if (root === "bundled") labels[0] = "Bundled";
-  else labels.unshift("Organization");
+  if (root === "my" || root === "my skills") labels[0] = rootLabels.mySkills;
+  else if (root === "projects") labels[0] = rootLabels.projects;
+  else if (root === "bundled") labels[0] = rootLabels.bundled;
+  else if (root === "organization") labels[0] = rootLabels.organization;
+  else if (!hasDisplaySeparator) labels.unshift(rootLabels.organization);
   return labels.join(" / ");
 }
 

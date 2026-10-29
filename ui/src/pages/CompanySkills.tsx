@@ -4024,6 +4024,7 @@ function SkillPane({
 }
 
 export function CompanySkills() {
+  const { t } = useTranslation();
   const { "*": routePath } = useParams<{ "*": string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -4087,7 +4088,7 @@ export function CompanySkills() {
   const [mobileFoldersOpen, setMobileFoldersOpen] = useState(false);
   // Rich move-to-folder dialog (tree picker + inline new-folder + path preview).
   const [moveDialog, setMoveDialog] = useState<
-    { skillIds: string[]; title: string; subtitle: string | null; currentFolderId: string | null } | null
+    { skillIds: string[]; skillName: string; currentFolderId: string | null } | null
   >(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
@@ -4796,21 +4797,21 @@ export function CompanySkills() {
         } catch (moveError) {
           pushToast({
             tone: "error",
-            title: "Folder created, move failed",
-            body: moveError instanceof Error ? moveError.message : "Failed to move the selected skills.",
+            title: t("skillFolders.notifications.folderCreatedMoveFailed"),
+            body: moveError instanceof Error ? moveError.message : t("skillFolders.notifications.failedToMoveSelectedSkills"),
           });
           return;
         }
       } else {
         setFolderSelection(folder.id);
       }
-      pushToast({ tone: "success", title: "Folder created", body: folder.name });
+      pushToast({ tone: "success", title: t("skillFolders.notifications.folderCreated"), body: folder.name });
     },
     onError: (error) => {
       pushToast({
         tone: "error",
-        title: "Folder save failed",
-        body: error instanceof Error ? error.message : "Failed to save folder.",
+        title: t("skillFolders.notifications.folderSaveFailed"),
+        body: error instanceof Error ? error.message : t("skillFolders.notifications.failedToSaveFolder"),
       });
     },
   });
@@ -4825,8 +4826,8 @@ export function CompanySkills() {
     onError: (error) => {
       pushToast({
         tone: "error",
-        title: "Folder save failed",
-        body: error instanceof Error ? error.message : "Failed to update folder.",
+        title: t("skillFolders.notifications.folderSaveFailed"),
+        body: error instanceof Error ? error.message : t("skillFolders.notifications.failedToUpdateFolder"),
       });
     },
   });
@@ -4838,15 +4839,20 @@ export function CompanySkills() {
       setFolderSelection(folder.id);
       pushToast({
         tone: "success",
-        title: "Folder moved",
-        body: skillFolderPathDisplayFallback(folder.path) ?? folder.name,
+        title: t("skillFolders.notifications.folderMoved"),
+        body: skillFolderPathDisplayFallback(folder.path, {
+          organization: t("skillFolders.organization"),
+          mySkills: t("skillFolders.mySkills"),
+          projects: t("skillFolders.projects"),
+          bundled: t("skillFolders.bundled"),
+        }) ?? folder.name,
       });
     },
     onError: (error) => {
       pushToast({
         tone: "error",
-        title: "Folder move failed",
-        body: error instanceof Error ? error.message : "Failed to move folder.",
+        title: t("skillFolders.notifications.folderMoveFailed"),
+        body: error instanceof Error ? error.message : t("skillFolders.notifications.failedToMoveFolder"),
       });
     },
   });
@@ -4859,13 +4865,17 @@ export function CompanySkills() {
         queryClient.invalidateQueries({ queryKey: queryKeys.companySkills.list(selectedCompanyId!) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.folders.list(selectedCompanyId!, "skill") }),
       ]);
-      pushToast({ tone: "success", title: "Folder deleted", body: "Skills moved to Unfiled." });
+      pushToast({
+        tone: "success",
+        title: t("skillFolders.notifications.folderDeleted"),
+        body: t("skillFolders.notifications.skillsMovedToUnfiled", { unfiled: t("skillFolders.unfiled") }),
+      });
     },
     onError: (error) => {
       pushToast({
         tone: "error",
-        title: "Folder delete failed",
-        body: error instanceof Error ? error.message : "Failed to delete folder.",
+        title: t("skillFolders.notifications.folderDeleteFailed"),
+        body: error instanceof Error ? error.message : t("skillFolders.notifications.failedToDeleteFolder"),
       });
     },
   });
@@ -4881,8 +4891,8 @@ export function CompanySkills() {
     onError: (error) => {
       pushToast({
         tone: "error",
-        title: "Move failed",
-        body: error instanceof Error ? error.message : "Failed to move skill.",
+        title: t("skillFolders.notifications.moveFailed"),
+        body: error instanceof Error ? error.message : t("skillFolders.notifications.failedToMoveSkill"),
       });
     },
   });
@@ -4898,12 +4908,16 @@ export function CompanySkills() {
         queryClient.invalidateQueries({ queryKey: queryKeys.companySkills.list(selectedCompanyId!) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.folders.list(selectedCompanyId!, "skill") }),
       ]);
-      pushToast({ tone: "success", title: "Skills moved", body: `${ids.length} skill${ids.length === 1 ? "" : "s"} filed.` });
+      pushToast({
+        tone: "success",
+        title: t("skillFolders.notifications.skillsMoved"),
+        body: t("skillFolders.notifications.selectedSkillsFiled", { count: ids.length }),
+      });
     } catch (moveError) {
       pushToast({
         tone: "error",
-        title: "Failed to move skills",
-        body: moveError instanceof Error ? moveError.message : "Failed to move the selected skills.",
+        title: t("skillFolders.notifications.skillsMoveFailed"),
+        body: moveError instanceof Error ? moveError.message : t("skillFolders.notifications.failedToMoveSelectedSkills"),
       });
     }
   }
@@ -4918,8 +4932,8 @@ export function CompanySkills() {
     onError: (error) => {
       pushToast({
         tone: "error",
-        title: "Couldn't open My Skills",
-        body: error instanceof Error ? error.message : "Failed to create your personal folder.",
+        title: t("skillFolders.notifications.couldNotOpenMySkills"),
+        body: error instanceof Error ? error.message : t("skillFolders.notifications.failedToCreatePersonalFolder"),
       });
     },
   });
@@ -4977,8 +4991,8 @@ export function CompanySkills() {
     } catch (error) {
       pushToast({
         tone: "error",
-        title: "Folder create failed",
-        body: error instanceof Error ? error.message : "Failed to create folder.",
+        title: t("skillFolders.notifications.folderCreateFailed"),
+        body: error instanceof Error ? error.message : t("skillFolders.notifications.failedToCreateFolder"),
       });
       return null;
     }
@@ -5002,16 +5016,20 @@ export function CompanySkills() {
       setSelectMode(false);
       pushToast({
         tone: "success",
-        title: ids.length === 1 ? "Skill moved" : "Skills moved",
+        title: ids.length === 1
+          ? t("skillFolders.notifications.skillMoved")
+          : t("skillFolders.notifications.skillsMoved"),
         body: folderId
-          ? `Filed under ${skillFolderResult?.folders.find((folder) => folder.id === folderId)?.name ?? "folder"}.`
-          : "Moved to Unfiled.",
+          ? t("skillFolders.notifications.filedUnder", {
+            folder: skillFolderResult?.folders.find((folder) => folder.id === folderId)?.name ?? t("skillFolders.genericFolder"),
+          })
+          : t("skillFolders.notifications.movedToUnfiled", { unfiled: t("skillFolders.unfiled") }),
       });
     } catch (moveError) {
       pushToast({
         tone: "error",
-        title: "Move failed",
-        body: moveError instanceof Error ? moveError.message : "Failed to move.",
+        title: t("skillFolders.notifications.moveFailed"),
+        body: moveError instanceof Error ? moveError.message : t("skillFolders.notifications.failedToMove"),
       });
     }
   }
@@ -5429,7 +5447,7 @@ export function CompanySkills() {
         onOpenChange={setMobileFoldersOpen}
         result={railSkillFolderResult}
         selection={folderSelection}
-        allLabel="All skills"
+        allLabel={t("skillCatalog.allSkills")}
         itemLabelPlural="Skills"
         onSelect={setFolderSelection}
         onCreate={() => openCreateFolder()}
@@ -5440,8 +5458,8 @@ export function CompanySkills() {
           if (!open) setMoveDialog(null);
         }}
         result={railSkillFolderResult}
-        title={moveDialog?.title ?? "Move to folder"}
-        subtitle={moveDialog?.subtitle ?? null}
+        title={moveDialog ? t("skillFolders.moveSkillTitle", { name: moveDialog.skillName }) : t("skillFolders.moveToFolder")}
+        subtitle={moveDialog ? t("skillFolders.chooseDestination") : null}
         currentFolderId={moveDialog?.currentFolderId ?? null}
         onMove={(folderId) => void performDialogMove(folderId)}
         onCreateFolder={createFolderInline}
@@ -5528,8 +5546,7 @@ export function CompanySkills() {
             if (!card.skillId) return;
             setMoveDialog({
               skillIds: [card.skillId],
-              title: `Move "${card.name}"`,
-              subtitle: "Choose a destination folder.",
+              skillName: card.name,
               currentFolderId: card.folderId ?? null,
             });
           } : undefined}
@@ -5559,12 +5576,18 @@ export function CompanySkills() {
             moveSkillToFolder.mutate({ itemId: skillId, folderId });
             pushToast({
               tone: "success",
-              title: "Skill moved",
+              title: t("skillFolders.notifications.skillMoved"),
               body: folderId
-                ? `Moved "${card.name}" to ${skillFolderResult?.folders.find((folder) => folder.id === folderId)?.name ?? "folder"}.`
-                : `Moved "${card.name}" to Unfiled.`,
+                ? t("skillFolders.notifications.movedItemToFolder", {
+                  name: card.name,
+                  folder: skillFolderResult?.folders.find((folder) => folder.id === folderId)?.name ?? t("skillFolders.genericFolder"),
+                })
+                : t("skillFolders.notifications.movedItemToUnfiled", {
+                  name: card.name,
+                  unfiled: t("skillFolders.unfiled"),
+                }),
               action: {
-                label: "Undo",
+                label: t("skillFolders.notifications.undo"),
                 onClick: () => moveSkillToFolder.mutate({ itemId: skillId, folderId: previousFolderId }),
               },
             });
@@ -5631,8 +5654,7 @@ export function CompanySkills() {
           onUpdateSettings={(updates) => activeDetail && updateSkillSettings.mutate({ skillId: activeDetail.id, updates })}
           onMoveToFolder={activeDetail ? () => setMoveDialog({
             skillIds: [activeDetail.id],
-            title: `Move "${activeDetail.name}"`,
-            subtitle: "Choose a destination folder.",
+            skillName: activeDetail.name,
             currentFolderId: activeDetail.folderId ?? null,
           }) : undefined}
           updateSettingsPending={updateSkillSettings.isPending}

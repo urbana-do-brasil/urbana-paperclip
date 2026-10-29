@@ -1480,10 +1480,10 @@
   ],
   "checkpoint": {
     "date": "2026-10-29",
-    "completedTasks": 196,
-    "totalTasks": 217,
+    "completedTasks": 197,
+    "totalTasks": 220,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "3.8e (segredos) e 3.8f (OAuth/MCP e conexões de assistentes) verificadas. Em 3.9, 3.9a localizou fontes/importação e 3.9b1 a descoberta/cartões da biblioteca nas variantes streamlined e production, preservando metadados externos. SkillSources + SkillSourceTree + SkillPackagePreview + locale-validation: 27/27; CompanySkills + locale-validation: 44/44. Gates de tokens, diff check e OpenSpec estrito passaram. Progresso: 196/217. Próxima: 3.9b2, biblioteca instalada, pastas, detalhe e operações."
+    "reason": "3.8e (segredos) e 3.8f (OAuth/MCP e conexões de assistentes) verificadas. Em 3.9, 3.9a localizou fontes/importação; 3.9b1 localizou descoberta/cartões; e 3.9b2a localizou árvore, breadcrumbs, gestão de pastas e feedback nas variantes streamlined e production, preservando metadados, nomes e caminhos fornecidos. SkillSources + SkillSourceTree + SkillPackagePreview + locale-validation: 27/27; CompanySkills + locale-validation: 44/44; FolderControls + SkillFolderTree + skill-folder-tree + CompanySkills + locale-validation: 70/70. `check:tokens`, `check:token-gates`, JSON, diff check e OpenSpec estrito passaram. O typecheck da UI continua bloqueado somente pelo erro preexistente em `storybook/prototypes/NewAgentWizard.tsx` (`SETUP_LOGIN_HINTS` não exportado). Progresso: 197/220. Próxima: 3.9b2b, detalhes e arquivos."
   }
 }

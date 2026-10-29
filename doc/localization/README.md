@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **196 de 217 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **197 de 220 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -49,13 +49,15 @@ administração das definições (e2b) e cobertura/estados ausentes (e2c). 3.8e2
 propostas) e 3.8f (OAuth/MCP e conexões de assistentes) também foram verificadas.
 3.9 foi dividida em seis jornadas; 3.9a, fontes e descoberta de skills, e 3.9b1,
 descoberta/cartões da biblioteca nas variantes streamlined e production, estão
-concluídas. Próxima: 3.9b2, biblioteca instalada, pastas, detalhe e operações.
+concluídas. 3.9b2 foi dividida em b2a (árvore e gestão de pastas), b2b (detalhes
+e arquivos) e b2c (edição, versões e operações). 3.9b2a está concluída; próxima:
+3.9b2b.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Fontes de skills (3.9a) e descoberta/cartões (3.9b1) verificadas; biblioteca instalada (3.9b2), Skill Studio, catálogo de equipes, ferramentas e apps (3.9c–f) pendentes. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Fontes de skills (3.9a), descoberta/cartões (3.9b1) e árvores/gestão de pastas (3.9b2a) verificadas; detalhes/arquivos (3.9b2b), operações (3.9b2c), Skill Studio, catálogo de equipes, ferramentas e apps (3.9c–f) pendentes. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |

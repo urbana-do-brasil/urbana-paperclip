@@ -3,6 +3,8 @@
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import type { FolderListResult } from "@paperclipai/shared";
 import {
   AllUnfiledBanner,
@@ -129,13 +131,14 @@ describe("FolderControls", () => {
   let container: HTMLDivElement;
   let root: Root | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     if (root) {
       act(() => {
         root?.unmount();
@@ -143,6 +146,7 @@ describe("FolderControls", () => {
     }
     container.remove();
     document.body.innerHTML = "";
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("normalizes URL selection values for folder persistence", () => {
@@ -152,6 +156,59 @@ describe("FolderControls", () => {
     expect(folderSearchValue("all")).toBe("");
     expect(folderSearchValue("unfiled")).toBe("unfiled");
     expect(folderSearchValue("folder-reporting")).toBe("folder-reporting");
+  });
+
+  it("localizes shared folder controls while preserving folder records", async () => {
+    await i18n.changeLanguage("pt-BR");
+    root = createRoot(container);
+    const onSelect = vi.fn();
+    act(() => {
+      root?.render(
+        <>
+          <FolderRail
+            result={folderResult}
+            selection="unfiled"
+            itemLabelPlural="skills"
+            allLabel="Todas as skills"
+            onSelect={onSelect}
+            onCreate={vi.fn()}
+            onRename={vi.fn()}
+            onEdit={vi.fn()}
+            onDelete={vi.fn()}
+          />
+          <FolderFormDialog
+            open
+            kind="skill"
+            folder={null}
+            onOpenChange={vi.fn()}
+            onSubmit={vi.fn()}
+          />
+          <DeleteFolderDialog
+            open
+            folder={folderResult.folders[0]!}
+            itemLabelPlural="skills"
+            onOpenChange={vi.fn()}
+            onConfirm={vi.fn()}
+          />
+          <BulkBar
+            selectedCount={2}
+            folders={folderResult.folders}
+            onMove={vi.fn()}
+            onCreateAndMove={vi.fn()}
+            onClear={vi.fn()}
+            onDone={vi.fn()}
+          />
+        </>,
+      );
+    });
+
+    expect(container.querySelector('[aria-label="Pastas de skills"]')).not.toBeNull();
+    expect(document.body.textContent).toContain("Sem pasta");
+    expect(document.body.textContent).toContain("Criar pasta");
+    expect(document.body.textContent).toContain("Organize as skills instaladas nesta organização.");
+    expect(document.body.textContent).toContain("Os itens desta pasta não serão excluídos (3 skills)");
+    expect(document.body.textContent).toContain("2 selecionados");
+    expect(document.body.textContent).toContain("Reporting");
   });
 
   it("renders All, user folders, and Unfiled with counts and selection callbacks", () => {

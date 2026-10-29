@@ -2250,5 +2250,22 @@ testes**, incluindo as duas variantes em PT-BR e a preservação dos metadados
 remotos. `check-token-gates`, parse dos catálogos, `git diff --check` e
 validação OpenSpec estrita passaram. O typecheck da UI aponta somente o erro
 preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
-`SETUP_LOGIN_HINTS` não é exportado. O progresso é **196/217 tarefas**; próxima:
-3.9b2, biblioteca instalada, pastas, detalhe e operações.
+`SETUP_LOGIN_HINTS` não é exportado. Após decompor a biblioteca instalada para
+verificação em lotes, o progresso é **196/220 tarefas**; próxima: 3.9b2a, árvore
+e gestão de pastas.
+
+### Árvore e gestão de pastas da biblioteca de skills (3.9b2a)
+
+As variantes streamlined e production agora localizam trilhos de pastas, árvores,
+filtros, breadcrumbs, ações, diálogos, movimentação, contagens e feedback de
+operações. Rótulos de raízes reservadas e caminhos de sistema mudam conforme o
+idioma; nomes e caminhos próprios das pastas, IDs, cores, propriedade e callbacks
+permanecem intactos.
+
+`FolderControls.test.tsx`, `SkillFolderTree.test.tsx`, `skill-folder-tree.test.ts`,
+`CompanySkills.test.tsx` e `locale-validation.test.ts` passaram em **70/70 testes**.
+`pnpm check:tokens`, `pnpm check:token-gates`, parse de JSON, `git diff --check` e
+validação OpenSpec estrita passaram. O typecheck da UI aponta somente o erro
+preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. O progresso é **197/220 tarefas**; próxima:
+3.9b2b, detalhes e arquivos.
