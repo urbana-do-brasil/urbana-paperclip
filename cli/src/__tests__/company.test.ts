@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompanyPortabilityPreviewResult } from "@paperclipai/shared";
+import { setCliLocale } from "../localization/index.js";
 import {
   buildCompanyDashboardUrl,
   buildDefaultImportAdapterOverrides,
@@ -15,6 +16,7 @@ import {
 } from "../commands/client/company.js";
 
 const ORIGINAL_ENV = { ...process.env };
+const ORIGINAL_ARGV = process.argv;
 const COMPANY_ID = "22222222-2222-4222-8222-222222222222";
 
 function makeProgram(): Command {
@@ -79,9 +81,85 @@ describe("company CLI commands", () => {
   });
 
   afterEach(() => {
+    process.argv = ORIGINAL_ARGV;
     process.env = { ...ORIGINAL_ENV };
+    setCliLocale("pt-BR");
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+
+  it("localizes empty company lists and preserves records and JSON contracts", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([company()]))
+      .mockResolvedValueOnce(jsonResponse([company()]))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([company()]))
+      .mockResolvedValueOnce(jsonResponse([company()]));
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(vazio)");
+
+    setCliLocale("en");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(empty)");
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    const ptRecord = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    const enRecord = String(logSpy.mock.calls.at(-1)?.[0]);
+    expect(ptRecord).toBe(enRecord);
+    expect(ptRecord).toContain(`id=${COMPANY_ID} name=Paperclip status=active`);
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const ptEmptyJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const enEmptyJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    expect(ptEmptyJson).toBe("[]");
+    expect(enEmptyJson).toBe(ptEmptyJson);
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const ptJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const enJson = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptJson).toBe(enJson);
+    expect(JSON.parse(ptJson)).toEqual([company()]);
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("localizes company-list API failures while preserving details and exit status", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "company fixture failure" }, 500))
+      .mockResolvedValueOnce(jsonResponse({ error: "company fixture failure" }, 500));
+    process.argv = ["node", "paperclipai", "company", "list"];
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+      throw new Error(`exit:${code ?? 0}`);
+    }) as typeof process.exit);
+
+    setCliLocale("pt-BR");
+    await expect(runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]))
+      .rejects.toThrow("exit:1");
+    const ptError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    setCliLocale("en");
+    await expect(runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]))
+      .rejects.toThrow("exit:1");
+    const enError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptError).toContain("Erro de API 500: Não foi possível concluir a solicitação. Detalhes: company fixture failure");
+    expect(enError).toContain("API error 500: The request could not be completed. Details: company fixture failure");
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1]);
   });
 
   it("gets the current company from an explicit company context without board-wide listing", async () => {

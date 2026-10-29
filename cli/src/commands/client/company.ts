@@ -25,6 +25,7 @@ import {
 import { getTelemetryClient, trackCompanyImported } from "../../telemetry.js";
 import { ApiRequestError, type PaperclipApiClient } from "../../client/http.js";
 import { openUrl } from "../../client/board-auth.js";
+import { cliMessage } from "../../localization/index.js";
 import {
   binaryContentTypeByExtension,
   bytesToPortableFileEntry,
@@ -1360,7 +1361,7 @@ export function registerCompanyCommands(program: Command): void {
           }
 
           if (rows.length === 0) {
-            printOutput([], { json: false });
+            console.log(pc.dim(cliMessage("emptyList")));
             return;
           }
 

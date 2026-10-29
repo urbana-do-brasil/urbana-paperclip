@@ -14,6 +14,7 @@ const messages = {
     invalid: "Invalid language. Use pt-BR or en.",
     apiError: "API error",
     usage: "Usage:", arguments: "Arguments:", options: "Options:", globalOptions: "Global Options:", commands: "Commands:",
+    emptyList: "(empty)",
   },
   "pt-BR": {
     description: "CLI do Paperclip — instale, diagnostique e configure sua instância",
@@ -24,6 +25,7 @@ const messages = {
     invalid: "Idioma inválido. Use pt-BR ou en.",
     apiError: "Erro de API",
     usage: "Uso:", arguments: "Argumentos:", options: "Opções:", globalOptions: "Opções globais:", commands: "Comandos:",
+    emptyList: "(vazio)",
   },
 } as const;
 

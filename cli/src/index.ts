@@ -4,6 +4,7 @@ import { registerMcpCommands } from "./commands/mcp.js";
 import { Command } from "commander";
 import { cliMessage, getCliLocale, isCliJsonRequested, localizeHelpTitle, parseCliLocale, resolveCliLocale, setCliCommandLineShape, setCliLocale } from "./localization/index.js";
 import { applyAdminHelpLocalization } from "./localization/admin-help.js";
+import { applyOperationHelpLocalization } from "./localization/operation-help.js";
 import { applySetupHelpLocalization } from "./localization/setup.js";
 import { localizeCommanderErrorOutput } from "./localization/commander-errors.js";
 import { ApiRequestError, formatApiRequestError } from "./client/http.js";
@@ -310,6 +311,7 @@ try { setCliLocale(resolveCliLocale(process.argv.slice(2), process.env, program)
 catch (error) { localeBootstrapError = error instanceof Error ? error : new Error(String(error)); }
 program.description(cliMessage("description"));
 applyAdminHelpLocalization(program, getCliLocale());
+applyOperationHelpLocalization(program, getCliLocale());
 applySetupHelpLocalization(program, getCliLocale());
 program.configureOutput({
   outputError: (output, write) => write(localizeCommanderErrorOutput(output)),

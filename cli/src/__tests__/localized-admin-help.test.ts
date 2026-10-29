@@ -29,12 +29,14 @@ afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
-describe("localized administrator CLI help", () => {
+describe("localized CLI help", () => {
   it.each([
     { command: ["install"], portuguese: "Instalar o Paperclip em um diretório gerenciado", english: "Install Paperclip into a managed per-user CLI store" },
     { command: ["update"], portuguese: "Verificar, atualizar ou reverter", english: "Check, update, or roll back" },
     { command: ["service", "install"], portuguese: "Instalar e registrar o serviço", english: "Install and register the background service" },
     { command: ["doctor"], portuguese: "Executar verificações de diagnóstico", english: "Run diagnostic checks" },
+    { command: ["company"], portuguese: "Operações de organizações", english: "Company operations" },
+    { command: ["company", "list"], portuguese: "Listar organizações", english: "List companies" },
   ])("localizes help for $command", ({ command, portuguese, english }) => {
     const pt = help([...command, "--help", "--lang", "pt-BR"]);
     expect(pt.status).toBe(0);
@@ -54,5 +56,25 @@ describe("localized administrator CLI help", () => {
     expect(output).toContain("paperclipai service restart");
     expect(output).toContain("--expected-version <version>");
     expect(output).toContain("Exigir que o servidor reiniciado informe esta versão");
+  });
+
+  it("localizes company list options while preserving command and flag names", () => {
+    const result = help(["company", "list", "--help", "--lang", "pt-BR"]);
+    const output = result.stdout.replace(/\s+/g, " ");
+    expect(result.status).toBe(0);
+    expect(output).toContain("paperclipai company list");
+    expect(output).toContain("--config <path>");
+    expect(output).toContain("Caminho para o arquivo de configuração do Paperclip");
+    expect(output).toContain("--data-dir <path>");
+    expect(output).toContain("Diretório raiz dos dados do Paperclip");
+    expect(output).toContain("--context <path>");
+    expect(output).toContain("--profile <name>");
+    expect(output).toContain("--api-base <url>");
+    expect(output).toContain("URL base da API do Paperclip");
+    expect(output).toContain("--api-key <token>");
+    expect(output).toContain("--run-id <id>");
+    expect(output).toContain("ID da execução do heartbeat");
+    expect(output).toContain("--json");
+    expect(output).toContain("Exibir JSON bruto");
   });
 });

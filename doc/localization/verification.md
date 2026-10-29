@@ -3203,3 +3203,13 @@ PT-BR/en. Conteúdo gerado, relações e identificadores foram preservados. Draw
 formatadores, cartões, lista e catálogos: **52/52 testes**; typecheck da UI passou
 após corrigir a referência desatualizada no protótipo do Storybook. Progresso da
 CLI OpenSpec: **272/295**; próxima: 3.10f4d, histórico.
+
+
+## CLI — listagem de organizações (4.3a)
+
+O help de `company list`, suas opções e o estado vazio acompanham PT-BR/en;
+comandos, flags, registros e JSON permanecem iguais. Os testes focados da CLI
+verificaram sucesso, vazio, erro, código de saída e paridade JSON: **28/28**.
+Eles usam mocks e não substituem a regressão de canais reais, subprocessos e
+exemplos exigida em 4.4. O typecheck da CLI foi encerrado por memória (137).
+Progresso OpenSpec: **273/296**; outras operações de 4.3 permanecem pendentes.
