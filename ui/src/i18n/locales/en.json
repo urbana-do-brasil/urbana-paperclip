@@ -187,6 +187,104 @@
       "delete": "Failed to delete the agent."
     }
   },
+  "companyAccess": {
+    "organizationFallback": "Organization",
+    "breadcrumbSettings": "Settings",
+    "breadcrumbMembers": "Members",
+    "breadcrumbAccess": "Access",
+    "title": "Organization Members",
+    "invitePeople": "Invite people",
+    "tabs": {
+      "label": "Organization access sections",
+      "members": "Members",
+      "invites": "Invites"
+    },
+    "selectOrganization": "Select an organization to manage access.",
+    "loading": "Loading organization access…",
+    "noPermission": "You do not have permission to manage organization members.",
+    "loadFailed": "Failed to load organization members.",
+    "instanceAdminWithoutMembership": "This account can manage access here through instance-admin privileges, but it does not currently hold an active organization membership.",
+    "pendingHumanJoins": "Pending human joins",
+    "pendingHumanJoinsDescription": "Review pending join requests before they become active organization members.",
+    "pendingCount_one": "{{count}} pending",
+    "pendingCount_other": "{{count}} pending",
+    "unknownHumanRequester": "Unknown human requester",
+    "noEmailAvailable": "No email available",
+    "joinTypes": {
+      "human": "person",
+      "agent": "agent",
+      "both": "person or agent"
+    },
+    "joinInviteContext": "Invite for {{joinTypes}}{{defaultRole}}",
+    "defaultRole": " · default role {{role}}",
+    "inviteMetadataUnavailable": "Invite metadata unavailable",
+    "submitted": "Submitted {{date}}",
+    "approveHuman": "Approve person",
+    "rejectHuman": "Reject person",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "action": "Action"
+    },
+    "noMemberships": "No user memberships found for this organization yet.",
+    "memberStatuses": {
+      "active": "Active",
+      "pending": "Pending",
+      "suspended": "Suspended",
+      "archived": "Archived"
+    },
+    "unset": "Unset",
+    "actions": {
+      "edit": "Edit",
+      "remove": "Remove",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "saveMember": "Save member",
+      "removing": "Removing…",
+      "removeMember": "Remove member"
+    },
+    "editMemberTitle": "Edit member",
+    "editMemberDescription": "Update organization role and membership status for {{member}}.",
+    "organizationRole": "Organization role",
+    "membershipStatus": "Membership status",
+    "removeMemberTitle": "Remove member",
+    "removeMemberDescription": "Archive {{member}} and move active assignments before hiding this person from assignment fields.",
+    "thisMember": "this member",
+    "checkingAssignedTasks": "Checking assigned tasks…",
+    "assignedTasksCount_one": "{{count}} open assigned task",
+    "assignedTasksCount_other": "{{count}} open assigned tasks",
+    "taskReassignment": "Task reassignment",
+    "leaveUnassigned": "Leave unassigned",
+    "people": "People",
+    "agents": "Agents",
+    "moreAssignedTasks_one": "{{count}} more task",
+    "moreAssignedTasks_other": "{{count}} more tasks",
+    "toasts": {
+      "memberUpdated": "Member updated",
+      "updateMemberFailed": "Failed to update member",
+      "joinApproved": "Join request approved",
+      "approveJoinFailed": "Failed to approve join request",
+      "joinRejected": "Join request rejected",
+      "rejectJoinFailed": "Failed to reject join request",
+      "memberRemoved": "Member removed",
+      "removeMemberFailed": "Failed to remove member",
+      "assignedTasksCleaned_one": "{{count}} assigned task cleaned up.",
+      "assignedTasksCleaned_other": "{{count}} assigned tasks cleaned up."
+    },
+    "errors": {
+      "unknown": "Unknown error"
+    },
+    "checkingExtensions": "Checking for advanced permission extensions…",
+    "advancedPermissions": "Advanced Permissions",
+    "advancedPermissionsDescription": "Advanced access, scoped assignment, and explicit grant controls are provided by installed organization settings extensions.",
+    "advancedPermissionsUnavailable": "Advanced permissions unavailable",
+    "advancedPermissionsUnavailableDescription": "Core Paperclip keeps enforcing organization boundaries and any existing restrictive policy data, but editing advanced permissions requires an installed extension.",
+    "pluginExtensionsUnavailable": "Plugin extensions unavailable: {{error}}",
+    "openMembers": "Open Members",
+    "openInvites": "Open Invites"
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Add another agent to {{company}}",

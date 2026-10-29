@@ -1799,5 +1799,21 @@ externos sem mapeamento continuam preservados.
 `locale-validation.test.ts` passaram em **21/21 testes**. O typecheck direcionado
 dos componentes, páginas e testes alterados, `check:tokens`, `check:token-gates`,
 `git diff --check`, parse dos catálogos e validação OpenSpec estrita passaram.
-O estado atual é **161/181 tarefas**; próxima tarefa: 3.8b, acesso e convites da
-empresa e fila de solicitações.
+O estado após a decomposição de 3.8b é **161/182 tarefas**; próxima tarefa:
+3.8b1, membros e solicitações embutidas.
+
+### Continuação — membros e solicitações embutidas (3.8b1)
+
+A tela de membros da organização agora localiza tabela, edição, remoção,
+reatribuição de tarefas, solicitações humanas pendentes, papéis/status,
+breadcrumbs e fallback legado de permissões avançadas em PT-BR/en. Nomes e
+e-mails, motivos de proteção, papéis/status salvos, grants, IDs, escopos,
+permissões, rotas e mutações foram preservados. A fila standalone já localizada
+em 3.4e5 foi revalidada.
+
+`CompanyAccess.test.tsx`, `JoinRequestQueue.test.tsx` e
+`locale-validation.test.ts` passaram em **33/33 testes**. O typecheck direcionado
+de `CompanyAccess` e seus testes, `check:tokens`, `check:token-gates`,
+`git diff --check`, parse dos catálogos e validação OpenSpec estrita passaram.
+O progresso atual é **162/182 tarefas**; próxima tarefa: 3.8b2, convites e
+revalidação do fluxo de solicitações.

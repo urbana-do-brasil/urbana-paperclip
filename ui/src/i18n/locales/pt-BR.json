@@ -187,6 +187,108 @@
       "delete": "Não foi possível excluir o agente."
     }
   },
+  "companyAccess": {
+    "organizationFallback": "Organização",
+    "breadcrumbSettings": "Configurações",
+    "breadcrumbMembers": "Membros",
+    "breadcrumbAccess": "Acesso",
+    "title": "Membros da organização",
+    "invitePeople": "Convidar pessoas",
+    "tabs": {
+      "label": "Seções de acesso da organização",
+      "members": "Membros",
+      "invites": "Convites"
+    },
+    "selectOrganization": "Selecione uma organização para gerenciar o acesso.",
+    "loading": "Carregando o acesso à organização…",
+    "noPermission": "Você não tem permissão para gerenciar os membros da organização.",
+    "loadFailed": "Não foi possível carregar os membros da organização.",
+    "instanceAdminWithoutMembership": "Esta conta pode gerenciar o acesso por meio dos privilégios de administração da instância, mas não tem uma associação ativa com a organização.",
+    "pendingHumanJoins": "Solicitações de entrada de pessoas pendentes",
+    "pendingHumanJoinsDescription": "Revise as solicitações antes que as pessoas se tornem membros ativos da organização.",
+    "pendingCount_one": "{{count}} pendente",
+    "pendingCount_many": "{{count}} pendentes",
+    "pendingCount_other": "{{count}} pendentes",
+    "unknownHumanRequester": "Pessoa solicitante desconhecida",
+    "noEmailAvailable": "E-mail indisponível",
+    "joinTypes": {
+      "human": "pessoa",
+      "agent": "agente",
+      "both": "pessoa ou agente"
+    },
+    "joinInviteContext": "Convite para entrada de {{joinTypes}}{{defaultRole}}",
+    "defaultRole": " · papel padrão: {{role}}",
+    "inviteMetadataUnavailable": "Metadados do convite indisponíveis",
+    "submitted": "Enviada em {{date}}",
+    "approveHuman": "Aprovar pessoa",
+    "rejectHuman": "Rejeitar pessoa",
+    "columns": {
+      "name": "Nome",
+      "email": "E-mail",
+      "role": "Função",
+      "status": "Status",
+      "action": "Ação"
+    },
+    "noMemberships": "Ainda não há membros de usuário nesta organização.",
+    "memberStatuses": {
+      "active": "Ativo",
+      "pending": "Pendente",
+      "suspended": "Suspenso",
+      "archived": "Arquivado"
+    },
+    "unset": "Não definida",
+    "actions": {
+      "edit": "Editar",
+      "remove": "Remover",
+      "cancel": "Cancelar",
+      "saving": "Salvando…",
+      "saveMember": "Salvar membro",
+      "removing": "Removendo…",
+      "removeMember": "Remover membro"
+    },
+    "editMemberTitle": "Editar membro",
+    "editMemberDescription": "Atualize a função na organização e o status de associação de {{member}}.",
+    "organizationRole": "Função na organização",
+    "membershipStatus": "Status da associação",
+    "removeMemberTitle": "Remover membro",
+    "removeMemberDescription": "Arquive {{member}} e mova as atribuições ativas antes de ocultar esta pessoa dos campos de atribuição.",
+    "thisMember": "este membro",
+    "checkingAssignedTasks": "Verificando tarefas atribuídas…",
+    "assignedTasksCount_one": "{{count}} tarefa atribuída aberta",
+    "assignedTasksCount_many": "{{count}} tarefas atribuídas abertas",
+    "assignedTasksCount_other": "{{count}} tarefas atribuídas abertas",
+    "taskReassignment": "Reatribuição de tarefas",
+    "leaveUnassigned": "Deixar sem responsável",
+    "people": "Pessoas",
+    "agents": "Agentes",
+    "moreAssignedTasks_one": "Mais {{count}} tarefa",
+    "moreAssignedTasks_many": "Mais {{count}} tarefas",
+    "moreAssignedTasks_other": "Mais {{count}} tarefas",
+    "toasts": {
+      "memberUpdated": "Membro atualizado",
+      "updateMemberFailed": "Não foi possível atualizar o membro",
+      "joinApproved": "Solicitação de entrada aprovada",
+      "approveJoinFailed": "Não foi possível aprovar a solicitação de entrada",
+      "joinRejected": "Solicitação de entrada rejeitada",
+      "rejectJoinFailed": "Não foi possível rejeitar a solicitação de entrada",
+      "memberRemoved": "Membro removido",
+      "removeMemberFailed": "Não foi possível remover o membro",
+      "assignedTasksCleaned_one": "{{count}} tarefa atribuída foi reatribuída.",
+      "assignedTasksCleaned_many": "{{count}} tarefas atribuídas foram reatribuídas.",
+      "assignedTasksCleaned_other": "{{count}} tarefas atribuídas foram reatribuídas."
+    },
+    "errors": {
+      "unknown": "Erro desconhecido"
+    },
+    "checkingExtensions": "Verificando extensões de permissões avançadas…",
+    "advancedPermissions": "Permissões avançadas",
+    "advancedPermissionsDescription": "Controles avançados de acesso, atribuição com escopo e concessões explícitas são fornecidos por extensões instaladas nas configurações da organização.",
+    "advancedPermissionsUnavailable": "Permissões avançadas indisponíveis",
+    "advancedPermissionsUnavailableDescription": "O Paperclip mantém os limites entre organizações e os dados de políticas restritivas já existentes, mas a edição de permissões avançadas exige uma extensão instalada.",
+    "pluginExtensionsUnavailable": "Extensões de plugins indisponíveis: {{error}}",
+    "openMembers": "Abrir membros",
+    "openInvites": "Abrir convites"
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Adicionar outro agente a {{company}}",

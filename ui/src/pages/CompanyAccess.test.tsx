@@ -5,6 +5,9 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompanyAccess, CompanyAccessLegacyRoute } from "./CompanyAccess";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
+import { ApiError } from "@/api/client";
 
 const listMembersMock = vi.hoisted(() => vi.fn());
 const listJoinRequestsMock = vi.hoisted(() => vi.fn());
@@ -111,7 +114,8 @@ async function flushReact() {
 describe("CompanyAccess", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockSearchParamsState.current = new URLSearchParams();
@@ -216,10 +220,11 @@ describe("CompanyAccess", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("renders a compact member table without redundant explanatory copy", async () => {
@@ -438,6 +443,63 @@ describe("CompanyAccess", () => {
     });
   });
 
+  it("localizes member access while preserving role/status values and the human requester", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <CompanyAccess />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    expect(container.textContent).toContain("Membros da organização");
+    expect(container.textContent).toContain("Solicitações de entrada de pessoas pendentes");
+    expect(container.textContent).toContain("Aprovar pessoa");
+    expect(container.textContent).toContain("Proprietário");
+    expect(container.textContent).toContain("Ativo");
+    expect(container.textContent).toContain("Board User");
+    expect(listJoinRequestsMock).toHaveBeenCalledWith("company-1", "pending_approval");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("localizes a permission denial without changing access behavior", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listMembersMock.mockRejectedValueOnce(new ApiError("Forbidden", 403, {}));
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <CompanyAccess />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    expect(container.textContent).toContain("Você não tem permissão para gerenciar os membros da organização.");
+    expect(updateMemberMock).not.toHaveBeenCalled();
+    expect(archiveMemberMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("redirects legacy access deep links to the permissions extension route when installed", async () => {
     mockUsePluginSlots.mockReturnValue({
       slots: [
@@ -503,7 +565,8 @@ describe("CompanyAccess", () => {
 describe("CompanyAccess invites tab", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockSearchParamsState.current = new URLSearchParams();
@@ -518,10 +581,11 @@ describe("CompanyAccess invites tab", () => {
     mockUsePluginSlots.mockReturnValue([]);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   async function renderPage(queryClient?: QueryClient) {
