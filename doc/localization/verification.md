@@ -2882,3 +2882,20 @@ material novo.
 testes**. O typecheck direcionado, `check:tokens`, `check:token-gates`, JSON,
 `git diff --check` e OpenSpec estrito passaram. Progresso: **238/265 tarefas**.
 Próxima: 3.10b4c2, comparação, confirmação e restauração.
+
+
+## Rotinas — comparação e restauração do histórico (3.10b4c2)
+
+A comparação de revisões agora localiza seletores, alterações de campos e
+ambiente, mudanças em gatilhos, cabeçalhos e diferenças da descrição. A
+confirmação explica que restaurar cria uma nova revisão sem modificar as
+anteriores, resume alterações de segredos e alerta quando um webhook será
+recriado com URL e segredo novos. Sucesso/falha também acompanham PT-BR/en.
+Conteúdo de descrições, nomes fornecidos, valores técnicos, IDs, segredos
+retornados e callbacks de entrega/reidratação permaneceram intactos.
+
+`RoutineHistoryTab.test.tsx` e `locale-validation.test.ts` passaram em **27/27
+testes**. O typecheck direcionado, `check:tokens`, `check:token-gates`, JSON,
+`git diff --check` e OpenSpec estrito passaram. Progresso: **241/265 tarefas**.
+3.10b4 (execuções, atividade e histórico) foi concluída. Próxima: 3.10b5,
+feed de auditoria de rotinas.

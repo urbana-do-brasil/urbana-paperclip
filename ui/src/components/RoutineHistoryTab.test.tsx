@@ -398,6 +398,123 @@ describe("RoutineHistoryTab", () => {
     expect(successCall).toBeTruthy();
   });
 
+  it("localizes revision comparison and restore confirmation while preserving new secrets and callbacks", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const current = createRevision({
+      id: "revision-2",
+      revisionNumber: 2,
+      snapshot: snapshotV1({ env: { LOG_LEVEL: { type: "plain", value: "info" } } }),
+    });
+    const old = createRevision({
+      id: "revision-1",
+      revisionNumber: 1,
+      snapshot: {
+        ...snapshotV1({ title: "Older routine title", description: "Old description from user" }),
+        triggers: [{
+          id: "webhook-1",
+          kind: "webhook",
+          label: "Deploy hook",
+          enabled: true,
+          cronExpression: null,
+          timezone: null,
+          publicId: null,
+          signingMode: "hmac_sha256",
+          replayWindowSec: 300,
+        }],
+      },
+    });
+    mockRoutinesApi.listRevisions.mockResolvedValue([current, old]);
+    const response = {
+      routine: createRoutine({ latestRevisionId: "revision-3", latestRevisionNumber: 3 }),
+      revision: createRevision({ id: "revision-3", revisionNumber: 3, restoredFromRevisionId: "revision-1" }),
+      restoredFromRevisionId: "revision-1",
+      restoredFromRevisionNumber: 1,
+      secretMaterials: [{
+        triggerId: "webhook-1",
+        webhookUrl: "https://hooks.example.test/new",
+        webhookSecret: "new-secret-material",
+      }],
+    };
+    mockRoutinesApi.restoreRevision.mockResolvedValue(response);
+    const onRestoreSecretMaterials = vi.fn();
+    const onRestored = vi.fn();
+    await render({ onRestoreSecretMaterials, onRestored });
+
+    const oldRow = container.querySelector("[data-testid='revision-row-1']") as HTMLButtonElement | null;
+    await act(async () => oldRow?.click());
+    await flush();
+    const compareButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Comparar com a versão atual",
+    );
+    await act(async () => compareButton?.click());
+    await flush();
+
+    expect(container.textContent).toContain("Comparar revisões da rotina");
+    expect(container.textContent).toContain("Anterior");
+    expect(container.textContent).toContain("Alterações nos campos");
+    expect(container.textContent).toContain("Título");
+    expect(container.textContent).toContain("Older routine title");
+    expect(container.textContent).toContain("Conteúdo");
+    expect(container.textContent).toContain("Old description from user");
+    expect(container.textContent).toContain("janela de repetição: 300 s");
+
+    const compareRestoreButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Restaurar a rev. 1 como nova revisão"),
+    );
+    await act(async () => compareRestoreButton?.click());
+    await flush();
+    expect(container.textContent).toContain("Restaurar a revisão 1?");
+    expect(container.textContent).toContain("As revisões 1–2 permanecem no histórico e não são alteradas.");
+    expect(container.textContent).toContain("Os segredos da rotina serão revertidos: 1 chave removida.");
+    expect(container.textContent).toContain("O gatilho de webhook Deploy hook será recriado");
+    expect(container.textContent).toContain("Copie-o antes de fechar.");
+    expect(container.querySelector("input")?.getAttribute("placeholder"))
+      .toBe("Por que você está restaurando? O resumo ficará visível no histórico.");
+
+    const confirmButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Restaurar como revisão 3"),
+    );
+    await act(async () => confirmButton?.click());
+    await flush();
+    expect(mockRoutinesApi.restoreRevision).toHaveBeenCalledWith("routine-1", "revision-1", { changeSummary: null });
+    expect(onRestoreSecretMaterials).toHaveBeenCalledWith(response);
+    expect(onRestored).toHaveBeenCalledWith(response);
+    expect(container.textContent).not.toContain("new-secret-material");
+    expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Revisão 1 restaurada como revisão 3",
+      body: expect.stringContaining("Novos segredos de webhook estão disponíveis no aviso acima."),
+    }));
+  });
+
+  it("localizes restore failure feedback while preserving the dynamic server message", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const current = createRevision({ id: "revision-2", revisionNumber: 2 });
+    const old = createRevision({ id: "revision-1", revisionNumber: 1 });
+    mockRoutinesApi.listRevisions.mockResolvedValue([current, old]);
+    mockRoutinesApi.restoreRevision.mockRejectedValue(new Error("restore service unavailable"));
+    await render();
+
+    const oldRow = container.querySelector("[data-testid='revision-row-1']") as HTMLButtonElement | null;
+    await act(async () => oldRow?.click());
+    await flush();
+    const restoreButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Restaurar como nova revisão",
+    );
+    await act(async () => restoreButton?.click());
+    await flush();
+    const confirmButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Restaurar como revisão 3"),
+    );
+    await act(async () => confirmButton?.click());
+    await flush();
+
+    expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Não foi possível restaurar a revisão",
+      body: "restore service unavailable",
+      tone: "error",
+    }));
+  });
+
   it("shows env summary on the revision preview and routes counts into restore dialog", async () => {
     const env: RoutineEnvConfig = {
       GH_TOKEN: { type: "secret_ref", secretId: "secret-1", version: "latest" },
