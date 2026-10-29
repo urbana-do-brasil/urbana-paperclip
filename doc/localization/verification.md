@@ -1426,3 +1426,19 @@ em **15/15**. Typecheck direcionado, `check:tokens`, `check:token-gates`,
 `git diff --check` e validação OpenSpec estrita passaram. Progresso:
 **124/156**. Próxima tarefa: 3.6d2c2c4, gateways, HTTP/process e campos por
 schema.
+
+### Continuação — gateways, HTTP/process e campos por schema (3.6d2c4)
+
+OpenClaw Gateway, Hermes Gateway, HTTP e process agora localizam rótulos,
+orientações, opções e acessibilidade em PT-BR/en. Também foram cobertos os
+campos JSON de payload e runtime e os schemas built-in de Hermes local e Cursor
+Cloud. URLs, protocolos, chaves de ambiente, valores de enums, comandos,
+exemplos JSON e payloads continuam intactos. Schemas de plugins mantêm os
+textos que fornecem quando não há tradução própria do Paperclip.
+
+`config-fields-localization.test.tsx`, `hermes-gateway/config-fields.test.tsx`,
+`config-sections.test.tsx`, `schema-config-sections.test.tsx` e
+`locale-validation.test.ts` passaram em **26/26**. O typecheck direcionado,
+gates de tokens, `git diff --check` e validação OpenSpec estrita foram
+verificados separadamente. Progresso: **126/156**. Próxima tarefa: 3.6d2d,
+ambientes e política de execução.

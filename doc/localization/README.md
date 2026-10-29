@@ -5,16 +5,16 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **124 de 156 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **126 de 156 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
 de progresso; [verification.md](verification.md) reúne resultados e limites.
 A entrega ainda não foi implantada.
 
-Os sete adaptadores locais (Claude, Gemini, Kimi, OpenCode, Pi, Cursor e Grok)
-foram localizados em 3.6d2c2c3. A próxima tarefa cobre gateways, HTTP/process e
-campos definidos por schema (3.6d2c2c4).
+Os adaptadores Codex/Runner, sete adaptadores locais, gateways, HTTP/process e
+campos de schemas built-in estão localizados em 3.6d2c. A próxima tarefa cobre
+ambientes e política de execução (3.6d2d).
 
 | Etapa | Situação |
 | --- | --- |

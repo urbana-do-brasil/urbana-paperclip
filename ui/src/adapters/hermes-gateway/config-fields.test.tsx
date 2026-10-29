@@ -4,6 +4,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { HermesGatewayConfigFields } from "./config-fields";
 import type { AdapterConfigFieldsProps } from "../types";
 
@@ -43,14 +45,16 @@ function renderFields(overrides: Partial<AdapterConfigFieldsProps> = {}) {
 describe("HermesGatewayConfigFields", () => {
   const roots: Root[] = [];
 
-  afterEach(() => {
+  afterEach(async () => {
     for (const root of roots.splice(0)) {
       act(() => root.unmount());
     }
     document.body.innerHTML = "";
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
-  it("shows the gateway URL and runtime fields in edit mode", () => {
+  it("shows gateway fields in English while preserving saved values", async () => {
+    await i18n.changeLanguage("en");
     const result = renderFields({
       config: {
         apiBaseUrl: "http://127.0.0.1:8642",
@@ -80,5 +84,20 @@ describe("HermesGatewayConfigFields", () => {
     expect(apiKeyInput).toBeTruthy();
 
     expect(result.container.querySelector('button[aria-label="Show API key"]')).toBeTruthy();
+    expect(result.container.querySelector<HTMLSelectElement>("select")?.value).toBe("issue");
+  });
+
+  it("shows Portuguese labels and keeps the configured session strategy", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const result = renderFields({ config: { sessionKeyStrategy: "issue" } });
+    roots.push(result.root);
+
+    const text = result.container.textContent ?? "";
+    expect(text).toContain("URL base da API");
+    expect(text).toContain("Chave de API");
+    expect(text).toContain("Estratégia da chave de sessão");
+    expect(text).toContain("Permitir HTTP remoto (inseguro)");
+    expect(result.container.querySelector<HTMLSelectElement>("select")?.value).toBe("issue");
+    expect(result.container.querySelector('button[aria-label="Mostrar Chave de API"]')).toBeTruthy();
   });
 });

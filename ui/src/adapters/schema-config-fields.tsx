@@ -1,5 +1,6 @@
 import { schemaFieldSection } from "./config-sections";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "@/i18n";
 
 import type { AdapterConfigSchema, ConfigFieldSchema, CreateConfigValues } from "@paperclipai/adapter-utils";
 
@@ -19,10 +20,12 @@ function SelectField({
   value,
   options,
   onChange,
+  placeholder,
 }: {
   value: string;
   options: Array<{ value: string; label: string }>;
   onChange: (value: string) => void;
+  placeholder: string;
 }) {
   const [open, setOpen] = useState(false);
   const selectedOpt = options.find((o) => o.value === value);
@@ -31,7 +34,7 @@ function SelectField({
       <PopoverTrigger asChild>
         <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">
           <span className={!value ? "text-muted-foreground" : ""}>
-            {selectedOpt?.label ?? value ?? "Select..."}
+            {selectedOpt?.label ?? (value || placeholder)}
           </span>
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </button>
@@ -67,11 +70,13 @@ function ComboboxField({
   options,
   onChange,
   placeholder,
+  customValueMessage,
 }: {
   value: string;
   options: { label: string; value: string; group?: string }[];
   onChange: (val: string) => void;
   placeholder?: string;
+  customValueMessage: (value: string) => string;
 }) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState("");
@@ -190,7 +195,7 @@ function ComboboxField({
             ))}
             {filter && filtered.length === 0 && (
               <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                Use &quot;{filter}&quot; as custom value (press Enter)
+              {customValueMessage(filter)}
               </div>
             )}
           </PopoverContent>
@@ -331,7 +336,31 @@ export function SchemaConfigFields({
   eff,
   mark,
 }: AdapterConfigFieldsProps) {
+  const { t } = useTranslation();
   const schema = useConfigSchema(adapterType);
+  const translateSchemaFields = adapterType === "hermes_local" || adapterType === "cursor_cloud";
+
+  function localizedLabel(field: ConfigFieldSchema): string {
+    return translateSchemaFields
+      ? t(`agentConfiguration.schemaAdapters.${adapterType}.${field.key}.label`, { defaultValue: field.label })
+      : field.label;
+  }
+
+  function localizedHint(field: ConfigFieldSchema): string | undefined {
+    if (!field.hint) return undefined;
+    return translateSchemaFields
+      ? t(`agentConfiguration.schemaAdapters.${adapterType}.${field.key}.hint`, { defaultValue: field.hint })
+      : field.hint;
+  }
+
+  function localizedOptions(field: ConfigFieldSchema) {
+    return (field.options ?? []).map((option) => ({
+      ...option,
+      label: translateSchemaFields
+        ? t(`agentConfiguration.schemaAdapters.${adapterType}.${field.key}.options.${option.value}`, { defaultValue: option.label })
+        : option.label,
+    }));
+  }
 
   const defaultsApplied = useRef({ adapterType, applied: false });
   useEffect(() => {
@@ -415,15 +444,18 @@ export function SchemaConfigFields({
         .filter((field) => !(field.type === "select" && /permissionMode/i.test(field.key) && (field.options?.length ?? 0) <= 1))
         .filter((field) => fieldMatchesVisibleWhen(field, readValue, schema))
         .map((field) => {
+          const label = localizedLabel(field);
+          const hint = localizedHint(field);
           switch (field.type) {
             case "select": {
               const currentVal = String(readValue(field) ?? "");
               return (
-                <Field key={field.key} label={field.label} hint={field.hint}>
+                <Field key={field.key} label={label} hint={hint}>
                   <SelectField
                     value={currentVal}
-                    options={field.options ?? []}
+                    options={localizedOptions(field)}
                     onChange={(v) => writeValue(field, v)}
+                    placeholder={t("agentConfiguration.schemaFields.select")}
                   />
                 </Field>
               );
@@ -433,8 +465,8 @@ export function SchemaConfigFields({
               return (
                 <ToggleField
                   key={field.key}
-                  label={field.label}
-                  hint={field.hint}
+                  label={label}
+                  hint={hint}
                   checked={readValue(field) === true}
                   onChange={(v) => writeValue(field, v)}
                 />
@@ -442,7 +474,7 @@ export function SchemaConfigFields({
 
             case "number":
               return (
-                <Field key={field.key} label={field.label} hint={field.hint}>
+                <Field key={field.key} label={label} hint={hint}>
                   <DraftNumberInput
                     value={Number(readValue(field) ?? 0)}
                     onCommit={(v) => writeValue(field, v)}
@@ -454,7 +486,7 @@ export function SchemaConfigFields({
 
             case "textarea":
               return (
-                <Field key={field.key} label={field.label} hint={field.hint}>
+                <Field key={field.key} label={label} hint={hint}>
                   <DraftTextarea
                     value={String(readValue(field) ?? "")}
                     onCommit={(v) => writeValue(field, v || undefined)}
@@ -467,14 +499,14 @@ export function SchemaConfigFields({
               const currentVal = String(readValue(field) ?? "");
               // Dynamic options: if meta.providerModels exists, compute options
               // based on the current provider value
-              let comboboxOptions = field.options ?? [];
+              let comboboxOptions = localizedOptions(field);
               if (field.meta?.providerModels) {
                 const providerVal = String(readValue(schema.fields.find((f) => f.key === "provider")!) ?? "auto");
                 const modelsByProvider = field.meta.providerModels as Record<string, string[]>;
                 if (providerVal === "auto") {
                   // Auto: show all models from all providers, grouped by provider
                   const providerLabel = schema.fields.find((f) => f.key === "provider");
-                  const providerOptions = providerLabel?.options ?? [];
+                  const providerOptions = providerLabel ? localizedOptions(providerLabel) : [];
                   comboboxOptions = Object.entries(modelsByProvider).flatMap(([prov, models]) =>
                     models.map((m) => ({
                       label: m,
@@ -485,7 +517,7 @@ export function SchemaConfigFields({
                 } else {
                   const providerModels = modelsByProvider[providerVal] ?? [];
                   const providerLabel = schema.fields.find((f) => f.key === "provider");
-                  const provName = providerLabel?.options?.find((p) => p.value === providerVal)?.label ?? providerVal;
+                  const provName = (providerLabel ? localizedOptions(providerLabel) : []).find((p) => p.value === providerVal)?.label ?? providerVal;
                   comboboxOptions = providerModels.map((m) => ({
                     label: m,
                     value: m,
@@ -494,12 +526,13 @@ export function SchemaConfigFields({
                 }
               }
               return (
-                <Field key={field.key} label={field.label} hint={field.hint}>
+                <Field key={field.key} label={label} hint={hint}>
                   <ComboboxField
                     value={currentVal}
                     options={comboboxOptions}
                     onChange={(v) => writeValue(field, v || undefined)}
-                    placeholder={field.hint}
+                    placeholder={hint ?? t("agentConfiguration.schemaFields.typeOrSelect")}
+                    customValueMessage={(value) => t("agentConfiguration.schemaFields.useCustomValue", { value })}
                   />
                 </Field>
               );
@@ -508,7 +541,7 @@ export function SchemaConfigFields({
             case "text":
             default:
               return (
-                <Field key={field.key} label={field.label} hint={field.hint}>
+                <Field key={field.key} label={label} hint={hint}>
                   <DraftInput
                     value={String(readValue(field) ?? "")}
                     onCommit={(v) => writeValue(field, v || undefined)}

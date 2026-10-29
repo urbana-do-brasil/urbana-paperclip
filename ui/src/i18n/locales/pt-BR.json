@@ -1688,6 +1688,113 @@
       "maxTurnsPerRun": "Máximo de turnos por execução",
       "maxTurnsPerRunHint": "Número máximo de turnos do agente (chamadas de ferramentas) por execução de heartbeat."
     },
+    "secretFields": {
+      "show": "Mostrar {{field}}",
+      "hide": "Ocultar {{field}}",
+      "storedSecretPlaceholder": "Segredo armazenado; informe um novo valor para substituí-lo"
+    },
+    "http": {
+      "webhookUrl": "URL do webhook",
+      "webhookUrlHint": "URL que recebe requisições POST quando o agente é acionado."
+    },
+    "process": {
+      "command": "Comando",
+      "commandHint": "Comando a executar (por exemplo, node ou python).",
+      "commandPlaceholder": "Ex.: node, python",
+      "args": "Argumentos (separados por vírgula)",
+      "argsHint": "Argumentos de linha de comando, separados por vírgula.",
+      "argsPlaceholder": "Ex.: script.js, --flag"
+    },
+    "openclawGateway": {
+      "gatewayUrl": "URL do Gateway",
+      "gatewayUrlHint": "URL WebSocket do OpenClaw acessível pelo Paperclip, como ws://127.0.0.1:18789.",
+      "gatewayAuthToken": "Token de autenticação do Gateway",
+      "gatewayTokenPlaceholder": "Token do gateway OpenClaw",
+      "agentId": "ID do agente",
+      "sessionStrategy": "Estratégia de sessão",
+      "sessionStrategies": { "fixed": "Fixa", "issue": "Por tarefa", "run": "Por execução" },
+      "sessionKey": "Chave da sessão",
+      "passwordAlternativeAuth": "Senha (autenticação alternativa)",
+      "passwordPlaceholder": "Senha compartilhada do Gateway",
+      "role": "Função",
+      "scopes": "Escopos (separados por vírgula)",
+      "paperclipApiUrlOverride": "Substituição da URL da API do Paperclip",
+      "timeoutSeconds": "Tempo limite (segundos)",
+      "headersJson": "Cabeçalhos JSON",
+      "claimedApiKeyPath": "Caminho da chave de API reivindicada",
+      "waitTimeoutMs": "Tempo limite de espera (ms)",
+      "disableDeviceAuth": "Desativar autenticação do dispositivo",
+      "skipDeviceKeyAuthentication": "Ignorar autenticação por chave do dispositivo",
+      "autoPairOnFirstConnect": "Parear automaticamente na primeira conexão",
+      "automaticallyApproveDevicePairing": "Aprovar automaticamente o pareamento do dispositivo",
+      "deviceAuth": "Autenticação do dispositivo",
+      "deviceAuthHint": "Quando ativado, o Paperclip armazena uma chave do dispositivo durante a configuração para manter as aprovações de pareamento entre execuções."
+    },
+    "hermesGateway": {
+      "apiBaseUrl": "URL base da API",
+      "apiBaseUrlHint": "URL do servidor da API Hermes acessível pelo Paperclip, como http://127.0.0.1:8642 ou uma URL HTTPS privada. URLs raiz/chat do painel (por exemplo, http://127.0.0.1:9119/chat) também são aceitas e mapeadas para /api.",
+      "apiKey": "Chave de API",
+      "apiKeyPlaceholder": "Hermes API_SERVER_KEY, não PAPERCLIP_API_KEY",
+      "paperclipApiUrl": "URL da API do Paperclip",
+      "paperclipApiUrlHint": "URL opcional da API do Paperclip acessível pelo host Hermes. Não é uma credencial.",
+      "sessionKeyStrategy": "Estratégia da chave de sessão",
+      "sessionKeyStrategyHint": "Controla X-Hermes-Session-Key. O escopo por tarefa evita, por padrão, mistura de memória entre tarefas.",
+      "sessionKeyStrategies": { "issue": "Por tarefa", "agent": "Por agente", "run": "Por execução", "none": "Nenhuma" },
+      "timeoutSeconds": "Tempo limite em segundos",
+      "eventReconnectMs": "Reconexão de eventos (ms)",
+      "eventReconnectMsHint": "Espera antes de reconectar ao fluxo de eventos SSE do Hermes após uma desconexão não terminal.",
+      "dangerouslyAllowRemoteHttp": "Permitir HTTP remoto (inseguro)",
+      "dangerouslyAllowRemoteHttpHint": "Opção insegura somente para desenvolvimento. Gateways Hermes remotos devem usar HTTPS; HTTP local continua permitido.",
+      "extraHeaders": "Cabeçalhos adicionais",
+      "extraHeadersHint": "Objeto JSON opcional com cabeçalhos não secretos. O adaptador gera os cabeçalhos críticos de segurança.",
+      "instructions": "Instruções",
+      "instructionsHint": "Instruções estáveis e opcionais para o Hermes, enviadas separadamente da entrada de ativação."
+    },
+    "runtimeJson": {
+      "runtimeServicesJson": "Serviços de execução em JSON",
+      "runtimeServicesJsonHint": "Definições opcionais de serviços do workspace para servidores compartilhados, workers ou outros processos auxiliares de longa duração.",
+      "payloadTemplateJson": "Modelo de payload em JSON",
+      "payloadTemplateJsonHint": "JSON opcional mesclado às requisições do adaptador remoto antes de o Paperclip adicionar os campos padrão de ativação e workspace."
+    },
+    "schemaFields": {
+      "select": "Selecione...",
+      "typeOrSelect": "Digite ou selecione...",
+      "useCustomValue": "Usar \"{{value}}\" como valor personalizado (pressione Enter)"
+    },
+    "schemaAdapters": {
+      "hermes_local": {
+        "provider": {
+          "label": "Provedor",
+          "hint": "Normalmente, automático. Defina somente se o Hermes não conseguir inferir o provedor pelo modelo ou por ~/.hermes/config.yaml.",
+          "options": { "auto": "Automático" }
+        },
+        "timeoutSec": { "label": "Tempo limite em segundos" },
+        "graceSec": { "label": "Período de tolerância em segundos", "hint": "Tempo de espera após SIGTERM antes de encerrar o processo Hermes à força." },
+        "maxTurnsPerRun": { "label": "Máximo de turnos por execução", "hint": "Limite opcional de iterações com ferramentas definido por Hermes --max-turns." },
+        "toolsets": { "label": "Conjuntos de ferramentas", "hint": "Conjuntos opcionais do Hermes separados por vírgula, como terminal,file,web." },
+        "persistSession": { "label": "Manter sessão", "hint": "Retoma sessões Hermes entre heartbeats do Paperclip." },
+        "worktreeMode": { "label": "Modo worktree do Hermes", "hint": "Passa --worktree para o Hermes." },
+        "checkpoints": { "label": "Pontos de verificação", "hint": "Passa --checkpoints para o Hermes." },
+        "quiet": { "label": "Saída silenciosa", "hint": "Passa --quiet para o Hermes e deixa os registros de execução do Paperclip mais limpos." },
+        "verbose": { "label": "Saída detalhada", "hint": "Passa --verbose para o Hermes." },
+        "paperclipApiUrl": { "label": "URL da API do Paperclip", "hint": "Substituição opcional da URL base da API. O padrão é PAPERCLIP_API_URL." },
+        "promptTemplate": { "label": "Modelo de prompt", "hint": "Modelo de prompt personalizado e opcional, com marcadores {{variable}}." }
+      },
+      "cursor_cloud": {
+        "repoUrl": { "label": "URL do repositório", "hint": "URL Git do repositório que o Cursor deve abrir para este agente." },
+        "repoStartingRef": { "label": "Referência inicial", "hint": "Branch, tag ou SHA opcional para o Cursor usar ao iniciar." },
+        "repoPullRequestUrl": { "label": "URL do pull request", "hint": "URL opcional do PR ao conectar o agente a uma branch de revisão existente." },
+        "runtimeEnvType": {
+          "label": "Ambiente de execução do Cursor",
+          "hint": "Escolha onde o Cursor deve executar o agente remoto.",
+          "options": { "cloud": "Hospedado pelo Cursor", "pool": "Pool autogerenciado", "machine": "Máquina nomeada" }
+        },
+        "runtimeEnvName": { "label": "Nome do ambiente", "hint": "Nome opcional do pool ou da máquina para usar um ambiente que não seja o padrão." },
+        "workOnCurrentBranch": { "label": "Trabalhar na branch atual", "hint": "Instrui o Cursor a continuar na branch atual em vez de criar outra." },
+        "autoCreatePR": { "label": "Criar PR automaticamente", "hint": "Permite que o Cursor crie um pull request para o trabalho automaticamente." },
+        "skipReviewerRequest": { "label": "Não solicitar revisão", "hint": "Suprime solicitações de revisão em pull requests criados automaticamente." }
+      }
+    },
     "identity": {
       "section": "Identidade do agente",
       "name": "Nome",
