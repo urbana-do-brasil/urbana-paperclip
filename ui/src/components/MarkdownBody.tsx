@@ -17,6 +17,7 @@ import { getCachedIssueDetail } from "../lib/issueDetailCache";
 import { queryKeys } from "../lib/queryKeys";
 import { parseIssueReferenceFromHref, remarkLinkIssueReferences } from "../lib/issue-reference";
 import { remarkLinkCaseReferences } from "../lib/case-reference";
+import { useTranslation } from "@/i18n";
 
 const CASE_HREF_RE = /^\/cases\/([A-Z][A-Z0-9]*-C\d+)$/i;
 
@@ -216,13 +217,14 @@ function MarkdownCaseLink({
 }) {
   // Cases resolve via the get-by-identifier route; navigate there on click.
   // Kept boxless/underlined to match the issue mention treatment.
+  const { t } = useTranslation();
   const caseHref = useCaseHref();
   return (
     <Link
       to={caseHref(identifier)}
       data-mention-kind="case"
       className={cn("paperclip-markdown-case-ref", "font-normal underline")}
-      aria-label={`Case ${identifier}`}
+      aria-label={t("caseManagement.issueLinks.caseReference", { identifier })}
     >
       {children}
     </Link>

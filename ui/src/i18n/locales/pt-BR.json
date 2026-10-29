@@ -1779,6 +1779,11 @@
     "next": "Próximo"
   },
   "caseManagement": {
+    "issueLinks": {
+      "roles": { "origin": "origem", "work": "trabalho", "reference": "referência" },
+      "caseReference": "Caso {{identifier}}",
+      "loadError": "Não foi possível carregar os casos vinculados."
+    },
     "attachments": { "empty": "Não há anexos." },
     "activity": {
       "loading": "Carregando atividade...",

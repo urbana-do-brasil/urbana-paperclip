@@ -15,6 +15,7 @@ import {
 } from "@paperclipai/shared";
 import { ThemeProvider } from "../context/ThemeContext";
 import { MarkdownBody } from "./MarkdownBody";
+import { i18n } from "@/i18n";
 import { queryKeys } from "../lib/queryKeys";
 import type { WorkspaceFileAvailabilityTarget } from "../lib/workspace-file-availability";
 
@@ -44,6 +45,7 @@ vi.mock("@/lib/router", () => ({
     hash: "",
     state: null,
   }),
+  useCaseHref: () => (...segments: string[]) => `/PAP/${["cases", ...segments].join("/")}`,
 }));
 
 vi.mock("../api/issues", () => ({
@@ -94,6 +96,24 @@ function renderMarkdown(
 }
 
 describe("MarkdownBody", () => {
+  it("localizes accessible case references when linkification is enabled", async () => {
+    const previousLanguage = i18n.language;
+    try {
+      await i18n.changeLanguage("pt-BR");
+      const pt = renderMarkdown("Veja PAP-C7 no texto do usuário.", [], { linkCaseReferences: true });
+      expect(pt).toContain('href="/PAP/cases/PAP-C7"');
+      expect(pt).toContain('aria-label="Caso PAP-C7"');
+      expect(pt).toContain("no texto do usuário");
+      await i18n.changeLanguage("en");
+      const en = renderMarkdown("See PAP-C7.", [], { linkCaseReferences: true });
+      expect(en).toContain('aria-label="Case PAP-C7"');
+      const disabled = renderMarkdown("PAP-C7", [], { linkCaseReferences: false });
+      expect(disabled).not.toContain('data-mention-kind="case"');
+      expect(disabled).toContain("PAP-C7");
+    } finally {
+      await i18n.changeLanguage(previousLanguage);
+    }
+  });
   it("preserves a saved document anchor in an explicit task link", () => {
     // Hover/focus can resolve the issue to its plain identifier. Both the old
     // fragment-bearing cache key and the corrected plain key model that load.

@@ -4,8 +4,9 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { AnchorHTMLAttributes } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IssueCaseLink } from "@/api/cases";
+import { i18n } from "@/i18n";
 import { IssueCasesPanel } from "./IssueCasesPanel";
 
 function act(callback: () => void) {
@@ -49,7 +50,11 @@ const links: IssueCaseLink[] = [
 
 describe("IssueCasesPanel", () => {
   let container: HTMLDivElement;
-  beforeEach(() => {
+  let previousLanguage = "pt-BR";
+  beforeAll(() => { previousLanguage = i18n.language; });
+  afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockCasesApi.listForIssue.mockReset();
@@ -89,7 +94,7 @@ describe("IssueCasesPanel", () => {
     expect(text).toContain("PAP-C7");
     expect(text).toContain("Launch post");
     expect(text).toContain("work");
-    expect(text).toContain("in review");
+    expect(text).toContain("In review");
     expect(container.querySelector('a[href="/PAP/cases/PAP-C7"]')).not.toBeNull();
     act(() => root.unmount());
   });
@@ -99,6 +104,39 @@ describe("IssueCasesPanel", () => {
     mockCasesApi.listForIssue.mockResolvedValue([]);
     const root = await render();
     expect(container.textContent).toBe("");
+    act(() => root.unmount());
+  });
+
+  it("localizes roles and status while keeping case links and user titles", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockInstanceApi.getExperimental.mockResolvedValue({ enableCases: true });
+    mockCasesApi.listForIssue.mockResolvedValue([
+      links[0],
+      { ...links[0], id: "l2", role: "origin", case: { ...links[0].case, identifier: "PAP-C8", title: "USER TITLE" } },
+      { ...links[0], id: "l3", role: "reference", case: { ...links[0].case, identifier: "PAP-C9" } },
+    ]);
+    const root = await render();
+    expect(container.textContent).toContain("Casos");
+    expect(container.textContent).toContain("trabalho");
+    expect(container.textContent).toContain("origem");
+    expect(container.textContent).toContain("referência");
+    expect(container.textContent).toContain("Em revisão");
+    expect(container.querySelector('a[href="/PAP/cases/PAP-C8"]')?.textContent).toContain("USER TITLE");
+    act(() => root.unmount());
+  });
+
+  it("shows a localized error and retries when linked cases fail to load", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockInstanceApi.getExperimental.mockResolvedValue({ enableCases: true });
+    mockCasesApi.listForIssue.mockRejectedValueOnce(new Error("provider detail")).mockResolvedValueOnce(links);
+    const root = await render();
+    expect(container.textContent).toContain("Não foi possível carregar os casos vinculados.");
+    expect(container.textContent).not.toContain("provider detail");
+    const retry = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Tentar novamente");
+    act(() => retry!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await flush();
+    expect(container.textContent).toContain("PAP-C7");
+    expect(mockCasesApi.listForIssue).toHaveBeenCalledTimes(2);
     act(() => root.unmount());
   });
 });

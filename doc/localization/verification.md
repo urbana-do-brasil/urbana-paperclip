@@ -3084,3 +3084,18 @@ teste de revisões foram atualizadas ao rótulo atual da interface.
 passaram. O typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 Progresso da CLI: **259/281**; próxima: 3.10e4, integração com issues.
+
+
+## Casos — integração com tarefas e Markdown (3.10e4)
+
+O painel de casos vinculados localiza papéis, status e falha com nova tentativa;
+referências em Markdown recebem nomes acessíveis no idioma ativo. A flag
+`enableCases`, URLs, identificadores, títulos e texto fornecido permanecem
+intactos. Referências não são transformadas quando a opção está desativada.
+
+`IssueCasesPanel.test.tsx`, `MarkdownBody.test.tsx`, `case-reference.test.ts` e
+`locale-validation.test.ts` passaram em **83/83 testes**. Gates de tokens, JSON,
+`git diff --check` e OpenSpec estrito passaram. O typecheck da UI aponta somente
+o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **260/281**; próxima:
+3.10e5, gates e navegação.

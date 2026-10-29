@@ -1735,6 +1735,11 @@
     "next": "Next"
   },
   "caseManagement": {
+    "issueLinks": {
+      "roles": { "origin": "origin", "work": "work", "reference": "reference" },
+      "caseReference": "Case {{identifier}}",
+      "loadError": "Could not load linked cases."
+    },
     "attachments": { "empty": "No attachments." },
     "activity": {
       "loading": "Loading activity...",
