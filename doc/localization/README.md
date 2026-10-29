@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **167 de 185 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **168 de 188 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -36,13 +36,15 @@ da empresa/fila de solicitações. Para manter o trabalho revisável, 3.8b foi
 dividida entre gestão de membros/solicitações embutidas (b1) e convites/fila
 standalone (b2). 3.8b (membros, solicitações e convites) está concluída. 3.8c
 também está concluída: acesso administrativo da instância (c1) e perfil público
-de usuário (c2). Próxima: 3.8d, configurações pessoais, da empresa e da instância.
+de usuário (c2). 3.8d foi dividida em perfil pessoal/navegação (d1, concluído),
+configurações da organização (d2) e preferências gerais da instância (d3).
+Próxima: 3.8d2.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), portfólio de organizações, projetos e metas (3.5a–3.5e), agentes e execuções (3.6a–3.6f), dashboard, execuções ao vivo, custos/finanças, orçamento, timeline, atividade, auditoria e hub (3.7a–f), aprovações e acesso da empresa (3.8a–b), acesso administrativo da instância e perfil público de usuário (3.8c1–c2) verificados. Configurações, segredos e consentimento OAuth/MCP (3.8d–f) permanecem pendentes. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), portfólio de organizações, projetos e metas (3.5a–3.5e), agentes e execuções (3.6a–3.6f), dashboard, execuções ao vivo, custos/finanças, orçamento, timeline, atividade, auditoria e hub (3.7a–f), aprovações e acesso da empresa (3.8a–b), acesso administrativo da instância e perfil público de usuário (3.8c1–c2), perfil pessoal e navegação compartilhada das configurações (3.8d1) verificados. Configurações gerais da organização/instância, segredos e consentimento OAuth/MCP (3.8d2–f) permanecem pendentes. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |
@@ -418,3 +420,14 @@ locale-validation passaram em **17/17 testes**; typecheck direcionado, gates de
 tokens, diff check, parse dos catálogos e OpenSpec estrito passaram. Progresso:
 **167/185 tarefas**. Próxima tarefa: 3.8d, configurações pessoais, da empresa e
 da instância.
+
+### Continuação — perfil pessoal e navegação de configurações (3.8d1)
+
+A página de perfil pessoal, já integrada ao seletor de idioma, foi revalidada.
+As variantes da navegação de configurações e as abas adaptáveis agora exibem
+rótulos e nomes acessíveis em PT-BR/en; destinos, valores internos, itens
+ocultos por operador/Cloud e nomes fornecidos por plugins não mudaram.
+CompanySettingsSidebar, CompanySettingsNav, ProfileSettings e
+locale-validation passaram em **31/31 testes**; typecheck direcionado e gates de
+tokens também passaram. Progresso: **168/188 tarefas**. Próxima: 3.8d2,
+configurações gerais da organização.

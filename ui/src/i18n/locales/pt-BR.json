@@ -636,6 +636,24 @@
     "save": "Salvar perfil",
     "board": "Painel"
   },
+  "settingsNav": {
+    "title": "Configurações",
+    "backToApp": "Voltar para o aplicativo",
+    "companyFallback": "Organização",
+    "general": "Geral",
+    "profile": "Perfil",
+    "members": "Membros",
+    "invites": "Convites",
+    "secrets": "Segredos",
+    "environments": "Ambientes",
+    "access": "Acesso",
+    "heartbeats": "Execuções periódicas",
+    "export": "Exportar",
+    "import": "Importar",
+    "experimental": "Experimental",
+    "plugins": "Plugins",
+    "adapters": "Adaptadores"
+  },
   "inbox": {
     "toolbarControls": "Controles de {{surface}}",
     "selectOrganization": "Selecione uma organização para ver {{surface}}.",

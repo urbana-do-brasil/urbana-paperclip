@@ -3,11 +3,15 @@
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { queryKeys } from "@/lib/queryKeys";
+import { CompanySettingsSidebar as ProductionCompanySettingsSidebar } from "./CompanySettingsSidebar.production";
 import { CompanySettingsSidebar } from "./CompanySettingsSidebar";
 import { primarySidebarStyles } from "./primary-sidebar-styles";
 
 const sidebarNavItemMock = vi.hoisted(() => vi.fn());
+const productionSidebarNavItemMock = vi.hoisted(() => vi.fn());
 const mockSidebarBadgesApi = vi.hoisted(() => ({
   get: vi.fn(),
 }));
@@ -67,6 +71,13 @@ vi.mock("./SidebarNavItem", () => ({
   },
 }));
 
+vi.mock("./SidebarNavItem.production", () => ({
+  SidebarNavItem: (props: { to: string; label: string; end?: boolean; badge?: number }) => {
+    productionSidebarNavItemMock(props);
+    return <div>{props.label}</div>;
+  },
+}));
+
 vi.mock("./SidebarCompanyMenu", () => ({
   SidebarCompanyMenu: () => <div>Workspace switcher</div>,
 }));
@@ -102,7 +113,8 @@ async function flushReact() {
 describe("CompanySettingsSidebar", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockSidebarBadgesApi.get.mockResolvedValue({
@@ -119,10 +131,11 @@ describe("CompanySettingsSidebar", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("renders a primary-style settings takeover with a back-to-app link", async () => {
@@ -264,6 +277,70 @@ describe("CompanySettingsSidebar", () => {
     });
   });
 
+  it("localizes settings navigation in PT-BR without changing destinations", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <CompanySettingsSidebar />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    expect(container.querySelector('nav[aria-label="Configurações"]')).not.toBeNull();
+    expect(container.textContent).toContain("Voltar para o aplicativo");
+    expect(sidebarNavItemMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/company/settings",
+      label: "Geral",
+    }));
+    expect(sidebarNavItemMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/company/settings/instance/profile",
+      label: "Perfil",
+    }));
+    expect(sidebarNavItemMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/company/settings/secrets",
+      label: "Segredos",
+    }));
+
+    await act(async () => root.unmount());
+  });
+
+  it("localizes the production settings sidebar and preserves its routes", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryClient.setQueryData(queryKeys.health, { status: "ok", hiddenSettings: [] });
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <ProductionCompanySettingsSidebar />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    expect(container.querySelector('nav[aria-label="Configurações"]')).not.toBeNull();
+    expect(container.textContent).toContain("Geral");
+    expect(container.textContent).toContain("Perfil");
+    expect(container.textContent).toContain("Convites");
+    expect(container.textContent).toContain("Segredos");
+    expect(productionSidebarNavItemMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/company/settings",
+      label: "Geral",
+    }));
+    expect(productionSidebarNavItemMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/company/settings/instance/access",
+      label: "Acesso",
+    }));
+
+    await act(async () => root.unmount());
+  });
+
   it("renders company settings pages contributed by ready plugins", async () => {
     mockUsePluginSlots.mockReturnValue({
       slots: [
@@ -374,7 +451,8 @@ describe("CompanySettingsSidebar", () => {
 describe("CompanySettingsSidebar operator-hidden entries", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockSidebarBadgesApi.get.mockResolvedValue({
@@ -387,10 +465,11 @@ describe("CompanySettingsSidebar operator-hidden entries", () => {
     mockUsePluginSlots.mockReturnValue({ slots: [], isLoading: false, errorMessage: null });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   async function renderSidebar(hiddenSettings?: string[], cloud?: { managed: boolean }) {

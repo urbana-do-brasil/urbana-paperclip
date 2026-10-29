@@ -1865,3 +1865,17 @@ configurações não estão ocultas. O typecheck direcionado da página e do tes
 passaram. A tarefa 3.8c e seus lotes c1/c2 estão concluídos; progresso:
 **167/185 tarefas**. Próxima tarefa: 3.8d, configurações pessoais, da empresa e
 da instância.
+
+### Continuação — perfil pessoal e navegação de configurações (3.8d1)
+
+`ProfileSettings` foi revalidada junto com a preferência de idioma. As variantes
+da barra lateral e a navegação adaptável de configurações agora localizam
+rótulos e nomes acessíveis em PT-BR/en. Destinos, valores de tab, itens ocultos
+por operador/Cloud e nomes exibidos por plugins permanecem intactos.
+
+`CompanySettingsSidebar.test.tsx`, `CompanySettingsNav.test.tsx`,
+`ProfileSettings.test.tsx` e `locale-validation.test.ts` passaram em **31/31
+testes**, incluindo a variante streamlined e a variante production da barra.
+O typecheck direcionado dos componentes/página/testes e `check:tokens`,
+`check:token-gates`, parse dos catálogos e OpenSpec estrito passaram. Progresso:
+**168/188 tarefas**. Próxima tarefa: 3.8d2, configurações gerais da organização.
