@@ -63,8 +63,9 @@ estão concluídas. O assistente genérico foi dividido em b2a–b2c; b2a (shell
 seleção), b2b (MCP personalizado e Zapier) e b2c (credenciais, métodos, OAuth e
 conclusão) estão concluídas. Com isso, 3.9f3b está concluída. 3.9f3c
 (permissões e acesso dos agentes) e 3.9f3d (identidades e contas associadas)
-estão concluídas. Próxima: 3.9f3e, teste manual de ações. Progresso atual:
-**218/243 tarefas**.
+estão concluídas. 3.9f3e foi dividida em e1–e3 para validar separadamente o
+diálogo/argumentos, execução/resultados e autorizações/retomada. Próxima:
+3.9f3e1. Progresso atual: **218/246 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |

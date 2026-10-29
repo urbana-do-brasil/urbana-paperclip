@@ -2593,3 +2593,10 @@ e `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
 typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 O progresso atual é **218/243 tarefas**. Próxima: 3.9f3e, teste manual de ações.
+
+### Decomposição do teste manual de ações (3.9f3e)
+
+O fluxo de teste manual tem três etapas para revisão focada: e1 (diálogo,
+seleção, badges e formulário de argumentos), e2 (execução e resultados) e e3
+(aprovação/hand-off de provider e retomada). Nenhuma etapa está marcada como
+concluída ainda. O progresso permanece em **218/246 tarefas**; próxima: 3.9f3e1.
