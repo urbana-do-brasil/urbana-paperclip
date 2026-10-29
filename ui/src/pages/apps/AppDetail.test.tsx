@@ -688,6 +688,24 @@ describe("AppDetail", () => {
     expect(container.querySelector<HTMLButtonElement>('button[aria-label="Renomear app"]')).toBeTruthy();
   });
 
+  it("localizes generic reconnect guidance and credential controls while preserving provider health text", async () => {
+    await i18n.changeLanguage("pt-BR");
+    getConnectionMock.mockResolvedValue(connection({
+      healthStatus: "error",
+      healthMessage: "Token expired.",
+      requiresReauthorization: true,
+    }));
+
+    await renderAppDetail();
+
+    expect(container.textContent).toContain("Este app precisa ser reconectado");
+    expect(container.textContent).toContain("Token expired.");
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Chave do app"]')).toBeTruthy();
+    expect(Array.from(container.querySelectorAll("button")).some(
+      (button) => button.textContent?.trim() === "Verificar e reconectar",
+    )).toBe(true);
+  });
+
   it("counts only active catalog entries as available actions", async () => {
     mockParams.tab = "permissions";
     listCatalogMock.mockResolvedValue({

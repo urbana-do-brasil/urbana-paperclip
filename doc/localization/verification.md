@@ -2436,5 +2436,25 @@ continuam preservados.
 incluindo a alternância para PT-BR e a preservação do nome `GitHub`. Os gates de
 tokens, JSON e OpenSpec estrito passaram. O typecheck da UI aponta somente o
 erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
-`SETUP_LOGIN_HINTS` não é exportado. Progresso atual: **210/235 tarefas**.
-Próxima: 3.9f3b, setup e ciclo de vida da conexão.
+`SETUP_LOGIN_HINTS` não é exportado. Progresso ao concluir 3.9f3a:
+**210/235 tarefas**. Em seguida, 3.9f3b foi dividida em b1 (estado sem conexão
+e ciclo de vida) e b2 (assistente genérico de configuração), elevando o total a
+**237 tarefas**. Próxima: 3.9f3b1.
+
+### Estado sem conexão e ciclo de vida (3.9f3b1)
+
+Os estados de app não conectado e requerendo atenção agora localizam abas,
+breadcrumbs, instruções de conexão/reconexão, permissões pausadas e estados
+vazios. O detalhe também localiza o fluxo de reconexão por OAuth/chave, rótulos
+de configuração técnica, zona de risco, pausa e remoção. Nomes de provedores,
+URLs, credenciais, regras de acesso e mensagens dinâmicas de saúde/erro foram
+preservados.
+
+`AppNotConnected.test.tsx`, `AdvancedPanel.render.test.tsx`, `AppDetail.test.tsx`
+e `locale-validation.test.ts` passaram em **114/114 testes**, cobrindo estados e
+ações em PT-BR e a preservação do nome `GitHub` e da mensagem dinâmica `Token
+expired.`. Os gates de tokens, JSON, diff e OpenSpec estrito passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso atual: **211/237 tarefas**. Próxima: 3.9f3b2, assistente genérico de
+configuração.

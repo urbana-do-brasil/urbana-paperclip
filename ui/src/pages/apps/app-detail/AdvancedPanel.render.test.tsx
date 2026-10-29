@@ -2,8 +2,9 @@
 
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getAppStoreDefinition } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import { DangerZone } from "./AdvancedPanel";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,6 +15,10 @@ function act(callback: () => void) {
 }
 
 let container: HTMLDivElement | null = null;
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 afterEach(() => {
   container?.remove();
@@ -28,9 +33,9 @@ function renderDangerZone() {
   return container;
 }
 
-function expandDangerZone(node: HTMLDivElement) {
+function expandDangerZone(node: HTMLDivElement, label = "Danger zone") {
   const trigger = Array.from(node.querySelectorAll("button"))
-    .find((button) => button.textContent?.includes("Danger zone"));
+    .find((button) => button.textContent?.includes(label));
   expect(trigger).toBeTruthy();
   act(() => trigger!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 }
@@ -120,6 +125,18 @@ describe("DangerZone", () => {
     expect(text).toContain("Yes, remove it");
     expect(text).toContain("Deletes credentials for PostHog");
     expect(text).toContain("requires a new sign-in or key");
+  });
+
+  it("localizes the connection removal lifecycle in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const node = renderDangerZone();
+    expandDangerZone(node, "Zona de risco");
+
+    expect(node.textContent).toContain("Remover este app");
+    expect(node.textContent).toContain("Exclui as credenciais de PostHog e remove o acesso dos agentes.");
+    expect(Array.from(node.querySelectorAll("button")).some(
+      (button) => button.textContent?.trim() === "Remover app",
+    )).toBe(true);
   });
 
 });

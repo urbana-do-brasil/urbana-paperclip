@@ -4,6 +4,7 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { AppNotConnected } from "./AppNotConnected";
 
 const listApplicationsMock = vi.hoisted(() => vi.fn());
@@ -149,7 +150,8 @@ describe("AppNotConnected", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockParams.applicationId = "app-1";
@@ -313,6 +315,21 @@ describe("AppNotConnected", () => {
     expect(container.textContent).toContain("GitHub");
     expect(container.textContent).toContain("Not connected");
     expect(container.textContent).toContain(expectedText);
+  });
+
+  it("localizes the disconnected app state in Brazilian Portuguese and preserves provider metadata", async () => {
+    await i18n.changeLanguage("pt-BR");
+
+    await renderPage();
+
+    expect(container.textContent).toContain("GitHub");
+    expect(container.textContent).toContain("Não conectada");
+    expect(container.textContent).toContain("Requer atenção");
+    expect(container.textContent).toContain("Adicione uma chave válida de GitHub para restaurar o acesso.");
+    expect(container.textContent).toContain("Permissões pausadas");
+    expect(Array.from(container.querySelectorAll("button")).some(
+      (button) => button.textContent?.trim() === "Reconectar",
+    )).toBe(true);
   });
 
   it.each([

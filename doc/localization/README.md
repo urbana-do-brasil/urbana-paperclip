@@ -57,9 +57,10 @@ concluídas; 3.9b2c (edição, versões e operações), 3.9c (Skill Studio) e 3.
 de ajuda, gateways MCP e tokens) estão verificadas em PT-BR/en. 3.9f1 (descoberta,
 filtros e catálogo de apps) e 3.9f2 (inventário/saúde de conexões, contas inline,
 revisão de ações e remoção) também estão verificadas. 3.9f3 foi dividida em
-sete lotes de detalhe/configuração; 3.9f3a (shell, navegação, cabeçalho e estados)
-está concluída. Próxima: 3.9f3b, setup e ciclo de vida da conexão. Progresso atual:
-**210/235 tarefas**.
+sete lotes de detalhe/configuração e f3b foi dividida em b1–b2; 3.9f3a (shell,
+navegação, cabeçalho e estados) e 3.9f3b1 (estado sem conexão e ciclo de vida)
+estão concluídas. Próxima: 3.9f3b2, assistente genérico de configuração.
+Progresso atual: **211/237 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |

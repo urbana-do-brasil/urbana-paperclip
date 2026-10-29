@@ -203,13 +203,13 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
     )
     : grantsQuery.data?.capabilities.canConfigure === true;
   const reconnectUnavailableMessage = grantsQuery.isLoading
-    ? "Checking who can reconnect this identity…"
+    ? t("apps.appDetail.reconnectUnavailable.checking")
     : grantsQuery.isError
-      ? "We couldn't verify who can reconnect this identity. Reload the page to try again."
+      ? t("apps.appDetail.reconnectUnavailable.notVerified")
       : managedIdentityGrant?.kind === "user"
         && managedPersonalUserId !== grantsQuery.data?.currentUserId
-        ? "The person this connection belongs to must reconnect it."
-        : "You don't have permission to reconnect this identity.";
+        ? t("apps.appDetail.reconnectUnavailable.ownerMustReconnect")
+        : t("apps.appDetail.reconnectUnavailable.noPermission");
   const logoEntry = useMemo(
     () => galleryEntryFor((galleryQuery.data?.apps ?? []) as AppGalleryDisplayEntry[], connection, application),
     [galleryQuery.data, connection, application],
@@ -287,7 +287,7 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
       queryClient.invalidateQueries({ queryKey: queryKeys.apps.attention(selectedCompanyId!) });
       navigate("/apps");
     },
-    onError: (error) => pushToast({ title: "Couldn't disconnect", body: error instanceof Error ? error.message : "Please try again.", tone: "error" }),
+    onError: (error) => pushToast({ title: t("apps.appDetail.lifecycle.disconnectFailed"), body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.pleaseTryAgain"), tone: "error" }),
   });
   const [pending, setPending] = useState(false);
   const persist = useMutation({
@@ -319,8 +319,8 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't save that",
-        body: error instanceof Error ? error.message : "Please try again.",
+        title: t("apps.appDetail.lifecycle.saveFailed"),
+        body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.pleaseTryAgain"),
         tone: "error",
       }),
     onSettled: () => setPending(false),
@@ -338,8 +338,8 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't rename the app",
-        body: error instanceof Error ? error.message : "Please try again.",
+        title: t("apps.appDetail.lifecycle.renameFailed"),
+        body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.pleaseTryAgain"),
         tone: "error",
       }),
   });
@@ -355,16 +355,16 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
         navigateTopLevel(target.url);
       } catch (error) {
         pushToast({
-          title: "Couldn't start sign-in",
-          body: error instanceof Error ? error.message : "Please try again.",
+          title: t("apps.appDetail.lifecycle.startSigninFailed"),
+          body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.pleaseTryAgain"),
           tone: "error",
         });
       }
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't start sign-in",
-        body: error instanceof Error ? error.message : "Please try again.",
+        title: t("apps.appDetail.lifecycle.startSigninFailed"),
+        body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.pleaseTryAgain"),
         tone: "error",
       }),
   });
@@ -382,7 +382,7 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
   const startPersonalAuth = useMutation({
     mutationFn: () => {
       const subjectUserId = grantsQuery.data?.currentUserId;
-      if (!subjectUserId) throw new Error("Sign in again to connect your own account.");
+      if (!subjectUserId) throw new Error(t("apps.appDetail.lifecycle.signInAgainToConnectOwnAccount"));
       return toolsApi.startPersonalAuthorization(selectedCompanyId!, connectionId, {
         subjectUserId,
         returnTo: appTabHref(connectionId, "permissions"),
@@ -397,16 +397,16 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
         navigateTopLevel(target.url);
       } catch (error) {
         pushToast({
-          title: "Couldn't start sign-in",
-          body: error instanceof Error ? error.message : "Please try again.",
+          title: t("apps.appDetail.lifecycle.startSigninFailed"),
+          body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.pleaseTryAgain"),
           tone: "error",
         });
       }
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't start sign-in",
-        body: error instanceof Error ? error.message : "Please try again.",
+        title: t("apps.appDetail.lifecycle.startSigninFailed"),
+        body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.pleaseTryAgain"),
         tone: "error",
       }),
   });

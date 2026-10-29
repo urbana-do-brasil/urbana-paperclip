@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useToast } from "@/context/ToastContext";
+import { useTranslation } from "@/i18n";
 import { redactUrlSecrets } from "@/lib/redact-url-secrets";
 import { navigateTopLevel } from "@/lib/browserNavigation";
 import { prepareOAuthNavigation, savePendingCloudHandoff } from "@/lib/oauthHandoff";
@@ -34,7 +35,7 @@ export function AdvancedPanel({
   onRemove,
   onReplaced,
   canReplaceCredential = true,
-  credentialUnavailableMessage = "You don't have permission to replace this identity's credential.",
+  credentialUnavailableMessage,
   appToggleDisabled,
   onToggleApp,
   identityGrant = null,
@@ -109,21 +110,22 @@ function KeySection({
   unavailableMessage: string;
 }) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
   return (
     <section>
       <div className="flex items-center justify-between">
         <div className="flex items-start gap-3">
           <Lock className="mt-0.5 h-4 w-4 text-muted-foreground" />
           <div>
-            <h2 className="text-sm font-medium text-foreground">Reconnect</h2>
+            <h2 className="text-sm font-medium text-foreground">{t("apps.appDetail.unconnected.reconnect")}</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {canReplace ? "Replace the stored credential." : unavailableMessage}
+              {canReplace ? t("apps.appDetail.lifecycle.replaceCredential") : unavailableMessage}
             </p>
           </div>
         </div>
         {canReplace && !open && (
           <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-            Reconnect
+            {t("apps.appDetail.unconnected.reconnect")}
           </Button>
         )}
       </div>
@@ -160,6 +162,7 @@ export function ReconnectCard({
   reconnectUnavailableMessage?: string;
 }) {
   const { pushToast } = useToast();
+  const { t } = useTranslation();
   const reconnectOAuth = useMutation({
     // Reconnect is not a new identity choice. Personal-only connections must
     // put the replacement token back on the signed-in user's existing grant;
@@ -176,16 +179,16 @@ export function ReconnectCard({
         navigateTopLevel(target.url);
       } catch (error) {
         pushToast({
-          title: "Couldn’t start sign-in",
-          body: error instanceof Error ? error.message : "Please try again.",
+          title: t("apps.appDetail.lifecycle.startSigninFailed"),
+          body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.pleaseTryAgain"),
           tone: "error",
         });
       }
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn’t start sign-in",
-        body: error instanceof Error ? error.message : "Please try again.",
+        title: t("apps.appDetail.lifecycle.startSigninFailed"),
+        body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.pleaseTryAgain"),
         tone: "error",
       }),
   });
@@ -193,15 +196,15 @@ export function ReconnectCard({
     mutationFn: () => toolsApi.checkConnectionHealth(connection.id),
     onSuccess: () => {
       pushToast({
-        title: "Vercel credential verified",
-        body: `${humanizeConnectionDisplayName(connection)} is back online.`,
+        title: t("apps.appDetail.lifecycle.vercelCredentialVerified"),
+        body: t("apps.appDetail.lifecycle.backOnline", { name: humanizeConnectionDisplayName(connection) }),
         tone: "success",
       });
       onReconnected();
     },
     onError: (error) => pushToast({
-      title: "Credential still needs attention",
-      body: error instanceof Error ? error.message : "Review the connector in Vercel Connect and try again.",
+      title: t("apps.appDetail.lifecycle.credentialNeedsAttention"),
+      body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.vercelCheckFallback"),
       tone: "error",
     }),
   });
@@ -213,34 +216,38 @@ export function ReconnectCard({
     <div className="flex flex-col gap-4 rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3">
       <div className="min-w-0">
         <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-          {methodUnavailable ? "Connection no longer supported" : oauth ? "Reconnect required" : "This app needs reconnecting"}
+          {methodUnavailable
+            ? t("apps.appDetail.lifecycle.connectionNoLongerSupported")
+            : oauth
+              ? t("apps.appDetail.lifecycle.reconnectRequired")
+              : t("apps.appDetail.lifecycle.appNeedsReconnect")}
         </h2>
         <p className="mt-0.5 text-sm text-amber-800 dark:text-amber-200">
           {methodUnavailable
-            ? "Add a supported connection from Connectors, then remove this connection."
+            ? t("apps.appDetail.lifecycle.addSupportedConnectionBody")
             : connection.healthMessage?.trim() || (oauth
-            ? "Authorization expired or was revoked. Sign in again to restore access."
-            : "The key stopped working. Paste a new one to get it back online.")}
+            ? t("apps.appDetail.lifecycle.authorizationExpired")
+            : t("apps.appDetail.lifecycle.keyStoppedWorking"))}
         </p>
       </div>
       <div className="shrink-0">
         {!canReconnect ? (
           <p className="text-sm text-amber-800 dark:text-amber-200">
-            {reconnectUnavailableMessage ?? "You don't have permission to reconnect this identity."}
+            {reconnectUnavailableMessage ?? t("apps.appDetail.reconnectUnavailable.noPermission")}
           </p>
         ) : methodUnavailable ? (
           <Button size="sm" variant="outline" asChild>
             <Link to={`/apps/connect?source=${encodeURIComponent(galleryEntry!.slug)}`}>
-              Add supported connection
+              {t("apps.appDetail.lifecycle.addSupportedConnection")}
             </Link>
           </Button>
         ) : onReconnect ? (
-          <Button size="sm" variant="outline" onClick={onReconnect}>Reconnect</Button>
+          <Button size="sm" variant="outline" onClick={onReconnect}>{t("apps.appDetail.unconnected.reconnect")}</Button>
         ) : managedByVercel && !oauth ? (
           <div className="flex items-center gap-2">
             <Button type="button" size="sm" variant="outline" asChild>
               <a href="https://vercel.com/connect" target="_blank" rel="noreferrer">
-                Manage in Vercel <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+                {t("apps.appDetail.lifecycle.manageInVercel")} <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
               </a>
             </Button>
             <Button
@@ -250,7 +257,7 @@ export function ReconnectCard({
               onClick={() => verifyVercel.mutate()}
             >
               {verifyVercel.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              Check again
+              {t("apps.appDetail.lifecycle.checkAgain")}
             </Button>
           </div>
         ) : oauth ? (
@@ -261,7 +268,9 @@ export function ReconnectCard({
             onClick={() => reconnectOAuth.mutate()}
           >
             {reconnectOAuth.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-            {reconnectOAuth.isPending ? "Opening sign-in…" : "Reconnect"}
+            {reconnectOAuth.isPending
+              ? t("apps.appDetail.lifecycle.openingSignin")
+              : t("apps.appDetail.unconnected.reconnect")}
           </Button>
         ) : (
           <ReconnectForm connection={connection} galleryEntry={galleryEntry} onReconnected={onReconnected} />
@@ -283,6 +292,7 @@ function ReconnectForm({
   onReconnected: () => void;
 }) {
   const { pushToast } = useToast();
+  const { t } = useTranslation();
   const methodKey = typeof connection.config?.connectionMethodKey === "string"
     ? connection.config.connectionMethodKey
     : null;
@@ -298,7 +308,11 @@ function ReconnectForm({
     .filter((ref) => ref.placement === "header" || ref.placement === "url")
     .map((ref) => ({
       configPath: connectionCredentialConfigPath(ref),
-      label: ref.placement === "url" ? "MCP server URL" : ref.prefix === "Bearer " ? "App key" : ref.key ?? ref.name,
+      label: ref.placement === "url"
+        ? t("apps.appDetail.lifecycle.mcpServerUrl")
+        : ref.prefix === "Bearer "
+          ? t("apps.appDetail.lifecycle.appKey")
+          : ref.key ?? ref.name,
       helpUrl: "",
       required: true,
     }));
@@ -318,23 +332,23 @@ function ReconnectForm({
         result.connection.healthStatus === "ok" || result.connection.healthStatus === "healthy" || result.connection.healthStatus === "unknown";
       if (healthy) {
         pushToast({
-          title: "Reconnected",
-          body: `${humanizeConnectionDisplayName(connection)} is back online.`,
+          title: t("apps.appDetail.lifecycle.reconnected"),
+          body: t("apps.appDetail.lifecycle.backOnline", { name: humanizeConnectionDisplayName(connection) }),
           tone: "success",
         });
         onReconnected();
       } else {
         pushToast({
-          title: "Still not working",
-          body: result.connection.healthMessage?.trim() || "That key didn't check out. Try another.",
+          title: t("apps.appDetail.lifecycle.stillNotWorking"),
+          body: result.connection.healthMessage?.trim() || t("apps.appDetail.lifecycle.keyDidNotCheckOut"),
           tone: "error",
         });
       }
     },
     onError: (error) =>
       pushToast({
-        title: "That key didn't work",
-        body: error instanceof Error ? error.message : "Check the key and try again.",
+        title: t("apps.appDetail.lifecycle.keyDidNotWork"),
+        body: error instanceof Error ? error.message : t("apps.appDetail.lifecycle.checkKeyTryAgain"),
         tone: "error",
       }),
   });
@@ -346,7 +360,7 @@ function ReconnectForm({
   if (connection.credentialSource === "vercel_connect") {
     return (
       <p className="text-sm text-muted-foreground">
-        Credentials for this connection are managed in Vercel Connect.
+        {t("apps.appDetail.lifecycle.credentialsManagedInVercel")}
       </p>
     );
   }
@@ -373,7 +387,7 @@ function ReconnectForm({
                 rel="noreferrer"
                 className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-foreground underline underline-offset-2"
               >
-                Where do I find this? <ArrowUpRight className="h-3 w-3" />
+                {t("apps.appDetail.lifecycle.whereFindThis")} <ArrowUpRight className="h-3 w-3" />
               </a>
             )}
           </div>
@@ -381,22 +395,24 @@ function ReconnectForm({
       ) : (
         <Input
           type="password"
-          aria-label="App key"
+          aria-label={t("apps.appDetail.lifecycle.appKey")}
           autoComplete="off"
           value={single}
           onChange={(e) => setSingle(e.target.value)}
-          placeholder="Paste your new key"
+          placeholder={t("apps.appDetail.lifecycle.pasteNewKey")}
           className="h-10 font-mono"
         />
       )}
       <div className="flex items-center gap-2">
         <Button size="sm" disabled={!filled || reconnect.isPending} onClick={() => reconnect.mutate()}>
           {reconnect.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-          {reconnect.isPending ? "Checking..." : "Check & reconnect"}
+          {reconnect.isPending
+            ? t("apps.appDetail.lifecycle.checking")
+            : t("apps.appDetail.lifecycle.checkAndReconnect")}
         </Button>
         {onCancel && (
           <Button size="sm" variant="ghost" onClick={onCancel} disabled={reconnect.isPending}>
-            Cancel
+            {t("apps.appDetail.cancel")}
           </Button>
         )}
       </div>
@@ -406,12 +422,25 @@ function ReconnectForm({
 
 function TechnicalDetails({ connection }: { connection: ToolConnection }) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
+  const address = connectionAddress(connection);
+  const addressLabel = address === "Local command"
+    ? t("apps.appDetail.lifecycle.localCommand")
+    : address === "Not set"
+      ? t("apps.appDetail.lifecycle.notSet")
+      : address;
+  const transport = connectionTransportLabel(connection.transport);
+  const transportLabel = transport === "Remote HTTP"
+    ? t("apps.appDetail.lifecycle.remoteHttp")
+    : transport === "Local command"
+      ? t("apps.appDetail.lifecycle.localCommand")
+      : t("apps.appDetail.lifecycle.unknown");
   return (
     <Collapsible open={open} onOpenChange={setOpen} asChild>
       <section>
         <CollapsibleTrigger asChild>
           <button type="button" className="flex w-full items-center gap-3 py-1 text-left">
-            <span className="min-w-0 flex-1 text-sm font-medium text-foreground">Connection details</span>
+            <span className="min-w-0 flex-1 text-sm font-medium text-foreground">{t("apps.appDetail.lifecycle.technicalDetails")}</span>
             <ChevronRight
               className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-90")}
             />
@@ -419,10 +448,10 @@ function TechnicalDetails({ connection }: { connection: ToolConnection }) {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <dl className="mt-4 grid gap-2 pb-2 text-xs sm:grid-cols-(--gtc-59)">
-            <dt className="text-muted-foreground">Address</dt>
-            <dd className="break-all font-mono text-foreground">{connectionAddress(connection)}</dd>
-            <dt className="text-muted-foreground">Type</dt>
-            <dd className="text-foreground">{connectionTransportLabel(connection.transport)}</dd>
+            <dt className="text-muted-foreground">{t("apps.appDetail.lifecycle.address")}</dt>
+            <dd className="break-all font-mono text-foreground">{addressLabel}</dd>
+            <dt className="text-muted-foreground">{t("apps.appDetail.lifecycle.type")}</dt>
+            <dd className="text-foreground">{transportLabel}</dd>
           </dl>
         </CollapsibleContent>
       </section>
@@ -438,7 +467,7 @@ export function DangerZone({
   onRemove,
   onReplaced,
   canReplaceCredential = true,
-  credentialUnavailableMessage = "You don't have permission to replace this identity's credential.",
+  credentialUnavailableMessage,
   toggleDisabled = false,
   onToggleConnection,
   identityGrant = null,
@@ -468,6 +497,8 @@ export function DangerZone({
   onRevokeIdentity?: (grant: ConnectionGrant) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
+  const unavailableCredentialMessage = credentialUnavailableMessage ?? t("apps.appDetail.lifecycle.credentialUnavailable");
   const [confirming, setConfirming] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<ConnectionGrant | null>(null);
   const paused = connection
@@ -490,7 +521,7 @@ export function DangerZone({
             type="button"
             className="flex w-full items-center gap-3 py-1 text-left"
           >
-            <span className="min-w-0 flex-1 text-sm font-medium text-destructive">Danger zone</span>
+            <span className="min-w-0 flex-1 text-sm font-medium text-destructive">{t("apps.appDetail.lifecycle.dangerZone")}</span>
             <ChevronRight
               className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-90")}
             />
@@ -501,9 +532,9 @@ export function DangerZone({
           <div className="mt-3 divide-y divide-border border-t border-border">
             {connection && onToggleConnection ? (
               <div className="flex items-center justify-between gap-4 py-4">
-                <h2 className="text-sm font-medium text-foreground">Pause connection</h2>
+                <h2 className="text-sm font-medium text-foreground">{t("apps.appDetail.lifecycle.pauseConnection")}</h2>
                 <ToggleSwitch
-                  aria-label="Pause connection"
+                  aria-label={t("apps.appDetail.lifecycle.pauseConnection")}
                   checked={paused}
                   disabled={toggleDisabled}
                   onCheckedChange={onToggleConnection}
@@ -519,7 +550,7 @@ export function DangerZone({
                   galleryEntry={galleryEntry}
                   onReplaced={onReplaced ?? (() => undefined)}
                   canReplace={canReplaceCredential}
-                  unavailableMessage={credentialUnavailableMessage}
+                  unavailableMessage={unavailableCredentialMessage}
                 />
               </div>
             ) : null}
@@ -531,7 +562,7 @@ export function DangerZone({
                   <p className="text-xs text-muted-foreground">
                     {canReplaceCredential
                       ? `Sign in to ${identityProviderName} again.`
-                      : credentialUnavailableMessage}
+                      : credentialUnavailableMessage ?? unavailableCredentialMessage}
                   </p>
                 </div>
                 {canReplaceCredential && onReconnectIdentity ? (
@@ -570,24 +601,24 @@ export function DangerZone({
 
             <div className="flex flex-wrap items-center justify-between gap-3 py-4">
               <div>
-                <p className="text-sm font-medium text-foreground">Remove this app</p>
+                <p className="text-sm font-medium text-foreground">{t("apps.appDetail.lifecycle.removeThisApp")}</p>
                 <p className="text-xs text-muted-foreground">
-                  {`Deletes credentials for ${appName} and removes agent access. Reconnecting requires a new sign-in or key.`}
+                  {t("apps.appDetail.lifecycle.removeWarning", { name: appName })}
                 </p>
               </div>
               {confirming ? (
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm" onClick={() => setConfirming(false)} disabled={removing}>
-                    Cancel
+                    {t("apps.appDetail.cancel")}
                   </Button>
                   <Button variant="destructive" size="sm" onClick={onRemove} disabled={removing}>
                     {removing && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                    Yes, remove it
+                    {t("apps.appDetail.lifecycle.yesRemoveIt")}
                   </Button>
                 </div>
               ) : (
                 <Button variant="destructive" size="sm" onClick={() => setConfirming(true)}>
-                  Remove app
+                  {t("apps.appDetail.lifecycle.removeApp")}
                 </Button>
               )}
             </div>
