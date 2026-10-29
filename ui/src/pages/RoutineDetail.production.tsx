@@ -213,7 +213,7 @@ export function RoutineDetail() {
     }),
     [routine?.triggers, routineRuns],
   );
-  const { data: activity } = useQuery({
+  const { data: activity, isLoading: activityLoading, error: activityError } = useQuery({
     queryKey: [
       ...queryKeys.routines.activity(selectedCompanyId!, routineId!),
       relatedActivityIds.triggerIds.join(","),
@@ -886,7 +886,7 @@ export function RoutineDetail() {
               {section === "secrets" && <SecretsSection />}
               {section === "delivery" && <DeliverySection />}
               {section === "runs" && <RunsSection />}
-              {section === "activity" && <ActivitySection />}
+              {section === "activity" && <ActivitySection isLoading={activityLoading} error={activityError} />}
               {section === "history" && <HistorySection />}
 
               {isEditableSection ? (

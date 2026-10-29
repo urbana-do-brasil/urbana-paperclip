@@ -934,6 +934,11 @@
         "activity": "Activity",
         "history": "Version history"
       },
+      "activity": {
+        "loading": "Loading activity…",
+        "noActivity": "No activity yet.",
+        "earlier": "Earlier"
+      },
       "status": {
         "archived": "Archived",
         "draft": "Draft",

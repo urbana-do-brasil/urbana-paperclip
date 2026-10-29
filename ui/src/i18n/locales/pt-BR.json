@@ -965,6 +965,11 @@
         "activity": "Atividade",
         "history": "Histórico de versões"
       },
+      "activity": {
+        "loading": "Carregando atividade…",
+        "noActivity": "Ainda não há atividade.",
+        "earlier": "Mais cedo"
+      },
       "status": {
         "archived": "Arquivada",
         "draft": "Rascunho",

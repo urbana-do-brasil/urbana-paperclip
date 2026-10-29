@@ -2844,3 +2844,17 @@ filtros, IDs, rotas e estados permanecem intactos.
 testes**. O typecheck direcionado, `check:tokens`, `check:token-gates`, validação
 JSON, `git diff --check` e OpenSpec estrito passaram. Progresso: **236/263
 tarefas**. Próxima: 3.10b4b, feed de atividade.
+
+
+## Rotinas — feed de atividade (3.10b4b)
+
+O feed agora localiza os estados de carregamento e vazio, os agrupamentos de
+data no idioma ativo e os rótulos conhecidos de eventos em PT-BR/en. A variante
+production também repassa os estados de carregamento e erro da consulta à seção.
+Resumos fornecidos por usuário, mensagens de erro dinâmicas, payloads JSON, IDs
+e ações/status desconhecidos permanecem intactos.
+
+`operate-sections.test.tsx` e `locale-validation.test.ts` passaram em **16/16
+testes**. O typecheck direcionado, `check:tokens`, `check:token-gates`, JSON,
+`git diff --check` e OpenSpec estrito passaram. Progresso: **237/263 tarefas**.
+Próxima: 3.10b4c, histórico e restauração de revisões.
