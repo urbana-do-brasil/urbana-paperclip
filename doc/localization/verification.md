@@ -1979,3 +1979,21 @@ bloqueado pelo erro não relacionado em `storybook/prototypes/NewAgentWizard.tsx
 `SETUP_LOGIN_HINTS` não é exportado por `@/lib/agent-setup-fields`. O progresso
 é **175/201 tarefas**; próxima: 3.8e1b2, atualização e rotação de
 valores/referências.
+
+### Continuação — rotação e atualização de segredos compartilhados (3.8e1b2)
+
+A janela de rotação agora localiza títulos e orientação para segredos
+gerenciados e referências externas, modos de gravação/troca de referência,
+seleção de cofre, campos, dicas, ações, cancelamento e feedback em PT-BR/en.
+Valores digitados permanecem restritos ao campo; referências e nomes dinâmicos,
+payloads e mensagens detalhadas do provider continuam preservados.
+
+`Secrets.render.test.tsx` e `locale-validation.test.ts` passaram em **47/47
+testes**, cobrindo rotação de valor e troca de referência em PT-BR. `check:tokens`,
+`check:token-gates`, parse dos catálogos, `git diff --check` e validação OpenSpec
+estrita passaram. A suíte de render emite avisos React `act`, sem falhas. O
+typecheck completo da UI segue bloqueado pelo erro não relacionado em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
+por `@/lib/agent-setup-fields`. O progresso é **176/201 tarefas**; próxima:
+3.8e1b3, transições de status e confirmações de arquivamento, restauração e
+exclusão.

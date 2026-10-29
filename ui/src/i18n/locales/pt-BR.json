@@ -90,6 +90,23 @@
       "userSecretUpdated": "Segredo do usuário atualizado",
       "userSecretCreated": "Segredo do usuário criado"
     },
+    "rotation": {
+      "updateExternalReferenceTitle": "Atualizar referência externa",
+      "updateSecretValueTitle": "Atualizar valor do segredo",
+      "managedDescription": "Cria uma nova versão no provedor. Consumidores vinculados à versão mais recente usam o novo valor na próxima execução.",
+      "referenceDescription": "Cria uma nova versão de metadados no Paperclip que aponta para um segredo existente no provedor. O Paperclip não grava um novo valor no provedor.",
+      "externalWriteDescription": "Grava uma nova versão do segredo referenciado no provedor. O novo valor passa a valer para todos os consumidores, dentro e fora do Paperclip.",
+      "writeNewValue": "Gravar novo valor",
+      "changeReference": "Alterar referência",
+      "deploymentDefaultRotationHelp": "Usar o padrão da implantação mantém o fallback atual.",
+      "updatedReferencePlaceholder": "Referência atualizada",
+      "rotateValueBeforeReference": "Faça a rotação do valor no provedor antes de alterar esta referência do Paperclip.",
+      "newValue": "Novo valor",
+      "newValuePlaceholder": "Cole o novo valor",
+      "writtenToProvider": "Gravado em {{reference}} no provedor.",
+      "rotated": "Rotação concluída",
+      "rotateFailed": "Falha na rotação"
+    },
     "inventory": {
       "searchPlaceholder": "Buscar por nome, chave ou referência",
       "searchLabel": "Buscar segredos",

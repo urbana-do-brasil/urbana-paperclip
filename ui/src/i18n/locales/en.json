@@ -90,6 +90,23 @@
       "userSecretUpdated": "User-provided secret updated",
       "userSecretCreated": "User-provided secret created"
     },
+    "rotation": {
+      "updateExternalReferenceTitle": "Update external reference",
+      "updateSecretValueTitle": "Update secret value",
+      "managedDescription": "Creates a new provider-backed version. Consumers pinned to latest pick up the new value on the next run.",
+      "referenceDescription": "Creates a new Paperclip metadata version that points at an existing provider secret. Paperclip does not write a new provider value.",
+      "externalWriteDescription": "Writes a new version of the referenced provider secret. The new value becomes current for every consumer of that secret, in and outside Paperclip.",
+      "writeNewValue": "Write new value",
+      "changeReference": "Change reference",
+      "deploymentDefaultRotationHelp": "Rotating with the deployment default preserves current fallback behavior.",
+      "updatedReferencePlaceholder": "Updated reference",
+      "rotateValueBeforeReference": "Rotate the actual value in the provider before changing this Paperclip reference.",
+      "newValue": "New value",
+      "newValuePlaceholder": "Paste the new value",
+      "writtenToProvider": "Written to {{reference}} in the provider.",
+      "rotated": "Rotated",
+      "rotateFailed": "Rotate failed"
+    },
     "inventory": {
       "searchPlaceholder": "Search by name, key, ref",
       "searchLabel": "Search secrets",

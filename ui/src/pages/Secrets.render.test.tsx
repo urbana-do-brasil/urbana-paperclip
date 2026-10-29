@@ -817,6 +817,7 @@ describe("Secrets page layout", () => {
   });
 
   it("writes a new value through the provider for external reference secrets", async () => {
+    await i18n.changeLanguage("pt-BR");
     const externalSecret = makeCompanySecret({
       id: "secret-neon",
       key: "neon_admin_api_key",
@@ -850,7 +851,7 @@ describe("Secrets page layout", () => {
 
     // AWS supports write-through, so the primary action is a value update.
     const updateValueButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Update value",
+      (button) => button.textContent?.trim() === "Atualizar valor",
     ) as HTMLButtonElement | undefined;
     expect(updateValueButton).not.toBeUndefined();
     await act(async () => {
@@ -858,9 +859,11 @@ describe("Secrets page layout", () => {
     });
     await flushReact();
 
-    // Both modes are offered; "Write new value" is the default.
-    expect(document.body.textContent).toContain("Write new value");
-    expect(document.body.textContent).toContain("Change reference");
+    // Both localized modes are offered; "Gravar novo valor" is the default.
+    expect(document.body.textContent).toContain("Gravar novo valor");
+    expect(document.body.textContent).toContain("Alterar referência");
+    expect(document.body.textContent).toContain("Atualizar valor do segredo");
+    expect(document.body.textContent).toContain("Cofre do provedor");
 
     const valueTextarea = document.getElementById("rotate-value") as HTMLTextAreaElement | null;
     expect(valueTextarea).not.toBeNull();
@@ -869,7 +872,7 @@ describe("Secrets page layout", () => {
 
     const dialog = valueTextarea!.closest("[role='dialog']") as HTMLElement;
     const submitButton = Array.from(dialog.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Update value",
+      (button) => button.textContent?.trim() === "Atualizar valor",
     ) as HTMLButtonElement | undefined;
     expect(submitButton?.disabled).toBe(false);
     await act(async () => {
@@ -879,6 +882,44 @@ describe("Secrets page layout", () => {
 
     expect(mockSecretsApi.rotate).toHaveBeenCalledWith("secret-neon", {
       value: "rotated-neon-admin-key",
+      providerConfigId: "vault-aws",
+    });
+
+    const reopenedUpdateButton = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Atualizar valor",
+    ) as HTMLButtonElement | undefined;
+    expect(reopenedUpdateButton).not.toBeUndefined();
+    await act(async () => reopenedUpdateButton?.click());
+    await flushReact();
+
+    const changeReferenceButton = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Alterar referência",
+    ) as HTMLButtonElement | undefined;
+    expect(changeReferenceButton).not.toBeUndefined();
+    await act(async () => {
+      changeReferenceButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      changeReferenceButton?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      changeReferenceButton?.click();
+    });
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Atualizar referência externa");
+    expect(document.body.textContent).toContain("Faça a rotação do valor no provedor");
+    const referenceInput = document.getElementById("rotate-ref") as HTMLInputElement | null;
+    expect(referenceInput).not.toBeNull();
+    await act(async () => setInputValue(referenceInput!, "arn:aws:secretsmanager:us-east-1:123456789012:secret:neon/admin-api-key-v2"));
+    await flushReact();
+
+    const referenceDialog = referenceInput!.closest("[role='dialog']") as HTMLElement;
+    const updateReferenceButton = Array.from(referenceDialog.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Atualizar referência",
+    ) as HTMLButtonElement | undefined;
+    expect(updateReferenceButton?.disabled).toBe(false);
+    await act(async () => updateReferenceButton?.click());
+    await flushReact();
+
+    expect(mockSecretsApi.rotate).toHaveBeenLastCalledWith("secret-neon", {
+      externalRef: "arn:aws:secretsmanager:us-east-1:123456789012:secret:neon/admin-api-key-v2",
       providerConfigId: "vault-aws",
     });
 
