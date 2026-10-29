@@ -83,13 +83,14 @@ concluídas. 3.10b4 foi dividida em b4a (lista de execuções e tarefas), b4b
 tarefas criadas e feedback), b4b (feed de atividade e eventos) e b4c
 (histórico, comparação e restauração) e b5 (auditoria de rotinas no AuditHub
 streamlined) estão concluídas. Próxima: 3.10c, pipelines. O progresso atual é
-**243/265 tarefas**.
+**243/268 tarefas**. Para revisão focada, 3.10c foi dividida em c1
+(catálogo/lista/gate), c2 (detalhe do item) e c3 (configuração).
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2), detalhe de apps (3.9f3a–g), configurações de provedores/gestores de contas (3.9f4), gateways MCP de apps (3.9f5), coleção/criação de rotinas (3.10a) e operações de rotinas (3.10b1–b5) verificadas. Etapa 3.10 dividida em a–g; 3.10b (detalhe e operações) está concluída, incluindo o feed de auditoria escopado acessível no AuditHub streamlined. Próxima: 3.10c, pipelines. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2), detalhe de apps (3.9f3a–g), configurações de provedores/gestores de contas (3.9f4), gateways MCP de apps (3.9f5), coleção/criação de rotinas (3.10a) e operações de rotinas (3.10b1–b5) verificadas. Etapa 3.10 dividida em a–g; 3.10b está concluída, incluindo o feed de auditoria escopado no AuditHub streamlined. 3.10c foi dividida em c1 (catálogo/lista/gate), c2 (detalhe do item) e c3 (configuração). Próxima: 3.10c1, pipelines. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |
