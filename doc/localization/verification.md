@@ -2500,3 +2500,21 @@ Ao concluir 3.9f3b2b, o progresso era **213/240 tarefas**. Para manter o lote
 seguinte revisável, 3.9f3b2c foi dividido em c1 (credenciais/método), c2
 (estados OAuth) e c3 (conclusão), elevando o total para **243 tarefas**. O
 progresso atual é **213/243**. Próxima: 3.9f3b2c1.
+
+### Credenciais e seleção de método (3.9f3b2c1)
+
+Os formulários de credenciais agora localizam a seleção de capacidade e método,
+campos obrigatórios, OAuth manual e configuração específica de Vercel, Asana e
+Google Sheets. Instruções e erros próprios da interface acompanham PT-BR/en;
+nomes, rótulos e ajuda fornecidos pelos provedores, valores de credenciais,
+callbacks, URLs, identificadores e erros dinâmicos foram preservados.
+
+`AppsConnect.test.tsx` e `locale-validation.test.ts` passaram em **219/219
+testes**, incluindo credenciais OAuth manuais em PT-BR, preservação do callback
+e segredos, compartilhamento de planilhas e validação de links. `pnpm
+check:tokens`, `pnpm check:token-gates`, parse dos catálogos, `git diff --check`
+e `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O progresso atual é **214/243 tarefas**. Próxima: 3.9f3b2c2, hand-off e estados
+OAuth.

@@ -1357,6 +1357,40 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     }));
   });
 
+  it("localizes manual OAuth credentials while preserving the provider and callback values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listGalleryMock.mockResolvedValue({
+      apps: [BOX],
+      oauthCallbackUrl: "https://paperclip.example.test/api/tools/oauth/callback",
+    });
+    mockParams.appKey = "box";
+    await render();
+    await passAccessStep();
+
+    expect(container.textContent).toContain("Box exige um app OAuth próprio");
+    expect(container.textContent).toContain("Abrir configurações do app Box");
+    expect(container.textContent).toContain("URL de callback do Paperclip");
+    expect(container.textContent).toContain("https://paperclip.example.test/api/tools/oauth/callback");
+    expect(container.querySelector('label[for="curated-oauth-client-id"]')?.textContent).toBe("ID do cliente");
+    expect(container.querySelector('label[for="curated-oauth-client-secret"]')?.textContent).toBe("Segredo do cliente");
+    expect(container.querySelector<HTMLInputElement>("#curated-oauth-client-id")?.placeholder).toBe("Obrigatório");
+    expect(buttonByText("Continuar para entrar")?.disabled).toBe(true);
+
+    await act(async () => {
+      setInputValue(container.querySelector<HTMLInputElement>("#curated-oauth-client-id")!, "box-client-id");
+      setInputValue(container.querySelector<HTMLInputElement>("#curated-oauth-client-secret")!, "box-client-secret");
+    });
+    await flushReact();
+    expect(buttonByText("Continuar para entrar")?.disabled).toBe(false);
+    await act(async () => buttonByText("Continuar para entrar")?.click());
+    await flushReact();
+
+    expect(connectAppMock).toHaveBeenCalledWith("company-1", expect.objectContaining({
+      galleryKey: "box",
+      oauthClient: { clientId: "box-client-id", clientSecret: "box-client-secret" },
+    }));
+  });
+
   it("connects Asana through the shared app without client credentials", async () => {
     listGalleryMock.mockResolvedValue({ apps: [ASANA_MANAGED] });
     mockParams.appKey = "asana";
@@ -3909,6 +3943,37 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await flushReact();
 
     expect(container.textContent).toContain("That doesn't look like a Google Sheets link.");
+    expect(connectAppMock).not.toHaveBeenCalled();
+  });
+
+  it("localizes Google Sheets credential instructions and invalid-link feedback", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listGalleryMock.mockResolvedValueOnce({
+      apps: [
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+      ],
+    });
+    await render();
+
+    await act(async () => buttonContaining("Google Sheets")?.click());
+    await flushReact();
+    await openAccessAdvanced();
+    await act(async () => buttonContaining("Share selected sheets")?.click());
+    await flushReact();
+
+    expect(container.textContent).toContain("Compartilhe cada planilha com este e-mail");
+    expect(container.textContent).toContain("No Google Sheets, clique em Compartilhar e adicione este e-mail como Editor.");
+    expect(container.textContent).toContain("Cole os links das planilhas compartilhadas");
+    expect(container.textContent).toContain("robot@paperclip.iam.gserviceaccount.com");
+    const links = container.querySelector<HTMLTextAreaElement>("textarea")!;
+    await act(async () => setTextareaValue(links, "https://docs.google.com/spreadsheets/d/sheet-id/edit"));
+    await flushReact();
+    expect(container.textContent).toContain("1 planilha pronta para conectar.");
+
+    await act(async () => setTextareaValue(links, "https://example.com/not-a-sheet"));
+    await act(async () => buttonByText("Conectar")?.click());
+    await flushReact();
+    expect(container.textContent).toContain("Este link não parece ser de uma planilha do Google Sheets.");
     expect(connectAppMock).not.toHaveBeenCalled();
   });
 

@@ -2587,11 +2587,11 @@ function StandardConnectionSetupFlow({
             if (isGoogleSheetsRobotMethod(entry, connectionMethodKey)) {
               const parsed = parseGoogleSheetIds(googleSheetsLinks);
               if (parsed.invalidCount > 0) {
-                setGoogleSheetsError("That doesn't look like a Google Sheets link.");
+                setGoogleSheetsError(t("apps.connectionSetup.credentials.invalidGoogleSheetsLink"));
                 return;
               }
               if (parsed.ids.length === 0) {
-                setGoogleSheetsError("Paste at least one Google Sheets link.");
+                setGoogleSheetsError(t("apps.connectionSetup.credentials.googleSheetsLinkRequired"));
                 return;
               }
             }
@@ -3572,6 +3572,7 @@ function KeyStep({
   onBack: () => void;
   onConnect: () => void;
 }) {
+  const { t } = useTranslation();
   const methods = useMemo(
     () => connectionMethodsForCredentialSource(entry, credentialSource),
     [credentialSource, entry],
@@ -3670,9 +3671,9 @@ function KeyStep({
   const hasAlternateMethods = capabilityGroups.length > 1 || capabilityMethods.length > 1;
   const capabilitySelection = capabilityGroups.length > 1 ? (
     <div>
-      <label className="text-sm font-medium text-foreground">What should Paperclip be able to do?</label>
+      <label className="text-sm font-medium text-foreground">{t("apps.connectionSetup.credentials.capabilityQuestion")}</label>
       <RadioCardGroup
-        ariaLabel={`Access level for ${entry.name}`}
+        ariaLabel={t("apps.connectionSetup.credentials.accessLevelAria", { name: entry.name })}
         className="mt-2"
         value={capabilityKey}
         onValueChange={(nextKey) => {
@@ -3687,7 +3688,7 @@ function KeyStep({
           description: group.description,
         }))}
       />
-      {!capabilityKey && <p className="mt-2 text-xs text-muted-foreground">Choose an access level to continue.</p>}
+      {!capabilityKey && <p className="mt-2 text-xs text-muted-foreground">{t("apps.connectionSetup.credentials.chooseAccessLevel")}</p>}
     </div>
   ) : null;
   const managedOAuthMethod = capabilityMethods.find((candidate) =>
@@ -3709,16 +3710,18 @@ function KeyStep({
       disabled={submitting}
       onClick={() => onMethodChange(usingCustomOAuth ? managedOAuthMethod : customerOAuthMethod)}
     >
-      {usingCustomOAuth ? "Use Paperclip instead" : `Use your own ${isGoogleWorkspaceConnectorProfileId(managedOAuthMethod.connectorProfile ?? "") ? "Google" : entry.name} OAuth app`}
+      {usingCustomOAuth
+        ? t("apps.connectionSetup.credentials.usePaperclipInstead")
+        : t("apps.connectionSetup.credentials.useOwnOAuthApp", { name: isGoogleWorkspaceConnectorProfileId(managedOAuthMethod.connectorProfile ?? "") ? "Google" : entry.name })}
     </Button>
   ) : capabilityMethods.length > 1 ? (
     // PAP-659 C1: the ranked default is already selected. This stays as the
     // way to pick something else, one disclosure away, rather than a question
     // the screen opens with.
     <div>
-      <label className="text-sm font-medium text-foreground">How do you want to connect?</label>
+      <label className="text-sm font-medium text-foreground">{t("apps.connectionSetup.credentials.connectQuestion")}</label>
       <RadioCardGroup
-        ariaLabel={`How to connect ${entry.name}`}
+        ariaLabel={t("apps.connectionSetup.credentials.connectAria", { name: entry.name })}
         className="mt-2"
         value={methodKey}
         onValueChange={(nextKey) => {
@@ -3727,10 +3730,12 @@ function KeyStep({
         }}
         options={capabilityMethods.map((candidate) => ({
           value: candidate.key,
-          title: candidate.label ?? (candidate.auth === "oauth" ? `Sign in with ${entry.name}` : "Use an API key"),
+          title: candidate.label ?? (candidate.auth === "oauth"
+            ? t("apps.connectionSetup.credentials.signInWith", { name: entry.name })
+            : t("apps.connectionSetup.credentials.useApiKey")),
         }))}
       />
-      {!method && <p className="mt-2 text-xs text-muted-foreground">Choose a connection method to continue.</p>}
+      {!method && <p className="mt-2 text-xs text-muted-foreground">{t("apps.connectionSetup.credentials.chooseConnectionMethod")}</p>}
     </div>
   ) : null;
   const hasAdvancedSettings = advancedConfigFields.length > 0
@@ -3777,7 +3782,7 @@ function KeyStep({
 
           {robotEmail ? (
             <div>
-              <label className="text-sm font-medium text-foreground">Share each sheet with this email</label>
+              <label className="text-sm font-medium text-foreground">{t("apps.connectionSetup.credentials.shareSheetWithEmail")}</label>
               <div className="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row">
                 <div
                   title={robotEmail}
@@ -3785,20 +3790,20 @@ function KeyStep({
                 >
                   {robotEmail}
                 </div>
-                <CopyValueButton value={robotEmail} ariaLabel="Copy sharing email" />
+                <CopyValueButton value={robotEmail} ariaLabel={t("apps.connectionSetup.credentials.copySharingEmail")} />
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                In Google Sheets, click Share and add this email as an Editor. Then paste the sheet links below.
+                {t("apps.connectionSetup.credentials.googleSheetsShareInstructions")}
               </p>
             </div>
           ) : (
             <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
-              Google Sheets is not available on this instance yet.
+              {t("apps.connectionSetup.credentials.googleSheetsUnavailable")}
             </div>
           )}
 
           <div>
-            <label className="text-sm font-medium text-foreground">Paste links to the sheets you shared</label>
+            <label className="text-sm font-medium text-foreground">{t("apps.connectionSetup.credentials.pasteSharedSheets")}</label>
             <Textarea
               value={googleSheetsLinks}
               onChange={(e) => onGoogleSheetsLinksChange(e.target.value)}
@@ -3807,8 +3812,8 @@ function KeyStep({
             />
             <div className="mt-2 text-xs text-muted-foreground">
               {parsed.ids.length > 0
-                ? `${parsed.ids.length} ${parsed.ids.length === 1 ? "sheet" : "sheets"} ready to connect.`
-                : "Paste one link per line. Both .../edit and .../edit#gid=... links work."}
+                ? t("apps.connectionSetup.credentials.sheetsReady", { count: parsed.ids.length })
+                : t("apps.connectionSetup.credentials.pasteSheetLinksHelp")}
             </div>
             {googleSheetsError && <div className="mt-2 text-xs text-destructive">{googleSheetsError}</div>}
           </div>
@@ -3818,11 +3823,11 @@ function KeyStep({
 
         <div className="mt-8 flex items-center justify-between">
           <Button variant="ghost" onClick={onBack} disabled={submitting}>
-            Back
+            {t("apps.connectionSetup.back")}
           </Button>
           <Button onClick={onConnect} disabled={submitting || !canConnect}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {submitting ? "Checking…" : "Connect"}
+            {submitting ? t("apps.connectionSetup.checking") : t("apps.connectionSetup.credentials.connect")}
           </Button>
         </div>
       </div>
@@ -3842,7 +3847,7 @@ function KeyStep({
             rel="noreferrer"
             className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
           >
-            Review requirements
+            {t("apps.connectionSetup.credentials.reviewRequirements")}
             <ArrowUpRight className="h-3 w-3" />
           </a>
         </div>
@@ -3850,7 +3855,7 @@ function KeyStep({
 
       <div className="space-y-6">
         {managedAsana ? (
-          <p className="text-sm text-muted-foreground">Sign in with Asana to choose your workspace and connect it to Paperclip.</p>
+          <p className="text-sm text-muted-foreground">{t("apps.connectionSetup.credentials.signInToChooseWorkspace", { name: entry.name })}</p>
         ) : null}
         {method?.capabilityProfile && (
           <p className="text-sm text-muted-foreground">
@@ -3860,9 +3865,9 @@ function KeyStep({
         {usingVercel && vercelReview && vercelConnectAvailability ? (
           <div className="space-y-4 rounded-lg border border-border p-4">
             <div>
-              <div className="text-sm font-medium text-foreground">Create or attach the connector in Vercel</div>
+              <div className="text-sm font-medium text-foreground">{t("apps.connectionSetup.credentials.createOrAttachVercelConnector")}</div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Paperclip does not copy Vercel’s setup forms. Finish connector setup there, then paste its UID below.
+                {t("apps.connectionSetup.credentials.vercelSetupInstructions")}
               </p>
               <a
                 href={vercelConnectAvailability.manageUrl}
@@ -3870,13 +3875,13 @@ function KeyStep({
                 rel="noreferrer"
                 className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-foreground underline underline-offset-2"
               >
-                Open Vercel Connect
+                {t("apps.connectionSetup.credentials.openVercelConnect")}
                 <ArrowUpRight className="h-3 w-3" />
               </a>
             </div>
             <div>
               <label className="text-sm font-medium text-foreground" htmlFor="vercel-connect-connector">
-                Connector UID or ID
+                {t("apps.connectionSetup.credentials.connectorIdLabel")}
               </label>
               <Input
                 id="vercel-connect-connector"
@@ -3887,7 +3892,7 @@ function KeyStep({
                 className="mt-2 h-11 font-mono"
               />
               <p className="mt-2 text-xs text-muted-foreground">
-                Paperclip validates the connector and stores only its reference and redacted verification metadata.
+                {t("apps.connectionSetup.credentials.vercelConnectorPrivacy")}
               </p>
             </div>
           </div>
@@ -3906,7 +3911,7 @@ function KeyStep({
 
 
         {!usingVercel && method?.auth === "oauth" && customerOAuthClientRequired ? (
-          <div id={customOAuthFieldsId} role="region" aria-label="Your OAuth app">
+          <div id={customOAuthFieldsId} role="region" aria-label={t("apps.connectionSetup.credentials.yourOAuthApp")}>
             <OAuthClientFields
               entry={entry}
               method={method}
@@ -3945,7 +3950,7 @@ function KeyStep({
                   rel="noreferrer"
                   className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-foreground underline underline-offset-2"
                 >
-                  Where do I find this?
+                  {t("apps.connectionSetup.credentials.whereToFind")}
                   <ArrowUpRight className="h-3 w-3" />
                 </a>
               )}
@@ -3959,17 +3964,21 @@ function KeyStep({
 
       <div className="mt-8 flex items-center justify-between">
         <Button variant="ghost" onClick={onBack} disabled={submitting}>
-          Back
+          {t("apps.connectionSetup.back")}
         </Button>
         <Button onClick={onConnect} disabled={submitting || !settingsValid || !hasMethodSelection || !allFilled || !oauthClientFilled || !vercelConnectorFilled || !configFilled || !configRequirementMet}>
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {submitting
-            ? "Checking…"
+            ? t("apps.connectionSetup.checking")
             : usingVercel
-              ? method?.auth === "oauth" ? "Validate and continue" : "Validate and connect"
+              ? method?.auth === "oauth"
+                ? t("apps.connectionSetup.credentials.validateAndContinue")
+                : t("apps.connectionSetup.credentials.validateAndConnect")
               : method?.auth === "oauth"
-                ? entry.slug === "github" ? "Continue to GitHub" : "Continue to sign in"
-                : "Connect"}
+                ? entry.slug === "github"
+                  ? t("apps.connectionSetup.credentials.continueToGithub")
+                  : t("apps.connectionSetup.credentials.continueToSignIn")
+                : t("apps.connectionSetup.credentials.connect")}
         </Button>
       </div>
     </div>
@@ -3982,6 +3991,7 @@ function KeyStep({
  * has to say whether the clipboard actually took it.
  */
 function CopyValueButton({ value, ariaLabel }: { value: string; ariaLabel: string }) {
+  const { t } = useTranslation();
   const { copied, failed, copy } = useCopyAction();
   return (
     <Button
@@ -3992,7 +4002,11 @@ function CopyValueButton({ value, ariaLabel }: { value: string; ariaLabel: strin
       onClick={() => void copy(value)}
     >
       {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-      {copied ? "Copied" : failed ? "Copy failed" : "Copy"}
+      {copied
+        ? t("apps.connectionSetup.credentials.copied")
+        : failed
+          ? t("apps.connectionSetup.credentials.copyFailed")
+          : t("apps.connectionSetup.credentials.copy")}
     </Button>
   );
 }
@@ -4016,11 +4030,16 @@ function OAuthClientFields({
   onClientSecretChange: (next: string) => void;
   required: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 rounded-lg border border-border p-4">
       <div>
         <div className="text-sm font-medium text-foreground">
-          {required ? method.oauthClientSecretRequired ? "Your OAuth app" : `${entry.name} needs its own OAuth app` : "Use your own OAuth app"}
+          {required
+            ? method.oauthClientSecretRequired
+              ? t("apps.connectionSetup.credentials.yourOAuthApp")
+              : t("apps.connectionSetup.credentials.needsOwnOAuthApp", { name: entry.name })
+            : t("apps.connectionSetup.credentials.useOwnOAuthAppGeneric")}
         </div>
         {/*
           When these fields are required it is a provider limitation, not a step
@@ -4028,9 +4047,11 @@ function OAuthClientFields({
           exception it is rather than as this connector's normal path.
         */}
         <p className="mt-1 text-xs text-muted-foreground">
-          {method.oauthClientSecretRequired ? method.guidanceMd : required
-            ? `${entry.name} does not let Paperclip register itself automatically, so this connector needs an OAuth app you create. Add the callback URL below in ${entry.name}, then paste the client details back here.`
-            : `Register Paperclip's callback URI in ${entry.name}, then enter the customer-owned client details.`}
+          {method.oauthClientSecretRequired
+            ? method.guidanceMd
+            : required
+              ? t("apps.connectionSetup.credentials.manualOAuthRequiredHelp", { name: entry.name })
+              : t("apps.connectionSetup.credentials.manualOAuthOptionalHelp", { name: entry.name })}
         </p>
         {method.consoleLinks?.register ? (
           <a
@@ -4039,14 +4060,14 @@ function OAuthClientFields({
             rel="noreferrer"
             className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-foreground underline underline-offset-2"
           >
-            Open {entry.name} app settings
+            {t("apps.connectionSetup.credentials.openProviderAppSettings", { name: entry.name })}
             <ArrowUpRight className="h-3 w-3" />
           </a>
         ) : null}
       </div>
       {callbackUrl ? (
         <div>
-          <label className="text-sm font-medium text-foreground">Paperclip callback URL</label>
+          <label className="text-sm font-medium text-foreground">{t("apps.connectionSetup.credentials.callbackUrl")}</label>
           <div className="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row">
             <div
               title={callbackUrl}
@@ -4054,29 +4075,29 @@ function OAuthClientFields({
             >
               {callbackUrl}
             </div>
-            <CopyValueButton value={callbackUrl} ariaLabel="Copy callback URL" />
+            <CopyValueButton value={callbackUrl} ariaLabel={t("apps.connectionSetup.credentials.copyCallbackUrl")} />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Add this exact URL to {entry.name} before continuing. It must match the authorization request.
+            {t("apps.connectionSetup.credentials.callbackUrlInstructions", { name: entry.name })}
           </p>
         </div>
       ) : null}
       <div>
         <label className="text-sm font-medium text-foreground" htmlFor="curated-oauth-client-id">
-          Client ID
+          {t("apps.connectionSetup.genericMcp.clientId")}
         </label>
         <Input
           id="curated-oauth-client-id"
           value={clientId}
           onChange={(event) => onClientIdChange(event.target.value)}
           autoComplete="off"
-          placeholder={required ? "Required" : "Optional"}
+          placeholder={required ? t("apps.connectionSetup.credentials.required") : t("apps.connectionSetup.optional")}
           className="mt-2 h-11 font-mono"
         />
       </div>
       <div>
         <label className="text-sm font-medium text-foreground" htmlFor="curated-oauth-client-secret">
-          Client secret
+          {t("apps.connectionSetup.genericMcp.clientSecret")}
         </label>
         <Input
           id="curated-oauth-client-secret"
@@ -4084,7 +4105,9 @@ function OAuthClientFields({
           value={clientSecret}
           onChange={(event) => onClientSecretChange(event.target.value)}
           autoComplete="off"
-          placeholder={method.oauthClientSecretRequired ? "Required" : "Optional for public clients"}
+          placeholder={method.oauthClientSecretRequired
+            ? t("apps.connectionSetup.credentials.required")
+            : t("apps.connectionSetup.credentials.optionalForPublicClients")}
           className="mt-2 h-11 font-mono"
         />
       </div>
@@ -4101,6 +4124,7 @@ function MethodConfigField({
   value: string | boolean | undefined;
   onChange: (value: string | boolean) => void;
 }) {
+  const { t } = useTranslation();
   if (field.type === "checkbox") {
     return (
       <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
@@ -4128,7 +4152,7 @@ function MethodConfigField({
           onChange={(event) => onChange(event.target.value)}
           className="mt-2 h-11 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
         >
-          <option value="" disabled>Select an option</option>
+          <option value="" disabled>{t("apps.connectionSetup.credentials.selectOption")}</option>
           {(field.options ?? []).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       ) : (
@@ -4141,7 +4165,7 @@ function MethodConfigField({
           className="mt-2 h-11"
         />
       )}
-      {field.required && (typeof value !== "string" || !value.trim()) && <p className="mt-2 text-xs text-muted-foreground">{field.label} is required.</p>}
+      {field.required && (typeof value !== "string" || !value.trim()) && <p className="mt-2 text-xs text-muted-foreground">{t("apps.connectionSetup.credentials.fieldRequired", { label: field.label })}</p>}
       {field.helperMd && <p className="mt-2 text-xs text-muted-foreground">{field.helperMd}</p>}
     </div>
   );
