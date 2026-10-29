@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { NewAgentDialog } from "./NewAgentDialog";
 import { queryKeys } from "@/lib/queryKeys";
+import { i18n } from "@/i18n";
 vi.mock("@/api/instanceSettings", () => ({
   instanceSettingsApi: {
     getExperimental: async () => ({ enableNativeRunner: true }),
@@ -41,6 +42,7 @@ async function click(label: string) {
   await act(async () => button!.click());
 }
 beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.clearAllMocks();
   Object.values(dotApi).forEach(mock => mock.mockReset());
   invites.createCompanyInvite.mockResolvedValue({ token: "one-time-token", onboardingTextPath: "/api/invites/one-time-token/onboarding.txt" });
@@ -68,6 +70,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await act(async () => root.unmount());
+  await i18n.changeLanguage("en");
   cache.clear();
   container.remove();
 });

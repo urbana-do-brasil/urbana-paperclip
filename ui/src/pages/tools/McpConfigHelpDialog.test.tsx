@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PasteConfigTab } from "./PasteConfigTab";
 import { MCP_CONFIG_HELP_PROMPT } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 
 const toolsApiMock = vi.hoisted(() => ({
   importMcpJson: vi.fn(),
@@ -58,15 +59,17 @@ describe("Paste a config — MCP config help", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot> | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
     copyTextToClipboardMock.mockResolvedValue(undefined);
   });
 
-  afterEach(() => {
-    act(() => root?.unmount());
+  afterEach(async () => {
+    await act(async () => root?.unmount());
+    await i18n.changeLanguage("en");
     root = null;
     container.remove();
     document.body.innerHTML = "";

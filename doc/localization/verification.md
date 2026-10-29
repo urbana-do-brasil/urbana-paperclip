@@ -1293,5 +1293,11 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
   configuração do runtime e cartão de teste, preservando nomes, flags, opções,
   segredos, modelos, prompts, payloads e mensagens técnicas de runtime. Os testes
   focados passaram em 66/66, com typecheck direcionado e gates de tokens limpos.
-  Próxima: 3.6c2.
+  3.6c2 localizou conexões/autenticação de provedores e convites/pareamento de
+  agentes externos, mantendo marcas e IDs de provedores, credenciais, prompts
+  gerados, erros retornados pela API e callbacks; a apresentação e os controles
+  do prompt foram localizados sem alterar seu conteúdo técnico. A bateria focada
+  passou em 130/130 testes; o typecheck direcionado, gates de tokens, diff check
+  e validação OpenSpec estrita passaram. O grupo 3.6c está concluído. Próxima:
+  3.6d.
   A aplicação ainda não foi implantada.

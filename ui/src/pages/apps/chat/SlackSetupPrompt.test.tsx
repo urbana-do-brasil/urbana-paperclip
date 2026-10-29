@@ -3,6 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { i18n } from "@/i18n";
 import { SlackSetupPrompt, buildSlackSetupPrompt, slackSetupPrompt } from "./SlackSetupPrompt";
 
 vi.mock("@/lib/clipboard", () => ({ copyTextToClipboard: vi.fn() }));
@@ -12,6 +13,7 @@ describe("Slack setup prompt", () => {
   let root: Root;
 
   beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.clearAllMocks();
     container = document.createElement("div");
     document.body.append(container);
@@ -21,6 +23,7 @@ describe("Slack setup prompt", () => {
 
   afterEach(async () => {
     await act(async () => root.unmount());
+    await i18n.changeLanguage("en");
     container.remove();
   });
 

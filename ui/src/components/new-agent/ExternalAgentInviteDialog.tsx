@@ -10,6 +10,7 @@ import { buildDotSetupPrompt } from "@/lib/dot-setup-prompt";
 import { AnimatedDialogContent } from "../AnimatedDialogContent";
 import { Dialog } from "../ui/dialog";
 import { ExternalAgentInviteContent, type DotConnectionState, type ExternalAgentPreset } from "./ExternalAgentInviteContent";
+import { useTranslation } from "@/i18n";
 
 /** Pairing secrets live only in this mounted dialog. Reloads resume the agent, never duplicate it. */
 export function ExternalAgentInviteDialog({ companyId, onClose, onBack }: {
@@ -17,6 +18,7 @@ export function ExternalAgentInviteDialog({ companyId, onClose, onBack }: {
   onClose: () => void;
   onBack: () => void;
 }) {
+  const { t } = useTranslation();
   const cache = useQueryClient();
   const { selectedCompany } = useCompany();
   const [preset, setPreset] = useState<ExternalAgentPreset | null>(null);
@@ -26,10 +28,10 @@ export function ExternalAgentInviteDialog({ companyId, onClose, onBack }: {
   const [genericPrompt, setGenericPrompt] = useState("");
   const attemptedAutomaticPairing = useRef(false);
   const experimental = useQuery({ queryKey: queryKeys.instance.experimentalSettings, queryFn: instanceSettingsApi.getExperimental });
-  const dotDisabledReason = experimental.isPending ? "Loading available agents…"
-    : experimental.error ? "Unable to load experimental settings. Try again after refreshing."
+  const dotDisabledReason = experimental.isPending ? t("externalAgentInvite.dotDisabled.loading")
+    : experimental.error ? t("externalAgentInvite.dotDisabled.settingsError")
     : !experimental.data?.enableOpenAiDot || !experimental.data.enablePublicMcp
-      ? "Enable OpenAI Dot and Assistant connections (MCP) in experimental settings." : undefined;
+      ? t("externalAgentInvite.dotDisabled.enableFeatures") : undefined;
   const key = ["dot-binding", companyId, invitation?.agent.id];
   const state = useQuery({ queryKey: key,
     queryFn: ({ signal }) => dotInvitationsApi.connection(companyId, invitation!.agent.id, signal),
@@ -122,9 +124,9 @@ export function ExternalAgentInviteDialog({ companyId, onClose, onBack }: {
   };
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}>
     <AnimatedDialogContent className="sm:max-w-(--sz-560px)">
-      <ExternalAgentInviteContent preset={preset} prompt={prompt} companyName={selectedCompany?.name ?? "your organization"}
+      <ExternalAgentInviteContent preset={preset} prompt={prompt} companyName={selectedCompany?.name ?? t("externalAgentInvite.organizationFallback")}
         connection={connection} dotDisabledReason={dotDisabledReason} busy={busy}
-        error={error?.message ?? (unavailable ? state.data?.agentLifecycleState === "terminated" ? "This agent was terminated. Invite another agent to connect Dot." : "Resume this agent before connecting Dot." : undefined)}
+        error={error?.message ?? (unavailable ? state.data?.agentLifecycleState === "terminated" ? t("externalAgentInvite.agentUnavailable") : t("externalAgentInvite.resumeAgent") : undefined)}
         approvalHref={pendingApproval && invitation?.approvalId ? `/approvals/${invitation.approvalId}` : undefined}
         onSelect={kind => { setPreset(kind); if (kind === "dot" ? !invitation : !genericPrompt) generate.mutate(kind); }}
         onBack={() => setPreset(null)} onClose={preset ? onClose : onBack} onCopied={() => { if (preset === "dot") void state.refetch(); }}

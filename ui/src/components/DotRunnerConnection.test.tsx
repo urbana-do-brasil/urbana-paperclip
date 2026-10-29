@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { DotRunnerConnection } from "./DotRunnerConnection";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { i18n } from "@/i18n";
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), delete: vi.fn() }));
 vi.mock("../api/client", () => ({ api }));
@@ -25,12 +26,13 @@ async function render() {
   await act(async () => root.render(<QueryClientProvider client={client}><Form /></QueryClientProvider>));
   await flush();
 }
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
   api.get.mockResolvedValue({ enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", binding: null });
 });
-afterEach(async () => { await act(async () => root.unmount()); client.clear(); container.remove(); vi.resetAllMocks(); });
+afterEach(async () => { await act(async () => root.unmount()); await i18n.changeLanguage("en"); client.clear(); container.remove(); vi.resetAllMocks(); });
 
 it("restores the server binding when the form is reopened after pairing without saving", async () => {
   api.post.mockImplementation(async () => {
