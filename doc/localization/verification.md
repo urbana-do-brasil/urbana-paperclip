@@ -2234,3 +2234,21 @@ da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 O progresso é **195/215 tarefas**; próxima: 3.9b, biblioteca de skills da
 organização.
+
+
+### Descoberta e cartões da biblioteca de skills (3.9b1)
+
+As variantes streamlined e production do catálogo da organização agora localizam
+busca, filtros por origem e categoria, ordenação, abas, ações de descoberta,
+contagens, estados vazios, rótulos acessíveis e estados apresentados nos cartões.
+Nomes e autores, descrições, categorias, nomes de repositórios e demais
+metadados fornecidos por fontes externas permanecem intactos; somente rótulos
+próprios e fallbacks de origem são traduzidos.
+
+`CompanySkills.test.tsx` e `locale-validation.test.ts` passaram em **44/44
+testes**, incluindo as duas variantes em PT-BR e a preservação dos metadados
+remotos. `check-token-gates`, parse dos catálogos, `git diff --check` e
+validação OpenSpec estrita passaram. O typecheck da UI aponta somente o erro
+preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. O progresso é **196/217 tarefas**; próxima:
+3.9b2, biblioteca instalada, pastas, detalhe e operações.

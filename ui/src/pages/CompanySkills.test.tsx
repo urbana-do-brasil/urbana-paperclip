@@ -3,7 +3,9 @@
 import { act as reactAct, type ComponentProps, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import type { CatalogSkill, CompanySkillDetail, CompanySkillListItem, CompanySkillVersion, FolderListResult } from "@paperclipai/shared";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import {
   DiscoveryGrid,
   InstallPreviewDialog,
@@ -15,6 +17,7 @@ import {
   withDiscoveryTab,
   skillDetailBreadcrumbs,
 } from "./CompanySkills";
+import { DiscoveryGrid as ProductionDiscoveryGrid } from "./CompanySkills.production";
 import { skillStudioNewRoute } from "../lib/company-skill-routes";
 
 vi.mock("@/lib/router", () => ({
@@ -113,6 +116,14 @@ afterEach(() => {
   root = null;
   container?.remove();
   container = null;
+});
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
+  await i18n.changeLanguage(DEFAULT_LOCALE);
 });
 
 function makeVersion(revisionNumber: number, content: string): CompanySkillVersion {
@@ -277,6 +288,47 @@ async function renderDiscoveryGrid(props: Partial<ComponentProps<typeof Discover
   return container;
 }
 
+async function renderProductionDiscoveryGrid(
+  props: Partial<ComponentProps<typeof ProductionDiscoveryGrid>> = {},
+) {
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+
+  await act(async () => {
+    root?.render(
+      <ProductionDiscoveryGrid
+        tab="all"
+        tabCounts={{ all: 0, installed: 0, catalog: 0, bundled: 0 }}
+        onTabChange={vi.fn()}
+        categories={[]}
+        categoryTotal={0}
+        activeCategory={null}
+        onCategoryChange={vi.fn()}
+        search=""
+        onSearchChange={vi.fn()}
+        sort="agents"
+        onSortChange={vi.fn()}
+        cards={[]}
+        onOpenCard={vi.fn()}
+        loading={false}
+        error={null}
+        totalCount={0}
+        onCreate={vi.fn()}
+        onImport={vi.fn()}
+        onImportFromProject={vi.fn()}
+        onBrowseCatalog={vi.fn()}
+        onScan={vi.fn()}
+        scanPending={false}
+        scanStatus={null}
+        {...props}
+      />,
+    );
+  });
+
+  return container;
+}
+
 const projectFolderResult: FolderListResult = {
   kind: "skill",
   allCount: 1,
@@ -373,6 +425,120 @@ describe("getSkillVersionDiffSelection", () => {
 });
 
 describe("DiscoveryGrid IA presentation", () => {
+  it("localizes the streamlined discovery grid and keeps remote skill metadata intact", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const localCard = {
+      key: "local-skill",
+      skillId: "local-1",
+      catalogRef: null,
+      name: "Security audit",
+      slug: "security-audit",
+      author: "Equipe Azul",
+      version: null,
+      tagline: null,
+      description: "Review repository permissions.",
+      categories: ["Security"],
+      iconUrl: null,
+      color: null,
+      starCount: 0,
+      agentCount: 1,
+      forkCount: 0,
+      installed: true,
+      required: false,
+      forkedFrom: true,
+      updatedAt: 0,
+      sourceBadge: "local" as const,
+    } satisfies ComponentProps<typeof DiscoveryGrid>["cards"][number];
+    const remoteCard = {
+      ...localCard,
+      key: "remote-skill",
+      skillId: null,
+      catalogRef: "remote-1",
+      name: "API threat review",
+      slug: "api-threat-review",
+      author: "Acme Security",
+      description: "Inspect endpoints for common threats.",
+      categories: ["Threat Modeling"],
+      agentCount: 0,
+      installed: false,
+      forkedFrom: false,
+      sourceBadge: "github" as const,
+      sourceLabel: "acme/security-skills",
+    };
+    const node = await renderDiscoveryGrid({
+      tab: "discover",
+      categories: [{ slug: "Security", count: 1 }],
+      categoryTotal: 2,
+      cards: [localCard, remoteCard],
+      totalCount: 2,
+    });
+
+    expect(node.querySelector('input[aria-label="Buscar skills disponíveis para descoberta"]')).not.toBeNull();
+    expect(node.textContent).toContain("Ordenar");
+    expect(node.textContent).toContain("Mais agentes");
+    expect(node.textContent).toContain("Todas as origens");
+    expect(node.textContent).toContain("2 skills");
+    expect(node.textContent).toContain("Ativada para 1 agente");
+    expect(node.textContent).toContain("Pasta");
+    expect(node.textContent).toContain("por Equipe Azul");
+    expect(node.textContent).toContain("acme/security-skills");
+    expect(node.textContent).toContain("API threat review");
+    expect(node.textContent).toContain("Inspect endpoints for common threats.");
+    expect(node.textContent).toContain("Threat Modeling");
+    expect(node.textContent).toContain("Derivada");
+  });
+
+  it("localizes the production catalog tabs, source labels, and empty state", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const node = await renderProductionDiscoveryGrid();
+
+    expect(node.textContent).toContain("Loja de skills");
+    expect(node.textContent).toContain("Descubra, instale, derive e compartilhe");
+    expect(node.textContent).toContain("Todas");
+    expect(node.textContent).toContain("Instaladas");
+    expect(node.textContent).toContain("Catálogo");
+    expect(node.textContent).toContain("Incluídas");
+    expect(node.textContent).toContain("Ainda não há skills. Crie uma ou instale uma pelo catálogo.");
+    expect(node.textContent).toContain("Explorar catálogo");
+    expect(node.textContent).toContain("Importar do GitHub");
+  });
+
+  it("preserves remote names and descriptions in the production card presentation", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const remoteCard = {
+      key: "remote-skill",
+      skillId: null,
+      catalogRef: "remote-1",
+      name: "API threat review",
+      slug: "api-threat-review",
+      author: "Acme Security",
+      version: null,
+      tagline: null,
+      description: "Inspect endpoints for common threats.",
+      categories: ["Threat Modeling"],
+      iconUrl: null,
+      color: null,
+      starCount: 0,
+      agentCount: 2,
+      forkCount: 0,
+      installed: false,
+      required: false,
+      forkedFrom: false,
+      updatedAt: 0,
+      sourceBadge: "github" as const,
+      sourceLabel: "acme/security-skills",
+    } satisfies ComponentProps<typeof ProductionDiscoveryGrid>["cards"][number];
+    const node = await renderProductionDiscoveryGrid({ cards: [remoteCard], totalCount: 1 });
+
+    expect(node.querySelector('input[aria-label="Buscar skills, autores ou categorias…"]')).not.toBeNull();
+    expect(node.textContent).toContain("2 agentes");
+    expect(node.textContent).toContain("API threat review");
+    expect(node.textContent).toContain("por Acme Security");
+    expect(node.textContent).toContain("Inspect endpoints for common threats.");
+    expect(node.textContent).toContain("Threat Modeling");
+    expect(node.querySelector('[aria-label="De acme/security-skills"]')).not.toBeNull();
+  });
+
   it("makes the search scope explicit for Installed and Discover", async () => {
     let node = await renderDiscoveryGrid({ tab: "installed" });
     expect(node.querySelector('input[aria-label="Search installed skills"]')).not.toBeNull();

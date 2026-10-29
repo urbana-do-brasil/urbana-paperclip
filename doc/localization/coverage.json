@@ -517,6 +517,7 @@
       "label": "Skills, ferramentas e apps",
       "sources": [
         "ui/src/pages/CompanySkills.tsx",
+        "ui/src/pages/CompanySkills.production.tsx",
         "ui/src/pages/SkillStudio.tsx",
         "ui/src/pages/tools/",
         "ui/src/pages/apps/",
@@ -531,9 +532,10 @@
         "ui/src/pages/SkillSources.test.tsx",
         "ui/src/pages/skills/SkillSourceTree.test.tsx",
         "ui/src/pages/skills/SkillPackagePreview.test.tsx",
+        "ui/src/pages/CompanySkills.test.tsx",
         "ui/src/i18n/locale-validation.test.ts"
       ],
-      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia de skills) verificada em PT-BR/en. Biblioteca de skills, Skill Studio, catálogo de equipes, ferramentas e apps continuam pendentes em 3.9b–f; metadados/conteúdo externo são preservados."
+      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia) e 3.9b1 (descoberta/cartões nas variantes streamlined e production) verificadas em PT-BR/en. Biblioteca instalada (3.9b2), Skill Studio, catálogo de equipes, ferramentas e apps continuam pendentes em 3.9b–f; metadados/conteúdo externo são preservados."
     },
     {
       "id": "experimental",
@@ -1478,10 +1480,10 @@
   ],
   "checkpoint": {
     "date": "2026-10-29",
-    "completedTasks": 195,
-    "totalTasks": 215,
+    "completedTasks": 196,
+    "totalTasks": 217,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "3.8e (segredos) e 3.8f (OAuth/MCP e conexões de assistentes) verificadas. A tarefa 3.9 foi dividida em seis jornadas; 3.9a localizou gestão e descoberta de fontes de skills em PT-BR/en, preservando metadados e conteúdo externos. SkillSources + SkillSourceTree + SkillPackagePreview + locale-validation: 27/27; gates de tokens, diff check e OpenSpec estrito passaram. Progresso: 195/215. Próxima: 3.9b, biblioteca de skills da organização."
+    "reason": "3.8e (segredos) e 3.8f (OAuth/MCP e conexões de assistentes) verificadas. Em 3.9, 3.9a localizou fontes/importação e 3.9b1 a descoberta/cartões da biblioteca nas variantes streamlined e production, preservando metadados externos. SkillSources + SkillSourceTree + SkillPackagePreview + locale-validation: 27/27; CompanySkills + locale-validation: 44/44. Gates de tokens, diff check e OpenSpec estrito passaram. Progresso: 196/217. Próxima: 3.9b2, biblioteca instalada, pastas, detalhe e operações."
   }
 }
