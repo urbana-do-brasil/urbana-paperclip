@@ -41,11 +41,11 @@ vi.hoisted(() => {
 
 vi.mock("./components/Layout", async () => {
   const { Outlet } = await import("react-router-dom");
-  return { Layout: () => <Outlet /> };
+  return { Layout: () => <div data-testid="streamlined-shell"><Outlet /></div> };
 });
 vi.mock("./components/Layout.production", async () => {
   const { Outlet } = await import("react-router-dom");
-  return { Layout: () => <Outlet /> };
+  return { Layout: () => <div data-testid="production-shell"><Outlet /></div> };
 });
 vi.mock("./components/OnboardingWizardVariant", () => ({ OnboardingWizardVariant: () => null }));
 vi.mock("./components/CloudAccessGate", async () => {
@@ -113,30 +113,91 @@ describe("App Status Cards routes", () => {
     vi.clearAllMocks();
   });
 
-  it.each(["pt-BR", "en"])("resolves the real unprefixed /status route in %s", async (locale) => {
+  it.each(["pt-BR", "en"])("resolves the real unprefixed /status route in the streamlined shell (%s)", async (locale) => {
     await i18n.changeLanguage(locale);
     root = await renderAppAt(container, "/status");
     await waitForRoute(container, '[data-testid="status-page"]');
 
     expect(container.querySelector('[data-testid="status-page"]')?.textContent).toBe("Status|/PAP/status|");
+    expect(container.querySelector('[data-testid="streamlined-shell"]')).not.toBeNull();
     expect(mockSettings.getExperimental).toHaveBeenCalled();
   });
 
-  it.each(["pt-BR", "en"])("resolves a legacy card URL through App's real redirect in %s", async (locale) => {
+  it.each(["pt-BR", "en"])("resolves current card detail in the streamlined shell (%s)", async (locale) => {
     await i18n.changeLanguage(locale);
-    root = await renderAppAt(container, "/PAP/status-cards/card-abc123");
+    root = await renderAppAt(container, "/PAP/status/card-abc123");
     await waitForRoute(container, '[data-testid="status-page"]');
 
     expect(container.querySelector('[data-testid="status-page"]')?.textContent).toBe(
       "Status|/PAP/status/card-abc123|card-abc123",
     );
+    expect(container.querySelector('[data-testid="streamlined-shell"]')).not.toBeNull();
   });
 
-  it("redirects the real direct route when Status Cards is disabled", async () => {
-    mockSettings.getExperimental.mockResolvedValue({ enableStreamlinedUi: true, enableStatusCards: false });
-    root = await renderAppAt(container, "/PAP/status");
-    await waitForRoute(container, '[data-testid="dashboard-page"]');
+  it.each([
+    { shell: "streamlined", enabled: true },
+    { shell: "production", enabled: false },
+  ])("resolves the current board and card routes in the $shell shell", async ({ shell, enabled }) => {
+    await i18n.changeLanguage("en");
+    mockSettings.getExperimental.mockResolvedValue({ enableStreamlinedUi: enabled, enableStatusCards: true });
+    for (const [path, expected] of [
+      ["/PAP/status", "Status|/PAP/status|"],
+      ["/PAP/status/card-abc123", "Status|/PAP/status/card-abc123|card-abc123"],
+    ]) {
+      root = await renderAppAt(container, path);
+      await waitForRoute(container, '[data-testid="status-page"]');
+      expect(container.querySelector('[data-testid="status-page"]')?.textContent).toBe(expected);
+      expect(container.querySelector(`[data-testid="${shell}-shell"]`)).not.toBeNull();
+      flushSync(() => root?.unmount());
+      root = null;
+    }
+  });
 
-    expect(container.querySelector('[data-testid="status-page"]')).toBeNull();
+  it.each([
+    { shell: "streamlined", enabled: true },
+    { shell: "production", enabled: false },
+  ])("redirects the prefixed and unprefixed legacy status-cards aliases in the $shell shell", async ({ shell, enabled }) => {
+    await i18n.changeLanguage("en");
+    mockSettings.getExperimental.mockResolvedValue({ enableStreamlinedUi: enabled, enableStatusCards: true });
+    for (const [path, expected] of [
+      ["/status", "Status|/PAP/status|"],
+      ["/status/card-abc123", "Status|/PAP/status/card-abc123|card-abc123"],
+      ["/PAP/status-cards/card-abc123", "Status|/PAP/status/card-abc123|card-abc123"],
+      ["/status-cards/card-abc123", "Status|/PAP/status/card-abc123|card-abc123"],
+      ["/PAP/status-cards", "Status|/PAP/status|"],
+      ["/status-cards", "Status|/PAP/status|"],
+    ]) {
+      root = await renderAppAt(container, path);
+      await waitForRoute(container, '[data-testid="status-page"]');
+      expect(container.querySelector('[data-testid="status-page"]')?.textContent).toBe(expected);
+      expect(container.querySelector(`[data-testid="${shell}-shell"]`)).not.toBeNull();
+      flushSync(() => root?.unmount());
+      root = null;
+    }
+  });
+
+  it.each([
+    { shell: "streamlined", enabled: true },
+    { shell: "production", enabled: false },
+  ])("blocks current and legacy status routes when the flag is off ($shell shell)", async ({ shell, enabled }) => {
+    await i18n.changeLanguage("en");
+    mockSettings.getExperimental.mockResolvedValue({ enableStreamlinedUi: enabled, enableStatusCards: false });
+    for (const path of [
+      "/PAP/status",
+      "/PAP/status/card-abc123",
+      "/status",
+      "/status/card-abc123",
+      "/PAP/status-cards",
+      "/PAP/status-cards/card-abc123",
+      "/status-cards",
+      "/status-cards/card-abc123",
+    ]) {
+      root = await renderAppAt(container, path);
+      await waitForRoute(container, '[data-testid="dashboard-page"]');
+      expect(container.querySelector('[data-testid="status-page"]')).toBeNull();
+      expect(container.querySelector(`[data-testid="${shell}-shell"]`)).not.toBeNull();
+      flushSync(() => root?.unmount());
+      root = null;
+    }
   });
 });

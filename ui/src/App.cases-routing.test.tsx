@@ -11,7 +11,7 @@
 import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
@@ -54,7 +54,11 @@ vi.hoisted(() => {
 // resolve the :companyPrefix segment and render its nested routes.
 vi.mock("./components/Layout", async () => {
   const { Outlet } = await import("react-router-dom");
-  return { Layout: () => <Outlet /> };
+  return { Layout: () => <div data-testid="streamlined-shell"><Outlet /></div> };
+});
+vi.mock("./components/Layout.production", async () => {
+  const { Outlet } = await import("react-router-dom");
+  return { Layout: () => <div data-testid="production-shell"><Outlet /></div> };
 });
 
 // Rendered by <App> outside <Routes> and needs DialogProvider; irrelevant here.
@@ -63,8 +67,18 @@ vi.mock("./components/OnboardingWizardVariant", () => ({
 }));
 
 // Sentinel pages so we can assert *which* route resolved.
-vi.mock("./pages/Cases", () => ({ Cases: () => <div>CASES_LIST_PAGE</div> }));
-vi.mock("./pages/CaseDetail", () => ({ CaseDetail: () => <div>CASE_DETAIL_PAGE</div> }));
+vi.mock("./pages/Cases", () => ({
+  Cases: () => {
+    const { pathname } = useLocation();
+    return <div>CASES_LIST_PAGE@{pathname}</div>;
+  },
+}));
+vi.mock("./pages/CaseDetail", () => ({
+  CaseDetail: () => {
+    const { pathname } = useLocation();
+    return <div>CASE_DETAIL_PAGE@{pathname}</div>;
+  },
+}));
 vi.mock("./pages/Dashboard", () => ({ Dashboard: () => <div>DASHBOARD_PAGE</div> }));
 
 // Cloud access is unrelated to the route-table regression. Let it fall through
@@ -125,7 +139,7 @@ describe("App Cases routing (PAP-13002)", () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
-    mockSettings.getExperimental.mockResolvedValue({ enableCases: true });
+    mockSettings.getExperimental.mockResolvedValue({ enableStreamlinedUi: true, enableCases: true });
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -136,32 +150,57 @@ describe("App Cases routing (PAP-13002)", () => {
     vi.clearAllMocks();
   });
 
-  it("redirects unprefixed /cases to the company-prefixed list page", async () => {
-    const root = await renderAppAt(container, "/cases");
-    await waitForRoute(container, "CASES_LIST_PAGE");
-    expect(container.textContent).not.toContain("No organization matches prefix");
-    flushSync(() => root.unmount());
+  it.each([
+    { shell: "streamlined", enabled: true },
+    { shell: "production", enabled: false },
+  ])("resolves current list and detail routes in the $shell shell", async ({ shell, enabled }) => {
+    mockSettings.getExperimental.mockResolvedValue({ enableStreamlinedUi: enabled, enableCases: true });
+    const listRoot = await renderAppAt(container, "/PAP/cases");
+    await waitForRoute(container, "CASES_LIST_PAGE@/PAP/cases");
+    expect(container.querySelector(`[data-testid="${shell}-shell"]`)).not.toBeNull();
+    flushSync(() => listRoot.unmount());
+
+    const detailRoot = await renderAppAt(container, "/PAP/cases/PAP-C7");
+    await waitForRoute(container, "CASE_DETAIL_PAGE@/PAP/cases/PAP-C7");
+    expect(container.querySelector(`[data-testid="${shell}-shell"]`)).not.toBeNull();
+    flushSync(() => detailRoot.unmount());
   });
 
-  it("redirects unprefixed /cases/:id to the company-prefixed detail page", async () => {
-    const root = await renderAppAt(container, "/cases/PAP-C5");
-    await waitForRoute(container, "CASE_DETAIL_PAGE");
+  it.each([
+    { shell: "streamlined", enabled: true },
+    { shell: "production", enabled: false },
+  ])("redirects unprefixed case list and identifier routes in the $shell shell", async ({ shell, enabled }) => {
+    mockSettings.getExperimental.mockResolvedValue({ enableStreamlinedUi: enabled, enableCases: true });
+    const listRoot = await renderAppAt(container, "/cases");
+    await waitForRoute(container, "CASES_LIST_PAGE@/PAP/cases");
+    expect(container.querySelector(`[data-testid="${shell}-shell"]`)).not.toBeNull();
     expect(container.textContent).not.toContain("No organization matches prefix");
-    flushSync(() => root.unmount());
+    flushSync(() => listRoot.unmount());
+
+    const detailRoot = await renderAppAt(container, "/cases/PAP-C7");
+    await waitForRoute(container, "CASE_DETAIL_PAGE@/PAP/cases/PAP-C7");
+    expect(container.querySelector(`[data-testid="${shell}-shell"]`)).not.toBeNull();
+    flushSync(() => detailRoot.unmount());
   });
 
-  it.each(["/PAP/cases", "/PAP/cases/PAP-C5"])("blocks direct %s when the flag is disabled", async (path) => {
-    mockSettings.getExperimental.mockResolvedValue({ enableCases: false });
-    const root = await renderAppAt(container, path);
-    await waitForRoute(container, "DASHBOARD_PAGE");
-    expect(container.textContent).not.toContain("CASES_LIST_PAGE");
-    expect(container.textContent).not.toContain("CASE_DETAIL_PAGE");
-    flushSync(() => root.unmount());
+  it.each([
+    { shell: "streamlined", enabled: true },
+    { shell: "production", enabled: false },
+  ])("blocks direct and unprefixed routes when cases is off ($shell shell)", async ({ shell, enabled }) => {
+    mockSettings.getExperimental.mockResolvedValue({ enableStreamlinedUi: enabled, enableCases: false });
+    for (const path of ["/PAP/cases", "/PAP/cases/PAP-C7", "/cases", "/cases/PAP-C7"]) {
+      const root = await renderAppAt(container, path);
+      await waitForRoute(container, "DASHBOARD_PAGE");
+      expect(container.querySelector(`[data-testid="${shell}-shell"]`)).not.toBeNull();
+      expect(container.textContent).not.toContain("CASES_LIST_PAGE");
+      expect(container.textContent).not.toContain("CASE_DETAIL_PAGE");
+      flushSync(() => root.unmount());
+    }
   });
 
   it("blocks a direct case route when settings cannot be read", async () => {
     mockSettings.getExperimental.mockRejectedValue(new Error("forbidden"));
-    const root = await renderAppAt(container, "/PAP/cases/PAP-C5");
+    const root = await renderAppAt(container, "/PAP/cases/PAP-C7");
     await waitForRoute(container, "DASHBOARD_PAGE");
     expect(container.textContent).not.toContain("CASE_DETAIL_PAGE");
     flushSync(() => root.unmount());

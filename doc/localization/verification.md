@@ -3347,3 +3347,13 @@ datas e plurais em PT-BR/en, preservando conteúdo, IDs, operações e erros
 externos. Os testes cobrem mudança de idioma e fallback: **45/45**; typecheck
 da UI passou. Avisos React de `act` e Vite foram emitidos pelos testes. A
 apresentação específica de 403 permanece em 3.10g4. Progresso: **287/307**.
+
+
+## Rotas experimentais nos dois shells (3.10g3)
+
+A árvore real do App, gates e redirects foi testada em streamlined/production
+para cases, status cards e pipelines, incluindo flags ativas/inativas, rotas
+sem prefixo e legadas, IDs e prefixos. Shells e páginas de domínio foram
+substituídos por sentinelas: o teste verifica roteamento, não jornadas de API
+ou renderização completa. **25/25 testes** e typecheck da UI passaram; JSDOM
+emitiu avisos de canvas sem falha. Progresso: **288/307**.
