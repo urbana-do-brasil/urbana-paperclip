@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Agent, ExecutionWorkspace, Project, RoutineVariable } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { queryKeys } from "../lib/queryKeys";
 import { RoutineRunVariablesDialog } from "./RoutineRunVariablesDialog";
 
@@ -223,15 +224,16 @@ function setInputValue(input: HTMLInputElement, value: string) {
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function findRunButton() {
+function findRunButton(label = "Run routine") {
   return Array.from(document.querySelectorAll("button"))
-    .find((button) => button.textContent === "Run routine") as HTMLButtonElement | undefined;
+    .find((button) => button.textContent === label) as HTMLButtonElement | undefined;
 }
 
 describe("RoutineRunVariablesDialog", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     issueWorkspaceDraftCalls = 0;
@@ -245,9 +247,43 @@ describe("RoutineRunVariablesDialog", () => {
     latestWorkspaceIssue = null;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
+    await i18n.changeLanguage("en");
+  });
+
+  it("localizes the manual run dialog in PT-BR without changing submitted values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const queryClient = createQueryClient();
+    const onSubmit = vi.fn();
+
+    await flushUi(() => root.render(
+      <QueryClientProvider client={queryClient}>
+        <RoutineRunVariablesDialog
+          open
+          onOpenChange={() => {}}
+          companyId="company-1"
+          routineName="Daily sync"
+          projects={[]}
+          agents={[]}
+          variables={[]}
+          isPending={false}
+          onSubmit={onSubmit}
+        />
+      </QueryClientProvider>,
+    ));
+
+    expect(document.body.textContent).toContain("Executar rotina");
+    expect(document.body.textContent).toContain("Escolha o agente e, se quiser, o projeto");
+    expect(document.body.textContent).toContain("Agente *");
+    expect(document.body.textContent).toContain("Projeto");
+    expect(document.body.textContent).toContain("É necessário definir um agente padrão");
+    expect(findRunButton("Executar rotina")?.disabled).toBe(true);
+
+    await flushUi(() => root.unmount());
+    queryClient.clear();
   });
 
   it("does not loop when the workspace card reports the same draft repeatedly", async () => {

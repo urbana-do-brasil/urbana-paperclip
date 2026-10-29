@@ -6,7 +6,9 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { FolderListResult, Issue, RoutineListItem } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { Routines, buildRoutineGroups, buildRoutineSections, sortRoutines } from "./Routines";
+import { Routines as ProductionRoutines } from "./Routines.production";
 
 let currentSearch = "";
 
@@ -380,7 +382,8 @@ async function flush() {
 describe("Routines page", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     currentSearch = "";
@@ -400,9 +403,10 @@ describe("Routines page", () => {
     localStorage.clear();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
+    await i18n.changeLanguage("en");
   });
 
   it("groups routines by project using project names for the section labels", () => {
@@ -1061,5 +1065,99 @@ describe("Routines page", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it.each([
+    ["streamlined", Routines],
+    ["production", ProductionRoutines],
+  ])("localizes the routine collection and create composer in PT-BR (%s)", async (_variant, Page) => {
+    await i18n.changeLanguage("pt-BR");
+    routinesListMock.mockResolvedValue([createRoutine({ id: "routine-1", title: "Daily sync" })]);
+    issuesListMock.mockResolvedValue([]);
+
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root.render(<QueryClientProvider client={queryClient}><Page /></QueryClientProvider>);
+      await flush();
+    });
+
+    expect(container.textContent).toContain("Rotinas");
+    expect(container.textContent).toContain("Definições de trabalho recorrente");
+    expect(container.textContent).toContain("Ordenar");
+    expect(container.textContent).toContain("Agrupar");
+    expect(container.textContent).toContain("Executar agora");
+    expect(container.textContent).toContain("Daily sync");
+
+    const createButton = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Criar rotina");
+    await act(async () => {
+      createButton?.click();
+      await flush();
+    });
+
+    expect(document.body.textContent).toContain("Nova rotina");
+    expect(document.body.textContent).toContain("Configurações avançadas de entrega");
+    expect(document.body.querySelector('textarea[placeholder="Título da rotina"]')).toBeTruthy();
+
+    await act(async () => root.unmount());
+    queryClient.clear();
+  });
+
+  it.each([
+    ["streamlined", Routines],
+    ["production", ProductionRoutines],
+  ])("localizes empty-folder state and create action in PT-BR (%s)", async (_variant, Page) => {
+    await i18n.changeLanguage("pt-BR");
+    foldersListMock.mockResolvedValue({
+      kind: "routine",
+      allCount: 1,
+      unfiledCount: 0,
+      folders: [{
+        id: "folder-empty",
+        companyId: "company-1",
+        kind: "routine",
+        parentId: null,
+        name: "Empty folder",
+        slug: "empty-folder",
+        systemKey: null,
+        path: "empty-folder",
+        depth: 1,
+        color: null,
+        position: 0,
+        itemCount: 0,
+        createdAt: new Date("2026-07-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-07-01T00:00:00.000Z"),
+      }],
+    });
+    routinesListMock.mockResolvedValue([
+      createRoutine({ id: "routine-other", title: "Other routine", folderId: null }),
+    ]);
+    issuesListMock.mockResolvedValue([]);
+    currentSearch = "folder=folder-empty";
+
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root.render(<QueryClientProvider client={queryClient}><Page /></QueryClientProvider>);
+      await flush();
+    });
+
+    for (let attempts = 0; attempts < 5 && !container.textContent?.includes("Esta pasta está vazia"); attempts += 1) {
+      await act(async () => { await flush(); });
+    }
+
+    expect(container.textContent).toContain("Esta pasta está vazia.");
+    const createInFolder = Array.from(container.querySelectorAll("button"))
+      .find((button) => button.textContent?.trim() === "Nova rotina nesta pasta");
+    expect(createInFolder).toBeTruthy();
+    await act(async () => {
+      createInFolder?.click();
+      await flush();
+    });
+    expect(document.body.textContent).toContain("Nova rotina");
+    expect(document.body.querySelector('textarea[placeholder="Título da rotina"]')).toBeTruthy();
+
+    await act(async () => root.unmount());
+    queryClient.clear();
   });
 });

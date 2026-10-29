@@ -2736,4 +2736,25 @@ nenhum diagnóstico foi reportado nos arquivos alterados. Gates de tokens, diff 
 OpenSpec estrito passaram. Progresso real conforme as caixas do OpenSpec:
 **229/246 tarefas** no checkpoint da 3.9f5, antes da decomposição de 3.10.
 Após dividir a etapa em 3.10a–g, o progresso atual é **229/253 tarefas**.
-Próxima: 3.10a, coleção de rotinas.
+Esse foi o checkpoint inicial da decomposição; a próxima etapa era 3.10a.
+
+## Rotinas — coleção e criação (3.10a)
+
+A coleção de rotinas, cabeçalho, ordenação/agrupamento, linhas, estados e ações
+acompanham PT-BR/en nos modos streamlined e production. O compositor de criação,
+as variáveis configuráveis e o diálogo de execução manual aberto pela coleção
+também foram localizados. Pastas compartilhadas já usavam o catálogo i18n e foram
+verificadas no estado de pasta vazia e no CTA para criar uma rotina dentro dela.
+Títulos, nomes, instruções, valores de variáveis, IDs, relações, dados de projeto
+e agente, regras de agenda e payloads permaneceram intactos.
+
+`Routines.test.tsx`, `RoutineList.test.tsx`, `RoutineVariablesEditor.test.tsx`,
+`RoutineRunVariablesDialog.test.tsx` e `locale-validation.test.ts` passaram em
+**45/45 testes focados**. `check:tokens`, `check:token-gates`, validação estrita do
+OpenSpec e `git diff --check` passaram. O typecheck de `ui/src` passou com uma
+configuração temporária que excluiu o diretório Storybook da raiz. O typecheck
+completo da UI foi encerrado por limite de memória (código 137); o checkpoint
+anterior havia registrado o erro independente em
+`storybook/prototypes/NewAgentWizard.tsx` (`SETUP_LOGIN_HINTS` não exportado).
+Progresso: **230/253 tarefas**. Próxima: 3.10b, detalhe/edição/operação de
+rotinas.
