@@ -2867,3 +2867,18 @@ comparação e restauração. Para manter a revisão focada, b4c foi dividida em
 (lista, estados, prévias e conflitos) e c2 (diff, confirmação, restauração e
 feedback). O contador OpenSpec passou a **265 tarefas**; progresso: **237/265**.
 Próxima: 3.10b4c1.
+
+
+## Rotinas — lista e prévia do histórico de revisões (3.10b4c1)
+
+A tela de histórico localiza carregamento, falha, ausência de revisões, lista,
+seleção, prévias somente de leitura, campos estruturados, gatilhos, variáveis e
+conflitos com alterações não salvas em PT-BR/en. Snapshots, ordem, conteúdo,
+IDs, valores de campos, nomes fornecidos e erros dinâmicos permanecem intactos;
+o aviso de segredo de webhook continua explicando que a restauração gera
+material novo.
+
+`RoutineHistoryTab.test.tsx` e `locale-validation.test.ts` passaram em **25/25
+testes**. O typecheck direcionado, `check:tokens`, `check:token-gates`, JSON,
+`git diff --check` e OpenSpec estrito passaram. Progresso: **238/265 tarefas**.
+Próxima: 3.10b4c2, comparação, confirmação e restauração.

@@ -12,6 +12,7 @@ import type {
   RoutineRevisionSnapshotV1,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { RoutineHistoryTab } from "./RoutineHistoryTab";
 
 const mockRoutinesApi = vi.hoisted(() => ({
@@ -167,15 +168,17 @@ function makeQueryClient() {
 describe("RoutineHistoryTab", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     vi.clearAllMocks();
     toastSpy.mockReset();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
+    await i18n.changeLanguage("en");
   });
 
   async function render(props: Partial<Parameters<typeof RoutineHistoryTab>[0]> = {}) {
@@ -212,6 +215,71 @@ describe("RoutineHistoryTab", () => {
     });
     expect(container.textContent).toContain("No edits yet");
     expect(container.textContent).toContain("Revision 1 is the only history");
+  });
+
+  it("localizes the revision list and preview in Portuguese without translating snapshot values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const current = createRevision({ id: "revision-2", revisionNumber: 2 });
+    const old = createRevision({
+      id: "revision-1",
+      revisionNumber: 1,
+      createdByUserId: null,
+      createdByAgentId: "agent-1",
+      snapshot: snapshotV1({ status: "paused", title: "Daily standup digest" }),
+    });
+    mockRoutinesApi.listRevisions.mockResolvedValue([current, old]);
+    await render();
+    expect(container.textContent).toContain("Revisões");
+    expect(container.textContent).toContain("Atual");
+    expect(container.textContent).toContain("Daily standup digest");
+
+    const oldRow = container.querySelector("[data-testid='revision-row-1']") as HTMLButtonElement | null;
+    await act(async () => oldRow?.click());
+    await flush();
+    expect(container.textContent).toContain("Visualizando a revisão 1 (somente leitura)");
+    expect(container.textContent).toContain("Restaurar como nova revisão");
+    expect(container.textContent).toContain("Comparar com a versão atual");
+    expect(container.textContent).toContain("Campos estruturados");
+    expect(container.textContent).toContain("Agente padrão");
+    expect(container.textContent).toContain("paused");
+    expect(container.textContent).toContain("agente");
+  });
+
+  it("localizes the edit conflict banner in Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockRoutinesApi.listRevisions.mockResolvedValue([
+      createRevision({ id: "revision-2", revisionNumber: 2 }),
+      createRevision({ id: "revision-1", revisionNumber: 1 }),
+    ]);
+    await render({ isEditDirty: true, dirtyFields: [{ key: "description", label: "Descrição" }] });
+    expect(container.textContent).toContain("Há alterações da rotina não salvas");
+    expect(container.textContent).toContain("Você alterou Descrição, mas ainda não salvou.");
+    expect(container.textContent).toContain("Descartar alterações");
+    expect(container.textContent).toContain("Salvar e continuar");
+  });
+
+  it("localizes an empty revision collection in Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockRoutinesApi.listRevisions.mockResolvedValue([]);
+    await render();
+    expect(container.textContent).toContain("Ainda não há revisões");
+  });
+
+  it("marks the revision loading state accessibly in Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockRoutinesApi.listRevisions.mockReturnValue(new Promise(() => {}));
+    await render();
+    expect(container.querySelector('[role="status"]')?.getAttribute("aria-label"))
+      .toBe("Carregando histórico de revisões…");
+  });
+
+  it("localizes revision load errors while preserving the dynamic server message", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockRoutinesApi.listRevisions.mockRejectedValue(new Error("dynamic history error"));
+    await render();
+    expect(container.textContent).toContain("Não foi possível carregar as revisões");
+    expect(container.textContent).toContain("dynamic history error");
+    expect(container.textContent).toContain("Tentar novamente");
   });
 
   it("renders the revision list with current and historical pills", async () => {
