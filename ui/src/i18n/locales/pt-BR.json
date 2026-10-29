@@ -1502,7 +1502,12 @@
       "typeHint": "Como este agente é executado: CLI local (Claude/Codex/OpenCode), OpenClaw Gateway, processo iniciado ou webhook HTTP genérico.",
       "comingSoon": "Em breve",
       "experimental": "Experimental",
+      "testEnvironment": "Testar",
       "environmentTestFailed": "Falha ao testar o ambiente",
+      "organizationRequiredForModelDetection": "Selecione uma organização para detectar o modelo",
+      "organizationRequiredForEnvironmentTest": "Selecione uma organização para testar o ambiente do adaptador",
+      "environmentSettingsLoadFailed": "Não foi possível carregar as configurações de ambiente para determinar onde testar. Tente novamente.",
+      "modelsRefreshFailed": "Falha ao atualizar os modelos do adaptador.",
       "modelLoadFailed": "Falha ao carregar os modelos do adaptador."
     },
     "configurationHeading": "Configuração",
@@ -1825,7 +1830,13 @@
       "kubernetesSandboxHint": "Esta instância executa todos os agentes no sandbox do Kubernetes. A execução local está desativada.",
       "kubernetesSandboxLabel": "{{name}} · sandbox do Kubernetes",
       "kubernetesEnvironmentUnavailable": "Esta instância exige o sandbox do Kubernetes, mas ainda não há um ambiente Kubernetes gerenciado para esta organização. Configure um antes de criar agentes; a execução não usará o ambiente local como alternativa.",
+      "managedSandboxTestUnavailable": "Esta instância executa agentes somente no sandbox gerenciado, mas não há um ambiente gerenciado disponível para teste. Verifique se o provedor está ativo e tente novamente.",
       "openCodeDiscoveryRemoteHint": "A descoberta de modelos do OpenCode em tempo real só funciona em ambientes locais. Usando a lista selecionada e a entrada manual para {{environment}}."
+    },
+    "saveFeedback": {
+      "agentSaved": "Agente salvo",
+      "saveFailed": "Falha ao salvar",
+      "couldNotSaveAgent": "Não foi possível salvar o agente"
     },
     "runPolicy": {
       "heading": "Política de execução",

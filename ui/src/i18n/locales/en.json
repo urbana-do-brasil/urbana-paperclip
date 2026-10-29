@@ -1460,7 +1460,12 @@
       "typeHint": "How this agent runs: a local CLI (Claude/Codex/OpenCode), OpenClaw Gateway, a spawned process, or a generic HTTP webhook.",
       "comingSoon": "Coming soon",
       "experimental": "Experimental",
+      "testEnvironment": "Test",
       "environmentTestFailed": "Environment test failed",
+      "organizationRequiredForModelDetection": "Select an organization to detect the model",
+      "organizationRequiredForEnvironmentTest": "Select an organization to test adapter environment",
+      "environmentSettingsLoadFailed": "Could not load environment settings to determine which environment to test in. Retry the test.",
+      "modelsRefreshFailed": "Failed to refresh adapter models.",
       "modelLoadFailed": "Failed to load adapter models."
     },
     "configurationHeading": "Configuration",
@@ -1783,7 +1788,13 @@
       "kubernetesSandboxHint": "This instance runs all agents in the Kubernetes sandbox. Local execution is disabled.",
       "kubernetesSandboxLabel": "{{name}} · Kubernetes sandbox",
       "kubernetesEnvironmentUnavailable": "This instance requires the Kubernetes sandbox, but no managed Kubernetes environment is available for this organization yet. Configure one before creating agents; execution will not fall back to local.",
+      "managedSandboxTestUnavailable": "This instance runs agents only in its managed sandbox environment, but no managed sandbox environment is available to test in. Check that the managed sandbox provider is active, then retry the test.",
       "openCodeDiscoveryRemoteHint": "Live OpenCode model discovery only runs for Local environments. Using the curated list and manual entry for {{environment}}."
+    },
+    "saveFeedback": {
+      "agentSaved": "Agent saved",
+      "saveFailed": "Save failed",
+      "couldNotSaveAgent": "Could not save agent"
     },
     "runPolicy": {
       "heading": "Run Policy",

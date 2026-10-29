@@ -1452,7 +1452,9 @@ concorrência e continuações após o limite de turnos. Nomes e IDs de ambiente
 drivers, valores salvos, limites, flags, permissões e payloads continuam
 inalterados.
 
-O teste focado de `AgentConfigForm.render.test.tsx` passou (**1/1**) e
-`locale-validation.test.ts`, **12/12**. Typecheck direcionado, gates de tokens,
-`git diff --check` e validação OpenSpec estrita passaram. Progresso: **127/156**.
-Próxima tarefa: 3.6d2e, validação e feedback de salvamento.
+A suíte `AgentConfigForm.render.test.tsx` passou (**103/103**), incluindo a
+barra/estado de salvamento em PT-BR, o rótulo de teste do ambiente e a falha de
+sandbox gerenciado indisponível. `locale-validation.test.ts` passou (**12/12**).
+Typecheck direcionado, gates de tokens, `git diff --check` e validação OpenSpec
+estrita passaram. Progresso: **129/156**. Próxima tarefa: 3.6d3, editor de
+instruções do agente.

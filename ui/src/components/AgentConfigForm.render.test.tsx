@@ -272,6 +272,7 @@ async function renderForm(
     content?: "configuration" | "secrets";
     environmentVariablesPlacement?: "configuration" | "secrets";
     hideInlineSave?: boolean;
+    isSaving?: boolean;
     hidePromptTemplate?: boolean;
     showAdapterTypeField?: boolean;
     onDirtyChange?: (dirty: boolean) => void;
@@ -305,6 +306,7 @@ async function renderForm(
               content={options.content}
               environmentVariablesPlacement={options.environmentVariablesPlacement}
               hideInlineSave={options.hideInlineSave}
+              isSaving={options.isSaving}
               onDirtyChange={options.onDirtyChange}
               onSaveActionChange={options.onSaveActionChange}
               onCancelActionChange={options.onCancelActionChange}
@@ -635,7 +637,7 @@ async function clickElement(element: Element | null | undefined) {
 }
 
 async function runTest(container: HTMLElement) {
-  await clickByText(container, "Test");
+  await clickByText(container, i18n.language === "pt-BR" ? "Testar" : "Test");
 }
 
 async function startLogin(container: HTMLElement) {
@@ -770,7 +772,7 @@ describe("AgentConfigForm environment selector", () => {
     });
     await flushReact();
     expect(dirty).toHaveBeenLastCalledWith(true);
-    expect([...result.container.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save")).toBe(false);
+    expect([...result.container.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save changes")).toBe(false);
     await act(async () => { await save?.(); });
     expect(result.onSave).toHaveBeenCalledWith(expect.objectContaining({ adapterConfig: expect.objectContaining({ env: { ONBOARDING_SMOKE: { type: "plain", value: "true" } } }) }));
     await act(async () => discard?.());
@@ -790,7 +792,7 @@ describe("AgentConfigForm environment selector", () => {
     expect(low).toBeTruthy();
     await act(async () => low.click());
     await flushReact();
-    const save = [...result.container.querySelectorAll("button")].find(button => button.textContent?.trim() === "Save")!;
+    const save = [...result.container.querySelectorAll("button")].find(button => button.textContent?.trim() === "Save changes")!;
     await act(async () => save.click());
     expect(result.onSave).toHaveBeenCalledWith(expect.objectContaining({ adapterConfig: expect.objectContaining({ thinking: "low" }) }));
     expect(result.onSave.mock.calls[0][0].adapterConfig.effort).toBeUndefined();
@@ -814,7 +816,7 @@ describe("AgentConfigForm environment selector", () => {
       });
       roots.push(result.root);
       await act(async () => {
-        result.container.querySelector('[aria-label="Harness"]')!
+        result.container.querySelector('[aria-label="Execution provider"]')!
           .dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       });
       await flushReact();
@@ -825,7 +827,7 @@ describe("AgentConfigForm environment selector", () => {
         option.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       });
       await flushReact();
-      await clickByText(result.container, "Save");
+      await clickByText(result.container, "Save changes");
       expect(result.onSave).toHaveBeenCalledWith(expect.objectContaining({
         adapterConfig: expect.objectContaining({ provider, model, ...(acpxAgent ? { acpxAgent } : {}) }),
       }));
@@ -845,7 +847,7 @@ describe("AgentConfigForm environment selector", () => {
     expect(xhigh).toBeTruthy();
     await act(async () => xhigh.click());
     await flushReact();
-    const save = [...result.container.querySelectorAll("button")].find(button => button.textContent?.trim() === "Save")!;
+    const save = [...result.container.querySelectorAll("button")].find(button => button.textContent?.trim() === "Save changes")!;
     await act(async () => save.click());
     expect(result.onSave).toHaveBeenCalledWith(expect.objectContaining({ adapterConfig: expect.objectContaining({ reasoningEffort: "xhigh" }) }));
     expect(result.onSave.mock.calls[0][0].adapterConfig.effort).toBeUndefined();
@@ -859,6 +861,39 @@ describe("AgentConfigForm environment selector", () => {
 
     expect(result.container.textContent).not.toContain("Environment override");
     expect(result.container.querySelector("select")).toBeNull();
+  });
+
+  it("localizes the inline save bar in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const result = await renderForm([
+      makeEnvironment({ id: "local-1", name: "Local", driver: "local" }),
+    ]);
+    roots.push(result.root);
+
+    const name = result.container.querySelector<HTMLInputElement>('input[placeholder="Nome do agente"]');
+    expect(name).toBeTruthy();
+    await act(async () => setInputValue(name!, "Cody atualizado"));
+    await flushReact();
+
+    expect(result.container.textContent).toContain("Você tem alterações não salvas.");
+    expect(findButton(result.container, "Salvar alterações")).toBeTruthy();
+  });
+
+  it("localizes the inline saving state in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const result = await renderForm(
+      [makeEnvironment({ id: "local-1", name: "Local", driver: "local" })],
+      {},
+      { isSaving: true },
+    );
+    roots.push(result.root);
+
+    const name = result.container.querySelector<HTMLInputElement>('input[placeholder="Nome do agente"]');
+    expect(name).toBeTruthy();
+    await act(async () => setInputValue(name!, "Cody atualizado"));
+    await flushReact();
+
+    expect(findButton(result.container, "Salvando…")?.disabled).toBe(true);
   });
 
   it("localizes the managed execution environment and run policy without changing saved limits", async () => {
@@ -973,7 +1008,7 @@ describe("AgentConfigForm environment selector", () => {
       environment.dispatchEvent(new Event("change", { bubbles: true }));
     });
     await flushReact();
-    await clickByText(result.container, "Save");
+    await clickByText(result.container, "Salvar alterações");
 
     expect(result.onSave).toHaveBeenCalledWith(expect.objectContaining({
       reportsTo: "manager-2",
@@ -1047,7 +1082,7 @@ describe("AgentConfigForm environment selector", () => {
     await flushReact();
 
     const saveButton = Array.from(result.container.querySelectorAll("button"))
-      .find((button) => button.textContent?.trim() === "Save");
+      .find((button) => button.textContent?.trim() === "Save changes");
     expect(saveButton).not.toBeUndefined();
     await act(async () => {
       saveButton!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -1713,6 +1748,7 @@ describe("AgentConfigForm environment selector", () => {
   });
 
   it("keeps the Login button hidden under the managed-sandbox-only policy when no managed sandbox is available", async () => {
+    await i18n.changeLanguage("pt-BR");
     // The policy is on, but no managed sandbox environment exists, so the login
     // target resolution fails closed. The render catches that failure and
     // resolves no login environment, so the affordance stays hidden. The Test
@@ -1737,6 +1773,10 @@ describe("AgentConfigForm environment selector", () => {
     roots.push(result.root);
 
     expect(findButton(result.container, "Sign in")).toBeFalsy();
+    await runTest(result.container);
+    expect(result.container.textContent).toContain(
+      "Esta instância executa agentes somente no sandbox gerenciado, mas não há um ambiente gerenciado disponível para teste.",
+    );
   });
 
   it("starts a login session for the effective sandbox and shows the code and the authentication URL", async () => {
@@ -2276,7 +2316,7 @@ describe("AgentConfigForm environment selector", () => {
     expect(mockAgentsApi.get).toHaveBeenCalledWith(saved.id, saved.companyId);
     expect(container.textContent).toContain("Verifying agent");
     expect(nameInput.value).toBe("Edited during poll");
-    await act(async () => findButton(container, "Save")!.click());
+    await act(async () => findButton(container, "Save changes")!.click());
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ name: "Edited during poll" }));
     mockAgentsApi.get.mockRejectedValueOnce(new Error("Status unavailable"));
     await act(async () => { await queryClient.refetchQueries({ queryKey: [...queryKeys.agents.detail(saved.id), "lifecycle"] }); });
@@ -2383,7 +2423,7 @@ describe("AgentConfigForm environment selector", () => {
 
     // An ordinary Save in that window still carries the binding.
     const persistedPatch = onSave.mock.calls[0]![0] as Record<string, unknown>;
-    const saveButton = findButton(container, "Save");
+    const saveButton = findButton(container, "Save changes");
     expect(saveButton).toBeTruthy();
     await act(async () => {
       saveButton!.click();
