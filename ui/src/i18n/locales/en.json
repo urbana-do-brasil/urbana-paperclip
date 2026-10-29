@@ -283,7 +283,89 @@
     "advancedPermissionsUnavailableDescription": "Core Paperclip keeps enforcing organization boundaries and any existing restrictive policy data, but editing advanced permissions requires an installed extension.",
     "pluginExtensionsUnavailable": "Plugin extensions unavailable: {{error}}",
     "openMembers": "Open Members",
-    "openInvites": "Open Invites"
+    "openInvites": "Open Invites",
+    "invites": {
+      "description": "Invite people to request access to this organization. New invite links are copied to your clipboard when they are generated.",
+      "createTitle": "Invite a person",
+      "createDescription": "Generate a human invite link and choose the default access it should request.",
+      "chooseRole": "Choose a role",
+      "roles": {
+        "viewer": {
+          "description": "Can view organization work and follow along.",
+          "gets": "View-only organization membership."
+        },
+        "operator": {
+          "description": "Can edit organization work and invite people.",
+          "gets": "Full editing and audit access. Cannot approve join requests or manage member permissions."
+        },
+        "admin": {
+          "description": "Recommended for operators who need to invite people, create agents, and approve joins.",
+          "gets": "Can create agents, invite users, assign tasks, and approve join requests."
+        },
+        "owner": {
+          "description": "Full organization access, including membership management.",
+          "gets": "Everything in Admin, plus managing members."
+        }
+      },
+      "defaultBadge": "Default",
+      "singleUseNotice": "Each invite link is single-use. Human invitees get the selected role immediately after sign-in; agent invites still create a join request for approval.",
+      "creating": "Creating…",
+      "create": "Create invite",
+      "historyNote": "Invite history below keeps the audit trail.",
+      "latestLink": "Latest invite link",
+      "copied": "Copied",
+      "urlDomainDescription": "This URL includes the current Paperclip domain returned by the server.",
+      "latestUrl": "Latest invite URL",
+      "copyLink": "Copy link",
+      "historyTitle": "Invite history",
+      "historyDescription": "Review invite status, audience, inviter, and any linked join request.",
+      "openJoinRequestQueue": "Open join request queue",
+      "noInvites": "No invites have been created for this organization yet.",
+      "columns": {
+        "state": "State",
+        "for": "For",
+        "invitedBy": "Invited by",
+        "created": "Created",
+        "joinRequest": "Join request",
+        "action": "Action"
+      },
+      "states": {
+        "active": "Active",
+        "accepted": "Accepted",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "audience": {
+        "agent": "Agent",
+        "both": "Human or agent",
+        "withRole": "{{audience}} · {{role}}",
+        "human": "Human"
+      },
+      "unknownInviter": "Unknown inviter",
+      "reviewRequest": "Review request",
+      "revoke": "Revoke",
+      "inactive": "Inactive",
+      "loadingMore": "Loading more…",
+      "viewMore": "View more",
+      "selectOrganization": "Select an organization to manage invites.",
+      "loading": "Loading invites…",
+      "noPermission": "You do not have permission to manage organization invites.",
+      "loadFailed": "Failed to load invites.",
+      "errors": {
+        "unknown": "Unknown error"
+      },
+      "toasts": {
+        "clipboardUnavailable": "Clipboard unavailable",
+        "copyManually": "The invite URL is selected. Copy it manually from the field.",
+        "copyFromField": "Copy the invite URL manually from the field below.",
+        "inviteCreated": "Invite created",
+        "inviteReadyCopied": "Invite ready below and copied to clipboard.",
+        "inviteReady": "Invite ready below.",
+        "createFailed": "Failed to create invite",
+        "inviteRevoked": "Invite revoked",
+        "revokeFailed": "Failed to revoke invite"
+      }
+    }
   },
   "onboarding": {
     "route": {

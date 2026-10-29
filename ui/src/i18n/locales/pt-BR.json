@@ -287,7 +287,89 @@
     "advancedPermissionsUnavailableDescription": "O Paperclip mantém os limites entre organizações e os dados de políticas restritivas já existentes, mas a edição de permissões avançadas exige uma extensão instalada.",
     "pluginExtensionsUnavailable": "Extensões de plugins indisponíveis: {{error}}",
     "openMembers": "Abrir membros",
-    "openInvites": "Abrir convites"
+    "openInvites": "Abrir convites",
+    "invites": {
+      "description": "Convide pessoas para solicitar acesso a esta organização. Os novos links de convite são copiados para a área de transferência quando são gerados.",
+      "createTitle": "Convidar uma pessoa",
+      "createDescription": "Gere um link de convite para uma pessoa e escolha o acesso padrão solicitado.",
+      "chooseRole": "Escolha uma função",
+      "roles": {
+        "viewer": {
+          "description": "Pode visualizar o trabalho da organização e acompanhar o andamento.",
+          "gets": "Associação à organização somente para visualização."
+        },
+        "operator": {
+          "description": "Pode editar o trabalho da organização e convidar pessoas.",
+          "gets": "Acesso completo para edição e auditoria. Não pode aprovar solicitações de entrada nem gerenciar permissões de membros."
+        },
+        "admin": {
+          "description": "Recomendada para operadores que precisam convidar pessoas, criar agentes e aprovar solicitações de entrada.",
+          "gets": "Pode criar agentes, convidar pessoas, atribuir tarefas e aprovar solicitações de entrada."
+        },
+        "owner": {
+          "description": "Acesso completo à organização, incluindo o gerenciamento de membros.",
+          "gets": "Tudo o que a função de administrador oferece, além do gerenciamento de membros."
+        }
+      },
+      "defaultBadge": "Padrão",
+      "singleUseNotice": "Cada link de convite pode ser usado uma única vez. Pessoas convidadas recebem a função selecionada após entrar; convites de agentes ainda criam uma solicitação de entrada para aprovação.",
+      "creating": "Criando…",
+      "create": "Criar convite",
+      "historyNote": "O histórico de convites abaixo mantém o registro de auditoria.",
+      "latestLink": "Link de convite mais recente",
+      "copied": "Copiado",
+      "urlDomainDescription": "Esta URL inclui o domínio atual do Paperclip retornado pelo servidor.",
+      "latestUrl": "URL do convite mais recente",
+      "copyLink": "Copiar link",
+      "historyTitle": "Histórico de convites",
+      "historyDescription": "Revise o status, o público-alvo, quem convidou e as solicitações de entrada vinculadas.",
+      "openJoinRequestQueue": "Abrir fila de solicitações de entrada",
+      "noInvites": "Ainda não há convites criados para esta organização.",
+      "columns": {
+        "state": "Estado",
+        "for": "Para",
+        "invitedBy": "Convidado por",
+        "created": "Criado em",
+        "joinRequest": "Solicitação de entrada",
+        "action": "Ação"
+      },
+      "states": {
+        "active": "Ativo",
+        "accepted": "Aceito",
+        "expired": "Expirado",
+        "revoked": "Revogado"
+      },
+      "audience": {
+        "agent": "Agente",
+        "both": "Pessoa ou agente",
+        "withRole": "{{audience}} · {{role}}",
+        "human": "Pessoa"
+      },
+      "unknownInviter": "Pessoa convidadora desconhecida",
+      "reviewRequest": "Revisar solicitação",
+      "revoke": "Revogar",
+      "inactive": "Inativo",
+      "loadingMore": "Carregando mais…",
+      "viewMore": "Ver mais",
+      "selectOrganization": "Selecione uma organização para gerenciar convites.",
+      "loading": "Carregando convites…",
+      "noPermission": "Você não tem permissão para gerenciar os convites da organização.",
+      "loadFailed": "Não foi possível carregar os convites.",
+      "errors": {
+        "unknown": "Erro desconhecido"
+      },
+      "toasts": {
+        "clipboardUnavailable": "Área de transferência indisponível",
+        "copyManually": "O link do convite está selecionado. Copie-o manualmente no campo.",
+        "copyFromField": "Copie o link do convite manualmente no campo abaixo.",
+        "inviteCreated": "Convite criado",
+        "inviteReadyCopied": "O convite está pronto abaixo e foi copiado para a área de transferência.",
+        "inviteReady": "O convite está pronto abaixo.",
+        "createFailed": "Não foi possível criar o convite",
+        "inviteRevoked": "Convite revogado",
+        "revokeFailed": "Não foi possível revogar o convite"
+      }
+    }
   },
   "onboarding": {
     "route": {

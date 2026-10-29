@@ -1799,7 +1799,7 @@ externos sem mapeamento continuam preservados.
 `locale-validation.test.ts` passaram em **21/21 testes**. O typecheck direcionado
 dos componentes, páginas e testes alterados, `check:tokens`, `check:token-gates`,
 `git diff --check`, parse dos catálogos e validação OpenSpec estrita passaram.
-O estado após a decomposição de 3.8b é **161/182 tarefas**; próxima tarefa:
+O estado após a decomposição de 3.8b é **161/183 tarefas**; próxima tarefa:
 3.8b1, membros e solicitações embutidas.
 
 ### Continuação — membros e solicitações embutidas (3.8b1)
@@ -1815,5 +1815,20 @@ em 3.4e5 foi revalidada.
 `locale-validation.test.ts` passaram em **33/33 testes**. O typecheck direcionado
 de `CompanyAccess` e seus testes, `check:tokens`, `check:token-gates`,
 `git diff --check`, parse dos catálogos e validação OpenSpec estrita passaram.
-O progresso atual é **162/182 tarefas**; próxima tarefa: 3.8b2, convites e
+O progresso atual é **162/183 tarefas**; próxima tarefa: 3.8b2, convites e
 revalidação do fluxo de solicitações.
+
+### Continuação — convites e fila standalone (3.8b2)
+
+A aba de convites agora localiza geração, papéis e descrições, histórico
+paginado, público-alvo, estados, cópia do link, revogação, estados de acesso e
+acessibilidade em PT-BR/en. A fila standalone já localizada em 3.4e5 foi
+revalidada nos dois idiomas. URLs e tokens, nomes/e-mails, mensagens dos
+convites, enums salvos, IDs e payloads permaneceram intactos.
+
+`InvitesSection.test.tsx`, `CompanyAccess.test.tsx`,
+`JoinRequestQueue.test.tsx` e `locale-validation.test.ts` passaram em **40/40
+testes**. O typecheck direcionado dos componentes e testes alterados,
+`check:tokens`, `check:token-gates`, `git diff --check`, parse dos catálogos e
+validação OpenSpec estrita passaram. A jornada 3.8b está concluída; o progresso
+é **164/183 tarefas**. Próxima tarefa: 3.8c, concessões de acesso da instância.
