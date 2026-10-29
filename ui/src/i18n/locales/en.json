@@ -1138,7 +1138,8 @@
           "draftSave": "Couldn’t save your draft in this browser. Keep this page open and try again.",
           "saveTrigger": "Couldn’t save the trigger. Please try again.",
           "saveSchedule": "Couldn’t save schedule.",
-          "replaceKey": "Couldn’t replace the key."
+          "replaceKey": "Couldn’t replace the key.",
+          "saveWizard": "Couldn’t save. Please try again."
         },
         "setup": {
           "triggerUnavailable": "This trigger is no longer available.",
@@ -1204,6 +1205,153 @@
           "weekdayAt": "Every {{day}} at {{time}}",
           "selectedWeekdaysAt": "Every {{days}} at {{time}}",
           "dayOfMonthAt": "Day {{day}} of every month at {{time}}"
+        },
+        "copy": {
+          "copied": "Copied",
+          "copy": "Copy",
+          "copyLabel": "Copy {{label}}",
+          "failed": "Copy failed. Select and copy the text below.",
+          "textAria": "{{label}} text"
+        },
+        "instructions": {
+          "ariaLabel": "Agent instructions",
+          "title": "Agent instructions",
+          "description": "Give your agent everything it needs to connect this webhook: the URL, authentication key, and step-by-step instructions.",
+          "copyForAgent": "Copy for your agent",
+          "setupTitle": "Webhook setup",
+          "setupDescription": "Paste this into your agent to connect this webhook to your routine.",
+          "connect": "Connect the sending app to the Paperclip routine {{routineTitle}}.",
+          "webhookUrl": "Webhook URL: {{url}}",
+          "postJson": "Send an HTTP POST request with a JSON object as the body (not an array or string).",
+          "checkConnection": "Open Check connection in Paperclip to see whether the event arrived and authentication passed.",
+          "setupOnly": "During setup, deliveries only test the connection. They do not start the routine or create a task.",
+          "finishSetup": "Finish setup in Paperclip to enable this webhook for future events. Test events are not replayed.",
+          "enabled": "This webhook is enabled. Deliveries can start the routine and create tasks.",
+          "storeKey": "Store the key securely; do not put it in source control or logs.",
+          "github": {
+            "addWebhook": "In GitHub, open your repository → Settings → Webhooks → Add webhook.",
+            "payloadUrl": "Use the webhook URL above as Payload URL and select application/json as Content type.",
+            "secret": "Secret: {{secret}}",
+            "signature": "Paste this value into GitHub’s Secret field. GitHub signs requests with X-Hub-Signature-256; do not use Bearer authentication.",
+            "selectEvents": "Select the events that should start this routine, enable the webhook, and save.",
+            "checkDelivery": "To check the connection, open Recent Deliveries and redeliver an event."
+          },
+          "custom": {
+            "secretKey": "Secret key: {{secret}}",
+            "signingSecret": "If the app asks for a signing secret, paste the secret key above. Paperclip accepts HMAC-SHA256 over the exact request body in {{headers}}, formatted sha256=<hex digest>.",
+            "bearerHeader": "For apps with custom headers, use Authorization: Bearer {{secret}}",
+            "subscribeHttps": "Subscribe only to the events that should start this routine. Public services need a publicly reachable HTTPS URL.",
+            "addWebhook": "In the sending app, add a webhook using this URL, POST method, JSON body, and headers, then save it.",
+            "idempotency": "Send a unique Idempotency-Key header for each event and reuse it on retries, so retrying a setup test after activation cannot start the routine.",
+            "examplePayload": "Example JSON body: {\"event\":\"deployment.completed\",\"environment\":\"production\"}",
+            "checkDelivery": "To check the connection, send a test event from the app or perform the action that triggers a delivery."
+          }
+        },
+        "urlWarnings": {
+          "loopback": {
+            "title": "Other apps can’t reach this localhost URL",
+            "message": "This address points back to the machine sending the request. Services such as GitHub can’t use it to reach Paperclip on your computer."
+          },
+          "private": {
+            "title": "This webhook URL appears to be private",
+            "message": "Only senders with access to this network can reach this address. Apps on the public internet, such as GitHub, usually can’t deliver webhooks here."
+          },
+          "tailscale": {
+            "title": "This Tailscale URL may not be public",
+            "message": "Tailscale Serve is private to your tailnet, even with HTTPS. Apps outside your tailnet need Tailscale Funnel or another public HTTPS address. If Funnel is already enabled for this URL, you can continue."
+          },
+          "https": {
+            "title": "Use HTTPS for webhooks from other apps",
+            "message": "This URL uses HTTP. Many apps require HTTPS, and HTTP does not encrypt webhook credentials or payloads."
+          },
+          "invalid": {
+            "title": "Check the webhook URL",
+            "message": "This is not a valid HTTP or HTTPS URL. Your sending app needs a complete address it can reach."
+          },
+          "continueNote": "You can continue for local or private-network use. For public senders, use a publicly reachable HTTPS URL.",
+          "learnHttps": "Learn how to set up HTTPS and public access"
+        },
+        "wizard": {
+          "steps": {
+            "choose": "Choose trigger",
+            "schedule": "Set schedule",
+            "reviewSchedule": "Review schedule",
+            "connectApp": "Connect your app",
+            "checkConnection": "Check connection"
+          },
+          "title": {
+            "choose": "When should this routine run?",
+            "setSchedule": "Set a schedule",
+            "reviewSchedule": "Review your schedule",
+            "connectGithub": "Connect GitHub",
+            "connectApp": "Connect your app",
+            "checkConnection": "Check your connection"
+          },
+          "subtitle": {
+            "choose": "Choose how to start “{{routineTitle}}”. You can add another trigger later.",
+            "schedule": "Choose when Paperclip should start this routine automatically.",
+            "reviewSchedule": "This schedule starts the routine automatically. You can pause or change it later.",
+            "connectApp": "Copy these details into the sending app, then save its webhook settings.",
+            "checkConnection": "Test that events arrive and authentication works. This won’t start the routine."
+          },
+          "progressAria": "Trigger setup progress",
+          "triggerType": "Trigger type",
+          "scheduleOption": "On a schedule",
+          "scheduleOptionDescription": "Every day, on weekdays, or once a week.",
+          "webhookOption": "When another app sends a webhook",
+          "webhookOptionDescription": "When something happens in GitHub, another app, or a script.",
+          "repeat": "Repeat",
+          "frequency": {
+            "daily": "Every day",
+            "weekdays": "Weekdays (Monday–Friday)",
+            "weekly": "Every week"
+          },
+          "time": "Time",
+          "day": "Day",
+          "timeZoneHelp": "The time follows this zone, including daylight saving changes.",
+          "scheduleReviewDescription": "Each scheduled run creates a task for the routine’s assigned agent. Any existing webhook triggers will continue to work.",
+          "scheduleSummary": {
+            "daily": "Every day at {{time}}",
+            "weekdays": "Every weekday at {{time}}",
+            "weekly": "Every {{day}} at {{time}}"
+          },
+          "senderQuestion": "What’s sending the webhook?",
+          "customSender": "Another app or script",
+          "githubSender": "GitHub",
+          "yourApp": "your app",
+          "publicHttpsRequirement": "Public services need a publicly reachable HTTPS webhook URL.",
+          "payloadUrl": "Payload URL",
+          "signingSecretHelp": "Paste this key into your app’s signing secret field.",
+          "bearerHeaderHelp": "If your app uses custom headers instead, set Authorization to Bearer followed by a space and this key.",
+          "secret": "Secret",
+          "keyHiddenAfterExit": "The key is hidden after leaving setup. If you haven’t saved it in your app, generate a replacement.",
+          "generateNewKey": "Generate new key",
+          "connectionTestOnly": "Connection test only",
+          "connectionTestOnlyDescription": "Events received during setup won’t start the routine or create tasks.",
+          "sendEventFrom": "Send an event from {{sender}}",
+          "githubTestInstructions": "Open this webhook in your repository settings. Under Recent Deliveries, choose Redeliver on an event.",
+          "customTestInstructions": "Look for “Send test” in your app’s webhook settings. If it doesn’t have one, do the action that should trigger the webhook—for example, complete a deployment.",
+          "keepPageOpen": "Keep this page open to see the test result.",
+          "results": {
+            "received": "Test event received · Connection working",
+            "rejected": "Event arrived, but the key was rejected",
+            "noEvent": "No event received yet",
+            "waiting": "Waiting for an event from your app…",
+            "receivedDescription": "Authentication passed. No routine run or task was created.",
+            "rejectedDescription": "Go back to Connect your app, update the key in your sending app, and resend. No task was created.",
+            "waitingDescription": "Waiting to verify delivery and authentication. The routine is not running."
+          },
+          "troubleshoot": "Troubleshoot delivery",
+          "troubleshootDescription": "Check that the webhook is enabled in your sending app and that its URL matches. Scripts must send POST with a JSON body.",
+          "finishWebhookActive": "Finish setup to enable this webhook. Future events will start the routine; this test event won’t be replayed.",
+          "finishWebhookPaused": "Finish setup to save this webhook. The routine is paused; enable its automatic triggers when you’re ready. This test event won’t be replayed.",
+          "schedulePaused": "The routine is paused. Enable its automatic triggers when you’re ready to use this schedule.",
+          "continue": "Continue",
+          "back": "Back",
+          "reviewSchedule": "Review schedule",
+          "addSchedule": "Add schedule",
+          "finishSetup": "Finish setup",
+          "finishWithoutChecking": "Finish without checking"
         }
       },
       "delivery": {

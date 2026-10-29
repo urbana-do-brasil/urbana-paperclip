@@ -1178,7 +1178,8 @@
           "draftSave": "Não foi possível salvar o rascunho neste navegador. Mantenha esta página aberta e tente novamente.",
           "saveTrigger": "Não foi possível salvar o gatilho. Tente novamente.",
           "saveSchedule": "Não foi possível salvar o agendamento.",
-          "replaceKey": "Não foi possível trocar a chave."
+          "replaceKey": "Não foi possível trocar a chave.",
+          "saveWizard": "Não foi possível salvar. Tente novamente."
         },
         "setup": {
           "triggerUnavailable": "Este gatilho não está mais disponível.",
@@ -1246,6 +1247,153 @@
           "weekdayAt": "Toda {{day}} às {{time}}",
           "selectedWeekdaysAt": "{{days}} às {{time}}",
           "dayOfMonthAt": "Dia {{day}} de cada mês às {{time}}"
+        },
+        "copy": {
+          "copied": "Copiado",
+          "copy": "Copiar",
+          "copyLabel": "Copiar {{label}}",
+          "failed": "Não foi possível copiar. Selecione e copie o texto abaixo.",
+          "textAria": "Texto de {{label}}"
+        },
+        "instructions": {
+          "ariaLabel": "Instruções para o agente",
+          "title": "Instruções para o agente",
+          "description": "Forneça ao agente tudo de que ele precisa para conectar este webhook: URL, chave de autenticação e instruções passo a passo.",
+          "copyForAgent": "Copiar para o agente",
+          "setupTitle": "Configuração do webhook",
+          "setupDescription": "Cole isto no agente para conectar o webhook à rotina.",
+          "connect": "Conecte o app emissor à rotina {{routineTitle}} do Paperclip.",
+          "webhookUrl": "URL do webhook: {{url}}",
+          "postJson": "Envie uma solicitação HTTP POST com um objeto JSON no corpo (não um array nem uma string).",
+          "checkConnection": "Abra Verificar conexão no Paperclip para confirmar se o evento chegou e se a autenticação foi aprovada.",
+          "setupOnly": "Durante a configuração, as entregas apenas testam a conexão. Elas não iniciam a rotina nem criam uma tarefa.",
+          "finishSetup": "Conclua a configuração no Paperclip para ativar este webhook para eventos futuros. Os eventos de teste não serão repetidos.",
+          "enabled": "Este webhook está ativo. As entregas podem iniciar a rotina e criar tarefas.",
+          "storeKey": "Guarde a chave em segurança; não a inclua no controle de versão nem em logs.",
+          "github": {
+            "addWebhook": "No GitHub, abra o repositório → Settings → Webhooks → Add webhook.",
+            "payloadUrl": "Use a URL do webhook acima em Payload URL e selecione application/json como tipo de conteúdo.",
+            "secret": "Segredo: {{secret}}",
+            "signature": "Cole este valor no campo Secret do GitHub. O GitHub assina as solicitações com X-Hub-Signature-256; não use autenticação Bearer.",
+            "selectEvents": "Selecione os eventos que devem iniciar esta rotina, ative o webhook e salve.",
+            "checkDelivery": "Para verificar a conexão, abra Recent Deliveries e reenvie um evento."
+          },
+          "custom": {
+            "secretKey": "Chave secreta: {{secret}}",
+            "signingSecret": "Se o app solicitar um segredo de assinatura, cole a chave secreta acima. O Paperclip aceita HMAC-SHA256 sobre o corpo exato da solicitação nos cabeçalhos {{headers}}, no formato sha256=<hex digest>.",
+            "bearerHeader": "Em apps com cabeçalhos personalizados, use Authorization: Bearer {{secret}}",
+            "subscribeHttps": "Assine somente os eventos que devem iniciar esta rotina. Serviços públicos precisam de uma URL HTTPS acessível pela internet.",
+            "addWebhook": "No app emissor, adicione um webhook com esta URL, método POST, corpo JSON e cabeçalhos; depois salve.",
+            "idempotency": "Envie um cabeçalho Idempotency-Key exclusivo para cada evento e reutilize-o nas novas tentativas, para que repetir um teste de configuração após a ativação não inicie a rotina.",
+            "examplePayload": "Exemplo de corpo JSON: {\"event\":\"deployment.completed\",\"environment\":\"production\"}",
+            "checkDelivery": "Para verificar a conexão, envie um evento de teste pelo app ou execute a ação que dispara a entrega."
+          }
+        },
+        "urlWarnings": {
+          "loopback": {
+            "title": "Outros apps não conseguem acessar esta URL localhost",
+            "message": "Este endereço aponta para a máquina que envia a solicitação. Serviços como o GitHub não conseguem usá-lo para acessar o Paperclip no seu computador."
+          },
+          "private": {
+            "title": "Esta URL de webhook parece ser privada",
+            "message": "Somente emissores com acesso a esta rede conseguem alcançar o endereço. Apps na internet pública, como o GitHub, geralmente não conseguem entregar webhooks aqui."
+          },
+          "tailscale": {
+            "title": "Esta URL do Tailscale pode não ser pública",
+            "message": "O Tailscale Serve é privado à sua tailnet, mesmo com HTTPS. Apps fora da tailnet precisam do Tailscale Funnel ou de outro endereço HTTPS público. Se o Funnel já estiver ativo para esta URL, você pode continuar."
+          },
+          "https": {
+            "title": "Use HTTPS para webhooks enviados por outros apps",
+            "message": "Esta URL usa HTTP. Muitos apps exigem HTTPS, e HTTP não criptografa as credenciais nem os dados do webhook."
+          },
+          "invalid": {
+            "title": "Verifique a URL do webhook",
+            "message": "Esta não é uma URL HTTP ou HTTPS válida. O app emissor precisa de um endereço completo e acessível."
+          },
+          "continueNote": "Você pode continuar para uso local ou em uma rede privada. Para emissores públicos, use uma URL HTTPS acessível pela internet.",
+          "learnHttps": "Saiba como configurar HTTPS e acesso público"
+        },
+        "wizard": {
+          "steps": {
+            "choose": "Escolher gatilho",
+            "schedule": "Definir agendamento",
+            "reviewSchedule": "Revisar agendamento",
+            "connectApp": "Conectar app",
+            "checkConnection": "Verificar conexão"
+          },
+          "title": {
+            "choose": "Quando esta rotina deve ser executada?",
+            "setSchedule": "Definir um agendamento",
+            "reviewSchedule": "Revise o agendamento",
+            "connectGithub": "Conectar ao GitHub",
+            "connectApp": "Conectar seu app",
+            "checkConnection": "Verifique a conexão"
+          },
+          "subtitle": {
+            "choose": "Escolha como iniciar “{{routineTitle}}”. Você poderá adicionar outro gatilho depois.",
+            "schedule": "Escolha quando o Paperclip deve iniciar esta rotina automaticamente.",
+            "reviewSchedule": "Este agendamento inicia a rotina automaticamente. Você pode pausá-lo ou alterá-lo depois.",
+            "connectApp": "Copie estes dados para o app emissor e salve as configurações do webhook.",
+            "checkConnection": "Teste se os eventos chegam e se a autenticação funciona. Isso não iniciará a rotina."
+          },
+          "progressAria": "Progresso da configuração do gatilho",
+          "triggerType": "Tipo de gatilho",
+          "scheduleOption": "Em um horário programado",
+          "scheduleOptionDescription": "Todos os dias, em dias úteis ou uma vez por semana.",
+          "webhookOption": "Quando outro app enviar um webhook",
+          "webhookOptionDescription": "Quando algo acontecer no GitHub, em outro app ou em um script.",
+          "repeat": "Repetição",
+          "frequency": {
+            "daily": "Todos os dias",
+            "weekdays": "Dias úteis (segunda a sexta-feira)",
+            "weekly": "Toda semana"
+          },
+          "time": "Horário",
+          "day": "Dia",
+          "timeZoneHelp": "O horário segue este fuso, incluindo as mudanças do horário de verão.",
+          "scheduleReviewDescription": "Cada execução agendada cria uma tarefa para o agente atribuído à rotina. Os gatilhos de webhook existentes continuarão funcionando.",
+          "scheduleSummary": {
+            "daily": "Todos os dias às {{time}}",
+            "weekdays": "Dias úteis às {{time}}",
+            "weekly": "Toda {{day}} às {{time}}"
+          },
+          "senderQuestion": "Quem está enviando o webhook?",
+          "customSender": "Outro app ou script",
+          "githubSender": "GitHub",
+          "yourApp": "seu app",
+          "publicHttpsRequirement": "Serviços públicos precisam de uma URL HTTPS de webhook acessível pela internet.",
+          "payloadUrl": "URL do payload",
+          "signingSecretHelp": "Cole esta chave no campo de segredo de assinatura do app.",
+          "bearerHeaderHelp": "Se o app usar cabeçalhos personalizados, defina Authorization como Bearer, seguido de um espaço e desta chave.",
+          "secret": "Segredo",
+          "keyHiddenAfterExit": "A chave fica oculta depois que você sai da configuração. Se ainda não a salvou no app, gere uma chave substituta.",
+          "generateNewKey": "Gerar nova chave",
+          "connectionTestOnly": "Somente teste de conexão",
+          "connectionTestOnlyDescription": "Os eventos recebidos durante a configuração não iniciam a rotina nem criam tarefas.",
+          "sendEventFrom": "Envie um evento do {{sender}}",
+          "githubTestInstructions": "Abra este webhook nas configurações do repositório. Em Recent Deliveries, escolha Redeliver em um evento.",
+          "customTestInstructions": "Procure “Send test” nas configurações do webhook do app. Se não houver essa opção, execute a ação que deveria disparar o webhook, como concluir uma implantação.",
+          "keepPageOpen": "Mantenha esta página aberta para ver o resultado do teste.",
+          "results": {
+            "received": "Evento de teste recebido · Conexão funcionando",
+            "rejected": "O evento chegou, mas a chave foi rejeitada",
+            "noEvent": "Nenhum evento recebido ainda",
+            "waiting": "Aguardando um evento do app…",
+            "receivedDescription": "Autenticação aprovada. Nenhuma execução da rotina ou tarefa foi criada.",
+            "rejectedDescription": "Volte a Conectar app, atualize a chave no app emissor e reenvie. Nenhuma tarefa foi criada.",
+            "waitingDescription": "Aguardando a verificação da entrega e da autenticação. A rotina não está em execução."
+          },
+          "troubleshoot": "Investigar problemas de entrega",
+          "troubleshootDescription": "Confira se o webhook está ativo no app emissor e se a URL corresponde. Scripts devem enviar POST com um corpo JSON.",
+          "finishWebhookActive": "Conclua a configuração para ativar este webhook. Eventos futuros iniciarão a rotina; este evento de teste não será repetido.",
+          "finishWebhookPaused": "Conclua a configuração para salvar este webhook. A rotina está pausada; ative os gatilhos automáticos quando quiser. Este evento de teste não será repetido.",
+          "schedulePaused": "A rotina está pausada. Ative os gatilhos automáticos quando quiser usar este agendamento.",
+          "continue": "Continuar",
+          "back": "Voltar",
+          "reviewSchedule": "Revisar agendamento",
+          "addSchedule": "Adicionar agendamento",
+          "finishSetup": "Concluir configuração",
+          "finishWithoutChecking": "Concluir sem verificar"
         }
       },
       "delivery": {

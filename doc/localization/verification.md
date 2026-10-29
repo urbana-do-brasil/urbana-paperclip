@@ -2805,3 +2805,20 @@ mensagens técnicas e payloads foram preservados.
 focados**. O typecheck direcionado dos arquivos alterados passou. `check:tokens`,
 `check:token-gates`, JSON, `git diff --check` e OpenSpec estrito passaram.
 3.10b3 foi dividida em editor/formulários (b3a), lista/ciclo de vida/configurações (b3b) e assistente/instruções de webhook (b3c). A b3a localizou em PT-BR/en os presets, dias, validação cron, formulários, modos de assinatura e cartões da variante production, preservando cron, timezones, enums e segredos. `ScheduleEditor`, `RoutineTriggerCard`, formulários production, locale-validation e regressões: 26/26 testes focados; typecheck direcionado, gates de tokens, JSON, diff e OpenSpec estrito passaram. Progresso: **233/260 tarefas**. Próxima: 3.10b3b. A b3b localizou lista, contagem, estados, restauração/remoção, retomada, resumo, pausa/ativação, configuração de agenda, fuso, rotação de chave, instruções HMAC e resultado de conexão em PT-BR/en, preservando cron, timezone, URLs, segredos, IDs, estados do servidor e contratos. `RoutineTriggers`, `TriggerCard`, `RoutineTriggerCard`, `ScheduleEditor`, `cron-readable`, testes de rotinas/cron e locale: 30/30; typecheck direcionado, gates de tokens, JSON, diff e OpenSpec estrito passaram. Progresso: **234/260 tarefas**. Próxima: 3.10b3c.
+
+
+## Rotinas — assistente e teste de gatilhos (3.10b3c)
+
+O wizard de configuração de agendas e webhooks, seus textos de ajuda, as
+instruções copiáveis para GitHub/apps genéricos, os estados de autenticação e
+idempotência e os avisos sobre URL agora acompanham PT-BR/en. Foram preservados
+URLs e links de documentação, cabeçalhos HTTP/HMAC/Bearer, payloads de exemplo,
+segredos e dados específicos dos emissores. O teste de conexão continua
+explicitamente sem iniciar a rotina nem criar tarefas.
+
+`TriggerWizard.test.tsx`, `editable-sections.test.tsx`,
+`RoutineTriggerEditorLocalization.test.tsx` e `locale-validation.test.ts`
+passaram em **30/30 testes focados em PT-BR/en**. O typecheck direcionado, `check:tokens`,
+`check:token-gates`, validação JSON dos catálogos e do manifesto, `git diff
+--check` e OpenSpec estrito passaram. Progresso: **235/260 tarefas**. Próxima:
+3.10b4, execuções, atividade e histórico de versões.
