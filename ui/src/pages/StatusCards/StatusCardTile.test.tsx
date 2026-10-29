@@ -223,4 +223,36 @@ describe("StatusCardTile lifecycle rendering", () => {
     expect(recompiled).toBe(1);
     expect(opened).toBe(0);
   });
+
+  it.each([
+    [{ state: "compiling", generatingIssueId: "issue-setup" }, "Preparando seu cartão"],
+    [{ state: "compiling", generatingIssueId: null }, "A configuração não foi concluída"],
+    [{ state: "active", generatingIssueId: "issue-9", pendingChangeCount: 3 }, "Integrando 3 alterações"],
+    [{ state: "active", pendingChangeCount: 2 }, "2 alterações desde a última atualização"],
+    [{ state: "error" }, "A última atualização falhou"],
+    [{ state: "paused_budget" }, "Limite diário de tokens atingido"],
+    [{ state: "paused_hours" }, "Fora do horário ativo"],
+  ] as Array<[Partial<StatusCardView>, string]>)("localizes card lifecycle states in PT-BR", async (overrides, expected) => {
+    await i18n.changeLanguage("pt-BR");
+    render(tile(baseCard({ ...overrides, title: "USER TITLE", summaryBody: "USER SUMMARY" })));
+    expect(container.textContent).toContain(expected);
+    expect(container.textContent).toContain("USER TITLE");
+    if (overrides.state !== "compiling") expect(container.textContent).toContain("USER SUMMARY");
+    expect(container.querySelector('[aria-label="Ações do cartão"]')).toBeTruthy();
+  });
+
+  it("keeps refresh behavior and data when switching languages", async () => {
+    await i18n.changeLanguage("pt-BR");
+    let refreshed = 0;
+    render(tile(baseCard({ pendingChangeCount: 2, title: "USER TITLE", summaryBody: "USER SUMMARY" }), { onRefresh: () => (refreshed += 1) }));
+    expect(container.textContent).toContain("2 alterações desde a última atualização");
+    expect(container.textContent).toContain("a cada 15 min se houver alterações");
+    const refresh = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Atualizar"));
+    flushSync(() => refresh!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(refreshed).toBe(1);
+    await i18n.changeLanguage("en");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(container.textContent).toContain("2 changes since last update");
+    expect(container.textContent).toContain("USER SUMMARY");
+  });
 });

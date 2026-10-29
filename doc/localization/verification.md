@@ -3154,3 +3154,18 @@ JSON, `git diff --check` e OpenSpec estrito passaram. O typecheck da UI aponta
 somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **264/288**; próxima:
 3.10f2b, cartões e políticas.
+
+
+## Status cards — estados e políticas dos cartões (3.10f2b)
+
+Os cartões localizam preparação, atualização, alterações pendentes, falha,
+pausas, ações e resumo da política em PT-BR/en. Resumos e instruções gerados,
+IDs, estados e callbacks permanecem intactos; a troca de idioma mantém o cartão
+e suas ações.
+
+`StatusCardTile.test.tsx`, `status-card-state.test.ts`, `format.test.ts`,
+`StatusCards/index.test.tsx` e `locale-validation.test.ts` passaram em **54/54
+testes**. Gates de tokens, JSON, `git diff --check` e OpenSpec estrito passaram.
+O typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso da CLI: **266/288**; próxima: 3.10f3, criação e configuração.
