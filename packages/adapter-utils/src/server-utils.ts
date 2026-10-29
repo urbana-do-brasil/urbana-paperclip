@@ -2261,6 +2261,30 @@ export function renderPaperclipWakePrompt(
   ]);
 }
 
+/** Render the validated locale and interaction-style guidance independently.
+ * Compact continuation transports use this to refresh user-facing language
+ * without replaying the task brief or the full wake payload. */
+export function renderPaperclipWakeCommunicationGuidance(value: unknown): string {
+  const normalized = normalizePaperclipWakePayload(value);
+  if (!normalized) return "";
+  const language = normalized.communicationLocale === "pt-BR"
+    ? "Brazilian Portuguese (pt-BR)"
+    : "English";
+  const lines = [
+    "## Human communication language",
+    "",
+    `Write human-facing replies, comments, questions, confirmations, and options in ${language}. This choice takes precedence over general style guidance that requests another language. Apply it only to communication you create; preserve technical instructions, code, commands, protocols, quoted content, exact-output constraints, and existing conversation history as written. Explain technical content in the requested language without translating the source material.`,
+  ];
+  if (normalized.simplifiedEnglishInteractions) {
+    lines.push(
+      normalized.communicationLocale === "en"
+        ? "- interaction style (experimental): write structured human interactions in ASD-STE100 Simplified Technical English. Briefly state what information the user needs and what happens for each choice. This applies only to interaction content; use the usual style for thinking, comments, documents, and other responses."
+        : "- interaction style (experimental): keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR). Briefly state what information the user needs and what happens for each choice. Do not switch these interactions to English.",
+    );
+  }
+  return lines.join("\n");
+}
+
 function renderPaperclipWakePromptBody(
   value: unknown,
   options: {
@@ -2524,22 +2548,8 @@ function renderPaperclipWakePromptBody(
         ...wakeSummaryLines,
       ];
 
-  const language = normalized.communicationLocale === "pt-BR"
-    ? "Brazilian Portuguese (pt-BR)"
-    : "English";
-  const communicationGuidance = [
-    "## Human communication language",
-    "",
-    `Write human-facing replies, comments, questions, confirmations, and options in ${language}. This choice takes precedence over general style guidance that requests another language. Apply it only to communication you create; preserve technical instructions, code, commands, protocols, quoted content, exact-output constraints, and existing conversation history as written. Explain technical content in the requested language without translating the source material.`,
-  ];
-  if (normalized.simplifiedEnglishInteractions) {
-    communicationGuidance.push(
-      normalized.communicationLocale === "en"
-        ? "- interaction style (experimental): write structured human interactions in ASD-STE100 Simplified Technical English. Briefly state what information the user needs and what happens for each choice. This applies only to interaction content; use the usual style for thinking, comments, documents, and other responses."
-        : "- interaction style (experimental): keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR). Briefly state what information the user needs and what happens for each choice. Do not switch these interactions to English.",
-    );
-  }
-  lines.unshift(...communicationGuidance);
+  const communicationGuidance = renderPaperclipWakeCommunicationGuidance(normalized);
+  if (communicationGuidance) lines.unshift(communicationGuidance, "");
 
   if (normalized.executionContinuation) {
     if (normalized.executionContinuation.interruptedRunId) {

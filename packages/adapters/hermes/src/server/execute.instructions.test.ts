@@ -75,6 +75,8 @@ console.log("Fixture completed\\nsession_id: ${SESSION_ID}");
           comments: [{ id: "comment-synthetic", body: "Fresh human direction." }],
           commentWindow: { requestedCount: 1, includedCount: 1, missingCount: 0 },
           fallbackFetchNeeded: false,
+          communicationLocale: "en",
+          simplifiedEnglishInteractions: true,
         },
       },
       onLog: async () => {},
@@ -107,6 +109,8 @@ console.log("Fixture completed\\nsession_id: ${SESSION_ID}");
       expect(query(invocation)).not.toContain(INSTRUCTIONS);
       expect(query(invocation)).not.toContain("Safe multiline update pattern:");
       expect(query(invocation)).toContain("Fresh human direction.");
+      expect(query(invocation)).toContain("Write human-facing replies, comments, questions, confirmations, and options in English.");
+      expect(query(invocation)).toContain("ASD-STE100 Simplified Technical English");
       expect(query(invocation)).toContain(invocation.runId);
       expect(query(invocation)).toContain("company-synthetic");
       expect(invocation.systemPrompt).toContain("$PAPERCLIP_API_KEY");

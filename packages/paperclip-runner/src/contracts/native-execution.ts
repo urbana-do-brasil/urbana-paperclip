@@ -873,6 +873,8 @@ function parseCompletionSources(value: unknown): NativeCompletionSources {
 export interface NativeContinuationEnvelope {
   schema: "paperclip.native-continuation.v1";
   events: string;
+  /** Current server-owned locale policy, refreshed without replaying task history. */
+  communicationGuidance?: string;
   completion: { revision: string; criterionIds: string[]; instruction: string };
 }
 
@@ -880,9 +882,24 @@ export function buildNativeModelEnvelope(input: NativeExecutionInput, options: {
 export function buildNativeModelEnvelope(input: NativeExecutionInput): NativeModelEnvelopeV1 | NativeModelEnvelopeV2 | NativeModelEnvelopeV3;
 export function buildNativeModelEnvelope(input: NativeExecutionInput, options?: { resumedSession: boolean }): NativeModelEnvelopeV1 | NativeModelEnvelopeV2 | NativeModelEnvelopeV3 | NativeContinuationEnvelope {
   if (options?.resumedSession && "continuationPrompt" in input && input.continuationPrompt) {
+    let events = input.continuationPrompt;
+    let communicationGuidance: string | null = null;
+    try {
+      const continuation = JSON.parse(input.continuationPrompt) as unknown;
+      if (continuation && typeof continuation === "object" && !Array.isArray(continuation)) {
+        const { communicationGuidance: currentGuidance, ...eventPayload } = continuation as Record<string, unknown>;
+        if (typeof currentGuidance === "string") {
+          communicationGuidance = currentGuidance;
+          events = JSON.stringify(eventPayload);
+        }
+      }
+    } catch {
+      // Historical continuation strings remain opaque event data.
+    }
     return {
       schema: "paperclip.native-continuation.v1",
-      events: input.continuationPrompt,
+      events,
+      ...(communicationGuidance ? { communicationGuidance } : {}),
       completion: {
         revision: input.completionContract.contract.revision,
         criterionIds: input.completionContract.contract.criteria.map((criterion) => criterion.id),

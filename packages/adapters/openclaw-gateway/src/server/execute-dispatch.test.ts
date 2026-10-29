@@ -128,6 +128,8 @@ describe("openclaw_gateway execute dispatch boundary", () => {
         issue: { id: "issue-1", workMode: "planning", status: "in_progress" },
         interactionKind: "request_confirmation",
         interactionStatus: "accepted",
+        communicationLocale: "pt-BR",
+        simplifiedEnglishInteractions: true,
       },
     };
     if (resumed) ctx.runtime.sessionId = "prior-session";
@@ -136,6 +138,9 @@ describe("openclaw_gateway execute dispatch boundary", () => {
     expect(websocketState.messages).toHaveLength(1);
     const prompt = websocketState.messages[0]!;
     expect(prompt).toContain(directive);
+    expect(prompt).toContain("Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR).");
+    expect(prompt).toContain("keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR)");
+    expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
     expect(prompt).toContain("X-Paperclip-Run-Id");
     expect(prompt).not.toContain("Execution contract:");
     expect(prompt).not.toContain("Create child issues");

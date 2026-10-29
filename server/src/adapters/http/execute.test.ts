@@ -82,6 +82,32 @@ describe("http adapter execute", () => {
     expect(guardedFetchMock).toHaveBeenCalledOnce();
   });
 
+  it("forwards wake locale as structured context without rendering a provider prompt", async () => {
+    const context = {
+      paperclipWake: {
+        reason: "issue_commented",
+        communicationLocale: "en",
+      },
+    };
+    guardedFetchMock.mockImplementation(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      expect(body.context).toEqual(context);
+      expect(body).not.toHaveProperty("prompt");
+      return new Response(null, { status: 204 });
+    });
+
+    await execute({
+      runId: "run-locale",
+      agent: { id: "agent-1", companyId: "company-1", name: "Agent", adapterType: "http", adapterConfig: {} },
+      runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
+      config: { url: "https://example.test/webhook" },
+      context,
+      onLog: async () => {},
+    });
+
+    expect(guardedFetchMock).toHaveBeenCalledOnce();
+  });
+
   it("reports configured request timeout as timed_out", async () => {
     guardedFetchMock.mockImplementation(
       (_url: string, init?: RequestInit) => new Promise((_resolve, reject) => {

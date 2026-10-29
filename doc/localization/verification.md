@@ -3289,3 +3289,22 @@ rotas atuais e legadas em ambos idiomas no modo streamlined; Layout, acesso clou
 e página foram substituídos por sentinelas, sem provar autenticação ou conteúdo.
 Redirect e gate também têm testes isolados. Dez arquivos: **185/185**; typecheck da UI passou. 3.10f concluída;
 progresso: **283/301**; próxima parte da UI: 3.10g.
+
+
+## Transporte de idioma e retomada nativa (6.2b)
+
+A continuação compacta do runner nativo envia a orientação de idioma atual em
+campo próprio, sem reproduzir histórico. Sem delta, o caminho usa o bootstrap
+completo. Testes determinísticos cobrem ACPX (nova/retomada/reset), Hermes
+local e gateway, OpenClaw, HTTP e runner/Codex simulado: **542/542** testes de
+servidor/adapters e **280/280** do runner; typechecks de adapter-utils e runner
+passaram. O teste anterior de wake vazio foi atualizado para confirmar o payload
+com locale padrão e sem tarefa inventada.
+
+Outros CLIs usam o prompt recomposto segundo inspeção de código, mas faltam
+capturas individuais; HTTP entrega o locale em JSON e depende do endpoint;
+`process` não transporta orientação explicitamente; `acpx_local` é aposentado.
+Mocks e fixtures não qualificam respostas reais. O typecheck do servidor segue
+sem confirmação após SIGKILL por memória; duas suítes de integração ampliadas
+foram integralmente ignoradas por indisponibilidade de PostgreSQL embutido.
+Progresso: **284/302**.

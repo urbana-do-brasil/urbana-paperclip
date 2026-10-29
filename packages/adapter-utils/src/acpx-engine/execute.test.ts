@@ -801,6 +801,8 @@ describe("shared ACPX engine runtime behavior", () => {
         issue: { id: "chat-1", workMode: "planning", status: "in_progress" },
         interactionKind: "request_confirmation",
         interactionStatus: "accepted",
+        communicationLocale: "en",
+        simplifiedEnglishInteractions: true,
         comments: [],
         commentWindow: { requestedCount: 0, includedCount: 0, missingCount: 0 },
         fallbackFetchNeeded: false,
@@ -818,13 +820,16 @@ describe("shared ACPX engine runtime behavior", () => {
       expect(String(run.meta[0]?.prompt).match(/Frozen Slack communication preference\./g)).toHaveLength(1);
     }
     expect(String(resumed.meta[0]?.prompt)).not.toContain("Frozen Slack communication preference.");
-    for (const { meta } of [fresh, resumed, reset]) {
+    for (const { meta, turnInputs } of [fresh, resumed, reset]) {
       const prompt = String(meta[0]?.prompt ?? "");
       expect(prompt).toContain(chatDirective);
+      expect(prompt).toContain("Write human-facing replies, comments, questions, confirmations, and options in English.");
+      expect(prompt).toContain("ASD-STE100 Simplified Technical English");
       expect(prompt).not.toContain("Execution contract:");
       expect(prompt).not.toContain("clear final disposition");
       expect(prompt).not.toContain("Create child issues");
       expect(prompt).not.toContain("Use child issues");
+      expect(String(turnInputs[0]?.text ?? "")).toContain("## Human communication language");
     }
     expect(String(fresh.meta[0]?.prompt)).toContain(custom ? "Custom agent instructions." : "You are agent agent-1");
     expect(String(reset.meta[0]?.prompt)).toContain(custom ? "Custom agent instructions." : "You are agent agent-1");

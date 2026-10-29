@@ -195,6 +195,8 @@ describe("execute", () => {
         issue: { id: "issue-1", workMode: "planning", status: "in_progress" },
         interactionKind: "request_confirmation",
         interactionStatus: "accepted",
+        communicationLocale: "en",
+        simplifiedEnglishInteractions: true,
       },
     };
     if (resumed) ctx.runtime.sessionId = "prior-session";
@@ -204,6 +206,8 @@ describe("execute", () => {
     const prompt = JSON.parse(String(call?.[1]?.body)).input as string;
     expect(prompt).toContain("Custom gateway instruction.");
     expect(prompt).toContain(directive);
+    expect(prompt).toContain("Write human-facing replies, comments, questions, confirmations, and options in English.");
+    expect(prompt).toContain("ASD-STE100 Simplified Technical English");
     expect(prompt).not.toContain("Execution contract:");
     expect(prompt).not.toContain("clear final disposition");
     expect(prompt).not.toContain("Create child issues");

@@ -131,6 +131,7 @@ describe("native execution input external-chat framing", () => {
       };
       const input = buildNativeExecutionInput(args);
       expect(input.initialCommunicationGuidance).toBe("Initial Slack communication preferences.");
+      expect(input.continuationPrompt).toBeUndefined();
       // The runtime adds this only after deciding whether provider recovery succeeded.
       expect(input.task.prompt).not.toContain("Initial Slack communication preferences.");
       expect(input.task.title).toBe("External chat follow-up");
@@ -145,6 +146,14 @@ describe("native execution input external-chat framing", () => {
       expect(input.task.prompt).not.toContain(
         "including marking the task done",
       );
+      if (resumedSession) {
+        // Specialized question-response wakes fall back to the full bootstrap
+        // envelope instead of a compact event delta; it still carries the
+        // current locale policy on a provider-session resume.
+        expect(buildNativeModelEnvelope(input, { resumedSession: true })).toMatchObject({
+          task: { prompt: expect.stringContaining("Write human-facing replies, comments, questions, confirmations, and options in English.") },
+        });
+      }
       expect(input.task.prompt.indexOf("Choose a color: Amber")).toBeLessThan(
         input.task.prompt.indexOf(
           "Ask for a color, then tell me the selected color.",
