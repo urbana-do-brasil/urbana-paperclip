@@ -971,6 +971,34 @@ describe("AppDetail", () => {
     expect(container.querySelector("section.bg-card")).toBeNull();
   });
 
+  it("localizes connection access and action permission controls in Brazilian Portuguese", async () => {
+    mockParams.tab = "permissions";
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    expect(container.textContent).toContain("Quais agentes podem usar esta conexão?");
+    expect(container.textContent).toContain("Somente os agentes que eu escolher");
+    expect(container.textContent).toContain("Qualquer agente");
+    expect(container.textContent).toContain("Ações");
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Buscar uma ação"]')).toBeTruthy();
+    expect(container.textContent).toContain("Leitura (1)");
+    expect(container.textContent).toContain("Alteração (1)");
+
+    const askFirst = container.querySelector<HTMLButtonElement>('button[aria-label="Read repo: Perguntar antes"]');
+    expect(askFirst).toBeTruthy();
+    await act(async () => {
+      askFirst!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await flushReact();
+
+    expect(finishAppMock).toHaveBeenCalledWith("company-1", "conn-1", {
+      enabledCatalogEntryIds: expect.arrayContaining(["catalog-read", "catalog-write"]),
+      askFirstCatalogEntryIds: expect.arrayContaining(["catalog-read", "catalog-write"]),
+      access: "all_agents",
+    });
+  });
+
   it("opens an action test modal with agent selection, inputs, and result-ready chrome", async () => {
     mockParams.tab = "permissions";
     listTestAgentsMock.mockResolvedValue({
@@ -1095,6 +1123,30 @@ describe("AppDetail", () => {
     expect(container.textContent).not.toContain("Additional agent access");
     expect(finishAppMock).not.toHaveBeenCalled();
     expect(putConnectionInstallsMock).not.toHaveBeenCalled();
+  });
+
+  it("localizes additional agent grants in Brazilian Portuguese", async () => {
+    listProfilesMock.mockResolvedValue({ profiles: [{
+      id: "task-grant", status: "active", profileKey: "connection-intent:conn-1:agent-1",
+      metadata: { source: "connection_intent", connectionId: "conn-1", agentId: "agent-1" },
+      bindings: [{ targetType: "agent", targetId: "agent-1" }],
+      entries: [{ effect: "include", catalogEntryId: "catalog-write" }],
+    }] });
+    listPoliciesMock.mockResolvedValue({ policies: [{
+      enabled: true, policyType: "require_approval",
+      selectors: { catalogEntryId: "catalog-write" },
+      config: { source: "connection_intent", connectionId: "conn-1", agentId: "agent-1" },
+    }] });
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    const section = Array.from(container.querySelectorAll("section"))
+      .find((candidate) => candidate.textContent?.includes("Acesso adicional de agentes"))!;
+    expect(section.textContent).toContain("Estes agentes podem usar as ações listadas");
+    expect(section.textContent).toContain("Perguntar antes");
+    expect(Array.from(section.querySelectorAll("button")).map((button) => button.textContent?.trim()))
+      .toContain("Remover concessão");
   });
 
   it("keeps the task grant visible when removal fails", async () => {

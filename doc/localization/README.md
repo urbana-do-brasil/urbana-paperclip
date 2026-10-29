@@ -61,9 +61,9 @@ sete lotes de detalhe/configuração e f3b foi dividida em b1–b2; 3.9f3a (shel
 navegação, cabeçalho e estados) e 3.9f3b1 (estado sem conexão e ciclo de vida)
 estão concluídas. O assistente genérico foi dividido em b2a–b2c; b2a (shell e
 seleção), b2b (MCP personalizado e Zapier) e b2c (credenciais, métodos, OAuth e
-conclusão) estão concluídas. Com isso, 3.9f3b está concluída.
-Próxima: 3.9f3c, permissões e acesso dos agentes. Progresso atual:
-**216/243 tarefas**.
+conclusão) estão concluídas. Com isso, 3.9f3b está concluída. 3.9f3c
+(permissões e acesso dos agentes) também está concluída. Próxima: 3.9f3d,
+identidades e contas associadas. Progresso atual: **217/243 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |

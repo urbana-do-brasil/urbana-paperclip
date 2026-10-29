@@ -2556,3 +2556,21 @@ typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 O progresso atual é **216/243 tarefas**. Próxima: 3.9f3c, permissões e acesso
 dos agentes.
+
+### Permissões e acesso dos agentes à conexão (3.9f3c)
+
+Os controles de acesso por agente, as opções de permissão por ação, os filtros,
+os rótulos acessíveis e as concessões adicionais agora acompanham PT-BR/en.
+Nomes de agentes e ferramentas, IDs, níveis de risco, regras e decisões de
+autorização foram preservados. Erros dinâmicos continuam sendo exibidos como
+retornados pelo servidor.
+
+`AppDetail.test.tsx`, `PermissionsPanel.group.test.tsx` e
+`locale-validation.test.ts` passaram em **95/95 testes**. Os casos exercitam os
+dois idiomas e confirmam que mudar uma permissão em PT-BR mantém os mesmos IDs e
+payload. `pnpm check:tokens`, `pnpm check:token-gates`, parse dos catálogos,
+`git diff --check` e `pnpm exec openspec validate --all --strict --no-interactive`
+passaram. O typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O progresso atual é **217/243 tarefas**. Próxima: 3.9f3d, identidades e contas
+associadas.
