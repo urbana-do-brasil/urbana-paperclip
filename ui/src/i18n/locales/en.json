@@ -23,6 +23,8 @@
       "newSecret": "New secret",
       "createFolder": "Create folder",
       "folderName": "Folder name",
+      "folderNameRequired": "Folder name is required.",
+      "folderNameNoSlashes": "Folder name cannot contain slashes.",
       "loadFailed": "Failed to load secrets",
       "empty": "No secrets yet. Create a shared organization secret or one that each user supplies.",
       "searchResults": "Search results",

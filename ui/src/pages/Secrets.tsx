@@ -969,7 +969,12 @@ export function Secrets() {
     const segment = newFolderName.trim();
     const error = validateSecretFolderSegment(segment);
     if (error) {
-      setNewFolderError(error);
+      const localizedError = error === "Folder name is required."
+        ? t("secrets.inventory.folderNameRequired")
+        : error === "Folder name cannot contain slashes."
+          ? t("secrets.inventory.folderNameNoSlashes")
+          : error;
+      setNewFolderError(localizedError);
       return;
     }
     goToFolder(folderPath ? `${folderPath}/${segment}` : segment);

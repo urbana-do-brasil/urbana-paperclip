@@ -1945,7 +1945,7 @@ próxima: 3.8e1a, inventário de segredos da organização.
 O shell e a listagem da aba de segredos agora localizam abas, busca, filtros,
 alternância pasta/lista, navegação e contagens de pastas, estados vazios/erro,
 colunas, status, metadados, ações de linha, indicação do provedor e datas em
-PT-BR/en. Nomes, chaves, caminhos e referências fornecidos por usuários ou
+PT-BR/en, inclusive validação da criação de pastas. Nomes, chaves, caminhos e referências fornecidos por usuários ou
 provedores permanecem intactos; enums, IDs, consultas, permissões e dados de
 segredo não foram alterados. As superfícies de detalhes, edição/rotação, cofres,
 valores pessoais e propostas continuam nos lotes posteriores.

@@ -404,6 +404,7 @@ describe("Secrets page layout", () => {
 
   it("localizes the organization secret inventory while preserving user supplied names and keys", async () => {
     await i18n.changeLanguage("pt-BR");
+    window.localStorage.setItem("paperclip.secrets.viewMode", "folders");
     mockSecretsApi.list.mockResolvedValue([
       makeCompanySecret({
         id: "secret-localized-inventory",
@@ -439,6 +440,18 @@ describe("Secrets page layout", () => {
     expect(container.textContent).toContain("Use segredos vinculando-os a variáveis de ambiente do runtime.");
     expect(container.querySelector('button[aria-label="Ações para API token - produção"]')).not.toBeNull();
     expect(container.querySelector('[aria-label*="Gerenciado pelo Paperclip"]')).not.toBeNull();
+
+    const newFolderButton = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Nova pasta",
+    ) as HTMLButtonElement;
+    await act(async () => newFolderButton.click());
+    await flushReact();
+    const createFolderButton = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Criar pasta",
+    ) as HTMLButtonElement;
+    await act(async () => createFolderButton.click());
+    await flushReact();
+    expect(container.textContent).toContain("Informe um nome para a pasta.");
 
     await act(async () => root.unmount());
     await i18n.changeLanguage("en");

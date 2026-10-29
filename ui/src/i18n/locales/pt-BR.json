@@ -23,6 +23,8 @@
       "newSecret": "Novo segredo",
       "createFolder": "Criar pasta",
       "folderName": "Nome da pasta",
+      "folderNameRequired": "Informe um nome para a pasta.",
+      "folderNameNoSlashes": "O nome da pasta não pode conter barras.",
       "loadFailed": "Falha ao carregar segredos",
       "empty": "Ainda não há segredos. Crie um segredo compartilhado da organização ou um valor fornecido por cada usuário.",
       "searchResults": "Resultados da busca",
