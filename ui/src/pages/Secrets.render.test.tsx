@@ -23,6 +23,10 @@ beforeEach(async () => {
   await i18n.changeLanguage("en");
 });
 
+afterEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
 const mockSecretsApi = vi.hoisted(() => ({
   list: vi.fn(),
   providers: vi.fn(),
@@ -638,7 +642,6 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
-    await i18n.changeLanguage("en");
   });
 
   it("refreshes existing AWS secrets from a provider vault card", async () => {
@@ -1823,6 +1826,7 @@ describe("Secrets page layout", () => {
   });
 
   it("discovers AWS provider vault candidates and applies selected values as prefill", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockSecretsApi.providerConfigDiscoveryPreview.mockResolvedValueOnce(makeDiscoveryPreview());
     const root = createRoot(container);
     const queryClient = new QueryClient({
@@ -1840,7 +1844,13 @@ describe("Secrets page layout", () => {
     });
     await flushReact();
     await flushReact();
-    await openAwsVaultDialog();
+    await openAwsVaultDialog({
+      providerTabLabel: "Cofres de provedores",
+      addVaultLabel: "Adicionar cofre",
+    });
+
+    expect(document.body.textContent).toContain("Descoberta na AWS");
+    expect(document.body.textContent).toContain("Buscar valores existentes na AWS");
 
     const discoveryButton = document.querySelector(
       '[data-testid="aws-vault-discovery-button"]',
@@ -1880,7 +1890,7 @@ describe("Secrets page layout", () => {
     expect(document.body.textContent).toContain("AWS production");
 
     const useValuesButton = [...document.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Use values"),
+      (button) => button.textContent?.includes("Usar valores"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       useValuesButton?.click();
@@ -1898,6 +1908,7 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("shows AWS discovery errors without replacing manual vault form values", async () => {

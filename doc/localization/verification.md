@@ -2111,5 +2111,22 @@ um teste existente de ações de definição de segredo pessoal após desativar 
 definição; os testes focados de cofre passaram. O typecheck completo da UI
 continua apontando apenas o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
-por `@/lib/agent-setup-fields`. O progresso é **182/206 tarefas**; próxima:
-3.8e3b, descoberta e importação de referências AWS.
+por `@/lib/agent-setup-fields`.
+
+### Descoberta e importação de referências AWS (3.8e3b)
+
+A descoberta de metadados AWS e o fluxo completo de importação agora localizam
+seleção de cofre, busca/paginação, estados, validação, revisão, confirmação,
+erros próprios e resultados em PT-BR/en. Nomes remotos, ARNs, valores, IDs,
+capacidades, mensagens de conflito/erro recebidas do servidor e payloads da API
+permanecem intactos. O teste em PT-BR verifica o payload enviado ao endpoint,
+incluindo `externalRef`, nome, chave e configuração do cofre.
+
+`ImportFromVaultDialog.test.tsx` (11/11), descoberta AWS focada em
+`Secrets.render.test.tsx` (1/1) e `locale-validation.test.ts` (12/12) passaram
+em **24/24 testes**. `check:tokens`, `check:token-gates`, parse dos catálogos,
+`git diff --check` e validação OpenSpec estrita passaram. O typecheck completo
+da UI continua apontando apenas o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
+por `@/lib/agent-setup-fields`. O progresso é **183/206 tarefas**; próxima:
+3.8e4, seletores e bindings de segredos em agentes, ambientes e variáveis.

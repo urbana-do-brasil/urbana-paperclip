@@ -12,6 +12,7 @@ import type {
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../api/client";
+import { i18n } from "../../i18n";
 
 const mockSecretsApi = vi.hoisted(() => ({
   remoteImportPreview: vi.fn(),
@@ -108,15 +109,17 @@ function makeWrapper() {
 describe("ImportFromVaultDialog", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage("en");
   });
 
   it("loads candidates and selects rows, persisting through pagination", async () => {
@@ -204,6 +207,109 @@ describe("ImportFromVaultDialog", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("localizes selection, review, and results in pt-BR while preserving import references", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const candidate = makeCandidate({
+      externalRef: "arn:aws:secretsmanager:us-east-1:1:secret:prod/openai-AbCdEf",
+      remoteName: "prod/openai",
+      name: "prod/openai",
+      key: "prod-openai",
+    });
+    mockSecretsApi.remoteImportPreview.mockResolvedValueOnce(makePreview([candidate]));
+    mockSecretsApi.remoteImport.mockResolvedValueOnce({
+      providerConfigId: awsVault.id,
+      provider: "aws_secrets_manager",
+      importedCount: 1,
+      skippedCount: 0,
+      errorCount: 0,
+      results: [
+        {
+          externalRef: candidate.externalRef,
+          name: candidate.name,
+          key: candidate.key,
+          status: "imported",
+          reason: null,
+          secretId: "secret-openai",
+          conflicts: [],
+        },
+      ],
+    } satisfies RemoteSecretImportResult);
+
+    const { queryClient } = makeWrapper();
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <ImportFromVaultDialog
+            open
+            onOpenChange={vi.fn()}
+            companyId="company-1"
+            providerConfigs={[awsVault]}
+            existingSecrets={[]}
+          />
+        </QueryClientProvider>,
+      );
+    });
+    await flush();
+    await flush();
+
+    expect(document.body.textContent).toContain("Importar do AWS Secrets Manager");
+    expect(document.body.textContent).toContain("Nome remoto");
+    expect(document.body.textContent).toContain(candidate.remoteName);
+    expect(
+      Array.from(document.querySelectorAll<HTMLElement>("[title]")).some(
+        (element) => element.title === candidate.externalRef,
+      ),
+    ).toBe(true);
+    expect(document.body.textContent).toContain("Pronto");
+
+    const row = document.querySelector(`[data-testid="vault-row-${candidate.externalRef}"]`) as HTMLElement | null;
+    await act(async () => row?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await flush();
+    expect(document.body.textContent).toContain("1 selecionado");
+
+    const continueButton = Array.from(document.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Continuar"),
+    );
+    await act(async () => continueButton?.click());
+    await flush();
+    expect(document.body.textContent).toContain("1 segredo pronto para importar");
+    expect(document.body.textContent).toContain("Nome no Paperclip");
+    expect(document.body.textContent).toContain("Descrição (opcional)");
+
+    const importButton = Array.from(document.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Importar 1",
+    );
+    await act(async () => importButton?.click());
+    await flush();
+    await flush();
+
+    expect(mockSecretsApi.remoteImport).toHaveBeenCalledWith("company-1", {
+      providerConfigId: awsVault.id,
+      secrets: [
+        {
+          externalRef: candidate.externalRef,
+          name: candidate.name,
+          key: candidate.key,
+          description: null,
+          providerVersionRef: null,
+          providerMetadata: null,
+        },
+      ],
+    });
+    expect(document.body.textContent).toContain("1 segredo importado com sucesso");
+    expect(document.body.textContent).toContain("1 criado");
+    expect(document.body.textContent).toContain("0 ignorados");
+    expect(document.body.textContent).toContain(candidate.remoteName);
+    expect(
+      Array.from(document.querySelectorAll<HTMLElement>("[title]")).some(
+        (element) => element.title === candidate.externalRef,
+      ),
+    ).toBe(true);
+
+    await act(async () => root.unmount());
   });
 
   it("disables checkboxes for already-imported (duplicate) rows and shows a conflict badge for conflicts", async () => {

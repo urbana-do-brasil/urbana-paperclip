@@ -3620,6 +3620,7 @@ function ImportFromVaultButton({
   onManageVaults,
   className,
 }: ImportFromVaultButtonProps) {
+  const { t } = useTranslation();
   const awsConfigs = providerConfigs.filter(
     (config) => config.provider === "aws_secrets_manager",
   );
@@ -3637,9 +3638,9 @@ function ImportFromVaultButton({
         size="sm"
         onClick={onManageVaults}
         className={cn("text-xs text-muted-foreground", className)}
-        title="Configure an AWS provider vault to enable remote import"
+        title={t("secrets.importVault.disabledTitle")}
       >
-        <Cloud className="h-3.5 w-3.5 mr-1" /> AWS vault disabled — manage
+        <Cloud className="h-3.5 w-3.5 mr-1" /> {t("secrets.importVault.disabledManage")}
       </Button>
     );
   }
@@ -3652,7 +3653,7 @@ function ImportFromVaultButton({
       className={className}
       data-testid="import-from-vault-button"
     >
-      <Cloud className="h-3.5 w-3.5 mr-1" /> Import from vault
+      <Cloud className="h-3.5 w-3.5 mr-1" /> {t("secrets.importVault.openButton")}
     </Button>
   );
 }
@@ -3975,6 +3976,7 @@ function AwsProviderVaultDiscoveryPanel({
   onDiscover: () => void;
   onApply: (candidate: SecretProviderConfigDiscoveryCandidate) => void;
 }) {
+  const { t } = useTranslation();
   const canDiscover = Boolean(form.region.trim());
   const warnings = preview?.warnings ?? [];
 
@@ -3982,9 +3984,9 @@ function AwsProviderVaultDiscoveryPanel({
     <div className="space-y-3 border-t border-border pt-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">AWS discovery</p>
+          <p className="text-sm font-medium">{t("secrets.providerVaultDiscovery.title")}</p>
           <p className="text-xs text-muted-foreground">
-            Uses the current draft routing fields to inspect AWS Secrets Manager metadata. Values are not read.
+            {t("secrets.providerVaultDiscovery.description")}
           </p>
         </div>
         <Button
@@ -4000,18 +4002,18 @@ function AwsProviderVaultDiscoveryPanel({
           ) : (
             <Search className="h-3.5 w-3.5 mr-1" />
           )}
-          Find existing AWS values
+          {t("secrets.providerVaultDiscovery.findValues")}
         </Button>
       </div>
 
       {!canDiscover ? (
-        <p className="text-xs text-muted-foreground">Enter an AWS region before discovery.</p>
+        <p className="text-xs text-muted-foreground">{t("secrets.providerVaultDiscovery.enterRegion")}</p>
       ) : null}
 
       {loading ? (
         <div className="flex items-center gap-2 rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Searching AWS Secrets Manager metadata
+          {t("secrets.providerVaultDiscovery.searching")}
         </div>
       ) : null}
 
@@ -4032,7 +4034,7 @@ function AwsProviderVaultDiscoveryPanel({
 
       {preview && preview.candidates.length === 0 && !loading ? (
         <div className="rounded-md border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
-          No AWS vault metadata candidates found. Manual entry is still available.
+          {t("secrets.providerVaultDiscovery.noCandidates")}
         </div>
       ) : null}
 
@@ -4041,8 +4043,8 @@ function AwsProviderVaultDiscoveryPanel({
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Database className="h-3.5 w-3.5" />
             <span>
-              {preview.candidates.length} candidate{preview.candidates.length === 1 ? "" : "s"} from{" "}
-              {preview.sampledSecretCount} sampled secret{preview.sampledSecretCount === 1 ? "" : "s"}
+              {t("secrets.providerVaultDiscovery.candidateSummary", { count: preview.candidates.length })}{" "}
+              {t("secrets.providerVaultDiscovery.sampleSummary", { count: preview.sampledSecretCount })}
             </span>
           </div>
           <div className="space-y-2" data-testid="aws-vault-discovery-candidates">
@@ -4088,7 +4090,7 @@ function AwsProviderVaultDiscoveryError({
   const { t } = useTranslation();
   const details = apiErrorDetails(error);
   const isAccessDenied = isAwsDiscoveryAccessDenied(error);
-  const region = (details?.region ?? form.region.trim()) || "unspecified";
+  const region = (details?.region ?? form.region.trim()) || t("secrets.providerVaultDiscovery.unspecified");
   const message = readableErrorMessage(error);
   const safeDetails = {
     message,
@@ -4115,36 +4117,36 @@ function AwsProviderVaultDiscoveryError({
         <div className="min-w-0 flex-1 space-y-2">
           <div>
             <p className="font-medium">
-              {isAccessDenied ? "AWS discovery needs ListSecrets permission" : "AWS discovery failed"}
+              {isAccessDenied ? t("secrets.providerVaultDiscovery.accessDeniedTitle") : t("secrets.providerVaultDiscovery.failedTitle")}
             </p>
             <p className="mt-1 leading-relaxed text-destructive/85">
               {isAccessDenied
                 ? details?.actionableMessage ??
-                  "Discovery needs secretsmanager:ListSecrets in the selected region for the Paperclip server runtime/provider credential path."
+                  t("secrets.providerVaultDiscovery.accessDeniedBody")
                 : message}
             </p>
           </div>
           {isAccessDenied ? (
             <p className="leading-relaxed text-destructive/85">
               {details?.safeAlternative ??
-                "If you already know the exact AWS Secrets Manager ARN, paste/link that ARN instead of using discovery. Exact-resource DescribeSecret and runtime read permissions are still required."}
+                t("secrets.providerVaultDiscovery.accessDeniedAlternative")}
             </p>
           ) : null}
           <dl className="grid gap-1 text-destructive/80 sm:grid-cols-2">
             <div>
-              <dt className="font-medium">Region</dt>
+              <dt className="font-medium">{t("secrets.providerVaultDiscovery.region")}</dt>
               <dd>{region}</dd>
             </div>
             <div>
-              <dt className="font-medium">Operation</dt>
+              <dt className="font-medium">{t("secrets.creation.operation")}</dt>
               <dd>{details?.operation ?? "secret_provider_config.discovery.preview"}</dd>
             </div>
             <div>
-              <dt className="font-medium">Provider</dt>
+              <dt className="font-medium">{t("secrets.creation.provider")}</dt>
               <dd>{details?.provider ?? "aws_secrets_manager"}</dd>
             </div>
             <div>
-              <dt className="font-medium">Vault context</dt>
+              <dt className="font-medium">{t("secrets.providerVaultDiscovery.vaultContext")}</dt>
               <dd>{details?.providerVaultContext ?? "draft_config"}</dd>
             </div>
           </dl>
@@ -4264,6 +4266,7 @@ function AwsProviderVaultDiscoveryCandidateRow({
   candidate: SecretProviderConfigDiscoveryCandidate;
   onApply: () => void;
 }) {
+  const { t } = useTranslation();
   const fieldSummary = [
     providerConfigValue(candidate.config, "region"),
     providerConfigValue(candidate.config, "namespace"),
@@ -4277,11 +4280,11 @@ function AwsProviderVaultDiscoveryCandidateRow({
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-medium leading-snug">{candidate.displayName}</p>
             <span className="text-xs text-muted-foreground">
-              {candidate.sampleCount} sample{candidate.sampleCount === 1 ? "" : "s"}
+              {t("secrets.providerVaultDiscovery.sampleSummary", { count: candidate.sampleCount })}
             </span>
           </div>
           <p className="mt-1 truncate text-xs text-muted-foreground">
-            {fieldSummary.length > 0 ? fieldSummary.join(" / ") : "No stable namespace or prefix detected"}
+            {fieldSummary.length > 0 ? fieldSummary.join(" / ") : t("secrets.providerVaultDiscovery.noStablePath")}
           </p>
           {candidate.samples[0] ? (
             <p className="mt-1 truncate font-mono text-(length:--text-micro) text-muted-foreground">
@@ -4290,7 +4293,7 @@ function AwsProviderVaultDiscoveryCandidateRow({
           ) : null}
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onApply}>
-          Use values
+          {t("secrets.providerVaultDiscovery.useValues")}
         </Button>
       </div>
       {candidate.warnings.length > 0 ? (
