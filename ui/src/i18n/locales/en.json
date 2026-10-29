@@ -2320,6 +2320,73 @@
       "title": "The system folded this run as a source-resolved false positive.",
       "ariaLabel": "Source-resolved watchdog fold",
       "label": "Source-resolved"
+    },
+    "detail": {
+      "cancel": "Cancel",
+      "cancelling": "Cancelling…",
+      "resume": "Resume",
+      "resuming": "Resuming…",
+      "retry": "Retry",
+      "retrying": "Retrying…",
+      "inspectRun": "Inspect run",
+      "starting": "Starting…",
+      "reRunWithProviderTrace": "Re-run with provider trace",
+      "onBehalfOf": "On behalf of",
+      "identityHistory": "GitHub identity history",
+      "noResponsibleUser": "No responsible person",
+      "noGithubOperation": "No GitHub operation recorded",
+      "failedResume": "Failed to resume run",
+      "failedRetry": "Failed to retry run",
+      "duration": "Duration: {{value}}",
+      "durationMinutesSeconds": "{{minutes}}m {{seconds}}s",
+      "durationSeconds": "{{seconds}}s",
+      "runningClaudeLogin": "Running claude login...",
+      "loginToClaudeCode": "Login to Claude Code",
+      "failedClaudeLogin": "Failed to run Claude login",
+      "loginUrl": "Login URL:",
+      "input": "Input",
+      "output": "Output",
+      "cached": "Cached",
+      "cost": "Cost",
+      "session": "Session",
+      "sessionChanged": "(changed)",
+      "before": "Before",
+      "id": "ID",
+      "after": "After",
+      "clearSessionConfirm_one": "Clear session for {{count}} issue touched by this run?",
+      "clearSessionConfirm_other": "Clear session for {{count}} issues touched by this run?",
+      "clearingSession": "clearing session...",
+      "clearSessionForTasks": "clear session for these tasks",
+      "failedClearSessions": "Failed to clear sessions",
+      "tasksTouched": "Tasks touched ({{count}})",
+      "workspaceRecovery": "Workspace recovery",
+      "exitCode": "Exit code {{code}}"
+    },
+    "trace": {
+      "expired": "Trace expired",
+      "capturing": "Raw tracing enabled",
+      "complete": "Trace captured",
+      "incomplete": "Trace incomplete",
+      "truncated": "Trace truncated",
+      "deleted": "Trace deleted",
+      "requested": "Trace requested",
+      "off": "Trace off",
+      "detailsTitle": "{{frames}} frames · {{bytes}} bytes · expires {{date}}",
+      "requestedTitle": "This run requested sensitive provider-frame capture.",
+      "disabledTitle": "Raw provider-frame capture was disabled for this run."
+    },
+    "responsibleUserDenial": {
+      "unknownResponsibleUser": "the responsible user",
+      "unauthorized": {
+        "title": "Responsible user not authorized",
+        "description": "This action was denied because {{user}} does not have permission to perform it. The agent may be allowed, but a run can never exceed the permissions of the user it acts for, so the action is blocked.",
+        "recommendedAction": "Grant {{user}} the required permission, or have someone who is authorized take this action instead."
+      },
+      "unavailable": {
+        "title": "Responsible user unavailable",
+        "description": "This run acts on behalf of {{user}}, but that account was removed or deactivated, so its permissions can no longer be evaluated. The agent's own permissions are not enough on their own — every action still requires an active responsible user.",
+        "recommendedAction": "Mark the work blocked and reassign a responsible user (or reactivate the account) before the agent continues."
+      }
     }
   },
   "mcpConnect": {

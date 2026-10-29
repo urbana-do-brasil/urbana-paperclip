@@ -1528,4 +1528,22 @@ também recebe rótulo acessível no idioma da interface.
 `AgentDetail.run-history.test.tsx` passou (**4/4**), cobrindo as duas variantes,
 o resumo/ID/rota preservados e o estado vazio; `locale-validation.test.ts`
 passou (**12/12**). Typecheck direcionado, gates de tokens, `git diff --check` e
-validação OpenSpec estrita passaram. Próxima tarefa: 3.6e2, detalhes da execução.
+validação OpenSpec estrita passaram.
+
+### Continuação — detalhes da execução (3.6e2)
+
+Os painéis de execução nas variantes streamlined e production agora localizam
+ações, horários e duração, métricas, sessão, pessoa responsável, histórico de
+identidade, estados do rastreamento do provedor, recuperação do workspace e
+estados próprios de erro. IDs, enums/status estruturados, dados fornecidos pela
+API, mensagens técnicas, saídas `stdout`/`stderr`, valores USD, permissões,
+callbacks e rotas foram preservados. As datas usam o locale selecionado; o
+rótulo padrão do badge de origem resolvida também passou a respeitar o locale.
+
+Os testes focados de `AgentDetail.run-history.test.tsx`,
+`ResponsibleUserDenialNotice.test.tsx`, `ProviderTraceStatusBadge.test.tsx`,
+`SourceResolvedFoldBadge.test.tsx` e `locale-validation.test.ts` passaram
+(**26/26**). Typecheck direcionado dos
+módulos alterados, gates de tokens, `git diff --check` e validação OpenSpec
+estrita passaram. Progresso: **135/160**. Próxima tarefa: 3.6f, transcrições e
+estados próprios de ferramentas.
