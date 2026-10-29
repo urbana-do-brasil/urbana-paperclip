@@ -1,5 +1,6 @@
 import { CircleDot, ExternalLink, FolderGit2, GitBranch } from "lucide-react";
 import { Link } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import type { WorkReference } from "../lib/pipeline-references";
 
 /**
@@ -7,8 +8,9 @@ import type { WorkReference } from "../lib/pipeline-references";
  * linked tasks — as real links/chips on the case detail panel.
  */
 export function PipelineWorkReferences({ references }: { references: WorkReference[] }) {
+  const { t } = useTranslation();
   if (references.length === 0) {
-    return <p className="py-3 text-sm text-muted-foreground">No linked work yet.</p>;
+    return <p className="py-3 text-sm text-muted-foreground">{t("pipelineManagement.detail.workReferences.empty")}</p>;
   }
   return (
     <ul className="min-w-0 space-y-2">
@@ -22,12 +24,14 @@ export function PipelineWorkReferences({ references }: { references: WorkReferen
 }
 
 function WorkReferenceRow({ reference }: { reference: WorkReference }) {
+  const { t } = useTranslation();
   if (reference.kind === "url") {
     return (
       <a
         href={reference.url}
         target="_blank"
         rel="noreferrer"
+        aria-label={t("pipelineManagement.detail.workReferences.openExternalReference", { label: reference.label })}
         className="group flex items-start gap-2 text-sm text-foreground"
       >
         <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -54,7 +58,11 @@ function WorkReferenceRow({ reference }: { reference: WorkReference }) {
       </>
     );
     return reference.issueId ? (
-      <Link to={`/issues/${reference.issueId}`} className="group flex items-start gap-2 text-sm text-foreground">
+      <Link
+        to={`/issues/${reference.issueId}`}
+        aria-label={t("pipelineManagement.detail.workReferences.openTask", { label: reference.label })}
+        className="group flex items-start gap-2 text-sm text-foreground"
+      >
         {inner}
       </Link>
     ) : (
@@ -67,7 +75,7 @@ function WorkReferenceRow({ reference }: { reference: WorkReference }) {
     <div className="flex items-start gap-2 text-sm text-foreground">
       <FolderGit2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
       <span className="min-w-0 [overflow-wrap:anywhere]">
-        <span className="block text-xs text-muted-foreground">Folder</span>
+        <span className="block text-xs text-muted-foreground">{t("pipelineManagement.detail.workReferences.folder")}</span>
         <span className="font-normal">{reference.label}</span>
         {reference.path ? (
           <span className="block font-mono text-xs text-muted-foreground [overflow-wrap:anywhere]">{reference.path}</span>

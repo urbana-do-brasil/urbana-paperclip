@@ -604,7 +604,7 @@
     },
     {
       "id": "experimental",
-      "tasks": "3.10a–g (3.10b1–b5; b3a–b3c; b4a–b4c; b4c1–b4c2; c1–c3)",
+      "tasks": "3.10a–g (3.10b1–b5; b3a–b3c; b4a–b4c; b4c1–b4c2; c1–c3; d1–d2)",
       "label": "Rotinas, pipelines, casos e status cards",
       "sources": [
         "ui/src/pages/Routines.tsx",
@@ -634,6 +634,10 @@
         "ui/src/components/PipelineHealthWarnings.tsx",
         "ui/src/components/PipelineStageHistoryPanel.tsx",
         "ui/src/components/PipelineItemBodyDocument.tsx",
+        "ui/src/components/PipelineWorkReferences.tsx",
+        "ui/src/components/StageSecretsPanel.tsx",
+        "ui/src/lib/pipeline-item-detail.ts",
+        "packages/shared/src/pipeline-health.ts",
         "ui/src/components/Sidebar.tsx",
         "ui/src/components/Sidebar.production.tsx",
         "ui/src/pages/InstanceExperimentalSettings.tsx",
@@ -686,9 +690,18 @@
         "ui/src/components/RoutineHistoryTab.test.tsx",
         "ui/src/pages/audit/RoutineAuditActivity.test.tsx",
         "ui/src/pages/audit/AuditHub.test.tsx",
-        "ui/src/pages/audit/audit-navigation.test.ts"
+        "ui/src/pages/audit/audit-navigation.test.ts",
+        "ui/src/pages/Pipelines.test.ts",
+        "ui/src/pages/Pipelines.i18n.test.tsx",
+        "ui/src/pages/PipelineSettings.test.ts",
+        "ui/src/components/PipelinesExperimentalGate.test.tsx",
+        "ui/src/components/PipelineItemBodyDocument.test.tsx",
+        "ui/src/components/PipelineLivenessBanner.test.tsx",
+        "ui/src/components/PipelineWorkReferences.test.tsx",
+        "ui/src/components/PipelineManagementHealthLocalization.test.tsx",
+        "packages/shared/src/pipeline-health.test.ts"
       ],
-      "limits": "3.10a, 3.10b1–b5 e 3.10b3a–b3c foram verificadas nas superfícies alcançáveis; o feed de auditoria escopado de rotinas existe no AuditHub streamlined. A página production mantém o feed geral e não oferece visão escopada de rotina; 3.10g registrará essa diferença de alcance. 3.10c1–c3 e 3.10d–g permanecem pendentes: pipelines, casos, status cards e revisão integrada de flags."
+      "limits": "3.10a, 3.10b1–b5 e 3.10c1–c3 foram verificadas nas superfícies alcançáveis. Pipelines cobre catálogo/lista, board, intake, detalhe, configurações, estágios, avisos de saúde e segredos; o gate `enablePipelines` cobre carregamento, desativado e ativado. A bateria focada passou em 51/51; typecheck de shared passou. O typecheck da UI aponta somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx` (`SETUP_LOGIN_HINTS` ausente); o typecheck do servidor foi encerrado por memória (SIGKILL/137), inclusive quando executado diretamente. O feed de auditoria escopado de rotinas existe no AuditHub streamlined; a página production mantém o feed geral e não oferece visão escopada. Próximas: 3.10d1–d2 (fila/learnings), 3.10e (casos), 3.10f (status cards) e 3.10g (revisão integrada dos flags)."
     },
     {
       "id": "plugins",

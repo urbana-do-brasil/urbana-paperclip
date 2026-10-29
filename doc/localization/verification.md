@@ -2916,3 +2916,28 @@ alcance por flag continua listada para 3.10g.
 e `locale-validation.test.ts` passaram em **27/27 testes**. O typecheck
 direcionado, JSON, `git diff --check` e OpenSpec estrito passaram. Progresso:
 **243/265 tarefas**. Próxima: 3.10c, pipelines.
+
+
+## Pipelines — catálogo, quadro, detalhe e configurações (3.10c)
+
+Catálogo/lista, criação de pipelines, board, inclusão em lote de itens,
+confirmações de movimentação, detalhe, atividade, outputs, referências, edição
+do corpo e configurações de etapas agora acompanham PT-BR/en. Os avisos de saúde
+e segredos das etapas também foram localizados. O gate `enablePipelines` mantém
+os estados de carregamento, desativado e ativado verificados. Nomes e conteúdo
+fornecidos pelo usuário, IDs, valores técnicos, payloads e mensagens `message`
+da API foram preservados; avisos novos incluem chave semântica e parâmetros
+para a tradução da interface.
+
+`Pipelines.test.ts`, `Pipelines.i18n.test.tsx`, `PipelineSettings.test.ts`,
+`PipelinesExperimentalGate.test.tsx`, testes dos componentes de detalhe,
+`PipelineManagementHealthLocalization.test.tsx`, `pipeline-health.test.ts` e
+`locale-validation.test.ts` passaram em **51/51 testes focados**. `shared`
+typecheck, `check:tokens`, `check:token-gates`, JSON, `git diff --check` e
+OpenSpec estrito passaram. O typecheck da UI aponta apenas o erro preexistente
+em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é
+exportado. O typecheck completo do servidor e uma execução direta de `tsc`
+foram encerrados por limite de memória (SIGKILL/código 137).
+
+Progresso: **247/269 tarefas**. 3.10d foi decomposta em d1 (fila de revisão) e
+d2 (learnings). Próxima: 3.10d1.

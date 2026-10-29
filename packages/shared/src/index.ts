@@ -134,6 +134,8 @@ export {
   type PipelineHealthStageRef,
   type PipelineHealthWarning,
   type PipelineHealthWarningCode,
+  type PipelineHealthWarningTranslationKey,
+  type PipelineHealthWarningTranslationParams,
 } from "./pipeline-health.js";
 export {
   caseTypeMatchesPipeline,

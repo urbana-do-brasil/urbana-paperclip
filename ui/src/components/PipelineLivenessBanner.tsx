@@ -2,11 +2,11 @@ import { AlertTriangle, ExternalLink, Loader2, Lock, RefreshCw } from "lucide-re
 import type { PipelineCaseLiveness } from "@paperclipai/shared";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import { cn } from "../lib/utils";
 import { createIssueDetailPath } from "../lib/issueDetailBreadcrumb";
 import {
   derivePipelineLivenessBanner,
-  type LivenessBannerLink,
   type LivenessBannerTone,
   type LivenessRetryKind,
 } from "../lib/pipeline-liveness";
@@ -63,16 +63,6 @@ const TONE_PALETTES: Record<LivenessBannerTone, TonePalette> = {
   },
 };
 
-function blockerLinkLabel(link: LivenessBannerLink): string {
-  if (link.identifier) return `Open ${link.identifier}`;
-  return "Open blocker";
-}
-
-function automationLinkLabel(link: LivenessBannerLink): string {
-  if (link.identifier) return `Open ${link.identifier}`;
-  return "Open automation task";
-}
-
 export function PipelineLivenessBanner({
   liveness,
   onRetry,
@@ -84,8 +74,55 @@ export function PipelineLivenessBanner({
   retryPending?: boolean;
   retryError?: string | null;
 }) {
+  const { t } = useTranslation();
   const view = derivePipelineLivenessBanner(liveness);
   if (!view) return null;
+
+  const title = (() => {
+    switch (view.reason) {
+      case "case_blocked":
+      case "linked_issue_blocked":
+        return t("pipelineManagement.detail.liveness.titles.blocked");
+      case "permission_preflight_failed":
+        return t("pipelineManagement.detail.liveness.titles.permissionNeeded");
+      case "automation_failed":
+        return t(view.tone === "retry"
+          ? "pipelineManagement.detail.liveness.titles.retryReady"
+          : "pipelineManagement.detail.liveness.titles.automationFailed");
+      case "breakdown_pending":
+        return t("pipelineManagement.detail.liveness.titles.breakdownPending");
+      case "breakdown_incomplete":
+        return t("pipelineManagement.detail.liveness.titles.breakdownIncomplete");
+      case "no_action_path":
+        return t("pipelineManagement.detail.liveness.titles.stuck");
+      default:
+        return view.title;
+    }
+  })();
+  const body = (() => {
+    if (view.reason === "no_action_path") {
+      return t("pipelineManagement.detail.liveness.bodies.noActionPath");
+    }
+    if (view.reason === "breakdown_incomplete") {
+      const missingCount = liveness?.breakdown?.missingRequestKeys?.length ?? 0;
+      if (missingCount > 0) {
+        const suffixKey = missingCount === 1
+          ? "pipelineManagement.detail.liveness.bodies.breakdownMissingSingular"
+          : "pipelineManagement.detail.liveness.bodies.breakdownMissingPlural";
+        return `${liveness?.message ?? view.body} ${t(suffixKey, { count: missingCount })}`;
+      }
+    }
+    // Server messages and other source content remain verbatim.
+    return view.body;
+  })();
+  const helperNote = view.helperNote
+    ? t(view.reason === "permission_preflight_failed"
+      ? "pipelineManagement.detail.liveness.helper.permission"
+      : "pipelineManagement.detail.liveness.helper.autoRetry")
+    : null;
+  const retryLabel = view.reason === "automation_failed"
+    ? t("pipelineManagement.detail.liveness.retry.retryNow")
+    : t("pipelineManagement.detail.liveness.retry.rerunStageAutomation");
 
   const palette = TONE_PALETTES[view.tone];
   const { Icon } = palette;
@@ -94,7 +131,7 @@ export function PipelineLivenessBanner({
   return (
     <section
       role="status"
-      aria-label={view.title}
+      aria-label={title}
       className={cn(
         "mb-5 flex flex-col gap-3 border-y py-4 md:flex-row md:items-start md:justify-between",
         palette.section,
@@ -110,16 +147,16 @@ export function PipelineLivenessBanner({
                 aria-hidden="true"
               />
             ) : null}
-            {view.title}
+            {title}
           </h2>
-          <p className="text-sm opacity-85">{view.body}</p>
+          <p className="text-sm opacity-85">{body}</p>
           {view.permissionKey ? (
             <p className="text-sm opacity-85">
-              Required permission:{" "}
+              {t("pipelineManagement.detail.liveness.permission.required")}{" "}
               <code className="rounded-sm bg-black/10 px-1 py-0.5 text-xs font-medium dark:bg-white/10">
                 {view.permissionKey}
               </code>{" "}
-              on the target pipeline.
+              {t("pipelineManagement.detail.liveness.permission.targetPipeline")}
             </p>
           ) : null}
           {view.blockerLink || view.automationLink ? (
@@ -130,7 +167,9 @@ export function PipelineLivenessBanner({
                   className={cn("inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline", palette.link)}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
-                  {blockerLinkLabel(view.blockerLink)}
+                  {view.blockerLink.identifier
+                    ? t("pipelineManagement.detail.liveness.openLink.identifier", { identifier: view.blockerLink.identifier })
+                    : t("pipelineManagement.detail.liveness.openLink.blocker")}
                   {view.blockerLink.title ? `: ${view.blockerLink.title}` : ""}
                 </Link>
               ) : null}
@@ -140,13 +179,15 @@ export function PipelineLivenessBanner({
                   className={cn("inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline", palette.link)}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
-                  {automationLinkLabel(view.automationLink)}
+                  {view.automationLink.identifier
+                    ? t("pipelineManagement.detail.liveness.openLink.identifier", { identifier: view.automationLink.identifier })
+                    : t("pipelineManagement.detail.liveness.openLink.automationTask")}
                 </Link>
               ) : null}
             </p>
           ) : null}
-          {view.helperNote ? (
-            <p className="text-xs italic opacity-70">{view.helperNote}</p>
+          {helperNote ? (
+            <p className="text-xs italic opacity-70">{helperNote}</p>
           ) : null}
           {retryError ? (
             <p role="alert" className="text-sm font-medium text-destructive">
@@ -169,7 +210,7 @@ export function PipelineLivenessBanner({
           ) : (
             <RefreshCw className="mr-2 h-4 w-4" />
           )}
-          {retryPending ? "Retrying…" : view.retryLabel}
+          {retryPending ? t("pipelineManagement.detail.liveness.retry.retrying") : retryLabel}
         </Button>
       ) : null}
     </section>
