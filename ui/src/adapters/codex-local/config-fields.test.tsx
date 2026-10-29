@@ -4,13 +4,16 @@ import { act } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 import { CodexLocalConfigFields } from "./config-fields";
 
 beforeAll(() => { Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); });
+afterEach(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 
 async function renderMarkup(node: ReactNode, expand?: string, inspect?: (container: HTMLElement) => void): Promise<string> {
   const container = document.createElement("div");
@@ -49,6 +52,70 @@ async function renderRunner(config: Record<string, unknown>, expand?: string, in
     expand, inspect,
   );
 }
+
+async function renderCodexLocal(config: Record<string, unknown>): Promise<string> {
+  return renderMarkup(
+    <TooltipProvider>
+      <CodexLocalConfigFields
+        mode="edit"
+        isCreate={false}
+        adapterType="codex_local"
+        values={null}
+        set={null}
+        config={config}
+        eff={(_group, _field, original) => original}
+        mark={() => undefined}
+        models={[]}
+      />
+    </TooltipProvider>,
+  );
+}
+
+describe("Codex local configuration localization", () => {
+  it("localizes labels and help while preserving runtime modes, paths, and model IDs", async () => {
+    const config = {
+      engine: "acp",
+      model: "gpt-5.6-sol",
+      instructionsFilePath: "/srv/agents/codex/AGENTS.md",
+      dangerouslyBypassApprovalsAndSandbox: true,
+      search: true,
+      fastMode: true,
+      mode: "persistent",
+      nonInteractivePermissions: "deny",
+      stateDir: "/var/tmp/codex-acp",
+      warmHandleIdleMs: 0,
+    };
+
+    await i18n.changeLanguage("pt-BR");
+    const portuguese = await renderCodexLocal(config);
+    expect(portuguese).toContain("Mecanismo de execução");
+    expect(portuguese).toContain("Padrão (ACP)");
+    expect(portuguese).toContain("Modo de sessão ACP");
+    expect(portuguese).toContain("Execução única");
+    expect(portuguese).toContain("Arquivo de instruções do agente");
+    expect(portuguese).toContain("Ignorar sandbox");
+    expect(portuguese).toContain("Ativar busca");
+    expect(portuguese).toContain("Modo rápido");
+    expect(portuguese).toContain("/srv/agents/codex/AGENTS.md");
+    expect(portuguese).toContain("/var/tmp/codex-acp");
+    expect(portuguese).toContain('value="persistent">Persistente</option>');
+    expect(portuguese).toContain('value="deny">Negar</option>');
+    const manualModel = await renderCodexLocal({ ...config, model: "custom-codex-model" });
+    expect(manualModel).toContain("O modo rápido será enviado para este modelo informado manualmente.");
+
+    await i18n.changeLanguage("en");
+    const english = await renderCodexLocal(config);
+    expect(english).toContain("Execution engine");
+    expect(english).toContain("Agent instructions file");
+    expect(english).toContain("Bypass sandbox");
+    expect(english).toContain("Fast mode");
+    expect(english).toContain('value="persistent">Persistent</option>');
+    expect(english).toContain('value="deny">Deny</option>');
+    expect(english).toContain("/srv/agents/codex/AGENTS.md");
+    const englishManualModel = await renderCodexLocal({ ...config, model: "custom-codex-model" });
+    expect(englishManualModel).toContain("Fast mode will be passed through for this manual model.");
+  });
+});
 
 describe("Paperclip Runner Codex configuration", () => {
   it("keeps Dot out of the general harness picker and hides that picker for Dot", async () => {

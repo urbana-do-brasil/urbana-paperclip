@@ -1,5 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { AdapterMark } from "../../components/AdapterMark";
+import { useTranslation } from "@/i18n";
 import { DotRunnerConnection } from "../../components/DotRunnerConnection";
 import { configFieldsForSection } from "../config-sections";
 import type { AdapterConfigFieldsProps } from "../types";
@@ -8,7 +9,6 @@ import {
   ToggleField,
   DraftInput,
   DraftNumberInput,
-  help,
 } from "../../components/agent-config-primitives";
 import { ChoosePathButton } from "../../components/PathInstructionsModal";
 import { LocalWorkspaceRuntimeFields } from "../local-workspace-runtime-fields";
@@ -32,8 +32,6 @@ import {
 
 const inputClass =
   "w-full rounded-md border border-border px-2.5 py-1.5 bg-transparent outline-none text-sm font-mono placeholder:text-muted-foreground/40";
-const instructionsFileHint =
-  "Absolute path to a markdown file (e.g. AGENTS.md) that defines this agent's behavior. Injected into the system prompt at runtime. Note: Codex may still auto-apply repo-scoped AGENTS.md files from the workspace.";
 const defaultOpenCodeRunnerModel = "openrouter/deepseek/deepseek-v4-flash-0731";
 const defaultAcpxClaudeModel = "claude-sonnet-5";
 const defaultClaudeManagedModel = "claude-sonnet-5";
@@ -63,6 +61,7 @@ export function CodexLocalConfigFields({
   hideInstructionsFile,
   managedSandboxOnly,
 }: AdapterConfigFieldsProps) {
+  const { t } = useTranslation();
   const runnerManaged = adapterType === "paperclip_runner";
   // The execution engine picks which binary runs on the execution host, and the
   // ACP sub-fields below name host paths. The platform-managed environment owns
@@ -164,17 +163,17 @@ export function CodexLocalConfigFields({
   const supportedModelsLabel =
     CODEX_LOCAL_FAST_MODE_SUPPORTED_MODELS.join(", ");
   const fastModeMessage = fastModeManualModel
-    ? "Fast mode will be passed through for this manual model. If Codex rejects it, turn the toggle off."
+    ? t("agentConfiguration.codex.fastModeManual")
     : fastModeSupported
-      ? "Fast mode consumes credits/tokens much faster than standard Codex runs."
-      : `Fast mode currently only works on ${supportedModelsLabel} or manual model IDs. Paperclip will ignore this toggle until the model is switched.`;
+      ? t("agentConfiguration.codex.fastModeSupported")
+      : t("agentConfiguration.codex.fastModeUnsupported", { models: supportedModelsLabel });
 
   return configFieldsForSection(section, (
     <>
       {!hideEngineChoice && (
         <Field
-          label="Execution engine"
-          hint="Default uses ACP. If ACP is unavailable, the run fails with a setup error. Choose CLI explicitly to use it."
+          label={t("agentConfiguration.codex.executionEngine")}
+          hint={t("agentConfiguration.codex.executionEngineHint")}
         >
           <select
             className={inputClass}
@@ -195,8 +194,8 @@ export function CodexLocalConfigFields({
                   );
             }}
           >
-            <option value="auto">Default (ACP)</option>
-            <option value="cli">Codex CLI</option>
+            <option value="auto">{t("agentConfiguration.codex.executionEngineDefault")}</option>
+            <option value="cli">{t("agentConfiguration.codex.executionEngineCli")}</option>
             <option value="acp">ACP</option>
           </select>
         </Field>
@@ -579,8 +578,8 @@ export function CodexLocalConfigFields({
         <>
           {!managedSandboxOnly && (
             <Field configSection="advanced"
-              label="ACP server command"
-              hint="Optional override for the Codex ACP server command. Defaults to the package-local codex-acp binary."
+              label={t("agentConfiguration.codex.acpServerCommand")}
+              hint={t("agentConfiguration.codex.acpServerCommandHint")}
             >
               <DraftInput
                 value={
@@ -604,8 +603,8 @@ export function CodexLocalConfigFields({
             </Field>
           )}
           <Field configSection="runPolicy"
-            label="ACP session mode"
-            hint="Persistent keeps ACP session state between runs. One-shot starts fresh each run."
+            label={t("agentConfiguration.codex.acpSessionMode")}
+            hint={t("agentConfiguration.codex.acpSessionModeHint")}
           >
             <select
               className={inputClass}
@@ -626,13 +625,13 @@ export function CodexLocalConfigFields({
                   : mark("adapterConfig", "mode", value);
               }}
             >
-              <option value="persistent">Persistent</option>
-              <option value="oneshot">One-shot</option>
+              <option value="persistent">{t("agentConfiguration.codex.persistent")}</option>
+              <option value="oneshot">{t("agentConfiguration.codex.oneShot")}</option>
             </select>
           </Field>
           <Field
-            label="ACP non-interactive permissions"
-            hint="Fallback if the ACP agent asks for input outside an interactive session."
+            label={t("agentConfiguration.codex.acpNonInteractivePermissions")}
+            hint={t("agentConfiguration.codex.acpNonInteractivePermissionsHint")}
           >
             <select
               className={inputClass}
@@ -652,14 +651,14 @@ export function CodexLocalConfigFields({
                   : mark("adapterConfig", "nonInteractivePermissions", value);
               }}
             >
-              <option value="deny">Deny</option>
-              <option value="fail">Fail</option>
+              <option value="deny">{t("agentConfiguration.codex.deny")}</option>
+              <option value="fail">{t("agentConfiguration.codex.fail")}</option>
             </select>
           </Field>
           {!managedSandboxOnly && (
             <Field
-              label="ACP state directory"
-              hint="Optional ACP session state directory. Defaults to Paperclip-managed organization/agent scoped storage."
+              label={t("agentConfiguration.codex.acpStateDirectory")}
+              hint={t("agentConfiguration.codex.acpStateDirectoryHint")}
             >
               <div className="flex items-center gap-2">
                 <DraftInput
@@ -686,8 +685,8 @@ export function CodexLocalConfigFields({
             </Field>
           )}
           <Field configSection="runPolicy"
-            label="ACP warm process idle ms"
-            hint="Defaults to 0, which closes the ACP process after each run while retaining persistent session state."
+            label={t("agentConfiguration.codex.acpWarmProcessIdle")}
+            hint={t("agentConfiguration.codex.acpWarmProcessIdleHint")}
           >
             {isCreate ? (
               <input
@@ -716,7 +715,7 @@ export function CodexLocalConfigFields({
         </>
       )}
       {!runnerManaged && !hideInstructionsFile && (
-        <Field label="Agent instructions file" hint={instructionsFileHint}>
+        <Field label={t("agentConfiguration.codex.instructionsFile")} hint={t("agentConfiguration.codex.instructionsFileHint")}>
           <div className="flex items-center gap-2">
             <DraftInput
               value={
@@ -748,8 +747,8 @@ export function CodexLocalConfigFields({
       {!runnerManaged && (
         <>
           <ToggleField
-            label="Bypass sandbox"
-            hint={help.dangerouslyBypassSandbox}
+            label={t("agentConfiguration.codex.bypassSandbox")}
+            hint={t("agentConfiguration.codex.bypassSandboxHint")}
             checked={
               isCreate
                 ? values!.dangerouslyBypassSandbox
@@ -770,8 +769,8 @@ export function CodexLocalConfigFields({
             }
           />
           <ToggleField
-            label="Enable search"
-            hint={help.search}
+            label={t("agentConfiguration.codex.enableSearch")}
+            hint={t("agentConfiguration.codex.enableSearchHint")}
             checked={
               isCreate
                 ? values!.search
@@ -784,8 +783,8 @@ export function CodexLocalConfigFields({
             }
           />
           <ToggleField
-            label="Fast mode"
-            hint={help.fastMode}
+            label={t("agentConfiguration.codex.fastMode")}
+            hint={t("agentConfiguration.codex.fastModeHint")}
             checked={fastModeEnabled}
             onChange={(v) =>
               isCreate
