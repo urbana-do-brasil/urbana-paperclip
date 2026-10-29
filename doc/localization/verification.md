@@ -1649,3 +1649,22 @@ foi executado, mas está bloqueado por um erro não relacionado em
 `SETUP_LOGIN_HINT_KEYS`). `check:tokens`, `check:token-gates`, `git diff --check`,
 JSON e validação OpenSpec estrita passaram. Progresso: **142/173**; próxima
 tarefa: 3.7c2, resumo de uso API/assinatura.
+
+### Continuação — uso de API e assinaturas (3.7c2)
+
+Os resumos de uso de API/assinatura, tokens, etiquetas de estimativa, conta
+visível, diálogo de detalhes e editor de preços agora acompanham PT-BR/en. O
+locale formata moeda e datas sem converter valores ou moedas de origem. Planos,
+provedores, contas, responsáveis e agentes continuam como dados recebidos; a
+edição e vinculação conservam os contratos e permissões. Estados e erros usam
+mensagens próprias, sem expor detalhes técnicos.
+
+`SubscriptionCostCard.test.tsx`, `Costs.test.tsx` e
+`locale-validation.test.ts` passaram em **55/55 testes**, incluindo pluralização,
+moeda EUR em ambos os locales, tokens em cache, edição/vinculação, troca de
+idioma em runtime, erros genéricos e preservação dos dados. O typecheck
+direcionado dos módulos e testes alterados passou. `check:tokens`,
+`check:token-gates`, `git diff --check`, JSON e validação OpenSpec estrita também
+passaram. O typecheck completo continua bloqueado pelo erro preexistente no
+protótipo Storybook descrito em 3.7c1. Progresso: **143/173**; próxima tarefa:
+3.7c3, detalhamento por agente, usuário, projeto e modelo.

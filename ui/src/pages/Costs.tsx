@@ -713,25 +713,32 @@ export function Costs({
               icon={ArrowUpRight}
             />
           </div>
-          {subscriptions && Number(subscriptions.subscription.costCents) > 0 && <p className="text-sm text-muted-foreground">Subscription accounts also have {formatCents(Number(subscriptions.subscription.costCents))} in recorded usage charges for this period, separate from monthly fees.</p>}
-          {subscriptions && subscriptions.unknown.eventCount > 0 && <p className="text-sm text-muted-foreground">{formatTokens(subscriptions.unknown.inputTokens + subscriptions.unknown.cachedInputTokens + subscriptions.unknown.outputTokens)} tokens have other or unknown billing types{Number(subscriptions.unknown.costCents) > 0 ? `, with ${formatCents(Number(subscriptions.unknown.costCents))} in recorded charges` : ""}. They remain in the inference ledger.</p>}
-          {subscriptionError && subscriptions && <p role="status" className="text-sm text-muted-foreground">Showing the last loaded API and subscription usage. Updates will resume automatically.</p>}
+          {subscriptions && Number(subscriptions.subscription.costCents) > 0 && <p className="text-sm text-muted-foreground">{t("costs.subscriptions.accountUsageRecorded", { amount: formatCents(Number(subscriptions.subscription.costCents)) })}</p>}
+          {subscriptions && subscriptions.unknown.eventCount > 0 && <p className="text-sm text-muted-foreground">{t("costs.subscriptions.unknownBillingTypes", {
+            tokens: formatTokens(subscriptions.unknown.inputTokens + subscriptions.unknown.cachedInputTokens + subscriptions.unknown.outputTokens),
+            chargeDetails: Number(subscriptions.unknown.costCents) > 0
+              ? t("costs.subscriptions.unknownBillingChargeDetails", { amount: formatCents(Number(subscriptions.unknown.costCents)) })
+              : "",
+          })}</p>}
+          {subscriptionError && subscriptions && <p role="status" className="text-sm text-muted-foreground">{t("costs.subscriptions.lastLoadedApiUsage")}</p>}
           {discoverSubscriptions.error && <div role="status" className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <p>Connected accounts could not be checked. Existing subscription estimates are still shown.</p>
+            <p>{t("costs.subscriptions.discoverError")}</p>
             {subscriptions?.canRefresh && <Button variant="outline" size="sm" disabled={discoverSubscriptions.isPending}
-              onClick={() => discoverSubscriptions.mutate(companyId)}>Retry account check</Button>}
+              onClick={() => discoverSubscriptions.mutate(companyId)}>{t("costs.subscriptions.retryAccountCheck")}</Button>}
           </div>}
           {spendData?.summary.pricingComplete === false && (
             <div role="status" className="space-y-1 text-sm text-muted-foreground">
               {spendData.summary.unpricedEventCount > 0 && (
-                <p>
-                  Costs are unavailable for {spendData.summary.unpricedEventCount} usage {spendData.summary.unpricedEventCount === 1 ? "entry" : "entries"} in this period. Totals include known costs only.
-                </p>
+                <p>{t("costs.subscriptions.unpricedUsage", {
+                  count: spendData.summary.unpricedEventCount,
+                  displayCount: formatNumber(spendData.summary.unpricedEventCount),
+                })}</p>
               )}
               {spendData.summary.pendingRunCount > 0 && (
-                <p>
-                  {spendData.summary.pendingRunCount} {spendData.summary.pendingRunCount === 1 ? "run is" : "runs are"} awaiting cost data.
-                </p>
+                <p>{t("costs.subscriptions.pendingRuns", {
+                  count: spendData.summary.pendingRunCount,
+                  displayCount: formatNumber(spendData.summary.pendingRunCount),
+                })}</p>
               )}
             </div>
           )}

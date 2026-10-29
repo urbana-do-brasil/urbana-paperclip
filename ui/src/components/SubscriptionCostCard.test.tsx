@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SubscriptionCostReport } from "@paperclipai/shared";
 import { SubscriptionCostCard } from "./SubscriptionCostCard";
+import { CostEstimateLabel } from "./CostEstimateLabel";
+import { i18n } from "../i18n";
 
 const mocks = vi.hoisted(() => ({ update: vi.fn(), link: vi.fn() }));
 vi.mock("../api/subscriptions", () => ({ subscriptionsApi: mocks }));
@@ -27,24 +29,90 @@ describe("subscription costs", () => {
   let root: ReturnType<typeof createRoot>;
   let client: QueryClient;
   const changed = vi.fn();
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div"); document.body.appendChild(container); root = createRoot(container);
     client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
     mocks.update.mockResolvedValue({}); mocks.link.mockResolvedValue({}); changed.mockClear();
   });
-  afterEach(() => { act(() => root.unmount()); container.remove(); client.clear(); vi.clearAllMocks(); });
+  afterEach(async () => { act(() => root.unmount()); container.remove(); client.clear(); vi.clearAllMocks(); await i18n.changeLanguage("en"); });
   async function render(report?: SubscriptionCostReport, error?: unknown) {
     await act(async () => root.render(<QueryClientProvider client={client}><SubscriptionCostCard companyId="company" report={report} error={error} onChanged={changed} /></QueryClientProvider>));
   }
   async function click(label: string) {
     await act(async () => [...document.querySelectorAll("button")].find(button => button.textContent === label)!.click());
   }
+  it("localizes token estimates, subscription summary, account details, and price editor", async () => {
+    const report = fixture();
+    report.monthlyTotals = [{ currency: "EUR", amountCents: "10000", estimatedCount: 1 }];
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    await render(report);
+    expect(container.textContent).toContain("Assinaturas");
+    expect(container.textContent).toContain("EUR");
+    expect(container.textContent).toContain(",00/mês");
+    expect(container.textContent).toContain("Estimado");
+    expect(container.textContent).toContain("1 assinatura ativa");
+    expect(container.textContent).toContain("150 tokens de entrada · 10 tokens de saída");
+    expect(container.textContent).toContain("50 tokens de entrada em cache");
+
+    await click("Ver detalhes");
+    expect(document.body.textContent).toContain("Alice’s Claude");
+    expect(document.body.textContent).toContain("Claude Max 5x");
+    expect(document.body.textContent).toContain("Plano verificado em");
+    await click("Editar preço");
+    expect(document.body.textContent).toContain("Preço por período de cobrança");
+    expect(document.body.textContent).toContain("As alterações valem a partir de agora.");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(document.body.textContent).toContain("Price per billing period");
+    expect(document.body.textContent).toContain("Changes apply from now.");
+    expect(document.body.textContent).toContain("EUR");
+    expect(document.body.textContent).toContain(".00/month");
+  });
+
+  it("localizes estimate badges and their accessible explanations", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    await act(async () => root.render(<CostEstimateLabel eventCount={2} estimatedEventCount={1} />));
+    const badge = container.querySelector<HTMLElement>("[title]")!;
+    expect(badge.textContent).toBe("Parcialmente estimado");
+    expect(badge.title).toContain("1 cobrança estimada");
+    expect(badge.title).toContain("tarifas publicadas");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(badge.textContent).toBe("Partially estimated");
+    expect(badge.title).toContain("1 estimated charge");
+    expect(badge.title).toContain("published rates");
+  });
+  it("localizes subscription loading and unavailable states without exposing API errors", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    await render();
+    expect(container.textContent).toContain("Carregando assinaturas…");
+    await render(undefined, new Error("private subscription response"));
+    expect(container.textContent).toContain("Dados de assinatura indisponíveis.");
+    expect(container.textContent).not.toContain("private subscription response");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("Subscription data is unavailable.");
+  });
+  it("localizes subscription price save errors without exposing provider details", async () => {
+    mocks.update.mockRejectedValueOnce(new Error("private provider billing detail"));
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    await render(fixture());
+    await click("Ver detalhes");
+    await click("Editar preço");
+    await act(async () => {
+      document.querySelector<HTMLFormElement>("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(document.body.textContent).toContain("Não foi possível salvar este preço."));
+    });
+    expect(document.body.textContent).not.toContain("private provider billing detail");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(document.body.textContent).toContain("Could not save this price.");
+  });
   it("labels the monthly estimate and counts cached input exactly once", async () => {
     await render(fixture());
     expect(container.textContent).toContain("$100.00/month");
     expect(container.textContent).toContain("Estimated");
     expect(container.textContent).toContain("150 in · 10 out");
-    expect(container.textContent).toContain("50 input cached");
+    expect(container.textContent).toContain("50 cached input tokens");
     await click("View details");
     expect(document.body.textContent).toContain("Used by Leela");
     expect(document.body.textContent).toContain("before tax");
@@ -127,7 +195,7 @@ describe("subscription costs", () => {
     const report = fixture();
     report.accounts.push({ ...report.accounts[0], id: "account-2", name: "Other connection", price: { ...report.accounts[0].price, revision: 3 } });
     await render(report); await click("View details"); await click("Edit price");
-    expect(document.body.textContent).toContain("keeps the selected account’s price");
+    expect(document.body.textContent).toContain("keeps the selected account's price");
     await act(async () => { const select = document.querySelector<HTMLSelectElement>("#subscription-link")!; select.value = "account-2"; select.dispatchEvent(new Event("change", { bubbles: true })); });
     await click("Link accounts");
     await vi.waitFor(() => expect(mocks.link).toHaveBeenCalledWith("company", "account-1", "account-2", 0, 3));
