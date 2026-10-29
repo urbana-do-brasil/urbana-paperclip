@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Project } from "@paperclipai/shared";
+import { act as reactAct } from "react";
 import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
@@ -9,6 +10,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectProperties } from "./ProjectProperties";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryKeys } from "../lib/queryKeys";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -42,6 +45,8 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     name: "Test project",
     description: "",
     status: "in_progress",
+    createdAt: "2025-01-01T00:00:00.000Z",
+    updatedAt: "2025-01-02T00:00:00.000Z",
     goalIds: [],
     goals: [],
     env: null,
@@ -63,16 +68,18 @@ function primedClient(hiddenSettings: string[] = []) {
 let container: HTMLDivElement;
 let root: Root;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await reactAct(async () => { await i18n.changeLanguage("en"); });
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
   container.remove();
   vi.clearAllMocks();
+  await reactAct(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 });
 
 function render(project: Project, onFieldUpdate: (field: string, data: Record<string, unknown>) => void, hiddenSettings: string[] = []) {
@@ -88,7 +95,8 @@ function render(project: Project, onFieldUpdate: (field: string, data: Record<st
 }
 
 function concurrencySelect(): HTMLSelectElement {
-  const el = container.querySelector<HTMLSelectElement>('select[aria-label="Shared workspace concurrency"]');
+  const label = i18n.t("projectProperties.executionWorkspaces.concurrency.label");
+  const el = container.querySelector<HTMLSelectElement>(`select[aria-label="${label}"]`);
   if (!el) throw new Error("Shared workspace concurrency select not found");
   return el;
 }
@@ -120,6 +128,40 @@ describe("ProjectProperties — shared workspace concurrency select", () => {
       const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value")!.set!;
       setter.call(select, "allow");
       select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(onFieldUpdate).toHaveBeenCalledWith(
+      "execution_workspace_shared_concurrency",
+      expect.objectContaining({
+        executionWorkspacePolicy: expect.objectContaining({ sharedWorkspaceConcurrency: "allow" }),
+      }),
+    );
+  });
+
+  it("localizes the policy controls in Brazilian Portuguese without changing stored values", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    const onFieldUpdate = vi.fn();
+    render(
+      makeProject({
+        executionWorkspacePolicy: {
+          enabled: true,
+          defaultMode: "shared_workspace",
+          sharedWorkspaceConcurrency: "serialize",
+        },
+      } as Partial<Project>),
+      onFieldUpdate,
+    );
+
+    expect(container.textContent).toContain("Espaços de execução");
+    expect(container.textContent).toContain("Ativar cópias isoladas para tarefas");
+    expect(container.textContent).toContain("Usar cópia isolada por padrão para novas tarefas");
+    expect(concurrencySelect().getAttribute("aria-label")).toBe("Concorrência no espaço compartilhado");
+    expect(concurrencySelect().selectedOptions[0]?.textContent).toBe("Serializar");
+    expect(container.textContent).toContain("Pastas locais/SSH permitem execuções simultâneas.");
+
+    act(() => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value")!.set!;
+      setter.call(concurrencySelect(), "allow");
+      concurrencySelect().dispatchEvent(new Event("change", { bubbles: true }));
     });
     expect(onFieldUpdate).toHaveBeenCalledWith(
       "execution_workspace_shared_concurrency",

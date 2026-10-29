@@ -1248,6 +1248,45 @@
       "budget": "Budget"
     }
   },
+  "projectWorkspaceSummary": {
+    "noActivity": "No non-default workspace activity yet.",
+    "cleanupAttention": "Cleanup attention needed",
+    "kind": {
+      "execution": "Execution workspace",
+      "project": "Project workspace"
+    },
+    "updated": "Updated {{timeAgo}}",
+    "servicesCount_one": "{{running}}/{{total}} service",
+    "servicesCount_other": "{{running}}/{{total}} services",
+    "status": {
+      "active": "Active",
+      "idle": "Idle",
+      "inReview": "In review",
+      "archived": "Archived",
+      "cleanupFailed": "Cleanup failed"
+    },
+    "actions": {
+      "startServices": "Start services",
+      "stopServices": "Stop services",
+      "retryClose": "Retry close",
+      "closeWorkspace": "Close workspace"
+    },
+    "fields": {
+      "branch": "Branch",
+      "path": "Path",
+      "service": "Service",
+      "linkedTasks": "Linked tasks"
+    },
+    "copy": {
+      "branch": "Copy branch",
+      "path": "Copy path",
+      "branchCopied": "Branch copied",
+      "pathCopied": "Path copied",
+      "failed": "Copy failed"
+    },
+    "moreTasks_one": "+{{count}} more",
+    "moreTasks_other": "+{{count}} more"
+  },
   "projectProperties": {
     "saving": "Saving",
     "saved": "Saved",
@@ -1305,6 +1344,55 @@
       "saveFolderFailed": "Failed to save workspace.",
       "deleteFolderFailed": "Failed to delete workspace.",
       "updateFolderFailed": "Failed to update workspace."
+    },
+    "executionWorkspaces": {
+      "title": "Execution Workspaces",
+      "helpLabel": "Execution workspaces help",
+      "help": "Project-owned defaults for isolated task checkouts and execution workspace behavior.",
+      "enabled": {
+        "label": "Enable isolated task checkouts",
+        "description": "Let tasks choose between the project's primary checkout and an isolated execution workspace.",
+        "enabled": "Enabled",
+        "disabled": "Disabled"
+      },
+      "defaultMode": {
+        "label": "New tasks default to isolated checkout",
+        "description": "If disabled, new tasks stay on the project's primary checkout unless someone opts in."
+      },
+      "concurrency": {
+        "label": "Shared workspace concurrency",
+        "options": {
+          "auto": {
+            "label": "Auto",
+            "help": "Concurrent runs on local/SSH runners; runs take turns in cloud environments."
+          },
+          "serialize": {
+            "label": "Serialize",
+            "help": "Sandbox runs take turns in the shared project workspace. Local/SSH folders allow concurrent runs."
+          },
+          "allow": {
+            "label": "Allow",
+            "help": "Runs never wait for the workspace; concurrent edits are possible."
+          }
+        }
+      },
+      "advanced": {
+        "hide": "Hide advanced checkout settings",
+        "show": "Show advanced checkout settings",
+        "implementationLabel": "Host-managed implementation:"
+      },
+      "fields": {
+        "environment": "Environment",
+        "noEnvironment": "No environment",
+        "baseRef": "Base ref",
+        "branchTemplate": "Branch template",
+        "worktreeParentDir": "Worktree parent dir",
+        "provisionCommand": "Provision command",
+        "runtimeProvisionCommand": "Runtime provision command",
+        "runtimeProvisionCommandHelp": "Runs once before the first runtime-service start (heavy setup, e.g. DB seed). Leave empty to keep eager provisioning.",
+        "teardownCommand": "Teardown command",
+        "commandsHelp": "Provision runs inside the derived worktree before agent execution. Teardown is stored here for future cleanup flows."
+      }
     }
   },
   "projectRepositorySettings": {

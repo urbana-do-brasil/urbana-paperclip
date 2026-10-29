@@ -101,7 +101,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
 - [ ] 3.5 Migrar organizações, projetos, metas e workspaces em lotes por jornada. Verificar criação/configuração, troca de organização, labels de estado e permissões nas duas línguas sem alterar valores ou contratos. Spec: `localized-web-interface`.
   - [x] 3.5a Localizar o portfólio de organizações, incluindo estado, seleção, renomeação, restauração, métricas e confirmações; preservar dados e ações.
   - [x] 3.5b Localizar a coleção e criação de projetos, incluindo estados vazios, filtros e permissões.
-  - [ ] 3.5c Localizar detalhes e configuração de projetos, orçamento, acesso e workspaces vinculados; preservar valores e gates.
+  - [x] 3.5c Localizar detalhes e configuração de projetos, orçamento, acesso e workspaces vinculados; preservar valores e gates.
     - [x] 3.5c1 Localizar a moldura do detalhe do projeto, cabeçalho, abas, estados, avisos e nomes acessíveis; preservar rotas, dados dinâmicos e permissões.
     - [x] 3.5c2 Localizar a configuração básica do projeto, campos, datas, arquivamento e repositórios; preservar valores, payloads, feedback de salvamento e controles de acesso.
       - [x] 3.5c2a Localizar nome/descrição, datas, feedback de salvamento e arquivamento do projeto, preservando nomes, conteúdo, valores, callbacks e confirmação.
@@ -109,7 +109,9 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.5c3 Localizar orçamento do projeto e gestão de acesso/privacidade; preservar moeda, limites, usuários, decisões e gates de autorização.
       - [x] 3.5c3a Localizar a política de orçamento e seus estados/ajustes no projeto, preservando USD, valores, limites, pausas e callbacks.
       - [x] 3.5c3b Localizar visibilidade e gestão de acesso de projetos privados, preservando controles de autorização, proteção de responsáveis e payloads.
-    - [ ] 3.5c4 Localizar política/configuração de workspaces e a visualização de workspaces vinculados; preservar caminhos, comandos, IDs, estados técnicos, ações e feature flags.
+    - [x] 3.5c4 Localizar política/configuração de workspaces e a visualização de workspaces vinculados; preservar caminhos, comandos, IDs, estados técnicos, ações e feature flags.
+      - [x] 3.5c4a Localizar a política e os controles de configuração de execution workspaces, preservando comandos, valores, estados, callbacks e gates.
+      - [x] 3.5c4b Localizar cartões, estados e ações dos workspaces vinculados ao projeto, preservando caminhos, IDs, rotas, serviços e tarefas associadas.
   - [ ] 3.5d Localizar coleção, criação, hierarquia e detalhes de metas, preservando vínculos e estados.
   - [ ] 3.5e Localizar a lista geral e a visualização de workspaces de projeto, preservando flags, rotas e operações.
 - [ ] 3.6 Migrar cadastro/configuração de agentes e visualizações de execução, incluindo descrições próprias e estados de ferramentas. Verificar fluxo de configuração e execução nas duas línguas, mantendo prompts técnicos e logs brutos originais. Spec: `localized-web-interface`.

@@ -1262,6 +1262,13 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
   em **32/32 testes**. Typecheck direcionado dos módulos e testes alterados,
   `check:tokens`, `check:token-gates`, `git diff --check` e
   `openspec validate localize-paperclip-pt-br --strict` passaram.
-- 3.5c2 e 3.5c3 estão concluídas; progresso OpenSpec: **89/116**. Próxima:
-  3.5c4, política e visualização de workspaces. A aplicação ainda não foi
-  implantada.
+- O grupo 3.5c está concluído. 3.5c4a localizou a política e configuração de
+  execution workspaces, mantendo enums, callbacks, comandos e gates. 3.5c4b
+  localizou estados, cartões e ações de workspaces vinculados, preservando
+  caminhos, IDs, rotas, serviços e tarefas. A proteção que oculta caminhos do
+  host em instâncias managed-sandbox-only continua ativa.
+- `ProjectProperties.concurrency.test.tsx`, `ProjectWorkspaceSummaryCard.test.tsx`,
+  `ProjectWorkspacesContent.test.tsx` e `locale-validation.test.ts` passaram em
+  **28/28 testes** nos dois idiomas. Typecheck direcionado, gates, diff check e
+  OpenSpec estrito passaram. Progresso OpenSpec: **93/118**. Próxima: 3.5d
+  (metas). A aplicação ainda não foi implantada.

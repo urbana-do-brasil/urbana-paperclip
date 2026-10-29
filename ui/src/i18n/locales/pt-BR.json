@@ -1293,6 +1293,47 @@
       "budget": "Orçamento"
     }
   },
+  "projectWorkspaceSummary": {
+    "noActivity": "Ainda não há atividade em espaços de trabalho não padrão.",
+    "cleanupAttention": "A limpeza precisa de atenção",
+    "kind": {
+      "execution": "Espaço de execução",
+      "project": "Espaço do projeto"
+    },
+    "updated": "Atualizado {{timeAgo}}",
+    "servicesCount_one": "{{running}}/{{total}} serviço",
+    "servicesCount_other": "{{running}}/{{total}} serviços",
+    "servicesCount_many": "{{running}}/{{total}} serviços",
+    "status": {
+      "active": "Ativo",
+      "idle": "Ocioso",
+      "inReview": "Em revisão",
+      "archived": "Arquivado",
+      "cleanupFailed": "Falha na limpeza"
+    },
+    "actions": {
+      "startServices": "Iniciar serviços",
+      "stopServices": "Parar serviços",
+      "retryClose": "Tentar encerrar novamente",
+      "closeWorkspace": "Encerrar espaço de trabalho"
+    },
+    "fields": {
+      "branch": "Branch",
+      "path": "Caminho",
+      "service": "Serviço",
+      "linkedTasks": "Tarefas vinculadas"
+    },
+    "copy": {
+      "branch": "Copiar branch",
+      "path": "Copiar caminho",
+      "branchCopied": "Branch copiada",
+      "pathCopied": "Caminho copiado",
+      "failed": "Falha ao copiar"
+    },
+    "moreTasks_one": "+{{count}} mais",
+    "moreTasks_other": "+{{count}} mais",
+    "moreTasks_many": "+{{count}} mais"
+  },
   "projectProperties": {
     "saving": "Salvando",
     "saved": "Salvo",
@@ -1350,6 +1391,55 @@
       "saveFolderFailed": "Não foi possível salvar o espaço de trabalho.",
       "deleteFolderFailed": "Não foi possível excluir o espaço de trabalho.",
       "updateFolderFailed": "Não foi possível atualizar o espaço de trabalho."
+    },
+    "executionWorkspaces": {
+      "title": "Espaços de execução",
+      "helpLabel": "Ajuda sobre espaços de execução",
+      "help": "Padrões definidos pelo projeto para cópias isoladas de tarefas e o comportamento dos espaços de execução.",
+      "enabled": {
+        "label": "Ativar cópias isoladas para tarefas",
+        "description": "Permite que as tarefas escolham entre a cópia principal do projeto e um espaço de execução isolado.",
+        "enabled": "Ativado",
+        "disabled": "Desativado"
+      },
+      "defaultMode": {
+        "label": "Usar cópia isolada por padrão para novas tarefas",
+        "description": "Se desativado, novas tarefas permanecem na cópia principal do projeto, a menos que alguém opte pela isolada."
+      },
+      "concurrency": {
+        "label": "Concorrência no espaço compartilhado",
+        "options": {
+          "auto": {
+            "label": "Automático",
+            "help": "Execuções simultâneas em executores locais/SSH; em ambientes na nuvem, as execuções aguardam sua vez."
+          },
+          "serialize": {
+            "label": "Serializar",
+            "help": "Em ambientes isolados, as execuções aguardam sua vez no espaço compartilhado do projeto. Pastas locais/SSH permitem execuções simultâneas."
+          },
+          "allow": {
+            "label": "Permitir",
+            "help": "As execuções não aguardam pelo espaço de trabalho; alterações simultâneas podem ocorrer."
+          }
+        }
+      },
+      "advanced": {
+        "hide": "Ocultar configurações avançadas da cópia",
+        "show": "Mostrar configurações avançadas da cópia",
+        "implementationLabel": "Implementação gerenciada pelo host:"
+      },
+      "fields": {
+        "environment": "Ambiente",
+        "noEnvironment": "Nenhum ambiente",
+        "baseRef": "Referência base",
+        "branchTemplate": "Modelo da branch",
+        "worktreeParentDir": "Diretório pai do worktree",
+        "provisionCommand": "Comando de provisionamento",
+        "runtimeProvisionCommand": "Comando de provisionamento em tempo de execução",
+        "runtimeProvisionCommandHelp": "Executado uma vez antes da primeira inicialização do serviço em tempo de execução (configuração mais pesada, como preparar o banco de dados). Deixe vazio para manter o provisionamento antecipado.",
+        "teardownCommand": "Comando de desmontagem",
+        "commandsHelp": "O provisionamento é executado no worktree derivado antes da execução do agente. O comando de desmontagem fica armazenado aqui para fluxos futuros de limpeza."
+      }
     }
   },
   "projectRepositorySettings": {
