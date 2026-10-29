@@ -1,11 +1,22 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Link, useCaseHref } from "@/lib/router";
-import type { CaseSummary } from "@/api/cases";
+import type { CaseStatus, CaseSummary } from "@/api/cases";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CaseCopyableToken } from "@/components/CaseIdentifierKey";
+import { useTranslation } from "@/i18n";
+import { formatNumber } from "@/lib/utils";
+
+const CASE_STATUS_KEYS: Record<CaseStatus, string> = {
+  draft: "caseManagement.collection.statuses.draft",
+  in_progress: "caseManagement.collection.statuses.inProgress",
+  in_review: "caseManagement.collection.statuses.inReview",
+  approved: "caseManagement.collection.statuses.approved",
+  done: "caseManagement.collection.statuses.done",
+  cancelled: "caseManagement.collection.statuses.cancelled",
+};
 
 type CaseRelationRow = Pick<CaseSummary, "id" | "identifier" | "title" | "caseType" | "status"> & {
   key?: string | null;
@@ -23,10 +34,11 @@ export function CaseChildrenTree({
   children: CaseRelationRow[];
   maxVisible?: number;
 }) {
+  const { t } = useTranslation();
   const caseHref = useCaseHref();
   const [expanded, setExpanded] = useState(false);
   if (children.length === 0) {
-    return <p className="text-xs text-muted-foreground">No child cases.</p>;
+    return <p className="text-xs text-muted-foreground">{t("caseManagement.properties.noChildren")}</p>;
   }
 
   const shouldCap = maxVisible != null && children.length > maxVisible;
@@ -51,7 +63,7 @@ export function CaseChildrenTree({
               />
               <span className="min-w-0 flex-1 truncate" title={child.title}>{child.title}</span>
               <Badge variant="secondary" className="shrink-0">{child.caseType}</Badge>
-              <StatusBadge status={child.status} />
+              <StatusBadge status={child.status} label={CASE_STATUS_KEYS[child.status] ? t(CASE_STATUS_KEYS[child.status]) : undefined} />
             </Link>
           </li>
         ))}
@@ -65,7 +77,7 @@ export function CaseChildrenTree({
           onClick={() => setExpanded(true)}
         >
           <ChevronDown className="h-3.5 w-3.5" />
-          Show {hiddenCount} more
+          {t("caseManagement.properties.showMore", { count: hiddenCount, formattedCount: formatNumber(hiddenCount) })}
         </Button>
       ) : null}
     </div>

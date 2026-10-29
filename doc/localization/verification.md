@@ -3034,3 +3034,19 @@ passaram. O typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 Progresso da CLI OpenSpec: **254/279**; próxima: 3.10e2b, propriedades e
 relações.
+
+
+## Casos — propriedades, rótulos e relações (3.10e2b)
+
+Propriedades compactas e completas, relações de pai/filhos, tarefas vinculadas,
+status e ações de rótulos agora acompanham PT-BR/en. O editor distingue
+carregamento, ausência e falha de rótulos; falhas de criação preservam o nome
+digitado. Nomes e campos fornecidos, links, identificadores e payloads continuam
+intactos.
+
+`CaseDetail.test.tsx`, `Cases.test.tsx`, `CaseChildrenTree.test.tsx` e
+`locale-validation.test.ts` passaram em **47/47 testes**. Gates de tokens, JSON,
+`git diff --check` e OpenSpec estrito passaram. O typecheck da UI aponta somente
+o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **256/279**. Próxima:
+3.10e3, atividade, documentos e anexos.

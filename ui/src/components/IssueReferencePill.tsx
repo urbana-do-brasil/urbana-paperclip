@@ -13,6 +13,7 @@ export function IssueReferencePill({
   className,
   children,
   onRemove,
+  ariaLabel,
   variant = "mention",
 }: {
   issue:
@@ -23,6 +24,7 @@ export function IssueReferencePill({
   variant?: "mention" | "property";
   className?: string;
   children?: ReactNode;
+  ariaLabel?: string;
   /** Reserves space for a separate hover/focus action without moving the task link. */
   onRemove?: (issueId: string) => void;
 }) {
@@ -56,7 +58,7 @@ export function IssueReferencePill({
           data-mention-kind="issue"
           className={cn(classNames, "min-w-0 max-w-full")}
           title={issue.title}
-          aria-label={`Task ${issueLabel}: ${issue.title}`}
+          aria-label={ariaLabel ?? `Task ${issueLabel}: ${issue.title}`}
         >
           {content}
         </Link>
@@ -82,7 +84,7 @@ export function IssueReferencePill({
         data-mention-kind="issue"
         className={classNames}
         title={issue.title}
-        aria-label={`Task: ${issue.title}`}
+        aria-label={ariaLabel ?? `Task: ${issue.title}`}
       >
         {content}
       </span>
@@ -96,7 +98,7 @@ export function IssueReferencePill({
       data-mention-kind="issue"
       className={classNames}
       title={issue.title}
-      aria-label={`Task ${issueLabel}: ${issue.title}`}
+      aria-label={ariaLabel ?? `Task ${issueLabel}: ${issue.title}`}
     >
       {content}
     </Link>
