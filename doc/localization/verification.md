@@ -3183,3 +3183,14 @@ seletor, políticas, formatação, cartões, lista e catálogos passaram: **64/6
 Gates de tokens, JSON, diff e OpenSpec estrito passaram. O typecheck da UI
 continua apontando apenas o erro preexistente `SETUP_LOGIN_HINTS` no Storybook.
 Progresso da CLI: **269/290**; próxima: 3.10f4, detalhe e histórico.
+
+
+## Status cards — moldura e formatadores do detalhe (3.10f4a/f4c)
+
+A moldura, abas, estado, ações, feedback e botão acessível de fechar acompanham
+PT-BR/en. Tipos de atualização e tokens de entrada/saída usam o idioma e os
+separadores locais; valores desconhecidos e dados dinâmicos são preservados.
+Drawer, formatadores, cartões, lista e catálogos passaram em **48/48 testes**;
+gates de tokens e OpenSpec estrito passaram. O typecheck da UI segue limitado
+ao erro preexistente de `SETUP_LOGIN_HINTS` no Storybook. f4 foi dividida em
+cinco partes; progresso da CLI: **271/295**. Próxima: f4b, resumo/revisões.

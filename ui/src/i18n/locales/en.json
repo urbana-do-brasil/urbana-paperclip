@@ -1726,6 +1726,52 @@
     }
   },
   "statusCards": {
+    "history": {
+      "tokenSplit": "{{input}} in / {{output}} out",
+      "updateKind": {
+        "compile": "compile",
+        "full": "full rebuild",
+        "incremental": "incremental"
+      }
+    },
+    "detailShell": {
+      "close": "Close",
+      "untitled": "Untitled card",
+      "updated": "Updated {{relativeTime}}",
+      "noSummaryYet": "No summary yet",
+      "status": {
+        "compiling": "Setting up",
+        "fresh": "Fresh",
+        "stale": "Stale",
+        "updating": "Updating",
+        "error": "Error",
+        "paused_budget": "Paused — budget",
+        "paused_hours": "Paused — hours",
+        "archived": "Archived"
+      },
+      "tabs": {
+        "summary": "Summary",
+        "settings": "Settings",
+        "watched": "Watched issues",
+        "history": "History"
+      },
+      "actions": {
+        "settingUp": "Setting up…",
+        "running": "Running…",
+        "runNow": "Run now",
+        "refreshing": "Refreshing…",
+        "refresh": "Refresh"
+      },
+      "feedback": {
+        "errorTitle": "Heads up",
+        "workingTitle": "Working on it",
+        "refreshQueued": "Refresh queued — the Summarizer is updating this card.",
+        "runQueued": "Run queued — the Summarizer is updating this card.",
+        "refreshFailed": "Could not refresh the card.",
+        "runFailed": "Could not run the card.",
+        "saveFailed": "Could not save settings."
+      }
+    },
       "settings": {
         "title": "Auto-update policy",
         "manual": "Manual only — updates when I press refresh",

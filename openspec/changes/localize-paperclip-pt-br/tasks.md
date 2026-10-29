@@ -288,7 +288,12 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.10f3 Localizar criação, edição e políticas de atualização/custo; preservar consultas, agendamento, configurações e payloads. Decomposta em f3a (criação e seleção de agente) e f3b (políticas e estimativa de custo).
       - [x] 3.10f3a Localizar criação de cartão e seleção do agente, incluindo exemplos e estados; preservar texto digitado, IDs, defaults e payloads.
       - [x] 3.10f3b Localizar políticas de atualização, limites e estimativa de custo; preservar configurações, quantidades, timezone e valores enviados. Criação, seletor, políticas e custo em PT-BR/en verificados em 64/64 testes; gates e OpenSpec passaram. Typecheck permanece limitado ao erro preexistente do Storybook. Progresso: 269/290; próxima: 3.10f4.
-    - [ ] 3.10f4 Localizar detalhe, histórico, revisão, atividade e ações dos status cards; preservar conteúdo, IDs e operações.
+    - [ ] 3.10f4 Localizar detalhe, histórico, revisão, atividade e ações dos status cards; preservar conteúdo, IDs e operações. Decomposta em moldura/ações, resumo/revisões, formatadores, histórico e itens acompanhados/configurações.
+      - [x] 3.10f4a Localizar moldura, abas, estado, ações e feedback do detalhe; preservar IDs, operações e dados dinâmicos. Moldura, abas, ações e feedback verificados em PT-BR/en; teste integrado junto a f4c: 48/48.
+      - [ ] 3.10f4b Localizar resumo, revisões e alterações integradas; preservar conteúdo e relações.
+      - [x] 3.10f4c Localizar formatadores de histórico, tipos de atualização e tokens; preservar valores e tipos desconhecidos. Formatadores de tokens e tipos de atualização verificados em PT-BR/en, incluindo decimais e fallback.
+      - [ ] 3.10f4d Localizar histórico e atividade, incluindo estados e contagens; preservar dados e valores originais.
+      - [ ] 3.10f4e Localizar itens acompanhados e configurações do detalhe, incluindo diagnóstico; preservar consultas, conteúdo e operações.
     - [ ] 3.10f5 Verificar e localizar gates, navegação e dependência entre `enableStatusCards` e `enableSummaries` nas variantes relevantes.
   - [ ] 3.10g Verificar gates, navegação e estados carregando/ativo/desativado/sem permissão nos modos streamlined e production para os flags relevantes; cobrir PT-BR/en e manter rotas compatíveis e estado de configuração.
 - [ ] 3.11 Migrar UI hospedeira de plugins e conteúdo humano de plugins distribuídos no produto, além das superfícies próprias adicionais encontradas no fechamento do mapa de rotas. Verificar cada superfície nos dois idiomas e documentar limites de plugins externos não controlados. Specs: `localized-web-interface`, `localization-quality`.

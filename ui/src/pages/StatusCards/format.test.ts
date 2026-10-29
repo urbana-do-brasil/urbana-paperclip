@@ -5,9 +5,11 @@ import { i18n } from "@/i18n";
 import {
   estimateStatusCardCost,
   formatCents,
+  formatTokenSplit,
   formatTokens,
   rollupUpdates,
   rollupUpdatesToday,
+  updateKindLabel,
 } from "./format";
 
 let previousLanguage = "pt-BR";
@@ -25,6 +27,28 @@ describe("status card number presentation", () => {
     expect(formatCents(62)).toBe(new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(0.62));
     expect(formatCents(0.6)).toBe(new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD", minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(0.006));
     expect(formatCents(null)).toBeNull();
+  });
+});
+
+describe("status card history presentation", () => {
+  it("localizes token split labels while preserving compact token values", async () => {
+    expect(formatTokenSplit(1_500, 750)).toBe("1.5k in / 750 out");
+
+    await i18n.changeLanguage("pt-BR");
+    expect(formatTokenSplit(1_500, 750)).toBe("1,5k de entrada / 750 de saída");
+  });
+
+  it("localizes known update kinds and preserves unknown kinds", async () => {
+    expect(updateKindLabel("compile")).toBe("compile");
+    expect(updateKindLabel("full")).toBe("full rebuild");
+    expect(updateKindLabel("incremental")).toBe("incremental");
+    expect(updateKindLabel("future-kind" as StatusCardUpdate["kind"])).toBe("future-kind");
+
+    await i18n.changeLanguage("pt-BR");
+    expect(updateKindLabel("compile")).toBe("compilação");
+    expect(updateKindLabel("full")).toBe("reconstrução completa");
+    expect(updateKindLabel("incremental")).toBe("incremental");
+    expect(updateKindLabel("future-kind" as StatusCardUpdate["kind"])).toBe("future-kind");
   });
 });
 

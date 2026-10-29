@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, Sele
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InlineBanner } from "@/components/InlineBanner";
+import { useTranslation } from "@/i18n";
 import { cn, formatDateTime, relativeTime } from "@/lib/utils";
 import { queryKeys } from "@/lib/queryKeys";
 import {
@@ -39,6 +40,16 @@ import {
 } from "./format";
 import type { StatusCardView } from "./types";
 
+type ActionErrorKey =
+  | "statusCards.detailShell.feedback.refreshFailed"
+  | "statusCards.detailShell.feedback.runFailed"
+  | "statusCards.detailShell.feedback.saveFailed";
+
+type ActionError = { message: string } | { key: ActionErrorKey };
+type ActionNoteKey =
+  | "statusCards.detailShell.feedback.refreshQueued"
+  | "statusCards.detailShell.feedback.runQueued";
+
 export function StatusCardDetailDrawer({
   card,
   companyId,
@@ -52,6 +63,7 @@ export function StatusCardDetailDrawer({
   onOpenChange: (open: boolean) => void;
   initialTab?: string;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState("summary");
   const [settings, setSettings] = useState<StatusCardSettingsValue>(defaultSettingsValue());
@@ -60,10 +72,10 @@ export function StatusCardDetailDrawer({
   const [interest, setInterest] = useState("");
   // "" → the built-in Summarizer; otherwise the id of the override agent.
   const [summarizerAgentId, setSummarizerAgentId] = useState("");
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<ActionError | null>(null);
   // A short confirmation after a build/refresh is queued (the state dot + badge
   // also update, but a card that finishes fast can look like "nothing happened").
-  const [actionNote, setActionNote] = useState<string | null>(null);
+  const [actionNote, setActionNote] = useState<ActionNoteKey | null>(null);
   // null → show the latest summary; otherwise a historical update id.
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null);
 
@@ -104,9 +116,14 @@ export function StatusCardDetailDrawer({
   const generatingIssue = useMemo<SummarySlotIssueRef | null>(
     () =>
       card && lifecycle === "updating" && card.generatingIssueId
-        ? { id: card.generatingIssueId, identifier: null, title: card.title ?? "Status update", status: "in_progress" }
+        ? {
+            id: card.generatingIssueId,
+            identifier: null,
+            title: card.title ?? t("statusCards.tile.statusUpdate"),
+            status: "in_progress",
+          }
         : null,
-    [card, lifecycle],
+    [card, lifecycle, t],
   );
   const draftStream = useSummaryDraftStream(companyId, generatingIssue);
 
@@ -126,9 +143,11 @@ export function StatusCardDetailDrawer({
     },
     onSuccess: async () => {
       await invalidateCard();
-      setActionNote("Refresh queued — the Summarizer is updating this card.");
+      setActionNote("statusCards.detailShell.feedback.refreshQueued");
     },
-    onError: (err) => setActionError(err instanceof Error ? err.message : "Could not refresh the card."),
+    onError: (err) => setActionError(err instanceof Error
+      ? { message: err.message }
+      : { key: "statusCards.detailShell.feedback.refreshFailed" }),
   });
 
   const recompileMutation = useMutation({
@@ -139,9 +158,11 @@ export function StatusCardDetailDrawer({
     },
     onSuccess: async () => {
       await invalidateCard();
-      setActionNote("Run queued — the Summarizer is updating this card.");
+      setActionNote("statusCards.detailShell.feedback.runQueued");
     },
-    onError: (err) => setActionError(err instanceof Error ? err.message : "Could not run the card."),
+    onError: (err) => setActionError(err instanceof Error
+      ? { message: err.message }
+      : { key: "statusCards.detailShell.feedback.runFailed" }),
   });
 
   const saveSettingsMutation = useMutation({
@@ -168,7 +189,9 @@ export function StatusCardDetailDrawer({
         queryClient.invalidateQueries({ queryKey: queryKeys.statusCards.detail(card.id) }),
       ]);
     },
-    onError: (err) => setActionError(err instanceof Error ? err.message : "Could not save settings."),
+    onError: (err) => setActionError(err instanceof Error
+      ? { message: err.message }
+      : { key: "statusCards.detailShell.feedback.saveFailed" }),
   });
 
   if (!card) return null;
@@ -199,6 +222,7 @@ export function StatusCardDetailDrawer({
   const revisionNumberOf = (update: StatusCardUpdate) => latestRevisionNumber - summaryRevisions.indexOf(update);
   const displayedChanges = selectedRevision ? selectedRevision.changes : latestUpdate?.changes ?? [];
   const presentation = STATUS_CARD_LIFECYCLE_PRESENTATION[lifecycle];
+  const lifecycleLabel = t(`statusCards.detailShell.status.${lifecycle}`);
   const hasSummary = Boolean(card.summaryBody && card.summaryBody.trim().length > 0);
   // Setup is genuinely in flight only while a generation task exists; a null id
   // on a compiling card means the first run stalled and needs a manual re-kick.
@@ -206,12 +230,17 @@ export function StatusCardDetailDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-2xl">
+      <SheetContent
+        className="flex w-full flex-col gap-0 p-0 sm:max-w-2xl"
+        closeButtonLabel={t("statusCards.detailShell.close")}
+      >
         <SheetHeader className="border-b border-border p-4">
           <div className="flex items-center gap-2 pr-8">
             <span className={cn("inline-block h-2.5 w-2.5 shrink-0 rounded-full", presentation.dotClassName)} aria-hidden="true" />
-            <SheetTitle className="min-w-0 flex-1 truncate text-lg">{card.title ?? "Untitled card"}</SheetTitle>
-            <Badge variant="outline">{presentation.label}</Badge>
+            <SheetTitle className="min-w-0 flex-1 truncate text-lg">
+              {card.title ?? t("statusCards.detailShell.untitled")}
+            </SheetTitle>
+            <Badge variant="outline">{lifecycleLabel}</Badge>
             {lifecycle === "compiling" ? (
               <Button
                 variant="outline"
@@ -226,7 +255,11 @@ export function StatusCardDetailDrawer({
                 ) : (
                   <Wand2 className="h-3.5 w-3.5" />
                 )}
-                {setupRunning ? "Setting up…" : recompileMutation.isPending ? "Running…" : "Run now"}
+                {setupRunning
+                  ? t("statusCards.detailShell.actions.settingUp")
+                  : recompileMutation.isPending
+                    ? t("statusCards.detailShell.actions.running")
+                    : t("statusCards.detailShell.actions.runNow")}
               </Button>
             ) : (
               <Button
@@ -236,31 +269,39 @@ export function StatusCardDetailDrawer({
                 disabled={refreshMutation.isPending || lifecycle === "updating"}
               >
                 <RefreshCw className={cn("h-3.5 w-3.5", refreshMutation.isPending && "animate-spin")} />
-                {refreshMutation.isPending ? "Refreshing…" : "Refresh"}
+                {refreshMutation.isPending
+                  ? t("statusCards.detailShell.actions.refreshing")
+                  : t("statusCards.detailShell.actions.refresh")}
               </Button>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            {card.lastGeneratedAt ? `Updated ${relativeTime(card.lastGeneratedAt)}` : "No summary yet"} ·{" "}
+            {card.lastGeneratedAt
+              ? t("statusCards.detailShell.updated", { relativeTime: relativeTime(card.lastGeneratedAt) })
+              : t("statusCards.detailShell.noSummaryYet")} ·{" "}
             {describeRefreshPolicy(card.refreshPolicy)}
           </p>
         </SheetHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col gap-0">
           <TabsList variant="line" className="w-full justify-start gap-4 border-b border-border px-4">
-            <TabsTrigger value="summary">Summary</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="watched">Watched issues</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
+            <TabsTrigger value="summary">{t("statusCards.detailShell.tabs.summary")}</TabsTrigger>
+            <TabsTrigger value="settings">{t("statusCards.detailShell.tabs.settings")}</TabsTrigger>
+            <TabsTrigger value="watched">{t("statusCards.detailShell.tabs.watched")}</TabsTrigger>
+            <TabsTrigger value="history">{t("statusCards.detailShell.tabs.history")}</TabsTrigger>
           </TabsList>
 
           {actionError ? (
             <div className="px-4 pt-3">
-              <InlineBanner tone="warning" title="Heads up">{actionError}</InlineBanner>
+              <InlineBanner tone="warning" title={t("statusCards.detailShell.feedback.errorTitle")}>
+                {"key" in actionError ? t(actionError.key) : actionError.message}
+              </InlineBanner>
             </div>
           ) : actionNote ? (
             <div className="px-4 pt-3">
-              <InlineBanner tone="info" title="Working on it">{actionNote}</InlineBanner>
+              <InlineBanner tone="info" title={t("statusCards.detailShell.feedback.workingTitle")}>
+                {t(actionNote)}
+              </InlineBanner>
             </div>
           ) : null}
 

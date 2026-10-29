@@ -1770,6 +1770,52 @@
     }
   },
   "statusCards": {
+    "history": {
+      "tokenSplit": "{{input}} de entrada / {{output}} de saída",
+      "updateKind": {
+        "compile": "compilação",
+        "full": "reconstrução completa",
+        "incremental": "incremental"
+      }
+    },
+    "detailShell": {
+      "close": "Fechar",
+      "untitled": "Cartão sem título",
+      "updated": "Atualizado {{relativeTime}}",
+      "noSummaryYet": "Ainda não há resumo",
+      "status": {
+        "compiling": "Em preparação",
+        "fresh": "Atualizado",
+        "stale": "Desatualizado",
+        "updating": "Atualizando",
+        "error": "Erro",
+        "paused_budget": "Pausado — orçamento",
+        "paused_hours": "Pausado — horário",
+        "archived": "Arquivado"
+      },
+      "tabs": {
+        "summary": "Resumo",
+        "settings": "Configurações",
+        "watched": "Tarefas acompanhadas",
+        "history": "Histórico"
+      },
+      "actions": {
+        "settingUp": "Preparando…",
+        "running": "Executando…",
+        "runNow": "Executar agora",
+        "refreshing": "Atualizando…",
+        "refresh": "Atualizar"
+      },
+      "feedback": {
+        "errorTitle": "Atenção",
+        "workingTitle": "Em andamento",
+        "refreshQueued": "Atualização na fila — o Summarizer está atualizando este cartão.",
+        "runQueued": "Execução na fila — o Summarizer está atualizando este cartão.",
+        "refreshFailed": "Não foi possível atualizar o cartão.",
+        "runFailed": "Não foi possível executar o cartão.",
+        "saveFailed": "Não foi possível salvar as configurações."
+      }
+    },
       "settings": {
         "title": "Política de atualização automática",
         "manual": "Somente manual — atualiza quando pressiono Atualizar",

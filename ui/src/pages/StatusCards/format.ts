@@ -143,19 +143,22 @@ export function estimateStatusCardCost(policy: StatusCardRefreshPolicy): StatusC
 
 /** "0.4k in / 0.2k out" — the per-update token split shown in history rows. */
 export function formatTokenSplit(inputTokens: number, outputTokens: number): string {
-  const fmt = (n: number) => (n < 1000 ? `${n}` : `${(n / 1000).toFixed(1)}k`);
-  return `${fmt(inputTokens)} in / ${fmt(outputTokens)} out`;
+  const fmt = (n: number) => (n < 1000 ? formatNumber(n) : `${formatNumber(n / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}k`);
+  return t("statusCards.history.tokenSplit", {
+    input: fmt(inputTokens),
+    output: fmt(outputTokens),
+  });
 }
 
 /** Human label for an update's kind. */
 export function updateKindLabel(kind: StatusCardUpdate["kind"]): string {
   switch (kind) {
     case "compile":
-      return "compile";
+      return t("statusCards.history.updateKind.compile");
     case "full":
-      return "full rebuild";
+      return t("statusCards.history.updateKind.full");
     case "incremental":
-      return "incremental";
+      return t("statusCards.history.updateKind.incremental");
     default:
       return kind;
   }
