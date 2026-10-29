@@ -160,10 +160,22 @@ describe("CompanySettings rename hint", () => {
     expect(container.textContent).toContain("Nome da organização");
     expect(container.textContent).toContain("Aparência");
     expect(container.textContent).toContain("Logotipo");
+    expect(container.textContent).toContain("Admissões");
+    expect(container.textContent).toContain("Exigir aprovação do conselho para novas admissões");
     expect(mockSetBreadcrumbs).toHaveBeenCalledWith([
       { label: "Acme Robotics", href: "/dashboard" },
       { label: "Configurações" },
     ]);
+    const hiringToggle = container.querySelector<HTMLButtonElement>(
+      '[data-testid="company-settings-team-approval-toggle"]',
+    );
+    expect(hiringToggle?.getAttribute("aria-checked")).toBe("false");
+    flushSync(() => hiringToggle?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await flushReact();
+    expect(mockCompaniesApi.update).toHaveBeenCalledWith("company-1", {
+      requireBoardApprovalForNewAgents: true,
+    });
+
     const textInputs = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="text"]'));
     const nameInput = textInputs[0]!;
     const descriptionInput = textInputs[1]!;

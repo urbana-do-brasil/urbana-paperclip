@@ -1895,3 +1895,25 @@ de nome/descrição, upload de logo, confirmação PT-BR e navegação após
 arquivamento. O typecheck direcionado da página/testes e `check:tokens`,
 `check:token-gates`, parse dos catálogos e OpenSpec estrito passaram. Progresso:
 **169/190 tarefas**. Próxima: 3.8d2b, admissão, governança e modelo de decisão.
+
+### Continuação — admissão, governança e modelo de decisão (3.8d2b)
+
+As configurações de admissão, governança de interações e modelo de decisão da
+organização agora localizam títulos, políticas, descrições, controles, status,
+estados, falhas próprias e diálogos em PT-BR/en. A seleção mantém os valores de
+política, a regra de aprovação do conselho e os contratos de persistência; os
+nomes de conexões/modelos, IDs, grants, valores de resposta e mensagens
+detalhadas fornecidas pelo provedor permanecem intactos. Os limites de
+autorização, cobrança e compartilhamento não foram alterados.
+
+`CompanySettingsRenameHint.test.tsx`, `InteractionGovernancePanel.test.tsx`,
+`DecisionModelSettings.test.tsx` e `locale-validation.test.ts` passaram em
+**35/35 testes**, cobrindo a alternância e persistência da aprovação de admissão,
+opções de governança/valores enviados, nomes dinâmicos de conexões e modelos,
+falhas próprias traduzidas e preservação de detalhes do provedor. `check:tokens`,
+`check:token-gates`, parse dos catálogos, `git diff --check` e validação OpenSpec
+estrita passaram. O typecheck completo da UI continua bloqueado por um erro em
+arquivo não alterado: `storybook/prototypes/NewAgentWizard.tsx` importa
+`SETUP_LOGIN_HINTS`, que não é exportado por `@/lib/agent-setup-fields` (o
+símbolo disponível é `SETUP_LOGIN_HINT_KEYS`). O progresso é **171/190 tarefas**;
+próxima: 3.8d3, preferências gerais da instância.
