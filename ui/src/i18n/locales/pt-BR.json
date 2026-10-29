@@ -1437,6 +1437,43 @@
     "refreshing": "Atualizando…",
     "refreshModels": "Atualizar modelos"
   },
+  "agentDetailHeader": {
+    "leftNotice": "Você saiu deste agente. Ele não aparece mais na sua barra lateral.",
+    "dismissMembershipNotice": "Dispensar aviso de participação de {{agentName}}",
+    "avatarLabel": "Avatar de {{agentName}}",
+    "escalationPausedTitle": "O caminho de escalonamento está pausado",
+    "pausedEscalation": "As escalações de {{agentName}} são encaminhadas ao agente pausado {{managerName}}. O trabalho atribuído a um agente pausado nunca é executado; retome {{managerName}} ou altere a quem este agente se reporta.",
+    "invalidChainTitle": "Hierarquia de reporte inválida",
+    "invalidChainDescription": "{{agentName}} não pode receber tarefas nem iniciar execuções até que sua hierarquia de reporte seja corrigida.",
+    "chainStatus": {
+      "missing": "gerente ausente",
+      "cycle": "ciclo na hierarquia de reporte"
+    },
+    "defaultRepairGuidance": "Atribua este agente a um gerente ativo ou à raiz, ou pause/encerre explicitamente o agente ou subárvore afetada.",
+    "repairMissingManager": "{{agentName}} reporta-se ao gerente ausente {{ancestorId}}. Atribua {{agentName}} ou o ancestral afetado mais próximo a um gerente ativo ou à raiz, ou pause/encerre explicitamente a subárvore inválida antes de atribuir trabalho ou iniciar execuções.",
+    "repairCycle": "{{agentName}} tem um ciclo na hierarquia de reporte em {{ancestorName}}. Desfaça o ciclo atribuindo um dos agentes afetados a um gerente ativo ou à raiz, ou pause/encerre explicitamente a subárvore inválida antes de atribuir trabalho ou iniciar execuções.",
+    "repairTerminatedAncestor": "{{agentName}} reporta-se ao ancestral encerrado {{ancestorName}}. Atribua {{agentName}} ou o ancestral afetado mais próximo a um gerente ativo ou à raiz, ou pause/encerre explicitamente a subárvore inválida antes de atribuir trabalho ou iniciar execuções.",
+    "builtInTitle": "Agente integrado",
+    "builtInResetting": "Restaurando…",
+    "builtInReset": "Restaurar padrões",
+    "builtInPowers": "Vem com o Paperclip e dá suporte a",
+    "builtInDescription": "Configure-o como qualquer agente — modelo, instruções e orçamento. Ele pode ser pausado, mas não excluído; pausá-lo também pausa este recurso.",
+    "pendingApproval": "Este agente aguarda aprovação do conselho e ainda não pode ser acionado.",
+    "approveAgent": "Aprovar agente"
+  },
+  "agentLifecycle": {
+    "refreshError": "Não foi possível atualizar o estado do ciclo de vida do agente.",
+    "retry": "Tentar novamente",
+    "retrying": "Tentando novamente…",
+    "phases": {
+      "preparing": { "title": "Preparando agente", "description": "Os recursos necessários estão sendo preparados. O trabalho permanece na fila." },
+      "verifying": { "title": "Verificando agente", "description": "A configuração de execução salva está sendo verificada. O trabalho permanece na fila." },
+      "pausing": { "title": "Pausando agente", "description": "Aguardando a parada da execução e dos recursos necessários." },
+      "resuming": { "title": "Retomando agente", "description": "Os recursos necessários estão sendo iniciados. O trabalho permanece na fila." },
+      "terminating": { "title": "Encerrando agente", "description": "Interrompendo a execução antes da limpeza dos recursos." },
+      "cleaningUp": { "title": "Limpando recursos do agente", "description": "Os recursos necessários estão sendo removidos. O encerramento ainda não foi concluído." }
+    }
+  },
   "agentOverview": {
     "adapterDefault": "Padrão do adaptador",
     "identity": "Identidade",

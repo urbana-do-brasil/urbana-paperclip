@@ -1306,5 +1306,13 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
   runtime, capacidades, skills, tarefas recentes e atalhos de auditoria, mantendo
   texto de usuário, modelo, IDs e rotas. AgentOverview e locale-validation
   passaram em 15/15 testes; typecheck direcionado, gates de tokens, diff check e
-  OpenSpec estrito passaram. Próxima: 3.6d1b.
+  OpenSpec estrito passaram. 3.6d1b localizou cabeçalho e avisos da ficha,
+  incluindo ciclo de vida, participação, aprovação e agente integrado. As
+  mensagens de hierarquia são montadas a partir dos campos estruturados,
+  traduzindo estados e mantendo nomes/IDs; diagnósticos brutos do servidor
+  continuam preservados quando não há campos estruturados. AgentLifecycleStatus,
+  helpers de hierarquia, AgentOverview e locale-validation passaram em 31/31
+  testes; o cenário integrado de polling do AgentConfigForm também passou.
+  Typecheck direcionado, gates, diff check e OpenSpec estrito passaram. Próxima:
+  3.6d1c.
   A aplicação ainda não foi implantada.

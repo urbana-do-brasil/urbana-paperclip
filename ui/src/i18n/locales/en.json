@@ -1395,6 +1395,43 @@
     "refreshing": "Refreshing…",
     "refreshModels": "Refresh models"
   },
+  "agentDetailHeader": {
+    "leftNotice": "You left this agent. It no longer appears in your sidebar.",
+    "dismissMembershipNotice": "Dismiss {{agentName}} membership notice",
+    "avatarLabel": "{{agentName}} avatar",
+    "escalationPausedTitle": "Escalation path is paused",
+    "pausedEscalation": "Escalations from {{agentName}} route to paused agent {{managerName}}. Work assigned to a paused agent never runs; unpause {{managerName}} or change who this agent reports to.",
+    "invalidChainTitle": "Invalid reporting chain",
+    "invalidChainDescription": "{{agentName}} cannot accept tasks or start runs until its reporting chain is repaired.",
+    "chainStatus": {
+      "missing": "missing manager",
+      "cycle": "reporting cycle"
+    },
+    "defaultRepairGuidance": "Assign this agent to an active manager or root, or explicitly pause or terminate the affected agent subtree.",
+    "repairMissingManager": "{{agentName}} reports to missing manager {{ancestorId}}. Reassign {{agentName}} or the nearest affected ancestor under an active manager or root, or explicitly pause or terminate the invalid subtree before assigning work or starting runs.",
+    "repairCycle": "{{agentName}} has a cycle in its reporting chain at {{ancestorName}}. Break the cycle by assigning one affected agent to an active manager or root, or explicitly pause or terminate the invalid subtree before assigning work or starting runs.",
+    "repairTerminatedAncestor": "{{agentName}} reports through terminated ancestor {{ancestorName}}. Reassign {{agentName}} or the nearest affected ancestor under an active manager or root, or explicitly pause or terminate the invalid subtree before assigning work or starting runs.",
+    "builtInTitle": "Built-in agent",
+    "builtInResetting": "Resetting…",
+    "builtInReset": "Reset to defaults",
+    "builtInPowers": "Ships with Paperclip and powers",
+    "builtInDescription": "Configure it like any agent — model, instructions, budget. It can be paused but not deleted; pausing it pauses this feature.",
+    "pendingApproval": "This agent is pending board approval and cannot be invoked yet.",
+    "approveAgent": "Approve agent"
+  },
+  "agentLifecycle": {
+    "refreshError": "Could not refresh agent lifecycle status.",
+    "retry": "Retry",
+    "retrying": "Retrying…",
+    "phases": {
+      "preparing": { "title": "Preparing agent", "description": "Required resources are being prepared. Work stays queued." },
+      "verifying": { "title": "Verifying agent", "description": "The saved execution configuration is being checked. Work stays queued." },
+      "pausing": { "title": "Pausing agent", "description": "Waiting for execution and required resources to stop." },
+      "resuming": { "title": "Resuming agent", "description": "Required resources are being started. Work stays queued." },
+      "terminating": { "title": "Terminating agent", "description": "Stopping execution before resource cleanup." },
+      "cleaningUp": { "title": "Cleaning up agent", "description": "Required resources are being removed. Termination is not complete." }
+    }
+  },
   "agentOverview": {
     "adapterDefault": "Adapter default",
     "identity": "Identity",
