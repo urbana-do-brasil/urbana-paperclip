@@ -1486,5 +1486,19 @@ etiquetas de origem conhecidas são apresentadas no idioma da interface.
 `AgentDetail.instructions.test.tsx` passou (**13/13**), incluindo histórico/diff
 e cópia de edições preservadas em PT-BR; `locale-validation.test.ts` passou
 (**12/12**). Typecheck direcionado, gates de tokens, `git diff --check` e
-validação OpenSpec estrita passaram. Progresso: **131/159**. Próxima tarefa:
-3.6d3c, instruções de conexão.
+validação OpenSpec estrita passaram. Progresso: **131/159**.
+
+### Continuação — instruções de conexão (3.6d3c)
+
+Os controles de edição e visualização de instruções das conexões agora seguem o
+idioma da interface em PT-BR/en, incluindo rótulos, acessibilidade, validação,
+salvamento, carregamento e avisos. Nomes de provedores e conexões, conteúdo
+personalizado enviado aos agentes, permissões e mensagens técnicas da API
+permanecem intactos.
+
+`ConnectionInstructions.test.tsx` passou (**2/2**), verificando rótulos
+localizados e preservação do provedor, nome da conexão e texto personalizado;
+`locale-validation.test.ts` passou (**12/12**). Typecheck direcionado, gates de
+tokens, `git diff --check` e validação OpenSpec estrita passaram. Progresso:
+**132/159**. Próxima tarefa: 3.6d4, ferramentas configuráveis no contexto do
+agente.

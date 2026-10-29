@@ -2160,6 +2160,27 @@
       "preservedEditsRemain": "Your preserved edits remain available.",
       "unsavedEditsRetained": "Your unsaved edits are retained.",
       "revisionSavedPendingMaterialization": "Revision saved. The instruction file still needs to be rebuilt from the saved revision."
+    },
+    "connection": {
+      "heading": "Agent instructions",
+      "tellAgents": "Tell agents to use {{provider}}",
+      "disabledNotice": "Agents can still use this connection’s tools, but won’t receive these instructions.",
+      "textLabel": "Instructions text",
+      "required": "Enter instructions.",
+      "doneEditing": "Done editing",
+      "edit": "Edit instructions",
+      "reset": "Reset to default",
+      "saveError": "Couldn’t save instructions. Try again.",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "save": "Save instructions",
+      "loading": "Loading connection instructions…",
+      "retry": "Retry",
+      "loadError": "Couldn’t load connection instructions.",
+      "fromConnections": "From connections",
+      "availabilityNotice": "Enabled instructions are included when the connection is available for the task. Access can depend on the task’s responsible person and action permissions.",
+      "offForConnection": "These instructions are turned off for this connection.",
+      "configurationRequired": "Complete this connection’s configuration before agents receive its instructions."
     }
   },
   "mcpConnect": {

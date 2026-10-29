@@ -2203,6 +2203,27 @@
       "preservedEditsRemain": "Suas alterações preservadas continuam disponíveis.",
       "unsavedEditsRetained": "Suas alterações não salvas foram mantidas.",
       "revisionSavedPendingMaterialization": "Revisão salva. Ainda é necessário reconstruir o arquivo de instruções com base na revisão salva."
+    },
+    "connection": {
+      "heading": "Instruções do agente",
+      "tellAgents": "Orientar os agentes a usar {{provider}}",
+      "disabledNotice": "Os agentes ainda podem usar as ferramentas desta conexão, mas não receberão estas instruções.",
+      "textLabel": "Texto das instruções",
+      "required": "Informe as instruções.",
+      "doneEditing": "Concluir edição",
+      "edit": "Editar instruções",
+      "reset": "Restaurar padrão",
+      "saveError": "Não foi possível salvar as instruções. Tente novamente.",
+      "cancel": "Cancelar",
+      "saving": "Salvando…",
+      "save": "Salvar instruções",
+      "loading": "Carregando instruções da conexão…",
+      "retry": "Tentar novamente",
+      "loadError": "Não foi possível carregar as instruções da conexão.",
+      "fromConnections": "De conexões",
+      "availabilityNotice": "As instruções habilitadas são incluídas quando a conexão está disponível para a tarefa. O acesso pode depender da pessoa responsável pela tarefa e das permissões de ações.",
+      "offForConnection": "As instruções desta conexão estão desativadas.",
+      "configurationRequired": "Conclua a configuração desta conexão antes que os agentes recebam suas instruções."
     }
   },
   "mcpConnect": {
