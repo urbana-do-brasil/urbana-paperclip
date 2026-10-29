@@ -5608,7 +5608,10 @@
         "disconnectFailed": "Não foi possível desconectar",
         "saveFailed": "Não foi possível salvar",
         "renameFailed": "Não foi possível renomear o app",
-        "signInAgainToConnectOwnAccount": "Entre novamente para conectar sua própria conta."
+        "signInAgainToConnectOwnAccount": "Entre novamente para conectar sua própria conta.",
+        "signInToIdentityProviderAgain": "Entre novamente no {{providerName}}.",
+        "disconnectCurrentIdentity": "Desconecta a identidade que este app está usando no momento.",
+        "revokeIdentityAction": "Revogar"
       },
       "tabs": { "permissions": "Permissões", "review": "Revisão" },
       "activity": {

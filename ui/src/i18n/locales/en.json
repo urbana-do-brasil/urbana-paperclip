@@ -5473,7 +5473,10 @@
         "disconnectFailed": "Couldn't disconnect",
         "saveFailed": "Couldn't save that",
         "renameFailed": "Couldn't rename the app",
-        "signInAgainToConnectOwnAccount": "Sign in again to connect your own account."
+        "signInAgainToConnectOwnAccount": "Sign in again to connect your own account.",
+        "signInToIdentityProviderAgain": "Sign in to {{providerName}} again.",
+        "disconnectCurrentIdentity": "Disconnect the identity currently used by this app.",
+        "revokeIdentityAction": "Revoke"
       },
       "tabs": { "permissions": "Permissions", "review": "Review" },
       "activity": {

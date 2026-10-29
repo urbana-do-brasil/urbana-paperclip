@@ -558,10 +558,10 @@ export function DangerZone({
             {connection?.authKind === "oauth" && !methodUnavailable && (onReconnectIdentity || !canReplaceCredential) ? (
               <div className="flex flex-wrap items-center justify-between gap-3 py-4">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Reconnect</p>
+                  <p className="text-sm font-medium text-foreground">{t("apps.appDetail.unconnected.reconnect")}</p>
                   <p className="text-xs text-muted-foreground">
                     {canReplaceCredential
-                      ? `Sign in to ${identityProviderName} again.`
+                      ? t("apps.appDetail.lifecycle.signInToIdentityProviderAgain", { providerName: identityProviderName })
                       : credentialUnavailableMessage ?? unavailableCredentialMessage}
                   </p>
                 </div>
@@ -573,7 +573,7 @@ export function DangerZone({
                     onClick={onReconnectIdentity}
                   >
                     {identityActionPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-                    Reconnect
+                    {t("apps.appDetail.unconnected.reconnect")}
                   </Button>
                 ) : null}
               </div>
@@ -584,9 +584,9 @@ export function DangerZone({
               && onRevokeIdentity ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 py-4">
                   <div>
-                    <p className="text-sm font-medium text-foreground">Revoke identity</p>
+                    <p className="text-sm font-medium text-foreground">{t("apps.appDetail.identities.revokeIdentity")}</p>
                     <p className="text-xs text-muted-foreground">
-                      Disconnect the identity currently used by this app.
+                      {t("apps.appDetail.lifecycle.disconnectCurrentIdentity")}
                     </p>
                   </div>
                   <Button
@@ -594,7 +594,7 @@ export function DangerZone({
                     size="sm"
                     onClick={() => setRevokeTarget(identityGrant)}
                   >
-                    Revoke
+                    {t("apps.appDetail.lifecycle.revokeIdentityAction")}
                   </Button>
                 </div>
             ) : null}

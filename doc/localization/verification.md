@@ -2680,3 +2680,20 @@ pluralização, links e tempo relativo. `pnpm check:tokens`,
 OpenSpec estrita passaram. O typecheck da UI aponta somente o erro preexistente
 em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 Progresso: **222/246 tarefas**. Próxima: 3.9f3g, painéis avançados genéricos.
+
+### Painéis avançados de conexão (3.9f3g)
+
+Os detalhes de endereço/transporte, ações de reconexão e revogação de identidade
+agora acompanham PT-BR/en. Endereços, nomes dos provedores, mensagens livres,
+configuração, URLs e callbacks foram preservados; os fluxos existentes de
+confirmação e mutação continuam iguais. O wrapper genérico `AdvancedPanel` não
+tem import ativo no detalhe atual, mas foi validado junto às ações que seguem em
+uso no fluxo de conexão.
+
+`AdvancedPanel.render.test.tsx`, `AppDetail.test.tsx` e
+`locale-validation.test.ts` passaram em **104/104 testes**, incluindo a
+preservação do endpoint/transporte e a execução dos callbacks de reconexão e
+revogação. Os gates de tokens, parse dos catálogos e OpenSpec estrito passaram.
+O typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso: **223/246 tarefas**. Próxima: 3.9f4, gestão de conexões de provedores.
