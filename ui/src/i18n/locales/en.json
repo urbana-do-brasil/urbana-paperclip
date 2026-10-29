@@ -1395,6 +1395,54 @@
     "refreshing": "Refreshing…",
     "refreshModels": "Refresh models"
   },
+  "agentDetailNavigation": {
+    "agents": "Agents",
+    "agentFallback": "Agent",
+    "navigationLabel": "{{agentName}} navigation",
+    "sections": {
+      "agent": "Agent",
+      "runtime": "Runtime",
+      "governance": "Governance"
+    },
+    "items": {
+      "overview": "Overview",
+      "instructions": "Instructions",
+      "skills": "Skills",
+      "runtime": "Harness / Runtime",
+      "secrets": "Secrets",
+      "secretsHeading": "Secrets & variables",
+      "tools": "Tools",
+      "channels": "Channels",
+      "permissions": "Permissions / Trust",
+      "apiKeys": "API Keys",
+      "revisions": "Revisions"
+    },
+    "audit": {
+      "heading": "Audit",
+      "activity": "Activity",
+      "runs": "Runs",
+      "costs": "Costs",
+      "budgets": "Budgets",
+      "loading": "Loading audit links…"
+    }
+  },
+  "agentConfiguration": {
+    "saveBar": {
+      "savingChanges": "Saving changes…",
+      "unsavedChanges": "You have unsaved changes.",
+      "discard": "Discard",
+      "saving": "Saving…",
+      "saveChanges": "Save changes"
+    },
+    "revisions": {
+      "heading": "Configuration revisions",
+      "count": "{{count}} total",
+      "empty": "No configuration revisions yet.",
+      "restore": "Restore",
+      "changed": "Changed",
+      "noTrackedChanges": "no tracked changes"
+    }
+  },
   "agentActions": {
     "assignTask": "Assign Task",
     "runNow": "Run now",

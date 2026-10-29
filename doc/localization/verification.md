@@ -1320,6 +1320,5 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
   Permissões, callbacks, rotas, IDs e erros retornados pela API permanecem
   intactos. AgentActionButtons, PrimaryAgentPresentation, roster e
   locale-validation passaram em 55/55 testes; typecheck direcionado, gates,
-  diff check e OpenSpec estrito passaram. O lote 3.6d1 está concluído. Próxima:
-  3.6d2.
+  diff check e OpenSpec estrito passaram. O lote 3.6d1 está concluído. A tarefa 3.6d2 foi dividida em d2a (navegação, alterações não salvas e revisões), d2b (identidade e ambiente), d2c (configuração de adaptador/runtime), d2d (ambientes e política de execução) e d2e (validação e feedback de salvamento). 3.6d2a localizou a navegação contextual e os links de auditoria, revisões de configuração e barra de alterações não salvas; destinos, IDs, datas, fontes e chaves técnicas permanecem intactos. Os testes focados passaram em 19/19; typecheck direcionado, gates de tokens, diff check e OpenSpec estrito passaram. Próxima: 3.6d2b.
   A aplicação ainda não foi implantada.

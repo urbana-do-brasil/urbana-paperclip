@@ -1044,25 +1044,25 @@ export function AgentDetail() {
 
   useEffect(() => {
     const crumbs: { label: string; href?: string }[] = [
-      { label: "Agents", href: "/agents" },
+      { label: t("agentDetailNavigation.agents"), href: "/agents" },
     ];
-    const agentName = agent?.name ?? routeAgentRef ?? "Agent";
+    const agentName = agent?.name ?? routeAgentRef ?? t("agentDetailNavigation.agentFallback");
     if (activeView === "overview" && !urlRunId) {
       crumbs.push({ label: agentName });
     } else {
       crumbs.push({ label: agentName, href: agentDetailHref(canonicalAgentRef) });
       if (urlRunId) {
-        crumbs.push({ label: "Runs", href: agent?.id ? agentScopedAuditHref(agent.id, "runs") : undefined });
+        crumbs.push({ label: t("agentDetailNavigation.audit.runs"), href: agent?.id ? agentScopedAuditHref(agent.id, "runs") : undefined });
         crumbs.push({ label: `Run ${urlRunId.slice(0, 8)}` });
       } else {
         const item = AGENT_DETAIL_NAVIGATION
           .flatMap((section) => section.items)
           .find((candidate) => candidate.value === activeView);
-        crumbs.push({ label: item?.label ?? "Overview" });
+        crumbs.push({ label: item ? t(item.translationKey) : t("agentDetailNavigation.items.overview") });
       }
     }
     setBreadcrumbs(crumbs);
-  }, [setBreadcrumbs, agent, routeAgentRef, canonicalAgentRef, activeView, urlRunId]);
+  }, [setBreadcrumbs, agent, routeAgentRef, canonicalAgentRef, activeView, urlRunId, t]);
 
   useEffect(() => {
     closePanel();
@@ -1175,6 +1175,11 @@ export function AgentDetail() {
   const showConfigActionBar = (
     activeView === "runtime" || activeView === "instructions" || activeView === "secrets"
   );
+  const activeViewItem = AGENT_DETAIL_NAVIGATION.flatMap((section) => section.items)
+    .find((item) => item.value === activeView);
+  const activeViewLabel = activeView === "secrets"
+    ? t("agentDetailNavigation.items.secrets")
+    : activeViewItem ? t(activeViewItem.translationKey) : "";
   const showLeftAgentNotice = agentMembershipState === "left" && !dismissedLeftAgentIds.has(agent.id);
   const agentMembershipPending =
     membershipMutation.isPending &&
@@ -1380,7 +1385,7 @@ export function AgentDetail() {
         </div>
       )}
 
-      {activeView !== "run-detail" && activeView !== "channels" && <h2 className="text-xl font-semibold">{activeView === "secrets" ? "Secrets & variables" : AGENT_DETAIL_NAVIGATION.flatMap(section => section.items).find(item => item.value === activeView)?.label}</h2>}
+      {activeView !== "run-detail" && activeView !== "channels" && <h2 className="text-xl font-semibold">{activeView === "secrets" ? t("agentDetailNavigation.items.secretsHeading") : activeViewLabel}</h2>}
 
       {/* View content */}
       {activeView === "overview" && (
@@ -1495,13 +1500,12 @@ export function AgentDetail() {
         />
       )}
 
-      {showConfigActionBar && <footer className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-background py-4">
-        <p role="status" className="text-xs text-muted-foreground">{configSaving ? "Saving changes…" : configDirty ? "You have unsaved changes." : ""}</p>
-        <div className="flex gap-2">
-          <Button variant="ghost" disabled={!configDirty || configSaving} onClick={() => cancelConfigActionRef.current?.()}>Discard</Button>
-          <Button disabled={!configDirty || configSaving} onClick={() => {Promise.resolve(saveConfigActionRef.current?.()).catch(() => {});}}>{configSaving ? "Saving…" : "Save changes"}</Button>
-        </div>
-      </footer>}
+      {showConfigActionBar && <AgentConfigSaveBar
+        dirty={configDirty}
+        saving={configSaving}
+        onDiscard={() => cancelConfigActionRef.current?.()}
+        onSave={() => { Promise.resolve(saveConfigActionRef.current?.()).catch(() => {}); }}
+      />}
 
     </div>
   );
@@ -1515,6 +1519,35 @@ function SummaryRow({ label, children }: { label: string; children: React.ReactN
       <span className="text-muted-foreground text-xs">{label}</span>
       <div className="flex items-center gap-1">{children}</div>
     </div>
+  );
+}
+
+export function AgentConfigSaveBar({
+  dirty,
+  saving,
+  onDiscard,
+  onSave,
+}: {
+  dirty: boolean;
+  saving: boolean;
+  onDiscard: () => void;
+  onSave: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <footer className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-background py-4">
+      <p role="status" className="text-xs text-muted-foreground">
+        {saving ? t("agentConfiguration.saveBar.savingChanges") : dirty ? t("agentConfiguration.saveBar.unsavedChanges") : ""}
+      </p>
+      <div className="flex gap-2">
+        <Button variant="ghost" disabled={!dirty || saving} onClick={onDiscard}>
+          {t("agentConfiguration.saveBar.discard")}
+        </Button>
+        <Button disabled={!dirty || saving} onClick={onSave}>
+          {saving ? t("agentConfiguration.saveBar.saving") : t("agentConfiguration.saveBar.saveChanges")}
+        </Button>
+      </div>
+    </footer>
   );
 }
 
@@ -1893,6 +1926,7 @@ export function AgentRevisionsTab({
   agent: AgentDetailRecord;
   companyId?: string;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -1915,11 +1949,11 @@ export function AgentRevisionsTab({
   return (
     <div className="max-w-3xl space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-sm font-medium">Configuration Revisions</h3>
-        <span className="text-xs text-muted-foreground">{configRevisions?.length ?? 0} total</span>
+        <h3 className="text-sm font-medium">{t("agentConfiguration.revisions.heading")}</h3>
+        <span className="text-xs text-muted-foreground">{t("agentConfiguration.revisions.count", { count: configRevisions?.length ?? 0 })}</span>
       </div>
       {(configRevisions ?? []).length === 0 ? (
-        <p className="text-sm text-muted-foreground">No configuration revisions yet.</p>
+        <p className="text-sm text-muted-foreground">{t("agentConfiguration.revisions.empty")}</p>
       ) : (
         <div className="space-y-2">
           {(configRevisions ?? []).map((revision) => (
@@ -1938,11 +1972,11 @@ export function AgentRevisionsTab({
                   onClick={() => rollbackConfig.mutate(revision.id)}
                   disabled={rollbackConfig.isPending}
                 >
-                  Restore
+                  {t("agentConfiguration.revisions.restore")}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Changed: {revision.changedKeys.length > 0 ? revision.changedKeys.join(", ") : "no tracked changes"}
+                {t("agentConfiguration.revisions.changed")}: {revision.changedKeys.length > 0 ? revision.changedKeys.join(", ") : t("agentConfiguration.revisions.noTrackedChanges")}
               </p>
             </div>
           ))}

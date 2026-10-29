@@ -1437,6 +1437,54 @@
     "refreshing": "Atualizando…",
     "refreshModels": "Atualizar modelos"
   },
+  "agentDetailNavigation": {
+    "agents": "Agentes",
+    "agentFallback": "Agente",
+    "navigationLabel": "Navegação de {{agentName}}",
+    "sections": {
+      "agent": "Agente",
+      "runtime": "Execução",
+      "governance": "Governança"
+    },
+    "items": {
+      "overview": "Visão geral",
+      "instructions": "Instruções",
+      "skills": "Competências",
+      "runtime": "Ambiente de execução",
+      "secrets": "Segredos",
+      "secretsHeading": "Segredos e variáveis",
+      "tools": "Ferramentas",
+      "channels": "Canais",
+      "permissions": "Permissões / confiança",
+      "apiKeys": "Chaves de API",
+      "revisions": "Revisões"
+    },
+    "audit": {
+      "heading": "Auditoria",
+      "activity": "Atividade",
+      "runs": "Execuções",
+      "costs": "Custos",
+      "budgets": "Orçamentos",
+      "loading": "Carregando links de auditoria…"
+    }
+  },
+  "agentConfiguration": {
+    "saveBar": {
+      "savingChanges": "Salvando alterações…",
+      "unsavedChanges": "Você tem alterações não salvas.",
+      "discard": "Descartar",
+      "saving": "Salvando…",
+      "saveChanges": "Salvar alterações"
+    },
+    "revisions": {
+      "heading": "Revisões da configuração",
+      "count": "Total: {{count}}",
+      "empty": "Ainda não há revisões de configuração.",
+      "restore": "Restaurar",
+      "changed": "Alterado",
+      "noTrackedChanges": "nenhuma alteração registrada"
+    }
+  },
   "agentActions": {
     "assignTask": "Atribuir tarefa",
     "runNow": "Executar agora",
