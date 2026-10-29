@@ -2804,5 +2804,4 @@ mensagens técnicas e payloads foram preservados.
 `cron-fires.test.ts` e `locale-validation.test.ts` passaram em **53/53 testes
 focados**. O typecheck direcionado dos arquivos alterados passou. `check:tokens`,
 `check:token-gates`, JSON, `git diff --check` e OpenSpec estrito passaram.
-Progresso: **232/258 tarefas**. Próxima: 3.10b3, gatilhos, agendamento e
-webhooks.
+3.10b3 foi dividida em editor/formulários (b3a), lista/ciclo de vida/configurações (b3b) e assistente/instruções de webhook (b3c). A b3a localizou em PT-BR/en os presets, dias, validação cron, formulários, modos de assinatura e cartões da variante production, preservando cron, timezones, enums e segredos. `ScheduleEditor`, `RoutineTriggerCard`, formulários production, locale-validation e regressões: 26/26 testes focados; typecheck direcionado, gates de tokens, JSON, diff e OpenSpec estrito passaram. Progresso: **233/260 tarefas**. Próxima: 3.10b3b.

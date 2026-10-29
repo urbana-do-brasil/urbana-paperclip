@@ -1072,6 +1072,105 @@
         "discardChanges": "Descartar alterações",
         "readOnly": "Somente leitura — você não é responsável por esta rotina."
       },
+      "triggers": {
+        "schedule": {
+          "title": "Agendamento",
+          "frequency": "Frequência do agendamento",
+          "chooseFrequency": "Escolha a frequência...",
+          "presets": {
+            "everyMinute": "A cada minuto",
+            "everyHour": "A cada hora",
+            "everyDay": "Todos os dias",
+            "weekdays": "Dias úteis",
+            "weekly": "Semanalmente",
+            "monthly": "Mensalmente",
+            "customCron": "Personalizado (cron)"
+          },
+          "daysShort": {
+            "monday": "seg",
+            "tuesday": "ter",
+            "wednesday": "qua",
+            "thursday": "qui",
+            "friday": "sex",
+            "saturday": "sáb",
+            "sunday": "dom"
+          },
+          "daysFull": {
+            "monday": "segunda-feira",
+            "tuesday": "terça-feira",
+            "wednesday": "quarta-feira",
+            "thursday": "quinta-feira",
+            "friday": "sexta-feira",
+            "saturday": "sábado",
+            "sunday": "domingo"
+          },
+          "cronExpression": "Expressão cron",
+          "fiveFields": "Cinco campos: minuto, hora, dia do mês, mês e dia da semana",
+          "at": "às",
+          "atMinute": "no minuto",
+          "on": "em",
+          "onDay": "no dia",
+          "nextFires": "Próximas execuções: {{dates}}.",
+          "validation": {
+            "empty": "Informe uma expressão cron com 5 campos.",
+            "fieldCount": "Use exatamente 5 campos; foram informados {{count}}.",
+            "invalidFields": "Os campos cron devem usar números, intervalos, listas, curingas ou passos válidos.",
+            "valid": "Expressão cron válida.",
+            "noUpcomingFires": "Expressão cron válida, mas não há próximas execuções."
+          }
+        },
+        "countEmpty": "Ainda não há gatilhos",
+        "count_one": "{{count}} gatilho",
+        "count_many": "{{count}} gatilhos",
+        "count_other": "{{count}} gatilhos",
+        "addTrigger": "Adicionar gatilho",
+        "addATrigger": "Adicionar um gatilho",
+        "newTrigger": "Novo gatilho",
+        "adding": "Adicionando...",
+        "cancel": "Cancelar",
+        "done": "Concluído",
+        "kind": "Tipo",
+        "label": "Rótulo",
+        "kinds": {
+          "schedule": "Agendamento",
+          "webhook": "Webhook",
+          "api": "API"
+        },
+        "signingMode": {
+          "title": "Modo de assinatura",
+          "options": {
+            "app_webhook": "Webhook do app",
+            "bearer": "Token Bearer",
+            "hmac_sha256": "HMAC-SHA256",
+            "github_hmac": "HMAC do GitHub",
+            "none": "Nenhum"
+          },
+          "descriptions": {
+            "bearer": "Envie Authorization: Bearer <secret> em cada solicitação.",
+            "hmacSha256": "Envie X-Paperclip-Timestamp e X-Paperclip-Signature: sha256=<hex>, assinando o timestamp + um ponto + o corpo JSON exato.",
+            "githubHmac": "Aceita o cabeçalho X-Hub-Signature-256 do GitHub (HMAC sobre o corpo bruto, sem timestamp).",
+            "appWebhook": "Aceita um token bearer ou uma assinatura HMAC-SHA256 sobre o corpo exato da solicitação em X-Hub-Signature ou X-Hub-Signature-256.",
+            "firefliesHmac": "Webhook assinado (legado).",
+            "none": "Sem autenticação — a própria URL do webhook funciona como segredo compartilhado."
+          }
+        },
+        "replayWindow": "Janela de repetição (segundos)",
+        "saveSecretNow": "Salve agora. O Paperclip não exibirá esse segredo novamente.",
+        "newWebhookUrl": "Nova URL do webhook",
+        "newWebhookSecret": "Novo segredo do webhook",
+        "webhookUrl": "URL do webhook",
+        "webhookSecret": "Segredo do webhook",
+        "url": "URL",
+        "secret": "Segredo",
+        "noneYet": "Ainda não há gatilhos.",
+        "taskCreated": "Tarefa criada",
+        "triggerAria": "Gatilho: {{label}}",
+        "next": "Próximo: {{date}}",
+        "webhookUrlHelp": "Envie uma solicitação POST com Content-Type: application/json. Mantenha esta URL privada quando a assinatura estiver desativada.",
+        "delete": "Excluir",
+        "rotateSecret": "Trocar segredo",
+        "saveTrigger": "Salvar gatilho"
+      },
       "delivery": {
         "concurrencyAria": "Política de concorrência",
         "catchUpAria": "Política de recuperação",

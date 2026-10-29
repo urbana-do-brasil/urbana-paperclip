@@ -1033,6 +1033,104 @@
         "discardChanges": "Discard changes",
         "readOnly": "Read-only — you don't own this routine."
       },
+      "triggers": {
+        "schedule": {
+          "title": "Schedule",
+          "frequency": "Schedule frequency",
+          "chooseFrequency": "Choose frequency...",
+          "presets": {
+            "everyMinute": "Every minute",
+            "everyHour": "Every hour",
+            "everyDay": "Every day",
+            "weekdays": "Weekdays",
+            "weekly": "Weekly",
+            "monthly": "Monthly",
+            "customCron": "Custom (cron)"
+          },
+          "daysShort": {
+            "monday": "Mon",
+            "tuesday": "Tue",
+            "wednesday": "Wed",
+            "thursday": "Thu",
+            "friday": "Fri",
+            "saturday": "Sat",
+            "sunday": "Sun"
+          },
+          "daysFull": {
+            "monday": "Monday",
+            "tuesday": "Tuesday",
+            "wednesday": "Wednesday",
+            "thursday": "Thursday",
+            "friday": "Friday",
+            "saturday": "Saturday",
+            "sunday": "Sunday"
+          },
+          "cronExpression": "Cron expression",
+          "fiveFields": "Five fields: minute hour day-of-month month day-of-week",
+          "at": "at",
+          "atMinute": "at minute",
+          "on": "on",
+          "onDay": "on day",
+          "nextFires": "Next: {{dates}}.",
+          "validation": {
+            "empty": "Enter a 5-field cron expression.",
+            "fieldCount": "Use exactly 5 fields; this has {{count}}.",
+            "invalidFields": "Cron fields must use valid numbers, ranges, lists, wildcards, or steps.",
+            "valid": "Valid cron.",
+            "noUpcomingFires": "Valid cron, but no upcoming fires were found."
+          }
+        },
+        "countEmpty": "No triggers yet",
+        "count_one": "{{count}} trigger",
+        "count_other": "{{count}} triggers",
+        "addTrigger": "Add trigger",
+        "addATrigger": "Add a trigger",
+        "newTrigger": "New trigger",
+        "adding": "Adding...",
+        "cancel": "Cancel",
+        "done": "Done",
+        "kind": "Kind",
+        "label": "Label",
+        "kinds": {
+          "schedule": "Schedule",
+          "webhook": "Webhook",
+          "api": "API"
+        },
+        "signingMode": {
+          "title": "Signing mode",
+          "options": {
+            "app_webhook": "App webhook",
+            "bearer": "Bearer token",
+            "hmac_sha256": "HMAC-SHA256",
+            "github_hmac": "GitHub HMAC",
+            "none": "None"
+          },
+          "descriptions": {
+            "bearer": "Send Authorization: Bearer <secret> with each request.",
+            "hmacSha256": "Send X-Paperclip-Timestamp and X-Paperclip-Signature: sha256=<hex>, signing timestamp + a dot + the exact JSON body.",
+            "githubHmac": "Accept GitHub-style X-Hub-Signature-256 header (HMAC over raw body, no timestamp).",
+            "appWebhook": "Accept a bearer token or an HMAC-SHA256 signature over the exact request body in X-Hub-Signature or X-Hub-Signature-256.",
+            "firefliesHmac": "Signed webhook (legacy).",
+            "none": "No authentication — the webhook URL itself acts as a shared secret."
+          }
+        },
+        "replayWindow": "Replay window (seconds)",
+        "saveSecretNow": "Save this now. Paperclip will not show the secret value again.",
+        "newWebhookUrl": "New webhook URL",
+        "newWebhookSecret": "New webhook secret",
+        "webhookUrl": "Webhook URL",
+        "webhookSecret": "Webhook secret",
+        "url": "URL",
+        "secret": "Secret",
+        "noneYet": "No triggers yet.",
+        "taskCreated": "Task created",
+        "triggerAria": "Trigger: {{label}}",
+        "next": "Next: {{date}}",
+        "webhookUrlHelp": "Send a POST request with Content-Type: application/json. Keep this URL private when signing is disabled.",
+        "delete": "Delete",
+        "rotateSecret": "Rotate secret",
+        "saveTrigger": "Save trigger"
+      },
       "delivery": {
         "concurrencyAria": "Concurrency policy",
         "catchUpAria": "Catch-up policy",

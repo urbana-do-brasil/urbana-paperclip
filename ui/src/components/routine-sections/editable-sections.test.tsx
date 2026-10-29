@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import type { RoutineDetail, RoutineTrigger } from "@paperclipai/shared";
 import { BreadcrumbProvider } from "@/context/BreadcrumbContext";
 import { queryKeys } from "@/lib/queryKeys";
@@ -41,7 +42,8 @@ async function render(secretMessage?: SecretMessage, contextRoutine?: RoutineDet
     <QueryClientProvider client={client}><BreadcrumbProvider><Harness secretMessage={secretMessage} contextRoutine={contextRoutine} /></BreadcrumbProvider></QueryClientProvider>
   </MemoryRouter>));
 }
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.clearAllMocks();
   sessionStorage.clear();
   container = document.createElement("div");
@@ -62,6 +64,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   await act(async () => root.unmount());
+  await i18n.changeLanguage("en");
   client.clear();
   container.remove();
 });
