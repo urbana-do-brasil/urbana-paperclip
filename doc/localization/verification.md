@@ -1759,3 +1759,29 @@ testes**. O typecheck direcionado dos módulos e testes alterados, `check:tokens
 passaram. O typecheck completo da UI continua com a falha preexistente de
 `SETUP_LOGIN_HINTS` no protótipo Storybook, documentada em 3.7c1. Progresso:
 **148/173**; próxima tarefa: 3.7f, auditoria, execuções e superfícies do hub.
+
+### Continuação — auditoria e execuções (3.7f)
+
+O hub de auditoria, seus breadcrumbs e navegação adaptada a telas móveis agora
+acompanham PT-BR/en. Filtros/status, origens conhecidas, durações, atividade e
+lista de execuções, estados vazios/carregando/falha e a nota dos 200 itens mais
+recentes também foram localizados. Rotas, query params, escopos/API, nomes, IDs,
+resumos de execução, valores desconhecidos e JSON expansível continuam intactos.
+Falhas conhecidas usam `formatUiError`; falhas sem chave conhecida mantêm o
+detalhe original já disponível, com explicação local traduzida.
+
+`AuditHub.test.tsx`, `AuditRuns.test.tsx`, `RoutineAuditActivity.test.tsx` e
+`locale-validation.test.ts` passaram em **30/30 testes**, incluindo navegação
+móvel preservando o escopo de rotina, filtros/status, conteúdo original,
+payloads, erros conhecidos e detalhes desconhecidos. O typecheck direcionado
+dos módulos e testes alterados, `check:tokens`, `check:token-gates`,
+`git diff --check`, parse dos catálogos e validação OpenSpec estrita passaram.
+O typecheck integral da UI não foi repetido neste lote; continua documentada a
+falha preexistente de `SETUP_LOGIN_HINTS` no protótipo Storybook.
+
+O lote 3.7f elevou o apply a **152/175 tarefas**. Ao conferir o estado do CLI,
+também foram reconciliados oito checkboxes agregadores cujas subtarefas e
+evidências já estavam concluídas nos lotes anteriores. O estado atual é
+**160/175 tarefas**; próxima tarefa: 3.8, migração de aprovações, acesso,
+segredos e configurações pessoais/de instância. O escopo geral de localização
+permanece parcial.

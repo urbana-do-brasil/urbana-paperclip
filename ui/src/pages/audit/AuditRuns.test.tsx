@@ -6,6 +6,8 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { HeartbeatRun, RoutineRunSummary } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { AuditRuns } from "./AuditRuns";
 
 const listAgentsMock = vi.hoisted(() => vi.fn());
@@ -91,7 +93,8 @@ describe("AuditRuns", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     currentSearch = "";
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -100,10 +103,11 @@ describe("AuditRuns", () => {
     listRoutineRunsMock.mockResolvedValue([routineRun()]);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root?.unmount());
     container.remove();
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   async function render(routineId?: string) {
@@ -150,5 +154,50 @@ describe("AuditRuns", () => {
     expect(container.textContent).toContain("Publish forecast");
     expect(container.textContent).toContain("Daily forecast");
     expect(container.querySelector('a[href="/issues/TES-42"]')).toBeTruthy();
+  });
+
+  it("localizes run labels and statuses while preserving summaries and links", async () => {
+    await i18n.changeLanguage("pt-BR");
+    currentSearch = "agentId=agent-1&runStatus=succeeded";
+    await render();
+
+    expect(container.textContent).toContain("Execuções");
+    expect(container.textContent).toContain("Agente");
+    expect(container.textContent).toContain("Status");
+    expect(container.textContent).toContain("Limpar filtros");
+    expect(container.textContent).toContain("Concluída");
+    expect(container.textContent).toContain("Reviewed the release checklist");
+    expect(container.textContent).toContain("1 min 5 s");
+    expect(listRunsMock).toHaveBeenCalledWith("company-1", "agent-1", 200, { summary: true });
+    expect(container.querySelector('a[href="/agents/agent-1/runs/run-12345678"]')).toBeTruthy();
+  });
+
+  it("localizes the empty state and pagination copy in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listRunsMock.mockResolvedValueOnce([]);
+    await render();
+
+    expect(container.textContent).toContain("Ainda não há execuções.");
+    expect(container.textContent).toContain("Mostrando as 200 execuções mais recentes.");
+  });
+
+  it("localizes owned request errors and preserves unknown API details", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const knownError = Object.assign(new Error("Validation error"), {
+      body: { error: "Validation error", messageKey: "validation" },
+    });
+    listRunsMock.mockRejectedValueOnce(knownError);
+    await render();
+    expect(container.textContent).toContain(
+      "Os dados enviados são inválidos. Revise os campos e tente novamente.",
+    );
+    expect(container.textContent).not.toContain("Validation error");
+
+    flushSync(() => root.unmount());
+    listRunsMock.mockRejectedValueOnce(new Error("Vendor: unavailable (token redacted)"));
+    await render();
+    expect(container.textContent).toContain(
+      "Não foi possível concluir a solicitação. Detalhes: Vendor: unavailable (token redacted)",
+    );
   });
 });

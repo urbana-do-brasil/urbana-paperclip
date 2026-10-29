@@ -12,6 +12,91 @@
       "next": "Use an organization invite or sign in with an account that already belongs to this organization."
     }
   },
+  "auditHub": {
+    "title": "Audit",
+    "sections": {
+      "activity": "Activity",
+      "runs": "Runs",
+      "costs": "Costs",
+      "budgets": "Budgets",
+      "timeline": "Timeline"
+    },
+    "pageSection": "Audit section",
+    "selectOrganization": "Select an organization to view audit.",
+    "runsDescription": "Recent agent executions across the organization. Open a run to inspect its transcript, output, and task context.",
+    "agentFilter": "Agent",
+    "allAgents": "All agents",
+    "statusFilter": "Status",
+    "allStatuses": "All statuses",
+    "clearFilters": "Clear filters",
+    "loadingRuns": "Loading runs…",
+    "loadRunsFailed": "Failed to load runs.",
+    "retry": "Try again",
+    "noRunsMatchFilters": "No runs match these filters.",
+    "noRuns": "No runs yet.",
+    "recentRuns": "Recent runs",
+    "unknownAgent": "Unknown agent",
+    "runSummaryFallback": "{{source}} run",
+    "showingRecentRuns": "Showing the {{count}} most recent runs.",
+    "loadingRoutineRuns": "Loading routine runs…",
+    "noRoutineRuns": "No routine runs yet.",
+    "routineRunsTitle": "Routine runs",
+    "routineRunsDescription": "Executions created by this routine, newest first.",
+    "routineRunFallback": "Routine run",
+    "showingRecentRoutineRuns": "Showing the {{count}} most recent routine runs.",
+    "loadingRoutineActivity": "Loading routine activity…",
+    "loadRoutineActivityFailed": "Failed to load routine activity.",
+    "noRoutineActivity": "No routine activity yet.",
+    "routineActivityTitle": "Routine activity"
+  },
+  "routineActivity": {
+    "actions": {
+      "webhookTestReceived": "Connection test passed",
+      "webhookTestRejected": "Connection test rejected",
+      "webhookReceived": "Webhook event received",
+      "webhookRejected": "Webhook authentication failed",
+      "created": "Routine created",
+      "updated": "Routine updated",
+      "revisionCreated": "Routine revision created",
+      "revisionRestored": "Routine revision restored",
+      "documentAnnotationRemapped": "Document annotation remapped",
+      "documentAnnotationThreadCreated": "Annotation thread created",
+      "documentAnnotationCommentAdded": "Annotation comment added",
+      "triggerCreated": "Trigger added",
+      "triggerUpdated": "Trigger updated",
+      "triggerDeleted": "Trigger removed",
+      "triggerRemoved": "Trigger removed",
+      "triggerRestored": "Trigger restored",
+      "triggerSetupFinished": "Webhook setup finished",
+      "triggerSecretRotated": "Webhook key replaced",
+      "runTriggered": "Routine started",
+      "runSkipped": "Routine run skipped",
+      "runCreated": "Run created",
+      "runCompleted": "Run completed",
+      "webhookIgnored": "Webhook event ignored"
+    },
+    "summary": {
+      "webhookTestReceived": "Connection working · No run or task created",
+      "webhookTestRejected": "Update the key in your app and resend",
+      "webhookReceived": "Authentication passed",
+      "webhookRejected": "Check the key in your sending app",
+      "taskCreated": "Task created"
+    },
+    "sources": {
+      "manual": "Manual",
+      "schedule": "Schedule",
+      "api": "API",
+      "webhook": "Webhook"
+    },
+    "status": {
+      "received": "Received",
+      "coalesced": "Coalesced",
+      "skipped": "Skipped",
+      "issueCreated": "Task created",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Add another agent to {{company}}",

@@ -3,11 +3,14 @@
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { AuditHub } from "./AuditHub";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 const setSearchParamsMock = vi.hoisted(() => vi.fn());
 const setBreadcrumbsMock = vi.hoisted(() => vi.fn());
+const sidebarState = vi.hoisted(() => ({ isMobile: false }));
 let currentSearch = "";
 
 vi.mock("@/context/CompanyContext", () => ({
@@ -19,7 +22,7 @@ vi.mock("@/context/BreadcrumbContext", () => ({
 }));
 
 vi.mock("@/context/SidebarContext", () => ({
-  useSidebar: () => ({ isMobile: false }),
+  useSidebar: () => sidebarState,
 }));
 
 vi.mock("@/lib/router", () => ({
@@ -76,16 +79,20 @@ describe("AuditHub", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+    sidebarState.isMobile = false;
     currentSearch = "";
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root?.unmount());
     container.remove();
     vi.clearAllMocks();
+    sidebarState.isMobile = false;
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   function render(section: "activity" | "runs" | "costs" | "budgets" | "timeline") {
@@ -139,6 +146,40 @@ describe("AuditHub", () => {
     expect(labels).toEqual(["Activity", "Runs", "Costs", "Budgets", "Timeline"]);
     expect(container.querySelector<HTMLElement>('[data-testid="audit-timeline"]')?.dataset.embedded)
       .toBe("true");
+  });
+
+  it("localizes Audit navigation and breadcrumbs in Brazilian Portuguese without changing destinations", async () => {
+    await i18n.changeLanguage("pt-BR");
+    render("timeline");
+
+    const labels = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]'))
+      .map((tab) => tab.textContent?.trim());
+    expect(labels).toEqual(["Atividade", "Execuções", "Custos", "Orçamentos", "Linha do tempo"]);
+    expect(container.querySelector("h1")?.textContent).toBe("Auditoria");
+    expect(setBreadcrumbsMock).toHaveBeenCalledWith([
+      { label: "Auditoria", href: "/activity" },
+      { label: "Linha do tempo" },
+    ]);
+    expect(container.querySelector<HTMLElement>('[data-testid="audit-timeline"]')?.dataset.embedded)
+      .toBe("true");
+  });
+
+  it("keeps mobile audit navigation localized and routes selections through the existing scope", async () => {
+    await i18n.changeLanguage("pt-BR");
+    sidebarState.isMobile = true;
+    currentSearch = "entityType=routine&entityId=routine-1";
+    render("activity");
+
+    const selector = container.querySelector<HTMLSelectElement>("select[aria-label='Seção da auditoria']");
+    expect(selector).toBeTruthy();
+    expect(Array.from(selector!.options).map((option) => option.textContent)).toEqual([
+      "Atividade", "Execuções", "Custos", "Orçamentos", "Linha do tempo",
+    ]);
+    flushSync(() => {
+      selector!.value = "runs";
+      selector!.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(navigateMock).toHaveBeenCalledWith("/activity/runs?entityType=routine&entityId=routine-1");
   });
 
   it("renders Costs and Budgets as intentional peer sections", () => {

@@ -12,6 +12,91 @@
       "next": "Use um convite de organização ou entre com uma conta que já pertença a esta organização."
     }
   },
+  "auditHub": {
+    "title": "Auditoria",
+    "sections": {
+      "activity": "Atividade",
+      "runs": "Execuções",
+      "costs": "Custos",
+      "budgets": "Orçamentos",
+      "timeline": "Linha do tempo"
+    },
+    "pageSection": "Seção da auditoria",
+    "selectOrganization": "Selecione uma organização para ver a auditoria.",
+    "runsDescription": "Execuções recentes de agentes na organização. Abra uma execução para ver a transcrição, a saída e o contexto da tarefa.",
+    "agentFilter": "Agente",
+    "allAgents": "Todos os agentes",
+    "statusFilter": "Status",
+    "allStatuses": "Todos os status",
+    "clearFilters": "Limpar filtros",
+    "loadingRuns": "Carregando execuções…",
+    "loadRunsFailed": "Não foi possível carregar as execuções.",
+    "retry": "Tentar novamente",
+    "noRunsMatchFilters": "Nenhuma execução corresponde a estes filtros.",
+    "noRuns": "Ainda não há execuções.",
+    "recentRuns": "Execuções recentes",
+    "unknownAgent": "Agente desconhecido",
+    "runSummaryFallback": "Execução {{source}}",
+    "showingRecentRuns": "Mostrando as {{count}} execuções mais recentes.",
+    "loadingRoutineRuns": "Carregando execuções da rotina…",
+    "noRoutineRuns": "Ainda não há execuções desta rotina.",
+    "routineRunsTitle": "Execuções da rotina",
+    "routineRunsDescription": "Execuções criadas por esta rotina, da mais recente para a mais antiga.",
+    "routineRunFallback": "Execução da rotina",
+    "showingRecentRoutineRuns": "Mostrando as {{count}} execuções mais recentes da rotina.",
+    "loadingRoutineActivity": "Carregando atividade da rotina…",
+    "loadRoutineActivityFailed": "Não foi possível carregar a atividade da rotina.",
+    "noRoutineActivity": "Ainda não há atividade nesta rotina.",
+    "routineActivityTitle": "Atividade da rotina"
+  },
+  "routineActivity": {
+    "actions": {
+      "webhookTestReceived": "Teste de conexão aprovado",
+      "webhookTestRejected": "Teste de conexão rejeitado",
+      "webhookReceived": "Evento de webhook recebido",
+      "webhookRejected": "Autenticação do webhook falhou",
+      "created": "Rotina criada",
+      "updated": "Rotina atualizada",
+      "revisionCreated": "Revisão da rotina criada",
+      "revisionRestored": "Revisão da rotina restaurada",
+      "documentAnnotationRemapped": "Anotação do documento remapeada",
+      "documentAnnotationThreadCreated": "Tópico de anotação criado",
+      "documentAnnotationCommentAdded": "Comentário adicionado à anotação",
+      "triggerCreated": "Gatilho adicionado",
+      "triggerUpdated": "Gatilho atualizado",
+      "triggerDeleted": "Gatilho removido",
+      "triggerRemoved": "Gatilho removido",
+      "triggerRestored": "Gatilho restaurado",
+      "triggerSetupFinished": "Configuração do webhook concluída",
+      "triggerSecretRotated": "Chave do webhook substituída",
+      "runTriggered": "Rotina iniciada",
+      "runSkipped": "Execução da rotina ignorada",
+      "runCreated": "Execução criada",
+      "runCompleted": "Execução concluída",
+      "webhookIgnored": "Evento do webhook ignorado"
+    },
+    "summary": {
+      "webhookTestReceived": "Conexão funcionando · Nenhuma execução ou tarefa foi criada",
+      "webhookTestRejected": "Atualize a chave no seu aplicativo e envie novamente",
+      "webhookReceived": "Autenticação aprovada",
+      "webhookRejected": "Verifique a chave no aplicativo que enviou a solicitação",
+      "taskCreated": "Tarefa criada"
+    },
+    "sources": {
+      "manual": "Manual",
+      "schedule": "Agendamento",
+      "api": "API",
+      "webhook": "Webhook"
+    },
+    "status": {
+      "received": "Recebida",
+      "coalesced": "Agrupada",
+      "skipped": "Ignorada",
+      "issueCreated": "Tarefa criada",
+      "completed": "Concluída",
+      "failed": "Falhou"
+    }
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Adicionar outro agente a {{company}}",
