@@ -8832,6 +8832,81 @@
       }
     }
   },
+  "teamCatalog": {
+    "trust": {
+      "markdownOnly": { "label": "Markdown only", "tip": "Contains only Markdown and references. No executable content." },
+      "assets": { "label": "Assets", "tip": "Includes static assets (images, fixtures). No executable content." },
+      "scripts": { "label": "Scripts", "tip": "Includes executable scripts that were security-reviewed before bundling." },
+      "externalSources": { "label": "External sources", "tip": "References external sources resolved at install time." }
+    },
+    "compatibility": { "compatible": "Compatible", "unknown": "Unknown compatibility", "invalid": "Invalid" },
+    "catalogProvenance": "Catalog package provenance",
+    "risk": {
+      "externalSources_one": "This team references {{count}} external source",
+      "externalSources_other": "This team references {{count}} external sources",
+      "unpinned": "unpinned",
+      "unsupported": "unsupported in browser install",
+      "pinned": "Pinned",
+      "notPinned": "Unpinned",
+      "unsupportedBrowser": "Unsupported in browser install"
+    },
+    "hierarchy": { "rootAgent": "root agent", "noAgents": "No agents in this team." },
+    "skills": { "noneRequired": "No required skills.", "resolved": "resolved", "external": "external", "type": { "catalog": "Catalog", "local": "Local", "skills_sh": "skills.sh", "github": "GitHub", "url": "URL", "local_path": "Local path", "agent_package": "Agent package" } },
+    "environment": { "title": "Secrets & environment inputs", "required": "required", "requiredPlaceholder": "Required", "optionalPlaceholder": "Optional", "kind": { "secret": "Secret", "plain": "Text" }, "value": "{{key}} value", "hide": "Hide {{key}}", "show": "Show {{key}}", "hideValue": "Hide value", "showValue": "Show value" },
+    "sources": { "title": "External sources", "pinned": "pinned", "unpinnedReference": "unpinned reference", "notInstallable": "not installable from the browser", "type": { "github": "GitHub", "url": "URL", "local_path": "Local path", "agent_package": "Agent package", "skills_sh": "skills.sh" } },
+    "detail": {
+      "reinstallLatest": "Re-install latest", "installTeam": "Install team", "kindBundled": "Bundled", "kindOptional": "Optional",
+      "installed": "Installed", "updateAvailable": "Update available", "invalidManifest": "This team cannot be installed — the package manifest is invalid.",
+      "installPermission": "Requires board operator or agent-create permissions.", "agents": "Agents", "projects": "Projects", "routines": "Routines",
+      "requiredSkills": "Required skills", "agentHierarchy": "Agent hierarchy", "files": "Files", "close": "Close"
+    },
+    "steps": { "targetManager": "Target manager", "sourcePolicy": "Source policy", "skillPlan": "Prerequisite skills", "preview": "Preview" },
+    "errors": { "previewFailed": "Failed to load install preview.", "installFailed": "Install failed.", "enableLegacyAdapter": "Enable a legacy adapter before installing this team." },
+    "install": {
+      "title": "Install {{name}}", "stepOf": "Step {{current}} of {{total}} · {{step}}", "failed": "Install failed",
+      "partialState": "Partial state is not rolled back. Review the organization activity log before retrying.",
+      "blocked_one": "Install blocked: {{count}} error", "blocked_other": "Install blocked: {{count}} errors",
+      "missingSecrets_one": "Required secrets missing: {{count}}", "missingSecrets_other": "Required secrets missing: {{count}}",
+      "enableLegacyAdapter": "Enable a legacy adapter to install this team", "confirmExecutables": "Confirm — install with executables",
+      "installExecutables": "Install with executables", "back": "Back", "cancel": "Cancel", "continue": "Continue", "close": "Close",
+      "targetManagerHelp": "This team’s root agents need a manager in your organization. Pick the agent who will become their parent. Internal team hierarchy is preserved.",
+      "rootAgents": "Root agents", "targetManagerLabel": "Target manager", "searchAgents": "Search agents…", "noAgentsFound": "No agents found.",
+      "fullOrganizationPackage": "Use this team as a full-organization package (no target manager)",
+      "externalSourcesWarning_one": "This team references {{count}} external source. Review each one and decide what to allow before continuing.",
+      "externalSourcesWarning_other": "This team references {{count}} external sources. Review each one and decide what to allow before continuing.",
+      "allowExternal": "Allow external sources", "allowExternalDescription": "Resolve GitHub/URL skill and team sources at install time.",
+      "allowUnpinned": "Allow unpinned optional sources", "allowUnpinnedDescription": "Permit optional sources that are not pinned to a ref or checksum.",
+      "allowLocal": "Allow local-path sources", "allowLocalDescription": "Required for local_path / agent_package sources. Development use only.",
+      "localPathBlocked": "This team has local-path sources. Enable “Allow local-path sources” to continue, or install it from the CLI.",
+      "skillPlanDescription": "Before agents are imported, the catalog resolves the skills they depend on. This is the resolution plan."
+    },
+    "skillActions": { "bundled": "Bundled in package", "catalog": "Will install from catalog", "external": "Will import from source", "blocked": "Blocked" },
+    "preview": {
+      "preparing": "Preparing preview…", "retry": "Retry", "summary": "Summary", "agents": "Agents", "projects": "Projects", "starterTasks": "Starter tasks",
+      "collisionStrategy": "Collision strategy", "renameCollisions": "Rename collisions", "skipCollisions": "Skip collisions", "installBlocked": "Install blocked",
+      "actionCreate": "Create", "actionUpdate": "Update", "actionSkip": "Skip",
+      "adapterSelection": "Adapter selection", "noLegacyAdapter": "No enabled legacy adapter", "adapterHelp": "Each imported agent defaults to its package adapter; override here before install. Deeper per-adapter model config is editable on the agent after install.",
+      "required": "required", "requiredPlaceholder": "Required", "optionalPlaceholder": "Optional", "hide": "Hide {{key}}", "show": "Show {{key}}", "hideValue": "Hide value", "showValue": "Show value",
+      "provenanceBefore": "Imported entities are stamped with", "provenanceAfter": "and an activity event is recorded for preview and install."
+    },
+    "apply": {
+      "installing": "Installing {{name}}…", "progress": "Resolving skills, importing agents, projects, and routines. This may take a moment.",
+      "teamInstalled": "Team installed", "importedToOrganization": "{{name}} was imported into your organization. Imported entities are stamped with catalog provenance.",
+      "agentsImported": "Agents imported", "projectsImported": "Projects imported", "skillsResolved": "Skills resolved",
+      "viewAgents": "View imported agents →", "viewProjects": "View imported projects →", "viewRoutines": "View routines →", "viewActivity": "View activity log →", "done": "Done"
+    },
+    "row": { "updateAvailable": "Update available — installed team is out of date", "externalSources": "Has external sources" },
+    "counts": {
+      "agents_one": "{{count}} agent", "agents_other": "{{count}} agents", "projects_one": "{{count}} project", "projects_other": "{{count}} projects", "routines_one": "{{count}} routine", "routines_other": "{{count}} routines"
+    },
+    "filters": {
+      "orgChart": "Org Chart", "teams": "Teams", "selectOrganization": "Select an organization to browse the team catalog.", "search": "Search teams",
+      "allKinds": "All kinds", "kind": "Kind", "bundled": "Bundled", "optional": "Optional", "allCategories": "All categories", "category": "Category",
+      "anyRisk": "Any risk", "risk": "Risk", "safeOnly": "Safe only", "hasWarnings": "Has warnings", "blocked": "Blocked", "reset": "Reset filters",
+      "loadFailed": "Failed to load team catalog.", "noCatalog": "No team catalog configured.", "noMatches": "No teams match this filter.", "retry": "Retry",
+      "installed": "Installed", "backToCatalog": "Back to catalog", "selectTeam": "Select a team to view details.", "teamInstalledToast": "Team installed", "teamImportedToast": "{{name}} was imported."
+    }
+  },
   "skillStudio": {
     "tryAgain": "Please try again.",
     "skills": "Skills",

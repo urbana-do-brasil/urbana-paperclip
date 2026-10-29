@@ -2322,3 +2322,21 @@ idioma e superfícies de fork/associação em PT-BR. `pnpm check:tokens`,
 estrita passaram. O typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 O progresso é **200/220 tarefas**; próxima: 3.9d, catálogo de equipes.
+
+### Catálogo de equipes (3.9d)
+
+O catálogo de equipes localiza filtros, listagem, detalhes, badges de confiança e
+compatibilidade, hierarquia de agentes, fontes externas, skills e variáveis de
+ambiente. O fluxo de instalação também alterna entre PT-BR e inglês nas etapas
+de gerente, política de fontes, resolução de skills, prévia, seleção de adapter,
+segredos, confirmação de scripts e resultado. Nomes, descrições, categorias,
+referências e conteúdo fornecidos pelos pacotes, enums/valores internos,
+permissões, rotas e payloads de prévia/instalação foram preservados.
+
+`TeamCatalog.test.tsx` e `locale-validation.test.ts` passaram em **23/23 testes**,
+incluindo catálogo, política de fontes, etapas de gerente e instalação em PT-BR
+com conferência das opções enviadas à API. `pnpm check:tokens`, `pnpm check:token-gates`, parse dos JSONs,
+`git diff --check` e validação OpenSpec estrita passaram. O typecheck da UI
+aponta somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. O progresso é **201/220 tarefas**; próxima:
+3.9e, ferramentas de agentes e administração de acesso/ferramentas.

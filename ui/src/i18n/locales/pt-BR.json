@@ -9067,6 +9067,83 @@
       }
     }
   },
+  "teamCatalog": {
+    "trust": {
+      "markdownOnly": { "label": "Somente Markdown", "tip": "Contém apenas Markdown e referências. Não inclui conteúdo executável." },
+      "assets": { "label": "Recursos", "tip": "Inclui recursos estáticos (imagens, fixtures). Não inclui conteúdo executável." },
+      "scripts": { "label": "Scripts", "tip": "Inclui scripts executáveis que passaram por revisão de segurança antes do empacotamento." },
+      "externalSources": { "label": "Fontes externas", "tip": "Faz referência a fontes externas resolvidas durante a instalação." }
+    },
+    "compatibility": { "compatible": "Compatível", "unknown": "Compatibilidade desconhecida", "invalid": "Inválida" },
+    "catalogProvenance": "Procedência do pacote no catálogo",
+    "risk": {
+      "externalSources_one": "Esta equipe referencia {{count}} fonte externa",
+      "externalSources_other": "Esta equipe referencia {{count}} fontes externas",
+      "externalSources_many": "Esta equipe referencia {{count}} fontes externas",
+      "unpinned": "sem versão fixada",
+      "unsupported": "não compatível com instalação pelo navegador",
+      "pinned": "Versão fixada",
+      "notPinned": "Sem versão fixada",
+      "unsupportedBrowser": "Não compatível com instalação pelo navegador"
+    },
+    "hierarchy": { "rootAgent": "agente raiz", "noAgents": "Esta equipe não tem agentes." },
+    "skills": { "noneRequired": "Nenhuma skill obrigatória.", "resolved": "resolvida", "external": "externa", "type": { "catalog": "Catálogo", "local": "Local", "skills_sh": "skills.sh", "github": "GitHub", "url": "URL", "local_path": "Caminho local", "agent_package": "Pacote de agentes" } },
+    "environment": { "title": "Segredos e variáveis de ambiente", "required": "obrigatório", "requiredPlaceholder": "Obrigatório", "optionalPlaceholder": "Opcional", "kind": { "secret": "Segredo", "plain": "Texto" }, "value": "Valor de {{key}}", "hide": "Ocultar {{key}}", "show": "Mostrar {{key}}", "hideValue": "Ocultar valor", "showValue": "Mostrar valor" },
+    "sources": { "title": "Fontes externas", "pinned": "com versão fixada", "unpinnedReference": "referência sem versão fixada", "notInstallable": "não instalável pelo navegador", "type": { "github": "GitHub", "url": "URL", "local_path": "Caminho local", "agent_package": "Pacote de agentes", "skills_sh": "skills.sh" } },
+    "detail": {
+      "reinstallLatest": "Reinstalar versão mais recente", "installTeam": "Instalar equipe", "kindBundled": "Inclusa", "kindOptional": "Opcional",
+      "installed": "Instalada", "updateAvailable": "Atualização disponível", "invalidManifest": "Não é possível instalar esta equipe: o manifesto do pacote é inválido.",
+      "installPermission": "Requer permissão de operador do quadro ou de criação de agentes.", "agents": "Agentes", "projects": "Projetos", "routines": "Rotinas",
+      "requiredSkills": "Skills obrigatórias", "agentHierarchy": "Hierarquia de agentes", "files": "Arquivos", "close": "Fechar"
+    },
+    "steps": { "targetManager": "Gerente de destino", "sourcePolicy": "Política de fontes", "skillPlan": "Skills necessárias", "preview": "Prévia" },
+    "errors": { "previewFailed": "Não foi possível carregar a prévia da instalação.", "installFailed": "Falha na instalação.", "enableLegacyAdapter": "Ative um adapter legado antes de instalar esta equipe." },
+    "install": {
+      "title": "Instalar {{name}}", "stepOf": "Etapa {{current}} de {{total}} · {{step}}", "failed": "Falha na instalação",
+      "partialState": "O estado parcial não será revertido. Verifique o registro de atividade da organização antes de tentar novamente.",
+      "blocked_one": "Instalação bloqueada: {{count}} erro", "blocked_other": "Instalação bloqueada: {{count}} erros", "blocked_many": "Instalação bloqueada: {{count}} erros",
+      "missingSecrets_one": "Segredos obrigatórios ausentes: {{count}}", "missingSecrets_other": "Segredos obrigatórios ausentes: {{count}}", "missingSecrets_many": "Segredos obrigatórios ausentes: {{count}}",
+      "enableLegacyAdapter": "Ative um adapter legado para instalar esta equipe", "confirmExecutables": "Confirmar — instalar com executáveis",
+      "installExecutables": "Instalar com executáveis", "back": "Voltar", "cancel": "Cancelar", "continue": "Continuar", "close": "Fechar",
+      "targetManagerHelp": "Os agentes raiz desta equipe precisam de um gerente na sua organização. Escolha o agente que será o responsável por eles. A hierarquia interna da equipe será preservada.",
+      "rootAgents": "Agentes raiz", "targetManagerLabel": "Gerente de destino", "searchAgents": "Buscar agentes…", "noAgentsFound": "Nenhum agente encontrado.",
+      "fullOrganizationPackage": "Usar esta equipe como um pacote para toda a organização (sem gerente de destino)",
+      "externalSourcesWarning_one": "Esta equipe referencia {{count}} fonte externa. Revise cada uma e decida o que permitir antes de continuar.",
+      "externalSourcesWarning_other": "Esta equipe referencia {{count}} fontes externas. Revise cada uma e decida o que permitir antes de continuar.",
+      "externalSourcesWarning_many": "Esta equipe referencia {{count}} fontes externas. Revise cada uma e decida o que permitir antes de continuar.",
+      "allowExternal": "Permitir fontes externas", "allowExternalDescription": "Resolver fontes de skills e equipes do GitHub/URL durante a instalação.",
+      "allowUnpinned": "Permitir fontes opcionais sem versão fixada", "allowUnpinnedDescription": "Permitir fontes opcionais sem referência ou checksum fixado.",
+      "allowLocal": "Permitir fontes de caminhos locais", "allowLocalDescription": "Necessário para fontes local_path / agent_package. Apenas para desenvolvimento.",
+      "localPathBlocked": "Esta equipe tem fontes em caminhos locais. Ative “Permitir fontes de caminhos locais” para continuar ou instale-a pela CLI.",
+      "skillPlanDescription": "Antes de importar os agentes, o catálogo resolve as skills das quais eles dependem. Este é o plano de resolução."
+    },
+    "skillActions": { "bundled": "Inclusa no pacote", "catalog": "Será instalada pelo catálogo", "external": "Será importada da origem", "blocked": "Bloqueada" },
+    "preview": {
+      "preparing": "Preparando prévia…", "retry": "Tentar novamente", "summary": "Resumo", "agents": "Agentes", "projects": "Projetos", "starterTasks": "Tarefas iniciais",
+      "collisionStrategy": "Estratégia para conflitos", "renameCollisions": "Renomear itens em conflito", "skipCollisions": "Ignorar itens em conflito", "installBlocked": "Instalação bloqueada",
+      "actionCreate": "Criar", "actionUpdate": "Atualizar", "actionSkip": "Ignorar",
+      "adapterSelection": "Seleção de adapter", "noLegacyAdapter": "Nenhum adapter legado está ativo", "adapterHelp": "Cada agente importado usa por padrão o adapter do pacote; você pode alterá-lo aqui antes da instalação. A configuração detalhada do modelo por adapter pode ser editada no agente após a instalação.",
+      "required": "obrigatório", "requiredPlaceholder": "Obrigatório", "optionalPlaceholder": "Opcional", "hide": "Ocultar {{key}}", "show": "Mostrar {{key}}", "hideValue": "Ocultar valor", "showValue": "Mostrar valor",
+      "provenanceBefore": "As entidades importadas recebem a marca", "provenanceAfter": "e um evento de atividade é registrado para a prévia e a instalação."
+    },
+    "apply": {
+      "installing": "Instalando {{name}}…", "progress": "Resolvendo skills e importando agentes, projetos e rotinas. Isso pode levar alguns instantes.",
+      "teamInstalled": "Equipe instalada", "importedToOrganization": "{{name}} foi importada para sua organização. As entidades importadas recebem a marca de procedência do catálogo.",
+      "agentsImported": "Agentes importados", "projectsImported": "Projetos importados", "skillsResolved": "Skills resolvidas",
+      "viewAgents": "Ver agentes importados →", "viewProjects": "Ver projetos importados →", "viewRoutines": "Ver rotinas →", "viewActivity": "Ver registro de atividade →", "done": "Concluir"
+    },
+    "row": { "updateAvailable": "Atualização disponível — a equipe instalada está desatualizada", "externalSources": "Contém fontes externas" },
+    "counts": {
+      "agents_one": "{{count}} agente", "agents_other": "{{count}} agentes", "agents_many": "{{count}} agentes", "projects_one": "{{count}} projeto", "projects_other": "{{count}} projetos", "projects_many": "{{count}} projetos", "routines_one": "{{count}} rotina", "routines_other": "{{count}} rotinas", "routines_many": "{{count}} rotinas"
+    },
+    "filters": {
+      "orgChart": "Organograma", "teams": "Equipes", "selectOrganization": "Selecione uma organização para consultar o catálogo de equipes.", "search": "Buscar equipes",
+      "allKinds": "Todos os tipos", "kind": "Tipo", "bundled": "Inclusas", "optional": "Opcionais", "allCategories": "Todas as categorias", "category": "Categoria",
+      "anyRisk": "Qualquer risco", "risk": "Risco", "safeOnly": "Somente sem riscos", "hasWarnings": "Com avisos", "blocked": "Bloqueadas", "reset": "Redefinir filtros",
+      "loadFailed": "Falha ao carregar o catálogo de equipes.", "noCatalog": "Nenhum catálogo de equipes configurado.", "noMatches": "Nenhuma equipe corresponde a este filtro.", "retry": "Tentar novamente",
+      "installed": "Instaladas", "backToCatalog": "Voltar ao catálogo", "selectTeam": "Selecione uma equipe para ver os detalhes.", "teamInstalledToast": "Equipe instalada", "teamImportedToast": "{{name}} foi importada."
+    }
+  },
   "skillStudio": {
     "tryAgain": "Tente novamente.",
     "skills": "Skills",
