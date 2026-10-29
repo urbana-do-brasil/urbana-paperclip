@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToolCatalogEntry } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import { ActionTestDialog, errorHints } from "./ActionTestDialog";
 
 const listTestAgentsMock = vi.hoisted(() => vi.fn());
@@ -129,7 +130,8 @@ function requestStatus(phase: "waiting" | "running" | "done" | "denied") {
   };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
@@ -157,6 +159,110 @@ afterEach(async () => {
 });
 
 describe("Permissions action Test dialog", () => {
+  it("localizes the action preview and agent picker in Brazilian Portuguese", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+
+    await renderDialog();
+
+    expect(document.body.textContent).toContain("Testar List projects");
+    expect(document.body.textContent).toContain("Execute uma ação real com as mesmas permissões");
+    expect(document.body.textContent).toContain("Agir como");
+    expect(document.body.textContent).toContain("Permitida");
+    expect(document.body.textContent).toContain("Esta ação não recebe parâmetros.");
+    expect(document.body.textContent).toContain("Esta ação fará uma chamada real ao Asana como CEO.");
+
+    const picker = document.body.querySelector<HTMLButtonElement>('button[aria-label="Escolha com qual agente testar"]');
+    expect(picker).toBeTruthy();
+    await act(() => picker!.click());
+    expect(document.body.querySelector<HTMLInputElement>('input[aria-label="Buscar agentes"]')).toBeTruthy();
+    expect(document.body.textContent).toContain("Só aparecem agentes para os quais você pode atribuir tarefas.");
+    expect(document.body.textContent).toContain("O que os indicadores significam");
+    expect(document.body.textContent).toContain("Os indicadores mostram as configurações atuais deste agente, não as suas.");
+  });
+
+  it("localizes empty and failed agent loading states", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    listTestAgentsMock.mockResolvedValueOnce({ agents: [] });
+
+    await renderDialog();
+    expect(document.body.textContent).toContain("Não há agentes disponíveis para testar como.");
+
+    await act(() => root.render(null));
+    client.clear();
+    listTestAgentsMock.mockRejectedValueOnce(new Error("private server detail"));
+    await renderDialog();
+    expect(document.body.textContent).toContain("Não foi possível carregar os agentes disponíveis para teste.");
+    expect(document.body.textContent).toContain("Tentar novamente");
+    expect(document.body.textContent).not.toContain("private server detail");
+  });
+
+  it("localizes a permissions loading failure without exposing its server detail", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    getTestAgentAccessMock.mockRejectedValueOnce(new Error("private server detail"));
+
+    await renderDialog();
+
+    expect(document.body.textContent).toContain("Não foi possível carregar as permissões de CEO.");
+    expect(document.body.textContent).toContain("Tentar novamente");
+    expect(document.body.textContent).not.toContain("private server detail");
+  });
+
+  it("explains a blocked action in Brazilian Portuguese without changing its ID", async () => {
+    getTestAgentAccessMock.mockResolvedValue({
+      access: {
+        connectionId: "conn-1", toolCount: 1, allowedCount: 0, askFirstCount: 0, offCount: 1,
+        lastChangedAt: null, lastChangedByAgentId: null, lastChangedByName: null,
+        tools: [{ toolName: "list_projects", gatewayToolName: "asana__list_projects", displayName: "List projects", risk: "read", decision: "off", reasonCode: null, matchedPolicyIds: [] }],
+      },
+    });
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+
+    await renderDialog();
+
+    expect(document.body.textContent).toContain("List projects está bloqueada para CEO.");
+    expect(document.body.textContent).toContain("Ela não será executada aqui nem em uma tarefa.");
+    expect(document.body.textContent).toContain("Nenhuma chamada será feita: esta ação está bloqueada para CEO.");
+    expect(document.body.textContent).toContain("Ative a ação para CEO em");
+    expect(document.body.textContent).toContain("Abrir permissões →");
+  });
+
+  it("localizes argument form controls and validation without translating schema names", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const formEntry = {
+      ...entry,
+      inputSchema: {
+        type: "object",
+        required: ["project_url", "mode"],
+        properties: {
+          project_url: { type: "string" },
+          mode: { type: "string", enum: ["compact", "full"] },
+          profile: { type: "string", enum: ["basic", "extended"] },
+        },
+      },
+    } as ToolCatalogEntry;
+
+    await renderDialog(formEntry);
+
+    expect(document.body.textContent).toContain("Project Url");
+    const runButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Run");
+    expect(runButton).toBeTruthy();
+    await act(() => runButton!.click());
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Este campo é obrigatório");
+    expect(runTestCallMock).not.toHaveBeenCalled();
+
+    const modeSelect = document.body.querySelector<HTMLButtonElement>('button[aria-label="Mode"]');
+    expect(modeSelect).toBeTruthy();
+    expect(modeSelect!.textContent).toContain("Selecione uma opção");
+
+    const moreOptions = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Mais opções");
+    expect(moreOptions).toBeTruthy();
+    await act(() => moreOptions!.click());
+    const profileSelect = document.body.querySelector<HTMLButtonElement>('button[aria-label="Profile"]');
+    expect(profileSelect?.textContent).toContain("Nenhum");
+  });
+
   it("forwards an explicitly cleared optional text field", async () => {
     const textEntry = {
       ...entry,

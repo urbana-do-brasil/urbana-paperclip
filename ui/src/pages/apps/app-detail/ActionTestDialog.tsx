@@ -41,7 +41,8 @@ import {
   validateJsonSchemaForm,
   type JsonSchemaNode,
 } from "@/components/JsonSchemaForm";
-import { cn, relativeTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 import { appTabHref } from "../app-tabs";
 
 // ---------------------------------------------------------------------------
@@ -53,17 +54,28 @@ function seconds(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-/** relativeTime() returns "just now"; the spec capitalizes it ("Just now"). */
-function relTime(date: Date): string {
-  const t = relativeTime(date);
-  return t.charAt(0).toUpperCase() + t.slice(1);
+function relTime(date: Date, locale = "en"): string {
+  const deltaSeconds = Math.round((date.getTime() - Date.now()) / 1000);
+  if (Math.abs(deltaSeconds) < 5) return locale.toLowerCase().startsWith("pt") ? "agora mesmo" : "just now";
+  const absoluteSeconds = Math.abs(deltaSeconds);
+  const [amount, unit]: [number, Intl.RelativeTimeFormatUnit] = absoluteSeconds < 60
+    ? [Math.round(deltaSeconds), "second"]
+    : absoluteSeconds < 3_600
+      ? [Math.round(deltaSeconds / 60), "minute"]
+      : absoluteSeconds < 86_400
+        ? [Math.round(deltaSeconds / 3_600), "hour"]
+        : absoluteSeconds < 604_800
+          ? [Math.round(deltaSeconds / 86_400), "day"]
+          : [Math.round(deltaSeconds / 604_800), "week"];
+  const relative = new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(amount, unit);
+  return relative.charAt(0).toLocaleUpperCase(locale) + relative.slice(1);
 }
 
 // ---------------------------------------------------------------------------
 // Decision badges
 // ---------------------------------------------------------------------------
 
-type DecisionMeta = { label: string; className: string };
+type DecisionMeta = { labelKey: "allowed" | "askFirst" | "off"; className: string };
 
 type TestAgentWithAccess = ToolConnectionTestAgent & {
   effectiveAccess: ToolConnectionAccessSummary;
@@ -88,6 +100,7 @@ export function ActionTestDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const testAgentsQuery = useQuery({
     queryKey: queryKeys.tools.testAgents(connectionId),
     queryFn: () => toolsApi.listTestAgents(connectionId),
@@ -129,38 +142,40 @@ export function ActionTestDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-(--sz-85vh) overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Test {title}</DialogTitle>
+          <DialogTitle>{t("apps.appDetail.actionTest.dialogTitle", { actionTitle: title })}</DialogTitle>
           <DialogDescription>
-            Run a real action with the same permissions and credentials an agent would use.
+            {t("apps.appDetail.actionTest.dialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
         {testAgentsQuery.isLoading ? (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground" role="status">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading agents…
+            {t("apps.appDetail.actionTest.loadingAgents")}
           </div>
         ) : testAgentsQuery.isError ? (
           <TestLoadError
-            message="We couldn't load the agents available for testing."
+            message={t("apps.appDetail.actionTest.agentsLoadError")}
             onRetry={() => { void testAgentsQuery.refetch(); }}
           />
         ) : agents.length === 0 ? (
-          <p className="py-6 text-sm text-muted-foreground">No agents are available to test as.</p>
+          <p className="py-6 text-sm text-muted-foreground">{t("apps.appDetail.actionTest.noAgents")}</p>
         ) : accessQuery.isError && !accessQuery.data ? (
           <TestLoadError
-            message={`We couldn't load ${selectedAgentBase?.name ?? "this agent"}'s permissions.`}
+            message={t("apps.appDetail.actionTest.permissionsLoadError", {
+              agentName: selectedAgentBase?.name ?? t("apps.appDetail.actionTest.agentFallback"),
+            })}
             onRetry={() => { void accessQuery.refetch(); }}
           />
         ) : !selectedAgent ? (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground" role="status">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading agent permissions…
+            {t("apps.appDetail.actionTest.loadingPermissions")}
           </div>
         ) : (
           <div className="space-y-5">
             <div className="rounded-md border border-border bg-muted/30 p-4">
-              <p className="text-xs font-medium text-muted-foreground">Act as</p>
+              <p className="text-xs font-medium text-muted-foreground">{t("apps.appDetail.actionTest.actAs")}</p>
               <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
                 <AgentPicker
                   agents={agents}
@@ -191,20 +206,21 @@ export function ActionTestDialog({
 
 const DECISION_META: Record<ToolConnectionTestDecision, DecisionMeta> = {
   allowed: {
-    label: "Allowed",
+    labelKey: "allowed",
     className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   },
   ask_first: {
-    label: "Ask first",
+    labelKey: "askFirst",
     className: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   },
   off: {
-    label: "Off",
+    labelKey: "off",
     className: "border-border bg-muted text-muted-foreground",
   },
 };
 
 function DecisionBadge({ decision }: { decision: ToolConnectionTestDecision }) {
+  const { t } = useTranslation();
   const meta = DECISION_META[decision];
   return (
     <span
@@ -213,17 +229,18 @@ function DecisionBadge({ decision }: { decision: ToolConnectionTestDecision }) {
         meta.className,
       )}
     >
-      {meta.label}
+      {t(`apps.appDetail.actionTest.${meta.labelKey}`)}
     </span>
   );
 }
 
 function TestLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="py-8 text-center">
       <p className="text-sm font-medium text-foreground">{message}</p>
       <Button className="mt-3" size="sm" variant="outline" onClick={onRetry}>
-        Try again
+        {t("apps.appDetail.actionTest.tryAgain")}
       </Button>
     </div>
   );
@@ -246,6 +263,7 @@ function AgentPicker({
   connectionId: string;
   appName: string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -259,7 +277,7 @@ function AgentPicker({
         <button
           type="button"
           className="inline-flex items-center gap-1.5 font-semibold text-foreground underline-offset-2 outline-none hover:text-primary hover:underline focus-visible:text-primary"
-          aria-label="Choose which agent to test as"
+          aria-label={t("apps.appDetail.actionTest.chooseAgent")}
         >
           {selectedAgent.name}
           <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -270,8 +288,8 @@ function AgentPicker({
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
-              aria-label="Search agents"
-              placeholder="Search agents…"
+              aria-label={t("apps.appDetail.actionTest.searchAgents")}
+              placeholder={t("apps.appDetail.actionTest.searchAgentsPlaceholder")}
               className="h-8 pl-8 text-sm"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -281,7 +299,7 @@ function AgentPicker({
         </div>
         <div className="max-h-60 overflow-y-auto p-1">
           {filtered.length === 0 ? (
-            <p className="px-3 py-4 text-center text-xs text-muted-foreground">No agents match.</p>
+            <p className="px-3 py-4 text-center text-xs text-muted-foreground">{t("apps.appDetail.actionTest.noAgentMatches")}</p>
           ) : (
             filtered.map((agent) => {
               const detail = agent.title?.trim() || agent.role;
@@ -315,23 +333,23 @@ function AgentPicker({
           )}
         </div>
         <div className="border-t border-border px-3 py-2 text-(length:--text-micro) text-muted-foreground">
-          <p>Only agents you can assign tasks to are listed.</p>
-          <p>Pick one to preview what they'd see in {appName}.</p>
+          <p>{t("apps.appDetail.actionTest.onlyAssignableAgents")}</p>
+          <p>{t("apps.appDetail.actionTest.previewForApp", { appName })}</p>
         </div>
         <div className="border-t border-border p-3">
-          <p className="text-xs font-semibold text-foreground">What the badges mean</p>
+          <p className="text-xs font-semibold text-foreground">{t("apps.appDetail.actionTest.badgeLegend")}</p>
           <ul className="mt-1.5 space-y-1 text-xs text-muted-foreground">
-            <li><span className="font-medium text-foreground">Allowed</span> — runs immediately when you press Run.</li>
-            <li><span className="font-medium text-foreground">Ask first</span> — Run is parked in Review for your OK.</li>
+            <li><span className="font-medium text-foreground">{t("apps.appDetail.actionTest.allowed")}</span> — {t("apps.appDetail.actionTest.allowedBadgeHelp")}</li>
+            <li><span className="font-medium text-foreground">{t("apps.appDetail.actionTest.askFirst")}</span> — {t("apps.appDetail.actionTest.askFirstBadgeHelp")}</li>
             <li>
-              <span className="font-medium text-foreground">Off</span> — won't run. Change it in{" "}
+              <span className="font-medium text-foreground">{t("apps.appDetail.actionTest.off")}</span> — {t("apps.appDetail.actionTest.offBadgeHelp")} {" "}
               <Link className="text-primary hover:underline" to={appTabHref(connectionId, "permissions")}>
-                Permissions
+                {t("apps.appDetail.actionTest.permissions")}
               </Link>.
             </li>
           </ul>
           <p className="mt-2 text-(length:--text-micro) text-muted-foreground">
-            Badges reflect this agent's current settings, not yours. Swap agents to see how an action would behave for each.
+            {t("apps.appDetail.actionTest.badgeSettingsNote")}
           </p>
         </div>
       </PopoverContent>
@@ -406,12 +424,6 @@ function splitRequiredOptional(schema: JsonSchemaNode): JsonSchemaNode {
   return { ...schema, properties: next };
 }
 
-const GUT_CHECK: Record<ToolConnectionTestDecision, (app: string, agent: string) => string> = {
-  allowed: (app, agent) => `This runs a real call against ${app} as ${agent}.`,
-  ask_first: () => `Waiting for your OK before this call leaves Paperclip.`,
-  off: (_app, agent) => `No call will be made — this action is off for ${agent}.`,
-};
-
 function ActionTester({
   entry,
   decision,
@@ -429,6 +441,7 @@ function ActionTester({
   allAgents: ToolConnectionTestAgent[];
   onSelectAgent: (agentId: string) => void;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { selectedCompanyId } = useCompany();
   const rawSchema = (entry.inputSchema ?? { type: "object", properties: {} }) as JsonSchemaNode;
@@ -537,13 +550,17 @@ function ActionTester({
           onChange={setValues}
           errors={errors}
           disabled={running}
-          advancedLabel="More options"
+          advancedLabel={t("apps.appDetail.actionTest.moreOptions")}
         />
       ) : (
-        <p className="text-xs text-muted-foreground">This action takes no inputs.</p>
+        <p className="text-xs text-muted-foreground">{t("apps.appDetail.actionTest.noInputs")}</p>
       )}
 
-      <p className="text-xs text-muted-foreground">{GUT_CHECK[decision](appName, agent.name)}</p>
+      <p className="text-xs text-muted-foreground">{decision === "allowed"
+        ? t("apps.appDetail.actionTest.gutCheckAllowed", { appName, agentName: agent.name })
+        : decision === "ask_first"
+          ? t("apps.appDetail.actionTest.gutCheckAskFirst")
+          : t("apps.appDetail.actionTest.gutCheckOff", { agentName: agent.name })}</p>
 
       <div className="flex items-center gap-2">
         <Button onClick={onRun} disabled={running || !!outcome?.result.upstreamPending?.resumeTool || outcome?.result.decision === "ask_first"} size="sm">
@@ -1266,6 +1283,7 @@ function OffExplanation({
   allAgents: ToolConnectionTestAgent[];
   onSelectAgent: (agentId: string) => void;
 }) {
+  const { t, i18n } = useTranslation();
   const title = entry.title ?? entry.toolName;
   const permHref = `${appTabHref(connectionId, "permissions")}?focus=${encodeURIComponent(entry.id)}`;
 
@@ -1275,8 +1293,8 @@ function OffExplanation({
   const others = allAgents.filter((a) => a.id !== agent.id);
 
   const whyBody = entry.status === "quarantined"
-    ? "This action is new and hasn't been turned on yet."
-    : `${agent.name}'s access profile sets this action to Off.`;
+    ? t("apps.appDetail.actionTest.quarantinedReason")
+    : t("apps.appDetail.actionTest.agentProfileOffReason", { agentName: agent.name });
 
   // "Last changed by {Actor} · {relativeTime}" — only the access config carries
   // this; a quarantined action has never been configured, so there's nothing to
@@ -1284,7 +1302,14 @@ function OffExplanation({
   const { lastChangedAt, lastChangedByName } = agent.effectiveAccess;
   const auditHint =
     entry.status !== "quarantined" && lastChangedAt
-      ? `Last changed${lastChangedByName ? ` by ${lastChangedByName}` : ""} · ${relTime(new Date(lastChangedAt))}`
+      ? lastChangedByName
+        ? t("apps.appDetail.actionTest.lastChangedBy", {
+          actorName: lastChangedByName,
+          relativeTime: relTime(new Date(lastChangedAt), i18n.language),
+        })
+        : t("apps.appDetail.actionTest.lastChanged", {
+          relativeTime: relTime(new Date(lastChangedAt), i18n.language),
+        })
       : null;
 
   return (
@@ -1293,30 +1318,30 @@ function OffExplanation({
         <div className="flex items-start gap-2">
           <Ban className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">{title} is off for {agent.name}.</p>
-            <p className="mt-0.5">It won't run here, and it won't run from a task either.</p>
+            <p className="font-medium text-foreground">{t("apps.appDetail.actionTest.actionOffForAgent", { actionTitle: title, agentName: agent.name })}</p>
+            <p className="mt-0.5">{t("apps.appDetail.actionTest.offExplanation")}</p>
             <p className="mt-2">
-              Want to test it? Turn it on for {agent.name} in{" "}
+              {t("apps.appDetail.actionTest.wantToTest", { agentName: agent.name })}{" "}
               <Link className="font-medium text-primary hover:underline" to={appTabHref(connectionId, "permissions")}>
-                Permissions
+                {t("apps.appDetail.actionTest.permissions")}
               </Link>{" "}
-              — set it to Allowed or Ask first.
+              {t("apps.appDetail.actionTest.setAllowedOrAskFirst")}
             </p>
           </div>
         </div>
         <Button asChild size="sm">
-          <Link to={permHref}>Open Permissions →</Link>
+          <Link to={permHref}>{t("apps.appDetail.actionTest.openPermissions")}</Link>
         </Button>
-        <p className="text-xs text-muted-foreground">No call will be made — this action is off for {agent.name}.</p>
+        <p className="text-xs text-muted-foreground">{t("apps.appDetail.actionTest.offStateSummary", { agentName: agent.name })}</p>
       </div>
 
       <aside>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Why this is off</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("apps.appDetail.actionTest.whyOff")}</p>
         <p className="mt-1.5 text-xs text-muted-foreground">{whyBody}</p>
         {auditHint && <p className="mt-1.5 text-(length:--text-micro) text-muted-foreground">{auditHint}</p>}
         {others.length > 0 && (
           <div className="mt-3">
-            <p className="text-(length:--text-micro) font-medium text-muted-foreground">Try as a different agent:</p>
+            <p className="text-(length:--text-micro) font-medium text-muted-foreground">{t("apps.appDetail.actionTest.tryDifferentAgent")}</p>
             <div className="mt-1 flex flex-wrap gap-1.5">
               {others.slice(0, 4).map((other) => (
                 <button

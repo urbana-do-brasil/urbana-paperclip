@@ -1,13 +1,16 @@
 // @vitest-environment jsdom
 import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { JsonSchemaForm, validateJsonSchemaForm, type JsonSchemaNode } from "./JsonSchemaForm";
 vi.mock("./SecretBindingPicker", () => ({ SecretBindingPicker: () => null }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const schema: JsonSchemaNode = { type: "object", properties: { tools: { type: "array", items: { type: "object", properties: { arguments: { type: "object", additionalProperties: true } } } } } };
 let dispose: (() => void) | undefined;
-afterEach(async () => { await act(async () => dispose?.()); document.body.innerHTML = ""; });
+beforeEach(async () => { await i18n.changeLanguage("en"); });
+afterEach(async () => { await act(async () => dispose?.()); document.body.innerHTML = ""; await i18n.changeLanguage(DEFAULT_LOCALE); });
 describe("remote MCP open-ended argument inputs", () => {
   it("edits nested tool arguments and rejects malformed JSON instead of submitting the previous object", async () => {
     const container = document.createElement("div"); document.body.append(container);

@@ -2598,5 +2598,25 @@ O progresso atual é **218/243 tarefas**. Próxima: 3.9f3e, teste manual de aç�
 
 O fluxo de teste manual tem três etapas para revisão focada: e1 (diálogo,
 seleção, badges e formulário de argumentos), e2 (execução e resultados) e e3
-(aprovação/hand-off de provider e retomada). Nenhuma etapa está marcada como
-concluída ainda. O progresso permanece em **218/246 tarefas**; próxima: 3.9f3e1.
+(aprovação/hand-off de provider e retomada). e1 está concluída; e2 e e3 ainda
+estão pendentes. O progresso é **219/246 tarefas**; próxima: 3.9f3e2.
+
+### Diálogo e formulário de argumentos (3.9f3e1)
+
+A moldura, estados de carregamento/falha, seleção de agente, explicações dos
+badges, bloqueio de ações e textos genéricos do formulário acompanham PT-BR/en.
+O formulário compartilhado também localiza validações, opções de enumeração,
+listas e opções avançadas. Títulos, nomes de argumentos e opções fornecidos
+pelas ferramentas, schemas, valores, decisões, IDs e payloads permanecem sem
+alteração.
+
+`ActionTestDialog.test.tsx`, `JsonSchemaForm.test.tsx`,
+`JsonSchemaForm.remote-mcp.test.tsx` e `locale-validation.test.ts` passaram em
+**51/51 testes**, cobrindo carregamento/vazio/falha, seleção/badges, ação
+bloqueada e formulário PT-BR com erro obrigatório, enumeração e argumento
+preservado. `pnpm check:tokens`, `pnpm
+check:token-gates`, parse dos catálogos, `git diff --check` e `pnpm exec
+openspec validate --all --strict --no-interactive` passaram. O typecheck da UI
+aponta somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. Progresso: **219/246 tarefas**. Próxima:
+3.9f3e2, execução e resultados.
