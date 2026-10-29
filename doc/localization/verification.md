@@ -3277,3 +3277,15 @@ Progresso: **280/300**.
 JSON e erros estruturados. Testes company: **29/29**; help focado: **2/2**.
 Typecheck da CLI não foi repetido. Importação/exportação e outros grupos de
 comandos permanecem pendentes. Progresso: **281/301**.
+
+
+## Status cards — gates e navegação (3.10f5)
+
+Os controles de flags acompanham PT-BR/en e preservam a dependência entre
+Status Cards e Summaries. Foram testados loading, falha e flag ligada/desligada
+no gate, sidebars standard/production e SummarySlotCard, além de toggle e
+rollback. O App real foi montado com shell/provedores substituídos para validar
+rotas atuais e legadas em ambos idiomas no modo streamlined; Layout, acesso cloud
+e página foram substituídos por sentinelas, sem provar autenticação ou conteúdo.
+Redirect e gate também têm testes isolados. Dez arquivos: **185/185**; typecheck da UI passou. 3.10f concluída;
+progresso: **283/301**; próxima parte da UI: 3.10g.

@@ -265,6 +265,28 @@ describe("SummarySlotCard", () => {
     expect(mockBuiltInAgentsApi.list).not.toHaveBeenCalled();
   });
 
+  it("keeps summary slots hidden while the summaries flag is loading", async () => {
+    mockInstanceSettingsApi.getExperimental.mockImplementation(() => new Promise(() => {}));
+
+    root = renderCard(container);
+    await flushQueries();
+
+    expect(container.textContent).toBe("");
+    expect(mockSummarySlotsApi.get).not.toHaveBeenCalled();
+    expect(mockBuiltInAgentsApi.list).not.toHaveBeenCalled();
+  });
+
+  it("fails closed without fetching summary slots when experimental settings fail", async () => {
+    mockInstanceSettingsApi.getExperimental.mockRejectedValue(new Error("settings unavailable"));
+
+    root = renderCard(container);
+    await flushQueries();
+
+    expect(container.textContent).toBe("");
+    expect(mockSummarySlotsApi.get).not.toHaveBeenCalled();
+    expect(mockBuiltInAgentsApi.list).not.toHaveBeenCalled();
+  });
+
   it("does not query built-in agents when their feature flag is off", async () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({
       enableSummaries: true,

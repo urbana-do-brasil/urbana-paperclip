@@ -1769,6 +1769,24 @@
       "runRoutine": "Executar rotina"
     }
   },
+  "instanceExperimental": {
+    "loading": "Carregando configurações experimentais…",
+    "loadFailedFallback": "Não foi possível carregar as configurações experimentais.",
+    "updateFailedFallback": "Não foi possível atualizar as configurações experimentais.",
+    "managedByCloud": "Gerenciado pelo Paperclip Cloud",
+    "statusCards": {
+      "title": "Cards de status",
+      "description": "Ativa o painel experimental compartilhado de cards de status e sua API protegida. Os dados existentes dos cards são mantidos quando esta opção é desativada.",
+      "footnote": "Ativar Cards de status também ativa Resumos.",
+      "ariaLabel": "Alternar configuração experimental de cards de status"
+    },
+    "summaries": {
+      "title": "Resumos",
+      "description": "Exibe áreas de status geradas pelo Summarizer nas páginas de projetos e espaços de trabalho, com atualização sob demanda e histórico de revisões. Os dados existentes dos resumos são mantidos quando esta opção é desativada.",
+      "footnote": "Cards de status requer Resumos. Desativar Resumos também desativa Cards de status.",
+      "ariaLabel": "Alternar configuração experimental de resumos"
+    }
+  },
   "statusCards": {
     "history": {
       "tokenSplit": "{{input}} de entrada / {{output}} de saída",

@@ -293,6 +293,52 @@ describe("Sidebar", () => {
     flushSync(() => root.unmount());
   });
 
+  it.each([
+    ["standard", false, "pt-BR"],
+    ["standard", false, "en"],
+    ["production", true, "pt-BR"],
+    ["production", true, "en"],
+  ])("shows the Status route in the %s sidebar for %s", async (_variant, production, locale) => {
+    await i18n.changeLanguage(locale as string);
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableStatusCards: true });
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    const statusLink = container.querySelector<HTMLAnchorElement>('a[href="/status"]');
+
+    expect(statusLink?.textContent).toContain(i18n.t("navigation.status"));
+    expect(statusLink?.textContent).toContain("beta");
+    flushSync(() => root.unmount());
+  });
+
+  it.each([["standard", false], ["production", true]])(
+    "hides the Status route in the %s sidebar when the flag is off",
+    async (_variant, production) => {
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableStatusCards: false });
+      const root = production ? await renderProductionSidebar() : await renderSidebar();
+      expect(container.querySelector('a[href="/status"]')).toBeNull();
+      flushSync(() => root.unmount());
+    },
+  );
+
+  it.each([["standard", false], ["production", true]])(
+    "keeps the Status route hidden in the %s sidebar while settings load",
+    async (_variant, production) => {
+      mockInstanceSettingsApi.getExperimental.mockImplementation(() => new Promise(() => {}));
+      const root = production ? await renderProductionSidebar() : await renderSidebar();
+      expect(container.querySelector('a[href="/status"]')).toBeNull();
+      flushSync(() => root.unmount());
+    },
+  );
+
+  it.each([["standard", false], ["production", true]])(
+    "keeps the Status route hidden in the %s sidebar when settings fail",
+    async (_variant, production) => {
+      mockInstanceSettingsApi.getExperimental.mockRejectedValue(new Error("forbidden"));
+      const root = production ? await renderProductionSidebar() : await renderSidebar();
+      expect(container.querySelector('a[href="/status"]')).toBeNull();
+      flushSync(() => root.unmount());
+    },
+  );
+
   it("renders plugin sidebar launchers inside the Work section", async () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({
       enableIsolatedWorkspaces: false,
