@@ -13,6 +13,7 @@ import {
 import { AssistantConnectionCard, useAssistantConnections } from "./AssistantConnection";
 import { ManagedAiConnectionRow } from "@/components/ai-connections/ManagedAiConnectionDetails";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { TFunction } from "i18next";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -52,6 +53,7 @@ import { aiConnectionPoolsApi } from "@/api/ai-connection-pools";
 import { toolsApi } from "@/api/tools";
 import { emailApi } from "@/api/email";
 import { useAccountIdentity } from "@/api/companies-query";
+import { useTranslation } from "@/i18n";
 import {
   chatEndpointsApi,
   type ChatEndpoint,
@@ -256,13 +258,14 @@ function connectorAction(
   row: ConnectorRowModel,
   chatConnectorsEnabled: boolean,
   agentId?: string | null,
+  t?: TFunction,
 ): {
   label: string;
   href: string | null;
   title?: string;
 } {
-  if (row.entry?.aiConnectionRouter) return { label: "Add connection pool", href: row.entry.availability?.available === false ? null : connectHrefFor(row.entry), title: row.entry.availability?.reason };
-  if (row.aggregatorApp && isInstalled(row)) return { label: "Manage", href: null };
+  if (row.entry?.aiConnectionRouter) return { label: t?.("apps.browse.actions.addConnectionPool") ?? "Add connection pool", href: row.entry.availability?.available === false ? null : connectHrefFor(row.entry), title: row.entry.availability?.reason };
+  if (row.aggregatorApp && isInstalled(row)) return { label: t?.("apps.browse.actions.manage") ?? "Manage", href: null };
   const applicationId = row.applications[0]?.id ?? null;
   const chatHref = (row.slug === "agentmail" || chatConnectorsEnabled)
     ? chatConnectHref(
@@ -272,39 +275,43 @@ function connectorAction(
       )
     : null;
   if (row.connections.length > 0 || row.chatEndpoints.length > 0) {
-    if (chatHref) return { label: "Add connection", href: chatHref };
+    if (chatHref) return { label: t?.("apps.browse.actions.addConnection") ?? "Add connection", href: chatHref };
     if (row.entry && applicationId) {
       return {
-        label: "Add account",
+        label: t?.("apps.browse.actions.addAccount") ?? "Add account",
         href: additionalConnectionHref(row.entry, applicationId),
       };
     }
     return {
-      label: "Add account",
+      label: t?.("apps.browse.actions.addAccount") ?? "Add account",
       href: applicationId ? `/apps/app/${applicationId}/permissions` : null,
     };
   }
 
   if (row.entry?.availability?.available === false) {
     return {
-      label: "Unavailable",
+      label: t?.("apps.browse.actions.unavailable") ?? "Unavailable",
       href: null,
       title:
         row.entry.availability.reason ??
-        "This connector is unavailable on this instance.",
+        t?.("apps.browse.unavailableReason") ?? "This connector is unavailable on this instance.",
     };
   }
-  if (chatHref) return { label: "Connect", href: chatHref };
+  if (chatHref) return { label: t?.("apps.browse.actions.connect") ?? "Connect", href: chatHref };
   // AI accounts share the Connect action across subscription and key methods.
   // Tool connectors retain their capability-specific setup verbs.
   if (row.entry) {
     return {
-      label: row.entry.methods?.some(method => method.purpose === "ai") ? "Connect" : connectionSetupVerbForApp(row.entry),
+      label: row.entry.methods?.some(method => method.purpose === "ai")
+        ? t?.("apps.browse.actions.connect") ?? "Connect"
+        : connectionSetupVerbForApp(row.entry) === "Add key"
+          ? t?.("apps.browse.actions.addKey") ?? "Add key"
+          : t?.("apps.browse.actions.connect") ?? "Connect",
       href: connectHrefFor(row.entry),
     };
   }
   return {
-    label: "Connect",
+    label: t?.("apps.browse.actions.connect") ?? "Connect",
     href: applicationId ? `/apps/app/${applicationId}/permissions` : null,
   };
 }
@@ -335,6 +342,7 @@ function accountActionHref(
  * account; unconnected providers retain the same catalog setup flows.
  */
 export function Browse({ renderAccountDetails = (connection) => connection.connectionPurpose === "ai" && !aiConnectionRouterPluginKey(connection) ? <ManagedAiConnectionRow connection={connection} /> : null }: { renderAccountDetails?: (connection: ToolConnection) => ReactNode } = {}) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const preselectedChatAgentId =
     typeof window === "undefined"
@@ -362,9 +370,9 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
     useState<ConnectionRemovalTarget | null>(null);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Connectors" }]);
+    setBreadcrumbs([{ label: t("navigation.connectors") }]);
     return () => setBreadcrumbs([]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
 
   useEffect(() => { setQuery(""); setPage(1); setSource("paperclip"); setExpandedSearch(false); setArcadeToConfigure(null); setAggregatorToConnect(null); setAggregatorToManage(null); setInitialAggregatorProvider(undefined); setConnectionToRemove(null); }, [selectedCompanyId]);
   useEffect(() => {
@@ -556,7 +564,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
         name: appDefinitionName(entry),
         description:
           !chatProviderVisible(slug, chatConnectorsEnabled, githubEnabled) && chatProviderForSlug(slug)
-            ? appCopyFor(slug).tagline
+            ? appCopyFor(slug, undefined, t).tagline
             : appDefinitionDescription(entry),
         brandKey: slug,
         logoUrl: appDefinitionLogoUrl(entry),
@@ -568,36 +576,36 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
       });
     }
     const nativeChatApps = [
-      { slug: "agentmail", name: "AgentMail", description: "Give agents email inboxes and handle each conversation as a task." },
-      { slug: "imessage-photon", name: "iMessage Photon", description: "Message agents and share photos from Apple Messages with a dedicated Photon number." },
+      { slug: "agentmail", name: "AgentMail", description: t("apps.browse.nativeChat.agentmail") },
+      { slug: "imessage-photon", name: "iMessage Photon", description: t("apps.browse.nativeChat.imessage-photon") },
       {
         slug: "slack",
         name: "Slack",
         description:
-          "Chat with agents from Slack channels and direct messages.",
+          t("apps.browse.nativeChat.slack"),
       },
       {
         slug: "github-code-review-bot",
         name: "GitHub Code Review Bot",
         description:
-          "Have an agent review pull requests and respond to GitHub mentions.",
+          t("apps.browse.nativeChat.github-code-review-bot"),
       },
       {
         slug: "discord",
         name: "Discord",
         description:
-          "Chat with agents from Discord channels, threads, and direct messages.",
+          t("apps.browse.nativeChat.discord"),
       },
       {
         slug: "microsoft-teams",
         name: "Microsoft Teams",
-        description: "Chat with agents from Teams channels and conversations.",
+        description: t("apps.browse.nativeChat.microsoft-teams"),
       },
       {
         slug: "telegram",
         name: "Telegram",
         description:
-          "Chat with agents from Telegram direct messages, groups, and topics.",
+          t("apps.browse.nativeChat.telegram"),
       },
     ] as const;
     for (const item of nativeChatApps.filter(item => chatProviderVisible(item.slug, chatConnectorsEnabled, githubEnabled))) {
@@ -687,8 +695,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
         slug: applicationSlug ?? application.id,
         name: application.name,
         description:
-          application.description ??
-          "A custom connector configured for this organization.",
+          application.description ?? t("apps.browse.genericDescription"),
         brandKey: applicationSlug ?? application.name,
         entry: null,
         applications: [application],
@@ -717,7 +724,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
           key: `chat:${endpoint.provider}`,
           slug: endpoint.provider,
           name: names[endpoint.provider],
-          description: `Chat with agents through ${names[endpoint.provider]}.`,
+          description: t("apps.browse.nativeChatDescription", { name: names[endpoint.provider] }),
           brandKey: endpoint.provider,
           entry: null,
           applications: [],
@@ -743,7 +750,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
       ![app.name, app.slug, ...app.aliases].some((alias) => nativeIdentities.has(aggregatorAppIdentity(alias))))
       .map((app) => ({
         key: `aggregator:${app.slug}`, slug: app.slug, name: app.name,
-        description: `Connect through ${app.routes.map((route) => AGGREGATOR_NAMES[route.provider]).join(" or ")}.`,
+        description: t("apps.browse.aggregatorDescription", { providers: app.routes.map((route) => AGGREGATOR_NAMES[route.provider]).join(` ${t("apps.browse.and")} `) }),
         brandKey: app.slug, logoUrl: app.routes[0]?.logoUrl, entry: null,
         applications: [], connections: [], chatEndpoints: [], aggregatorApp: app,
         upstreamApps: upstreamAppsBySlug.get(app.slug) ?? [], upstreamCatalogApp: app,
@@ -779,6 +786,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
     gallery,
     galleryQuery.data,
     upstreamAppsBySlug,
+    t,
   ]);
 
   const trimmed = query.trim().toLocaleLowerCase();
@@ -857,14 +865,14 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
   }
   const showAssistantConnection = (source === "paperclip" || source === "all" ||
     (source === "installed" && (!assistantConnections.isSuccess || assistantConnections.rows.some(row => !row.revokedAt)))) &&
-    (!trimmed || "assistant connection (mcp) paperclip codex claude opencode".includes(trimmed));
+    (!trimmed || normalizeConnectionQuery([t("assistantConnection.title"), "mcp paperclip codex claude opencode"].join(" ")).includes(trimmed));
   const showCustomConnector =
-    (source === "paperclip" || source === "all") && (!trimmed || "connect your own tool custom mcp server".includes(trimmed));
+    (source === "paperclip" || source === "all") && (!trimmed || normalizeConnectionQuery([t("apps.browse.custom.title"), t("apps.browse.custom.description"), "mcp server"].join(" ")).includes(trimmed));
 
   if (!selectedCompanyId) {
     return (
       <div className="p-6 text-sm text-muted-foreground">
-        Select an organization to manage connectors.
+        {t("apps.browse.manageOrganization")}
       </div>
     );
   }
@@ -890,8 +898,8 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
             type="search"
             value={query}
             onChange={(event) => changeQuery(event.target.value)}
-            placeholder="Search connectors…"
-            aria-label="Search connectors"
+            placeholder={t("apps.browse.search")}
+            aria-label={t("apps.browse.searchAria")}
             className="pl-9"
           />
         </div>
@@ -905,8 +913,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
         >
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <p className="min-w-0 flex-1">
-            Couldn’t load every connector. Existing accounts are shown where
-            available.
+            {t("apps.browse.loadError")}
           </p>
           <Button
             type="button"
@@ -919,26 +926,26 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
               void chatEndpointsQuery.refetch();
             }}
           >
-            Try again
+            {t("apps.browse.retry")}
           </Button>
         </div>
       ) : null}
 
-      {refreshAggregator.isError ? <p role="alert" className="text-sm text-destructive">Couldn’t refresh the gateway. Last known accounts are shown.</p> : null}
+      {refreshAggregator.isError ? <p role="alert" className="text-sm text-destructive">{t("apps.browse.aggregatorRefreshError")}</p> : null}
 
       {loading ? (
-        <div className="space-y-3" aria-label="Loading connectors">
+        <div className="space-y-3" aria-label={t("apps.browse.loadingAria")}>
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-24 w-full rounded-xl" />
           ))}
         </div>
       ) : nothingMatches ? (
         <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border bg-card px-4 py-6 text-sm text-muted-foreground">
-          <p className="flex items-center gap-2"><Link2 className="h-4 w-4" />No connectors match “{query.trim()}”.</p>
-          <Button variant="outline" size="sm" onClick={() => changeQuery("")}>Clear search</Button>
+          <p className="flex items-center gap-2"><Link2 className="h-4 w-4" />{t("apps.browse.noMatches", { query: query.trim() })}</p>
+          <Button variant="outline" size="sm" onClick={() => changeQuery("")}>{t("apps.browse.clearSearch")}</Button>
         </div>
       ) : (
-        <div className="space-y-3" role="list" aria-label="Connector list">
+        <div className="space-y-3" role="list" aria-label={t("apps.browse.listAria")}>
           {showAssistantConnection && <AssistantConnectionCard onNavigate={navigate} />}
           {paginatedRows.map((row) => (
             <ConnectorCard
@@ -968,14 +975,14 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
         </div>
       )}
 
-      {accountLoadErrors.length ? <p role="alert" className="text-sm text-destructive">Couldn’t load {Array.from(new Set(accountLoadErrors)).join(" or ")} accounts. Use Refresh in the connection’s menu to try again.</p> : null}
+      {accountLoadErrors.length ? <p role="alert" className="text-sm text-destructive">{t("apps.browse.accountsLoadError", { providers: Array.from(new Set(accountLoadErrors)).join(` ${t("apps.browse.or")} `) })}</p> : null}
 
-      {!loading && catalogRows.length > 0 ? <nav aria-label="Connector catalog pages" className="flex flex-wrap items-center justify-between gap-3 text-sm">
-        <p className="text-muted-foreground" role="status">{pageStart + 1}–{Math.min(pageStart + CATALOG_PAGE_SIZE, catalogRows.length)} of {catalogRows.length.toLocaleString()} connectors</p>
+      {!loading && catalogRows.length > 0 ? <nav aria-label={t("apps.browse.pagesAria")} className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <p className="text-muted-foreground" role="status">{t("apps.browse.range", { start: (pageStart + 1).toLocaleString(), end: Math.min(pageStart + CATALOG_PAGE_SIZE, catalogRows.length).toLocaleString(), total: catalogRows.length.toLocaleString() })}</p>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => { setPage(currentPage - 1); catalogTop.current?.scrollIntoView?.({ block: "start" }); }}>Previous</Button>
-          <span className="text-xs text-muted-foreground">Page {currentPage} of {pageCount}</span>
-          <Button variant="outline" size="sm" disabled={currentPage === pageCount} onClick={() => { setPage(currentPage + 1); catalogTop.current?.scrollIntoView?.({ block: "start" }); }}>Next</Button>
+          <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => { setPage(currentPage - 1); catalogTop.current?.scrollIntoView?.({ block: "start" }); }}>{t("apps.browse.previous")}</Button>
+          <span className="text-xs text-muted-foreground">{t("apps.browse.page", { current: currentPage, total: pageCount })}</span>
+          <Button variant="outline" size="sm" disabled={currentPage === pageCount} onClick={() => { setPage(currentPage + 1); catalogTop.current?.scrollIntoView?.({ block: "start" }); }}>{t("apps.browse.next")}</Button>
         </div>
       </nav> : null}
 
@@ -1081,15 +1088,17 @@ export function ConnectorCard({
   onConfigureArcade?: (connection: ToolConnection) => void;
   onConfigureExecutor?: (connection: ToolConnection) => void;
 }) {
+  const { t } = useTranslation();
   const action = connectorAction(
     row,
     chatProviderVisible(row.slug, chatConnectorsEnabled, githubReviewBotsEnabled),
     preselectedAgentId,
+    t,
   );
   const upstreamAccounts = (row.upstreamApps ?? []).flatMap(snapshot => {
     const connection = connectionById?.get(snapshot.connectionId);
     return connection ? snapshot.accounts.map((account, index) => ({ connection, account, snapshot,
-      name: account.alias || (snapshot.accounts.length > 1 ? `${row.name} account ${index + 1}` : `${row.name} account`) })) : [];
+      name: account.alias || t(snapshot.accounts.length > 1 ? "apps.browse.multipleUpstreamAccountName" : "apps.browse.upstreamAccountName", { name: row.name, index: index + 1 }) })) : [];
   });
   return (
     <div
@@ -1117,7 +1126,11 @@ export function ConnectorCard({
               const providerName = AGGREGATOR_NAMES[route.provider];
               const managedSnapshot = row.upstreamApps?.find(app => (app.provider ?? "composio") === route.provider && app.accounts.length > 0);
               const managed = Boolean(managedSnapshot);
-              const label = `${managed ? "Manage" : "Connect"} ${row.name} through ${providerName}, a third-party service`;
+              const label = t("apps.browse.thirdPartyRoute", {
+                action: t(managed ? "apps.browse.actions.manage" : "apps.browse.actions.connect"),
+                app: row.name,
+                provider: providerName,
+              });
               return <Tooltip key={route.provider}><TooltipTrigger asChild>
                 <button type="button" aria-label={label} onClick={() => managed ? onManageAggregator?.(row.aggregatorApp!, managedSnapshot?.connectionId) : onConnectAggregator?.(row.aggregatorApp!)} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <AppLogo name={providerName} brandKey={route.provider} size={16} compact />
@@ -1126,7 +1139,9 @@ export function ConnectorCard({
             })}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {row.aggregatorApp && row.upstreamApps?.some(app => app.accounts.length > 0) ? `Accounts managed in ${[...new Set(row.upstreamApps?.map(app => AGGREGATOR_NAMES[app.provider ?? "composio"]))].join(" and ")}.` : row.description}
+            {row.aggregatorApp && row.upstreamApps?.some(app => app.accounts.length > 0)
+              ? t("apps.browse.managedAccounts", { providers: [...new Set(row.upstreamApps?.map(app => AGGREGATOR_NAMES[app.provider ?? "composio"]))].join(` ${t("apps.browse.and")} `) })
+              : row.description}
           </p>
         </div>
         <Button
@@ -1467,6 +1482,7 @@ function CustomConnectorCard({
 }: {
   onNavigate: (href: string) => void;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -1481,10 +1497,10 @@ function CustomConnectorCard({
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold text-foreground">
-            Connect your own tool
+            {t("apps.browse.custom.title")}
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Add a custom MCP server or paste an existing configuration.
+            {t("apps.browse.custom.description")}
           </p>
         </div>
         <Button
@@ -1495,7 +1511,7 @@ function CustomConnectorCard({
           aria-controls="custom-connector-options"
           onClick={() => setExpanded((open) => !open)}
         >
-          {expanded ? "Close" : "Connect"}
+          {expanded ? t("apps.browse.custom.close") : t("apps.browse.custom.connect")}
         </Button>
       </div>
 
@@ -1506,14 +1522,14 @@ function CustomConnectorCard({
         >
           <CustomConnectorOption
             icon={ServerCog}
-            title="Connect your own MCP server"
-            description="Enter the URL for a custom or self-hosted MCP server."
+            title={t("apps.browse.custom.serverTitle")}
+            description={t("apps.browse.custom.serverDescription")}
             onClick={() => onNavigate("/apps/byo")}
           />
           <CustomConnectorOption
             icon={ClipboardPaste}
-            title="Paste a config"
-            description="Paste an existing setup snippet and connect it."
+            title={t("apps.browse.custom.pasteTitle")}
+            description={t("apps.browse.custom.pasteDescription")}
             onClick={() => onNavigate("/apps/advanced/paste-config")}
           />
         </div>

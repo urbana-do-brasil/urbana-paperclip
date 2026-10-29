@@ -54,8 +54,9 @@ e arquivos) e b2c (edição, versões e operações). 3.9b2a e 3.9b2b estão
 concluídas; 3.9b2c (edição, versões e operações), 3.9c (Skill Studio) e 3.9d
 (catálogo de equipes e instalação/configuração) também estão concluídas. 3.9e1–e2
 (perfis, permissões, assistente e detalhe) e 3.9e3 (configuração colada, prompt
-de ajuda, gateways MCP e tokens) estão verificadas em PT-BR/en. Próxima: 3.9f,
-descoberta, conexão e gestão de apps.
+de ajuda, gateways MCP e tokens) estão verificadas em PT-BR/en. 3.9f1 (descoberta,
+filtros e catálogo de apps) também está verificada. Próxima: 3.9f2, inventário de
+conexões, saúde e revisão. Progresso atual: **208/228 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |

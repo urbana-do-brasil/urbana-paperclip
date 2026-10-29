@@ -2378,5 +2378,24 @@ incluindo prompt em PT-BR e preservação da estrutura MCP. `pnpm check:tokens`,
 `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
 typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
-Progresso real pelo manifesto: **207/223 tarefas**. Próxima: 3.9f, descoberta,
-conexão e gestão de apps.
+Progresso real ao encerrar 3.9e: **207/223 tarefas**. Em seguida, a jornada 3.9f
+foi dividida em f1–f5; o manifesto passou a contabilizar **207/228 tarefas**.
+Próxima: 3.9f1, descoberta e catálogo de apps.
+
+### Descoberta e catálogo de apps (3.9f1)
+
+Busca, filtros de fonte, navegação do catálogo, cartões, ações de configuração,
+conector personalizado, estados vazios/de erro e paginação agora acompanham
+PT-BR/en. Nomes, descrições e disponibilidade fornecidos pelos apps/provedores,
+as rotas de configuração e os identificadores de origem foram preservados. As
+linhas inline de contas e os respectivos estados de conexão pertencem ao lote
+3.9f2.
+
+`Browse.test.tsx` e `locale-validation.test.ts` passaram em **90/90 testes**,
+incluindo busca/estado vazio e navegação para a configuração em PT-BR. `pnpm
+check:tokens`, `pnpm check:token-gates`, parse dos catálogos, `git diff --check`
+e `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso atual: **208/228 tarefas**. Próxima: 3.9f2, inventário e saúde das
+conexões.

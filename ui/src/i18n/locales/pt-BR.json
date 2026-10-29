@@ -5490,6 +5490,174 @@
     "companyArchivedTitle": "A organização {{company}} foi arquivada",
     "companySwitchedBody": "Você foi redirecionado para {{company}}."
   },
+  "apps": {
+    "browse": {
+      "search": "Buscar conectores…",
+      "searchAria": "Buscar conectores",
+      "filtersAria": "Filtros de apps",
+      "sources": {
+        "paperclip": "Paperclip",
+        "composio": "Composio",
+        "arcade": "Arcade",
+        "installed": "Instalados",
+        "all": "Todos"
+      },
+      "loadError": "Não foi possível carregar todos os conectores. As contas existentes são exibidas quando disponíveis.",
+      "retry": "Tentar novamente",
+      "loadingAria": "Carregando conectores",
+      "noMatches": "Nenhum conector corresponde a “{{query}}”.",
+      "clearSearch": "Limpar busca",
+      "listAria": "Lista de conectores",
+      "manageOrganization": "Selecione uma organização para gerenciar os conectores.",
+      "range": "{{start}}–{{end}} de {{total}} conectores",
+      "previous": "Anterior",
+      "page": "Página {{current}} de {{total}}",
+      "next": "Próxima",
+      "pagesAria": "Páginas do catálogo de conectores",
+      "unavailableReason": "Este conector não está disponível nesta instância.",
+      "genericDescription": "Um conector personalizado configurado para esta organização.",
+      "aggregatorDescription": "Conecte-se por meio de {{providers}}.",
+      "actions": {
+        "addConnectionPool": "Adicionar pool de conexões",
+        "manage": "Gerenciar",
+        "addConnection": "Adicionar conexão",
+        "addAccount": "Adicionar conta",
+        "unavailable": "Indisponível",
+        "connect": "Conectar",
+        "addKey": "Adicionar chave"
+      },
+      "custom": {
+        "title": "Conecte sua própria ferramenta",
+        "description": "Adicione um servidor MCP personalizado ou cole uma configuração existente.",
+        "close": "Fechar",
+        "connect": "Conectar",
+        "serverTitle": "Conecte seu próprio servidor MCP",
+        "serverDescription": "Informe a URL de um servidor MCP personalizado ou hospedado por você.",
+        "pasteTitle": "Colar uma configuração",
+        "pasteDescription": "Cole um trecho de configuração existente para conectar."
+      },
+      "nativeChat": {
+        "agentmail": "Crie caixas de entrada de e-mail para agentes e transforme cada conversa em uma tarefa.",
+        "imessage-photon": "Envie mensagens aos agentes e compartilhe fotos do Apple Messages com um número Photon exclusivo.",
+        "slack": "Converse com agentes em canais e mensagens diretas do Slack.",
+        "github-code-review-bot": "Peça a um agente para revisar pull requests e responder a menções no GitHub.",
+        "discord": "Converse com agentes em canais, tópicos e mensagens diretas do Discord.",
+        "microsoft-teams": "Converse com agentes em canais e conversas do Teams.",
+        "telegram": "Converse com agentes em mensagens diretas, grupos e tópicos do Telegram."
+      },
+      "copy": {
+        "zapier": {
+          "tagline": "Acesse mais de 9.000 apps que sua equipe já usa.",
+          "short": "Acesse mais de 9.000 apps por meio dos seus agentes."
+        },
+        "github": {
+          "tagline": "Leia código e pull requests e comente em tarefas.",
+          "short": "Leia código e pull requests e comente em tarefas."
+        },
+        "slack": {
+          "tagline": "Envie e leia mensagens nos canais da sua equipe.",
+          "short": "Envie e leia mensagens nos seus canais."
+        },
+        "notion": {
+          "tagline": "Leia e atualize páginas do seu workspace.",
+          "short": "Leia e atualize páginas do seu workspace."
+        },
+        "railway": {
+          "tagline": "Inspecione serviços, leia logs e gerencie implantações.",
+          "short": "Conecte o Railway para gerenciar implantações, logs e contêineres."
+        },
+        "posthog": {
+          "tagline": "Explore uso do produto, erros, sinalizadores e experimentos.",
+          "short": "Entre no PostHog. Fixar um projeto e controlar o acesso são opcionais."
+        },
+        "gauge": {
+          "tagline": "Acompanhe sua marca em respostas de IA e execute fluxos de conteúdo.",
+          "short": "Entre no Gauge e escolha uma organização. Chaves de API são opcionais."
+        },
+        "neon": {
+          "tagline": "Gerencie projetos Postgres, branches e consultas.",
+          "short": "Entre no Neon. Fixar um projeto e usar somente leitura são opções."
+        },
+        "superagent": {
+          "tagline": "Revise alertas de segurança e execute verificações red team.",
+          "short": "Conecte-se com uma chave de API do Superagent. Ações faturáveis e destrutivas continuam sujeitas às políticas."
+        },
+        "linear": {
+          "tagline": "Crie, atualize e consulte tarefas.",
+          "short": "Crie, atualize e consulte tarefas."
+        },
+        "google-sheets": {
+          "tagline": "Leia e atualize as planilhas selecionadas.",
+          "short": "Leia planilhas ou atualize os arquivos que escolher."
+        },
+        "gmail": {
+          "tagline": "Leia mensagens e crie rascunhos para sua revisão.",
+          "short": "Leia mensagens e crie rascunhos para sua revisão."
+        },
+        "google-drive": {
+          "tagline": "Encontre, leia e crie arquivos no Drive.",
+          "short": "Encontre, leia e crie arquivos no Drive."
+        },
+        "google-docs": {
+          "tagline": "Leia e atualize documentos.",
+          "short": "Leia e atualize documentos."
+        },
+        "google-slides": {
+          "tagline": "Leia e atualize apresentações.",
+          "short": "Leia e atualize apresentações."
+        },
+        "google-calendar": {
+          "tagline": "Consulte agendas e gerencie eventos.",
+          "short": "Consulte agendas e gerencie eventos."
+        },
+        "google-chat": {
+          "tagline": "Leia conversas e envie mensagens.",
+          "short": "Leia conversas e envie mensagens."
+        },
+        "google-people": {
+          "tagline": "Consulte contatos e pessoas no seu diretório.",
+          "short": "Consulte contatos e pessoas no seu diretório."
+        },
+        "google-workspace-search": {
+          "tagline": "Pesquise em todo o seu Google Workspace.",
+          "short": "Pesquise em todo o seu Google Workspace."
+        },
+        "hubspot": {
+          "tagline": "Consulte contatos e atualize etapas de negócios.",
+          "short": "Consulte contatos e atualize etapas de negócios."
+        },
+        "intercom": {
+          "tagline": "Leia e responda a conversas com clientes.",
+          "short": "Leia e responda a conversas com clientes."
+        },
+        "figma": {
+          "tagline": "Leia arquivos e publique comentários nos quadros.",
+          "short": "Leia arquivos e publique comentários nos quadros."
+        },
+        "stripe": {
+          "tagline": "Consulte clientes, faturas e repasses.",
+          "short": "Consulte clientes, faturas e repasses."
+        },
+        "context7": {
+          "tagline": "Consulte a documentação atualizada das suas bibliotecas.",
+          "short": "Consulte a documentação atualizada das suas bibliotecas."
+        }
+      },
+      "genericCopy": {
+        "tagline": "Dê aos seus agentes acesso a este app.",
+        "short": "Dê aos seus agentes acesso a este app."
+      },
+      "and": "e",
+      "or": "ou",
+      "nativeChatDescription": "Converse com agentes pelo {{name}}.",
+      "aggregatorRefreshError": "Não foi possível atualizar o catálogo de apps. As contas conhecidas continuam visíveis.",
+      "accountsLoadError": "Não foi possível carregar as contas de {{providers}}. Use Atualizar no menu da conexão para tentar novamente.",
+      "thirdPartyRoute": "{{action}} {{app}} por meio de {{provider}}, um serviço de terceiros.",
+      "managedAccounts": "Contas gerenciadas por {{providers}}.",
+      "upstreamAccountName": "Conta de {{name}}",
+      "multipleUpstreamAccountName": "Conta {{index}} de {{name}}"
+    }
+  },
   "accountMenu": {
     "open": "Abrir menu da conta",
     "viewProfile": "Ver perfil",

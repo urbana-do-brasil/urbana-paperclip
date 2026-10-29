@@ -5360,6 +5360,174 @@
     "companyArchivedTitle": "Organization {{company}} was archived",
     "companySwitchedBody": "Switched to {{company}}."
   },
+  "apps": {
+    "browse": {
+      "search": "Search connectors…",
+      "searchAria": "Search connectors",
+      "filtersAria": "App filters",
+      "sources": {
+        "paperclip": "Paperclip",
+        "composio": "Composio",
+        "arcade": "Arcade",
+        "installed": "Installed",
+        "all": "All"
+      },
+      "loadError": "Couldn’t load every connector. Existing accounts are shown where available.",
+      "retry": "Try again",
+      "loadingAria": "Loading connectors",
+      "noMatches": "No connectors match “{{query}}”.",
+      "clearSearch": "Clear search",
+      "listAria": "Connector list",
+      "manageOrganization": "Select an organization to manage connectors.",
+      "range": "{{start}}–{{end}} of {{total}} connectors",
+      "previous": "Previous",
+      "page": "Page {{current}} of {{total}}",
+      "next": "Next",
+      "pagesAria": "Connector catalog pages",
+      "unavailableReason": "This connector is unavailable on this instance.",
+      "genericDescription": "A custom connector configured for this organization.",
+      "aggregatorDescription": "Connect through {{providers}}.",
+      "actions": {
+        "addConnectionPool": "Add connection pool",
+        "manage": "Manage",
+        "addConnection": "Add connection",
+        "addAccount": "Add account",
+        "unavailable": "Unavailable",
+        "connect": "Connect",
+        "addKey": "Add key"
+      },
+      "custom": {
+        "title": "Connect your own tool",
+        "description": "Add a custom MCP server or paste an existing configuration.",
+        "close": "Close",
+        "connect": "Connect",
+        "serverTitle": "Connect your own MCP server",
+        "serverDescription": "Enter the URL for a custom or self-hosted MCP server.",
+        "pasteTitle": "Paste a config",
+        "pasteDescription": "Paste an existing setup snippet and connect it."
+      },
+      "nativeChat": {
+        "agentmail": "Give agents email inboxes and handle each conversation as a task.",
+        "imessage-photon": "Message agents and share photos from Apple Messages with a dedicated Photon number.",
+        "slack": "Chat with agents from Slack channels and direct messages.",
+        "github-code-review-bot": "Have an agent review pull requests and respond to GitHub mentions.",
+        "discord": "Chat with agents from Discord channels, threads, and direct messages.",
+        "microsoft-teams": "Chat with agents from Teams channels and conversations.",
+        "telegram": "Chat with agents from Telegram direct messages, groups, and topics."
+      },
+      "copy": {
+        "zapier": {
+          "tagline": "Reach 9,000+ apps your team already uses.",
+          "short": "Reach 9,000+ apps from your agents."
+        },
+        "github": {
+          "tagline": "Read code and pull requests, comment on issues.",
+          "short": "Read code and pull requests, comment on issues."
+        },
+        "slack": {
+          "tagline": "Send and read messages in your team's channels.",
+          "short": "Send and read messages in your channels."
+        },
+        "notion": {
+          "tagline": "Read and update pages in your workspace.",
+          "short": "Read and update pages in your workspace."
+        },
+        "railway": {
+          "tagline": "Inspect services, read logs, and manage deployments.",
+          "short": "Connect Railway for deployments, logs, and container access."
+        },
+        "posthog": {
+          "tagline": "Explore product usage, errors, flags, and experiments.",
+          "short": "Sign in with PostHog. Project pinning and access controls are optional."
+        },
+        "gauge": {
+          "tagline": "Track your brand in AI answers and run content workflows.",
+          "short": "Sign in with Gauge and pick an organization. API keys are optional."
+        },
+        "neon": {
+          "tagline": "Manage Postgres projects, branches, and queries.",
+          "short": "Sign in with Neon. Project pinning and read-only mode are optional."
+        },
+        "superagent": {
+          "tagline": "Review security findings and run red-team checks.",
+          "short": "Connect with a Superagent API key. Billable and destructive tools stay under action policies."
+        },
+        "linear": {
+          "tagline": "Create, update and read tickets.",
+          "short": "Create, update and read tickets."
+        },
+        "google-sheets": {
+          "tagline": "Read and update selected spreadsheets.",
+          "short": "Read spreadsheets or update the files you choose."
+        },
+        "gmail": {
+          "tagline": "Read mail and create drafts for your review.",
+          "short": "Read mail and create drafts for your review."
+        },
+        "google-drive": {
+          "tagline": "Find, read, and create files in Drive.",
+          "short": "Find, read, and create files in Drive."
+        },
+        "google-docs": {
+          "tagline": "Read and update documents.",
+          "short": "Read and update documents."
+        },
+        "google-slides": {
+          "tagline": "Read and update presentations.",
+          "short": "Read and update presentations."
+        },
+        "google-calendar": {
+          "tagline": "Review calendars and manage events.",
+          "short": "Review calendars and manage events."
+        },
+        "google-chat": {
+          "tagline": "Read conversations and send messages.",
+          "short": "Read conversations and send messages."
+        },
+        "google-people": {
+          "tagline": "Look up contacts and people in your directory.",
+          "short": "Look up contacts and people in your directory."
+        },
+        "google-workspace-search": {
+          "tagline": "Search across your Google workspace.",
+          "short": "Search across your Google workspace."
+        },
+        "hubspot": {
+          "tagline": "Look up contacts and update deal stages.",
+          "short": "Look up contacts and update deal stages."
+        },
+        "intercom": {
+          "tagline": "Read and reply to customer conversations.",
+          "short": "Read and reply to customer conversations."
+        },
+        "figma": {
+          "tagline": "Read files and post comments on frames.",
+          "short": "Read files and post comments on frames."
+        },
+        "stripe": {
+          "tagline": "Read customers, invoices, and payouts.",
+          "short": "Read customers, invoices, and payouts."
+        },
+        "context7": {
+          "tagline": "Look up up-to-date docs for your libraries.",
+          "short": "Look up up-to-date docs for your libraries."
+        }
+      },
+      "genericCopy": {
+        "tagline": "Give your agents access to this app.",
+        "short": "Give your agents access to this app."
+      },
+      "and": "and",
+      "or": "or",
+      "nativeChatDescription": "Chat with agents through {{name}}.",
+      "aggregatorRefreshError": "Couldn’t refresh the app catalog. Last known accounts are shown.",
+      "accountsLoadError": "Couldn’t load {{providers}} accounts. Use Refresh in the connection’s menu to try again.",
+      "thirdPartyRoute": "{{action}} {{app}} through {{provider}}, a third-party service.",
+      "managedAccounts": "Accounts managed in {{providers}}.",
+      "upstreamAccountName": "{{name}} account",
+      "multipleUpstreamAccountName": "{{name}} account {{index}}"
+    }
+  },
   "accountMenu": {
     "open": "Open account menu",
     "viewProfile": "View profile",

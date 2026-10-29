@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Browse } from "./Browse";
 import { aiConnectionRouterAppDefinition, getAppStoreDefinition } from "@paperclipai/shared";
 import { queryKeys } from "@/lib/queryKeys";
+import { i18n } from "@/i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { AggregatorAppCatalogEntry } from "@paperclipai/shared/aggregator-app-catalog";
 
@@ -180,7 +181,8 @@ describe("Connectors landing page", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     accountIdentity.userId = "board-user"; accountIdentity.settled = true;
     assistantConnectionsMock.mockReset().mockResolvedValue([]);
     syncComposioAppsMock.mockReset().mockImplementation((...args) => listComposioAppsMock(...args));
@@ -281,6 +283,33 @@ describe("Connectors landing page", () => {
     await act(() => button!.click());
     expect(navigateMock).toHaveBeenCalledWith("/apps/assistant-connection");
     expect(chatSetupMock).not.toHaveBeenCalled();
+  });
+
+  it("localizes catalog search, filters, empty results, and custom setup while preserving routes", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderBrowse(false);
+
+    expect(setBreadcrumbsMock).toHaveBeenCalledWith([{ label: "Conectores" }]);
+    expect(container.querySelector('input[aria-label="Buscar conectores"]')).toBeTruthy();
+    expect(container.querySelector('nav[aria-label="Filtros de apps"]')?.textContent).toContain("Instalados");
+    expect(container.textContent).toContain("Conecte sua própria ferramenta");
+
+    const search = container.querySelector<HTMLInputElement>('input[aria-label="Buscar conectores"]')!;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+    setter?.call(search, "sem-resultados");
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+    await flushReact();
+    expect(container.textContent).toContain('Nenhum conector corresponde a “sem-resultados”.');
+    await clickButton("Limpar busca", container);
+
+    const customToggle = container.querySelector<HTMLButtonElement>('[data-app-slug="custom-mcp"] button')!;
+    await act(() => customToggle.click());
+    await flushReact();
+    expect(container.textContent).toContain("Conecte seu próprio servidor MCP");
+    const serverOption = Array.from(container.querySelectorAll<HTMLButtonElement>("button"))
+      .find((button) => button.textContent?.includes("Conecte seu próprio servidor MCP"))!;
+    await act(() => serverOption.click());
+    expect(navigateMock).toHaveBeenCalledWith("/apps/byo");
   });
 
   it("keeps assistant setup in the Paperclip catalog when filtering connection sources", async () => {
