@@ -2697,3 +2697,22 @@ revogação. Os gates de tokens, parse dos catálogos e OpenSpec estrito passara
 O typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 Progresso: **223/246 tarefas**. Próxima: 3.9f4, gestão de conexões de provedores.
+
+### Configurações e gestores de contas de provedores (3.9f4)
+
+As configurações de Browser Use Cloud, Railway e Honcho agora acompanham
+PT-BR/en, assim como o gestor ativo de contas Composio/agregadores. Rótulos,
+instruções, estados e ações foram localizados; nomes fornecidos pelos provedores,
+URLs, IDs de conta/grant, chaves SSH, credenciais, mensagens técnicas, valores de
+configuração e payloads foram preservados. O componente antigo
+`ComposioAppManager` também foi localizado, mas não tem import ativo; o fluxo atual
+é atendido por `AggregatorAppManager`.
+
+`BrowserUseSettingsPanel.test.tsx`, `HonchoWorkspaceSettings.test.tsx`,
+`RailwayAccessPanel.test.tsx`, `Browse.test.tsx` e `locale-validation.test.ts`
+passaram em **101/101 testes**, incluindo PT-BR/en, acesso negado, estados sem
+perfis, salvamento sem perda de configuração, preservação de chave/URL e escopo
+da atualização de contas. O typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado;
+nenhum diagnóstico foi reportado nos arquivos alterados. Progresso real conforme
+as caixas do OpenSpec: **228/246 tarefas**. Próxima: 3.9f5, gateways MCP de apps.

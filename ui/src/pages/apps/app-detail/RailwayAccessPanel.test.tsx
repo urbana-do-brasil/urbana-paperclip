@@ -3,16 +3,18 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ConnectionGrantsResponse, ToolConnection } from "@paperclipai/shared";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { RailwayAccessPanel } from "./RailwayAccessPanel";
 const { configure } = vi.hoisted(() => ({ configure: vi.fn(async () => null) }));
 vi.mock("@/api/tools", () => ({ toolsApi: { configureRailwaySsh: configure } }));
 let root: Root | undefined;
 let container: HTMLDivElement;
-afterEach(async () => { if (root) await act(async () => root?.unmount()); container?.remove(); vi.clearAllMocks(); });
-async function render(status: string, canConfigure = true, owner = "operator") {
+beforeEach(async () => { await i18n.changeLanguage("en"); });
+afterEach(async () => { if (root) await act(async () => root?.unmount()); container?.remove(); vi.clearAllMocks(); await i18n.changeLanguage("en"); });
+async function render(status: string, canConfigure = true, owner = "operator", connectionStatus = "disabled") {
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
-  const connection = { id: "connection", status: "disabled", config: { railwaySsh: { grantId: "grant", publicKey: "ssh-ed25519 public-fixture", knownHosts: "", enabled: false } } } as unknown as ToolConnection;
+  const connection = { id: "connection", status: connectionStatus, config: { railwaySsh: { grantId: "grant", publicKey: "ssh-ed25519 public-fixture", knownHosts: "", enabled: false } } } as unknown as ToolConnection;
   const grants = { currentUserId: "operator", capabilities: { canConfigure }, grants: [{ id: "grant", kind: "user", subjectUserId: owner, status }] } as unknown as ConnectionGrantsResponse;
   await act(async () => root!.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><RailwayAccessPanel connection={connection} grants={grants} /></QueryClientProvider>));
 }
@@ -33,5 +35,19 @@ describe("Railway container setup", () => {
   it("requires connection configuration access for key changes", async () => {
     await render("revoked", false);
     expect(container.querySelectorAll("button")).toHaveLength(0);
+  });
+
+  it("localizes Railway setup and preserves provider keys and mutation values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render("revoked", true, "operator", "active");
+    expect(container.textContent).toContain("Operações do Railway");
+    expect(container.textContent).toContain("Acesso ao contêiner");
+    expect(container.textContent).toContain("Chave pública");
+    expect(container.textContent).toContain("ssh-ed25519 public-fixture");
+    expect(container.querySelector('a[href="https://docs.railway.com/cli/ssh#manage-ssh-keys"]')).toBeTruthy();
+    const remove = Array.from(container.querySelectorAll("button"))
+      .find((button) => button.textContent === "Remover chave do contêiner")!;
+    await act(async () => remove.click());
+    expect(configure).toHaveBeenCalledWith("connection", { action: "remove", grantId: "grant" });
   });
 });

@@ -640,6 +640,27 @@ describe("Connectors landing page", () => {
     expect(setupComposioAppMock).not.toHaveBeenCalled();
   });
 
+  it("localizes the provider account manager while preserving links and refresh scope", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const snapshot = composioFixture();
+    const disconnected = { ...snapshot, status: "not_connected", accounts: [] };
+    refreshComposioAppsMock.mockResolvedValue({ apps: [disconnected] });
+    await renderBrowse(false);
+    await clickButton("Gerenciar", container);
+    const dialog = document.querySelector('[role="dialog"]')!;
+
+    expect(dialog.textContent).toContain("Gerenciar Circleback");
+    expect(dialog.textContent).toContain("As contas e o login são gerenciados no Composio.");
+    expect(dialog.textContent).toContain("Meeting notes");
+    expect(dialog.querySelector('a[href="/apps/conn-notion/permissions"]')).toBeTruthy();
+    expect(dialog.querySelector('a[href="https://dashboard.composio.dev/~/org/connect/apps"]')).toBeTruthy();
+
+    await clickButton("Atualizar", dialog);
+    expect(refreshComposioAppsMock).toHaveBeenCalledWith("conn-notion", ["circleback"]);
+    expect(dialog.textContent).toContain("Nenhuma conta de Circleback conectada.");
+    expect(manageComposioAppAccountMock).not.toHaveBeenCalled();
+  });
+
   it("preserves failed observations with an unverified status and offers retry", async () => {
     const snapshot = composioFixture();
     listComposioAppsMock.mockResolvedValue({ apps: [{ ...snapshot, errorAt: new Date().toISOString() }], sync: { status: "error", error: "Unavailable" } });

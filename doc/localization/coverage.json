@@ -535,7 +535,12 @@
         "ui/src/pages/apps/app-detail/ActionTestDialog.tsx",
         "ui/src/components/JsonSchemaForm.tsx",
         "ui/src/pages/apps/app-detail/ActivityPanel.tsx",
-        "ui/src/pages/apps/app-detail/AdvancedPanel.tsx"
+        "ui/src/pages/apps/app-detail/AdvancedPanel.tsx",
+        "ui/src/pages/apps/AggregatorAppManager.tsx",
+        "ui/src/pages/apps/ComposioAppManager.tsx",
+        "ui/src/pages/apps/app-detail/BrowserUseSettingsPanel.tsx",
+        "ui/src/pages/apps/app-detail/RailwayAccessPanel.tsx",
+        "ui/src/features/connections/HonchoWorkspaceSettings.tsx"
       ],
       "status": "partial",
       "evidence": [
@@ -567,9 +572,12 @@
         "ui/src/components/JsonSchemaForm.test.tsx",
         "ui/src/components/JsonSchemaForm.remote-mcp.test.tsx",
         "ui/src/pages/apps/app-detail/ActivityPanel.test.tsx",
-        "ui/src/pages/apps/app-detail/ActivityPanel.render.test.tsx"
+        "ui/src/pages/apps/app-detail/ActivityPanel.render.test.tsx",
+        "ui/src/pages/apps/app-detail/BrowserUseSettingsPanel.test.tsx",
+        "ui/src/pages/apps/app-detail/RailwayAccessPanel.test.tsx",
+        "ui/src/features/connections/HonchoWorkspaceSettings.test.tsx"
       ],
-      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia), 3.9b1–b2c (descoberta/cartões, árvore e gestão de pastas, detalhes/arquivos e operações da biblioteca), 3.9c (Skill Studio), 3.9d (catálogo e instalação/configuração de equipes), 3.9e1–e3 (perfis, acesso, gateways MCP, tokens e configuração colada), 3.9f1 (descoberta e catálogo de apps), 3.9f2 (inventário/saúde de conexões, contas inline, revisão de ações e remoção), 3.9f3a (shell, navegação, cabeçalho e estados do detalhe), 3.9f3b (setup/ciclo de vida) e 3.9f3c (permissões/acesso dos agentes) e 3.9f3d (identidades/contas associadas) foram verificadas em PT-BR/en. O assistente genérico foi decomposto em b2a (shell/seleção, verificado por AppsConnect e locale: 214/214), b2b (MCP personalizado/Zapier, verificado por AppsConnect, generic-mcp-connect, locale, TriggerWizard e GitHubChatSetup: 277/277) e b2c (credenciais/método, estados OAuth e conclusão, dividido em c1–c3; concluído); teste manual de ações: 3.9f3e1 (diálogo, seleção, badges e argumentos) verificada em PT-BR/en com 51/51 testes; e2 (execução, cancelamento, resultados e falhas) verificada com 55/55; e3 (aprovações Ask-first, hand-off, retomada, recusa/cancelamento e expiração do provider) verificada em PT-BR/en com 62/62 testes; 3.9f3f localizou o painel legado de atividade/histórico em PT-BR/en com 27/27 testes. A aba atual redireciona ao feed geral de auditoria e o painel não tem import ativo; o redirecionamento foi mantido. 3.9f3g localizou os detalhes técnicos e as ações de reconexão/revogação; o wrapper avançado não tem import ativo, mas foi verificado junto às ações usadas no fluxo atual. Configuração de provedores e gateways de apps (3.9f4–f5) permanece pendente. Biblioteca e catálogo de skills foram conferidos nas variantes streamlined e production; a superfície do catálogo de equipes compartilha sua implementação entre as variantes. Nomes e descrições de pacotes, apps, perfis e ferramentas fornecidos, conteúdo externo, compatibilidade, permissões, IDs, referências e payloads foram preservados."
+      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia), 3.9b1–b2c (descoberta/cartões, árvore e gestão de pastas, detalhes/arquivos e operações da biblioteca), 3.9c (Skill Studio), 3.9d (catálogo e instalação/configuração de equipes), 3.9e1–e3 (perfis, acesso, gateways MCP, tokens e configuração colada), 3.9f1 (descoberta e catálogo de apps), 3.9f2 (inventário/saúde de conexões, contas inline, revisão de ações e remoção), 3.9f3a (shell, navegação, cabeçalho e estados do detalhe), 3.9f3b (setup/ciclo de vida) e 3.9f3c (permissões/acesso dos agentes) e 3.9f3d (identidades/contas associadas) foram verificadas em PT-BR/en. O assistente genérico foi decomposto em b2a (shell/seleção, verificado por AppsConnect e locale: 214/214), b2b (MCP personalizado/Zapier, verificado por AppsConnect, generic-mcp-connect, locale, TriggerWizard e GitHubChatSetup: 277/277) e b2c (credenciais/método, estados OAuth e conclusão, dividido em c1–c3; concluído); teste manual de ações: 3.9f3e1 (diálogo, seleção, badges e argumentos) verificada em PT-BR/en com 51/51 testes; e2 (execução, cancelamento, resultados e falhas) verificada com 55/55; e3 (aprovações Ask-first, hand-off, retomada, recusa/cancelamento e expiração do provider) verificada em PT-BR/en com 62/62 testes; 3.9f3f localizou o painel legado de atividade/histórico em PT-BR/en com 27/27 testes. A aba atual redireciona ao feed geral de auditoria e o painel não tem import ativo; o redirecionamento foi mantido. 3.9f3g localizou os detalhes técnicos e as ações de reconexão/revogação; o wrapper avançado não tem import ativo, mas foi verificado junto às ações usadas no fluxo atual. 3.9f4 (configurações de provedores e gestores de contas) foi verificada em PT-BR/en com 101/101 testes; 3.9f5 (gestão de gateways MCP de apps) permanece pendente. Biblioteca e catálogo de skills foram conferidos nas variantes streamlined e production; a superfície do catálogo de equipes compartilha sua implementação entre as variantes. Nomes e descrições de pacotes, apps, perfis e ferramentas fornecidos, conteúdo externo, compatibilidade, permissões, IDs, referências e payloads foram preservados."
     },
     {
       "id": "experimental",
