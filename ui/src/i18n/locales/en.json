@@ -2107,6 +2107,7 @@
     "copyFileAria": "Copy instructions file as markdown",
     "copyAsMarkdown": "Copy as markdown",
     "copied": "Copied",
+    "copyFailed": "Copy failed",
     "delete": "Delete",
     "deleteConfirm": "Delete {{path}}?",
     "binaryFileNotice": "This file is preserved with the agent directory. Download it to view its contents.",
@@ -2114,7 +2115,52 @@
     "emptyFile": "This instruction file is empty.",
     "markdownPlaceholder": "# Agent instructions",
     "fileEditorAria": "Instruction file editor",
-    "fileContentsPlaceholder": "File contents"
+    "fileContentsPlaceholder": "File contents",
+    "history": {
+      "open": "History",
+      "loading": "Loading revisions…",
+      "current": "Current",
+      "olderRevisions": "Older revisions",
+      "loadingOlder": "Loading older revisions…",
+      "selectedRevision": "Selected revision",
+      "diffHeading": "Changes from selected revision to current",
+      "removed": "Removed",
+      "added": "Added",
+      "noChanges": "No content changes.",
+      "restore": "Restore as new revision",
+      "restoring": "Restoring…",
+      "saveOrCancelBeforeRestore": "Save or cancel your edits before restoring.",
+      "source": {
+        "seed": "Seed",
+        "board": "Board",
+        "api": "API",
+        "tool": "Tool",
+        "cleanup": "Cleanup",
+        "restore": "Restore"
+      }
+    },
+    "runNotice": {
+      "storageWarningTitle": "Agent storage warning",
+      "syncFailureTitle": "Agent file sync failed for this run"
+    },
+    "candidates": {
+      "notRetrieved": "These instruction edits have not been retrieved yet.",
+      "heading": "Preserved instruction edits",
+      "description": "Older instruction-only sessions have edits to review.",
+      "review": "Review preserved edits",
+      "entryChanged": "The instruction entry changed. These edits remain preserved for the original file.",
+      "preservedForFile": "Preserved edits for {{path}}",
+      "readOnly": "Read only: {{entryPath}}. To keep any of these edits in {{currentEntryFile}}, copy them and edit the current entry explicitly.",
+      "copyForFile": "Copy preserved edits for {{path}}",
+      "copy": "Copy preserved edits",
+      "reviewingDraft": "Reviewing preserved edits. Save to apply your resolved draft and close this preserved edit.",
+      "compareCurrent": "Compare current instructions",
+      "baseChanged": "The current instructions changed after this draft was loaded. Refresh the current revision, compare the instructions, and save your resolved draft again.",
+      "refreshCurrentRevision": "Refresh current revision",
+      "preservedEditsRemain": "Your preserved edits remain available.",
+      "unsavedEditsRetained": "Your unsaved edits are retained.",
+      "revisionSavedPendingMaterialization": "Revision saved. The instruction file still needs to be rebuilt from the saved revision."
+    }
   },
   "mcpConnect": {
     "device": {

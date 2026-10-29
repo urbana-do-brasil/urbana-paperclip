@@ -2150,6 +2150,7 @@
     "copyFileAria": "Copiar arquivo de instruções como Markdown",
     "copyAsMarkdown": "Copiar como Markdown",
     "copied": "Copiado",
+    "copyFailed": "Falha ao copiar",
     "delete": "Excluir",
     "deleteConfirm": "Excluir {{path}}?",
     "binaryFileNotice": "Este arquivo é preservado no diretório do agente. Faça o download para ver o conteúdo.",
@@ -2157,7 +2158,52 @@
     "emptyFile": "Este arquivo de instruções está vazio.",
     "markdownPlaceholder": "# Instruções do agente",
     "fileEditorAria": "Editor do arquivo de instruções",
-    "fileContentsPlaceholder": "Conteúdo do arquivo"
+    "fileContentsPlaceholder": "Conteúdo do arquivo",
+    "history": {
+      "open": "Histórico",
+      "loading": "Carregando revisões…",
+      "current": "Atual",
+      "olderRevisions": "Revisões anteriores",
+      "loadingOlder": "Carregando revisões anteriores…",
+      "selectedRevision": "Revisão selecionada",
+      "diffHeading": "Alterações da revisão selecionada para a atual",
+      "removed": "Removido",
+      "added": "Adicionado",
+      "noChanges": "Não há alterações no conteúdo.",
+      "restore": "Restaurar como nova revisão",
+      "restoring": "Restaurando…",
+      "saveOrCancelBeforeRestore": "Salve ou cancele suas alterações antes de restaurar.",
+      "source": {
+        "seed": "Inicial",
+        "board": "Painel",
+        "api": "API",
+        "tool": "Ferramenta",
+        "cleanup": "Limpeza",
+        "restore": "Restauração"
+      }
+    },
+    "runNotice": {
+      "storageWarningTitle": "Aviso de armazenamento do agente",
+      "syncFailureTitle": "Falha ao sincronizar arquivos do agente nesta execução"
+    },
+    "candidates": {
+      "notRetrieved": "Estas alterações de instruções ainda não foram recuperadas.",
+      "heading": "Edições de instruções preservadas",
+      "description": "Sessões anteriores dedicadas a instruções têm alterações para revisar.",
+      "review": "Revisar alterações preservadas",
+      "entryChanged": "O arquivo de entrada das instruções mudou. Estas alterações continuam preservadas no arquivo original.",
+      "preservedForFile": "Alterações preservadas em {{path}}",
+      "readOnly": "Somente leitura: {{entryPath}}. Para manter qualquer uma destas alterações em {{currentEntryFile}}, copie-as e edite explicitamente o arquivo de entrada atual.",
+      "copyForFile": "Copiar alterações preservadas de {{path}}",
+      "copy": "Copiar alterações preservadas",
+      "reviewingDraft": "Revisando alterações preservadas. Salve para aplicar o rascunho resolvido e encerrar esta revisão.",
+      "compareCurrent": "Comparar instruções atuais",
+      "baseChanged": "As instruções atuais mudaram depois que este rascunho foi carregado. Atualize a revisão atual, compare as instruções e salve novamente o rascunho resolvido.",
+      "refreshCurrentRevision": "Atualizar revisão atual",
+      "preservedEditsRemain": "Suas alterações preservadas continuam disponíveis.",
+      "unsavedEditsRetained": "Suas alterações não salvas foram mantidas.",
+      "revisionSavedPendingMaterialization": "Revisão salva. Ainda é necessário reconstruir o arquivo de instruções com base na revisão salva."
+    }
   },
   "mcpConnect": {
     "device": {

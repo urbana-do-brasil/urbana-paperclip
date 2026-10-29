@@ -1472,3 +1472,19 @@ PT-BR que confirma a preservação literal do prompt e do caminho do arquivo;
 `locale-validation.test.ts` passou (**12/12**). Typecheck direcionado, gates de
 tokens, `git diff --check` e validação OpenSpec estrita passaram. Progresso:
 **130/159**. Próxima tarefa: 3.6d3b, histórico/diff e edições preservadas.
+
+### Continuação — histórico e edições preservadas (3.6d3b)
+
+O histórico localiza carregamento/paginação, origem e data da revisão, diff,
+restauração e estados de conflito. A revisão de edições preservadas localiza
+comparação, instruções de somente leitura, cópia, atualização da revisão-base e
+avisos próprios, incluindo os títulos de falha de sincronização no detalhe de
+execução. IDs de execução/revisão, caminhos, conteúdo dos arquivos,
+valores de origem e mensagens técnicas da API continuam intactos; somente as
+etiquetas de origem conhecidas são apresentadas no idioma da interface.
+
+`AgentDetail.instructions.test.tsx` passou (**13/13**), incluindo histórico/diff
+e cópia de edições preservadas em PT-BR; `locale-validation.test.ts` passou
+(**12/12**). Typecheck direcionado, gates de tokens, `git diff --check` e
+validação OpenSpec estrita passaram. Progresso: **131/159**. Próxima tarefa:
+3.6d3c, instruções de conexão.
