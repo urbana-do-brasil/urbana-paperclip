@@ -1725,7 +1725,17 @@
       "runRoutine": "Run routine"
     }
   },
+  "mediaGallery": {
+    "title": "Media gallery",
+    "position": "{{current}} / {{total}}",
+    "download": "Download",
+    "downloadFile": "Download {{filename}}",
+    "close": "Close",
+    "previous": "Previous",
+    "next": "Next"
+  },
   "caseManagement": {
+    "attachments": { "empty": "No attachments." },
     "activity": {
       "loading": "Loading activity...",
       "error": "Could not load activity.",

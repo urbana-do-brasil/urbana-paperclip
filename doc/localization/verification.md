@@ -3067,3 +3067,20 @@ passaram em **31/31 testes**. Gates de tokens, JSON, `git diff --check` e
 OpenSpec estrito passaram. O typecheck da UI aponta somente o erro preexistente
 em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é
 exportado. Progresso da CLI: **257/281**; próxima: 3.10e3b, documentos e anexos.
+
+
+## Casos — documentos e anexos (3.10e3b)
+
+A galeria de anexos e os controles acessíveis da galeria compartilhada agora
+acompanham PT-BR/en; tamanhos são formatados no idioma selecionado. A seção de
+documentos compartilhada foi verificada com um documento de caso: bloqueio,
+prévia e restauração de revisão funcionaram após troca de idioma. Nomes,
+arquivos, URLs, IDs e conteúdo permaneceram intactos. Expectativas antigas do
+teste de revisões foram atualizadas ao rótulo atual da interface.
+
+`CaseAttachmentsGallery.test.tsx`, `ImageGalleryModal.test.tsx`,
+`IssueDocumentsSection.test.tsx` e `locale-validation.test.ts` passaram em
+**31/31 testes**. Gates de tokens, JSON, `git diff --check` e OpenSpec estrito
+passaram. O typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso da CLI: **259/281**; próxima: 3.10e4, integração com issues.

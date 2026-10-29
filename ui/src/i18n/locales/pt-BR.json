@@ -1769,7 +1769,17 @@
       "runRoutine": "Executar rotina"
     }
   },
+  "mediaGallery": {
+    "title": "Galeria de mídia",
+    "position": "{{current}} / {{total}}",
+    "download": "Baixar",
+    "downloadFile": "Baixar {{filename}}",
+    "close": "Fechar",
+    "previous": "Anterior",
+    "next": "Próximo"
+  },
   "caseManagement": {
+    "attachments": { "empty": "Não há anexos." },
     "activity": {
       "loading": "Carregando atividade...",
       "error": "Não foi possível carregar a atividade.",

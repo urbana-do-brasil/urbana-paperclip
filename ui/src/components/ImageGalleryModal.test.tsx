@@ -2,8 +2,9 @@
 
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ImageGalleryModal, type GalleryMediaItem } from "./ImageGalleryModal";
+import { i18n } from "@/i18n";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -38,8 +39,12 @@ function makeMediaItem(overrides: Partial<GalleryMediaItem> = {}): GalleryMediaI
 describe("ImageGalleryModal", () => {
   let container: HTMLDivElement;
   let root: Root;
+  let previousLanguage = "pt-BR";
 
-  beforeEach(() => {
+  beforeAll(() => { previousLanguage = i18n.language; });
+  afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -129,6 +134,23 @@ describe("ImageGalleryModal", () => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     });
 
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("localizes gallery controls while preserving filenames and links", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onOpenChange = vi.fn();
+    const items = [makeMediaItem({ originalFilename: "USER PHOTO.png" }), makeMediaItem({ id: "second", originalFilename: "SECOND.png" })];
+    await act(async () => root.render(<ImageGalleryModal items={items} initialIndex={0} open onOpenChange={onOpenChange} />));
+    await flushReact();
+    expect(document.body.querySelector('[role="dialog"]')?.getAttribute("aria-labelledby")).toBeTruthy();
+    expect(document.body.querySelector('a[aria-label="Baixar USER PHOTO.png"]')?.getAttribute("href")).toBe("/api/attachments/media-1/content?download=1");
+    expect(document.body.querySelector('button[aria-label="Anterior"]')).toBeTruthy();
+    const next = document.body.querySelector<HTMLButtonElement>('button[aria-label="Próximo"]');
+    await act(() => { next!.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
+    expect(document.body.textContent).toContain("SECOND.png");
+    const close = document.body.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]');
+    await act(() => { close!.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });
