@@ -159,4 +159,25 @@ describe("estimateStatusCardCost", () => {
     expect(est.primary).toContain("Up to ~12 updates/day");
     expect(est.primary).toContain("during active hours");
   });
+
+  it("localizes the estimate in Brazilian Portuguese while keeping USD and quantities", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const manual = estimateStatusCardCost({ mode: "manual", triggers: {} as never });
+    expect(manual.primary).toContain("reconstrução");
+    expect(manual.note).toContain("Cartões manuais só consomem tokens");
+    expect(manual.cost).toBe(`${formatCents(3)} · ${formatTokens(4_500)}`);
+
+    const capped = estimateStatusCardCost({
+      mode: "interval",
+      intervalMinutes: 60,
+      dailyTokenCap: 10_000,
+      activeHours: { start: "08:00", end: "20:00", timezone: "America/Sao_Paulo" },
+      triggers: {} as never,
+    });
+    expect(capped.primary).toContain("Até ~5 atualizações/dia");
+    expect(capped.primary).toContain("a cada 60 min, durante o horário ativo");
+    expect(capped.primary).toContain(capped.cost);
+    expect(capped.cost).toBe(`${formatCents(5)} · ${formatTokens(10_000)}`);
+    expect(capped.note?.toLowerCase()).toContain("limite diário");
+  });
 });

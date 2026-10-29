@@ -43,6 +43,7 @@ interface InlineEntitySelectorProps {
   contentStyle?: CSSProperties;
   /** Heading for the large mobile selector modal. Defaults to the placeholder. */
   mobileTitle?: string;
+  ariaLabel?: string;
   /** Own the scroll lock when this picker portals outside a parent dialog. */
   modal?: boolean;
 }
@@ -92,6 +93,7 @@ export const InlineEntitySelector = forwardRef<HTMLButtonElement, InlineEntitySe
       triggerDataSlot,
       contentStyle,
       mobileTitle,
+      ariaLabel,
       modal = false,
     },
     ref,
@@ -173,6 +175,7 @@ export const InlineEntitySelector = forwardRef<HTMLButtonElement, InlineEntitySe
           <button
             ref={ref}
             type="button"
+            aria-label={ariaLabel}
             disabled={disabled}
             data-testid={triggerTestId}
             data-slot={triggerDataSlot}

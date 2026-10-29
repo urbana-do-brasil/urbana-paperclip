@@ -1726,6 +1726,72 @@
     }
   },
   "statusCards": {
+      "settings": {
+        "title": "Auto-update policy",
+        "manual": "Manual only — updates when I press refresh",
+        "default": "Default",
+        "interval": "On a schedule, only if something changed",
+        "checkEvery": "Check every",
+        "minutes": "min",
+        "reactive": "As soon as something changes (debounced)",
+        "wait": "Wait",
+        "afterLastChangeMax": "after the last change · max",
+        "maxUpdatesPerHour": "Max updates per hour",
+        "updatesPerHour": "updates/hour",
+        "advanced": "Advanced",
+        "countAsChange": "Count as a change",
+        "triggers": {
+          "statusTransitions": "Became blocked / needs review / done / cancelled",
+          "membershipChanges": "New issue matches the query · issue leaves the query",
+          "humanComments": "Human comments",
+          "assigneeChanges": "Assignee changes",
+          "anyUpdate": "Any update at all (noisy — includes in-progress churn)"
+        },
+        "guardrails": "Guardrails",
+        "limitActiveHours": "Only auto-update during active hours",
+        "activeHoursStart": "Active hours start",
+        "activeHoursEnd": "Active hours end",
+        "timezone": "Timezone",
+        "dailyTokenCap": "Daily token cap",
+        "noCap": "no cap",
+        "estimatedCost": "Estimated cost",
+        "costEstimateRough": "Rough estimate from typical update sizes; actual cost is tracked per update."
+      },
+      "costEstimate": {
+        "manualPrimary": "~1 rebuild per refresh ≈ {{cost}}",
+        "manualNote": "Manual cards only cost tokens when you press Refresh.",
+        "autoPrimary": "Up to ~{{count}} updates/day ({{cadence}}{{activeHours}}) ≈ {{cost}}",
+        "intervalCadence": "every {{interval}} min",
+        "reactiveCadence": "up to {{count}}/hour",
+        "duringActiveHours": ", during active hours",
+        "tokenCapNote": "Capped by your {{cap}} daily token cap — the card pauses when it's hit.",
+        "noOpNote": "Only runs when something changed; a cheap no-op check otherwise."
+      },
+    "create": {
+      "close": "Close",
+      "description": "One message sets up the whole card: say what you want to watch and what each update should tell you. The agent builds the query from it and writes every update against it.",
+      "failed": "Create failed",
+      "error": "Could not create the card.",
+      "promptLabel": "What do you want to keep an eye on?",
+      "promptPlaceholder": "Keep an eye on the ID and Cloud projects. Tell me whether the service is live, and if not, the exact three actions needed to get it to production.",
+      "examplesLabel": "Examples",
+      "examples": {
+        "evaluations": "issues about evals",
+        "blocked": "everything blocked this week",
+        "release": "is feature X live? if not, the exact next actions to ship it"
+      },
+      "agent": "Agent",
+      "agentSelect": "Select the card agent",
+      "agentHelp": "Runs this card's setup and updates. Leave on the default unless another agent should own it.",
+      "defaultAgent": "Summarizer (default)",
+      "searchAgents": "Search agents...",
+      "noAgents": "No agents found.",
+      "loadingAgents": "Loading agents...",
+      "agentsError": "Could not load agents.",
+      "retry": "Try again",
+      "cancel": "Cancel",
+      "submit": "Create card"
+    },
     "policy": {
       "manual": "manual",
       "interval": "every {{minutes}}m if changed",

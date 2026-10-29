@@ -3169,3 +3169,17 @@ testes**. Gates de tokens, JSON, `git diff --check` e OpenSpec estrito passaram.
 O typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 Progresso da CLI: **266/288**; próxima: 3.10f3, criação e configuração.
+
+3.10f3 foi dividida em f3a (criação e seleção de agente) e f3b (políticas e
+estimativa de custo). O progresso da CLI é **266/290**; próxima: 3.10f3a.
+
+
+## Status cards — criação e políticas (3.10f3)
+
+Criação, exemplos, seletor e estados de agente, políticas, limites e estimativa
+de custo acompanham PT-BR/en. Texto digitado, IDs, configurações, fuso horário,
+valores em USD e payloads foram preservados. Os testes integrados da criação,
+seletor, políticas, formatação, cartões, lista e catálogos passaram: **64/64**.
+Gates de tokens, JSON, diff e OpenSpec estrito passaram. O typecheck da UI
+continua apontando apenas o erro preexistente `SETUP_LOGIN_HINTS` no Storybook.
+Progresso da CLI: **269/290**; próxima: 3.10f4, detalhe e histórico.

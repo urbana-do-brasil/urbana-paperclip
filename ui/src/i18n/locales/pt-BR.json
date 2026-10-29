@@ -1770,6 +1770,72 @@
     }
   },
   "statusCards": {
+      "settings": {
+        "title": "Política de atualização automática",
+        "manual": "Somente manual — atualiza quando pressiono Atualizar",
+        "default": "Padrão",
+        "interval": "Em intervalos, somente se algo tiver mudado",
+        "checkEvery": "Verificar a cada",
+        "minutes": "min",
+        "reactive": "Assim que algo mudar (com espera para agrupar alterações)",
+        "wait": "Aguardar",
+        "afterLastChangeMax": "após a última alteração · no máximo",
+        "maxUpdatesPerHour": "Máximo de atualizações por hora",
+        "updatesPerHour": "atualizações/h",
+        "advanced": "Avançado",
+        "countAsChange": "Contar como alteração",
+        "triggers": {
+          "statusTransitions": "Passou a bloqueado / precisa de revisão / concluído / cancelado",
+          "membershipChanges": "Novo item corresponde à consulta · item deixa de corresponder à consulta",
+          "humanComments": "Comentários de pessoas",
+          "assigneeChanges": "Alterações na pessoa responsável",
+          "anyUpdate": "Qualquer alteração (gera muito ruído — inclui mudanças durante o andamento)"
+        },
+        "guardrails": "Limites de segurança",
+        "limitActiveHours": "Atualizar automaticamente somente no horário ativo",
+        "activeHoursStart": "Início do horário ativo",
+        "activeHoursEnd": "Fim do horário ativo",
+        "timezone": "Fuso horário",
+        "dailyTokenCap": "Limite diário de tokens",
+        "noCap": "Sem limite",
+        "estimatedCost": "Custo estimado",
+        "costEstimateRough": "Estimativa aproximada com base no tamanho típico das atualizações; o custo real é registrado por atualização."
+      },
+      "costEstimate": {
+        "manualPrimary": "≈ 1 reconstrução por atualização ≈ {{cost}}",
+        "manualNote": "Cartões manuais só consomem tokens quando você seleciona Atualizar.",
+        "autoPrimary": "Até ~{{count}} atualizações/dia ({{cadence}}{{activeHours}}) ≈ {{cost}}",
+        "intervalCadence": "a cada {{interval}} min",
+        "reactiveCadence": "até {{count}}/hora",
+        "duringActiveHours": ", durante o horário ativo",
+        "tokenCapNote": "Limitado pelo limite diário de {{cap}} — o cartão pausa ao atingir esse valor.",
+        "noOpNote": "A atualização só é executada quando algo muda; caso contrário, ocorre uma verificação de baixo custo."
+      },
+    "create": {
+      "close": "Fechar",
+      "description": "Uma mensagem configura todo o cartão: diga o que deseja acompanhar e o que cada atualização deve informar. O agente cria a consulta a partir dela e escreve cada atualização com base nela.",
+      "failed": "Falha ao criar",
+      "error": "Não foi possível criar o cartão.",
+      "promptLabel": "O que você deseja acompanhar?",
+      "promptPlaceholder": "Acompanhe os projetos ID e Cloud. Informe se o serviço está no ar e, caso não esteja, as três ações exatas necessárias para colocá-lo em produção.",
+      "examplesLabel": "Exemplos",
+      "examples": {
+        "evaluations": "tarefas sobre avaliações",
+        "blocked": "tudo que está bloqueado nesta semana",
+        "release": "a funcionalidade X está no ar? se não, quais são as próximas ações exatas para lançá-la"
+      },
+      "agent": "Agente",
+      "agentSelect": "Selecionar agente do cartão",
+      "agentHelp": "Executa a configuração e as atualizações deste cartão. Mantenha o padrão, a menos que outro agente deva ser responsável.",
+      "defaultAgent": "Summarizer (padrão)",
+      "searchAgents": "Buscar agentes...",
+      "noAgents": "Nenhum agente encontrado.",
+      "loadingAgents": "Carregando agentes...",
+      "agentsError": "Não foi possível carregar os agentes.",
+      "retry": "Tentar novamente",
+      "cancel": "Cancelar",
+      "submit": "Criar cartão"
+    },
     "policy": {
       "manual": "manual",
       "interval": "a cada {{minutes}} min se houver alterações",
