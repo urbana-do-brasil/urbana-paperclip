@@ -107,6 +107,19 @@
       "rotated": "Rotated",
       "rotateFailed": "Rotate failed"
     },
+    "lifecycle": {
+      "moreActions": "More",
+      "statusUpdated": "Secret status changed to {{status}}",
+      "statusUpdateFailed": "Status update failed",
+      "deleteSucceeded": "Secret deleted",
+      "deleteFailed": "Delete failed",
+      "deleteDescription": "Permanently removes <strong>{{name}}</strong>. Active bindings will fail until you remap them.",
+      "archiveTitle": "Archive secret?",
+      "archiveDescription": "Archive <strong>{{name}}</strong>? It will be unavailable to runtime bindings until restored.",
+      "restoreTitle": "Restore secret?",
+      "restoreDescription": "Restore <strong>{{name}}</strong> to active status so bindings can use it again.",
+      "restore": "Restore"
+    },
     "inventory": {
       "searchPlaceholder": "Search by name, key, ref",
       "searchLabel": "Search secrets",

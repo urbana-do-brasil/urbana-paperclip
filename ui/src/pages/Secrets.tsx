@@ -36,6 +36,7 @@ import {
   Users,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Trans } from "react-i18next";
 import type {
   CompanySecret,
   CompanySecretUsageBinding,
@@ -752,6 +753,10 @@ export function Secrets() {
   const [rotateProviderConfigId, setRotateProviderConfigId] = useState("");
   const [rotateError, setRotateError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<CompanySecret | null>(null);
+  const [statusConfirm, setStatusConfirm] = useState<{
+    secret: CompanySecret;
+    status: "active" | "archived";
+  } | null>(null);
   const [definitionDeleteConfirm, setDefinitionDeleteConfirm] = useState<UserSecretDefinition | null>(null);
   const [setMyValueFor, setSetMyValueFor] = useState<MyUserSecretEntry | null>(null);
   const [vaultDialogOpen, setVaultDialogOpen] = useState(false);
@@ -1223,7 +1228,7 @@ export function Secrets() {
   });
 
   const statusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: SecretStatus }) => {
+    mutationFn: ({ id, status }: { id: string; status: SecretStatus; confirmed?: boolean }) => {
       switch (status) {
         case "active":
           return secretsApi.enable(id);
@@ -1235,14 +1240,19 @@ export function Secrets() {
           return secretsApi.update(id, { status });
       }
     },
-    onSuccess: (updated) => {
-      pushToast({ title: `Secret ${updated.status}`, body: updated.name, tone: "info" });
+    onSuccess: (updated, variables) => {
+      pushToast({
+        title: t("secrets.lifecycle.statusUpdated", { status: statusLabel(updated.status, t) }),
+        body: updated.name,
+        tone: "info",
+      });
+      if (variables.confirmed) setStatusConfirm(null);
       invalidateAll([updated.id]);
     },
     onError: (error) => {
       pushToast({
-        title: "Status update failed",
-        body: error instanceof Error ? error.message : "Try again",
+        title: t("secrets.lifecycle.statusUpdateFailed"),
+        body: error instanceof Error ? error.message : t("common.retry"),
         tone: "error",
       });
     },
@@ -1267,15 +1277,15 @@ export function Secrets() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => secretsApi.remove(id),
     onSuccess: (_response, id) => {
-      pushToast({ title: "Secret deleted", tone: "info" });
+      pushToast({ title: t("secrets.lifecycle.deleteSucceeded"), tone: "info" });
       setDeleteConfirm(null);
       if (selectedSecretId === id) setDetailSelection(null);
       invalidateAll([id]);
     },
     onError: (error) => {
       pushToast({
-        title: "Delete failed",
-        body: error instanceof Error ? error.message : "Try again",
+        title: t("secrets.lifecycle.deleteFailed"),
+        body: error instanceof Error ? error.message : t("common.retry"),
         tone: "error",
       });
     },
@@ -1606,12 +1616,10 @@ export function Secrets() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={statusMutation.isPending}
-                onSelect={() =>
-                  statusMutation.mutate({
-                    id: row.secret.id,
-                    status: row.secret.status === "archived" ? "active" : "archived",
-                  })
-                }
+                onSelect={() => setStatusConfirm({
+                  secret: row.secret,
+                  status: row.secret.status === "archived" ? "active" : "archived",
+                })}
               >
                 {row.secret.status === "archived" ? (
                   <ArchiveRestore className="h-4 w-4" />
@@ -2338,8 +2346,12 @@ export function Secrets() {
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" aria-label={`More actions for ${selectedSecret.name}`}>
-                      <MoreHorizontal className="mr-1 h-3.5 w-3.5" /> More
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label={t("secrets.inventory.actionsFor", { name: selectedSecret.name })}
+                    >
+                      <MoreHorizontal className="mr-1 h-3.5 w-3.5" /> {t("secrets.lifecycle.moreActions")}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52">
@@ -2357,27 +2369,29 @@ export function Secrets() {
                       ) : (
                         <CheckCircle2 className="h-4 w-4" />
                       )}
-                      {selectedSecret.status === "active" ? "Disable" : "Activate"}
+                      {selectedSecret.status === "active"
+                        ? t("secrets.inventory.disable")
+                        : t("secrets.inventory.activate")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={statusMutation.isPending}
-                      onSelect={() =>
-                        statusMutation.mutate({
-                          id: selectedSecret.id,
-                          status: selectedSecret.status === "archived" ? "active" : "archived",
-                        })
-                      }
+                      onSelect={() => setStatusConfirm({
+                        secret: selectedSecret,
+                        status: selectedSecret.status === "archived" ? "active" : "archived",
+                      })}
                     >
                       {selectedSecret.status === "archived" ? (
                         <ArchiveRestore className="h-4 w-4" />
                       ) : (
                         <Archive className="h-4 w-4" />
                       )}
-                      {selectedSecret.status === "archived" ? "Unarchive" : "Archive"}
+                      {selectedSecret.status === "archived"
+                        ? t("secrets.inventory.unarchive")
+                        : t("secrets.inventory.archive")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem variant="destructive" onSelect={() => setDeleteConfirm(selectedSecret)}>
-                      <Trash2 className="h-4 w-4" /> Delete secret
+                      <Trash2 className="h-4 w-4" /> {t("secrets.inventory.deleteSecret")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -3216,23 +3230,79 @@ export function Secrets() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(deleteConfirm)} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+      <Dialog
+        open={Boolean(statusConfirm)}
+        onOpenChange={(open) => !open && !statusMutation.isPending && setStatusConfirm(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete secret</DialogTitle>
+            <DialogTitle>
+              {statusConfirm?.status === "active"
+                ? t("secrets.lifecycle.restoreTitle")
+                : t("secrets.lifecycle.archiveTitle")}
+            </DialogTitle>
             <DialogDescription>
-              Permanently removes <strong>{deleteConfirm?.name}</strong>. Active bindings will fail until you remap them.
+              <Trans
+                i18nKey={
+                  statusConfirm?.status === "active"
+                    ? "secrets.lifecycle.restoreDescription"
+                    : "secrets.lifecycle.archiveDescription"
+                }
+                values={{ name: statusConfirm?.secret.name ?? "" }}
+                components={{ strong: <strong /> }}
+              />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button
+              variant="outline"
+              onClick={() => setStatusConfirm(null)}
+              disabled={statusMutation.isPending}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant={statusConfirm?.status === "archived" ? "destructive" : "default"}
+              onClick={() => {
+                if (!statusConfirm) return;
+                statusMutation.mutate({
+                  id: statusConfirm.secret.id,
+                  status: statusConfirm.status,
+                  confirmed: true,
+                });
+              }}
+              disabled={statusMutation.isPending || !statusConfirm}
+            >
+              {statusMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+              {statusConfirm?.status === "active"
+                ? t("secrets.lifecycle.restore")
+                : t("secrets.inventory.archive")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(deleteConfirm)} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("secrets.inventory.deleteSecret")}</DialogTitle>
+            <DialogDescription>
+              <Trans
+                i18nKey="secrets.lifecycle.deleteDescription"
+                values={{ name: deleteConfirm?.name ?? "" }}
+                components={{ strong: <strong /> }}
+              />
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm.id)}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-              Delete
+              {t("secrets.inventory.deleteSecret")}
             </Button>
           </DialogFooter>
         </DialogContent>

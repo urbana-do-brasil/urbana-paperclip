@@ -107,6 +107,19 @@
       "rotated": "Rotação concluída",
       "rotateFailed": "Falha na rotação"
     },
+    "lifecycle": {
+      "moreActions": "Mais",
+      "statusUpdated": "Status do segredo alterado para {{status}}",
+      "statusUpdateFailed": "Falha ao atualizar o status",
+      "deleteSucceeded": "Segredo excluído",
+      "deleteFailed": "Falha ao excluir",
+      "deleteDescription": "Remove permanentemente <strong>{{name}}</strong>. Os vínculos ativos deixarão de funcionar até que você os mapeie novamente.",
+      "archiveTitle": "Arquivar segredo?",
+      "archiveDescription": "Arquivar <strong>{{name}}</strong>? Ele ficará indisponível para vínculos de execução até ser restaurado.",
+      "restoreTitle": "Restaurar segredo?",
+      "restoreDescription": "Restaurar <strong>{{name}}</strong> para o status ativo, permitindo que os vínculos voltem a usá-lo.",
+      "restore": "Restaurar"
+    },
     "inventory": {
       "searchPlaceholder": "Buscar por nome, chave ou referência",
       "searchLabel": "Buscar segredos",

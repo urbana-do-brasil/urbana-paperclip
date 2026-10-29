@@ -928,6 +928,143 @@ describe("Secrets page layout", () => {
     });
   });
 
+  it("localizes company secret status transitions and delete confirmation", async () => {
+    await i18n.changeLanguage("pt-BR");
+    let secret = makeCompanySecret({ id: "secret-lifecycle", name: "credencial-deploy" });
+    mockSecretsApi.list.mockImplementation(async () => [secret]);
+    mockSecretsApi.disable.mockImplementation(async (id: string) => {
+      secret = { ...secret, id, status: "disabled" };
+      return secret;
+    });
+    mockSecretsApi.enable.mockImplementation(async (id: string) => {
+      secret = { ...secret, id, status: "active" };
+      return secret;
+    });
+    mockSecretsApi.archive.mockImplementation(async (id: string) => {
+      secret = { ...secret, id, status: "archived" };
+      return secret;
+    });
+    mockSecretsApi.remove.mockResolvedValue({ id: secret.id });
+
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={["/company/settings/secrets?secret=secret-lifecycle"]}>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    async function openMoreActions() {
+      const moreButton = Array.from(document.body.querySelectorAll("button")).find(
+        (button) => button.textContent?.trim() === "Mais",
+      ) as HTMLButtonElement | undefined;
+      expect(moreButton).not.toBeUndefined();
+      await act(async () => {
+        moreButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+        moreButton?.click();
+      });
+      await flushReact();
+    }
+
+    async function selectAction(label: string) {
+      const action = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find(
+        (item) => item.textContent?.trim() === label,
+      ) as HTMLElement | undefined;
+      expect(action).not.toBeUndefined();
+      await act(async () => action?.click());
+      await flushReact();
+      await flushReact();
+    }
+
+    await openMoreActions();
+    await selectAction("Desativar");
+    expect(mockSecretsApi.disable).toHaveBeenCalledWith("secret-lifecycle");
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Status do segredo alterado para Desativado", body: "credencial-deploy" }),
+    );
+
+    await openMoreActions();
+    await selectAction("Ativar");
+    expect(mockSecretsApi.enable).toHaveBeenCalledWith("secret-lifecycle");
+
+    await openMoreActions();
+    await selectAction("Arquivar");
+    const archiveDialog = Array.from(document.body.querySelectorAll('[role="dialog"]')).find(
+      (dialog) => dialog.textContent?.includes("Arquivar credencial-deploy?"),
+    ) as HTMLElement | undefined;
+    expect(archiveDialog?.textContent).toContain("indisponível para vínculos de execução");
+    expect(mockSecretsApi.archive).not.toHaveBeenCalled();
+    const confirmArchive = Array.from(archiveDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Arquivar",
+    ) as HTMLButtonElement | undefined;
+    await act(async () => confirmArchive?.click());
+    await flushReact();
+    expect(mockSecretsApi.archive).toHaveBeenCalledWith("secret-lifecycle");
+
+    await openMoreActions();
+    await selectAction("Remover do arquivo");
+    const restoreDialog = Array.from(document.body.querySelectorAll('[role="dialog"]')).find(
+      (dialog) => dialog.textContent?.includes("Restaurar credencial-deploy"),
+    ) as HTMLElement | undefined;
+    expect(restoreDialog?.textContent).toContain("para o status ativo");
+    expect(mockSecretsApi.enable).toHaveBeenCalledTimes(1);
+    const confirmRestore = Array.from(restoreDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Restaurar",
+    ) as HTMLButtonElement | undefined;
+    await act(async () => confirmRestore?.click());
+    await flushReact();
+    expect(mockSecretsApi.enable).toHaveBeenCalledTimes(2);
+
+    mockSecretsApi.disable.mockRejectedValueOnce(new Error("Status denied by provider"));
+    mockPushToast.mockClear();
+    await openMoreActions();
+    await selectAction("Desativar");
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Falha ao atualizar o status",
+        body: "Status denied by provider",
+        tone: "error",
+      }),
+    );
+
+    await openMoreActions();
+    await selectAction("Excluir segredo");
+    const deleteDialog = Array.from(document.body.querySelectorAll('[role="dialog"]')).find(
+      (dialog) => dialog.textContent?.includes("Remove permanentemente credencial-deploy."),
+    ) as HTMLElement | undefined;
+    expect(deleteDialog?.textContent).toContain("Os vínculos ativos deixarão de funcionar");
+    const confirmDelete = Array.from(deleteDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Excluir segredo",
+    ) as HTMLButtonElement | undefined;
+    expect(confirmDelete).not.toBeUndefined();
+    mockSecretsApi.remove.mockRejectedValueOnce(null);
+    await act(async () => confirmDelete?.click());
+    await flushReact();
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Falha ao excluir", body: "Tentar novamente", tone: "error" }),
+    );
+
+    const retryDelete = Array.from(deleteDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Excluir segredo",
+    ) as HTMLButtonElement | undefined;
+    await act(async () => retryDelete?.click());
+    await flushReact();
+
+    expect(mockSecretsApi.remove).toHaveBeenCalledTimes(2);
+    expect(mockSecretsApi.remove).toHaveBeenLastCalledWith("secret-lifecycle");
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Segredo excluído", tone: "info" }),
+    );
+    await act(async () => root.unmount());
+    await i18n.changeLanguage("en");
+  });
+
   it("merges company secrets and each-user definitions into the Secrets list", async () => {
     mockSecretsApi.list.mockResolvedValue([makeCompanySecret()]);
     mockSecretsApi.listUserSecretDefinitions.mockResolvedValue([makeUserSecretDefinition()]);

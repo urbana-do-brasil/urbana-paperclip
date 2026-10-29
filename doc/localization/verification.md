@@ -1997,3 +1997,22 @@ typecheck completo da UI segue bloqueado pelo erro não relacionado em
 por `@/lib/agent-setup-fields`. O progresso é **176/201 tarefas**; próxima:
 3.8e1b3, transições de status e confirmações de arquivamento, restauração e
 exclusão.
+
+### Continuação — ciclo de vida de segredos compartilhados (3.8e1b3)
+
+As transições de desativação/ativação e os menus de arquivamento/restauração
+agora estão localizados em PT-BR/en. Arquivar e restaurar pedem confirmação;
+a exclusão preserva o diálogo de confirmação e informa que vínculos ativos
+precisarão ser remapeados. Status persistidos e enviados à API, nomes, IDs,
+vínculos, autorização e destinos permanecem iguais. Mensagens detalhadas do
+servidor continuam intactas, e os fallbacks próprios de erro e sucesso estão
+traduzidos.
+
+`Secrets.render.test.tsx` e `locale-validation.test.ts` passaram em **48/48
+testes**, cobrindo desativação, ativação, arquivamento, restauração, exclusão,
+confirmações e mensagens de erro em PT-BR. `check:tokens`, `check:token-gates`,
+parse dos catálogos, `git diff --check` e validação OpenSpec estrita passaram.
+O typecheck completo da UI segue bloqueado pelo erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
+por `@/lib/agent-setup-fields`. O progresso é **177/201 tarefas**; próxima:
+3.8e1c, detalhes e auditoria dos segredos compartilhados.
