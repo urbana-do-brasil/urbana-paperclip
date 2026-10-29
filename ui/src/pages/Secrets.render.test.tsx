@@ -346,9 +346,15 @@ function setSelectValue(select: HTMLSelectElement, value: string) {
   select.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-async function openAwsVaultDialog() {
+async function openAwsVaultDialog({
+  providerTabLabel = "Provider vaults",
+  addVaultLabel = "Add vault",
+}: {
+  providerTabLabel?: string;
+  addVaultLabel?: string;
+} = {}) {
   const vaultTabButton = [...document.querySelectorAll("button")].find(
-    (button) => button.textContent?.includes("Provider vaults"),
+    (button) => button.textContent?.includes(providerTabLabel),
   ) as HTMLButtonElement | undefined;
   await act(async () => {
     vaultTabButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
@@ -358,7 +364,7 @@ async function openAwsVaultDialog() {
   await flushReact();
 
   const addVaultButtons = [...document.querySelectorAll("button")].filter(
-    (button) => button.textContent?.includes("Add vault"),
+    (button) => button.textContent?.includes(addVaultLabel),
   ) as HTMLButtonElement[];
   await act(async () => {
     addVaultButtons[1]?.click();
@@ -595,6 +601,46 @@ describe("Secrets page layout", () => {
     });
   });
 
+  it("localizes provider vault administration and keeps stable field IDs in pt-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+    await openAwsVaultDialog({
+      providerTabLabel: "Cofres de provedores",
+      addVaultLabel: "Adicionar cofre",
+    });
+
+    expect(document.body.textContent).toContain("Criar cofre de provedor");
+    expect(document.body.textContent).toContain("Nome de exibição");
+    expect(document.body.textContent).toContain("Região da AWS");
+    expect(document.body.textContent).toContain("Verificar saúde");
+    expect(document.body.textContent).toContain("AWS production");
+    expect(document.body.textContent).toContain("Desativar");
+    expect(document.body.textContent).toContain("Definir como padrão");
+    expect(document.getElementById("provider-vault-aws-region")).not.toBeNull();
+    expect(document.getElementById("provider-vault-secret-name-prefix")).not.toBeNull();
+    expect(document.body.textContent).not.toContain("Create provider vault");
+
+    await act(async () => {
+      root.unmount();
+    });
+    await i18n.changeLanguage("en");
+  });
+
   it("refreshes existing AWS secrets from a provider vault card", async () => {
     const root = createRoot(container);
     const queryClient = new QueryClient({
@@ -648,6 +694,7 @@ describe("Secrets page layout", () => {
   });
 
   it("warns that removing a provider vault only removes Paperclip config", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockSecretsApi.removeProviderConfig.mockResolvedValueOnce(providerConfigs[1]);
     const root = createRoot(container);
     const queryClient = new QueryClient({
@@ -667,7 +714,7 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const vaultTabButton = [...document.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Provider vaults"),
+      (button) => button.textContent?.includes("Cofres de provedores"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       vaultTabButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
@@ -677,20 +724,20 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const removeButtons = [...document.querySelectorAll("button")].filter(
-      (button) => button.textContent?.trim() === "Remove",
+      (button) => button.textContent?.trim() === "Remover",
     ) as HTMLButtonElement[];
     await act(async () => {
       removeButtons[1]?.click();
     });
     await flushReact();
 
-    expect(document.body.textContent).toContain("Remove provider vault");
-    expect(document.body.textContent).toContain("from Paperclip only");
-    expect(document.body.textContent).toContain("does not delete");
+    expect(document.body.textContent).toContain("Remover cofre do provedor");
+    expect(document.body.textContent).toContain("somente do Paperclip");
+    expect(document.body.textContent).toContain("não exclui");
     expect(document.body.textContent).toContain("AWS Secrets Manager");
 
     const confirmButton = [...document.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Remove from Paperclip"),
+      (button) => button.textContent?.includes("Remover do Paperclip"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       confirmButton?.click();
@@ -703,6 +750,7 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("keeps references reachable from the compact secrets row and detail drawer", async () => {

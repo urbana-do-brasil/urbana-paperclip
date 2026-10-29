@@ -1327,7 +1327,7 @@ export function Secrets() {
       } as CreateSecretProviderConfigInput);
     },
     onSuccess: (saved) => {
-      pushToast({ title: editingVault ? "Provider vault updated" : "Provider vault created", body: saved.displayName, tone: "success" });
+      pushToast({ title: editingVault ? t("secrets.providerVaultAdmin.updated") : t("secrets.providerVaultAdmin.created"), body: saved.displayName, tone: "success" });
       setVaultDialogOpen(false);
       setEditingVault(null);
       setVaultForm(emptyProviderVaultForm());
@@ -1360,13 +1360,13 @@ export function Secrets() {
   const disableVaultMutation = useMutation({
     mutationFn: (id: string) => secretsApi.disableProviderConfig(id),
     onSuccess: (updated) => {
-      pushToast({ title: "Provider vault disabled", body: updated.displayName, tone: "info" });
+      pushToast({ title: t("secrets.providerVaultAdmin.disabled"), body: updated.displayName, tone: "info" });
       invalidateAll();
     },
     onError: (error) => {
       pushToast({
-        title: "Disable failed",
-        body: error instanceof Error ? error.message : "Try again",
+        title: t("secrets.providerVaultAdmin.disableFailed"),
+        body: error instanceof Error ? error.message : t("common.retry"),
         tone: "error",
       });
     },
@@ -1376,8 +1376,8 @@ export function Secrets() {
     mutationFn: (id: string) => secretsApi.removeProviderConfig(id),
     onSuccess: (removed) => {
       pushToast({
-        title: "Provider vault removed",
-        body: `${removed.displayName} was removed from Paperclip only.`,
+        title: t("secrets.providerVaultAdmin.removed"),
+        body: t("secrets.providerVaultAdmin.removedFromPaperclip", { name: removed.displayName }),
         tone: "info",
       });
       setRemoveVaultConfirm(null);
@@ -1385,8 +1385,8 @@ export function Secrets() {
     },
     onError: (error) => {
       pushToast({
-        title: "Remove failed",
-        body: error instanceof Error ? error.message : "Try again",
+        title: t("secrets.providerVaultAdmin.removeFailed"),
+        body: error instanceof Error ? error.message : t("common.retry"),
         tone: "error",
       });
     },
@@ -1395,13 +1395,13 @@ export function Secrets() {
   const defaultVaultMutation = useMutation({
     mutationFn: (id: string) => secretsApi.setDefaultProviderConfig(id),
     onSuccess: (updated) => {
-      pushToast({ title: "Default vault set", body: updated.displayName, tone: "success" });
+      pushToast({ title: t("secrets.providerVaultAdmin.defaultSet"), body: updated.displayName, tone: "success" });
       invalidateAll();
     },
     onError: (error) => {
       pushToast({
-        title: "Default update failed",
-        body: error instanceof Error ? error.message : "Try again",
+        title: t("secrets.providerVaultAdmin.defaultUpdateFailed"),
+        body: error instanceof Error ? error.message : t("common.retry"),
         tone: "error",
       });
     },
@@ -1410,13 +1410,13 @@ export function Secrets() {
   const healthVaultMutation = useMutation({
     mutationFn: (id: string) => secretsApi.checkProviderConfigHealth(id),
     onSuccess: (health) => {
-      pushToast({ title: "Health checked", body: health.message, tone: health.status === "error" ? "error" : "info" });
+      pushToast({ title: t("secrets.providerVaultAdmin.healthChecked"), body: health.message, tone: health.status === "error" ? "error" : "info" });
       invalidateAll();
     },
     onError: (error) => {
       pushToast({
-        title: "Health check failed",
-        body: error instanceof Error ? error.message : "Try again",
+        title: t("secrets.providerVaultAdmin.healthCheckFailed"),
+        body: error instanceof Error ? error.message : t("common.retry"),
         tone: "error",
       });
     },
@@ -3012,15 +3012,15 @@ export function Secrets() {
       <Dialog open={vaultDialogOpen} onOpenChange={setVaultDialogOpen}>
         <DialogContent className="max-h-(--sz-85vh) overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingVault ? "Edit provider vault" : "Create provider vault"}</DialogTitle>
+            <DialogTitle>{editingVault ? t("secrets.providerVaultAdmin.editTitle") : t("secrets.providerVaultAdmin.createTitle")}</DialogTitle>
             <DialogDescription>
-              Save only non-sensitive routing metadata. Credentials stay in the runtime environment or provider identity.
+              {t("secrets.providerVaultAdmin.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-xs font-medium" htmlFor="vault-provider">Provider</label>
+                <label className="text-xs font-medium" htmlFor="vault-provider">{t("secrets.providerVaultAdmin.provider")}</label>
                 <select
                   id="vault-provider"
                   className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none disabled:opacity-60"
@@ -3041,18 +3041,18 @@ export function Secrets() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium" htmlFor="vault-name">Display name</label>
+                <label className="text-xs font-medium" htmlFor="vault-name">{t("secrets.providerVaultAdmin.displayName")}</label>
                 <Input
                   id="vault-name"
                   value={vaultForm.displayName}
                   onChange={(event) =>
                     setVaultForm((current) => ({ ...current, displayName: event.target.value }))
                   }
-                  placeholder="Production local vault"
+                  placeholder={t("secrets.providerVaultAdmin.displayNamePlaceholder")}
                 />
               </div>
               <div>
-                <label className="text-xs font-medium" htmlFor="vault-status">Status</label>
+                <label className="text-xs font-medium" htmlFor="vault-status">{t("secrets.providerVaultAdmin.status")}</label>
                 <select
                   id="vault-status"
                   className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none"
@@ -3068,13 +3068,13 @@ export function Secrets() {
                   }}
                 >
                   <option value="ready" disabled={vaultForm.provider === "gcp_secret_manager" || vaultForm.provider === "vault"}>
-                    Ready
+                    {t("secrets.creation.providerConfigStatus.ready")}
                   </option>
                   <option value="warning" disabled={vaultForm.provider === "gcp_secret_manager" || vaultForm.provider === "vault"}>
-                    Warning
+                    {t("secrets.creation.providerConfigStatus.warning")}
                   </option>
-                  <option value="coming_soon">Coming soon</option>
-                  <option value="disabled">Disabled</option>
+                  <option value="coming_soon">{t("secrets.creation.providerConfigStatus.coming_soon")}</option>
+                  <option value="disabled">{t("secrets.creation.providerConfigStatus.disabled")}</option>
                 </select>
               </div>
               <label className="flex items-center gap-2 pt-6 text-sm">
@@ -3087,7 +3087,7 @@ export function Secrets() {
                     setVaultForm((current) => ({ ...current, isDefault: event.target.checked }))
                   }
                 />
-                Default for {providerLabel(providers, vaultForm.provider)}
+                {t("secrets.providerVaultAdmin.defaultFor", { provider: providerLabel(providers, vaultForm.provider) })}
               </label>
             </div>
 
@@ -3110,15 +3110,14 @@ export function Secrets() {
 
             {vaultForm.provider === "gcp_secret_manager" || vaultForm.provider === "vault" ? (
               <div className="rounded-md border border-sky-500/30 bg-sky-500/5 p-3 text-xs text-sky-700 dark:text-sky-300">
-                This provider can save draft routing metadata, but runtime writes and resolution stay disabled until
-                the provider module is implemented and reviewed.
+                {t("secrets.providerVaultAdmin.draftOnlyNotice")}
               </div>
             ) : null}
             {vaultError ? <p className="text-xs text-destructive">{vaultError}</p> : null}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setVaultDialogOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={() => {
@@ -3132,7 +3131,7 @@ export function Secrets() {
               }
             >
               {saveVaultMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-              {editingVault ? "Save vault" : "Create vault"}
+              {editingVault ? t("secrets.providerVaultAdmin.saveVault") : t("secrets.providerVaultAdmin.createVault")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3373,24 +3372,29 @@ export function Secrets() {
       <Dialog open={Boolean(removeVaultConfirm)} onOpenChange={(open) => !open && setRemoveVaultConfirm(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Remove provider vault</DialogTitle>
+            <DialogTitle>{t("secrets.providerVaultAdmin.removeTitle")}</DialogTitle>
             <DialogDescription>
-              Removes <strong>{removeVaultConfirm?.displayName}</strong> from Paperclip only.{" "}
-              {removeVaultConfirm?.provider === "aws_secrets_manager"
-                ? "This does not delete the remote AWS Secrets Manager vault, secrets, or any AWS data."
-                : "This does not delete any remote provider data."}{" "}
-              Secrets using this vault will lose the vault association until you assign another one.
+              <Trans
+                i18nKey="secrets.providerVaultAdmin.removeDescription"
+                values={{
+                  name: removeVaultConfirm?.displayName,
+                  providerData: removeVaultConfirm?.provider === "aws_secrets_manager"
+                    ? t("secrets.providerVaultAdmin.awsRemoteDataNotice")
+                    : t("secrets.providerVaultAdmin.remoteDataNotice"),
+                }}
+                components={{ strong: <strong /> }}
+              />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRemoveVaultConfirm(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRemoveVaultConfirm(null)}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => removeVaultConfirm && removeVaultMutation.mutate(removeVaultConfirm.id)}
               disabled={removeVaultMutation.isPending}
             >
               {removeVaultMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-              Remove from Paperclip
+              {t("secrets.providerVaultAdmin.removeFromPaperclip")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3682,11 +3686,12 @@ export function ProviderVaultsTab({
   onImportSecrets: (config: CompanySecretProviderConfig) => void;
   pendingActionId: string | null;
 }) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading provider vaults
+        {t("secrets.providerVaultAdmin.loading")}
       </div>
     );
   }
@@ -3694,9 +3699,9 @@ export function ProviderVaultsTab({
   if (error) {
     return (
       <div className="py-4 text-sm text-destructive flex items-center gap-2">
-        <AlertCircle className="h-4 w-4" /> Failed to load provider vaults: {(error as Error).message}
+        <AlertCircle className="h-4 w-4" /> {t("secrets.providerVaultAdmin.loadFailed", { message: (error as Error).message })}
         <Button variant="ghost" size="sm" onClick={onRetry}>
-          Retry
+          {t("secrets.providerVaultAdmin.retry")}
         </Button>
       </div>
     );
@@ -3735,19 +3740,19 @@ export function ProviderVaultsTab({
               <Icon className="h-4 w-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold">{provider?.label ?? id.replaceAll("_", " ")}</h2>
               {isComingSoonFamily ? (
-                <span className="ml-auto text-xs text-muted-foreground">Coming soon</span>
+                <span className="ml-auto text-xs text-muted-foreground">{t("secrets.providerVaultAdmin.comingSoon")}</span>
               ) : (
                 <Button variant="outline" size="sm" className="ml-auto" onClick={() => onCreate(id)}>
                   <Plus className="h-3.5 w-3.5 mr-1" />
-                  Add vault
+                  {t("secrets.providerVaultAdmin.addVault")}
                 </Button>
               )}
             </div>
             {configs.length === 0 ? (
               <div className="rounded-md border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
                 {isComingSoonFamily
-                  ? "Not yet supported."
-                  : "No organization-specific vaults yet. Secrets can still use the deployment default provider settings."}
+                  ? t("secrets.providerVaultAdmin.notSupported")
+                  : t("secrets.providerVaultAdmin.emptyProvider")}
               </div>
             ) : (
               <div className="space-y-3">
@@ -3792,7 +3797,8 @@ function ProviderVaultCard({
   onHealthCheck: () => void;
   onImportSecrets: () => void;
 }) {
-  const blockReason = getProviderConfigBlockReason(config);
+  const { t } = useTranslation();
+  const blockReason = getProviderConfigBlockReason(config, t);
   const details = config.healthDetails;
   return (
     <div className="rounded-md border border-border bg-background p-4">
@@ -3803,20 +3809,20 @@ function ProviderVaultCard({
             {config.isDefault ? (
               <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
                 <Star className="h-3 w-3 fill-current" />
-                Default
+                {t("secrets.providerVaultAdmin.default")}
               </span>
             ) : null}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <Badge variant="outline" className={cn("font-medium", providerConfigStatusTone(config.status))}>
-              {config.status.replace("_", " ")}
+              {t(`secrets.creation.providerConfigStatus.${config.status}`)}
             </Badge>
             {config.healthStatus ? (
               <span className="text-xs text-muted-foreground">
-                Health {config.healthStatus.replace("_", " ")} · {formatRelative(config.healthCheckedAt)}
+                {t("secrets.providerVaultAdmin.health", { status: t(`secrets.providerVaultAdmin.healthStatus.${config.healthStatus}`), time: formatRelative(config.healthCheckedAt) })}
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground">Health not checked</span>
+              <span className="text-xs text-muted-foreground">{t("secrets.providerVaultAdmin.healthNotChecked")}</span>
             )}
           </div>
         </div>
@@ -3839,7 +3845,7 @@ function ProviderVaultCard({
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant="outline" size="sm" onClick={onHealthCheck} disabled={pending}>
           {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
-          Check health
+          {t("secrets.providerVaultAdmin.checkHealth")}
         </Button>
         {config.provider === "aws_secrets_manager" ? (
           <Button
@@ -3850,12 +3856,12 @@ function ProviderVaultCard({
             title={
               blockReason
                 ? blockReason
-                : "Refresh AWS metadata and import existing secrets"
+                : t("secrets.providerVaultAdmin.refreshSecretsTitle")
             }
             data-testid={`provider-vault-refresh-secrets-${config.id}`}
           >
             <Cloud className="h-3.5 w-3.5 mr-1" />
-            Refresh secrets
+            {t("secrets.providerVaultAdmin.refreshSecrets")}
           </Button>
         ) : null}
         <Button
@@ -3865,7 +3871,7 @@ function ProviderVaultCard({
           disabled={pending || Boolean(blockReason) || config.isDefault}
         >
           <Star className="h-3.5 w-3.5 mr-1" />
-          Make default
+          {t("secrets.providerVaultAdmin.makeDefault")}
         </Button>
         <Button
           variant="outline"
@@ -3875,7 +3881,7 @@ function ProviderVaultCard({
           disabled={pending || config.status === "disabled"}
         >
           <Ban className="h-3.5 w-3.5 mr-1" />
-          Disable
+          {t("secrets.providerVaultAdmin.disable")}
         </Button>
         <Button
           variant="outline"
@@ -3885,7 +3891,7 @@ function ProviderVaultCard({
           disabled={pending}
         >
           <Trash2 className="h-3.5 w-3.5 mr-1" />
-          Remove
+          {t("secrets.providerVaultAdmin.remove")}
         </Button>
       </div>
     </div>
@@ -3899,6 +3905,7 @@ function ProviderVaultFields({
   form: ProviderVaultForm;
   onChange: React.Dispatch<React.SetStateAction<ProviderVaultForm>>;
 }) {
+  const { t } = useTranslation();
   const setField = (key: keyof ProviderVaultForm, value: string | boolean) => {
     onChange((current) => ({ ...current, [key]: value }));
   };
@@ -3913,7 +3920,7 @@ function ProviderVaultFields({
           onChange={(event) => setField("backupReminderAcknowledged", event.target.checked)}
         />
         <span>
-          I understand backup and restore require both the database metadata and the local encrypted master key file.
+          {t("secrets.providerVaultAdmin.localBackupAcknowledgement")}
         </span>
       </label>
     );
@@ -3922,12 +3929,12 @@ function ProviderVaultFields({
   if (form.provider === "aws_secrets_manager") {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="AWS region" value={form.region} onChange={(value) => setField("region", value)} placeholder="us-east-1" required />
-        <TextField label="Namespace" value={form.namespace} onChange={(value) => setField("namespace", value)} placeholder="production" />
-        <TextField label="Secret name prefix" value={form.secretNamePrefix} onChange={(value) => setField("secretNamePrefix", value)} placeholder="paperclip" />
-        <TextField label="KMS key id" value={form.kmsKeyId} onChange={(value) => setField("kmsKeyId", value)} placeholder="alias/paperclip-secrets" />
-        <TextField label="Owner tag" value={form.ownerTag} onChange={(value) => setField("ownerTag", value)} placeholder="platform" />
-        <TextField label="Environment tag" value={form.environmentTag} onChange={(value) => setField("environmentTag", value)} placeholder="prod" />
+        <TextField id="provider-vault-aws-region" label={t("secrets.providerVaultAdmin.fields.awsRegion")} value={form.region} onChange={(value) => setField("region", value)} placeholder="us-east-1" required />
+        <TextField id="provider-vault-namespace" label={t("secrets.providerVaultAdmin.fields.namespace")} value={form.namespace} onChange={(value) => setField("namespace", value)} placeholder="production" />
+        <TextField id="provider-vault-secret-name-prefix" label={t("secrets.providerVaultAdmin.fields.secretNamePrefix")} value={form.secretNamePrefix} onChange={(value) => setField("secretNamePrefix", value)} placeholder="paperclip" />
+        <TextField id="provider-vault-kms-key-id" label={t("secrets.providerVaultAdmin.fields.kmsKeyId")} value={form.kmsKeyId} onChange={(value) => setField("kmsKeyId", value)} placeholder="alias/paperclip-secrets" />
+        <TextField id="provider-vault-owner-tag" label={t("secrets.providerVaultAdmin.fields.ownerTag")} value={form.ownerTag} onChange={(value) => setField("ownerTag", value)} placeholder="platform" />
+        <TextField id="provider-vault-environment-tag" label={t("secrets.providerVaultAdmin.fields.environmentTag")} value={form.environmentTag} onChange={(value) => setField("environmentTag", value)} placeholder="prod" />
       </div>
     );
   }
@@ -3935,20 +3942,20 @@ function ProviderVaultFields({
   if (form.provider === "gcp_secret_manager") {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="Project id" value={form.projectId} onChange={(value) => setField("projectId", value)} placeholder="paperclip-prod" />
-        <TextField label="Location" value={form.location} onChange={(value) => setField("location", value)} placeholder="global" />
-        <TextField label="Namespace" value={form.namespace} onChange={(value) => setField("namespace", value)} placeholder="production" />
-        <TextField label="Secret name prefix" value={form.secretNamePrefix} onChange={(value) => setField("secretNamePrefix", value)} placeholder="paperclip" />
+        <TextField id="provider-vault-project-id" label={t("secrets.providerVaultAdmin.fields.projectId")} value={form.projectId} onChange={(value) => setField("projectId", value)} placeholder="paperclip-prod" />
+        <TextField id="provider-vault-location" label={t("secrets.providerVaultAdmin.fields.location")} value={form.location} onChange={(value) => setField("location", value)} placeholder="global" />
+        <TextField id="provider-vault-namespace" label={t("secrets.providerVaultAdmin.fields.namespace")} value={form.namespace} onChange={(value) => setField("namespace", value)} placeholder="production" />
+        <TextField id="provider-vault-secret-name-prefix" label={t("secrets.providerVaultAdmin.fields.secretNamePrefix")} value={form.secretNamePrefix} onChange={(value) => setField("secretNamePrefix", value)} placeholder="paperclip" />
       </div>
     );
   }
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <TextField label="Address" value={form.address} onChange={(value) => setField("address", value)} placeholder="https://vault.example.com" />
-      <TextField label="Namespace" value={form.namespace} onChange={(value) => setField("namespace", value)} placeholder="admin" />
-      <TextField label="Mount path" value={form.mountPath} onChange={(value) => setField("mountPath", value)} placeholder="secret" />
-      <TextField label="Secret path prefix" value={form.secretPathPrefix} onChange={(value) => setField("secretPathPrefix", value)} placeholder="paperclip/prod" />
+      <TextField id="provider-vault-address" label={t("secrets.providerVaultAdmin.fields.address")} value={form.address} onChange={(value) => setField("address", value)} placeholder="https://vault.example.com" />
+      <TextField id="provider-vault-namespace" label={t("secrets.providerVaultAdmin.fields.namespace")} value={form.namespace} onChange={(value) => setField("namespace", value)} placeholder="admin" />
+      <TextField id="provider-vault-mount-path" label={t("secrets.providerVaultAdmin.fields.mountPath")} value={form.mountPath} onChange={(value) => setField("mountPath", value)} placeholder="secret" />
+      <TextField id="provider-vault-secret-path-prefix" label={t("secrets.providerVaultAdmin.fields.secretPathPrefix")} value={form.secretPathPrefix} onChange={(value) => setField("secretPathPrefix", value)} placeholder="paperclip/prod" />
     </div>
   );
 }
@@ -4301,24 +4308,27 @@ function AwsProviderVaultDiscoveryCandidateRow({
 }
 
 function TextField({
+  id: idProp,
   label,
   value,
   onChange,
   placeholder,
   required,
 }: {
+  id?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   required?: boolean;
 }) {
-  const id = `provider-vault-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  const { t } = useTranslation();
+  const id = idProp ?? `provider-vault-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return (
     <div>
       <label className="text-xs font-medium" htmlFor={id}>
         {label}
-        {required ? null : <span className="text-muted-foreground/70"> (optional)</span>}
+        {required ? null : <span className="text-muted-foreground/70"> {t("secrets.creation.optional")}</span>}
       </label>
       <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
     </div>

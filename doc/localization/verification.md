@@ -2093,3 +2093,23 @@ typecheck completo da UI continua apontando apenas o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
 por `@/lib/agent-setup-fields`. O progresso é **181/204 tarefas**; próxima:
 3.8e3, configuração de cofres e provedores.
+
+### Administração de cofres de provedores (3.8e3a)
+
+A listagem e a administração de cofres agora localizam carregamento, falha,
+estados, saúde, configuração por provedor, formulário, ações, confirmação de
+remoção e feedback das mutações em PT-BR/en. Nomes de provedores e nomes
+configurados permanecem literais; credenciais continuam fora dos formulários,
+IDs de campos permanecem estáveis entre idiomas, e valores técnicos, capacidades
+e payloads da API não foram alterados.
+
+`Secrets.render.test.tsx` (testes focados de administração) e
+`locale-validation.test.ts` passaram em **14/14 testes**. `check:tokens`,
+`check:token-gates`, parse dos catálogos, `git diff --check` e validação OpenSpec
+estrita passaram. A suíte completa `Secrets.render.test.tsx` teve 39/40: falhou
+um teste existente de ações de definição de segredo pessoal após desativar uma
+definição; os testes focados de cofre passaram. O typecheck completo da UI
+continua apontando apenas o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
+por `@/lib/agent-setup-fields`. O progresso é **182/206 tarefas**; próxima:
+3.8e3b, descoberta e importação de referências AWS.
