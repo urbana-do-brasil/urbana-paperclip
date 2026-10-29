@@ -1796,6 +1796,29 @@
       "change_one": "{{count}} change",
       "change_other": "{{count}} changes"
     },
+    "detailHistory": {
+      "loading": "Loading history…",
+      "queryFailedTitle": "Could not load update history",
+      "queryFailedFallback": "Try again.",
+      "noUpdates": "No updates recorded yet.",
+      "today": "Today: {{count}} {{update}} · {{tokens}} · {{cost}}",
+      "update_one": "update",
+      "update_other": "updates",
+      "changes_one": "{{count}} change",
+      "changes_other": "{{count}} changes",
+      "dailyCap": "daily cap {{cap}}",
+      "triggers": {
+        "manual": "Manual",
+        "interval": "Scheduled",
+        "reactive": "On change",
+        "restore": "Restored"
+      },
+      "statuses": {
+        "running": "Running",
+        "ok": "Completed",
+        "failed": "Failed"
+      }
+    },
       "settings": {
         "title": "Auto-update policy",
         "manual": "Manual only — updates when I press refresh",

@@ -61,6 +61,19 @@ const CHANGE_KIND_TRANSLATION_KEYS: Record<string, string> = {
   updated: "statusCards.detailSummary.changeKinds.updated",
 };
 
+const HISTORY_TRIGGER_TRANSLATION_KEYS: Record<string, string> = {
+  manual: "statusCards.detailHistory.triggers.manual",
+  interval: "statusCards.detailHistory.triggers.interval",
+  reactive: "statusCards.detailHistory.triggers.reactive",
+  restore: "statusCards.detailHistory.triggers.restore",
+};
+
+const HISTORY_STATUS_TRANSLATION_KEYS: Record<string, string> = {
+  running: "statusCards.detailHistory.statuses.running",
+  ok: "statusCards.detailHistory.statuses.ok",
+  failed: "statusCards.detailHistory.statuses.failed",
+};
+
 export function StatusCardDetailDrawer({
   card,
   companyId,
@@ -210,6 +223,13 @@ export function StatusCardDetailDrawer({
   const updates = updatesQuery.data ?? [];
   const latestUpdate = updates[0] ?? null;
   const todayRollup = rollupUpdatesToday(updates);
+  const historyActivityLabel = (update: StatusCardUpdate) => {
+    const label = update.status === "ok" ? update.trigger : update.status;
+    const translationKey = update.status === "ok"
+      ? HISTORY_TRIGGER_TRANSLATION_KEYS[update.trigger]
+      : HISTORY_STATUS_TRANSLATION_KEYS[update.status];
+    return translationKey ? t(translationKey) : label;
+  };
 
   // Each successful summary-producing update is a summary revision (reuses the
   // SummarySlotCard revision-history pattern). The finishedAt check excludes
@@ -442,17 +462,28 @@ export function StatusCardDetailDrawer({
                   every recorded update (each update is one summary revision). */}
               {updatesQuery.isLoading ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading history…
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("statusCards.detailHistory.loading")}
                 </div>
+              ) : updatesQuery.isError ? (
+                <InlineBanner tone="danger" title={t("statusCards.detailHistory.queryFailedTitle")}>
+                  {updatesQuery.error instanceof Error
+                    ? updatesQuery.error.message
+                    : t("statusCards.detailHistory.queryFailedFallback")}
+                </InlineBanner>
               ) : updates.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No updates recorded yet.</p>
+                <p className="text-sm text-muted-foreground">{t("statusCards.detailHistory.noUpdates")}</p>
               ) : (
                 <>
                   <div className="text-xs text-muted-foreground">
-                    Today: {todayRollup.updateCount}{" "}
-                    {todayRollup.updateCount === 1 ? "update" : "updates"} ·{" "}
-                    {formatTokens(todayRollup.totalTokens)} · {formatCents(todayRollup.totalCostCents)}
-                    {card.refreshPolicy.dailyTokenCap ? ` · daily cap ${formatTokens(card.refreshPolicy.dailyTokenCap)}` : ""}
+                    {t("statusCards.detailHistory.today", {
+                      count: todayRollup.updateCount,
+                      update: t("statusCards.detailHistory.update", { count: todayRollup.updateCount }),
+                      tokens: formatTokens(todayRollup.totalTokens),
+                      cost: formatCents(todayRollup.totalCostCents),
+                    })}
+                    {card.refreshPolicy.dailyTokenCap
+                      ? ` · ${t("statusCards.detailHistory.dailyCap", { cap: formatTokens(card.refreshPolicy.dailyTokenCap) })}`
+                      : ""}
                   </div>
                   <div className="divide-y divide-border">
                     {updates.map((update) => (
@@ -461,7 +492,7 @@ export function StatusCardDetailDrawer({
                           <span className="flex items-center gap-2 text-sm font-medium">
                             {updateKindLabel(update.kind)}
                             <Badge variant={update.status === "failed" ? "destructive" : "secondary"}>
-                              {update.status === "ok" ? update.trigger : update.status}
+                              {historyActivityLabel(update)}
                             </Badge>
                           </span>
                           <span className="text-xs text-muted-foreground" title={formatDateTime(update.startedAt)}>
@@ -471,7 +502,9 @@ export function StatusCardDetailDrawer({
                         <p className="mt-1 text-xs text-muted-foreground">
                           {formatTokenSplit(update.inputTokens, update.outputTokens)} · {formatCents(update.costCents)}
                           {update.model ? ` · ${update.model}` : ""}
-                          {update.changes.length > 0 ? ` · ${update.changes.length} changes` : ""}
+                          {update.changes.length > 0
+                            ? ` · ${t("statusCards.detailHistory.changes", { count: update.changes.length })}`
+                            : ""}
                         </p>
                         {update.error ? <p className="mt-1 text-xs text-destructive">{update.error}</p> : null}
                       </div>

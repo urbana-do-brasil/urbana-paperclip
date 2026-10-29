@@ -292,7 +292,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
       - [x] 3.10f4a Localizar moldura, abas, estado, ações e feedback do detalhe; preservar IDs, operações e dados dinâmicos. Moldura, abas, ações e feedback verificados em PT-BR/en; teste integrado junto a f4c: 48/48.
       - [x] 3.10f4b Localizar resumo, revisões e alterações integradas; preservar conteúdo e relações. Resumo, revisões, estados e alterações em PT-BR/en; conteúdo, links e IDs preservados. Drawer, formatadores, cartões, lista e catálogos: 52/52; typecheck da UI passou.
       - [x] 3.10f4c Localizar formatadores de histórico, tipos de atualização e tokens; preservar valores e tipos desconhecidos. Formatadores de tokens e tipos de atualização verificados em PT-BR/en, incluindo decimais e fallback.
-      - [ ] 3.10f4d Localizar histórico e atividade, incluindo estados e contagens; preservar dados e valores originais.
+      - [x] 3.10f4d Localizar histórico e atividade, incluindo estados e contagens; preservar dados e valores originais. Histórico, estados, tipos e contagens localizados; falhas e valores desconhecidos preservados. Drawer, formatadores, cartões, lista e catálogos: 56/56; typecheck da UI passou.
       - [ ] 3.10f4e Localizar itens acompanhados e configurações do detalhe, incluindo diagnóstico; preservar consultas, conteúdo e operações.
     - [ ] 3.10f5 Verificar e localizar gates, navegação e dependência entre `enableStatusCards` e `enableSummaries` nas variantes relevantes.
   - [ ] 3.10g Verificar gates, navegação e estados carregando/ativo/desativado/sem permissão nos modos streamlined e production para os flags relevantes; cobrir PT-BR/en e manter rotas compatíveis e estado de configuração.

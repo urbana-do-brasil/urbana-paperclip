@@ -100,7 +100,7 @@ async function flush() {
   });
 }
 
-async function render(card: StatusCardView) {
+async function render(card: StatusCardView, initialTab = "summary") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   root = createRoot(container);
   await act(async () => {
@@ -112,6 +112,7 @@ async function render(card: StatusCardView) {
             companyId="company-1"
             open
             onOpenChange={vi.fn()}
+            initialTab={initialTab}
           />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -130,7 +131,7 @@ function buttonNamed(name: string) {
 
 function summaryUpdate(
   id: string,
-  kind: "full" | "incremental",
+  kind: StatusCardUpdate["kind"],
   changes: StatusCardUpdate["changes"],
   startedAt: string,
   changeSummary: string | null,
@@ -363,5 +364,132 @@ describe("StatusCardDetailDrawer shell localization", () => {
     await act(async () => { await i18n.changeLanguage("en"); });
     await flush();
     expect(visibleText()).toContain("No summary yet — the first one is generated automatically once this card finishes setting up.");
+  });
+
+  it("localizes the history ledger, counts, activity labels, and cap while preserving dynamic values", async () => {
+    const startedAt = new Date().toISOString();
+    const updates: StatusCardUpdate[] = [
+      {
+        ...summaryUpdate("00000000-0000-4000-8000-000000000061", "full", [
+          { issueId: "00000000-0000-4000-8000-000000000071", identifier: "PAP-301", from: null, to: null, changeKind: "new" },
+          { issueId: "00000000-0000-4000-8000-000000000072", identifier: "PAP-302", from: null, to: null, changeKind: "new" },
+        ], startedAt, "Latest update"),
+        trigger: "interval",
+        inputTokens: 100,
+        outputTokens: 40,
+        costCents: 7,
+        model: "model-history-dynamic",
+      },
+      {
+        ...summaryUpdate("00000000-0000-4000-8000-000000000062", "incremental", [
+          { issueId: "00000000-0000-4000-8000-000000000073", identifier: "PAP-303", from: null, to: null, changeKind: "updated" },
+        ], startedAt, "Failed update"),
+        trigger: "manual",
+        status: "failed",
+        error: "RAW UPSTREAM ERROR: service unavailable",
+        inputTokens: 50,
+        outputTokens: 20,
+        costCents: 3,
+      },
+      {
+        ...summaryUpdate("00000000-0000-4000-8000-000000000063", "full", [
+          { issueId: "00000000-0000-4000-8000-000000000074", identifier: "PAP-304", from: null, to: null, changeKind: "updated" },
+        ], startedAt, "Reactive update"),
+        trigger: "reactive",
+      },
+      {
+        ...summaryUpdate("00000000-0000-4000-8000-000000000064", "full", [], startedAt, null),
+        trigger: "restore",
+      },
+      {
+        ...summaryUpdate("00000000-0000-4000-8000-000000000065", "compile", [], startedAt, null),
+        trigger: "future_trigger" as StatusCardUpdate["trigger"],
+      },
+      {
+        ...summaryUpdate("00000000-0000-4000-8000-000000000066", "compile", [], startedAt, null),
+        status: "future_status" as StatusCardUpdate["status"],
+      },
+      {
+        ...summaryUpdate("00000000-0000-4000-8000-000000000067", "compile", [], startedAt, null),
+        status: "running",
+      },
+    ];
+    statusCardsApi.updates.mockResolvedValue(updates);
+    const card = baseCard();
+    card.refreshPolicy.dailyTokenCap = 5_000;
+
+    await render(card, "history");
+    await flush();
+
+    expect(visibleText()).toContain("Hoje: 4 atualizações");
+    expect(visibleText()).toContain("limite diário");
+    expect(visibleText()).toContain("Programado");
+    expect(visibleText()).toContain("Ao mudar");
+    expect(visibleText()).toContain("Restaurado");
+    expect(visibleText()).toContain("Falhou");
+    expect(visibleText()).toContain("Em andamento");
+    expect(visibleText()).toContain("future_trigger");
+    expect(visibleText()).toContain("future_status");
+    expect(visibleText()).toContain("2 alterações");
+    expect(visibleText()).toContain("1 alteração");
+    expect(visibleText()).toContain("model-history-dynamic");
+    expect(visibleText()).toContain("RAW UPSTREAM ERROR: service unavailable");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("Today: 4 updates");
+    expect(visibleText()).toContain("daily cap");
+    expect(visibleText()).toContain("Scheduled");
+    expect(visibleText()).toContain("On change");
+    expect(visibleText()).toContain("Restored");
+    expect(visibleText()).toContain("Failed");
+    expect(visibleText()).toContain("Running");
+    expect(visibleText()).toContain("future_trigger");
+    expect(visibleText()).toContain("future_status");
+    expect(visibleText()).toContain("2 changes");
+    expect(visibleText()).toContain("1 change");
+    expect(visibleText()).toContain("model-history-dynamic");
+    expect(visibleText()).toContain("RAW UPSTREAM ERROR: service unavailable");
+  });
+
+  it("localizes history loading and empty states", async () => {
+    let finishUpdates!: (updates: StatusCardUpdate[]) => void;
+    statusCardsApi.updates.mockReturnValue(new Promise((resolve) => { finishUpdates = resolve; }));
+    await render(baseCard(), "history");
+    await flush();
+
+    expect(visibleText()).toContain("Carregando histórico…");
+    finishUpdates([]);
+    await flush();
+    expect(visibleText()).toContain("Ainda não há atualizações registradas.");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("No updates recorded yet.");
+  });
+
+  it("localizes history query failures while preserving the external error message", async () => {
+    statusCardsApi.updates.mockRejectedValue(new Error("UPSTREAM HISTORY FAILURE"));
+    await render(baseCard(), "history");
+    await flush();
+
+    expect(visibleText()).toContain("Não foi possível carregar o histórico de atualizações");
+    expect(visibleText()).toContain("UPSTREAM HISTORY FAILURE");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("Could not load update history");
+    expect(visibleText()).toContain("UPSTREAM HISTORY FAILURE");
+  });
+
+  it("uses the localized fallback for a history query failure without an Error message", async () => {
+    statusCardsApi.updates.mockRejectedValue("opaque history failure");
+    await render(baseCard(), "history");
+    await flush();
+
+    expect(visibleText()).toContain("Tente novamente.");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("Try again.");
   });
 });

@@ -3213,3 +3213,12 @@ verificaram sucesso, vazio, erro, código de saída e paridade JSON: **28/28**.
 Eles usam mocks e não substituem a regressão de canais reais, subprocessos e
 exemplos exigida em 4.4. O typecheck da CLI foi encerrado por memória (137).
 Progresso OpenSpec: **273/296**; outras operações de 4.3 permanecem pendentes.
+
+
+## Status cards — histórico (3.10f4d)
+
+Histórico localiza carregamento, erro, estado vazio, resumo de hoje, limites,
+contagens e rótulos conhecidos de estado e gatilho. Dados, valores desconhecidos
+e mensagens externas permanecem intactos. Drawer, formatadores, cartões, lista
+e catálogos: **56/56**; typecheck da UI passou. Progresso: **274/296**; próxima
+parte da interface: 3.10f4e, itens acompanhados e configurações.

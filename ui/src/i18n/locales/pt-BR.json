@@ -1841,6 +1841,31 @@
       "change_many": "{{count}} alterações",
       "change_other": "{{count}} alterações"
     },
+    "detailHistory": {
+      "loading": "Carregando histórico…",
+      "queryFailedTitle": "Não foi possível carregar o histórico de atualizações",
+      "queryFailedFallback": "Tente novamente.",
+      "noUpdates": "Ainda não há atualizações registradas.",
+      "today": "Hoje: {{count}} {{update}} · {{tokens}} · {{cost}}",
+      "update_one": "atualização",
+      "update_many": "atualizações",
+      "update_other": "atualizações",
+      "changes_one": "{{count}} alteração",
+      "changes_many": "{{count}} alterações",
+      "changes_other": "{{count}} alterações",
+      "dailyCap": "limite diário {{cap}}",
+      "triggers": {
+        "manual": "Manual",
+        "interval": "Programado",
+        "reactive": "Ao mudar",
+        "restore": "Restaurado"
+      },
+      "statuses": {
+        "running": "Em andamento",
+        "ok": "Concluído",
+        "failed": "Falhou"
+      }
+    },
       "settings": {
         "title": "Política de atualização automática",
         "manual": "Somente manual — atualiza quando pressiono Atualizar",
