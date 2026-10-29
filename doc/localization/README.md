@@ -84,14 +84,16 @@ tarefas criadas e feedback), b4b (feed de atividade e eventos) e b4c
 (histórico, comparação e restauração) e b5 (auditoria de rotinas no AuditHub
 streamlined) estão concluídas. 3.10c (catálogo/lista/gate, detalhe do item e
 configuração de pipelines) foi concluída em PT-BR/en. 3.10d foi dividida em d1
-(fila de revisão, concluída) e d2 (learnings). O progresso atual é **248/269
-tarefas**; próxima: 3.10d2.
+(fila de revisão) e d2 (learnings), ambas concluídas. 3.10e foi dividida em
+e1 (coleção), e2 (detalhe), e3 (atividade/documentos/anexos), e4 (integração
+com issues) e e5 (gates/navegação). O progresso atual é **249/273 tarefas**;
+próxima: 3.10e1.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2), detalhe de apps (3.9f3a–g), configurações de provedores/gestores de contas (3.9f4), gateways MCP de apps (3.9f5), coleção/criação de rotinas (3.10a), operações de rotinas (3.10b1–b5), pipelines (3.10c1–c3) e fila de revisão (3.10d1) verificadas. Etapa 3.10 continua dividida em a–g; 3.10b, 3.10c e 3.10d1 estão concluídas. 3.10d2 (learnings) segue. Próxima: 3.10d2. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2), detalhe de apps (3.9f3a–g), configurações de provedores/gestores de contas (3.9f4), gateways MCP de apps (3.9f5), coleção/criação de rotinas (3.10a), operações de rotinas (3.10b1–b5), pipelines (3.10c1–c3) e fila/learnings (3.10d1–d2) verificadas. 3.10b–d estão concluídas; 3.10e foi dividida em e1–e5 (coleção, detalhe, atividade/documentos/anexos, integração com issues e gates/navegação). Próxima: 3.10e1. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |

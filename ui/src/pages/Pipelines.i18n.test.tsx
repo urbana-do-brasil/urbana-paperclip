@@ -6,11 +6,19 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { i18n } from "@/i18n";
-import type { PipelineAttentionFeed, PipelineCaseDetail, PipelineDetail, PipelineListItem } from "../api/pipelines";
+import type {
+  PipelineAttentionFeed,
+  PipelineCaseDetail,
+  PipelineCompanyCaseEvent,
+  PipelineCompanyCaseEventsPage,
+  PipelineDetail,
+  PipelineListItem,
+} from "../api/pipelines";
 import { queryKeys } from "../lib/queryKeys";
 import {
   PipelineBoardMoveDialog,
   PipelineItemDetailView,
+  Learnings,
   Pipelines,
   PipelinesIndexTable,
   ReviewQueue,
@@ -20,7 +28,7 @@ import {
 
 const mocks = vi.hoisted(() => ({
   queryData: new Map<string, unknown>(),
-  companyId: "company-1",
+  companyId: "company-1" as string | null,
   pathname: "/pipelines/pipeline-1/items/item-1",
   pipelineId: "",
   setBreadcrumbs: vi.fn(),
@@ -278,6 +286,36 @@ const pageMessages = {
         approve: "aprova",
       },
     },
+    learnings: {
+      title: "Aprendizados",
+      description: "Padrões de decisões de revisão e movimentações manuais, em linguagem simples.",
+      selectOrganization: "Selecione uma organização para ver os aprendizados.",
+      refreshing: "Atualizando…",
+      noRows: "Nenhum registro",
+      loadError: "Não foi possível carregar os aprendizados.",
+      empty: "Ainda não há aprendizados.",
+      rowRange: "{{first}}–{{last}}",
+      previous: "Anterior",
+      next: "Próxima",
+      fallbacks: {
+        untitledItem: "Item sem título",
+        someone: "Alguém",
+        unknownDate: "Data desconhecida",
+      },
+      relativeDate: { today: "Hoje", yesterday: "Ontem" },
+      events: {
+        reviewApproved: "{{actor}} aprovou '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        reviewSentBack: "{{actor}} devolveu '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        reviewDeclined: "{{actor}} recusou '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        movingToStage: " movendo para {{stageName}}",
+        noteSuffix: " — observação: {{note}}",
+        forcedMove: "'{{itemTitle}}' foi movido manualmente{{fromStageCopy}}{{toStageCopy}}{{reasonCopy}}.",
+        fromStage: " da etapa {{stageName}}",
+        toStage: " para a etapa {{stageName}}",
+        reasonSuffix: " — motivo: {{reason}}",
+        unknown: "'{{itemTitle}}' sofreu uma alteração.",
+      },
+    },
   },
 };
 
@@ -324,6 +362,36 @@ const englishReviewQueueMessages = {
         move: "or arrow keys move",
         openItem: "opens item",
         approve: "approves",
+      },
+    },
+    learnings: {
+      title: "Learnings",
+      description: "Patterns from review decisions and hand moves, in plain words.",
+      selectOrganization: "Select an organization to view learnings.",
+      refreshing: "Refreshing…",
+      noRows: "No rows",
+      loadError: "Could not load learnings.",
+      empty: "No learnings yet.",
+      rowRange: "{{first}}–{{last}}",
+      previous: "Previous",
+      next: "Next",
+      fallbacks: {
+        untitledItem: "Untitled item",
+        someone: "Someone",
+        unknownDate: "Unknown date",
+      },
+      relativeDate: { today: "Today", yesterday: "Yesterday" },
+      events: {
+        reviewApproved: "{{actor}} approved '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        reviewSentBack: "{{actor}} sent back '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        reviewDeclined: "{{actor}} declined '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        movingToStage: " moving to {{stageName}}",
+        noteSuffix: " — note: {{note}}",
+        forcedMove: "'{{itemTitle}}' was moved by hand{{fromStageCopy}}{{toStageCopy}}{{reasonCopy}}.",
+        fromStage: " from {{stageName}}",
+        toStage: " to {{stageName}}",
+        reasonSuffix: " — reason: {{reason}}",
+        unknown: "'{{itemTitle}}' changed.",
       },
     },
   },
@@ -373,6 +441,7 @@ function queryKey(key: unknown[]) {
 describe("Pipelines localization", () => {
   beforeEach(async () => {
     mocks.queryData.clear();
+    mocks.companyId = "company-1";
     mocks.pathname = "/pipelines/pipeline-1/items/item-1";
     mocks.pipelineId = "";
     mocks.setBreadcrumbs.mockClear();
@@ -381,6 +450,7 @@ describe("Pipelines localization", () => {
 
   afterEach(async () => {
     for (const root of mountedRoots.splice(0)) root.unmount();
+    vi.useRealTimers();
     document.body.replaceChildren();
     mocks.queryData.clear();
     await restoreI18n();
@@ -794,5 +864,118 @@ describe("Pipelines localization", () => {
     expect(english).toContain("Request changes");
     expect(english).toContain("Approve");
     expect(document.body.innerHTML).toContain("placeholder=\"Required when requesting changes.\"");
+  });
+
+  it("localizes Learnings organization, loading, empty, and failure states", () => {
+    mocks.companyId = null;
+    expect(renderToStaticMarkup(createElement(Learnings))).toContain(
+      "Selecione uma organização para ver os aprendizados.",
+    );
+
+    mocks.companyId = "company-1";
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.learnings("company-1", 0)), {
+      data: undefined,
+      isLoading: true,
+      isFetching: false,
+      error: null,
+    });
+    expect(renderToStaticMarkup(createElement(Learnings))).toContain('data-slot="skeleton"');
+
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.learnings("company-1", 0)), {
+      data: { items: [], pagination: { limit: 100, offset: 0, nextOffset: null, hasMore: false } },
+      isLoading: false,
+      isFetching: false,
+      error: new Error("Private server details should not be shown."),
+    });
+    const failure = renderToStaticMarkup(createElement(Learnings));
+    expect(failure).toContain("Não foi possível carregar os aprendizados.");
+    expect(failure).not.toContain("Private server details should not be shown.");
+    expect(failure).toContain("Nenhum registro");
+
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.learnings("company-1", 0)), {
+      data: { items: [], pagination: { limit: 100, offset: 0, nextOffset: null, hasMore: false } },
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    });
+    expect(renderToStaticMarkup(createElement(Learnings))).toContain("Ainda não há aprendizados.");
+  });
+
+  it("localizes learning events and dates and keeps pagination data intact", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-29T12:00:00.000Z"));
+    const createdAt = "2026-10-29T11:30:00.000Z";
+    const event: PipelineCompanyCaseEvent = {
+      id: "event-1",
+      companyId: "company-1",
+      caseId: "item-1",
+      type: "review_decided",
+      actorType: "agent",
+      actorAgent: { id: "agent-1", name: "USER ACTOR" },
+      toStage: { id: "stage-1", key: "done", name: "USER TARGET STAGE", kind: "terminal" },
+      payload: { decision: "approve", note: "USER NOTE" },
+      createdAt,
+      updatedAt: createdAt,
+      case: { id: "item-1", caseKey: null, title: "USER LEARNING ITEM" },
+      pipeline: { id: "pipeline-1", key: "pipeline-key", name: "USER PIPELINE" },
+    };
+    const nextEvent: PipelineCompanyCaseEvent = {
+      ...event,
+      id: "event-2",
+      caseId: "item-2",
+      case: { id: "item-2", caseKey: null, title: "USER SECOND PAGE ITEM" },
+      payload: { decision: "request_changes" },
+    };
+    const page = (items: PipelineCompanyCaseEvent[], offset: number, nextOffset: number | null): PipelineCompanyCaseEventsPage => ({
+      items,
+      pagination: { limit: 100, offset, nextOffset, hasMore: nextOffset !== null },
+    });
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.learnings("company-1", 0)), {
+      data: page([event], 0, 100),
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    });
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.learnings("company-1", 100)), {
+      data: page([nextEvent], 100, null),
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    mountedRoots.push(root);
+    flushSync(() => root.render(createElement(Learnings)));
+
+    expect(container.textContent).toContain("Aprendizados");
+    expect(container.textContent).toContain("Padrões de decisões de revisão e movimentações manuais");
+    expect(container.textContent).toContain("Hoje");
+    expect(container.textContent).toContain("USER ACTOR aprovou 'USER LEARNING ITEM' movendo para USER TARGET STAGE — observação: USER NOTE.");
+    expect(container.textContent).toContain("USER PIPELINE");
+    const portugueseTitle = new Date(createdAt).toLocaleString("pt-BR");
+    expect(container.querySelector(`span[title="${portugueseTitle}"]`)).not.toBeNull();
+    expect(container.textContent).toContain("1–1");
+
+    await useTestEnglishReviewQueueResources();
+    flushSync(() => root.render(createElement(Learnings)));
+    expect(container.textContent).toContain("Learnings");
+    expect(container.textContent).toContain("Today");
+    expect(container.textContent).toContain("USER ACTOR approved 'USER LEARNING ITEM' moving to USER TARGET STAGE — note: USER NOTE.");
+    const englishTitle = new Date(createdAt).toLocaleString("en");
+    expect(container.querySelector(`span[title="${englishTitle}"]`)).not.toBeNull();
+
+    const buttons = Array.from(container.querySelectorAll("button"));
+    expect(buttons[0].textContent).toBe("Previous");
+    expect(buttons[0].disabled).toBe(true);
+    expect(buttons[1].textContent).toBe("Next");
+    expect(buttons[1].disabled).toBe(false);
+    flushSync(() => buttons[1].click());
+    expect(container.textContent).toContain("101–101");
+    expect(container.textContent).toContain("USER SECOND PAGE ITEM");
+    const updatedButtons = Array.from(container.querySelectorAll("button"));
+    expect(updatedButtons[0].disabled).toBe(false);
+    expect(updatedButtons[1].disabled).toBe(true);
   });
 });

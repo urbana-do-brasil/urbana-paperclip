@@ -2958,3 +2958,24 @@ UI ainda aponta somente o erro preexistente em
 
 Progresso: **248/269 tarefas**. Próxima: 3.10d2, learnings e formatação de
 atividade.
+
+
+## Pipelines — learnings e atividade de revisão (3.10d2)
+
+A página Learnings agora localiza título, descrição, organização, atualização,
+estados vazio/erro, paginação e intervalo de registros. Eventos de decisão e
+movimentação, fallbacks de ator/item/data e rótulos de hoje/ontem também
+acompanham PT-BR/en. O horário detalhado respeita o idioma selecionado; o
+agrupamento por dia usa a mesma data local dos rótulos. Autores, itens, etapas,
+notas, motivos, IDs e payloads permanecem intactos.
+
+`pipeline-learnings.test.ts`, `Pipelines.i18n.test.tsx` e
+`locale-validation.test.ts` passaram em **26/26 testes focados**. `check:tokens`,
+`check:token-gates`, JSON, `git diff --check` e OpenSpec estrito passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+
+3.10d está concluída. 3.10e foi decomposta em e1 (coleção), e2
+(detalhe/propriedades), e3 (atividade/documentos/anexos), e4 (integração com
+issues) e e5 (gates/navegação). Progresso: **249/273 tarefas**. Próxima:
+3.10e1, coleção de casos.

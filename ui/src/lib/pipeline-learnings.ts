@@ -1,4 +1,5 @@
 import type { PipelineCompanyCaseEvent } from "../api/pipelines";
+import { t } from "../i18n";
 import { formatShortDate } from "./utils";
 
 export type LearningEventPresentation = {
@@ -23,7 +24,7 @@ function eventItemTitle(event: PipelineCompanyCaseEvent): string {
     asString(payload.itemTitle) ??
     asString(payload.caseTitle) ??
     asString(payload.title) ??
-    "Untitled item"
+    t("pipelineManagement.learnings.fallbacks.untitledItem")
   );
 }
 
@@ -34,7 +35,7 @@ function eventActorName(event: PipelineCompanyCaseEvent): string {
     asString(payload.actorName) ??
     asString(payload.reviewerName) ??
     asString(payload.decidedByName) ??
-    "Someone"
+    t("pipelineManagement.learnings.fallbacks.someone")
   );
 }
 
@@ -47,10 +48,10 @@ function payloadText(event: PipelineCompanyCaseEvent, ...keys: string[]): string
   return null;
 }
 
-function reviewVerb(decision: string | null): string {
-  if (decision === "request_changes") return "sent back";
-  if (decision === "reject" || decision === "drop") return "declined";
-  return "approved";
+function reviewSentenceKey(decision: string | null) {
+  if (decision === "request_changes") return "pipelineManagement.learnings.events.reviewSentBack";
+  if (decision === "reject" || decision === "drop") return "pipelineManagement.learnings.events.reviewDeclined";
+  return "pipelineManagement.learnings.events.reviewApproved";
 }
 
 export function formatLearningEvent(event: PipelineCompanyCaseEvent): LearningEventPresentation {
@@ -62,12 +63,14 @@ export function formatLearningEvent(event: PipelineCompanyCaseEvent): LearningEv
     const decision = asString(payload.decision);
     const toStageName =
       asString(event.toStage?.name) ?? payloadText(event, "toStageName", "stageName", "targetStageName");
-    const stageCopy = toStageName ? ` moving to ${toStageName}` : "";
+    const stageCopy = toStageName
+      ? t("pipelineManagement.learnings.events.movingToStage", { stageName: toStageName })
+      : "";
     const note = payloadText(event, "reason", "note");
-    const noteCopy = note ? ` - note: ${note}` : "";
+    const noteCopy = note ? t("pipelineManagement.learnings.events.noteSuffix", { note }) : "";
     return {
       kind: "review",
-      sentence: `${actor} ${reviewVerb(decision)} '${title}'${stageCopy}${noteCopy}.`,
+      sentence: t(reviewSentenceKey(decision), { actor, itemTitle: title, stageCopy, noteCopy }),
     };
   }
 
@@ -75,37 +78,49 @@ export function formatLearningEvent(event: PipelineCompanyCaseEvent): LearningEv
     const fromStageName = asString(event.fromStage?.name) ?? payloadText(event, "fromStageName");
     const toStageName =
       asString(event.toStage?.name) ?? payloadText(event, "toStageName", "stageName", "targetStageName");
-    const fromCopy = fromStageName ? ` from ${fromStageName}` : "";
-    const toCopy = toStageName ? ` to ${toStageName}` : "";
+    const fromCopy = fromStageName
+      ? t("pipelineManagement.learnings.events.fromStage", { stageName: fromStageName })
+      : "";
+    const toCopy = toStageName
+      ? t("pipelineManagement.learnings.events.toStage", { stageName: toStageName })
+      : "";
     const reason = payloadText(event, "reason", "note");
-    const reasonCopy = reason ? ` - reason: ${reason}` : "";
+    const reasonCopy = reason ? t("pipelineManagement.learnings.events.reasonSuffix", { reason }) : "";
     return {
       kind: "forced_move",
-      sentence: `'${title}' was moved by hand${fromCopy}${toCopy}${reasonCopy}.`,
+      sentence: t("pipelineManagement.learnings.events.forcedMove", {
+        itemTitle: title,
+        fromStageCopy: fromCopy,
+        toStageCopy: toCopy,
+        reasonCopy,
+      }),
     };
   }
 
   return {
     kind: "unknown",
-    sentence: `'${title}' changed.`,
+    sentence: t("pipelineManagement.learnings.events.unknown", { itemTitle: title }),
   };
 }
 
 export function learningDayKey(value: string | Date) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
-  return date.toISOString().slice(0, 10);
+  if (Number.isNaN(date.getTime())) return t("pipelineManagement.learnings.fallbacks.unknownDate");
+  const year = String(date.getFullYear()).padStart(4, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function learningDayLabel(value: string | Date) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
+  if (Number.isNaN(date.getTime())) return t("pipelineManagement.learnings.fallbacks.unknownDate");
   const today = new Date();
-  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const startOfToday = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const startOfDay = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
   const diffDays = Math.round((startOfToday - startOfDay) / 86_400_000);
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
+  if (diffDays === 0) return t("pipelineManagement.learnings.relativeDate.today");
+  if (diffDays === 1) return t("pipelineManagement.learnings.relativeDate.yesterday");
   return formatShortDate(date);
 }
 

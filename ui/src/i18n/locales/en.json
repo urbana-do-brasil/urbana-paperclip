@@ -2114,6 +2114,39 @@
         "approve": "approves"
       }
     },
+    "learnings": {
+      "title": "Learnings",
+      "description": "Patterns from review decisions and hand moves, in plain words.",
+      "selectOrganization": "Select an organization to view learnings.",
+      "refreshing": "Refreshing...",
+      "noRows": "No rows",
+      "loadError": "Could not load learnings.",
+      "empty": "No learnings yet.",
+      "rowRange": "{{first}}-{{last}}",
+      "previous": "Previous",
+      "next": "Next",
+      "fallbacks": {
+        "untitledItem": "Untitled item",
+        "someone": "Someone",
+        "unknownDate": "Unknown"
+      },
+      "relativeDate": {
+        "today": "Today",
+        "yesterday": "Yesterday"
+      },
+      "events": {
+        "reviewApproved": "{{actor}} approved '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        "reviewSentBack": "{{actor}} sent back '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        "reviewDeclined": "{{actor}} declined '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        "movingToStage": " moving to {{stageName}}",
+        "noteSuffix": " — note: {{note}}",
+        "forcedMove": "'{{itemTitle}}' was moved by hand{{fromStageCopy}}{{toStageCopy}}{{reasonCopy}}.",
+        "fromStage": " from {{stageName}}",
+        "toStage": " to {{stageName}}",
+        "reasonSuffix": " — reason: {{reason}}",
+        "unknown": "'{{itemTitle}}' changed."
+      }
+    },
     "waitingChildren": {
       "ariaLabel": "Waiting child items",
       "items_one": "Waiting on {{waiting}} of {{total}} child item",

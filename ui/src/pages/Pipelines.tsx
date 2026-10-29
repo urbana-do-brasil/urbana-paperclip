@@ -5432,13 +5432,14 @@ const LEARNINGS_PAGE_SIZE = 100;
 const LEARNING_EVENT_TYPES = "review_decided,transition_forced";
 
 export function Learnings() {
+  const { t, i18n } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Learnings" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("pipelineManagement.learnings.title") }]);
+  }, [setBreadcrumbs, t]);
 
   const learningsQuery = useQuery({
     queryKey: selectedCompanyId
@@ -5454,7 +5455,7 @@ export function Learnings() {
   });
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={BookOpenText} message="Select an organization to view learnings." />;
+    return <EmptyState icon={BookOpenText} message={t("pipelineManagement.learnings.selectOrganization")} />;
   }
 
   if (learningsQuery.isLoading && !learningsQuery.data) {
@@ -5472,26 +5473,29 @@ export function Learnings() {
   return (
     <div className="space-y-6">
       <div className="border-b border-border pb-5">
-        <h1 className="text-2xl font-semibold tracking-normal text-foreground">Learnings</h1>
+        <h1 className="text-2xl font-semibold tracking-normal text-foreground">{t("pipelineManagement.learnings.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Patterns from review decisions and hand moves, in plain words.
+          {t("pipelineManagement.learnings.description")}
         </p>
       </div>
 
       <div className="flex items-center justify-end">
         <p className="text-sm text-muted-foreground">
           {learningsQuery.isFetching
-            ? "Refreshing..."
+            ? t("pipelineManagement.learnings.refreshing")
             : events.length > 0
-              ? `${formatNumber(firstVisible)}-${formatNumber(lastVisible)}`
-              : "No rows"}
+              ? t("pipelineManagement.learnings.rowRange", {
+                  first: formatNumber(firstVisible),
+                  last: formatNumber(lastVisible),
+                })
+              : t("pipelineManagement.learnings.noRows")}
         </p>
       </div>
 
       {learningsQuery.error ? (
-        <p className="text-sm text-destructive">Could not load learnings.</p>
+        <p className="text-sm text-destructive">{t("pipelineManagement.learnings.loadError")}</p>
       ) : groups.length === 0 ? (
-        <EmptyState icon={BookOpenText} message="No learnings yet." />
+        <EmptyState icon={BookOpenText} message={t("pipelineManagement.learnings.empty")} />
       ) : (
         <div className="space-y-6">
           {groups.map((group) => (
@@ -5511,7 +5515,10 @@ export function Learnings() {
                         forcedMove && "border-l-2 border-l-amber-400 bg-amber-50/50 dark:bg-amber-400/10",
                       )}
                     >
-                      <span className="text-xs text-muted-foreground" title={new Date(event.createdAt).toLocaleString()}>
+                      <span
+                        className="text-xs text-muted-foreground"
+                        title={new Date(event.createdAt).toLocaleString(i18n.resolvedLanguage ?? i18n.language)}
+                      >
                         {relativeTime(event.createdAt)}
                       </span>
                       <div className="min-w-0">
@@ -5539,10 +5546,15 @@ export function Learnings() {
           disabled={!canGoPrevious}
           onClick={() => setOffset((current) => Math.max(0, current - LEARNINGS_PAGE_SIZE))}
         >
-          Previous
+          {t("pipelineManagement.learnings.previous")}
         </Button>
         <span className="text-sm text-muted-foreground">
-          {events.length > 0 ? `${formatNumber(firstVisible)}-${formatNumber(lastVisible)}` : "No rows"}
+          {events.length > 0
+            ? t("pipelineManagement.learnings.rowRange", {
+                first: formatNumber(firstVisible),
+                last: formatNumber(lastVisible),
+              })
+            : t("pipelineManagement.learnings.noRows")}
         </span>
         <Button
           type="button"
@@ -5550,7 +5562,7 @@ export function Learnings() {
           disabled={!canGoNext}
           onClick={() => setOffset((current) => pagination?.nextOffset ?? current + LEARNINGS_PAGE_SIZE)}
         >
-          Next
+          {t("pipelineManagement.learnings.next")}
         </Button>
       </div>
     </div>

@@ -2167,6 +2167,39 @@
         "approve": "aprova"
       }
     },
+    "learnings": {
+      "title": "Aprendizados",
+      "description": "Padrões de decisões de revisão e movimentações manuais, em linguagem simples.",
+      "selectOrganization": "Selecione uma organização para ver os aprendizados.",
+      "refreshing": "Atualizando...",
+      "noRows": "Nenhum registro",
+      "loadError": "Não foi possível carregar os aprendizados.",
+      "empty": "Ainda não há aprendizados.",
+      "rowRange": "{{first}}-{{last}}",
+      "previous": "Anterior",
+      "next": "Próxima",
+      "fallbacks": {
+        "untitledItem": "Item sem título",
+        "someone": "Alguém",
+        "unknownDate": "Data desconhecida"
+      },
+      "relativeDate": {
+        "today": "Hoje",
+        "yesterday": "Ontem"
+      },
+      "events": {
+        "reviewApproved": "{{actor}} aprovou '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        "reviewSentBack": "{{actor}} devolveu '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        "reviewDeclined": "{{actor}} recusou '{{itemTitle}}'{{stageCopy}}{{noteCopy}}.",
+        "movingToStage": " movendo para {{stageName}}",
+        "noteSuffix": " — observação: {{note}}",
+        "forcedMove": "'{{itemTitle}}' foi movido manualmente{{fromStageCopy}}{{toStageCopy}}{{reasonCopy}}.",
+        "fromStage": " da etapa {{stageName}}",
+        "toStage": " para a etapa {{stageName}}",
+        "reasonSuffix": " — motivo: {{reason}}",
+        "unknown": "'{{itemTitle}}' sofreu uma alteração."
+      }
+    },
     "waitingChildren": {
       "ariaLabel": "Itens filhos aguardando",
       "items_one": "{{waiting}} de {{total}} item filho aguardando",
