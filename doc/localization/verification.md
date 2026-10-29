@@ -3308,3 +3308,12 @@ Mocks e fixtures não qualificam respostas reais. O typecheck do servidor segue
 sem confirmação após SIGKILL por memória; duas suítes de integração ampliadas
 foram integralmente ignoradas por indisponibilidade de PostgreSQL embutido.
 Progresso: **284/302**.
+
+
+## Auditoria de flags e navegação (3.10g)
+
+Auditoria estática encontrou textos próprios em inglês no SummarySlotCard ativo,
+lacunas de paridade dos gates de pipelines, rotas reais no shell production e
+apresentação de 403. A atividade de rotina no AuditHub production mantém o feed
+geral, ao contrário da visão escopada streamlined. 3.10g foi dividida em quatro
+partes; progresso OpenSpec: **284/306**. A auditoria não substitui testes.

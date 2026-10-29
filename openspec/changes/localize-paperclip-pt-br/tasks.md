@@ -295,7 +295,11 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
       - [x] 3.10f4d Localizar histórico e atividade, incluindo estados e contagens; preservar dados e valores originais. Histórico, estados, tipos e contagens localizados; falhas e valores desconhecidos preservados. Drawer, formatadores, cartões, lista e catálogos: 56/56; typecheck da UI passou.
       - [x] 3.10f4e Localizar itens acompanhados e configurações do detalhe, incluindo diagnóstico; preservar consultas, conteúdo e operações. Estados, conteúdo e salvamento verificados em PT-BR/en; drawer e catálogos: 29/29; typecheck da UI passou.
     - [x] 3.10f5 Verificar e localizar gates, navegação e dependência entre `enableStatusCards` e `enableSummaries` nas variantes relevantes. Settings, sidebar standard/production, gate, SummarySlotCard e rotas reais/legadas testados; 185/185, typecheck UI passou.
-  - [ ] 3.10g Verificar gates, navegação e estados carregando/ativo/desativado/sem permissão nos modos streamlined e production para os flags relevantes; cobrir PT-BR/en e manter rotas compatíveis e estado de configuração.
+  - [ ] 3.10g Verificar gates, navegação e estados carregando/ativo/desativado/sem permissão nos modos streamlined e production para os flags relevantes; cobrir PT-BR/en e manter rotas compatíveis e estado de configuração. Auditoria identificou resumos ativos não localizados e lacunas de pipeline, rotas e permissões; decomposta abaixo.
+    - [ ] 3.10g1 Localizar SummarySlotCard ativo, incluindo geração, pausas, revisão e falhas, preservando conteúdo e datas nos dois idiomas.
+    - [ ] 3.10g2 Verificar gate e navegação de pipelines em ambos shells, incluindo falhas de configuração e estados de permissão em PT-BR/en.
+    - [ ] 3.10g3 Verificar árvores reais de rotas e redirecionamentos de cases, status cards e pipelines nos shells streamlined/production, preservando IDs e prefixos.
+    - [ ] 3.10g4 Verificar apresentação de erro de permissão e rotinas em production, incluindo seleção de rota e a diferença conhecida no feed de auditoria escopado.
 - [ ] 3.11 Migrar UI hospedeira de plugins e conteúdo humano de plugins distribuídos no produto, além das superfícies próprias adicionais encontradas no fechamento do mapa de rotas. Verificar cada superfície nos dois idiomas e documentar limites de plugins externos não controlados. Specs: `localized-web-interface`, `localization-quality`.
 
 ## 4. CLI bilíngue
