@@ -14,6 +14,7 @@ import type {
   SummarySlotRevision,
 } from "@paperclipai/shared";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "@/api/client";
 import { i18n } from "@/i18n";
 import { formatDateTime, formatNumber } from "@/lib/utils";
 import { SummarySlotCard } from "./SummarySlotCard";
@@ -445,18 +446,19 @@ describe("SummarySlotCard", () => {
     expect(container.textContent).toContain("RAW SUMMARIZER ERROR");
   });
 
-  it("localizes summary read-failure chrome and preserves the external detail", async () => {
-    mockSummarySlotsApi.get.mockRejectedValue(new Error("RAW SUMMARY READ ERROR"));
+  it("localizes a 403 summary read failure and preserves the API denial detail", async () => {
+    const denial = "User does not have access to this company";
+    mockSummarySlotsApi.get.mockRejectedValue(new ApiError(denial, 403, { error: denial }));
     root = renderCard(container);
     await flushQueries();
 
     expect(container.textContent).toContain("Summary could not be loaded");
-    expect(container.textContent).toContain("RAW SUMMARY READ ERROR");
+    expect(container.textContent).toContain(denial);
     expect(container.textContent).toContain("Retry");
     await i18n.changeLanguage("pt-BR");
     await flushQueries();
     expect(container.textContent).toContain("Não foi possível carregar o resumo");
-    expect(container.textContent).toContain("RAW SUMMARY READ ERROR");
+    expect(container.textContent).toContain(denial);
     expect(container.textContent).toContain("Tentar novamente");
   });
 

@@ -3357,3 +3357,12 @@ sem prefixo e legadas, IDs e prefixos. Shells e páginas de domínio foram
 substituídos por sentinelas: o teste verifica roteamento, não jornadas de API
 ou renderização completa. **25/25 testes** e typecheck da UI passaram; JSDOM
 emitiu avisos de canvas sem falha. Progresso: **288/307**.
+
+
+## Erros de permissão nas superfícies experimentais (3.10g4a)
+
+Testes com ApiError 403 cobrem Cases, Status Cards e SummarySlotCard em
+PT-BR/en. Cases antes ocultava o detalhe retornado pela API; agora a
+apresentação localiza o contexto e preserva esse detalhe. **52/52 testes**
+focados e typecheck UI passaram. A parte de rotinas production segue em g4b.
+Progresso: **289/309**.

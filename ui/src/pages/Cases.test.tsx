@@ -6,6 +6,7 @@ import type { AnchorHTMLAttributes } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CaseSummary } from "@/api/cases";
+import { ApiError } from "@/api/client";
 import { i18n } from "@/i18n";
 import { Cases } from "./Cases";
 
@@ -823,6 +824,24 @@ describe("Cases list", () => {
     expect(retry).toBeTruthy();
     act(() => retry!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
     await waitForAssertion(() => expect(container.textContent).toContain("USER CASE"));
+    act(() => root.unmount());
+  });
+
+  it("localizes the 403 explanation while preserving the Cases API denial detail", async () => {
+    const denial = "Cases are disabled";
+    mockCasesApi.list.mockRejectedValueOnce(new ApiError(denial, 403, { error: denial }));
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain(`Não foi possível concluir a solicitação. Detalhes: ${denial}`);
+      expect(container.textContent).toContain("Tentar novamente");
+    });
+
+    await i18n.changeLanguage("en");
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain(`The request could not be completed. Details: ${denial}`);
+      expect(container.textContent).toContain("Try again");
+    });
     act(() => root.unmount());
   });
 

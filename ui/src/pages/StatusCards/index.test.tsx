@@ -4,6 +4,7 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "@/api/client";
 import { i18n } from "@/i18n";
 import { StatusCards } from "./index";
 
@@ -118,6 +119,21 @@ describe("StatusCards list", () => {
     await i18n.changeLanguage("en");
     await flush();
     expect(container.textContent).toContain("Could not refresh the card.");
+    flushSync(() => root.unmount());
+  });
+
+  it("localizes a 403 response while preserving the Status Cards API denial detail", async () => {
+    const denial = "User does not have access to this company";
+    mockApi.list.mockImplementation((_companyId: string, archived: boolean) => archived
+      ? Promise.resolve([])
+      : Promise.reject(new ApiError(denial, 403, { error: denial })));
+    const root = await renderPage();
+
+    expect(container.textContent).toContain(`Não foi possível concluir a solicitação. Detalhes: ${denial}`);
+    expect(container.textContent).not.toContain("Ainda não há cartões de status");
+    await i18n.changeLanguage("en");
+    await flush();
+    expect(container.textContent).toContain(`The request could not be completed. Details: ${denial}`);
     flushSync(() => root.unmount());
   });
 });

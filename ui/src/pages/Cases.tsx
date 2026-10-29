@@ -6,6 +6,8 @@ import { useCompany } from "@/context/CompanyContext";
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";
 import { queryKeys } from "@/lib/queryKeys";
 import { casesApi, CASE_STATUSES, TERMINAL_CASE_STATUSES, type CaseStatus, type CaseSummary } from "@/api/cases";
+import { ApiError } from "@/api/client";
+import { formatUiError } from "@/api/error-presentation";
 import { projectsApi } from "@/api/projects";
 import { issuesApi } from "@/api/issues";
 import { Badge } from "@/components/ui/badge";
@@ -1204,7 +1206,10 @@ export function Cases() {
   if (!selectedCompanyId) return <EmptyState icon={SearchX} message={t("caseManagement.collection.selectOrganization")} />;
   if (casesQuery.isLoading) return <PageSkeleton variant="list" />;
   if (casesQuery.isError && !casesQuery.data) {
-    return <EmptyState icon={SearchX} message={t("caseManagement.collection.loadError")} action={t("caseManagement.collection.retry")} onAction={() => void casesQuery.refetch()} hideActionIcon />;
+    const message = casesQuery.error instanceof ApiError && casesQuery.error.status === 403
+      ? formatUiError(casesQuery.error)
+      : t("caseManagement.collection.loadError");
+    return <EmptyState icon={SearchX} message={message} action={t("caseManagement.collection.retry")} onAction={() => void casesQuery.refetch()} hideActionIcon />;
   }
 
   const noCasesAtAll = allCases.length === 0 && activeFilters.length === 0;

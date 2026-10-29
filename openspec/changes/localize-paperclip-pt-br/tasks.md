@@ -300,6 +300,8 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.10g2 Verificar gate e navegação de pipelines em ambos shells, incluindo falhas de configuração e estados de permissão em PT-BR/en. Gate, Sidebar standard/production e mensagens de permissão: 79/79 testes; tooltip verificado pelo atributo title, sem teste visual de navegador.
     - [x] 3.10g3 Verificar árvores reais de rotas e redirecionamentos de cases, status cards e pipelines nos shells streamlined/production, preservando IDs e prefixos. App/gates/redirecionamentos reais, com sentinelas de shell/página: 25/25; typecheck UI passou.
     - [ ] 3.10g4 Verificar apresentação de erro de permissão e rotinas em production, incluindo seleção de rota e a diferença conhecida no feed de auditoria escopado.
+      - [x] 3.10g4a Verificar 403 em Cases, Status Cards e SummarySlotCard em PT-BR/en; Cases passou a preservar detalhes da API. Testes focados: 52/52; typecheck UI passou.
+      - [ ] 3.10g4b Verificar rotas e auditoria escopada de rotinas em production, preservando permissão e navegação.
 - [ ] 3.11 Migrar UI hospedeira de plugins e conteúdo humano de plugins distribuídos no produto, além das superfícies próprias adicionais encontradas no fechamento do mapa de rotas. Verificar cada superfície nos dois idiomas e documentar limites de plugins externos não controlados. Specs: `localized-web-interface`, `localization-quality`.
 
 ## 4. CLI bilíngue
