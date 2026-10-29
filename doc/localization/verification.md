@@ -2496,5 +2496,7 @@ check:tokens`, `pnpm check:token-gates`, parse dos catálogos e do manifesto,
 `git diff --check` e `pnpm exec openspec validate --all --strict --no-interactive`
 passaram. O typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
-O progresso atual é **213/240 tarefas**. Próxima: 3.9f3b2c, credenciais,
-métodos, OAuth e conclusão da conexão.
+Ao concluir 3.9f3b2b, o progresso era **213/240 tarefas**. Para manter o lote
+seguinte revisável, 3.9f3b2c foi dividido em c1 (credenciais/método), c2
+(estados OAuth) e c3 (conclusão), elevando o total para **243 tarefas**. O
+progresso atual é **213/243**. Próxima: 3.9f3b2c1.
