@@ -6140,6 +6140,32 @@
     },
     "recentActivity": "Atividade recente",
     "recentTasks": "Tarefas recentes",
-    "noTasks": "Ainda não há tarefas."
+    "noTasks": "Ainda não há tarefas.",
+    "liveRuns": {
+      "panelTitle": "Agentes",
+      "loading": "Carregando execuções recentes de agentes…",
+      "loadError": "Não foi possível carregar as execuções ao vivo dos agentes.",
+      "empty": "Não há execuções recentes de agentes.",
+      "moreRuns_one": "Mais {{displayCount}} execução ativa/recente",
+      "moreRuns_other": "Mais {{displayCount}} execuções ativas/recentes",
+      "moreRuns_many": "Mais {{displayCount}} execuções ativas/recentes",
+      "viewAllRuns": "Ver todas as execuções",
+      "finished": "Concluída {{relativeTime}}",
+      "started": "Iniciada {{relativeTime}}",
+      "queued": "Na fila {{relativeTime}}",
+      "viewRunAria": "{{agentName}} — {{status}}. Ver execução",
+      "taskStatusTitle": "Tarefa: {{status}}",
+      "taskUnavailable": "Tarefa indisponível",
+      "loadingTask": "Carregando tarefa…",
+      "scheduledHeartbeat": "Heartbeat agendado",
+      "noLinkedTask": "Sem tarefa vinculada",
+      "breadcrumb": "Execuções ao vivo",
+      "pageTitle": "Execuções ao vivo de agentes",
+      "description": "As execuções ativas aparecem primeiro, seguidas pelas execuções concluídas mais recentes.",
+      "showingUpTo": "Exibindo até {{count}}",
+      "activeRecent": "Ativas / recentes",
+      "createOrganization": "Crie uma organização para ver as execuções ao vivo.",
+      "selectOrganization": "Selecione uma organização para ver as execuções ao vivo."
+    }
   }
 }

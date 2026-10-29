@@ -5994,6 +5994,31 @@
     },
     "recentActivity": "Recent Activity",
     "recentTasks": "Recent Tasks",
-    "noTasks": "No tasks yet."
+    "noTasks": "No tasks yet.",
+    "liveRuns": {
+      "panelTitle": "Agents",
+      "loading": "Loading recent agent runs…",
+      "loadError": "Could not load live agent runs.",
+      "empty": "No recent agent runs.",
+      "moreRuns_one": "{{displayCount}} more active/recent run",
+      "moreRuns_other": "{{displayCount}} more active/recent runs",
+      "viewAllRuns": "View all runs",
+      "finished": "Finished {{relativeTime}}",
+      "started": "Started {{relativeTime}}",
+      "queued": "Queued {{relativeTime}}",
+      "viewRunAria": "{{agentName}} — {{status}}. View run",
+      "taskStatusTitle": "Task {{status}}",
+      "taskUnavailable": "Task unavailable",
+      "loadingTask": "Loading task…",
+      "scheduledHeartbeat": "Scheduled heartbeat",
+      "noLinkedTask": "No linked task",
+      "breadcrumb": "Live runs",
+      "pageTitle": "Live agent runs",
+      "description": "Active runs first, followed by the most recent completed runs.",
+      "showingUpTo": "Showing up to {{count}}",
+      "activeRecent": "Active / recent",
+      "createOrganization": "Create an organization to view live runs.",
+      "selectOrganization": "Select an organization to view live runs."
+    }
   }
 }

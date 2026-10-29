@@ -1610,3 +1610,21 @@ percentuais, estados sem dados e preservação de códigos de erro. Typecheck
 direcionado dos módulos/testes alterados, `check:tokens`, `check:token-gates`,
 `git diff --check` e validação OpenSpec estrita passaram. O progresso é
 **140/168**; próxima tarefa: 3.7b, execuções ao vivo do dashboard.
+
+### Continuação — execuções ao vivo do dashboard (3.7b)
+
+A tela de execuções ao vivo e os cartões de agentes agora localizam estados de
+carga, vazio e falha; status conhecidos, horários, nomes acessíveis, tarefas
+vinculadas, origem agendada e contagem de execuções restantes em PT-BR/en. As
+datas relativas acompanham o idioma. Falhas mostram uma mensagem própria sem
+expor o corpo técnico da API; dados já carregados permanecem visíveis durante
+falhas de atualização. IDs, status desconhecidos, títulos e conteúdo de tarefas,
+identificadores, rotas e dados de execução continuam preservados.
+
+`ActiveAgentsPanel.test.tsx`, `DashboardLive.i18n.test.tsx` e
+`locale-validation.test.ts` passaram em **25/25 testes**, incluindo plural
+singular/múltiplo, nomes acessíveis e loading/vazio/falha. No conjunto dos lotes
+3.7a–b, a bateria focada passou em **35/35 testes**. Typecheck direcionado dos
+módulos/testes alterados, `check:tokens`, `check:token-gates`, `git diff --check`
+e validação OpenSpec estrita passaram. O progresso é **141/168**; próxima
+tarefa: 3.7c, custos e finanças.
