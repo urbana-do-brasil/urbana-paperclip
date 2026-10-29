@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import type { ToolMcpGatewayToken, ToolMcpGatewayWithTokens, ToolProfileWithDetails } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { GatewaysTab } from "./GatewaysTab";
 import { RelativeTime } from "./shared";
 
@@ -190,7 +191,8 @@ describe("GatewaysTab", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.spyOn(Date, "now").mockReturnValue(new Date("2026-06-16T12:00:00.000Z").getTime());
     listProfilesMock.mockResolvedValue({ profiles: [profile()] });
     listAgentsMock.mockResolvedValue([]);
@@ -221,8 +223,21 @@ describe("GatewaysTab", () => {
       </>,
     );
 
-    expect(container.textContent).toContain("in 2d");
-    expect(container.textContent).toContain("2d ago");
+    expect(container.textContent).toContain("in 2 days");
+    expect(container.textContent).toContain("2 days ago");
+  });
+
+  it("formats relative times in the selected language", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render(
+      <>
+        <RelativeTime value="2026-06-18T12:00:00.000Z" />
+        <RelativeTime value="2026-06-14T12:00:00.000Z" />
+      </>,
+    );
+
+    expect(container.textContent).toContain("depois de amanhã");
+    expect(container.textContent).toContain("anteontem");
   });
 
   it("renders token expiry, revocation date, and empty snippets copy", async () => {
@@ -254,9 +269,9 @@ describe("GatewaysTab", () => {
       </QueryClientProvider>,
     );
 
-    expect(container.textContent).toContain("expires in 2d");
-    expect(container.textContent).not.toContain("expires 2d ago");
-    expect(container.textContent).toContain("revoked 3h ago");
+    expect(container.textContent).toContain("expires in 2 days");
+    expect(container.textContent).not.toContain("expires 2 days ago");
+    expect(container.textContent).toContain("revoked 3 hours ago");
     expect(container.textContent).toContain("No snippets available.");
   });
 });

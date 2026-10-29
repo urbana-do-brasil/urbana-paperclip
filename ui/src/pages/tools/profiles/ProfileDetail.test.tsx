@@ -12,6 +12,7 @@ import type {
   ToolProfileWithDetails,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 
 const navigate = vi.hoisted(() => vi.fn());
 const setSearchParams = vi.hoisted(() => vi.fn());
@@ -180,7 +181,8 @@ describe("ProfileDetail", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -221,6 +223,18 @@ describe("ProfileDetail", () => {
     expect(container.textContent).toContain("Who has it");
     expect(container.textContent).toContain("Sage");
     expect(container.textContent).toContain("New tools that appear later");
+  });
+
+  it("localizes profile administration in PT-BR while retaining provider-supplied names", async () => {
+    await i18n.changeLanguage("pt-BR");
+    setData([profile()], [tool({})]);
+    await render();
+
+    expect(container.textContent).toContain("O que ele permite");
+    expect(container.textContent).toContain("Quem tem acesso");
+    expect(container.textContent).toContain("Read mail");
+    expect(container.textContent).toContain("Sage");
+    expect(container.textContent).toContain("adicionada pela regra: todos de Gmail");
   });
 
   it("shows degraded app rows and the 0-tools warning state", async () => {

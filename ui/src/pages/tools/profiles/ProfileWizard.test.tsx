@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ToolCatalogEntry, ToolProfileWithDetails } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 
 const navigate = vi.hoisted(() => vi.fn());
 const api = vi.hoisted(() => ({
@@ -71,7 +72,8 @@ describe("ProfileWizard", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -154,5 +156,55 @@ describe("ProfileWizard", () => {
     // lastCompletedStep 1 -> resume on step 2 (Choose tools), not step 1.
     expect(container.textContent).toContain("New tools that appear later");
     expect(container.querySelector("#profile-name")).toBeNull();
+  });
+
+  it("localizes the profile wizard in PT-BR while preserving the selected template data", async () => {
+    await i18n.changeLanguage("pt-BR");
+    setData([]);
+    await render({ initialTemplate: "everyday" });
+
+    expect(container.textContent).toContain("Começar a partir de");
+    expect(container.textContent).toContain("Trabalho do dia a dia");
+    expect(container.textContent).toContain("Descrição (opcional)");
+    expect([...container.querySelectorAll("button")].some((button) => button.textContent?.trim() === "Continuar")).toBe(true);
+    expect(api.createProfile).not.toHaveBeenCalled();
+  });
+
+  it("localizes tool selection and policy controls in PT-BR while retaining app and tool identifiers", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const draft: ToolProfileWithDetails = {
+      id: "d1",
+      companyId: "c1",
+      profileKey: "everyday",
+      name: "Perfil Gmail",
+      description: null,
+      status: "draft",
+      defaultAction: "deny",
+      newToolsReviewedAt: null,
+      metadata: { wizard: { lastCompletedStep: 1, template: "everyday" } },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      entries: [],
+      bindings: [],
+      summary: {
+        accessMode: "selected",
+        allowedToolCount: 0,
+        allowedApplicationCount: 0,
+        excludedToolCount: 0,
+        totalToolCount: 0,
+        assignmentCount: 0,
+        appliesToAgentCount: 0,
+        isCompanyDefault: false,
+      },
+    };
+    setData([draft]);
+    await render({ profileId: "d1" });
+
+    expect(container.querySelector('input[placeholder="Buscar ferramentas…"]')).toBeTruthy();
+    expect(container.textContent).toContain("Novas ferramentas adicionadas no futuro");
+    expect(container.textContent).toContain("Continuar bloqueadas até alguém permiti-las");
+    expect(container.textContent).toContain("Gmail");
+    expect(container.textContent).not.toContain("tool_name");
+    expect(api.updateProfile).not.toHaveBeenCalled();
   });
 });

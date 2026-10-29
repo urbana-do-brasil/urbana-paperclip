@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ToolProfileSummary, ToolProfileWithDetails } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 
 const navigate = vi.hoisted(() => vi.fn());
 const profilesData = vi.hoisted(() => ({
@@ -102,7 +103,8 @@ describe("ProfilesIndex", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -143,6 +145,17 @@ describe("ProfilesIndex", () => {
     expect(container.textContent).toContain("Organization default");
   });
 
+  it("localizes the profile list in PT-BR without translating profile names", async () => {
+    await i18n.changeLanguage("pt-BR");
+    setData([profile({ name: "Finance tools", summary: summary({ allowedToolCount: 4, allowedApplicationCount: 1 }) })]);
+    await render();
+
+    expect(container.textContent).toContain("Perfis de acesso");
+    expect(container.textContent).toContain("Finance tools");
+    expect(container.textContent).toContain("4 ferramentas · 1 app");
+    expect(container.textContent).toContain("Associado a");
+  });
+
   it("shows a new-tools chip in the Allows column", async () => {
     setData([
       profile({
@@ -154,7 +167,7 @@ describe("ProfilesIndex", () => {
     await render();
 
     expect(container.textContent).toContain("4 tools · 1 app");
-    expect(container.textContent).toContain("3 new");
+    expect(container.textContent).toContain("New tools: 3");
   });
 
   it("constrains long profile names to the Profile column", async () => {

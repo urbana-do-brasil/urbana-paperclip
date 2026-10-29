@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/context/ToastContext";
+import { useTranslation } from "@/i18n";
 import { EmptyState } from "@/components/EmptyState";
 import {
   CapabilityBadges,
@@ -472,6 +473,7 @@ function EntryFields({
 }
 
 export function EffectiveAgentPanel({ companyId, agentOptions }: { companyId: string; agentOptions: Array<{ id: string; name: string }> }) {
+  const { t } = useTranslation();
   const [agentId, setAgentId] = useState("");
   const effective = useQuery({
     queryKey: agentId
@@ -484,29 +486,29 @@ export function EffectiveAgentPanel({ companyId, agentOptions }: { companyId: st
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="space-y-1.5">
-        <Label>Agent</Label>
+        <Label>{t("toolsAdmin.profiles.detail.agent")}</Label>
         <AgentSelect agents={agentOptions} value={agentId} onChange={setAgentId} />
       </div>
       {!agentId ? (
         <div className="rounded-lg border border-dashed border-border px-4 py-8 text-sm text-muted-foreground">
-          Pick an agent to see what it can use right now.
+          {t("toolsAdmin.profiles.detail.pickAgent")}
         </div>
       ) : effective.isLoading ? (
-        <LoadingState label="Checking access..." />
+        <LoadingState label={t("toolsAdmin.profiles.detail.checkingAccess")} />
       ) : effective.error ? (
         <ErrorState error={effective.error} onRetry={() => effective.refetch()} />
       ) : (
         <div className="min-h-0 space-y-5 overflow-y-auto pr-1">
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-foreground">Can use</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t("toolsAdmin.profiles.detail.canUse")}</h3>
               <span className="text-xs text-muted-foreground tabular-nums">
-                {(effective.data?.allowedToolNames ?? []).length} tools
+                {t("toolsAdmin.profiles.detail.toolCount", { count: (effective.data?.allowedToolNames ?? []).length })}
               </span>
             </div>
             {(effective.data?.allowedToolNames ?? []).length === 0 ? (
               <div className="rounded-lg border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
-                This agent cannot use any app tools right now.
+                {t("toolsAdmin.profiles.detail.cannotUseTools")}
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -517,10 +519,10 @@ export function EffectiveAgentPanel({ companyId, agentOptions }: { companyId: st
             )}
           </div>
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-foreground">Access profiles</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("toolsAdmin.profiles.detail.accessProfiles")}</h3>
             {(effective.data?.profiles ?? []).length === 0 ? (
               <div className="rounded-lg border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
-                No active profile applies to this agent.
+                {t("toolsAdmin.profiles.detail.noProfileApplies")}
               </div>
             ) : (
               <div className="divide-y divide-border rounded-lg border border-border">
@@ -528,7 +530,7 @@ export function EffectiveAgentPanel({ companyId, agentOptions }: { companyId: st
                   <div key={profile.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
                     <span className="min-w-0 truncate text-sm font-medium text-foreground">{profile.name}</span>
                     {profile.summary.isCompanyDefault ? (
-                      <Badge variant="secondary">Organization default</Badge>
+                      <Badge variant="secondary">{t("toolsAdmin.profiles.detail.organizationDefault")}</Badge>
                     ) : null}
                   </div>
                 ))}

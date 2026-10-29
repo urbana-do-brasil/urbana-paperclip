@@ -2340,3 +2340,24 @@ com conferência das opções enviadas à API. `pnpm check:tokens`, `pnpm check:
 aponta somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. O progresso é **201/220 tarefas**; próxima:
 3.9e, ferramentas de agentes e administração de acesso/ferramentas.
+
+### Perfis e ferramentas de agentes (3.9e1–e2)
+
+A navegação de configuração avançada, gate administrativo, lista e assistente de
+perfis agora alternam entre PT-BR e inglês. O detalhe do agente, a consulta de
+acesso efetivo e o detalhe/administração do perfil também estão localizados,
+incluindo revisão por ferramenta, atribuições e ações de ciclo de vida. Nomes de
+apps, ferramentas, perfis e agentes, identificadores, enums, filtros/rotas,
+permissões, decisões de revisão, erros técnicos do servidor e payloads foram
+preservados.
+
+`ProfileDetail.test.tsx`, `ProfileWizard.test.tsx`, `ProfilesIndex.test.tsx`,
+`ToolsAccess.test.tsx`, `AgentToolsTab.test.tsx` e `locale-validation.test.ts`
+passaram em **56/56 testes**, incluindo controles do assistente, navegação,
+estados de detalhe, preservação de decisões enviadas à API e conteúdo externo.
+`pnpm check:tokens`, `pnpm check:token-gates`, JSON, `git diff --check` e
+`pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso real pelo manifesto: **205/223 tarefas**. Próxima: 3.9e3,
+configuração avançada, gateways MCP e configuração colada.

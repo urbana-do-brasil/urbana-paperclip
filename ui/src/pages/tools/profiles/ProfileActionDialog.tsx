@@ -1,6 +1,7 @@
 import { AlertTriangle } from "lucide-react";
 import type { ToolProfileWithDetails } from "@paperclipai/shared";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/i18n";
 import {
   Dialog,
   DialogContent,
@@ -29,28 +30,29 @@ export function ProfileActionDialog({
   onRestore: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   if (!kind || !profile) return null;
 
   const defaultDeleteBlocked = kind === "delete" && profile.summary.isCompanyDefault;
   const copy = {
     archive: {
-      title: "Archive profile",
-      body: `This profile stops applying to ${profile.summary.appliesToAgentCount} ${profile.summary.appliesToAgentCount === 1 ? "agent" : "agents"}. You can restore it later.`,
-      confirm: "Archive",
+      title: t("toolsAdmin.profiles.actions.archiveTitle"),
+      body: t("toolsAdmin.profiles.actions.archiveBody", { count: profile.summary.appliesToAgentCount }),
+      confirm: t("toolsAdmin.profiles.actions.archiveConfirm"),
       action: onArchive,
     },
     restore: {
-      title: "Restore profile",
-      body: "This profile will be active again and can be assigned to agents.",
-      confirm: "Restore",
+      title: t("toolsAdmin.profiles.actions.restoreTitle"),
+      body: t("toolsAdmin.profiles.actions.restoreBody"),
+      confirm: t("toolsAdmin.profiles.actions.restoreConfirm"),
       action: onRestore,
     },
     delete: {
-      title: "Delete profile",
+      title: t("toolsAdmin.profiles.actions.deleteTitle"),
       body: defaultDeleteBlocked
-        ? "This profile is the organization default. Reassign the organization default to another profile before deleting it."
-        : `This permanently deletes the profile and removes ${profile.summary.assignmentCount} ${profile.summary.assignmentCount === 1 ? "assignment" : "assignments"}.`,
-      confirm: "Delete",
+        ? t("toolsAdmin.profiles.actions.deleteDefaultBody")
+        : t("toolsAdmin.profiles.actions.deleteAssignments", { count: profile.summary.assignmentCount }),
+      confirm: t("toolsAdmin.profiles.actions.deleteConfirm"),
       action: onDelete,
     },
   }[kind];
@@ -65,11 +67,11 @@ export function ProfileActionDialog({
         {defaultDeleteBlocked ? (
           <div className="flex gap-3 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Choose another access profile and make it the organization default first.</span>
+            <span>{t("toolsAdmin.profiles.actions.defaultMustMove")}</span>
           </div>
         ) : null}
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>{t("toolsAdmin.common.cancel")}</Button>
           <Button
             variant={kind === "delete" ? "destructive" : "default"}
             disabled={pending || defaultDeleteBlocked}

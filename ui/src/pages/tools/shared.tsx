@@ -9,17 +9,19 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ApiError } from "@/api/client";
+import { useTranslation } from "@/i18n";
 
 /** Risk classification badge for a catalog tool. */
 export function RiskBadge({ risk, labels }: { risk: ToolRiskLevel | null | undefined; labels?: Partial<Record<ToolRiskLevel | "unknown", string>> }) {
-  if (!risk) return <Badge variant="outline">{labels?.unknown ?? "unknown"}</Badge>;
+  const { t } = useTranslation();
+  if (!risk) return <Badge variant="outline">{labels?.unknown ?? t("toolsAdmin.common.riskLevels.unknown")}</Badge>;
   const variant =
     risk === "high" || risk === "critical"
       ? "destructive"
       : risk === "medium"
         ? "secondary"
         : "outline";
-  return <Badge variant={variant}>{labels?.[risk] ?? risk}</Badge>;
+  return <Badge variant={variant}>{labels?.[risk] ?? t(`toolsAdmin.common.riskLevels.${risk}`)}</Badge>;
 }
 
 /** Read/Write/Destructive capability chips. */
@@ -34,18 +36,20 @@ export function CapabilityBadges({
   isDestructive?: boolean;
   labels?: Partial<Record<"readOnly" | "write" | "destructive", string>>;
 }) {
+  const { t } = useTranslation();
   return (
     <span className="inline-flex flex-wrap gap-1">
-      {isReadOnly ? <Badge variant="outline">{labels?.readOnly ?? "read-only"}</Badge> : null}
-      {isWrite ? <Badge variant="secondary">{labels?.write ?? "write"}</Badge> : null}
-      {isDestructive ? <Badge variant="destructive">{labels?.destructive ?? "destructive"}</Badge> : null}
+      {isReadOnly ? <Badge variant="outline">{labels?.readOnly ?? t("toolsAdmin.common.capabilities.read")}</Badge> : null}
+      {isWrite ? <Badge variant="secondary">{labels?.write ?? t("toolsAdmin.common.capabilities.write")}</Badge> : null}
+      {isDestructive ? <Badge variant="destructive">{labels?.destructive ?? t("toolsAdmin.common.capabilities.destructive")}</Badge> : null}
     </span>
   );
 }
 
 /** Catalog quarantine marker — canonical status key. */
 export function QuarantineBadge() {
-  return <StatusBadge status="quarantined" />;
+  const { t } = useTranslation();
+  return <StatusBadge status="quarantined" label={t("toolsAdmin.common.quarantined")} />;
 }
 
 function healthToStatusKey(status: string): string {
@@ -77,63 +81,70 @@ export function HealthBadge({
   status: ToolConnectionHealthStatus | string | null | undefined;
   label?: string;
 }) {
+  const { t } = useTranslation();
   const raw = (status ?? "unknown").toString();
-  return <StatusBadge status={healthToStatusKey(raw)} label={label ?? raw} />;
+  const key = healthToStatusKey(raw);
+  const labelKey = key === "healthy" ? "healthy" : key === "degraded" ? "degraded" : key === "runtime-error" ? "error" : key === "unchecked" ? "unchecked" : null;
+  return <StatusBadge status={key} label={label ?? (labelKey ? t(`toolsAdmin.common.health.${labelKey}`) : raw)} />;
 }
 
-function decisionToStatusKey(decision: string): { key: string; label: string } {
+function decisionToStatusKey(decision: string): { key: string; labelKey: string | null } {
   switch (decision) {
     case "allow":
     case "allowed":
-      return { key: "allowed", label: "allowed" };
+      return { key: "allowed", labelKey: "allowed" };
     case "deny":
     case "denied":
-      return { key: "denied", label: "denied" };
+      return { key: "denied", labelKey: "denied" };
     case "block":
-      return { key: "block", label: "block" };
+      return { key: "block", labelKey: "block" };
     case "require_approval":
     case "requires_approval":
-      return { key: "require-approval", label: "require approval" };
+      return { key: "require-approval", labelKey: "requireApproval" };
     case "redact":
     case "redacted":
-      return { key: "redacted", label: "redacted" };
+      return { key: "redacted", labelKey: "redacted" };
     case "rate_limited":
-      return { key: "rate-limit", label: "rate limited" };
+      return { key: "rate-limit", labelKey: "rateLimited" };
     case "defer":
     case "deferred":
-      return { key: "deferred", label: "deferred" };
+      return { key: "deferred", labelKey: "deferred" };
     case "hidden":
-      return { key: "hidden", label: "hidden" };
+      return { key: "hidden", labelKey: "hidden" };
     default:
-      return { key: decision, label: decision };
+      return { key: decision, labelKey: null };
   }
 }
 
 /** Policy/gateway decision badge — canonical status colors. */
 export function DecisionBadge({ decision }: { decision: ToolPolicyDecision | string | null | undefined }) {
+  const { t } = useTranslation();
   if (!decision) return <Badge variant="outline">—</Badge>;
-  const { key, label } = decisionToStatusKey(decision.toString());
+  const { key, labelKey } = decisionToStatusKey(decision.toString());
+  const label = labelKey ? t(`toolsAdmin.common.decisions.${labelKey}`) : decision.toString();
   return <StatusBadge status={key} label={label} />;
 }
 
 /** Compact relative time, falling back to absolute. */
 export function RelativeTime({ value }: { value: Date | string | null | undefined }) {
-  if (!value) return <span className="text-muted-foreground">never</span>;
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? i18n.language;
+  if (!value) return <span className="text-muted-foreground">{t("toolsAdmin.common.relativeTime.never")}</span>;
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return <span className="text-muted-foreground">—</span>;
-  const diffMs = Date.now() - date.getTime();
+  const diffMs = date.getTime() - Date.now();
   const abs = Math.abs(diffMs);
   const mins = Math.round(abs / 60000);
-  const isFuture = diffMs < 0;
-  let text: string;
-  if (mins < 1) text = "just now";
-  else {
-    const value =
-      mins < 60 ? `${mins}m` : mins < 1440 ? `${Math.round(mins / 60)}h` : `${Math.round(mins / 1440)}d`;
-    text = isFuture ? `in ${value}` : `${value} ago`;
-  }
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  const text = mins < 1
+    ? t("toolsAdmin.common.relativeTime.justNow")
+    : mins < 60
+      ? rtf.format(Math.round(diffMs / 60000), "minute")
+      : mins < 1440
+        ? rtf.format(Math.round(diffMs / 3600000), "hour")
+        : rtf.format(Math.round(diffMs / 86400000), "day");
   return (
-    <span title={date.toLocaleString()} className="text-muted-foreground">
+    <span title={date.toLocaleString(locale)} className="text-muted-foreground">
       {text}
     </span>
   );
@@ -170,20 +181,21 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
 
 /** Actionable error surface — surfaces the server message and HTTP status. */
 export function ErrorState({ error, onRetry, labels }: { error: unknown; onRetry?: () => void; labels?: Partial<Record<"forbidden" | "routeUnavailable" | "generic" | "couldNotLoad" | "retry", string>> }) {
+  const { t } = useTranslation();
   let message: string;
   if (error instanceof ApiError) {
     if (error.status === 403) {
-      message = labels?.forbidden ?? "You do not have permission to view this. Tools & Access requires board/admin access.";
+      message = labels?.forbidden ?? t("toolsAdmin.common.errors.forbidden");
     } else if (error.status === 404 || /route not found/i.test(error.message)) {
       // Snapshot-skew window: the route exists in this build but not on the live server snapshot yet.
-      message = labels?.routeUnavailable ?? "Tools & Access isn't available on this server yet — try refreshing after the next deployment.";
+      message = labels?.routeUnavailable ?? t("toolsAdmin.common.errors.routeUnavailable");
     } else {
       message = error.message;
     }
   } else if (error instanceof Error) {
     message = error.message;
   } else {
-    message = labels?.generic ?? "Something went wrong.";
+    message = labels?.generic ?? t("toolsAdmin.common.errors.generic");
   }
   return (
     <Card className="border-destructive/40">
@@ -191,7 +203,7 @@ export function ErrorState({ error, onRetry, labels }: { error: unknown; onRetry
         <div className="flex items-start gap-2 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <p className="font-medium">{labels?.couldNotLoad ?? "Could not load this view"}</p>
+            <p className="font-medium">{labels?.couldNotLoad ?? t("toolsAdmin.common.errors.couldNotLoad")}</p>
             <p className="text-destructive/80">{message}</p>
           </div>
         </div>
@@ -201,7 +213,7 @@ export function ErrorState({ error, onRetry, labels }: { error: unknown; onRetry
             onClick={onRetry}
             className="self-start rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent"
           >
-            {labels?.retry ?? "Retry"}
+            {labels?.retry ?? t("toolsAdmin.common.errors.retry")}
           </button>
         ) : null}
       </CardContent>
@@ -223,6 +235,7 @@ export function PendingBackendNotice({
   body: ReactNode;
   issue?: { identifier: string; href: string };
 }) {
+  const { t } = useTranslation();
   return (
     <Card className="border-dashed">
       <CardContent className="flex flex-col gap-2 py-8">
@@ -233,7 +246,7 @@ export function PendingBackendNotice({
         <p className="max-w-2xl text-sm text-muted-foreground">{body}</p>
         {issue ? (
           <a href={issue.href} className="text-sm font-medium text-primary hover:underline">
-            Tracked in {issue.identifier} →
+            {t("toolsAdmin.common.trackedIn")} {issue.identifier} →
           </a>
         ) : null}
       </CardContent>
