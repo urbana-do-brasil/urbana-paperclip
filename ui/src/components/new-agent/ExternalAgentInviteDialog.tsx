@@ -111,7 +111,9 @@ export function ExternalAgentInviteDialog({ companyId, onClose, onBack }: {
   const pendingApproval = (state.data?.agentStatus ?? invitation?.agent.status) === "pending_approval";
   const unavailable = state.data && !state.data.canConfigureConnection && !pendingApproval;
   const prompt = preset === "dot" ? pairing && pairing.bindingId === binding?.id && state.data?.resourceUrl && invitation
-    ? buildDotSetupPrompt({ companyId, agentId: invitation.agent.id, resourceUrl: state.data.resourceUrl, ...pairing }) : "" : genericPrompt;
+    ? buildDotSetupPrompt({ companyId, agentId: invitation.agent.id, resourceUrl: state.data.resourceUrl, ...pairing,
+      pairingCodeLabel: t("agentConfiguration.runner.dot.pairingCodeLabel"),
+      connectButtonLabel: t("agentConfiguration.runner.dot.connectWithPairingCode") }) : "" : genericPrompt;
   const error = (generate.variables === preset ? generate.error : null) ?? (preset === "dot" ? (binding?.connected ? null : pair.error) ?? test.error : null);
   const busy = generate.isPending || pair.isPending || test.isPending || preparePairing
     || (preset === "dot" && !!invitation && (state.isPending || (!prompt && state.isFetching)));

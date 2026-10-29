@@ -58,7 +58,9 @@ export function DotRunnerConnection({ companyId, agentId, bindingId, onBinding }
   };
   const bindingStatus = b ? bindingStatusLabels[b.status] ?? b.status : "";
   const setupPrompt = pairing && state.data?.resourceUrl && companyId && agentId
-    ? buildDotSetupPrompt({ companyId, agentId, resourceUrl: state.data.resourceUrl, ...pairing })
+    ? buildDotSetupPrompt({ companyId, agentId, resourceUrl: state.data.resourceUrl, ...pairing,
+      pairingCodeLabel: t("agentConfiguration.runner.dot.pairingCodeLabel"),
+      connectButtonLabel: t("agentConfiguration.runner.dot.connectWithPairingCode") })
     : "";
   return <div className="space-y-3">
     <p className="text-sm text-muted-foreground">{t("agentConfiguration.runner.dot.overview")}</p>

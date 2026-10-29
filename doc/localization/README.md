@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **116 de 156 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **117 de 156 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -14,7 +14,7 @@ A entrega ainda não foi implantada.
 
 Na configuração de agentes, a seleção de provedor e os controles ACPX de
 Cursor/Pi (3.6d2c2b1) já estão localizados; a próxima tarefa é o pareamento e os
-controles do OpenAI Dot no formulário do agente (3.6d2c2b2a); a próxima tarefa é a revisão de escopo/pareamento MCP (3.6d2c2b2b).
+controles do OpenAI Dot no formulário do agente (3.6d2c2b2a); as telas de revisão de escopo/pareamento MCP (3.6d2c2b2b) também estão concluídas; a próxima tarefa é o reconhecimento de cobrança no fluxo de importação (3.6d2c2b2c).
 
 | Etapa | Situação |
 | --- | --- |
@@ -250,7 +250,7 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
   controles de ciclo de vida, rastreamento do provedor e seleção do agente
   principal, preservando callbacks, permissões, IDs e respostas técnicas. Testes
   focados com a lista de agentes: 55/55; typecheck, gates e validação OpenSpec
-  passaram. O lote 3.6d1 está concluído. 3.6d2a localizou a navegação da ficha, o histórico de revisões e a barra de salvamento nos dois idiomas, preservando rotas, IDs e valores técnicos. Os testes focados passaram em 19/19; typecheck direcionado, gates e validação OpenSpec estrita passaram. 3.6d2b localizou identidade, reporte e seleção do ambiente padrão do agente; conteúdo dos prompts, nomes, IDs, relações e payloads foram preservados. AgentConfigForm e locale-validation passaram em 112/112 testes; typecheck direcionado, gates e validação OpenSpec estrita passaram. 3.6d2c foi dividida em c1 (controles compartilhados), c2 (Codex/Paperclip Runner), c3 (adaptadores locais) e c4 (gateways, HTTP/process e campos por schema). 3.6d2c1 localizou os rótulos compartilhados de adaptador/runtime e o seletor de modelo nos dois idiomas, preservando nomes de produto, IDs, opções e valores. AgentConfigForm, ModelDropdown, seus testes de entrada e locale-validation passaram em 121/121; typecheck direcionado, gates e validação OpenSpec estrita passaram. 3.6d2c2 foi subdividida entre configuração do Codex local (c2a) e escolha/configuração dos providers do Paperclip Runner (c2b), mantendo as opções de segurança em lotes próprios para validação focada. 3.6d2c2a localizou engine/ACP, instruções, sandbox, busca, Fast mode e feedback correspondente em PT-BR/en, preservando valores ACP, paths, IDs e conteúdo técnico. Testes focados e locale-validation: 36/36; typecheck direcionado, gates e validação OpenSpec estrita passaram. 3.6d2c2b foi dividida em b1 (harness/ACPX), b2 (OpenAI Dot), b3 (Claude Managed/AWS AgentCore) e b4 (permissões/ciclo de vida do Runner). Próxima: 3.6d2c2b2b. A aplicação ainda não
+  passaram. O lote 3.6d1 está concluído. 3.6d2a localizou a navegação da ficha, o histórico de revisões e a barra de salvamento nos dois idiomas, preservando rotas, IDs e valores técnicos. Os testes focados passaram em 19/19; typecheck direcionado, gates e validação OpenSpec estrita passaram. 3.6d2b localizou identidade, reporte e seleção do ambiente padrão do agente; conteúdo dos prompts, nomes, IDs, relações e payloads foram preservados. AgentConfigForm e locale-validation passaram em 112/112 testes; typecheck direcionado, gates e validação OpenSpec estrita passaram. 3.6d2c foi dividida em c1 (controles compartilhados), c2 (Codex/Paperclip Runner), c3 (adaptadores locais) e c4 (gateways, HTTP/process e campos por schema). 3.6d2c1 localizou os rótulos compartilhados de adaptador/runtime e o seletor de modelo nos dois idiomas, preservando nomes de produto, IDs, opções e valores. AgentConfigForm, ModelDropdown, seus testes de entrada e locale-validation passaram em 121/121; typecheck direcionado, gates e validação OpenSpec estrita passaram. 3.6d2c2 foi subdividida entre configuração do Codex local (c2a) e escolha/configuração dos providers do Paperclip Runner (c2b), mantendo as opções de segurança em lotes próprios para validação focada. 3.6d2c2a localizou engine/ACP, instruções, sandbox, busca, Fast mode e feedback correspondente em PT-BR/en, preservando valores ACP, paths, IDs e conteúdo técnico. Testes focados e locale-validation: 36/36; typecheck direcionado, gates e validação OpenSpec estrita passaram. 3.6d2c2b foi dividida em b1 (harness/ACPX), b2 (OpenAI Dot), b3 (Claude Managed/AWS AgentCore) e b4 (permissões/ciclo de vida do Runner). Próxima: 3.6d2c2b2c. A aplicação ainda não
   foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28

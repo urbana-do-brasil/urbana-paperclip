@@ -4,9 +4,11 @@ import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { api } from "../api/client";
 import { McpConnectPage, McpDevicePage } from "./McpConnect";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 const route = vi.hoisted(() => ({ id: "request-one", companyId: null as string | null, unavailable: false, canWrite: true, requestedWrite: true, requestedConfigure: false, agentConnection: false, requiresSignIn: false, clientName: "Assistant", clientOrigin: null as string | null, setupUrl: "https://my.paperclip.app/orgs/new", reverseCompanies: false, hideFirst: false }));
 vi.mock("@/lib/router", () => ({
@@ -28,10 +30,12 @@ vi.mock("../api/client", () => ({ api: {
   post: vi.fn(() => new Promise(() => {})),
 } }));
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   Object.assign(route, { id: "request-one", companyId: null, unavailable: false, canWrite: true, requestedWrite: true, requestedConfigure: false, agentConnection: false, requiresSignIn: false, clientName: "Assistant", clientOrigin: null, setupUrl: "https://my.paperclip.app/orgs/new", reverseCompanies: false, hideFirst: false });
   vi.clearAllMocks();
 });
+afterEach(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 
 function setup(device = false, agentPairingOnly = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -81,6 +85,45 @@ it.each([false, true])("lets Dot use the operator pairing capability without sig
     expect(connect.disabled).toBe(false);
     flushSync(() => connect.click());
     await vi.waitFor(() => expect(api.post).toHaveBeenCalledWith(`${dedicated ? "/dot-mcp" : "/mcp"}/requests/request-one/dot-pairing`, { pairingCode: "x".repeat(32) }));
+  } finally { page.cleanup(); }
+});
+
+it("localizes Dot's one-use pairing review and preserves the previewed access data", async () => {
+  await i18n.changeLanguage("pt-BR");
+  Object.assign(route, { agentConnection: true, requiresSignIn: false, clientName: "Dot" });
+  vi.mocked(api.post).mockImplementationOnce(async () => ({
+    company: { id: "company-one", name: "Pesquisa Urbana" },
+    agent: { id: "agent-one", name: "Dot de produção" },
+    permissions: "Assigned work only",
+    accessDuration: "Until revoked",
+  }) as never);
+  const page = setup(false, true);
+  try {
+    await vi.waitFor(() => expect(page.container.querySelector("#dot-pairing-code")).not.toBeNull());
+    expect(page.container.querySelector("h1")?.textContent).toBe("Conectar Dot ao Paperclip");
+    expect(page.container.textContent).toContain("Digite o código de uso único da instrução de configuração do Dot");
+    expect(page.container.querySelector('label[for="dot-pairing-code"]')?.textContent).toBe("Código de pareamento");
+    expect(page.container.textContent).toContain("Organização");
+    expect(page.container.textContent).toContain("Conecte o Dot como agente do Paperclip.");
+    const input = page.container.querySelector<HTMLInputElement>("#dot-pairing-code")!;
+    flushSync(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "x".repeat(32));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await vi.waitFor(() => expect(page.container.textContent).toContain("Pesquisa Urbana"));
+    const preview = Array.from(page.container.querySelectorAll("dl > div")).map(row => [
+      row.querySelector("dt")?.textContent,
+      row.querySelector("dd")?.textContent,
+    ]);
+    expect(preview).toEqual([
+      ["Empresa", "Pesquisa Urbana (company-one)"],
+      ["Agente", "Dot de produção (agent-one)"],
+      ["Permissões", "Assigned work only"],
+      ["Duração do acesso", "Until revoked"],
+    ]);
+    expect(Array.from(page.container.querySelectorAll("button")).map(button => button.textContent)).toContain("Conectar agente Dot");
+    const connect = Array.from(page.container.querySelectorAll("button")).find(button => button.textContent === "Conectar o Dot com o código de pareamento")!;
+    expect(connect.disabled).toBe(false);
   } finally { page.cleanup(); }
 });
 

@@ -1354,3 +1354,20 @@ traduzidos nem alterados.
 `check:tokens`, `check:token-gates`, `git diff --check` e validação OpenSpec
 estrita passaram. O progresso atual é **116/156**; próxima tarefa: revisão de
 escopo e pareamento MCP (3.6d2c2b2b).
+
+### Continuação — pareamento MCP e revisão de acesso do Dot (3.6d2c2b2b)
+
+As páginas de conexão MCP localizam o código de uso único, a empresa/agente da
+prévia, permissões, duração do acesso, autenticação e estados de aprovação/erro.
+Também foram localizados os controles da etapa de pareamento, mantendo escopos,
+IDs, nomes, códigos, URLs, flags de autorização e chamadas da API. O prompt
+copiado de configuração do Dot referencia os rótulos de código e botão no idioma
+atual; os nomes de ferramentas, instruções de protocolo e conteúdo operacional
+permanecem intactos.
+
+`McpConnect.test.tsx`, `DotRunnerConnection.test.tsx`,
+`codex-local/config-fields.test.tsx`, `ExternalAgentInviteContent.test.tsx` e
+`locale-validation.test.ts` passaram em **72/72 testes**. Typecheck direcionado,
+`check:tokens`, `check:token-gates`, `git diff --check` e validação OpenSpec
+estrita passaram. O progresso atual é **117/156**; próxima tarefa:
+reconhecimento de cobrança externa na importação (3.6d2c2b2c).

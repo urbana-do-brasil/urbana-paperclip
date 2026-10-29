@@ -116,6 +116,24 @@ it("shows event testing when a connected Dot subscribes without a manual refresh
   } finally { vi.useRealTimers(); }
 });
 
+it("matches the Portuguese labels in the copied Dot setup prompt", async () => {
+  await i18n.changeLanguage("pt-BR");
+  const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
+  api.post.mockImplementation(async () => {
+    api.get.mockResolvedValue({ enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", binding: { ...binding, status: "pairing", connected: false, subscriptionVerified: false } });
+    return { bindingId: binding.id, pairingCode: "fresh-one-use-pairing-code", expiresAt };
+  });
+  vi.mocked(copyTextToClipboard).mockResolvedValue(undefined);
+  await render();
+  await act(async () => Array.from(container.querySelectorAll("button")).find(button => button.textContent === "Parear o Dot")!.click());
+  await flush();
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Configurar com o Dot"]')!.click());
+  const prompt = vi.mocked(copyTextToClipboard).mock.calls[0][0];
+  expect(prompt).toContain('Paperclip’s "Código de pareamento" field');
+  expect(prompt).toContain('click "Conectar o Dot com o código de pareamento"');
+  expect(prompt).toContain("paperclip_dot_inbox");
+  expect(prompt).toContain("fresh-one-use-pairing-code");
+});
 
 it("copies the complete Dot setup with its server URL, one-use code and event instructions", async () => {
   const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
