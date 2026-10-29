@@ -2399,3 +2399,26 @@ typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 Progresso atual: **208/228 tarefas**. Próxima: 3.9f2, inventário e saúde das
 conexões.
+
+### Inventário, saúde e revisão de conexões (3.9f2)
+
+A lista de conexões localiza tabela, filtros por estado, indicadores de saúde,
+contagem de ações, datas relativas, estados vazios, avisos de aprovação e
+confirmações/feedback de remoção. A fila de revisão localiza ações pendentes,
+explicações e decisões; o catálogo também localiza as linhas de contas,
+identidades ausentes, estados de saúde, ações de reconexão/gerenciamento e
+remoção de conexões e endpoints de chat. Nomes fornecidos de apps, contas,
+agentes e ferramentas; mensagens dinâmicas de provedores/servidores; URLs,
+credenciais, IDs, estados de protocolo, rotas, contagens e operações foram
+preservados. Rótulos de conta e tempo relativo gerados pelo produto acompanham
+PT-BR.
+
+`Connections.test.tsx`, `ReviewQueueCard.test.tsx`, `Browse.test.tsx` e
+`locale-validation.test.ts` passaram em **100/100 testes**, incluindo estados de
+saúde, erro dinâmico de provedor, controles e confirmações em PT-BR. `pnpm
+check:tokens`, `pnpm check:token-gates`, parse dos catálogos, `git diff --check`
+e `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso atual: **209/228 tarefas**. Próxima: 3.9f3, conexão genérica e
+detalhe/administração do app.

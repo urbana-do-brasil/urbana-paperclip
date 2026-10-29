@@ -312,6 +312,37 @@ describe("Connectors landing page", () => {
     expect(navigateMock).toHaveBeenCalledWith("/apps/byo");
   });
 
+  it("localizes inline account health and controls while preserving provider messages", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listApplicationsMock.mockResolvedValue({ applications: [application()] });
+    listConnectionsMock.mockResolvedValue({
+      connections: [connection({ healthStatus: "error", healthMessage: "Token expired by provider" })],
+    });
+
+    await renderBrowse(false);
+
+    const card = container.querySelector('[data-app-slug="notion"]');
+    expect(card?.textContent).toContain("Requer atenção");
+    expect(card?.textContent).toContain("Token expired by provider");
+    expect(card?.textContent).toContain("Reconectar");
+    expect(card?.querySelector('button[aria-label="Abrir permissões de devinfoley@gmail.com"]')).toBeTruthy();
+    const menuTrigger = card?.querySelector<HTMLButtonElement>('button[aria-label="Gerenciar conexão devinfoley@gmail.com"]');
+    expect(menuTrigger).toBeTruthy();
+    await act(async () => {
+      menuTrigger?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    });
+    await flushReact();
+    const removeItem = Array.from(document.body.querySelectorAll<HTMLElement>('[role="menuitem"]'))
+      .find((item) => item.textContent?.trim() === "Remover conexão");
+    expect(removeItem).toBeTruthy();
+    await act(async () => {
+      removeItem?.dispatchEvent(new Event("click", { bubbles: true }));
+    });
+    await flushReact();
+    expect(document.body.textContent).toContain("Remover a conexão devinfoley@gmail.com?");
+    expect(document.body.textContent).toContain("As credenciais salvas serão excluídas");
+  });
+
   it("keeps assistant setup in the Paperclip catalog when filtering connection sources", async () => {
     await renderBrowse(false);
     const assistantButton = () => container.querySelector('[aria-label="Set up Assistant Connection (MCP)"]');

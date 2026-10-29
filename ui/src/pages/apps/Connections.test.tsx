@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Connections } from "./Connections";
+import { i18n } from "@/i18n";
 
 const listGalleryMock = vi.hoisted(() => vi.fn());
 const listApplicationsMock = vi.hoisted(() => vi.fn());
@@ -161,7 +162,8 @@ describe("Connections table (M1b / PAP-13254 door 2)", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     listGalleryMock.mockResolvedValue({ apps: [] });
     listAppsAttentionMock.mockResolvedValue({ apps: [] });
     listApplicationsMock.mockResolvedValue({ applications: [] });
@@ -226,6 +228,34 @@ describe("Connections table (M1b / PAP-13254 door 2)", () => {
     );
     connectButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(mockNavigate).toHaveBeenCalledWith("/apps/app/app-github/permissions");
+  });
+
+  it("localizes connection inventory and health labels in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listApplicationsMock.mockResolvedValue({
+      applications: [application({ id: "app-github", name: "GitHub" })],
+    });
+    listConnectionsMock.mockResolvedValue({
+      connections: [connection({ id: "c-github", applicationId: "app-github", healthStatus: "healthy" })],
+    });
+
+    await renderApps();
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("Conexões");
+    expect(text).toContain("Conectar um app");
+    expect(text).toContain("Todas (1)");
+    expect(text).toContain("Conectada por");
+    expect(text).toContain("Saudável");
+    expect(text).toContain("Permissões");
+    const deleteButton = container.querySelector<HTMLButtonElement>('button[aria-label="Excluir conexão GitHub da organização"]');
+    expect(deleteButton).toBeTruthy();
+    await act(async () => {
+      deleteButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(document.body.textContent).toContain("Excluir a conexão GitHub?");
+    expect(document.body.textContent).toContain("As credenciais salvas serão excluídas");
+    expect(Array.from(document.body.querySelectorAll("button")).some((button) => button.textContent?.trim() === "Cancelar")).toBe(true);
   });
 
   it("renders every account with its owner, status, actions, and direct edit navigation", async () => {

@@ -39,29 +39,32 @@ const ORGANIZATION_NAME_SUFFIX = " for the organization";
 const LEGACY_ORGANIZATION_NAME_SUFFIX = " for the company";
 
 /** Keep organization-owned connections unmistakable anywhere their name appears. */
-export function connectionNameForGrantKind(name: string, grantKind: ConnectionGrantKind): string {
+export function connectionNameForGrantKind(name: string, grantKind: ConnectionGrantKind, locale = "en"): string {
   const trimmed = name.trim();
   if (grantKind !== "organization") {
     return trimmed;
   }
+  const localizedSuffix = locale.toLowerCase().startsWith("pt") ? " da organização" : ORGANIZATION_NAME_SUFFIX;
+  if (trimmed.toLocaleLowerCase().endsWith(localizedSuffix)) return trimmed;
   const lowercased = trimmed.toLocaleLowerCase();
-  if (lowercased.endsWith(ORGANIZATION_NAME_SUFFIX)) {
-    return trimmed;
+  for (const suffix of [ORGANIZATION_NAME_SUFFIX, LEGACY_ORGANIZATION_NAME_SUFFIX, " da organização"]) {
+    if (lowercased.endsWith(suffix)) {
+      const base = trimmed.slice(0, trimmed.length - suffix.length).trimEnd();
+      return `${base}${localizedSuffix}`;
+    }
   }
-  if (lowercased.endsWith(LEGACY_ORGANIZATION_NAME_SUFFIX)) {
-    const base = trimmed.slice(0, trimmed.length - LEGACY_ORGANIZATION_NAME_SUFFIX.length).trimEnd();
-    return `${base}${ORGANIZATION_NAME_SUFFIX}`;
-  }
-  return `${trimmed}${ORGANIZATION_NAME_SUFFIX}`;
+  return `${trimmed}${localizedSuffix}`;
 }
 
 export function connectionNameForCredentialPolicy(
   name: string,
   credentialPolicy: ToolConnectionCredentialPolicy,
+  locale = "en",
 ): string {
   return connectionNameForGrantKind(
     name,
     connectionTypeLabel(credentialPolicy) === "Organization" ? "organization" : "user",
+    locale,
   );
 }
 

@@ -544,9 +544,11 @@
         "ui/src/pages/tools/McpConfigHelpDialog.test.tsx",
         "ui/src/pages/tools/GatewaysTab.test.tsx",
         "ui/src/pages/apps/Browse.test.tsx",
+        "ui/src/pages/apps/Connections.test.tsx",
+        "ui/src/pages/apps/ReviewQueueCard.test.tsx",
         "ui/src/i18n/locale-validation.test.ts"
       ],
-      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia), 3.9b1–b2c (descoberta/cartões, árvore e gestão de pastas, detalhes/arquivos e operações da biblioteca), 3.9c (Skill Studio), 3.9d (catálogo e instalação/configuração de equipes), 3.9e1–e3 (perfis, acesso, gateways MCP, tokens e configuração colada) e 3.9f1 (descoberta e catálogo de apps) foram verificadas em PT-BR/en. Inventário de conexões, detalhes, conexão/gestão de provedores e gateways de apps (3.9f2–f5) permanecem pendentes. Biblioteca e catálogo de skills foram conferidos nas variantes streamlined e production; a superfície do catálogo de equipes compartilha sua implementação entre as variantes. Nomes e descrições de pacotes, apps, perfis e ferramentas fornecidos, conteúdo externo, compatibilidade, permissões, IDs, referências e payloads foram preservados."
+      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia), 3.9b1–b2c (descoberta/cartões, árvore e gestão de pastas, detalhes/arquivos e operações da biblioteca), 3.9c (Skill Studio), 3.9d (catálogo e instalação/configuração de equipes), 3.9e1–e3 (perfis, acesso, gateways MCP, tokens e configuração colada), 3.9f1 (descoberta e catálogo de apps) e 3.9f2 (inventário/saúde de conexões, contas inline, revisão de ações e remoção) foram verificadas em PT-BR/en. Detalhe, configuração e gestão de provedores e gateways de apps (3.9f3–f5) permanecem pendentes. Biblioteca e catálogo de skills foram conferidos nas variantes streamlined e production; a superfície do catálogo de equipes compartilha sua implementação entre as variantes. Nomes e descrições de pacotes, apps, perfis e ferramentas fornecidos, conteúdo externo, compatibilidade, permissões, IDs, referências e payloads foram preservados."
     },
     {
       "id": "experimental",
@@ -1491,10 +1493,10 @@
   ],
   "checkpoint": {
     "date": "2026-10-29",
-    "completedTasks": 208,
+    "completedTasks": 209,
     "totalTasks": 228,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Em 3.9a–d, fontes e biblioteca de skills, Skill Studio e catálogo/instalação de equipes foram verificados em PT-BR/en. 3.9e1–e3 localizou perfis, acesso, gateways MCP, tokens e configuração colada; nomes externos, permissões, URLs, JSON MCP, IDs, estados/enums, ações, credenciais e payloads foram preservados. 3.9f1 localizou busca, filtros, cartões, estados e navegação do catálogo, mantendo metadados dos provedores. Bateria focal de Browse e locale: 90/90; JSON, diff check e OpenSpec estrito passaram. Check de tokens e seus gates passaram. O typecheck da UI aponta somente o erro preexistente em storybook/prototypes/NewAgentWizard.tsx (SETUP_LOGIN_HINTS não exportado). Progresso atual: 208/228; próxima: 3.9f2, inventário e saúde de conexões."
+    "reason": "Em 3.9a–d, fontes e biblioteca de skills, Skill Studio e catálogo/instalação de equipes foram verificados em PT-BR/en. 3.9e1–e3 localizou perfis, acesso, gateways MCP, tokens e configuração colada; nomes externos, permissões, URLs, JSON MCP, IDs, estados/enums, ações, credenciais e payloads foram preservados. 3.9f1 localizou busca, filtros, cartões, estados e navegação do catálogo, mantendo metadados dos provedores. 3.9f2 localizou o inventário e a saúde de conexões, as aprovações pendentes, as linhas inline de contas e as remoções; mensagens externas, nomes, URLs, credenciais, IDs e operações foram preservados. Bateria focal de Connections, ReviewQueueCard, Browse e locale: 100/100; JSON, diff check, OpenSpec estrito e gates de tokens passaram. O typecheck da UI aponta somente o erro preexistente em storybook/prototypes/NewAgentWizard.tsx (SETUP_LOGIN_HINTS não exportado). Progresso atual: 209/228; próxima: 3.9f3, conexão genérica e detalhe/administração do app."
   }
 }

@@ -8,7 +8,6 @@ import {
   connectionSetupVerbForApp,
   getConnectableAppDefinition,
   isRetiredComposioConnection,
-  RETIRED_COMPOSIO_MESSAGE,
 } from "@paperclipai/shared";
 import { AssistantConnectionCard, useAssistantConnections } from "./AssistantConnection";
 import { ManagedAiConnectionRow } from "@/components/ai-connections/ManagedAiConnectionDetails";
@@ -203,37 +202,37 @@ function additionalConnectionHref(
   return `${path}?${params.toString()}`;
 }
 
-function connectionState(connection: ToolConnection): ConnectionState {
+function connectionState(connection: ToolConnection, t: TFunction): ConnectionState {
   if (isRetiredComposioConnection(connection)) {
-    return { kind: "attention", label: "Retired", message: RETIRED_COMPOSIO_MESSAGE };
+    return { kind: "attention", label: t("apps.inlineAccounts.state.retired"), message: t("apps.inlineAccounts.message.retired") };
   }
   if (connection.status === "draft") {
     return {
       kind: "draft",
-      label: "Setup incomplete",
-      message: "Finish setup before agents can use this account.",
+      label: t("apps.inlineAccounts.state.setupIncomplete"),
+      message: t("apps.inlineAccounts.message.finishSetup"),
     };
   }
   if (connection.enabled === false || connection.status === "disabled") {
     return {
       kind: "paused",
-      label: "Paused",
-      message: "Agents can’t use this account right now.",
+      label: t("apps.inlineAccounts.state.paused"),
+      message: t("apps.inlineAccounts.message.paused"),
     };
   }
   if ((connection.connectionPurpose === "ai" && (connection.healthStatus !== "ok" || aiSubscriptionNeedsIsolatedLogin(connection.config))) || isToolConnectionAttentionHealth(connection.healthStatus)) {
     return {
       kind: "attention",
-      label: "Needs attention",
+      label: t("apps.inlineAccounts.state.needsAttention"),
       message:
         connection.healthMessage ??
         connection.lastError ??
         (connection.authKind === "oauth"
-          ? "Sign in again to restore access."
-          : "Replace the credential to restore access."),
+          ? t("apps.inlineAccounts.message.signInAgain")
+          : t("apps.inlineAccounts.message.replaceCredential")),
     };
   }
-  return { kind: "connected", label: "Connected", message: null };
+  return { kind: "connected", label: t("apps.inlineAccounts.state.connected"), message: null };
 }
 
 function connectionRank(connection: ToolConnection): number {
@@ -454,7 +453,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
           await chatEndpointsApi.setup(target.id, { action: "remove" });
         }
       } else if (target.pool) {
-        if (!target.poolRevision) throw new Error("Open the confirmation again before removing this pool.");
+        if (!target.poolRevision) throw new Error(t("apps.inlineAccounts.poolUnavailable"));
         await aiConnectionPoolsApi.remove(selectedCompanyId!, target.id, target.poolRevision);
       } else {
         await toolsApi.archiveConnection(target.id);
@@ -475,21 +474,21 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
         queryKey: queryKeys.apps.attention(selectedCompanyId!),
       });
       pushToast({
-        title: "Connection removed",
+        title: t("apps.inlineAccounts.removeSuccessTitle"),
         body:
-          target.pool ? "The connections in the pool are kept." : target.kind === "chat"
-            ? `${target.providerName} is disconnected. Existing Paperclip tasks remain available.`
+          target.pool ? t("apps.inlineAccounts.removePoolSuccess") : target.kind === "chat"
+            ? t("apps.inlineAccounts.removeChatSuccess", { provider: target.providerName })
             : target.remainingConnectionCount > 0
-            ? `${target.providerName} still has ${target.remainingConnectionCount} active ${target.remainingConnectionCount === 1 ? "connection" : "connections"} available to agents.`
-            : `${target.providerName} is no longer available to agents through this connection. Its saved credentials were deleted.`,
+            ? t("apps.inlineAccounts.removeSuccessWithOthers", { provider: target.providerName, count: target.remainingConnectionCount })
+            : t("apps.inlineAccounts.removeSuccessWithoutOthers", { provider: target.providerName }),
         tone: "success",
       });
       setConnectionToRemove(null);
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't remove the connection",
-        body: error instanceof Error ? error.message : "Please try again.",
+        title: t("apps.inlineAccounts.removeErrorTitle"),
+        body: error instanceof Error ? error.message : t("apps.inlineAccounts.removeErrorFallback"),
         tone: "error",
       }),
   });
@@ -498,12 +497,12 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
     if (!target.pool) { setConnectionToRemove(target); return; }
     try {
       const pool = (await aiConnectionPoolsApi.list(selectedCompanyId!)).find(pool => pool.id === target.id);
-      if (!pool) throw new Error("This connection pool is no longer available.");
+      if (!pool) throw new Error(t("apps.inlineAccounts.poolUnavailable"));
       // Capture the revision when presenting the confirmation. Never replace
       // it at submission time: concurrent edits must invalidate this consent.
       setConnectionToRemove({ ...target, accountName: pool.name, poolRevision: pool.revision });
     } catch (error) {
-      pushToast({ title: "Couldn't open the connection pool", body: error instanceof Error ? error.message : "Please try again.", tone: "error" });
+      pushToast({ title: t("apps.inlineAccounts.openPoolFailed"), body: error instanceof Error ? error.message : t("apps.inlineAccounts.removeErrorFallback"), tone: "error" });
     }
   }
 
@@ -1004,25 +1003,27 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remove {connectionToRemove?.accountName ?? "this"} connection?
+              {connectionToRemove
+                ? t("apps.inlineAccounts.removeTitle", { name: connectionToRemove.accountName })
+                : t("apps.inlineAccounts.removeCurrentTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {connectionToRemove?.pool ? "The connections in this pool are kept." : connectionToRemove && Object.values(AGGREGATOR_NAMES).includes(connectionToRemove.providerName as "Composio")
-                ? `This removes the saved ${connectionToRemove.providerName} connection from Paperclip and agents lose access through it. Your apps and accounts remain connected in ${connectionToRemove.providerName}.`
+              {connectionToRemove?.pool ? t("apps.inlineAccounts.removePoolKept") : connectionToRemove && Object.values(AGGREGATOR_NAMES).includes(connectionToRemove.providerName as "Composio")
+                ? t("apps.inlineAccounts.removeAggregatorDescription", { provider: connectionToRemove.providerName })
                 : connectionToRemove?.kind === "chat"
-                ? `This connection will stop receiving new work from ${connectionToRemove.providerName}. Existing Paperclip tasks and conversation history remain available. This does not delete the app, bot, or account in ${connectionToRemove.providerName}.`
+                ? t("apps.inlineAccounts.removeChatDescription", { provider: connectionToRemove.providerName })
                 : connectionToRemove &&
                     connectionToRemove.remainingConnectionCount > 0
-                  ? `This connection's saved credentials are deleted and agents lose access through it immediately. They can still use ${connectionToRemove.providerName} through ${connectionToRemove.remainingConnectionCount} other active ${connectionToRemove.remainingConnectionCount === 1 ? "connection" : "connections"}.`
-                  : "The saved credentials are deleted and agents lose access immediately. Connecting it again later requires a new sign-in or key."}
+                  ? t("apps.inlineAccounts.removeWithOthers", { provider: connectionToRemove.providerName, count: connectionToRemove.remainingConnectionCount })
+                  : t("apps.inlineAccounts.removeWithoutOthers")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {removeConnection.isError ? <p role="alert" className="text-sm text-destructive">
-            {removeConnection.error instanceof Error ? removeConnection.error.message : "Couldn’t remove the connection. Please try again."}
+            {removeConnection.error instanceof Error ? removeConnection.error.message : t("apps.inlineAccounts.removeErrorFallback")}
           </p> : null}
           <AlertDialogFooter className="sm:justify-between">
             <AlertDialogCancel disabled={removeConnection.isPending}>
-              Cancel
+              {t("apps.connections.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -1038,7 +1039,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
               ) : (
                 <Trash2 />
               )}
-              {removeConnection.isPending ? "Removing…" : "Remove connection"}
+              {removeConnection.isPending ? t("apps.inlineAccounts.removing") : t("apps.inlineAccounts.removeConnection")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1088,7 +1089,7 @@ export function ConnectorCard({
   onConfigureArcade?: (connection: ToolConnection) => void;
   onConfigureExecutor?: (connection: ToolConnection) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const action = connectorAction(
     row,
     chatProviderVisible(row.slug, chatConnectorsEnabled, githubReviewBotsEnabled),
@@ -1183,6 +1184,7 @@ export function ConnectorCard({
                   connection,
                   row.name,
                   connectionOwnerProfile(connection, userProfileById),
+                  i18n.resolvedLanguage,
                 );
                 onRequestRemove({
                   id: connection.id,
@@ -1203,25 +1205,25 @@ export function ConnectorCard({
       ) : null}
       {row.upstreamCatalogApp && upstreamAccounts.length > 0 ? <div className="divide-y divide-border border-t border-border">
         {upstreamAccounts.map(({ connection, account, name, snapshot }) => {
-          const gatewayState = connectionState(connection);
+          const gatewayState = connectionState(connection, t);
           const state: ConnectionState = gatewayState.kind !== "connected" ? gatewayState
             : snapshot.freshness === "stale" || snapshot.errorAt || Date.now() - new Date(snapshot.checkedAt).getTime() > 5 * 60_000
-              ? { kind: "attention", label: "Not verified", message: "Last known account · Refresh to verify" }
-            : account.status === "UNVERIFIED" ? { kind: "attention", label: "Not verified", message: "Account found upstream · Authorization not verified" }
-            : account.status === "ACTIVE" ? { kind: "connected", label: "Connected", message: null }
-            : account.status === "INITIATED" ? { kind: "draft", label: "Waiting for sign-in", message: "Finish connecting this account." }
-            : { kind: "attention", label: "Needs sign-in", message: "Sign in again to restore access." };
+              ? { kind: "attention", label: t("apps.inlineAccounts.state.notVerified"), message: t("apps.inlineAccounts.message.lastKnownRefresh") }
+            : account.status === "UNVERIFIED" ? { kind: "attention", label: t("apps.inlineAccounts.state.notVerified"), message: t("apps.inlineAccounts.message.foundUnverified") }
+            : account.status === "ACTIVE" ? { kind: "connected", label: t("apps.inlineAccounts.state.connected"), message: null }
+            : account.status === "INITIATED" ? { kind: "draft", label: t("apps.inlineAccounts.state.waitingForSignIn"), message: t("apps.inlineAccounts.message.finishConnecting") }
+            : { kind: "attention", label: t("apps.inlineAccounts.state.needsSignIn"), message: t("apps.inlineAccounts.message.signInAgain") };
           const provider = snapshot.provider ?? (isAppAggregator(connection.config?.sourceTemplateKey) ? connection.config?.sourceTemplateKey : "composio");
           const providerName = AGGREGATOR_NAMES[provider];
           const managementUrl = aggregatorManagementUrl(provider, account.managementUrl ?? (typeof connection.config?.managementUrl === "string" ? connection.config?.managementUrl : null));
           const manage = () => onManageAggregator?.(row.upstreamCatalogApp!, connection.id);
           return <ConnectionAccountRowLayout key={`${connection.id}:${snapshot.toolkit}:${account.id}`} state={state} accountName={name}
-            source={<><AppLogo name={providerName} brandKey={provider} size={16} compact /><span>Managed by {providerName} ·</span><button type="button" className="max-w-full truncate hover:underline" onClick={() => onNavigate(`/apps/${connection.id}/permissions`)}>“{connection.name}”</button></>}
-            onOpen={manage} openLabel={`Manage ${name}`}>
-            <DropdownMenu><DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" aria-label={`Manage ${name} connection`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+            source={<><AppLogo name={providerName} brandKey={provider} size={16} compact /><span>{t("apps.inlineAccounts.managedBy", { provider: providerName })}</span><button type="button" className="max-w-full truncate hover:underline" onClick={() => onNavigate(`/apps/${connection.id}/permissions`)}>“{connection.name}”</button></>}
+            onOpen={manage} openLabel={t("apps.inlineAccounts.manage", { name })}>
+            <DropdownMenu><DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" aria-label={t("apps.inlineAccounts.manageConnection", { name })}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {managementUrl ? <DropdownMenuItem asChild><a href={managementUrl} target="_blank" rel="noopener noreferrer">Open in {providerName}<ExternalLink className="size-4" /></a></DropdownMenuItem>
-                  : <DropdownMenuItem disabled title="Set the management URL on this gateway to open its console">Open in {providerName}<ExternalLink className="size-4" /></DropdownMenuItem>}
+                {managementUrl ? <DropdownMenuItem asChild><a href={managementUrl} target="_blank" rel="noopener noreferrer">{t("apps.inlineAccounts.openProvider", { provider: providerName })}<ExternalLink className="size-4" /></a></DropdownMenuItem>
+                  : <DropdownMenuItem disabled title={t("apps.inlineAccounts.managementUrlHint")}>{t("apps.inlineAccounts.openProvider", { provider: providerName })}<ExternalLink className="size-4" /></DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
           </ConnectionAccountRowLayout>;
@@ -1236,7 +1238,7 @@ export function ConnectorCard({
             >
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <AgentAvatar agent={chatAgentById?.get(endpoint.assignedAgentId) ?? { id: endpoint.assignedAgentId, name: endpoint.assignedAgentName }}
-                  size={40} label={`${endpoint.assignedAgentName} avatar`} />
+                  size={40} label={t("apps.inlineAccounts.agentAvatar", { name: endpoint.assignedAgentName })} />
                 <div className="min-w-0">
                   <button
                     type="button"
@@ -1245,12 +1247,12 @@ export function ConnectorCard({
                       onNavigate(`/apps/chat/${endpoint.id}/settings`)
                     }
                   >
-                    {endpoint.assignedAgentName} · {endpoint.provider === "agentmail" ? "Email" : endpoint.provider === "github" ? "Code review bot" : "Chat"}
+                    {endpoint.assignedAgentName} · {endpoint.provider === "agentmail" ? t("apps.inlineAccounts.email") : endpoint.provider === "github" ? t("apps.inlineAccounts.codeReviewBot") : t("apps.inlineAccounts.chat")}
                   </button>
                   <p className="truncate text-xs text-muted-foreground">
                     {endpoint.providerAccountLabel ??
                       endpoint.botLabel ??
-                      "Provider identity"}
+                      t("apps.inlineAccounts.providerIdentity")}
                   </p>
                 </div>
               </div>
@@ -1259,7 +1261,7 @@ export function ConnectorCard({
                   { createdByUserId: (endpoint.connectionId ? connectionById?.get(endpoint.connectionId)?.createdByUserId : null) ?? endpoint.sponsorUserId ?? null }, userProfileById,
                 )} />
                 {["paused", "attention", "revoked"].includes(endpoint.status) && <span className="text-xs text-muted-foreground">
-                  {endpoint.status === "attention" ? "Needs attention" : endpoint.status === "revoked" ? "Access revoked" : "Paused"}
+                  {endpoint.status === "attention" ? t("apps.inlineAccounts.needsAttention") : endpoint.status === "revoked" ? t("apps.inlineAccounts.accessRevoked") : t("apps.inlineAccounts.paused")}
                 </span>}
                 {endpoint.status === "draft" ? (
                   <Button
@@ -1267,7 +1269,7 @@ export function ConnectorCard({
                     variant="outline"
                     onClick={() => onNavigate(`/apps/chat/connect?provider=${endpoint.provider}&purpose=chat&resume=${endpoint.id}`)}
                   >
-                    Finish setup
+                    {t("apps.inlineAccounts.finishSetup")}
                   </Button>
                 ) : null}
                 <DropdownMenu>
@@ -1276,14 +1278,14 @@ export function ConnectorCard({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Manage ${endpoint.assignedAgentName} ${row.name} connection`}
+                      aria-label={t("apps.inlineAccounts.manageConnection", { name: `${endpoint.assignedAgentName} ${row.name}` })}
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onSelect={() => onNavigate(`/apps/chat/${endpoint.id}/settings`)}>
-                      Manage
+                      {t("apps.browse.actions.manage")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -1298,7 +1300,7 @@ export function ConnectorCard({
                       })}
                     >
                       <Trash2 />
-                      Remove connection
+                      {t("apps.inlineAccounts.removeConnection")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -1336,17 +1338,19 @@ function ConnectionAccountRow({
   onConfigureArcade?: () => void;
   onConfigureExecutor?: () => void;
 }) {
-  const state = connectionState(connection);
+  const { t, i18n } = useTranslation();
+  const state = connectionState(connection, t);
   const actionHref = accountActionHref(row, connection);
   const accountName = connectionDisplayNameForOwner(
     connection,
     row.name,
     owner,
+    i18n.resolvedLanguage,
   );
 
   return (
     <ConnectionAccountRowLayout state={state} accountName={accountName} owner={owner} details={<>{details}{discovery?.discovery.message || discovery?.sync.status === "error" ? <p className="text-xs text-muted-foreground" role="status">{discovery.discovery.message ?? discovery.sync.error}</p> : null}</>}
-      openLabel={`Open ${accountName} permissions`} onOpen={() => onNavigate(`/apps/${connection.id}/permissions`)}>
+      openLabel={t("apps.inlineAccounts.openPermissions", { name: accountName })} onOpen={() => onNavigate(`/apps/${connection.id}/permissions`)}>
         {state.kind === "attention" || state.kind === "draft" ? (
           <Button
             type="button"
@@ -1356,9 +1360,9 @@ function ConnectionAccountRow({
           >
             {state.kind === "attention"
               ? connection.requiresReauthorization === false
-                ? "Retry access"
-                : "Reconnect"
-              : "Finish setup"}
+                ? t("apps.inlineAccounts.retryAccess")
+                : t("apps.inlineAccounts.reconnect")
+              : t("apps.inlineAccounts.finishSetup")}
           </Button>
         ) : null}
         <DropdownMenu>
@@ -1367,7 +1371,7 @@ function ConnectionAccountRow({
               type="button"
               variant="ghost"
               size="icon-sm"
-              aria-label={`Manage ${accountName} connection`}
+              aria-label={t("apps.inlineAccounts.manageConnection", { name: accountName })}
             >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -1376,18 +1380,18 @@ function ConnectionAccountRow({
             <DropdownMenuItem
               onSelect={() => onNavigate(`/apps/${connection.id}/permissions`)}
             >
-              Permissions
+              {t("apps.inlineAccounts.permissions")}
             </DropdownMenuItem>
             {onRefreshComposio ? <DropdownMenuItem disabled={refreshingComposio} onSelect={onRefreshComposio}>
               {refreshingComposio ? <Loader2 className="animate-spin" /> : null}
-              Refresh {isAppAggregator(row.slug) ? AGGREGATOR_NAMES[row.slug] : "Composio"}
+              {t("apps.inlineAccounts.refreshProvider", { provider: isAppAggregator(row.slug) ? AGGREGATOR_NAMES[row.slug] : "Composio" })}
             </DropdownMenuItem> : null}
-            {row.slug === "arcade" && onConfigureArcade ? <DropdownMenuItem onSelect={onConfigureArcade}>{discovery?.discovery.availability === "setup_required" ? "Set up account sync" : "Account sync settings"}</DropdownMenuItem> : null}
-            {row.slug === "executor" && onConfigureExecutor ? <DropdownMenuItem onSelect={onConfigureExecutor}>Console URL</DropdownMenuItem> : null}
+            {row.slug === "arcade" && onConfigureArcade ? <DropdownMenuItem onSelect={onConfigureArcade}>{discovery?.discovery.availability === "setup_required" ? t("apps.inlineAccounts.setUpAccountSync") : t("apps.inlineAccounts.accountSyncSettings")}</DropdownMenuItem> : null}
+            {row.slug === "executor" && onConfigureExecutor ? <DropdownMenuItem onSelect={onConfigureExecutor}>{t("apps.inlineAccounts.consoleUrl")}</DropdownMenuItem> : null}
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onSelect={onRemove}>
               <Trash2 />
-              Remove connection
+              {t("apps.inlineAccounts.removeConnection")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
