@@ -3116,3 +3116,23 @@ e `locale-validation.test.ts` passaram em **70/70 testes**;
 o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **262/281**; próxima:
 3.10f, status cards.
+
+3.10f foi dividida em f1 (lista/arquivados), f2 (cartões/formatação), f3
+(criação/configuração), f4 (detalhe/histórico) e f5 (flags/navegação). O
+progresso da CLI é **262/286**; próxima: 3.10f1.
+
+
+## Status cards — lista e arquivados (3.10f1)
+
+A lista localiza cabeçalho, ausência de organização, carregamento, erro, vazio,
+ações e cartões arquivados em PT-BR/en. As datas abreviadas seguem o idioma
+escolhido; nomes, IDs, operações e mensagens dinâmicas continuam preservados.
+Falhas da consulta de arquivados agora são apresentadas. Formatação de tokens e
+custo permanece pendente em 3.10f2.
+
+`StatusCards/index.test.tsx`, `StatusCards/format.test.ts` e
+`locale-validation.test.ts` passaram em **23/23 testes**. Gates de tokens, JSON,
+`git diff --check` e OpenSpec estrito passaram. O typecheck da UI aponta somente
+o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **263/286**; próxima:
+3.10f2, cartões e formatação.

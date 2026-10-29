@@ -1725,6 +1725,35 @@
       "runRoutine": "Run routine"
     }
   },
+  "statusCards": {
+    "list": {
+      "title": "Status",
+      "experimental": "Experimental",
+      "todayCost": "Today: {{tokens}} · ~{{cost}}",
+      "newCard": "New card",
+      "headsUp": "Heads up",
+      "selectOrganization": "Select an organization to view status cards.",
+      "loading": "Loading cards…",
+      "loadError": "Could not load status cards",
+      "archivedLoadError": "Could not load archived cards",
+      "tryAgain": "Try again.",
+      "emptyTitle": "No status cards yet",
+      "emptyMessage": "Create a card to keep a living summary of the issues you care about.",
+      "showArchived": "Show archived ({{formattedCount}})",
+      "hideArchived": "Hide archived",
+      "refreshError": "Could not refresh the card.",
+      "runError": "Could not run the card.",
+      "archiveError": "Could not archive the card.",
+      "restoreError": "Could not restore the card."
+    },
+    "archived": {
+      "untitled": "Untitled card",
+      "dates": "archived {{archived}} · last summary {{lastSummary}}",
+      "lifetime": " · lifetime {{tokens}} / {{cost}}",
+      "view": "View",
+      "restore": "Restore"
+    }
+  },
   "mediaGallery": {
     "title": "Media gallery",
     "position": "{{current}} / {{total}}",

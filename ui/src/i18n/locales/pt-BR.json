@@ -1769,6 +1769,35 @@
       "runRoutine": "Executar rotina"
     }
   },
+  "statusCards": {
+    "list": {
+      "title": "Status",
+      "experimental": "Experimental",
+      "todayCost": "Hoje: {{tokens}} · ~{{cost}}",
+      "newCard": "Novo cartão",
+      "headsUp": "Atenção",
+      "selectOrganization": "Selecione uma organização para ver os cartões de status.",
+      "loading": "Carregando cartões…",
+      "loadError": "Não foi possível carregar os cartões de status",
+      "archivedLoadError": "Não foi possível carregar os cartões arquivados",
+      "tryAgain": "Tente novamente.",
+      "emptyTitle": "Ainda não há cartões de status",
+      "emptyMessage": "Crie um cartão para manter um resumo atualizado das tarefas que você acompanha.",
+      "showArchived": "Mostrar arquivados ({{formattedCount}})",
+      "hideArchived": "Ocultar arquivados",
+      "refreshError": "Não foi possível atualizar o cartão.",
+      "runError": "Não foi possível executar o cartão.",
+      "archiveError": "Não foi possível arquivar o cartão.",
+      "restoreError": "Não foi possível restaurar o cartão."
+    },
+    "archived": {
+      "untitled": "Cartão sem título",
+      "dates": "arquivado em {{archived}} · último resumo {{lastSummary}}",
+      "lifetime": " · total {{tokens}} / {{cost}}",
+      "view": "Ver",
+      "restore": "Restaurar"
+    }
+  },
   "mediaGallery": {
     "title": "Galeria de mídia",
     "position": "{{current}} / {{total}}",
