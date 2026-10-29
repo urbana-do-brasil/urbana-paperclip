@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **231 de 258 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **232 de 258 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -73,15 +73,15 @@ além dos gestores de contas Composio/agregadores. 3.9f5 localizou a gestão de
 gateways MCP de apps. 3.10a (coleção e criação de rotinas) foi concluída em
 PT-BR/en nas variantes streamlined/production. Próxima: 3.10b, detalhe e operação
 de rotinas. 3.10b foi decomposta em cinco fatias revisáveis; 3.10b1 (shell,
-navegação e visão geral somente de leitura) está concluída. A próxima é 3.10b2,
-edição da visão geral, variáveis, segredos e salvamento. O progresso atual é
-**231/258 tarefas**.
+navegação e visão geral somente de leitura) e 3.10b2 (edição, variáveis,
+segredos, políticas de entrega e salvamento) estão concluídas. A próxima é
+3.10b3, gatilhos, agendamento e webhooks. O progresso atual é **232/258 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2), detalhe de apps (3.9f3a–g), configurações de provedores/gestores de contas (3.9f4), gateways MCP de apps (3.9f5), coleção/criação de rotinas (3.10a) e shell/visão geral do detalhe (3.10b1) verificadas. Etapa 3.10 dividida em a–g; 3.10b foi decomposta em b1–b5; próxima: edição da visão geral, variáveis, segredos e salvamento (3.10b2). |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2), detalhe de apps (3.9f3a–g), configurações de provedores/gestores de contas (3.9f4), gateways MCP de apps (3.9f5), coleção/criação de rotinas (3.10a) e detalhe de rotinas (3.10b1–b2) verificadas. Etapa 3.10 dividida em a–g; 3.10b foi decomposta em b1–b5; próxima: gatilhos, agendamento e webhooks (3.10b3). |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |

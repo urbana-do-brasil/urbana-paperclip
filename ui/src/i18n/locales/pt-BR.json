@@ -1004,6 +1004,106 @@
         "activeSchedule_one": "{{count}} agendamento ativo",
         "activeSchedule_other": "{{count}} agendamentos ativos",
         "activeSchedule_many": "{{count}} agendamentos ativos"
+      },
+      "fields": {
+        "title": "Título",
+        "description": "Instruções",
+        "project": "Projeto",
+        "defaultAgent": "Agente padrão",
+        "priority": "Prioridade",
+        "concurrencyPolicy": "Política de concorrência",
+        "catchUpPolicy": "Política de recuperação",
+        "advancedRunPolicy": "Política avançada de execução",
+        "activityGateScope": "Escopo de atividade",
+        "variables": "Variáveis",
+        "secrets": "Segredos"
+      },
+      "editor": {
+        "defaultAgentRequired": "É necessário definir um agente padrão.",
+        "defaultAgentRequiredBody": "Esta rotina pode permanecer como rascunho e ser executada manualmente, mas a automação ficará pausada até que você atribua um agente padrão.",
+        "activeTriggers_one": "{{count}} ativo",
+        "activeTriggers_other": "{{count}} ativos",
+        "activeTriggers_many": "{{count}} ativos",
+        "nextFire": "Próxima execução {{date}}",
+        "triggersAria_one": "{{count}} gatilho. Abrir gatilhos.",
+        "triggersAria_other": "{{count}} gatilhos. Abrir gatilhos.",
+        "triggersAria_many": "{{count}} gatilhos. Abrir gatilhos.",
+        "boundSecrets_one": "{{count}} vinculado",
+        "boundSecrets_other": "{{count}} vinculados",
+        "boundSecrets_many": "{{count}} vinculados",
+        "boundSecretsAria_one": "{{count}} segredo vinculado. Abrir segredos.",
+        "boundSecretsAria_other": "{{count}} segredos vinculados. Abrir segredos.",
+        "boundSecretsAria_many": "{{count}} segredos vinculados. Abrir segredos.",
+        "manageBoundSecrets": "Gerenciar segredos vinculados",
+        "lastRunAria": "Última execução: {{status}}. Abrir execuções.",
+        "noRunsAria": "Nenhuma execução. Abrir execuções.",
+        "recentActivity": "Atividade recente",
+        "noActivity": "Ainda não há atividade.",
+        "viewAllActivity": "Ver toda a atividade",
+        "variablesDetectedFrom": "As variáveis são detectadas automaticamente a partir de",
+        "variablesDetectedSuffix": "no título e nas instruções. Os nomes das variáveis são somente leitura; renomeie-as editando o marcador.",
+        "editInstructions": "Editar instruções",
+        "noVariables": "Ainda não há variáveis. Adicione um {{placeholder}} ao título ou às instruções para criar uma.",
+        "secretsDescription": "Os segredos da rotina se aplicam a todas as tarefas criadas por ela. Eles substituem valores com os mesmos nomes vindos das variáveis de ambiente do projeto e do agente.",
+        "secretsReserved": "é um nome reservado.",
+        "none": "Nenhum",
+        "conflictToastTitle": "Rotina alterada",
+        "conflictToastBody": "Outra pessoa atualizou esta rotina. Recarregue para ver a revisão mais recente.",
+        "routineSaved": "Rotina salva",
+        "automationPaused": "Automação pausada.",
+        "automationEnabled": "Automação ativada."
+      },
+      "save": {
+        "conflict": "A rotina foi alterada em outro lugar. Recarregue para mesclar as alterações.",
+        "unsavedChanges_one": "{{count}} alteração não salva",
+        "unsavedChanges_other": "{{count}} alterações não salvas",
+        "unsavedChanges_many": "{{count}} alterações não salvas",
+        "pendingChanges": "Alterações pendentes",
+        "reloadLatest": "Recarregar versão mais recente",
+        "overwriteAnyway": "Sobrescrever mesmo assim",
+        "overwriteDescription": "Substitui a revisão mais recente pelas suas alterações locais.",
+        "discard": "Descartar",
+        "saveChanges": "Salvar alterações",
+        "discardTitle": "Descartar alterações?",
+        "discardDescription_one": "Isso reverterá {{count}} alteração não salva nesta seção.",
+        "discardDescription_other": "Isso reverterá {{count}} alterações não salvas nesta seção.",
+        "discardDescription_many": "Isso reverterá {{count}} alterações não salvas nesta seção.",
+        "keepEditing": "Continuar editando",
+        "discardChanges": "Descartar alterações",
+        "readOnly": "Somente leitura — você não é responsável por esta rotina."
+      },
+      "delivery": {
+        "concurrencyAria": "Política de concorrência",
+        "catchUpAria": "Política de recuperação",
+        "advancedPolicy": "Política avançada de execução",
+        "advancedPolicyAria": "Política avançada de execução",
+        "addScheduleForActivityGate": "Adicione um gatilho de agenda para condicionar execuções à atividade. Webhooks, execuções manuais e chamadas de API sempre executam a rotina.",
+        "activityGate": {
+          "always": "Executar a cada ocorrência agendada",
+          "alwaysDescription": "Executar na agenda independentemente de outras atividades — este é o comportamento padrão.",
+          "requireActivity": "Ignorar se não houver atividade desde a última execução",
+          "requireActivityDescription": "Na ocorrência agendada, executar somente se algo aconteceu desde a última execução concluída. Assim, uma rotina de monitoramento pode ficar inativa quando o sistema estiver estável, sem consumir tokens."
+        },
+        "activityScope": {
+          "title": "Escopo da atividade",
+          "ariaLabel": "Escopo do filtro de atividade",
+          "company": "Toda a organização",
+          "companyDescription": "Qualquer atividade na organização conta como motivo para executar.",
+          "project": "Este projeto",
+          "projectDescription": "Somente a atividade do projeto da rotina conta como motivo para executar."
+        },
+        "nextFires": "Próximas 5 ocorrências",
+        "disposition": {
+          "queued": "na fila",
+          "coalesced": "seria agrupada",
+          "skipped": "seria ignorada"
+        },
+        "previewNote": {
+          "runsImmediately": "executa imediatamente",
+          "previousRunActive": "se a execução anterior ainda estiver ativa"
+        },
+        "previewDescription": "A prévia considera que a execução anterior ainda está em andamento quando ocorre a próxima. Horários em {{timeZone}}.",
+        "noSchedulePreview": "Não há gatilho de agenda ativo para a prévia. Adicione uma agenda em Gatilhos para ver como esta política trata as próximas ocorrências."
       }
     },
     "row": {
@@ -2614,7 +2714,8 @@
     "companyLogo": "Logo de {{company}}",
     "cancel": "Cancelar",
     "retry": "Tentar novamente",
-    "saveAndExit": "Salvar e sair"
+    "saveAndExit": "Salvar e sair",
+    "closeSelector": "Fechar seletor"
   },
   "trustPolicy": {
     "lowTrustLabel": "Fonte de baixa confiabilidade",

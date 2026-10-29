@@ -971,6 +971,100 @@
         "activeWebhook_other": "{{count}} active webhooks",
         "activeSchedule_one": "{{count}} active schedule",
         "activeSchedule_other": "{{count}} active schedules"
+      },
+      "fields": {
+        "title": "Title",
+        "description": "Instructions",
+        "project": "Project",
+        "defaultAgent": "Default agent",
+        "priority": "Priority",
+        "concurrencyPolicy": "Concurrency policy",
+        "catchUpPolicy": "Catch-up policy",
+        "advancedRunPolicy": "Advanced run policy",
+        "activityGateScope": "Activity scope",
+        "variables": "Variables",
+        "secrets": "Secrets"
+      },
+      "editor": {
+        "defaultAgentRequired": "Default agent required.",
+        "defaultAgentRequiredBody": "This routine can remain a draft and run manually, but automation stays paused until you assign a default agent.",
+        "activeTriggers_one": "{{count}} active",
+        "activeTriggers_other": "{{count}} active",
+        "nextFire": "Next fire {{date}}",
+        "triggersAria_one": "{{count}} trigger. Open triggers.",
+        "triggersAria_other": "{{count}} triggers. Open triggers.",
+        "boundSecrets_one": "{{count}} bound",
+        "boundSecrets_other": "{{count}} bound",
+        "boundSecretsAria_one": "{{count}} secret bound. Open secrets.",
+        "boundSecretsAria_other": "{{count}} secrets bound. Open secrets.",
+        "manageBoundSecrets": "Manage bound secrets",
+        "lastRunAria": "Last run {{status}}. Open runs.",
+        "noRunsAria": "No runs. Open runs.",
+        "recentActivity": "Recent activity",
+        "noActivity": "No activity yet.",
+        "viewAllActivity": "View all activity",
+        "variablesDetectedFrom": "Variables are auto-detected from",
+        "variablesDetectedSuffix": "in the title and instructions. Variable names are read-only; rename them by editing the placeholder.",
+        "editInstructions": "Edit instructions",
+        "noVariables": "No variables yet. Add a {{placeholder}} in the title or instructions to create one.",
+        "secretsDescription": "Routine secrets apply to every task created by this routine. They override matching keys from project and agent environment variables.",
+        "secretsReserved": "names are reserved.",
+        "none": "None",
+        "conflictToastTitle": "Routine changed",
+        "conflictToastBody": "Someone else updated this routine. Reload to see the latest revision.",
+        "routineSaved": "Routine saved",
+        "automationPaused": "Automation paused.",
+        "automationEnabled": "Automation enabled."
+      },
+      "save": {
+        "conflict": "Routine changed elsewhere. Reload to merge.",
+        "unsavedChanges_one": "{{count}} unsaved change",
+        "unsavedChanges_other": "{{count}} unsaved changes",
+        "pendingChanges": "Pending changes",
+        "reloadLatest": "Reload latest",
+        "overwriteAnyway": "Overwrite anyway",
+        "overwriteDescription": "Replaces the newer revision with your local edits.",
+        "discard": "Discard",
+        "saveChanges": "Save changes",
+        "discardTitle": "Discard changes?",
+        "discardDescription_one": "This will revert {{count}} unsaved change in this section.",
+        "discardDescription_other": "This will revert {{count}} unsaved changes in this section.",
+        "keepEditing": "Keep editing",
+        "discardChanges": "Discard changes",
+        "readOnly": "Read-only — you don't own this routine."
+      },
+      "delivery": {
+        "concurrencyAria": "Concurrency policy",
+        "catchUpAria": "Catch-up policy",
+        "advancedPolicy": "Advanced run policy",
+        "advancedPolicyAria": "Advanced run policy",
+        "addScheduleForActivityGate": "Add a schedule trigger to gate runs on activity. Webhook, manual, and API fires always run.",
+        "activityGate": {
+          "always": "Run on every scheduled tick",
+          "alwaysDescription": "Fire on the schedule no matter what — the default behavior.",
+          "requireActivity": "Skip when there's been no activity since the last run",
+          "requireActivityDescription": "On a scheduled tick, run only if something happened since the last completed run. This lets a watcher-style routine stay idle while the system is settled instead of using tokens."
+        },
+        "activityScope": {
+          "title": "Activity scope",
+          "ariaLabel": "Activity gate scope",
+          "company": "Organization-wide",
+          "companyDescription": "Any activity across the organization counts as a reason to run.",
+          "project": "This project",
+          "projectDescription": "Only activity in the routine's project counts as a reason to run."
+        },
+        "nextFires": "Next 5 fires",
+        "disposition": {
+          "queued": "queued",
+          "coalesced": "would be coalesced",
+          "skipped": "would be skipped"
+        },
+        "previewNote": {
+          "runsImmediately": "runs immediately",
+          "previousRunActive": "if the previous run is still active"
+        },
+        "previewDescription": "Preview assumes the previous run is still in flight when the next one fires. Times shown in {{timeZone}}.",
+        "noSchedulePreview": "No enabled schedule trigger to preview. Add a schedule in Triggers to see how this policy treats upcoming fires."
       }
     },
     "row": {
@@ -2535,7 +2629,8 @@
     "companyLogo": "{{company}} logo",
     "cancel": "Cancel",
     "retry": "Retry",
-    "saveAndExit": "Save & exit"
+    "saveAndExit": "Save & exit",
+    "closeSelector": "Close selector"
   },
   "trustPolicy": {
     "lowTrustLabel": "Low-trust source",

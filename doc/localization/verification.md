@@ -2761,12 +2761,12 @@ rotinas.
 
 ## Decomposição do detalhe de rotinas (3.10b)
 
-Antes da implementação, 3.10b foi dividida em cinco lotes: b1 (shell, navegação,
-resumo e edição básica), b2 (variáveis, segredos, políticas de entrega e
-salvamento), b3 (gatilhos, agenda e webhooks), b4 (execuções, atividade e
-histórico de versões) e b5 (feed de auditoria). O progresso continua em
-**230 tarefas concluídas**; com a decomposição, o total agora é **258**. Próxima:
-3.10b1, shell e visão geral do detalhe.
+Antes da implementação, 3.10b foi dividida em cinco lotes: b1 (shell, navegação
+e visão geral somente de leitura), b2 (edição da visão geral, variáveis,
+segredos, políticas de entrega e salvamento), b3 (gatilhos, agenda e webhooks),
+b4 (execuções, atividade e histórico de versões) e b5 (feed de auditoria). O
+checkpoint da decomposição registrou **230 tarefas concluídas**; com a divisão,
+o total passou a **258**. Próxima naquele momento: 3.10b1.
 
 ## Rotinas — shell e resumo do detalhe (3.10b1)
 
@@ -2786,3 +2786,23 @@ typecheck completo da UI foi encerrado pelo limite de memória (código 137), se
 diagnóstico de TypeScript. `check:tokens`, `check:token-gates`, JSON, `git diff
 --check` e OpenSpec estrito passaram. Progresso: **231/258 tarefas**. Próxima:
 3.10b2, edição da visão geral, variáveis, segredos e salvamento.
+
+## Rotinas — edição e políticas de entrega (3.10b2)
+
+A edição do título, instruções, projeto e agente, as seções de variáveis e
+segredos, políticas de entrega e estados de salvamento agora acompanham PT-BR/en
+nas variantes streamlined e production. A interface localiza opções de
+concorrência/recuperação, política avançada por atividade, escopo, preview das
+próximas ocorrências, contagem de alterações, descarte, salvamento, conflito e
+modo somente leitura. Os valores internos das políticas, nomes e valores de
+variáveis, segredos, expressões cron, timezones, referências `PAPERCLIP_*`,
+mensagens técnicas e payloads foram preservados.
+
+`RoutineSaveBar.test.tsx`, `RoutineDeliveryLocalization.test.tsx`,
+`RoutineDetailEditingLocalization.test.tsx`, `editable-sections.test.tsx`,
+`RoutineVariablesEditor.test.tsx`, `RoutineOverview.test.tsx`,
+`cron-fires.test.ts` e `locale-validation.test.ts` passaram em **53/53 testes
+focados**. O typecheck direcionado dos arquivos alterados passou. `check:tokens`,
+`check:token-gates`, JSON, `git diff --check` e OpenSpec estrito passaram.
+Progresso: **232/258 tarefas**. Próxima: 3.10b3, gatilhos, agendamento e
+webhooks.

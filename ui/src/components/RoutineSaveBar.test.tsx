@@ -4,7 +4,8 @@ import type React from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RoutineSaveBar } from "./RoutineSaveBar";
+import { i18n } from "@/i18n";
+import { RoutineReadOnlyStrip, RoutineSaveBar } from "./RoutineSaveBar";
 import type { RoutineHistoryDirtyFieldDescriptor } from "./RoutineHistoryTab";
 
 function act(callback: () => void) {
@@ -14,7 +15,8 @@ function act(callback: () => void) {
 let container: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
@@ -91,5 +93,16 @@ describe("RoutineSaveBar", () => {
       reload!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     expect(handlers.onReload).toHaveBeenCalledTimes(1);
+  });
+
+  it("localizes the save bar and read-only message in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    renderBar({ dirtyFields: DIRTY, saveConflict: true });
+    expect(container.textContent).toContain("A rotina foi alterada em outro lugar");
+    expect(container.textContent).toContain("Recarregar versão mais recente");
+    expect(container.textContent).toContain("Sobrescrever mesmo assim");
+
+    act(() => root.render(<RoutineReadOnlyStrip />));
+    expect(container.textContent).toContain("Somente leitura");
   });
 });
