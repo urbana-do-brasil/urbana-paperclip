@@ -2,6 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { defaultTriggerDraft, RoutineTriggerWizard, webhookAgentInstructions } from "./TriggerWizard";
 
 const { setBreadcrumbs } = vi.hoisted(() => ({ setBreadcrumbs: vi.fn() }));
@@ -9,7 +10,7 @@ vi.mock("@/context/BreadcrumbContext", () => ({ useBreadcrumbs: () => ({ setBrea
 vi.mock("@/context/SidebarContext", () => ({ useSidebar: () => ({ isMobile: false, setSidebarOpen: () => {} }) }));
 let root: Root;
 let container: HTMLDivElement;
-beforeEach(() => { vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); container = document.createElement("div"); document.body.append(container); root = createRoot(container); });
+beforeEach(async () => { await i18n.changeLanguage("pt-BR"); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); container = document.createElement("div"); document.body.append(container); root = createRoot(container); });
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
 
 it("offers the shared app flow without a Fireflies-specific sender", async () => {
@@ -25,7 +26,7 @@ it("resumes generic setup with a signing secret and preserves the draft", async 
   expect(container.textContent).toContain("Secret key");
   expect(container.textContent).toContain("signing secret field");
   expect(container.textContent).not.toContain("Fireflies");
-  const save = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Save & exit"))!;
+  const save = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Salvar e sair"))!;
   await act(async () => save.click());
   expect(onSaveExit).toHaveBeenCalledWith(expect.objectContaining({ sender: "custom", step: 1, created: true }));
 });

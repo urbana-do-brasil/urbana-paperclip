@@ -2216,7 +2216,8 @@
     "loading": "Loading…",
     "companyLogo": "{{company}} logo",
     "cancel": "Cancel",
-    "retry": "Retry"
+    "retry": "Retry",
+    "saveAndExit": "Save & exit"
   },
   "trustPolicy": {
     "lowTrustLabel": "Low-trust source",
@@ -5473,6 +5474,12 @@
       "enableMemoryConnectors": "Enable memory connectors in Settings → Experimental to set up this connection.",
       "tryAgain": "Try again",
       "cancel": "Cancel",
+      "back": "Back",
+      "checking": "Checking…",
+      "checkLink": "Check link",
+      "removeHeader": "Remove",
+      "addHeader": "Add another header",
+      "optional": "Optional",
       "stepProgress": "Step {{current}} of {{total}}",
       "steps": {
         "pickApp": "Pick app",
@@ -5492,6 +5499,157 @@
       "breadcrumbs": {
         "connectApp": "Connect an app",
         "connectOwnTool": "Connect your own tool"
+      },
+      "zapier": {
+        "urlLabel": "Zapier MCP URL",
+        "invalidUrl": "Paste a valid Zapier URL to continue."
+      },
+      "genericMcp": {
+        "guidedSetup": "Paperclip has a guided setup for {{name}}.",
+        "useApp": "Use {{name}}",
+        "appKey": "App key",
+        "appKeyHelp": "Grant this key read and write access to the resources your agents need. Paperclip cannot increase its permissions.",
+        "advancedAuthentication": "Advanced authentication",
+        "advancedAuthenticationHelp": "Only needed when the server's docs are specific about how to authenticate.",
+        "authModes": {
+          "auto": {
+            "label": "Let Paperclip check",
+            "hint": "Paperclip asks the server what it needs and walks you through it. Start here."
+          },
+          "none": {
+            "label": "No sign-in needed",
+            "hint": "The server is open to anyone with the address."
+          },
+          "bearer": {
+            "label": "Key or token",
+            "hint": "Paperclip sends your key as an Authorization header."
+          },
+          "custom_headers": {
+            "label": "Custom headers",
+            "hint": "For servers that name their own headers. Values are stored as Paperclip secrets and can’t be read back."
+          },
+          "oauth": {
+            "label": "Browser sign-in",
+            "hint": "You’ll sign in at the provider. Add a client ID and secret only if the provider requires you to register Paperclip first."
+          }
+        },
+        "headerName": "Header name",
+        "headerValue": "Header value",
+        "valueForHeader": "Value for {{name}}",
+        "oauthClientHelp": "Paperclip sets sign-in up on its own whenever the server allows it. Only fill these in when the server's docs tell you to register Paperclip yourself first.",
+        "clientId": "Client ID",
+        "clientSecret": "Client secret",
+        "headerErrors": {
+          "empty": "Header names cannot be blank.",
+          "too_long": "Header name \"{{name}}\" is too long.",
+          "invalid_characters": "\"{{name}}\" is not a valid header name. Use letters, digits, and dashes.",
+          "forbidden": "Paperclip manages the \"{{name}}\" header and cannot send a custom value for it.",
+          "value_too_long": "The value for \"{{name}}\" is too long.",
+          "value_control_characters": "The value for \"{{name}}\" contains line breaks or control characters.",
+          "missingValue": "Add a value for \"{{name}}\", or remove the row.",
+          "duplicateName": "\"{{name}}\" is listed twice."
+        },
+        "guidance": {
+          "invalidUrl": {
+            "title": "That doesn't look like a server address",
+            "body": "Paste the full address, starting with https:// — for example https://mcp.example.com/mcp."
+          },
+          "privateNetwork": {
+            "title": "That address is inside a private network",
+            "body": "This Paperclip is reachable from the internet, so it won't call addresses on your local network. Use the server's public address instead."
+          },
+          "hostNotFound": {
+            "title": "We couldn't find that host",
+            "body": "The address didn't resolve. Check the spelling, or confirm the server is published on the internet."
+          },
+          "headerRejected": {
+            "title": "Paperclip can't send that header",
+            "body": "Paperclip couldn't connect to that address. Check it and try again."
+          },
+          "nameConflict": {
+            "title": "Paperclip couldn’t name this connection",
+            "body": "Try connecting again."
+          },
+          "credentialRequired": {
+            "title": "This server wants a credential",
+            "body": "It asked us to authenticate but didn't offer a sign-in Paperclip can complete on its own. Add the key or headers its docs list under Advanced authentication."
+          },
+          "manualClientRequired": {
+            "title": "This server needs sign-in details you create yourself",
+            "body": "Register Paperclip in the provider's settings, then add the client ID and secret it gives you under Advanced authentication."
+          },
+          "httpsRequired": {
+            "title": "This Paperclip needs a public HTTPS address first",
+            "body": "Sign-in sends the operator back to Paperclip, so this instance has to be reachable over HTTPS. Ask your Paperclip admin to configure it."
+          },
+          "serverUnreachable": {
+            "title": "We couldn't reach that server",
+            "body": "Nothing answered at that address. Confirm the server is running and the address is right, then try again."
+          },
+          "genericFailure": {
+            "title": "Paperclip couldn't connect",
+            "body": "Paperclip couldn't connect to that address. Check it and try again."
+          }
+        }
+      },
+      "remoteMcp": {
+        "connectThroughProvider": "Connect {{service}} through {{provider}}",
+        "continueSetup": "Continue your setup",
+        "whoCanUseConnection": "Who can use this connection",
+        "reconnect": "Reconnect {{name}}",
+        "providerWillBeUsed": "Paperclip will use {{name}} on your behalf.",
+        "setupReadyToResume": "Your {{name}} setup is ready to resume.",
+        "connectedSummary": "Connected{{identity}} · {{count}} actions available",
+        "connectedAs": " as {{identity}}",
+        "manageConnection": "Manage this {{name}} connection.",
+        "upstreamBanner": "{{provider}} handles the connection and requests to {{service}}.",
+        "composioSignIn": "After connecting this account, sign in to the app in Composio.",
+        "providerSignIn": "Manage app sign-in in the provider, then refresh your gateway here.",
+        "invalidUrlTitle": "Enter a valid MCP URL",
+        "invalidUrlBody": "Paste the complete server URL, including https:// or http://. A dashboard page is not an MCP endpoint.",
+        "oauthFailedTitle": "{{name}} couldn’t connect",
+        "oauthFailedBody": "Authorization did not complete. Your saved connection is still here, so you can try again.",
+        "credentialsRejectedTitle": "Credentials were rejected",
+        "credentialsRejectedBody": "Check or replace the credentials from {{name}}, then reconnect. Your agent access and tool choices are preserved.",
+        "unreachableTitle": "Paperclip could not reach this server",
+        "unreachableBody": "Check that the endpoint is running and reachable from Paperclip, then try again. Your draft is still here.",
+        "urlLabel": "MCP server URL",
+        "zapierUrlPlaceholder": "Paste the full URL from Zapier",
+        "zapierUrlHelp": "The full server URL can contain a secret token. Paste it exactly as Zapier provides it.",
+        "zapierAuthHelp": "For a separate token, use https://mcp.zapier.com/api/v1/connect and choose Bearer token.",
+        "zapierInstructions": {
+          "createServer": "Create an MCP server in Zapier and choose Other as the client.",
+          "connectApps": "Connect your apps and select the actions to expose.",
+          "copyUrl": "Open Connect, generate a token, and copy the full server URL."
+        },
+        "openSetupGuide": "Open {{name}} setup guide",
+        "finishSignIn": "Finish signing in to {{name}}",
+        "completeSignIn": "Complete sign-in in the provider window, then return here. Paperclip is waiting for confirmation.",
+        "windowDidNotOpen": "If a window did not open,",
+        "openSignInAgain": "open sign-in again",
+        "cancelSignIn": "Cancel sign-in",
+        "waitingForSignIn": "Waiting for sign-in",
+        "connectionCancelled": "Connection cancelled. Your setup details are preserved; try again when you are ready.",
+        "reuseSession": "Reuse an existing session",
+        "authentication": "Authentication",
+        "signInMethod": "Sign-in method",
+        "authModes": {
+          "auto": "Automatic (sign in if required)",
+          "bearer": "Bearer token",
+          "headers": "Custom headers",
+          "none": "No additional authentication"
+        },
+        "bearerToken": "Bearer token",
+        "bearerTokenHelp": "Paste the token only, without the word Bearer. It is kept in the connection’s credentials.",
+        "additionalHeaders": "Additional headers",
+        "headers": "Headers",
+        "headerNameNumber": "Header {{number}} name",
+        "headerValueNumber": "Header {{number}} value",
+        "removeHeader": "Remove header {{number}}",
+        "addHeader": "Add header",
+        "connectingAndDiscovering": "Connecting and discovering tools…",
+        "connecting": "Connecting…",
+        "connectProvider": "Connect {{name}}"
       },
       "gallery": {
         "pickAppSubtitle": "Pick the app you want your agents to use.",

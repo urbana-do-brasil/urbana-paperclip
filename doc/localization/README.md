@@ -60,8 +60,8 @@ revisão de ações e remoção) também estão verificadas. 3.9f3 foi dividida 
 sete lotes de detalhe/configuração e f3b foi dividida em b1–b2; 3.9f3a (shell,
 navegação, cabeçalho e estados) e 3.9f3b1 (estado sem conexão e ciclo de vida)
 estão concluídas. O assistente genérico foi dividido em b2a–b2c; b2a (shell e
-seleção do app) está verificada. Próxima: 3.9f3b2b, servidor MCP personalizado
-e Zapier. Progresso atual: **212/240 tarefas**.
+seleção) e b2b (MCP personalizado e Zapier) estão verificadas. Próxima:
+3.9f3b2c, credenciais, métodos e OAuth. Progresso atual: **213/240 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |

@@ -395,6 +395,94 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(container.textContent).toContain("Escolha o app que você quer disponibilizar para seus agentes.");
   });
 
+  it("localizes custom MCP authentication choices and validation while preserving header names", async () => {
+    mockSearch.value = "link=https%3A%2F%2Fmcp.example.test%2Fmcp";
+    await i18n.changeLanguage("pt-BR");
+
+    await render();
+    expect(container.textContent).toContain("Autenticação avançada");
+    await act(async () => buttonByText("Autenticação avançada")?.click());
+
+    for (const label of [
+      "Deixar o Paperclip verificar",
+      "Não precisa entrar",
+      "Chave ou token",
+      "Cabeçalhos personalizados",
+      "Entrar pelo navegador",
+    ]) {
+      expect(container.textContent).toContain(label);
+    }
+
+    await act(async () => buttonByText("Cabeçalhos personalizados")?.click());
+    const headerName = container.querySelector<HTMLInputElement>('input[aria-label="Nome do cabeçalho"]')!;
+    await act(async () => setInputValue(headerName, "Host"));
+    await flushReact();
+    expect(container.textContent).toContain('O Paperclip gerencia o cabeçalho "Host"');
+
+    await act(async () => setInputValue(headerName, "X-Api-Key"));
+    await flushReact();
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Valor para X-Api-Key"]')).toBeTruthy();
+
+    await act(async () => buttonByText("Entrar pelo navegador")?.click());
+    expect(container.querySelector<HTMLInputElement>("#generic-mcp-client-id")).toBeTruthy();
+    expect(container.querySelector<HTMLInputElement>("#generic-mcp-client-secret")).toBeTruthy();
+    expect(container.textContent).not.toContain("Advanced authentication");
+  });
+
+  it("localizes the shared Zapier MCP setup and URL validation", async () => {
+    mockSearch.value = "source=zapier";
+    await i18n.changeLanguage("pt-BR");
+
+    await render();
+
+    expect(container.querySelector('[data-remote-mcp-provider="zapier"]')).toBeTruthy();
+    expect(container.textContent).toContain("Crie um servidor MCP no Zapier e escolha Other como cliente.");
+    expect(container.textContent).toContain("A URL completa do servidor pode conter um token secreto.");
+    expect(buttonByText("Salvar e sair")).toBeTruthy();
+    const urlInput = container.querySelector<HTMLInputElement>('input[placeholder="Cole a URL completa fornecida pelo Zapier"]')!;
+    expect(container.textContent).toContain("URL do servidor MCP");
+    expect(buttonByText("Conectar Zapier")).toBeTruthy();
+    await act(async () => buttonByText("Change")?.click());
+    await flushReact();
+    expect(container.textContent).toContain("Método de login");
+    expect(container.textContent).toContain("Token bearer");
+    expect(container.textContent).toContain("Cabeçalhos personalizados");
+    expect(container.textContent).toContain("Sem autenticação adicional");
+
+    await act(async () => setInputValue(urlInput, "not a URL"));
+    await act(async () => buttonByText("Conectar Zapier")?.click());
+    await flushReact();
+    expect(container.textContent).toContain("Informe uma URL MCP válida");
+    expect(container.textContent).toContain("O endereço de um painel não é um endpoint MCP.");
+  });
+
+  it("localizes known generic MCP connection guidance", async () => {
+    mockSearch.value = "link=https%3A%2F%2Fmcp.example.test%2Fmcp";
+    connectAppMock.mockRejectedValueOnce(new ApiError("Invalid MCP URL", 400, {
+      error: "Invalid MCP URL",
+      details: { code: "mcp_remote_url_invalid" },
+    }));
+    await i18n.changeLanguage("pt-BR");
+
+    await render();
+    await act(async () => buttonByText("Verificar link")?.click());
+    await flushReact();
+    await flushReact();
+
+    expect(container.textContent).toContain("Este endereço não parece ser o endereço de um servidor");
+    expect(container.textContent).toContain("Cole o endereço completo, começando com https://");
+
+    connectAppMock.mockRejectedValueOnce(new ApiError("Upstream said no.", 502, {
+      error: "Upstream said no.",
+      details: { code: "provider_error" },
+    }));
+    await act(async () => buttonByText("Verificar link")?.click());
+    await flushReact();
+    await flushReact();
+    expect(container.textContent).toContain("O Paperclip não conseguiu conectar");
+    expect(container.textContent).toContain("Upstream said no.");
+  });
+
   it("keeps Honcho setup blocked until the provider workspace is supplied", async () => {
     const honcho = CONNECTABLE_APP_DEFINITIONS.find((app) => app.slug === "honcho")!;
     experimentalMock.mockResolvedValue({ enableMemoryConnectors: true });

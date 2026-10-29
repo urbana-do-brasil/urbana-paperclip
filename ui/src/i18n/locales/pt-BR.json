@@ -2287,7 +2287,8 @@
     "loading": "Carregando…",
     "companyLogo": "Logo de {{company}}",
     "cancel": "Cancelar",
-    "retry": "Tentar novamente"
+    "retry": "Tentar novamente",
+    "saveAndExit": "Salvar e sair"
   },
   "trustPolicy": {
     "lowTrustLabel": "Fonte de baixa confiabilidade",
@@ -5605,6 +5606,12 @@
       "enableMemoryConnectors": "Ative os conectores de memória em Configurações → Experimental para configurar esta conexão.",
       "tryAgain": "Tentar novamente",
       "cancel": "Cancelar",
+      "back": "Voltar",
+      "checking": "Verificando…",
+      "checkLink": "Verificar link",
+      "removeHeader": "Remover",
+      "addHeader": "Adicionar outro cabeçalho",
+      "optional": "Opcional",
       "stepProgress": "Etapa {{current}} de {{total}}",
       "steps": {
         "pickApp": "Escolher app",
@@ -5624,6 +5631,157 @@
       "breadcrumbs": {
         "connectApp": "Conectar um app",
         "connectOwnTool": "Conectar sua própria ferramenta"
+      },
+      "zapier": {
+        "urlLabel": "URL MCP do Zapier",
+        "invalidUrl": "Cole uma URL válida do Zapier para continuar."
+      },
+      "genericMcp": {
+        "guidedSetup": "O Paperclip oferece uma configuração guiada para {{name}}.",
+        "useApp": "Usar {{name}}",
+        "appKey": "Chave do app",
+        "appKeyHelp": "Conceda a esta chave acesso de leitura e gravação aos recursos de que seus agentes precisam. O Paperclip não pode ampliar as permissões dela.",
+        "advancedAuthentication": "Autenticação avançada",
+        "advancedAuthenticationHelp": "Use esta opção somente quando a documentação do servidor especificar como fazer a autenticação.",
+        "authModes": {
+          "auto": {
+            "label": "Deixar o Paperclip verificar",
+            "hint": "O Paperclip pergunta ao servidor do que ele precisa e orienta você durante a configuração. Comece por aqui."
+          },
+          "none": {
+            "label": "Não precisa entrar",
+            "hint": "Qualquer pessoa com o endereço pode acessar o servidor."
+          },
+          "bearer": {
+            "label": "Chave ou token",
+            "hint": "O Paperclip envia sua chave no cabeçalho Authorization."
+          },
+          "custom_headers": {
+            "label": "Cabeçalhos personalizados",
+            "hint": "Para servidores que definem seus próprios cabeçalhos. Os valores são armazenados como segredos no Paperclip e não podem ser consultados depois."
+          },
+          "oauth": {
+            "label": "Entrar pelo navegador",
+            "hint": "Você fará login no provedor. Informe o ID e o segredo do cliente somente se o provedor exigir que você registre o Paperclip antes."
+          }
+        },
+        "headerName": "Nome do cabeçalho",
+        "headerValue": "Valor do cabeçalho",
+        "valueForHeader": "Valor para {{name}}",
+        "oauthClientHelp": "O Paperclip configura o login automaticamente quando o servidor permite. Preencha estes campos somente se a documentação do servidor pedir que você registre o Paperclip primeiro.",
+        "clientId": "ID do cliente",
+        "clientSecret": "Segredo do cliente",
+        "headerErrors": {
+          "empty": "O nome do cabeçalho não pode ficar em branco.",
+          "too_long": "O nome do cabeçalho \"{{name}}\" é longo demais.",
+          "invalid_characters": "\"{{name}}\" não é um nome de cabeçalho válido. Use letras, números e hífens.",
+          "forbidden": "O Paperclip gerencia o cabeçalho \"{{name}}\" e não pode enviar um valor personalizado para ele.",
+          "value_too_long": "O valor de \"{{name}}\" é longo demais.",
+          "value_control_characters": "O valor de \"{{name}}\" contém quebras de linha ou caracteres de controle.",
+          "missingValue": "Informe um valor para \"{{name}}\" ou remova esta linha.",
+          "duplicateName": "\"{{name}}\" está listado mais de uma vez."
+        },
+        "guidance": {
+          "invalidUrl": {
+            "title": "Este endereço não parece ser o endereço de um servidor",
+            "body": "Cole o endereço completo, começando com https:// — por exemplo, https://mcp.example.com/mcp."
+          },
+          "privateNetwork": {
+            "title": "Este endereço está em uma rede privada",
+            "body": "Esta instância do Paperclip está acessível pela internet e não acessará endereços da sua rede local. Use o endereço público do servidor."
+          },
+          "hostNotFound": {
+            "title": "Não foi possível encontrar este host",
+            "body": "O endereço não foi localizado. Confira a grafia ou confirme se o servidor está publicado na internet."
+          },
+          "headerRejected": {
+            "title": "O Paperclip não pode enviar este cabeçalho",
+            "body": "Não foi possível conectar ao endereço. Confira-o e tente novamente."
+          },
+          "nameConflict": {
+            "title": "O Paperclip não conseguiu nomear esta conexão",
+            "body": "Tente conectar novamente."
+          },
+          "credentialRequired": {
+            "title": "Este servidor exige uma credencial",
+            "body": "O servidor pediu autenticação, mas não ofereceu um método de login que o Paperclip possa concluir automaticamente. Adicione a chave ou os cabeçalhos indicados na documentação em Autenticação avançada."
+          },
+          "manualClientRequired": {
+            "title": "Este servidor exige dados de login que você precisa criar",
+            "body": "Registre o Paperclip nas configurações do provedor e informe o ID e o segredo do cliente fornecidos, em Autenticação avançada."
+          },
+          "httpsRequired": {
+            "title": "Esta instância do Paperclip precisa primeiro de um endereço HTTPS público",
+            "body": "O login redireciona o operador de volta ao Paperclip, então esta instância precisa estar acessível por HTTPS. Peça ao administrador do Paperclip para configurá-la."
+          },
+          "serverUnreachable": {
+            "title": "Não foi possível acessar este servidor",
+            "body": "Nenhuma resposta foi recebida neste endereço. Confirme se o servidor está em execução e se o endereço está correto; depois, tente novamente."
+          },
+          "genericFailure": {
+            "title": "O Paperclip não conseguiu conectar",
+            "body": "Não foi possível conectar a este endereço. Confira-o e tente novamente."
+          }
+        }
+      },
+      "remoteMcp": {
+        "connectThroughProvider": "Conectar {{service}} pelo {{provider}}",
+        "continueSetup": "Continuar a configuração",
+        "whoCanUseConnection": "Quem pode usar esta conexão",
+        "reconnect": "Reconectar {{name}}",
+        "providerWillBeUsed": "O Paperclip usará {{name}} em seu nome.",
+        "setupReadyToResume": "A configuração de {{name}} está pronta para continuar.",
+        "connectedSummary": "Conectado{{identity}} · {{count}} ações disponíveis",
+        "connectedAs": " como {{identity}}",
+        "manageConnection": "Gerenciar esta conexão de {{name}}.",
+        "upstreamBanner": "{{provider}} gerencia a conexão e as solicitações para {{service}}.",
+        "composioSignIn": "Depois de conectar esta conta, entre no app pelo Composio.",
+        "providerSignIn": "Gerencie o login do app no provedor e atualize seu gateway aqui.",
+        "invalidUrlTitle": "Informe uma URL MCP válida",
+        "invalidUrlBody": "Cole a URL completa do servidor, incluindo https:// ou http://. O endereço de um painel não é um endpoint MCP.",
+        "oauthFailedTitle": "Não foi possível conectar {{name}}",
+        "oauthFailedBody": "A autorização não foi concluída. Sua conexão salva continua disponível para você tentar novamente.",
+        "credentialsRejectedTitle": "As credenciais foram rejeitadas",
+        "credentialsRejectedBody": "Confira ou substitua as credenciais de {{name}} e reconecte. O acesso dos agentes e as escolhas de ferramentas foram preservados.",
+        "unreachableTitle": "O Paperclip não conseguiu acessar este servidor",
+        "unreachableBody": "Confirme se o endpoint está em execução e acessível pelo Paperclip; depois, tente novamente. Seu rascunho foi preservado.",
+        "urlLabel": "URL do servidor MCP",
+        "zapierUrlPlaceholder": "Cole a URL completa fornecida pelo Zapier",
+        "zapierUrlHelp": "A URL completa do servidor pode conter um token secreto. Cole exatamente como o Zapier forneceu.",
+        "zapierAuthHelp": "Para usar um token separado, acesse https://mcp.zapier.com/api/v1/connect e escolha Token bearer.",
+        "zapierInstructions": {
+          "createServer": "Crie um servidor MCP no Zapier e escolha Other como cliente.",
+          "connectApps": "Conecte seus apps e selecione as ações que deseja disponibilizar.",
+          "copyUrl": "Abra Connect, gere um token e copie a URL completa do servidor."
+        },
+        "openSetupGuide": "Abrir o guia de configuração de {{name}}",
+        "finishSignIn": "Concluir o login em {{name}}",
+        "completeSignIn": "Conclua o login na janela do provedor e volte para cá. O Paperclip está aguardando a confirmação.",
+        "windowDidNotOpen": "Se a janela não abriu,",
+        "openSignInAgain": "abra o login novamente",
+        "cancelSignIn": "Cancelar login",
+        "waitingForSignIn": "Aguardando o login",
+        "connectionCancelled": "Conexão cancelada. Os dados da configuração foram preservados; tente novamente quando quiser.",
+        "reuseSession": "Reutilizar uma sessão existente",
+        "authentication": "Autenticação",
+        "signInMethod": "Método de login",
+        "authModes": {
+          "auto": "Automático (entrar se necessário)",
+          "bearer": "Token bearer",
+          "headers": "Cabeçalhos personalizados",
+          "none": "Sem autenticação adicional"
+        },
+        "bearerToken": "Token bearer",
+        "bearerTokenHelp": "Cole somente o token, sem a palavra Bearer. Ele será mantido nas credenciais da conexão.",
+        "additionalHeaders": "Cabeçalhos adicionais",
+        "headers": "Cabeçalhos",
+        "headerNameNumber": "Nome do cabeçalho {{number}}",
+        "headerValueNumber": "Valor do cabeçalho {{number}}",
+        "removeHeader": "Remover cabeçalho {{number}}",
+        "addHeader": "Adicionar cabeçalho",
+        "connectingAndDiscovering": "Conectando e descobrindo ferramentas…",
+        "connecting": "Conectando…",
+        "connectProvider": "Conectar {{name}}"
       },
       "gallery": {
         "pickAppSubtitle": "Escolha o app que você quer disponibilizar para seus agentes.",

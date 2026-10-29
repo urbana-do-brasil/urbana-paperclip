@@ -2477,3 +2477,24 @@ typecheck da UI foi encerrado pelo sistema com código 137, sem diagnóstico de
 TypeScript; essa verificação ficou inconclusiva por limite de recursos. O
 progresso atual é **212/240 tarefas**. Próxima: 3.9f3b2b, configuração de MCP
 personalizado e Zapier.
+
+### MCP personalizado e Zapier (3.9f3b2b)
+
+O fluxo de servidor MCP personalizado localiza URL, autenticação automática,
+token bearer, cabeçalhos personalizados, OAuth manual, validação dos cabeçalhos
+e orientações próprias dos erros conhecidos. A rota de Zapier usada atualmente
+compartilha a tela de configuração MCP; instruções, URL, autenticação, erros de
+conexão, rótulos acessíveis e ações estão em PT-BR/en. O botão compartilhado
+“Save & exit” também acompanha o idioma. URLs, modos/valores enviados, nomes de
+cabeçalhos, segredos e mensagens dinâmicas do servidor/provedor permanecem
+inalterados.
+
+`AppsConnect.test.tsx`, `generic-mcp-connect.test.ts`, `locale-validation.test.ts`,
+`TriggerWizard.test.tsx` e `GitHubChatSetup.test.tsx` passaram em **277/277 testes**,
+incluindo a preservação de erro dinâmico recebido do servidor. `pnpm
+check:tokens`, `pnpm check:token-gates`, parse dos catálogos e do manifesto,
+`git diff --check` e `pnpm exec openspec validate --all --strict --no-interactive`
+passaram. O typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O progresso atual é **213/240 tarefas**. Próxima: 3.9f3b2c, credenciais,
+métodos, OAuth e conclusão da conexão.

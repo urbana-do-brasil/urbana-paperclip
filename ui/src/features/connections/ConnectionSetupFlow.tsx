@@ -95,7 +95,7 @@ import { parseGoogleSheetIds } from "@/pages/apps/google-sheets";
 import { connectionNameForGrantKind } from "@/pages/apps/connection-identity";
 import {
   canSubmitGenericConnect,
-  customHeaderError,
+  customHeaderIssue,
   defaultGenericMcpName,
   endpointHost,
   genericConnectGuidance,
@@ -2887,6 +2887,7 @@ function ZapierConnectStep({
   onBack: () => void;
   onConnect: () => void;
 }) {
+  const { t } = useTranslation();
   const normalizedLink = normalizeAppLink(link);
   const zapierHostname = normalizedLink ? new URL(normalizedLink).hostname : "";
   const isZapierLink = zapierHostname === "zapier.com" || zapierHostname.endsWith(".zapier.com");
@@ -2894,8 +2895,11 @@ function ZapierConnectStep({
   return (
     <div className="mx-auto max-w-xl">
       <div>
-        <label className="text-sm font-medium text-foreground">Zapier MCP URL</label>
+        <label htmlFor="zapier-mcp-url" className="text-sm font-medium text-foreground">
+          {t("apps.connectionSetup.zapier.urlLabel")}
+        </label>
         <Input
+          id="zapier-mcp-url"
           type="password"
           autoComplete="off"
           spellCheck={false}
@@ -2909,7 +2913,7 @@ function ZapierConnectStep({
           autoFocus
         />
         {link.trim() && !isZapierLink && (
-          <p className="mt-2 text-xs text-destructive">Paste a valid Zapier URL to continue.</p>
+          <p className="mt-2 text-xs text-destructive">{t("apps.connectionSetup.zapier.invalidUrl")}</p>
         )}
       </div>
 
@@ -2917,11 +2921,11 @@ function ZapierConnectStep({
 
       <div className="mt-6 flex items-center justify-between">
         <Button variant="ghost" onClick={onBack} disabled={submitting}>
-          Back
+          {t("apps.connectionSetup.back")}
         </Button>
         <Button onClick={onConnect} disabled={submitting || !isZapierLink}>
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {submitting ? "Checking…" : "Check link"}
+          {submitting ? t("apps.connectionSetup.checking") : t("apps.connectionSetup.checkLink")}
         </Button>
       </div>
     </div>
@@ -3263,8 +3267,16 @@ function LinkConnectStep({
   onBack: () => void;
   onConnect: () => void;
 }) {
+  const { t } = useTranslation();
   const host = endpointHost(link);
-  const headerError = authMode === "custom_headers" ? customHeaderError(headers) : null;
+  const headerIssue = authMode === "custom_headers" ? customHeaderIssue(headers) : null;
+  const headerError = !headerIssue
+    ? null
+    : headerIssue.kind === "header_rejected"
+      ? t(`apps.connectionSetup.genericMcp.headerErrors.${headerIssue.reason}`, { name: headerIssue.name })
+      : headerIssue.kind === "missing_value"
+        ? t("apps.connectionSetup.genericMcp.headerErrors.missingValue", { name: headerIssue.name })
+        : t("apps.connectionSetup.genericMcp.headerErrors.duplicateName", { name: headerIssue.name });
   const draft: GenericConnectDraft = {
     link,
     name,
@@ -3297,18 +3309,23 @@ function LinkConnectStep({
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
           <div className="flex min-w-0 items-center gap-2 text-sm">
             <AppLogo name={matchedEntry.name} logoUrl={matchedEntry.branding.logoUrl} darkLogoUrl={matchedEntry.branding.darkLogoUrl} size={24} />
-            <span className="truncate">Paperclip has a guided setup for {matchedEntry.name}.</span>
+            <span className="truncate">{t("apps.connectionSetup.genericMcp.guidedSetup", { name: matchedEntry.name })}</span>
           </div>
           <Button type="button" size="sm" variant="outline" onClick={onUseMatchedEntry}>
-            Use {matchedEntry.name}
+            {t("apps.connectionSetup.genericMcp.useApp", { name: matchedEntry.name })}
           </Button>
         </div>
       ) : null}
 
       {guidance ? (
         <div className="mt-6">
-          <InlineBanner tone="warning" title={guidance.title}>
-            {guidance.body}
+          <InlineBanner
+            tone="warning"
+            title={t(`apps.connectionSetup.genericMcp.guidance.${guidance.copyKey}.title`)}
+          >
+            {guidance.bodyFromServer
+              ? guidance.body
+              : t(`apps.connectionSetup.genericMcp.guidance.${guidance.copyKey}.body`)}
           </InlineBanner>
         </div>
       ) : null}
@@ -3317,7 +3334,9 @@ function LinkConnectStep({
         {showKeyField ? (
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground" htmlFor="generic-mcp-key">App key</label>
+              <label className="text-sm font-medium text-foreground" htmlFor="generic-mcp-key">
+                {t("apps.connectionSetup.genericMcp.appKey")}
+              </label>
               <Input
                 id="generic-mcp-key"
                 type="password"
@@ -3328,7 +3347,7 @@ function LinkConnectStep({
                 className="mt-2 h-11 font-mono"
               />
               <p className="mt-2 text-xs text-muted-foreground">
-                Grant this key read and write access to the resources your agents need. Paperclip cannot increase its permissions.
+                {t("apps.connectionSetup.genericMcp.appKeyHelp")}
               </p>
             </div>
           </div>
@@ -3336,25 +3355,25 @@ function LinkConnectStep({
 
         <Collapsible open={advancedOpen} onOpenChange={onAdvancedOpenChange}>
           <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-left text-sm font-medium text-foreground hover:bg-accent/40">
-            Advanced authentication
+            {t("apps.connectionSetup.genericMcp.advancedAuthentication")}
             <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", advancedOpen && "rotate-180")} />
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-5 pt-4">
             <p className="text-xs text-muted-foreground">
-              Only needed when the server's docs are specific about how to authenticate.
+              {t("apps.connectionSetup.genericMcp.advancedAuthenticationHelp")}
             </p>
             <div className="flex flex-wrap gap-2">
-              {GENERIC_AUTH_MODE_OPTIONS.map((option) => (
+              {GENERIC_AUTH_MODE_OPTIONS.map((mode) => (
                 <SegmentedOption
-                  key={option.mode}
-                  label={option.label}
-                  selected={authMode === option.mode}
-                  onClick={() => onAuthModeChange(option.mode)}
+                  key={mode}
+                  label={t(`apps.connectionSetup.genericMcp.authModes.${mode}.label`)}
+                  selected={authMode === mode}
+                  onClick={() => onAuthModeChange(mode)}
                 />
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              {GENERIC_AUTH_MODE_OPTIONS.find((option) => option.mode === authMode)?.hint}
+              {t(`apps.connectionSetup.genericMcp.authModes.${authMode}.hint`)}
             </p>
 
             {authMode === "custom_headers" ? (
@@ -3364,8 +3383,8 @@ function LinkConnectStep({
                     <Input
                       value={row.name}
                       onChange={(e) => updateHeader(row.id, { name: e.target.value })}
-                      placeholder="Header name"
-                      aria-label="Header name"
+                      placeholder={t("apps.connectionSetup.genericMcp.headerName")}
+                      aria-label={t("apps.connectionSetup.genericMcp.headerName")}
                       className="h-10 font-mono"
                     />
                     <Input
@@ -3373,8 +3392,10 @@ function LinkConnectStep({
                       autoComplete="off"
                       value={row.value}
                       onChange={(e) => updateHeader(row.id, { value: e.target.value })}
-                      placeholder="Value"
-                      aria-label={row.name.trim() ? `Value for ${row.name.trim()}` : "Header value"}
+                      placeholder={t("apps.connectionSetup.genericMcp.headerValue")}
+                      aria-label={row.name.trim()
+                        ? t("apps.connectionSetup.genericMcp.valueForHeader", { name: row.name.trim() })
+                        : t("apps.connectionSetup.genericMcp.headerValue")}
                       className="h-10 font-mono"
                     />
                     <Button
@@ -3385,7 +3406,7 @@ function LinkConnectStep({
                       onClick={() => onHeadersChange(headers.filter((candidate) => candidate.id !== row.id))}
                       disabled={headers.length === 1}
                     >
-                      Remove
+                      {t("apps.connectionSetup.removeHeader")}
                     </Button>
                   </div>
                 ))}
@@ -3395,7 +3416,7 @@ function LinkConnectStep({
                   size="sm"
                   onClick={() => onHeadersChange([...headers, newCustomHeaderRow()])}
                 >
-                  Add another header
+                  {t("apps.connectionSetup.addHeader")}
                 </Button>
                 {headerError ? <p className="text-xs text-destructive">{headerError}</p> : null}
               </div>
@@ -3404,25 +3425,24 @@ function LinkConnectStep({
             {authMode === "oauth" ? (
               <div className="space-y-4">
                 <p className="text-xs text-muted-foreground">
-                  Paperclip sets sign-in up on its own whenever the server allows it. Only fill these in when the
-                  server's docs tell you to register Paperclip yourself first.
+                  {t("apps.connectionSetup.genericMcp.oauthClientHelp")}
                 </p>
                 <div>
                   <label className="text-sm font-medium text-foreground" htmlFor="generic-mcp-client-id">
-                    Client ID
+                    {t("apps.connectionSetup.genericMcp.clientId")}
                   </label>
                   <Input
                     id="generic-mcp-client-id"
                     value={oauthClientId}
                     onChange={(e) => onOAuthClientIdChange(e.target.value)}
                     autoComplete="off"
-                    placeholder="Optional"
+                    placeholder={t("apps.connectionSetup.optional")}
                     className="mt-2 h-11 font-mono"
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground" htmlFor="generic-mcp-client-secret">
-                    Client secret
+                    {t("apps.connectionSetup.genericMcp.clientSecret")}
                   </label>
                   <Input
                     id="generic-mcp-client-secret"
@@ -3430,7 +3450,7 @@ function LinkConnectStep({
                     autoComplete="off"
                     value={oauthClientSecret}
                     onChange={(e) => onOAuthClientSecretChange(e.target.value)}
-                    placeholder="Optional"
+                    placeholder={t("apps.connectionSetup.optional")}
                     className="mt-2 h-11 font-mono"
                   />
                 </div>
@@ -3444,11 +3464,11 @@ function LinkConnectStep({
 
       <div className="mt-8 flex items-center justify-between">
         <Button variant="ghost" onClick={onBack} disabled={submitting}>
-          Back
+          {t("apps.connectionSetup.back")}
         </Button>
         <Button onClick={onConnect} disabled={submitting || !canSubmit || Boolean(headerError)}>
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {submitting ? "Checking…" : "Check link"}
+          {submitting ? t("apps.connectionSetup.checking") : t("apps.connectionSetup.checkLink")}
         </Button>
       </div>
     </div>
@@ -3461,33 +3481,7 @@ function LinkConnectStep({
  * a client ID metadata document, dynamic registration, or the credentials pasted
  * below — none of which belongs on this screen.
  */
-const GENERIC_AUTH_MODE_OPTIONS: Array<{ mode: GenericMcpAuthMode; label: string; hint: string }> = [
-  {
-    mode: "auto",
-    label: "Let Paperclip check",
-    hint: "Paperclip asks the server what it needs and walks you through it. Start here.",
-  },
-  {
-    mode: "none",
-    label: "No sign-in needed",
-    hint: "The server is open to anyone with the address.",
-  },
-  {
-    mode: "bearer",
-    label: "Key or token",
-    hint: "Paperclip sends your key as an Authorization header.",
-  },
-  {
-    mode: "custom_headers",
-    label: "Custom headers",
-    hint: "For servers that name their own headers. Values are stored as Paperclip secrets and can\u2019t be read back.",
-  },
-  {
-    mode: "oauth",
-    label: "Browser sign-in",
-    hint: "You\u2019ll sign in at the provider. Add a client ID and secret only if the provider requires you to register Paperclip first.",
-  },
-];
+const GENERIC_AUTH_MODE_OPTIONS: GenericMcpAuthMode[] = ["auto", "none", "bearer", "custom_headers", "oauth"];
 
 function SegmentedOption({
   label,
