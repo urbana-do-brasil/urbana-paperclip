@@ -2977,5 +2977,7 @@ typecheck da UI aponta somente o erro preexistente em
 
 3.10d está concluída. 3.10e foi decomposta em e1 (coleção), e2
 (detalhe/propriedades), e3 (atividade/documentos/anexos), e4 (integração com
-issues) e e5 (gates/navegação). Progresso: **249/273 tarefas**. Próxima:
-3.10e1, coleção de casos.
+issues) e e5 (gates/navegação). A coleção (e1) foi subdividida em e1a
+(busca/filtros/preferências de visualização) e e1b (onboarding/linhas/árvore/
+estados) por abranger muitos controles e estados na mesma página. Progresso:
+**249/274 tarefas**. Próxima: 3.10e1a, busca e filtros da coleção de casos.
