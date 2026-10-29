@@ -2822,3 +2822,11 @@ passaram em **30/30 testes focados em PT-BR/en**. O typecheck direcionado, `chec
 `check:token-gates`, validação JSON dos catálogos e do manifesto, `git diff
 --check` e OpenSpec estrito passaram. Progresso: **235/260 tarefas**. Próxima:
 3.10b4, execuções, atividade e histórico de versões.
+
+## Decomposição das execuções e histórico de rotinas (3.10b4)
+
+Antes da implementação, b4 foi dividida em três lotes para manter revisão e
+verificação focadas: b4a (lista de execuções e tarefas geradas), b4b (feed de
+atividade) e b4c (histórico de revisões, comparação e restauração). O contador
+OpenSpec passou a **263 tarefas**; o progresso permaneceu em **235/263**.
+Próxima: 3.10b4a.
