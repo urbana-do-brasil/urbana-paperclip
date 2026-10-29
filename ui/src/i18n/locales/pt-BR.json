@@ -1537,6 +1537,27 @@
       "fastModeSupported": "O modo rápido consome créditos/tokens muito mais rapidamente que as execuções padrão do Codex.",
       "fastModeUnsupported": "O modo rápido funciona atualmente apenas com {{models}} ou IDs de modelo informados manualmente. O Paperclip ignorará esta opção até que o modelo seja alterado."
     },
+    "runner": {
+      "provider": "Provedor de execução",
+      "providerHint": "Escolha o provedor de agente que executará suas tarefas.",
+      "acpAgents": "Agentes ACP",
+      "acpAgent": "Agente ACP",
+      "acpAgentHint": "O Cursor usa perguntas do Paperclip; o custo por execução não fica disponível. O Pi aceita qualquer ID de provedor/modelo. A qualificação do GitHub Copilot está pendente.",
+      "qualificationPending": "qualificação pendente",
+      "cursorMode": "Modo do Cursor",
+      "cursorModeHint": "Selecione o modo de sessão do Cursor. As permissões e regras de aprovação da empresa continuam valendo.",
+      "cursorUnsupportedMode": "Modo salvo incompatível — selecione Agente, Planejamento ou Perguntar",
+      "cursorAgent": "Agente",
+      "cursorPlan": "Planejamento",
+      "cursorAsk": "Perguntar",
+      "piThinkingLevel": "Nível de raciocínio do Pi",
+      "piThinkingLevelHint": "O executor verifica exatamente esse nível antes de permitir prompts em cada sessão. Alterar o nível inicia uma nova sessão.",
+      "unsupportedThinkingLevel": "Nível de raciocínio salvo incompatível",
+      "thinkingOff": "Desativado",
+      "thinkingLow": "Baixo",
+      "thinkingHigh": "Alto",
+      "thinkingMax": "Máximo"
+    },
     "identity": {
       "section": "Identidade do agente",
       "name": "Nome",

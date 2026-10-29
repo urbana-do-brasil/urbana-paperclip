@@ -1495,6 +1495,27 @@
       "fastModeSupported": "Fast mode consumes credits/tokens much faster than standard Codex runs.",
       "fastModeUnsupported": "Fast mode currently only works on {{models}} or manual model IDs. Paperclip will ignore this toggle until the model is switched."
     },
+    "runner": {
+      "provider": "Execution provider",
+      "providerHint": "Choose the agent provider that runs your tasks.",
+      "acpAgents": "ACP agents",
+      "acpAgent": "ACP agent",
+      "acpAgentHint": "Cursor uses Paperclip questions; per-run cost is unavailable. Pi accepts any provider/model ID. GitHub Copilot awaits qualification.",
+      "qualificationPending": "qualification pending",
+      "cursorMode": "Cursor mode",
+      "cursorModeHint": "Select Cursor's session mode. Permissions and company approval rules still apply.",
+      "cursorUnsupportedMode": "Unsupported saved mode — select Agent, Plan, or Ask",
+      "cursorAgent": "Agent",
+      "cursorPlan": "Plan",
+      "cursorAsk": "Ask",
+      "piThinkingLevel": "Pi thinking level",
+      "piThinkingLevelHint": "The runner verifies this exact level before each session can prompt. Changing it starts a new session.",
+      "unsupportedThinkingLevel": "Unsupported saved thinking level",
+      "thinkingOff": "Off",
+      "thinkingLow": "Low",
+      "thinkingHigh": "High",
+      "thinkingMax": "Max"
+    },
     "identity": {
       "section": "Agent identity",
       "name": "Name",

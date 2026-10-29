@@ -119,9 +119,9 @@ describe("Codex local configuration localization", () => {
 
 describe("Paperclip Runner Codex configuration", () => {
   it("keeps Dot out of the general harness picker and hides that picker for Dot", async () => {
-    expect(await renderRunner({ provider: "codex" }, "Harness", true)).not.toContain("OpenAI Dot");
+    expect(await renderRunner({ provider: "codex" }, "Provedor de execução", true)).not.toContain("OpenAI Dot");
     const dot = await renderRunner({ provider: "openai_dot" });
-    expect(dot).not.toContain('aria-label="Harness"');
+    expect(dot).not.toContain('aria-label="Provedor de execução"');
     expect(dot).toContain("Dot connection");
     expect(dot).toContain("Allow externally billed provider");
   });
@@ -138,11 +138,11 @@ describe("Paperclip Runner Codex configuration", () => {
   });
 
   it("exposes all qualified provider choices", async () => {
-    const html = await renderRunner({ provider: "codex" }, "Harness");
+    const html = await renderRunner({ provider: "codex" }, "Provedor de execução");
 
-    expect(html).toContain('aria-label="Harness"');
+    expect(html).toContain('aria-label="Provedor de execução"');
     expect(html).toContain("OpenCode 1.18.34");
-    expect(html).toContain('ACP agents');
+    expect(html).toContain('Agentes ACP');
     expect(html).not.toContain("Permission mode");
     expect(html).not.toContain("Ask when requested");
     expect(html).not.toContain("Ask for untrusted operations");
@@ -171,15 +171,15 @@ describe("Paperclip Runner Codex configuration", () => {
       provider: "acpx",
       acpxAgent: "claude",
       acpxPermissionMode: "approve-reads",
-    }, "ACP agent");
+    }, "Agente ACP");
 
-    expect(html).toContain('ACP agents');
-    expect(html).toContain("ACP agent");
+    expect(html).toContain('Agentes ACP');
+    expect(html).toContain("Agente ACP");
     const options = new DOMParser().parseFromString(html, "text/html").querySelectorAll('[role="option"]');
     expect(Array.from(options, option => ({ label: option.textContent?.trim(), disabled: option.hasAttribute("data-disabled") })))
       .toEqual(expect.arrayContaining([
         { label: "Claude", disabled: false }, { label: "Cursor", disabled: false },
-        { label: "Pi", disabled: false }, { label: "GitHub Copilot — qualification pending", disabled: true },
+        { label: "Pi", disabled: false }, { label: "GitHub Copilot — qualificação pendente", disabled: true },
       ]));
     expect(html).not.toContain("Codex via ACPX");
     expect(html).not.toContain("ACPX Codex");
@@ -190,7 +190,7 @@ describe("Paperclip Runner Codex configuration", () => {
   it.each([undefined, "agent", "plan", "ask"])("displays saved Cursor mode %s", async acpxSessionMode => {
     const selected = acpxSessionMode ?? "agent";
     await renderRunner({ provider: "acpx", acpxAgent: "cursor", acpxSessionMode }, undefined, container => {
-      const modes = container.querySelectorAll('[aria-label="Cursor mode"]');
+      const modes = container.querySelectorAll('[aria-label="Modo do Cursor"]');
       expect(modes).toHaveLength(1);
       expect((modes[0] as HTMLSelectElement).value).toBe(selected);
     });
@@ -198,15 +198,36 @@ describe("Paperclip Runner Codex configuration", () => {
 
   it.each([undefined, "off", "low", "high", "max"])("displays saved Pi thinking level %s", async piThinkingLevel => {
     await renderRunner({ provider: "acpx", acpxAgent: "pi", piThinkingLevel }, undefined, container => {
-      const mode = container.querySelector('[aria-label="Pi thinking level"]');
+      const mode = container.querySelector('[aria-label="Nível de raciocínio do Pi"]');
       expect((mode as HTMLSelectElement).value).toBe(piThinkingLevel ?? "low");
     });
   });
+  it("localizes Cursor and Pi controls in both languages without changing saved enums", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const portugueseCursor = await renderRunner({ provider: "acpx", acpxAgent: "cursor", acpxSessionMode: "plan" });
+    expect(portugueseCursor).toContain('aria-label="Modo do Cursor"');
+    expect(portugueseCursor).toContain('<option value="plan">Planejamento</option>');
+    const portuguesePi = await renderRunner({ provider: "acpx", acpxAgent: "pi", piThinkingLevel: "max" });
+    expect(portuguesePi).toContain('aria-label="Nível de raciocínio do Pi"');
+    expect(portuguesePi).toContain('<option value="max">Máximo</option>');
+
+    await i18n.changeLanguage("en");
+    const englishProvider = await renderRunner({ provider: "codex" }, "Execution provider");
+    expect(englishProvider).toContain('aria-label="Execution provider"');
+    expect(englishProvider).toContain("ACP agents");
+    const englishCursor = await renderRunner({ provider: "acpx", acpxAgent: "cursor", acpxSessionMode: "plan" });
+    expect(englishCursor).toContain('aria-label="Cursor mode"');
+    expect(englishCursor).toContain('<option value="plan">Plan</option>');
+    const englishPi = await renderRunner({ provider: "acpx", acpxAgent: "pi", piThinkingLevel: "max" });
+    expect(englishPi).toContain('aria-label="Pi thinking level"');
+    expect(englishPi).toContain('<option value="max">Max</option>');
+  });
+
   it("shows unsupported saved Pi level without aliasing it", async () => {
-    expect(await renderRunner({ provider: "acpx", acpxAgent: "pi", piThinkingLevel: "medium" })).toContain("Unsupported saved thinking level");
+    expect(await renderRunner({ provider: "acpx", acpxAgent: "pi", piThinkingLevel: "medium" })).toContain("Nível de raciocínio salvo incompatível");
   });
   it.each(["claude", "copilot", "pi"])("does not expose Cursor mode for %s", async acpxAgent => {
-    expect(await renderRunner({ provider: "acpx", acpxAgent })).not.toContain('aria-label="Cursor mode"');
+    expect(await renderRunner({ provider: "acpx", acpxAgent })).not.toContain('aria-label="Modo do Cursor"');
   });
 
   it("falls back to the fail-closed Codex permission mode", async () => {
