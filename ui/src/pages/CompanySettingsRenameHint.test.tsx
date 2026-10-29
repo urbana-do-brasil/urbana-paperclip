@@ -5,6 +5,8 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryKeys } from "@/lib/queryKeys";
 import { CompanySettings } from "./CompanySettings";
@@ -36,6 +38,10 @@ const SELECTED_COMPANY = {
 
 vi.mock("../api/companies", () => ({ companiesApi: mockCompaniesApi }));
 vi.mock("../api/assets", () => ({ assetsApi: mockAssetsApi }));
+
+vi.mock("../components/decision-models/DecisionModelSettings", () => ({
+  DecisionModelSettingsSection: () => null,
+}));
 
 vi.mock("../context/BreadcrumbContext", () => ({
   useBreadcrumbs: () => ({ setBreadcrumbs: mockSetBreadcrumbs }),
@@ -79,18 +85,32 @@ const SELF_HOSTED_HEALTH = { status: "ok" as const, cloud: null };
 const RENAME_HINT =
   "Renaming can change this company's task ID prefix. Existing task IDs are renumbered and old task links stop resolving.";
 
+async function flushReact() {
+  await Promise.resolve();
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
+}
+
 describe("CompanySettings rename hint", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
+    mockCompaniesApi.update.mockImplementation(async (_companyId: string, patch: Record<string, unknown>) => ({
+      ...SELECTED_COMPANY,
+      ...(typeof patch.name === "string" ? { name: patch.name } : {}),
+      ...(typeof patch.description === "string" || patch.description === null ? { description: patch.description } : {}),
+      ...(typeof patch.logoAssetId === "string" ? { logoUrl: "/api/assets/logo/content" } : {}),
+    }));
+    mockAssetsApi.uploadCompanyLogo.mockResolvedValue({ assetId: "logo-asset-1" });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   function render(health: unknown) {
@@ -130,6 +150,63 @@ describe("CompanySettings rename hint", () => {
   it("stays silent on a self-hosted instance, where a rename keeps the prefix", () => {
     const root = render(SELF_HOSTED_HEALTH);
     expect(hintText()).toBeUndefined();
+    flushSync(() => root.unmount());
+  });
+
+  it("localizes organization fields and preserves name, description, and logo upload values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = render(SELF_HOSTED_HEALTH);
+
+    expect(container.textContent).toContain("Nome da organização");
+    expect(container.textContent).toContain("Aparência");
+    expect(container.textContent).toContain("Logotipo");
+    expect(mockSetBreadcrumbs).toHaveBeenCalledWith([
+      { label: "Acme Robotics", href: "/dashboard" },
+      { label: "Configurações" },
+    ]);
+    const textInputs = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="text"]'));
+    const nameInput = textInputs[0]!;
+    const descriptionInput = textInputs[1]!;
+    const setInputValue = (input: HTMLInputElement, value: string) => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+
+    flushSync(() => {
+      setInputValue(nameInput, "Acme Robotics BR");
+      setInputValue(descriptionInput, "Brazilian team");
+    });
+    const saveButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Salvar alterações",
+    );
+    expect(saveButton).toBeDefined();
+    flushSync(() => saveButton!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await flushReact();
+    expect(mockCompaniesApi.update).toHaveBeenCalledWith("company-1", {
+      name: "Acme Robotics BR",
+      description: "Brazilian team",
+    });
+
+    const logoInput = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const file = new File(["logo"], "brand.svg", { type: "image/svg+xml" });
+    Object.defineProperty(logoInput, "files", { configurable: true, value: [file] });
+    flushSync(() => logoInput.dispatchEvent(new Event("change", { bubbles: true })));
+    await flushReact();
+    await flushReact();
+    expect(mockAssetsApi.uploadCompanyLogo).toHaveBeenCalledWith("company-1", file);
+    expect(mockCompaniesApi.update).toHaveBeenCalledWith("company-1", { logoAssetId: "logo-asset-1" });
+    expect(container.textContent).toContain("Remover logotipo");
+
+    flushSync(() => root.unmount());
+  });
+
+  it("localizes the managed-instance rename warning while retaining the task ID constraint", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = render(CLOUD_HEALTH);
+    expect(container.textContent).toContain(
+      "Renomear pode alterar o prefixo dos IDs de tarefas desta organização. Os IDs existentes serão renumerados e os links antigos deixarão de funcionar.",
+    );
+    expect(container.querySelector<HTMLInputElement>('input[type="text"]')?.value).toBe("Acme Robotics");
     flushSync(() => root.unmount());
   });
 });

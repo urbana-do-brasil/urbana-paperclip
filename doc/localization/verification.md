@@ -1879,3 +1879,19 @@ testes**, incluindo a variante streamlined e a variante production da barra.
 O typecheck direcionado dos componentes/página/testes e `check:tokens`,
 `check:token-gates`, parse dos catálogos e OpenSpec estrito passaram. Progresso:
 **168/188 tarefas**. Próxima tarefa: 3.8d2, configurações gerais da organização.
+
+### Continuação — identidade e arquivamento da organização (3.8d2a)
+
+`CompanySettings` localiza nome/descrição, aparência/logo, estados de upload e
+salvamento, o aviso Cloud sobre renumeração de IDs, arquivamento, confirmação,
+notificações e breadcrumbs em PT-BR/en. Nomes, descrições, IDs, prefixos,
+valores, rotas e contratos de mutação foram preservados. A confirmação de
+arquivamento continua usando o nome real da organização e a saída mantém o
+destino determinado pelo contexto (outra organização, Cloud ou lista).
+
+`CompanySettingsArchive.test.tsx`, `CompanySettingsRenameHint.test.tsx` e
+`locale-validation.test.ts` passaram em **20/20 testes**, incluindo salvamento
+de nome/descrição, upload de logo, confirmação PT-BR e navegação após
+arquivamento. O typecheck direcionado da página/testes e `check:tokens`,
+`check:token-gates`, parse dos catálogos e OpenSpec estrito passaram. Progresso:
+**169/190 tarefas**. Próxima: 3.8d2b, admissão, governança e modelo de decisão.
