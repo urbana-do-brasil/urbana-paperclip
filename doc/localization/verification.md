@@ -1442,3 +1442,17 @@ textos que fornecem quando não há tradução própria do Paperclip.
 gates de tokens, `git diff --check` e validação OpenSpec estrita foram
 verificados separadamente. Progresso: **126/156**. Próxima tarefa: 3.6d2d,
 ambientes e política de execução.
+
+### Continuação — ambiente e política de execução (3.6d2d)
+
+O formulário do agente localiza o seletor/estado do ambiente, a política que
+força execução no sandbox Kubernetes e seus avisos, além dos controles de
+heartbeat, timeout, tolerância à interrupção, ativação sob demanda, cooldown,
+concorrência e continuações após o limite de turnos. Nomes e IDs de ambiente,
+drivers, valores salvos, limites, flags, permissões e payloads continuam
+inalterados.
+
+O teste focado de `AgentConfigForm.render.test.tsx` passou (**1/1**) e
+`locale-validation.test.ts`, **12/12**. Typecheck direcionado, gates de tokens,
+`git diff --check` e validação OpenSpec estrita passaram. Progresso: **127/156**.
+Próxima tarefa: 3.6d2e, validação e feedback de salvamento.

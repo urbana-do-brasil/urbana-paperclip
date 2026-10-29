@@ -1540,17 +1540,15 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
             <Field
               label={t("agentConfiguration.environment.defaultLabel")}
-              hint="This instance runs all agents in the Kubernetes sandbox. Local execution is disabled."
+              hint={t("agentConfiguration.environment.kubernetesSandboxHint")}
             >
               {kubernetesEnvironment ? (
                 <div className={cn(inputClass, "flex items-center text-muted-foreground")}>
-                  {kubernetesEnvironment.name} · Kubernetes sandbox
+                  {t("agentConfiguration.environment.kubernetesSandboxLabel", { name: kubernetesEnvironment.name })}
                 </div>
               ) : (
                 <div className="rounded-md border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
-                  This instance requires the Kubernetes sandbox, but no managed Kubernetes
-                  environment is available for this organization yet. Configure one before creating
-                  agents; execution will not fall back to local.
+                  {t("agentConfiguration.environment.kubernetesEnvironmentUnavailable")}
                 </div>
               )}
             </Field>
@@ -1804,7 +1802,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                 && currentDefaultEnvironment
                 && currentDefaultEnvironment.driver !== "local" && (
                 <p className="text-xs text-muted-foreground">
-                  Live OpenCode model discovery only runs for Local environments. Using the curated list and manual entry for {currentDefaultEnvironment.name}.
+                  {t("agentConfiguration.environment.openCodeDiscoveryRemoteHint", { environment: currentDefaultEnvironment.name })}
                 </p>
               )}
 
@@ -1967,23 +1965,23 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       {isCreate && showCreateRunPolicySection ? (
         <div data-config-section="run-policy" className={cn(!cards && "border-b border-border")}>
           {cards
-            ? <h3 className="text-sm font-medium flex items-center gap-2 mb-3"><Heart className="h-3 w-3" /> Run Policy</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2"><Heart className="h-3 w-3" /> Run Policy</div>
+            ? <h3 className="text-sm font-medium flex items-center gap-2 mb-3"><Heart className="h-3 w-3" /> {t("agentConfiguration.runPolicy.heading")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2"><Heart className="h-3 w-3" /> {t("agentConfiguration.runPolicy.heading")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
             <ToggleWithNumber
-              label="Heartbeat on interval"
-              hint={help.heartbeatInterval}
+              label={t("agentConfiguration.runPolicy.heartbeatOnInterval")}
+              hint={t("agentConfiguration.runPolicy.heartbeatOnIntervalHint")}
               checked={val!.heartbeatEnabled}
               onCheckedChange={(v) => set!({ heartbeatEnabled: v })}
               number={val!.intervalSec}
               onNumberChange={(v) => set!({ intervalSec: v })}
-              numberLabel="sec"
-              numberPrefix="Run heartbeat every"
-              numberHint={help.intervalSec}
+              numberLabel={t("agentConfiguration.runPolicy.secondsAbbreviation")}
+              numberPrefix={t("agentConfiguration.runPolicy.runHeartbeatEvery")}
+              numberHint={t("agentConfiguration.runPolicy.intervalSecondsHint")}
               showNumber={val!.heartbeatEnabled}
             />
-            <CollapsibleSection title="Advanced Run Policy" open={runPolicyAdvancedOpen} onToggle={() => setRunPolicyAdvancedOpen(!runPolicyAdvancedOpen)}>
+            <CollapsibleSection title={t("agentConfiguration.runPolicy.advancedHeading")} open={runPolicyAdvancedOpen} onToggle={() => setRunPolicyAdvancedOpen(!runPolicyAdvancedOpen)}>
               <div className="space-y-3">{renderAdapterFields("runPolicy")}</div>
             </CollapsibleSection>
           </div>
@@ -1991,26 +1989,26 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       ) : !isCreate ? (
         <div data-config-section="run-policy" className={cn(!cards && "border-b border-border")}>
           {cards
-            ? <h3 className="text-sm font-medium flex items-center gap-2 mb-3"><Heart className="h-3 w-3" /> Run Policy</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2"><Heart className="h-3 w-3" /> Run Policy</div>
+            ? <h3 className="text-sm font-medium flex items-center gap-2 mb-3"><Heart className="h-3 w-3" /> {t("agentConfiguration.runPolicy.heading")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2"><Heart className="h-3 w-3" /> {t("agentConfiguration.runPolicy.heading")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg overflow-hidden" : "")}>
             <div className={cn(cards ? "p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
               <ToggleWithNumber
-                label="Heartbeat on interval"
-                hint={help.heartbeatInterval}
+                label={t("agentConfiguration.runPolicy.heartbeatOnInterval")}
+                hint={t("agentConfiguration.runPolicy.heartbeatOnIntervalHint")}
                 checked={eff("heartbeat", "enabled", heartbeat.enabled === true)}
                 onCheckedChange={(v) => mark("heartbeat", "enabled", v)}
                 number={eff("heartbeat", "intervalSec", Number(heartbeat.intervalSec ?? 300))}
                 onNumberChange={(v) => mark("heartbeat", "intervalSec", v)}
-                numberLabel="sec"
-                numberPrefix="Run heartbeat every"
-                numberHint={help.intervalSec}
+                numberLabel={t("agentConfiguration.runPolicy.secondsAbbreviation")}
+                numberPrefix={t("agentConfiguration.runPolicy.runHeartbeatEvery")}
+                numberHint={t("agentConfiguration.runPolicy.intervalSecondsHint")}
                 showNumber={eff("heartbeat", "enabled", heartbeat.enabled === true)}
               />
             </div>
             <CollapsibleSection
-              title="Advanced Run Policy"
+              title={t("agentConfiguration.runPolicy.advancedHeading")}
               bordered={cards}
               open={runPolicyAdvancedOpen}
               onToggle={() => setRunPolicyAdvancedOpen(!runPolicyAdvancedOpen)}
@@ -2022,7 +2020,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
               {!isCreate && (
                 <>
                   {!configSchema?.fields.some((field) => field.key === "timeoutSec") && (
-                  <Field label="Timeout (sec)" hint={help.timeoutSec}>
+                  <Field label={t("agentConfiguration.runPolicy.timeoutSeconds")} hint={t("agentConfiguration.runPolicy.timeoutSecondsHint")}>
                     <DraftNumberInput
                       value={eff(
                         "adapterConfig",
@@ -2036,7 +2034,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                   </Field>
                   )}
                   {!configSchema?.fields.some((field) => field.key === "graceSec") && (
-                  <Field label="Interrupt grace period (sec)" hint={help.graceSec}>
+                  <Field label={t("agentConfiguration.runPolicy.interruptGracePeriodSeconds")} hint={t("agentConfiguration.runPolicy.interruptGracePeriodSecondsHint")}>
                     <DraftNumberInput
                       value={eff(
                         "adapterConfig",
@@ -2053,8 +2051,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
               )}
               </>)}
               <ToggleField
-                label="Wake on demand"
-                hint={help.wakeOnDemand}
+                label={t("agentConfiguration.runPolicy.wakeOnDemand")}
+                hint={t("agentConfiguration.runPolicy.wakeOnDemandHint")}
                 checked={eff(
                   "heartbeat",
                   "wakeOnDemand",
@@ -2062,7 +2060,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                 )}
                 onChange={(v) => mark("heartbeat", "wakeOnDemand", v)}
               />
-              <Field label="Cooldown (sec)" hint={help.cooldownSec}>
+              <Field label={t("agentConfiguration.runPolicy.cooldownSeconds")} hint={t("agentConfiguration.runPolicy.cooldownSecondsHint")}>
                 <DraftNumberInput
                   value={eff(
                     "heartbeat",
@@ -2074,7 +2072,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Max concurrent runs" hint={help.maxConcurrentRuns}>
+              <Field label={t("agentConfiguration.runPolicy.maxConcurrentRuns")} hint={t("agentConfiguration.runPolicy.maxConcurrentRunsHint")}>
                 <DraftNumberInput
                   value={eff(
                     "heartbeat",
@@ -2088,14 +2086,14 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
               </Field>
               <div className="rounded-md border border-border/70 px-3 py-2">
                 <ToggleField
-                  label="Continue after max-turn stop"
-                  hint={help.maxTurnContinuationEnabled}
+                  label={t("agentConfiguration.runPolicy.continueAfterMaxTurnStop")}
+                  hint={t("agentConfiguration.runPolicy.continueAfterMaxTurnStopHint")}
                   checked={maxTurnContinuationEnabled}
                   onChange={(v) => updateMaxTurnContinuation({ enabled: v })}
                 />
                 {maxTurnContinuationEnabled ? (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <Field label="Continuation attempts" hint={help.maxTurnContinuationMaxAttempts}>
+                    <Field label={t("agentConfiguration.runPolicy.continuationAttempts")} hint={t("agentConfiguration.runPolicy.continuationAttemptsHint")}>
                       <DraftNumberInput
                         value={maxTurnContinuationMaxAttempts}
                         onCommit={(v) =>
@@ -2106,7 +2104,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                         className={inputClass}
                       />
                     </Field>
-                    <Field label="Continuation delay (sec)" hint={help.maxTurnContinuationDelaySec}>
+                    <Field label={t("agentConfiguration.runPolicy.continuationDelaySeconds")} hint={t("agentConfiguration.runPolicy.continuationDelaySecondsHint")}>
                       <DraftNumberInput
                         value={maxTurnContinuationDelaySec}
                         onCommit={(v) =>

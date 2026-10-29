@@ -1779,7 +1779,36 @@
       "heading": "Environment",
       "defaultLabel": "Default environment",
       "override": "Environment override",
-      "defaultOption": "Default: {{environment}}"
+      "defaultOption": "Default: {{environment}}",
+      "kubernetesSandboxHint": "This instance runs all agents in the Kubernetes sandbox. Local execution is disabled.",
+      "kubernetesSandboxLabel": "{{name}} · Kubernetes sandbox",
+      "kubernetesEnvironmentUnavailable": "This instance requires the Kubernetes sandbox, but no managed Kubernetes environment is available for this organization yet. Configure one before creating agents; execution will not fall back to local.",
+      "openCodeDiscoveryRemoteHint": "Live OpenCode model discovery only runs for Local environments. Using the curated list and manual entry for {{environment}}."
+    },
+    "runPolicy": {
+      "heading": "Run Policy",
+      "heartbeatOnInterval": "Heartbeat on interval",
+      "heartbeatOnIntervalHint": "Run this agent automatically on a timer. Useful for periodic tasks like checking for new work.",
+      "intervalSecondsHint": "Seconds between automatic heartbeat invocations.",
+      "runHeartbeatEvery": "Run heartbeat every",
+      "secondsAbbreviation": "sec",
+      "advancedHeading": "Advanced Run Policy",
+      "timeoutSeconds": "Timeout (sec)",
+      "timeoutSecondsHint": "Maximum seconds a run can take before being terminated. 0 means no timeout.",
+      "interruptGracePeriodSeconds": "Interrupt grace period (sec)",
+      "interruptGracePeriodSecondsHint": "Seconds to wait after sending interrupt before force-killing the process.",
+      "wakeOnDemand": "Wake on demand",
+      "wakeOnDemandHint": "Allow this agent to be woken by assignments, API calls, UI actions, or automated systems.",
+      "cooldownSeconds": "Cooldown (sec)",
+      "cooldownSecondsHint": "Minimum seconds between consecutive heartbeat runs.",
+      "maxConcurrentRuns": "Max concurrent runs",
+      "maxConcurrentRunsHint": "Maximum number of heartbeat runs that can execute simultaneously for this agent.",
+      "continueAfterMaxTurnStop": "Continue after max-turn stop",
+      "continueAfterMaxTurnStopHint": "Automatically queue bounded continuation runs when an adapter stops because its per-run turn cap was exhausted.",
+      "continuationAttempts": "Continuation attempts",
+      "continuationAttemptsHint": "Maximum automatic continuations after one max-turn stop. This is separate from max turns per run.",
+      "continuationDelaySeconds": "Continuation delay (sec)",
+      "continuationDelaySecondsHint": "Seconds to wait before starting each max-turn continuation."
     }
   },
   "agentActions": {

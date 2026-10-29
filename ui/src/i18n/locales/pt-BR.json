@@ -1821,7 +1821,36 @@
       "heading": "Ambiente",
       "defaultLabel": "Ambiente padrão",
       "override": "Substituir ambiente padrão",
-      "defaultOption": "Padrão: {{environment}}"
+      "defaultOption": "Padrão: {{environment}}",
+      "kubernetesSandboxHint": "Esta instância executa todos os agentes no sandbox do Kubernetes. A execução local está desativada.",
+      "kubernetesSandboxLabel": "{{name}} · sandbox do Kubernetes",
+      "kubernetesEnvironmentUnavailable": "Esta instância exige o sandbox do Kubernetes, mas ainda não há um ambiente Kubernetes gerenciado para esta organização. Configure um antes de criar agentes; a execução não usará o ambiente local como alternativa.",
+      "openCodeDiscoveryRemoteHint": "A descoberta de modelos do OpenCode em tempo real só funciona em ambientes locais. Usando a lista selecionada e a entrada manual para {{environment}}."
+    },
+    "runPolicy": {
+      "heading": "Política de execução",
+      "heartbeatOnInterval": "Heartbeat em intervalos",
+      "heartbeatOnIntervalHint": "Executa este agente automaticamente em um intervalo. Útil para tarefas periódicas, como verificar novos trabalhos.",
+      "intervalSecondsHint": "Intervalo, em segundos, entre ativações automáticas do heartbeat.",
+      "runHeartbeatEvery": "Executar heartbeat a cada",
+      "secondsAbbreviation": "s",
+      "advancedHeading": "Política avançada de execução",
+      "timeoutSeconds": "Tempo limite (segundos)",
+      "timeoutSecondsHint": "Tempo máximo de execução antes de encerrar o processo. 0 significa sem limite.",
+      "interruptGracePeriodSeconds": "Tolerância à interrupção (segundos)",
+      "interruptGracePeriodSecondsHint": "Tempo de espera após enviar o sinal de interrupção antes de encerrar o processo à força.",
+      "wakeOnDemand": "Ativação sob demanda",
+      "wakeOnDemandHint": "Permite ativar este agente por atribuições, chamadas de API, ações da interface ou sistemas automatizados.",
+      "cooldownSeconds": "Intervalo mínimo (segundos)",
+      "cooldownSecondsHint": "Tempo mínimo entre execuções consecutivas do heartbeat.",
+      "maxConcurrentRuns": "Máximo de execuções simultâneas",
+      "maxConcurrentRunsHint": "Número máximo de execuções de heartbeat simultâneas para este agente.",
+      "continueAfterMaxTurnStop": "Continuar após atingir o limite de turnos",
+      "continueAfterMaxTurnStopHint": "Enfileira continuações limitadas quando o adaptador para ao atingir o limite de turnos por execução.",
+      "continuationAttempts": "Tentativas de continuação",
+      "continuationAttemptsHint": "Número máximo de continuações automáticas após atingir o limite de turnos. É separado do limite de turnos por execução.",
+      "continuationDelaySeconds": "Atraso da continuação (segundos)",
+      "continuationDelaySecondsHint": "Tempo de espera antes de iniciar cada continuação após o limite de turnos."
     }
   },
   "agentActions": {

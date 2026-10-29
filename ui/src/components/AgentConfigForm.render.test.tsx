@@ -861,6 +861,60 @@ describe("AgentConfigForm environment selector", () => {
     expect(result.container.querySelector("select")).toBeNull();
   });
 
+  it("localizes the managed execution environment and run policy without changing saved limits", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockInstanceSettingsApi.getGeneral.mockResolvedValue({ executionMode: "kubernetes" });
+    const result = await renderForm(
+      [
+        makeEnvironment({ id: "local-1", name: "Local", driver: "local" }),
+        makeEnvironment({ id: "kubernetes-1", name: "Cluster interno", driver: "sandbox", config: { provider: "kubernetes" } }),
+      ],
+      {
+        runtimeConfig: {
+          heartbeat: {
+            enabled: true,
+            intervalSec: 120,
+            wakeOnDemand: false,
+            cooldownSec: 12,
+            maxConcurrentRuns: 3,
+            maxTurnContinuation: { enabled: true, maxAttempts: 4, delayMs: 2000 },
+          },
+        },
+      },
+    );
+    roots.push(result.root);
+
+    expect(result.container.textContent).toContain("Ambiente padrão");
+    expect(result.container.textContent).toContain("Cluster interno · sandbox do Kubernetes");
+    expect(result.container.textContent).toContain("Política de execução");
+    expect(result.container.textContent).toContain("Heartbeat em intervalos");
+    expect(result.container.textContent).toContain("Executar heartbeat a cada");
+
+    const advanced = [...result.container.querySelectorAll("button")]
+      .find(button => button.textContent?.includes("Política avançada de execução"));
+    expect(advanced).toBeTruthy();
+    await clickElement(advanced);
+    const runPolicy = result.container.querySelector<HTMLElement>('[data-config-section="run-policy"]')!;
+    expect(runPolicy.textContent).toContain("Tempo limite (segundos)");
+    expect(runPolicy.textContent).toContain("Tolerância à interrupção (segundos)");
+    expect(runPolicy.textContent).toContain("Ativação sob demanda");
+    expect(runPolicy.textContent).toContain("Intervalo mínimo (segundos)");
+    expect(runPolicy.textContent).toContain("Máximo de execuções simultâneas");
+    expect(runPolicy.textContent).toContain("Continuar após atingir o limite de turnos");
+    expect(runPolicy.textContent).toContain("Tentativas de continuação");
+    expect(runPolicy.textContent).toContain("Atraso da continuação (segundos)");
+    const numericValues = Array.from(runPolicy.querySelectorAll<HTMLInputElement>('input[type="number"]'), input => input.value);
+    expect(numericValues).toEqual(expect.arrayContaining(["120", "0", "15", "12", "3", "4", "2"]));
+
+    const missing = await renderForm(
+      [makeEnvironment({ id: "local-1", name: "Local", driver: "local" })],
+      {},
+    );
+    roots.push(missing.root);
+    expect(missing.container.textContent).toContain("Esta instância exige o sandbox do Kubernetes");
+    expect(missing.container.textContent).toContain("a execução não usará o ambiente local como alternativa");
+  });
+
   it("localizes agent identity and default environment while preserving names and relationship IDs", async () => {
     await i18n.changeLanguage("pt-BR");
     const currentManager = makeAgent({ id: "manager-1", name: "Ana Diretora", role: "engineer", status: "idle" });
