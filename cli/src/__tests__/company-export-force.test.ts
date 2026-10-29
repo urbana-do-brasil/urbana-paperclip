@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { confirmOverwriteExportDirectory } from "../commands/client/company.js";
+import { setCliLocale } from "../localization/index.js";
 
 // These tests run under vitest, where stdin/stdout are not TTYs — i.e. exactly
 // the non-interactive/automated posture the nightly backup routine runs in.
@@ -11,10 +12,12 @@ describe("confirmOverwriteExportDirectory (non-interactive)", () => {
   let dir: string;
 
   beforeEach(async () => {
+    setCliLocale("en");
     dir = await mkdtemp(path.join(tmpdir(), "pc-export-force-"));
   });
 
   afterEach(async () => {
+    setCliLocale("pt-BR");
     await rm(dir, { recursive: true, force: true });
   });
 

@@ -52,6 +52,11 @@ describe("localized CLI help", () => {
       english: "Update company branding",
     },
     { command: ["company", "archive"], portuguese: "Arquivar uma organização", english: "Archive a company" },
+    {
+      command: ["company", "export"],
+      portuguese: "Exportar uma organização como pacote Markdown portátil",
+      english: "Export a company into a portable markdown package",
+    },
   ])("localizes help for $command", ({ command, portuguese, english }) => {
     const pt = help([...command, "--help", "--lang", "pt-BR"]);
     expect(pt.status).toBe(0);
@@ -142,5 +147,18 @@ describe("localized CLI help", () => {
     expect(output).toContain("companyId ID da organização");
     expect(output).toContain("--payload-json <json>");
     expect(output).toContain("Payload JSON de UpdateCompanyBranding");
+  }, 35_000);
+
+  it("localizes company export options while preserving paths, flags, and include values", () => {
+    const result = help(["company", "export", "--help", "--lang", "pt-BR"]);
+    const output = result.stdout.replace(/\s+/g, " ");
+    expect(result.status).toBe(0);
+    expect(output).toContain("paperclipai company export [options] <companyId>");
+    expect(output).toContain("companyId ID da organização");
+    expect(output).toContain("--out <path> Diretório de saída");
+    expect(output).toContain("--include <values>");
+    expect(output).toContain("company,agents,projects,issues,tasks,skills");
+    expect(output).toContain("--force");
+    expect(output).toContain("Sobrescrever diretório de saída não vazio");
   }, 35_000);
 });

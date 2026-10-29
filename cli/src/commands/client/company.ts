@@ -25,6 +25,7 @@ import {
 import { getTelemetryClient, trackCompanyImported } from "../../telemetry.js";
 import { ApiRequestError, type PaperclipApiClient } from "../../client/http.js";
 import { openUrl } from "../../client/board-auth.js";
+import { adminOperationMessage, type AdminOperationMessageId } from "../../localization/admin-operations.js";
 import { cliMessage, isCliJsonRequested } from "../../localization/index.js";
 import {
   binaryContentTypeByExtension,
@@ -112,6 +113,17 @@ const DEFAULT_EXPORT_INCLUDE: CompanyPortabilityInclude = {
   issues: false,
   skills: false,
 };
+
+type CompanyExportMessageId = Extract<AdminOperationMessageId, `companyExport${string}`>;
+
+function companyExportMessage(
+  id: CompanyExportMessageId,
+  values: Record<string, string | number> = {},
+): string {
+  // Human copy follows --lang; errors under --json remain locale-neutral so
+  // automation receives the same stderr regardless of the user's language.
+  return adminOperationMessage(id, values, isCliJsonRequested() ? "en" : undefined);
+}
 
 const DEFAULT_IMPORT_INCLUDE: CompanyPortabilityInclude = {
   company: true,
@@ -1233,7 +1245,7 @@ export function resolveExportOutputPath(root: string, relativePath: string): str
   const filePath = path.resolve(resolvedRoot, relativePath);
   const rootPrefix = resolvedRoot.endsWith(path.sep) ? resolvedRoot : `${resolvedRoot}${path.sep}`;
   if (filePath !== resolvedRoot && !filePath.startsWith(rootPrefix)) {
-    throw new Error(`Refusing to write export file outside output directory: ${relativePath}`);
+    throw new Error(companyExportMessage("companyExportPathOutsideOutput", { path: relativePath }));
   }
   return filePath;
 }
@@ -1246,7 +1258,7 @@ export async function confirmOverwriteExportDirectory(
   const stats = await stat(root).catch(() => null);
   if (!stats) return;
   if (!stats.isDirectory()) {
-    throw new Error(`Export output path ${root} exists and is not a directory.`);
+    throw new Error(companyExportMessage("companyExportPathNotDirectory", { path: root }));
   }
 
   const entries = await readdir(root);
@@ -1258,16 +1270,16 @@ export async function confirmOverwriteExportDirectory(
   if (opts.force) return;
 
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    throw new Error(`Export output directory ${root} already contains files. Re-run interactively, pass --force, or choose an empty directory.`);
+    throw new Error(companyExportMessage("companyExportDestinationNotEmpty", { path: root }));
   }
 
   const confirmed = await p.confirm({
-    message: `Overwrite existing files in ${root}?`,
+    message: companyExportMessage("companyExportOverwritePrompt", { path: root }),
     initialValue: false,
   });
 
   if (p.isCancel(confirmed) || !confirmed) {
-    throw new Error("Export cancelled.");
+    throw new Error(companyExportMessage("companyExportCancelled"));
   }
 }
 
@@ -1618,24 +1630,29 @@ export function registerCompanyCommands(program: Command): void {
             },
           );
           if (!exported) {
-            throw new Error("Export request returned no data");
+            throw new Error(companyExportMessage("companyExportNoData"));
           }
           await confirmOverwriteExportDirectory(opts.out!, { force: Boolean(opts.force) });
           await writeExportToFolder(opts.out!, exported);
-          printOutput(
-            {
-              ok: true,
-              out: path.resolve(opts.out!),
-              rootPath: exported.rootPath,
-              filesWritten: Object.keys(exported.files).length,
-              paperclipExtensionPath: exported.paperclipExtensionPath,
-              warningCount: exported.warnings.length,
-            },
-            { json: ctx.json },
-          );
+          const output = {
+            ok: true,
+            out: path.resolve(opts.out!),
+            rootPath: exported.rootPath,
+            filesWritten: Object.keys(exported.files).length,
+            paperclipExtensionPath: exported.paperclipExtensionPath,
+            warningCount: exported.warnings.length,
+          };
+          if (ctx.json) {
+            printOutput(output, { json: true });
+          } else {
+            console.log(adminOperationMessage(
+              output.filesWritten === 1 ? "companyExportDoneOne" : "companyExportDoneMany",
+              { path: output.out, count: output.filesWritten },
+            ));
+          }
           if (!ctx.json && exported.warnings.length > 0) {
             for (const warning of exported.warnings) {
-              console.log(`warning=${warning}`);
+              console.log(adminOperationMessage("companyExportWarning", { warning }));
             }
           }
         } catch (err) {

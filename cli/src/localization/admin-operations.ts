@@ -1,4 +1,5 @@
 import { getCliLocale } from "./index.js";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
 
 const messages = {
   en: {
@@ -7,6 +8,15 @@ const messages = {
     installPathSkipped: "PATH was not changed. Run:\n  {command}",
     installPathUpdated: "Updated {path}.",
     installPathExists: "{path} already contains the PATH block.",
+    companyExportDoneOne: "Exported company to {path} (1 file).",
+    companyExportDoneMany: "Exported company to {path} ({count} files).",
+    companyExportWarning: "Warning: {warning}",
+    companyExportNoData: "Export request returned no data.",
+    companyExportPathNotDirectory: "Export output path {path} exists and is not a directory.",
+    companyExportDestinationNotEmpty: "Export output directory {path} already contains files. Re-run interactively, pass --force, or choose an empty directory.",
+    companyExportOverwritePrompt: "Overwrite existing files in {path}?",
+    companyExportCancelled: "Export cancelled.",
+    companyExportPathOutsideOutput: "Refusing to write export file outside output directory: {path}.",
     installGitWarning: "Warning: Installing {repo}@{ref} executes dependency and build scripts from that repository.",
     installGitConsentRequired: "Installing {repo}@{ref} executes dependency and build scripts from that repository. Re-run with --yes to consent in non-interactive environments.",
     installGitConfirm: "Installing {repo}@{ref} executes dependency and build scripts from that repository. Continue?",
@@ -138,6 +148,15 @@ const messages = {
     installPathSkipped: "O PATH não foi alterado. Execute:\n  {command}",
     installPathUpdated: "{path} foi atualizado.",
     installPathExists: "{path} já contém o bloco do PATH.",
+    companyExportDoneOne: "Organização exportada para {path} (1 arquivo).",
+    companyExportDoneMany: "Organização exportada para {path} ({count} arquivos).",
+    companyExportWarning: "Aviso: {warning}",
+    companyExportNoData: "A solicitação de exportação não retornou dados.",
+    companyExportPathNotDirectory: "O caminho de saída da exportação {path} existe e não é um diretório.",
+    companyExportDestinationNotEmpty: "O diretório de saída da exportação {path} já contém arquivos. Execute novamente em modo interativo, informe --force ou escolha um diretório vazio.",
+    companyExportOverwritePrompt: "Sobrescrever os arquivos existentes em {path}?",
+    companyExportCancelled: "Exportação cancelada.",
+    companyExportPathOutsideOutput: "Não é permitido gravar o arquivo exportado fora do diretório de saída: {path}.",
     installGitWarning: "Aviso: instalar {repo}@{ref} executa scripts de dependências e build desse repositório.",
     installGitConsentRequired: "Instalar {repo}@{ref} executa scripts de dependências e build desse repositório. Execute novamente com --yes para autorizar em ambientes não interativos.",
     installGitConfirm: "Instalar {repo}@{ref} executa scripts de dependências e build desse repositório. Continuar?",
@@ -300,7 +319,8 @@ export function localizeDoctorCheckName(name: string): string {
 export function adminOperationMessage(
   id: AdminOperationMessageId,
   values: Record<string, string | number> = {},
+  locale: SupportedLocale = getCliLocale(),
 ): string {
-  const template: string = messages[getCliLocale()][id];
+  const template: string = messages[locale][id];
   return template.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (_match, key: string) => String(values[key] ?? `{${key}}`));
 }

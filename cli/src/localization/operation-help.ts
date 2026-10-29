@@ -86,6 +86,45 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
     options: commonClientOptions,
   },
+  "company export": {
+    description: {
+      en: "Export a company into a portable markdown package",
+      "pt-BR": "Exportar uma organização como pacote Markdown portátil",
+    },
+    arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
+    options: {
+      ...commonClientOptions,
+      "--out": { en: "Output directory", "pt-BR": "Diretório de saída" },
+      "--include": {
+        en: "Comma-separated include set: company,agents,projects,issues,tasks,skills",
+        "pt-BR": "Conjunto de conteúdo separado por vírgulas: company,agents,projects,issues,tasks,skills",
+      },
+      "--skills": {
+        en: "Comma-separated skill slugs/keys to export",
+        "pt-BR": "Slugs/chaves de skills para exportar, separados por vírgulas",
+      },
+      "--projects": {
+        en: "Comma-separated project shortnames/ids to export",
+        "pt-BR": "Nomes curtos/IDs de projetos para exportar, separados por vírgulas",
+      },
+      "--issues": {
+        en: "Comma-separated issue identifiers/ids to export",
+        "pt-BR": "Identificadores/IDs de tarefas para exportar, separados por vírgulas",
+      },
+      "--project-issues": {
+        en: "Comma-separated project shortnames/ids whose issues should be exported",
+        "pt-BR": "Nomes curtos/IDs dos projetos cujas tarefas devem ser exportadas, separados por vírgulas",
+      },
+      "--expand-referenced-skills": {
+        en: "Vendor skill contents instead of exporting upstream references",
+        "pt-BR": "Incluir o conteúdo das skills em vez de exportar referências upstream",
+      },
+      "--force": {
+        en: "Overwrite a non-empty output directory without the interactive confirmation (required for non-interactive/automated runs such as the nightly backup routine)",
+        "pt-BR": "Sobrescrever diretório de saída não vazio sem confirmação interativa (necessário em execuções não interativas/automatizadas, como a rotina de backup noturno)",
+      },
+    },
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {

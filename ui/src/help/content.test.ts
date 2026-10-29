@@ -5,8 +5,19 @@ describe("public help mapping", () => {
   it("contains unique source-backed public topics, including linked pages outside navigation", () => {
     const slugs = HELP_TOPICS.map((topic) => topic.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
-    expect(slugs).toEqual(expect.arrayContaining(["start/quickstart", "guides/board-operator/language", "companies/companies-spec", "deploy/aws-ecs", "adapters/gemini-local"]));
-    for (const topic of HELP_TOPICS) expect(hasHelpTranslation(topic, "en"), topic.slug).toBe(true);
+    expect(slugs).toEqual(expect.arrayContaining([
+      "start/quickstart",
+      "guides/board-operator/language",
+      "guides/execution-policy",
+      "guides/openclaw-docker-setup",
+      "companies/companies-spec",
+      "deploy/aws-ecs",
+      "adapters/gemini-local",
+    ]));
+    for (const topic of HELP_TOPICS) {
+      expect(hasHelpTranslation(topic, "en"), `${topic.slug} English`).toBe(true);
+      expect(hasHelpTranslation(topic, "pt-BR"), `${topic.slug} PT-BR`).toBe(true);
+    }
   });
 
   it("accepts only canonical explicit languages and mapped slugs", () => {
@@ -30,6 +41,34 @@ describe("public help mapping", () => {
     const fallback = await loadHelpTopic(untranslated, "pt-BR");
     expect(fallback.language).toBe("en"); expect(fallback.fallback).toBe(true);
     expect(splitFrontmatter(fallback.content).title).toBe("Costs");
+  });
+
+  it("loads the newly mapped root-level guides in PT-BR without changing technical examples or URLs", async () => {
+    const technicalTokens = (markdown: string) => {
+      const withoutFences = markdown.replace(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm, "");
+      return [...withoutFences.matchAll(/`([^`\n]+)`/g)].map((match) => match[1]);
+    };
+    const exampleBlocks = (markdown: string) =>
+      [...markdown.matchAll(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm)].map((match) => match[0]);
+    const linkTargets = (markdown: string) => [...markdown.matchAll(/\]\(([^)]+)\)/g)].map((match) => match[1]);
+
+    const translatedHeadings: Record<string, string> = {
+      "guides/execution-policy": "## Visão geral",
+      "guides/openclaw-docker-setup": "## Teste automatizado de entrada (recomendado para começar)",
+    };
+    for (const slug of Object.keys(translatedHeadings)) {
+      const topic = findHelpTopic(slug)!;
+      expect(parseHelpPath(`/help/pt-BR/${slug}`).valid).toBe(true);
+      const english = await loadHelpTopic(topic, "en");
+      const portuguese = await loadHelpTopic(topic, "pt-BR");
+      expect(portuguese.language).toBe("pt-BR");
+      expect(portuguese.fallback).toBe(false);
+      expect(portuguese.content).not.toBe(english.content);
+      expect(portuguese.content).toContain(translatedHeadings[slug]);
+      expect(technicalTokens(portuguese.content)).toEqual(technicalTokens(english.content));
+      expect(exampleBlocks(portuguese.content)).toEqual(exampleBlocks(english.content));
+      expect(linkTargets(portuguese.content)).toEqual(linkTargets(english.content));
+    }
   });
 
   it("preserves technical code, converts known cards safely, and never routes unknown or unsafe links", () => {

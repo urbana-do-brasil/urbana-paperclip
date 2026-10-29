@@ -649,5 +649,25 @@
     },
     "source": "docs/deploy/aws-ecs.md",
     "portugueseSource": "docs/pt-BR/deploy/aws-ecs.md"
+  },
+  {
+    "slug": "guides/execution-policy",
+    "group": "operator",
+    "title": {
+      "en": "Execution Policy: Review & Approval Workflows",
+      "pt-BR": "Política de execução: fluxos de revisão e aprovação"
+    },
+    "source": "docs/guides/execution-policy.md",
+    "portugueseSource": "docs/pt-BR/guides/execution-policy.md"
+  },
+  {
+    "slug": "guides/openclaw-docker-setup",
+    "group": "adapters",
+    "title": {
+      "en": "Running OpenClaw in Docker (Local Development)",
+      "pt-BR": "Executar o OpenClaw no Docker (desenvolvimento local)"
+    },
+    "source": "docs/guides/openclaw-docker-setup.md",
+    "portugueseSource": "docs/pt-BR/guides/openclaw-docker-setup.md"
   }
 ]

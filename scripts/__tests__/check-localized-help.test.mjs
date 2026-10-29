@@ -23,6 +23,27 @@ test("coverage gate rejects missing translations and duplicate slugs", () => {
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });
 
+test("coverage gate accepts root-level public guides", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-help-root-guide-"));
+  try {
+    fs.mkdirSync(path.join(tmp, "docs/guides"), { recursive: true });
+    fs.mkdirSync(path.join(tmp, "docs/pt-BR/guides"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "docs/guides/example.md"), "# English\n");
+    fs.writeFileSync(path.join(tmp, "docs/pt-BR/guides/example.md"), "# Português\n");
+    const manifest = path.join(tmp, "topics.json");
+    fs.writeFileSync(manifest, JSON.stringify([{
+      slug: "guides/example",
+      group: "operator",
+      source: "docs/guides/example.md",
+      portugueseSource: "docs/pt-BR/guides/example.md",
+    }]));
+
+    const result = spawnSync(process.execPath, [checker, "--manifest", manifest, "--root", tmp], { encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /1 topics with both source files/);
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
 test("coverage gate rejects an existing source outside the public help bundle", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-help-gate-outside-"));
   try {
