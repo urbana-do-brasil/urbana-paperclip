@@ -1875,6 +1875,9 @@
     "connectDotAgent": "Connect Dot agent",
     "connectOrganization": "Connect organization"
   },
+  "companyImport": {
+    "dotExternalBillingRequired": "{{provider}} requires acknowledgement of external billing. Configure the Dot adapter and enable {{setting}}."
+  },
   "organizationPortfolio": {
     "breadcrumb": "Organizations",
     "newOrganization": "New Organization",

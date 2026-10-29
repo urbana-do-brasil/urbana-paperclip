@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/client";
 import type { CompanyImportJobAccepted } from "../api/companies";
 import { CompanyImport } from "./CompanyImport";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 // jsdom's crypto has no SubtleCrypto; the chunked transfer path hashes parts
 // with WebCrypto, so back the global with Node's implementation.
@@ -271,7 +273,8 @@ describe("CompanyImport", () => {
   let container: HTMLDivElement;
   let root: Root | null = null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     sessionStorage.clear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -313,6 +316,7 @@ describe("CompanyImport", () => {
     document.body.innerHTML = "";
     sessionStorage.clear();
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   function findButton(matches: (text: string) => boolean) {
@@ -1185,11 +1189,22 @@ describe("CompanyImport", () => {
     expect(mockCompaniesApi.importBundleAsync).not.toHaveBeenCalled();
     expect(container.textContent).toContain("OpenAI Dot requires acknowledgement of external billing");
 
-    const billingToggle = Array.from(container.querySelectorAll<HTMLButtonElement>('button[role="switch"]'))
-      .find((button) => button.closest("label")?.textContent?.includes("Allow externally billed provider")
-        || button.parentElement?.textContent?.includes("Allow externally billed provider"));
+    await i18n.changeLanguage("pt-BR");
+    await flushReact();
+    expect(container.textContent).toContain("Permitir provedor com cobrança externa");
+    const findBillingToggle = () => Array.from(container.querySelectorAll<HTMLButtonElement>('button[role="switch"]'))
+      .find((button) => button.getAttribute("aria-label") === "Permitir provedor com cobrança externa");
+    const billingToggle = findBillingToggle();
     expect(billingToggle).toBeTruthy();
     await act(async () => billingToggle!.click());
+    await flushReact();
+    await act(async () => findBillingToggle()!.click());
+    await flushReact();
+    await clickButton((text) => text.startsWith("Import 3 file"));
+    await settle();
+    expect(container.textContent).toContain("OpenAI Dot exige a confirmação de que a cobrança é externa");
+
+    await act(async () => findBillingToggle()!.click());
     await flushReact();
     await clickButton((text) => text.startsWith("Import 3 file"));
     await settle();

@@ -68,6 +68,7 @@ import {
   writeStoredImportJob,
 } from "../lib/import-job-watch";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/i18n";
 
 // ── Import-specific helpers ───────────────────────────────────────────
 
@@ -870,6 +871,7 @@ async function watchImportJob(
 // ── Main page ─────────────────────────────────────────────────────────
 
 export function CompanyImport() {
+  const { t } = useTranslation();
   const {
     selectedCompanyId,
     selectedCompany,
@@ -1682,7 +1684,10 @@ export function CompanyImport() {
       const override: CompanyPortabilityAdapterOverride = { adapterType: apiType };
       if (configVals) {
         if (selectedType === "openai_dot" && configVals.adapterSchemaValues?.allowUnmeteredProvider !== true) {
-          throw new Error("OpenAI Dot requires acknowledgement of external billing. Configure the Dot adapter and enable Allow externally billed provider.");
+          throw new Error(t("companyImport.dotExternalBillingRequired", {
+            provider: "OpenAI Dot",
+            setting: t("agentConfiguration.runner.dot.allowExternallyBilledProvider"),
+          }));
         }
         override.adapterConfig = getUIAdapter(apiType).buildAdapterConfig(configVals);
       }

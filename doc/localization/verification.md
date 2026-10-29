@@ -1371,3 +1371,17 @@ permanecem intactos.
 `check:tokens`, `check:token-gates`, `git diff --check` e validação OpenSpec
 estrita passaram. O progresso atual é **117/156**; próxima tarefa:
 reconhecimento de cobrança externa na importação (3.6d2c2b2c).
+
+### Continuação — confirmação de cobrança na importação de Dot (3.6d2c2b2c)
+
+O fluxo de importação agora apresenta em PT-BR/en o reconhecimento de cobrança
+externa exigido para OpenAI Dot. A seleção e a confirmação continuam
+obrigatórias antes da importação; a mesma flag `allowUnmeteredProvider` e o
+payload do Runner são mantidos. A mensagem de validação que impede a importação
+sem confirmação acompanha o idioma atual.
+
+`CompanyImport.test.tsx` e `locale-validation.test.ts` passaram em **41/41
+execuções**. Typecheck direcionado, `check:tokens`, `check:token-gates`,
+`git diff --check` e validação OpenSpec estrita passaram. Com isso, 3.6d2c2b e
+3.6d2c2 estão concluídas; progresso: **121/156**. Próxima tarefa: perfis Claude
+Managed e AWS AgentCore (3.6d2c2b3).

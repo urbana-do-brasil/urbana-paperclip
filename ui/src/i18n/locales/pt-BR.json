@@ -1918,6 +1918,9 @@
     "connectDotAgent": "Conectar agente Dot",
     "connectOrganization": "Conectar organização"
   },
+  "companyImport": {
+    "dotExternalBillingRequired": "{{provider}} exige a confirmação de que a cobrança é externa. Configure o adaptador Dot e ative {{setting}}."
+  },
   "organizationPortfolio": {
     "breadcrumb": "Organizações",
     "newOrganization": "Nova organização",
