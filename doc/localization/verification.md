@@ -1298,6 +1298,13 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
   gerados, erros retornados pela API e callbacks; a apresentação e os controles
   do prompt foram localizados sem alterar seu conteúdo técnico. A bateria focada
   passou em 130/130 testes; o typecheck direcionado, gates de tokens, diff check
-  e validação OpenSpec estrita passaram. O grupo 3.6c está concluído. Próxima:
-  3.6d.
+  e validação OpenSpec estrita passaram. O grupo 3.6c está concluído. Como o
+  detalhe do agente abrange visões, formulários, documentos de instrução e gestão
+  de ferramentas, 3.6d foi decomposta em quatro lotes verificáveis (d1–d4).
+  Como d1 também combina cartões de resumo, avisos e ações confirmáveis, foi
+  dividida em três subtarefas (d1a–d1c). 3.6d1a localizou cartões de identidade,
+  runtime, capacidades, skills, tarefas recentes e atalhos de auditoria, mantendo
+  texto de usuário, modelo, IDs e rotas. AgentOverview e locale-validation
+  passaram em 15/15 testes; typecheck direcionado, gates de tokens, diff check e
+  OpenSpec estrito passaram. Próxima: 3.6d1b.
   A aplicação ainda não foi implantada.

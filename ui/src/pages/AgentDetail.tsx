@@ -36,6 +36,8 @@ import { AgentSkillsTab } from "./agent-skills/AgentSkillsTab";
 import { AgentConfigForm } from "../components/AgentConfigForm";
 import { getAdapterDisplay } from "../adapters/adapter-display-registry";
 import { adapterLabels, roleLabels, help } from "../components/agent-config-primitives";
+import { useTranslation } from "@/i18n";
+import { agentRoleLabel, agentStatusLabel } from "../lib/agent-directory-labels";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useAdapterCapabilities } from "@/adapters/use-adapter-capabilities";
 import { redactCommandText as redactCommandSecretText } from "@paperclipai/adapter-utils";
@@ -1729,6 +1731,7 @@ export function AgentOverview({
   skillNames: string[];
   agentRouteId: string;
 }) {
+  const { t } = useTranslation();
   const issuesById = useMemo(() => {
     const map = new Map<string, (typeof assignedIssues)[number]>();
     for (const issue of assignedIssues) map.set(issue.id, issue);
@@ -1737,7 +1740,7 @@ export function AgentOverview({
   const configuredModel = asNonEmptyString(agent.adapterConfig?.model)
     ?? asNonEmptyString(agent.adapterConfig?.modelName)
     ?? asNonEmptyString(agent.runtimeConfig?.model)
-    ?? "Adapter default";
+    ?? t("agentOverview.adapterDefault");
   const lastRun = runs[0] ?? null;
   const identity = useQuery({
     queryKey: [...queryKeys.agents.identity(agent.id), lastRun?.id, lastRun?.status],
@@ -1750,31 +1753,31 @@ export function AgentOverview({
       <div className="grid gap-4 md:grid-cols-2">
         <section className="rounded-lg border border-border p-4" aria-labelledby="agent-identity-heading">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 id="agent-identity-heading" className="text-sm font-medium">Identity</h3>
-            <StatusBadge status={agent.status} />
+            <h3 id="agent-identity-heading" className="text-sm font-medium">{t("agentOverview.identity")}</h3>
+            <StatusBadge status={agent.status} label={agentStatusLabel(agent.status, t)} />
           </div>
           <div className="space-y-3">
-            <SummaryRow label="Role"><span className="text-sm">{roleLabels[agent.role] ?? agent.role}</span></SummaryRow>
-            <SummaryRow label="Title"><span className="text-sm">{agent.title ?? "Not set"}</span></SummaryRow>
-            <SummaryRow label="Reports to">
+            <SummaryRow label={t("agentOverview.role")}><span className="text-sm">{agentRoleLabel(agent.role, t)}</span></SummaryRow>
+            <SummaryRow label={t("agentOverview.title")}><span className="text-sm">{agent.title ?? t("agentOverview.notSet")}</span></SummaryRow>
+            <SummaryRow label={t("agentOverview.reportsTo")}>
               {reportsToAgent ? (
                 <Link className="text-sm hover:underline" to={agentDetailHref(agentRouteRef(reportsToAgent))}>
                   {reportsToAgent.name}
                 </Link>
-              ) : <span className="text-sm">Board</span>}
+              ) : <span className="text-sm">{t("agentOverview.board")}</span>}
             </SummaryRow>
-            <SummaryRow label="Direct reports"><span className="text-sm tabular-nums">{directReportCount}</span></SummaryRow>
-            <SummaryRow label="Public key">
-              {identity.isPending ? <span className="text-sm text-muted-foreground">Loading…</span>
-                : identity.isError ? <span className="text-sm text-destructive">Could not load public key</span>
+            <SummaryRow label={t("agentOverview.directReports")}><span className="text-sm tabular-nums">{directReportCount}</span></SummaryRow>
+            <SummaryRow label={t("agentOverview.publicKey")}>
+              {identity.isPending ? <span className="text-sm text-muted-foreground">{t("agentOverview.loading")}</span>
+                : identity.isError ? <span className="text-sm text-destructive">{t("agentOverview.publicKeyError")}</span>
                 : identity.data ? (
-                  <CopyText text={identity.data.publicKeyPem} ariaLabel="Copy public key" title="Copy public key">
+                  <CopyText text={identity.data.publicKeyPem} ariaLabel={t("agentOverview.copyPublicKey")} title={t("agentOverview.copyPublicKey")}>
                     <span className="font-mono text-sm">{identity.data.keyId.slice(0, 19)}…</span>
                   </CopyText>
                 ) : (
                   <div className="text-sm">
-                    <div>Not created yet</div>
-                    <div className="text-xs text-muted-foreground">Created automatically on the next managed run</div>
+                    <div>{t("agentOverview.publicKeyNotCreated")}</div>
+                    <div className="text-xs text-muted-foreground">{t("agentOverview.publicKeyCreatedOnRun")}</div>
                   </div>
                 )}
             </SummaryRow>
@@ -1783,56 +1786,56 @@ export function AgentOverview({
 
         <section className="rounded-lg border border-border p-4" aria-labelledby="agent-runtime-heading">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 id="agent-runtime-heading" className="text-sm font-medium">Harness / Runtime</h3>
-            <Link className="text-xs text-muted-foreground hover:text-foreground" to={agentDetailHref(agentRouteId, "runtime")}>Configure</Link>
+            <h3 id="agent-runtime-heading" className="text-sm font-medium">{t("agentOverview.runtime")}</h3>
+            <Link className="text-xs text-muted-foreground hover:text-foreground" to={agentDetailHref(agentRouteId, "runtime")}>{t("agentOverview.configure")}</Link>
           </div>
           <div className="space-y-3">
-            <SummaryRow label="Adapter"><span className="text-sm">{getAdapterDisplay(agent.adapterType === "paperclip_runner" && agent.adapterConfig.provider === "openai_dot" ? "openai_dot" : agent.adapterType).label}</span></SummaryRow>
-            <SummaryRow label="Model"><span className="max-w-64 truncate text-sm font-mono">{configuredModel}</span></SummaryRow>
-            <SummaryRow label="Session"><span className="max-w-64 truncate text-sm font-mono">{runtimeState?.sessionDisplayId ?? runtimeState?.sessionId ?? "No session"}</span></SummaryRow>
-            <SummaryRow label="Last run">
-              <span className="text-sm">{lastRun ? `${lastRun.status} · ${relativeTime(lastRun.createdAt)}` : "No runs"}</span>
+            <SummaryRow label={t("agentOverview.adapter")}><span className="text-sm">{getAdapterDisplay(agent.adapterType === "paperclip_runner" && agent.adapterConfig.provider === "openai_dot" ? "openai_dot" : agent.adapterType).label}</span></SummaryRow>
+            <SummaryRow label={t("agentOverview.model")}><span className="max-w-64 truncate text-sm font-mono">{configuredModel}</span></SummaryRow>
+            <SummaryRow label={t("agentOverview.session")}><span className="max-w-64 truncate text-sm font-mono">{runtimeState?.sessionDisplayId ?? runtimeState?.sessionId ?? t("agentOverview.noSession")}</span></SummaryRow>
+            <SummaryRow label={t("agentOverview.lastRun")}>
+              <span className="text-sm">{lastRun ? `${lastRun.status} · ${relativeTime(lastRun.createdAt)}` : t("agentOverview.noRuns")}</span>
             </SummaryRow>
           </div>
         </section>
 
         <section className="rounded-lg border border-border p-4" aria-labelledby="agent-capabilities-heading">
-          <h3 id="agent-capabilities-heading" className="mb-3 text-sm font-medium">Capabilities</h3>
+          <h3 id="agent-capabilities-heading" className="mb-3 text-sm font-medium">{t("agentOverview.capabilities")}</h3>
           {agent.capabilities?.trim() ? (
             <MarkdownBody className="text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">{agent.capabilities}</MarkdownBody>
           ) : (
-            <p className="text-sm text-muted-foreground">No capability summary has been added.</p>
+            <p className="text-sm text-muted-foreground">{t("agentOverview.noCapabilities")}</p>
           )}
         </section>
 
         <section className="rounded-lg border border-border p-4" aria-labelledby="agent-skills-heading">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h3 id="agent-skills-heading" className="text-sm font-medium">Skills</h3>
-            <Link className="text-xs text-muted-foreground hover:text-foreground" to={agentDetailHref(agentRouteId, "skills")}>Manage</Link>
+            <h3 id="agent-skills-heading" className="text-sm font-medium">{t("agentOverview.skills")}</h3>
+            <Link className="text-xs text-muted-foreground hover:text-foreground" to={agentDetailHref(agentRouteId, "skills")}>{t("agentOverview.manage")}</Link>
           </div>
           {skillNames.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {skillNames.slice(0, 8).map((skill) => <Badge key={skill} variant="secondary">{skill}</Badge>)}
-              {skillNames.length > 8 ? <Badge variant="outline">+{skillNames.length - 8} more</Badge> : null}
+              {skillNames.length > 8 ? <Badge variant="outline">{t("agentOverview.more", { count: skillNames.length - 8 })}</Badge> : null}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No skills enabled.</p>
+            <p className="text-sm text-muted-foreground">{t("agentOverview.noSkills")}</p>
           )}
         </section>
       </div>
 
       <section className="space-y-3" aria-labelledby="agent-recent-tasks-heading">
         <div className="flex items-center justify-between">
-          <h3 id="agent-recent-tasks-heading" className="text-sm font-medium">Recent Tasks</h3>
+          <h3 id="agent-recent-tasks-heading" className="text-sm font-medium">{t("agentOverview.recentTasks")}</h3>
           <Link
             to={`/issues?participantAgentId=${agent.id}`}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            See All &rarr;
+            {t("agentOverview.seeAll")} &rarr;
           </Link>
         </div>
         {assignedIssues.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No recent tasks.</p>
+          <p className="text-sm text-muted-foreground">{t("agentOverview.noRecentTasks")}</p>
         ) : (
           <div className="overflow-hidden rounded-lg border border-border">
             {assignedIssues.slice(0, 6).map((issue) => (
@@ -1846,7 +1849,7 @@ export function AgentOverview({
             ))}
             {assignedIssues.length > 6 && (
               <div className="border-t border-border px-3 py-2 text-center text-xs text-muted-foreground">
-                +{assignedIssues.length - 6} more tasks
+                {t("agentOverview.moreTasks", { count: assignedIssues.length - 6 })}
               </div>
             )}
           </div>
@@ -1854,7 +1857,7 @@ export function AgentOverview({
       </section>
 
       <section className="space-y-3" aria-labelledby="agent-audit-links-heading">
-        <h3 id="agent-audit-links-heading" className="text-sm font-medium">Audit</h3>
+        <h3 id="agent-audit-links-heading" className="text-sm font-medium">{t("agentOverview.audit")}</h3>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {(["activity", "runs", "costs", "budgets"] as const).map((section) => (
             <Link
@@ -1862,7 +1865,7 @@ export function AgentOverview({
               to={agentScopedAuditHref(agent.id, section)}
               className="rounded-lg border border-border px-3 py-2 text-sm font-medium capitalize hover:bg-accent"
             >
-              {section}
+              {t(`agentOverview.auditSections.${section}`)}
             </Link>
           ))}
         </div>

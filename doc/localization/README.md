@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **106 de 131 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **107 de 138 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -232,8 +232,14 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
   conexões/autenticação de provedores e convites/pareamento de agentes externos,
   preservando credenciais, prompts gerados, erros do servidor e callbacks; testes
   focados: 130/130, typecheck direcionado, gates de tokens e validação OpenSpec
-  passaram. A etapa 3.6c está concluída; próxima: 3.6d. A aplicação ainda não
-  foi implantada.
+  passaram. A etapa 3.6c está concluída. 3.6d foi dividida em quatro lotes:
+  identidade/visão geral (d1), formulários e histórico de configuração (d2),
+  editor de instruções (d3) e ferramentas configuráveis por agente (d4). O lote
+  d1 foi subdividido entre resumo (d1a), cabeçalho/avisos (d1b) e ações da ficha
+  (d1c). 3.6d1a localizou os cartões de identidade/runtime/capacidades/skills,
+  tarefas recentes e atalhos de auditoria; conteúdo do agente, modelo, IDs e
+  rotas continuam preservados. Testes focados: 15/15; typecheck direcionado e
+  gates passaram. Próxima: 3.6d1b. A aplicação ainda não foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28
 
