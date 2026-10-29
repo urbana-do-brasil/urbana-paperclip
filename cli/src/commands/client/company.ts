@@ -1424,7 +1424,7 @@ export function registerCompanyCommands(program: Command): void {
       .action(async (opts: CompanyCommandOptions) => {
         try {
           const ctx = resolveCommandContext(opts);
-          printOutput(await ctx.api.get("/api/companies/stats"), { json: ctx.json });
+          printCompanyResult(await ctx.api.get("/api/companies/stats"), ctx.json);
         } catch (err) {
           handleCommandError(err);
         }
@@ -2001,7 +2001,7 @@ export function registerCompanyCommands(program: Command): void {
   );
 }
 
-function printCompanyResult(row: Company | null, json: boolean): void {
+function printCompanyResult(row: unknown, json: boolean): void {
   if (row === null && !json) {
     console.log(pc.dim(cliMessage("emptyValue")));
     return;

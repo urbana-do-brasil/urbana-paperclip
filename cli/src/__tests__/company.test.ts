@@ -313,6 +313,84 @@ describe("company CLI commands", () => {
     expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1, 1, 1, 1, 1]);
   });
 
+  it("preserves company stats JSON and localizes human and structured failures", async () => {
+    const stats = {
+      companyCount: 2,
+      totalMonthlyBudgetCents: 45000,
+      byAgent: [{ agentId: "agent-1", spentMonthlyCents: 12500 }],
+    };
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(stats))
+      .mockResolvedValueOnce(jsonResponse(stats))
+      .mockResolvedValueOnce(jsonResponse({ error: "provider unavailable", messageKey: "service_unavailable" }, 503))
+      .mockResolvedValueOnce(jsonResponse({ error: "provider unavailable", messageKey: "service_unavailable" }, 503))
+      .mockResolvedValueOnce(jsonResponse({ error: "stats fixture failure", details: { code: "STATS_FAILED" } }, 503))
+      .mockResolvedValueOnce(jsonResponse({ error: "stats fixture failure", details: { code: "STATS_FAILED" } }, 503));
+
+    const base = ["--api-base", "http://paperclip.test", "--api-key", "board-token"];
+    setCliLocale("pt-BR");
+    await runCommand(["company", "stats", ...base, "--json"]);
+    const ptJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "stats", ...base, "--json"]);
+    const enJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    expect(ptJson).toBe(enJson);
+    expect(JSON.parse(ptJson)).toEqual(stats);
+
+    process.argv = ["node", "paperclipai", "company", "stats"];
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+      throw new Error(`exit:${code ?? 0}`);
+    }) as typeof process.exit);
+
+    setCliLocale("pt-BR");
+    await expect(runCommand(["company", "stats", ...base])).rejects.toThrow("exit:1");
+    const ptHumanError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await expect(runCommand(["company", "stats", ...base])).rejects.toThrow("exit:1");
+    const enHumanError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    process.argv = ["node", "paperclipai", "company", "stats", "--json"];
+    setCliLocale("pt-BR");
+    await expect(runCommand(["company", "stats", ...base, "--json"])).rejects.toThrow("exit:1");
+    const ptJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await expect(runCommand(["company", "stats", ...base, "--json"])).rejects.toThrow("exit:1");
+    const enJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptHumanError).toContain("Erro de API 503: O Paperclip está temporariamente indisponível.");
+    expect(enHumanError).toContain("API error 503: Paperclip is temporarily unavailable.");
+    expect(ptJsonError).toBe(enJsonError);
+    expect(ptJsonError).toBe('API error 503: stats fixture failure details={"code":"STATS_FAILED"}');
+    expect(logSpy).toHaveBeenCalledTimes(2);
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1, 1, 1]);
+  });
+
+  it("localizes an empty company stats result without translating JSON null", async () => {
+    const noContent = () => new Response(null, { status: 204 });
+    fetchMock
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent());
+    const base = ["company", "stats", "--api-base", "http://paperclip.test", "--api-key", "board-token"];
+
+    setCliLocale("pt-BR");
+    await runCommand(base);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(nulo)");
+    setCliLocale("en");
+    await runCommand(base);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(null)");
+
+    setCliLocale("pt-BR");
+    await runCommand([...base, "--json"]);
+    const ptJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand([...base, "--json"]);
+    const enJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    expect(ptJson).toBe("null");
+    expect(enJson).toBe(ptJson);
+  });
+
   it("gets the current company from an explicit company context without board-wide listing", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(company()));
 

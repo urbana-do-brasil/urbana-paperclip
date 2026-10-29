@@ -51,6 +51,10 @@ const operationHelp: Record<string, CommandHelp> = {
       "--company-id": { en: "Company ID (overrides context default)", "pt-BR": "ID da organização (substitui o padrão do contexto)" },
     },
   },
+  "company stats": {
+    description: { en: "Get company stats", "pt-BR": "Consultar estatísticas da organização" },
+    options: commonClientOptions,
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {

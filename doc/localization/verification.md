@@ -3252,3 +3252,11 @@ e histórico são preservados. Preparação, prompt e caminho nativo passaram em
 **173/173 testes**; typecheck de adapter-utils passou. O typecheck do servidor
 foi encerrado por memória (SIGKILL). Outros carriers/adapters e respostas reais
 por runtime e modelo permanecem sem qualificação. Progresso: **278/298**.
+
+
+## CLI — estatísticas de organizações (4.3c)
+
+`company stats` localiza help e resultado vazio em PT-BR/en, preservando dados,
+JSON, falhas estruturadas e códigos. Testes do comando: **25/25**; help
+direcionado: **1/1**. Typecheck da CLI não foi repetido. Demais operações e
+regressão de processo 4.4 continuam pendentes. Progresso: **279/299**.

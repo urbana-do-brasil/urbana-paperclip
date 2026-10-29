@@ -43,6 +43,7 @@ describe("localized CLI help", () => {
       portuguese: "Consultar a organização atual do escopo",
       english: "Get the current scoped company",
     },
+    { command: ["company", "stats"], portuguese: "Consultar estatísticas da organização", english: "Get company stats" },
   ])("localizes help for $command", ({ command, portuguese, english }) => {
     const pt = help([...command, "--help", "--lang", "pt-BR"]);
     expect(pt.status).toBe(0);
