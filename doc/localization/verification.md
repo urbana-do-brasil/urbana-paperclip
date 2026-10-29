@@ -1545,5 +1545,22 @@ Os testes focados de `AgentDetail.run-history.test.tsx`,
 `SourceResolvedFoldBadge.test.tsx` e `locale-validation.test.ts` passaram
 (**26/26**). Typecheck direcionado dos
 módulos alterados, gates de tokens, `git diff --check` e validação OpenSpec
-estrita passaram. Progresso: **135/160**. Próxima tarefa: 3.6f, transcrições e
-estados próprios de ferramentas.
+estrita passaram. Progresso: **135/162**. A tarefa 3.6f foi subdividida em
+visualizadores de log/transcript (f1), blocos de transcrição e estados de
+ferramentas (f2) e Runner Inspector (f3).
+
+### Continuação — visualizadores de log e invocação (3.6f1)
+
+Os visualizadores de log das variantes streamlined e production localizam os
+estados vazio, carregamento e erro; modos da transcrição, acompanhamento ao
+vivo, paginação, horários e contagens. Os cartões de invocação e operações de
+workspace também localizam rótulos, fases, status e intervalos de tempo. Streams,
+comandos, caminhos, metadados, dados da API, mensagens técnicas e conteúdo bruto
+dos logs permanecem intactos.
+
+`AgentDetail.log-visibility.test.tsx` passou (**10/10**), verificando estados
+vazios nos dois idiomas, controles de transcrição, operação de workspace e dados
+de invocação preservados nas duas variantes. `locale-validation.test.ts` passou
+(**12/12**). Typecheck direcionado, gates de tokens, `git diff --check` e
+validação OpenSpec estrita passaram. Progresso: **136/162**. Próxima tarefa:
+3.6f2, blocos de transcrição e estados de ferramentas.
