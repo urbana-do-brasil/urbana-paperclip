@@ -1935,5 +1935,27 @@ parse dos catálogos, `git diff --check` e validação OpenSpec estrita passaram
 O typecheck completo da UI permanece bloqueado pelo erro em arquivo não
 alterado: `storybook/prototypes/NewAgentWizard.tsx` importa
 `SETUP_LOGIN_HINTS`, símbolo não exportado por `@/lib/agent-setup-fields`.
-O progresso é **173/190 tarefas**; 3.8d está concluída. Próxima: 3.8e, segredos
-e cofres.
+3.8d está concluída. Antes do início, 3.8e foi decomposta em cinco jornadas;
+3.8e1 foi dividida em três lotes revisáveis (inventário, gerenciamento de
+valores e detalhes/auditoria). O progresso atualizado então era **173/198 tarefas**;
+próxima: 3.8e1a, inventário de segredos da organização.
+
+### Continuação — inventário de segredos da organização (3.8e1a)
+
+O shell e a listagem da aba de segredos agora localizam abas, busca, filtros,
+alternância pasta/lista, navegação e contagens de pastas, estados vazios/erro,
+colunas, status, metadados, ações de linha, indicação do provedor e datas em
+PT-BR/en. Nomes, chaves, caminhos e referências fornecidos por usuários ou
+provedores permanecem intactos; enums, IDs, consultas, permissões e dados de
+segredo não foram alterados. As superfícies de detalhes, edição/rotação, cofres,
+valores pessoais e propostas continuam nos lotes posteriores.
+
+`Secrets.render.test.tsx` e `locale-validation.test.ts` passaram em **46/46
+testes**, incluindo a renderização PT-BR com nome e chave dinâmicos preservados.
+`check:tokens`, `check:token-gates`, parse dos catálogos, `git diff --check` e
+validação OpenSpec estrita passaram. A suíte de render ainda emite avisos
+React `act`, sem falhas nos testes. O typecheck completo da UI
+permanece bloqueado pelo erro não relacionado em `storybook/prototypes/NewAgentWizard.tsx`:
+o import `SETUP_LOGIN_HINTS` não é exportado por `@/lib/agent-setup-fields`.
+O progresso é **174/198 tarefas**; próxima: 3.8e1b, criação, edição, rotação e
+arquivamento de valores/referências.

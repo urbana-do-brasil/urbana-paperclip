@@ -14,9 +14,14 @@ import type {
   UserSecretDefinition,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
 import { ProviderVaultsTab, Secrets } from "./Secrets";
 import { ApiError } from "../api/client";
 import { queryKeys } from "../lib/queryKeys";
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 const mockSecretsApi = vi.hoisted(() => ({
   list: vi.fn(),
@@ -395,6 +400,48 @@ describe("Secrets page layout", () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+  });
+
+  it("localizes the organization secret inventory while preserving user supplied names and keys", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockSecretsApi.list.mockResolvedValue([
+      makeCompanySecret({
+        id: "secret-localized-inventory",
+        name: "API token - produção",
+        key: "CLIENTE_API_TOKEN",
+      }),
+    ]);
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    expect(container.querySelector("h1")?.textContent).toBe("Segredos");
+    expect(container.querySelector('input[aria-label="Buscar segredos"]')).not.toBeNull();
+    expect(container.querySelector('[role="group"][aria-label="Modo de visualização"]')).not.toBeNull();
+    expect(container.querySelector('[role="table"][aria-label="Segredos"]')).not.toBeNull();
+    expect(container.textContent).toContain("Meus segredos");
+    expect(container.querySelector('button[aria-label="Filtrar"]')).not.toBeNull();
+    expect(container.textContent).toContain("API token - produção");
+    expect(container.textContent).toContain("CLIENTE_API_TOKEN");
+    expect(container.textContent).toContain("Ativo");
+    expect(container.textContent).toContain("Organização");
+    expect(container.textContent).toContain("Use segredos vinculando-os a variáveis de ambiente do runtime.");
+    expect(container.querySelector('button[aria-label="Ações para API token - produção"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label*="Gerenciado pelo Paperclip"]')).not.toBeNull();
+
+    await act(async () => root.unmount());
+    await i18n.changeLanguage("en");
   });
 
   it("uses the shared search/filter/tab affordances and keeps vault sections quiet", async () => {

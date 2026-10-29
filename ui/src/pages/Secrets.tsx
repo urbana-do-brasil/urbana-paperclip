@@ -129,6 +129,9 @@ import {
   UserSecretChip,
 } from "./secrets/user-secret-presentation";
 import type { MyUserSecretEntry } from "../api/secrets";
+import { i18n, useTranslation } from "@/i18n";
+
+type Translate = ReturnType<typeof useTranslation>["t"];
 
 type CreateMode = "managed" | "external";
 // "value" writes a new secret value (for external references: through to the
@@ -151,10 +154,10 @@ function readStoredViewMode(): SecretsViewMode | null {
 }
 
 /** "12 secrets · 3 folders" — folder part omitted when there are no subfolders. */
-function formatSecretPathCounts(secretCount: number, folderCount: number): string {
-  const parts = [`${secretCount} ${secretCount === 1 ? "secret" : "secrets"}`];
+function formatSecretPathCounts(secretCount: number, folderCount: number, t: Translate): string {
+  const parts = [t("secrets.inventory.secretCount", { count: secretCount })];
   if (folderCount > 0) {
-    parts.push(`${folderCount} ${folderCount === 1 ? "folder" : "folders"}`);
+    parts.push(t("secrets.inventory.folderCount", { count: folderCount }));
   }
   return parts.join(" · ");
 }
@@ -294,16 +297,18 @@ function formatRelative(value: Date | string | null | undefined): string {
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return "—";
   const diff = Date.now() - date.getTime();
-  if (diff < 0) return date.toLocaleString();
+  const locale = i18n.resolvedLanguage ?? "en";
+  if (diff < 0) return date.toLocaleString(locale);
+  const relative = new Intl.RelativeTimeFormat(locale, { numeric: "always", style: "narrow" });
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 60) return relative.format(-seconds, "second");
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return relative.format(-minutes, "minute");
   const hours = Math.floor(minutes / 60);
-  if (hours < 48) return `${hours}h ago`;
+  if (hours < 48) return relative.format(-hours, "hour");
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return date.toLocaleDateString();
+  if (days < 30) return relative.format(-days, "day");
+  return date.toLocaleDateString(locale);
 }
 
 function statusTextTone(status: SecretStatus) {
@@ -357,8 +362,8 @@ function modeDescription(managedMode: SecretManagedMode, canWriteExternalValue =
     : "Paperclip resolves this provider reference but does not rotate the provider value.";
 }
 
-function statusLabel(status: SecretStatus) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
+function statusLabel(status: SecretStatus, t: Translate) {
+  return t(`secrets.status.${status}`);
 }
 
 function statusDotTone(status: SecretStatus) {
@@ -377,10 +382,11 @@ function statusDotTone(status: SecretStatus) {
 }
 
 function StatusBadge({ status }: { status: SecretStatus }) {
+  const { t } = useTranslation();
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium", statusTextTone(status))}>
       <span className={cn("h-1.5 w-1.5 rounded-full", statusDotTone(status))} aria-hidden="true" />
-      {statusLabel(status)}
+      {statusLabel(status, t)}
     </span>
   );
 }
@@ -397,14 +403,19 @@ function providerIndicatorLabel(
   secret: CompanySecret,
   providers: SecretProviderDescriptor[],
   providerConfigs: CompanySecretProviderConfig[],
+  t: Translate,
 ) {
   const provider = providerLabel(providers, secret.provider);
-  const vault = providerVaultLabel(providerConfigs, secret.providerConfigId);
-  const custody = modeLabel(secret.managedMode);
+  const vault = secret.providerConfigId
+    ? providerConfigs.find((config) => config.id === secret.providerConfigId)?.displayName ?? t("secrets.inventory.unknownVault")
+    : t("secrets.inventory.deploymentDefault");
+  const custody = t(secret.managedMode === "paperclip_managed"
+    ? "secrets.inventory.paperclipManaged"
+    : "secrets.inventory.linkedExternal");
   return [
     `${custody} · ${provider}`,
-    vault ? `Vault: ${vault}` : null,
-    secret.externalRef ? `Reference: ${secret.externalRef}` : null,
+    `${t("secrets.inventory.vaultLabel")}: ${vault}`,
+    secret.externalRef ? `${t("secrets.inventory.referenceLabel")}: ${secret.externalRef}` : null,
   ]
     .filter(Boolean)
     .join("\n");
@@ -419,7 +430,8 @@ function SecretProviderIndicator({
   providers: SecretProviderDescriptor[];
   providerConfigs: CompanySecretProviderConfig[];
 }) {
-  const label = providerIndicatorLabel(secret, providers, providerConfigs);
+  const { t } = useTranslation();
+  const label = providerIndicatorLabel(secret, providers, providerConfigs, t);
   const Icon = secret.managedMode === "external_reference" ? ExternalLink : Lock;
   return (
     <Tooltip>
@@ -650,6 +662,7 @@ export function getAwsManagedPathPreview(input: {
 }
 
 export function Secrets() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
@@ -731,8 +744,8 @@ export function Secrets() {
   const [newFolderError, setNewFolderError] = useState<string | null>(null);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Secrets" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("secrets.title") }]);
+  }, [setBreadcrumbs, t]);
 
   const secretsQuery = useQuery({
     queryKey: selectedCompanyId
@@ -1522,7 +1535,7 @@ export function Secrets() {
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Actions for ${name}`}
+            aria-label={t("secrets.inventory.actionsFor", { name })}
             onClick={(event) => event.stopPropagation()}
           >
             <MoreHorizontal className="h-4 w-4" />
@@ -1535,16 +1548,18 @@ export function Secrets() {
               else openUserDefinition(row.definition);
             }}
           >
-            <KeyRound className="h-4 w-4" /> View details
+            <KeyRound className="h-4 w-4" /> {t("secrets.inventory.viewDetails")}
           </DropdownMenuItem>
           {row.kind === "company" ? (
             <>
               <DropdownMenuItem onSelect={() => setUsageDialogSecretId(row.secret.id)}>
-                <Link2 className="h-4 w-4" /> View references ({row.secret.referenceCount ?? 0})
+                <Link2 className="h-4 w-4" /> {t("secrets.inventory.viewReferences", { count: row.secret.referenceCount ?? 0 })}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openRotateSecret(row.secret)}>
                 <RefreshCw className="h-4 w-4" />
-                {rotateActionLabel(row.secret)}
+                {row.secret.managedMode === "external_reference" && !secretSupportsExternalValueWrite(row.secret)
+                  ? t("secrets.inventory.updateReference")
+                  : t("secrets.inventory.updateValue")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -1557,7 +1572,7 @@ export function Secrets() {
                 }
               >
                 {row.secret.status === "active" ? <Ban className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                {row.secret.status === "active" ? "Disable" : "Activate"}
+                {row.secret.status === "active" ? t("secrets.inventory.disable") : t("secrets.inventory.activate")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={statusMutation.isPending}
@@ -1573,11 +1588,11 @@ export function Secrets() {
                 ) : (
                   <Archive className="h-4 w-4" />
                 )}
-                {row.secret.status === "archived" ? "Unarchive" : "Archive"}
+                {row.secret.status === "archived" ? t("secrets.inventory.unarchive") : t("secrets.inventory.archive")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onSelect={() => setDeleteConfirm(row.secret)}>
-                <Trash2 className="h-4 w-4" /> Delete secret
+                <Trash2 className="h-4 w-4" /> {t("secrets.inventory.deleteSecret")}
               </DropdownMenuItem>
             </>
           ) : (
@@ -1595,11 +1610,11 @@ export function Secrets() {
               >
                 <KeyRound className="h-4 w-4" />
                 {myUserSecrets.find((entry) => entry.definition.id === row.definition.id)?.secret
-                  ? "Update my value"
-                  : "Set my value"}
+                  ? t("secrets.inventory.updateMyValue")
+                  : t("secrets.inventory.setMyValue")}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openEditDefinition(row.definition)}>
-                <Pencil className="h-4 w-4" /> Edit definition
+                <Pencil className="h-4 w-4" /> {t("secrets.inventory.editDefinition")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -1616,7 +1631,7 @@ export function Secrets() {
                 ) : (
                   <CheckCircle2 className="h-4 w-4" />
                 )}
-                {row.definition.status === "active" ? "Disable" : "Activate"}
+                {row.definition.status === "active" ? t("secrets.inventory.disable") : t("secrets.inventory.activate")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={definitionStatusMutation.isPending}
@@ -1632,11 +1647,11 @@ export function Secrets() {
                 ) : (
                   <Archive className="h-4 w-4" />
                 )}
-                {row.definition.status === "archived" ? "Unarchive" : "Archive"}
+                {row.definition.status === "archived" ? t("secrets.inventory.unarchive") : t("secrets.inventory.archive")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onSelect={() => setDefinitionDeleteConfirm(row.definition)}>
-                <Trash2 className="h-4 w-4" /> Delete definition
+                <Trash2 className="h-4 w-4" /> {t("secrets.inventory.deleteDefinition")}
               </DropdownMenuItem>
             </>
           )}
@@ -1675,7 +1690,7 @@ export function Secrets() {
             <span className="truncate font-medium text-foreground">{folder.name}</span>
           </div>
           <div className="mt-0.5 pl-6 text-xs text-muted-foreground">
-            {formatSecretPathCounts(folder.secretCount, folder.folderCount)}
+            {formatSecretPathCounts(folder.secretCount, folder.folderCount, t)}
           </div>
         </div>
         <div role="cell" aria-hidden="true" />
@@ -1700,7 +1715,7 @@ export function Secrets() {
           <div className="min-w-0">
             <div className="truncate font-medium text-foreground">{folder.name}</div>
             <div className="text-xs text-muted-foreground">
-              {formatSecretPathCounts(folder.secretCount, folder.folderCount)}
+              {formatSecretPathCounts(folder.secretCount, folder.folderCount, t)}
             </div>
           </div>
         </div>
@@ -1710,7 +1725,7 @@ export function Secrets() {
   }
 
   function renderUpRow(variant: "table" | "card") {
-    const parentLabel = parentFolderPath ? parentFolderPath.split("/").pop()! : "All secrets";
+    const parentLabel = parentFolderPath ? parentFolderPath.split("/").pop()! : t("secrets.inventory.allSecrets");
     return (
       <Link
         to={folderLinkTo(parentFolderPath)}
@@ -1723,16 +1738,16 @@ export function Secrets() {
         )}
       >
         <CornerLeftUp className="h-4 w-4 shrink-0" />
-        <span className="truncate">Up to {parentLabel}</span>
+        <span className="truncate">{t("secrets.inventory.upToFolder", { folder: parentLabel })}</span>
       </Link>
     );
   }
 
   function renderSecretsBreadcrumb() {
-    const currentName = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].name : "All secrets";
-    const parentLabel = parentFolderPath ? parentFolderPath.split("/").pop()! : "All secrets";
+    const currentName = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].name : t("secrets.inventory.allSecrets");
+    const parentLabel = parentFolderPath ? parentFolderPath.split("/").pop()! : t("secrets.inventory.allSecrets");
     const fullTrail: { name: string; path: string }[] = [
-      { name: "All secrets", path: "" },
+      { name: t("secrets.inventory.allSecrets"), path: "" },
       ...breadcrumbs,
     ];
     // Middle-truncate deep paths: root · … · last two.
@@ -1742,7 +1757,7 @@ export function Secrets() {
         : fullTrail;
 
     return (
-      <nav aria-label="Breadcrumb" className="min-w-0">
+      <nav aria-label={t("secrets.inventory.breadcrumb")} className="min-w-0">
         {/* Wide: full trail */}
         <ol className="hidden min-w-0 items-center gap-1 text-sm @min-[40rem]:flex">
           {collapsed.map((crumb, index) => {
@@ -1775,12 +1790,12 @@ export function Secrets() {
             <>
               <Link
                 to={folderLinkTo(parentFolderPath)}
-                aria-label="Up one folder"
+                aria-label={t("secrets.inventory.upOneFolder")}
                 className="shrink-0 text-muted-foreground hover:text-foreground"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Link>
-              {parentLabel !== "All secrets" ? (
+              {parentFolderPath ? (
                 <span className="shrink-0 text-muted-foreground">{parentLabel} /</span>
               ) : null}
               <span aria-current="page" className="truncate font-medium text-foreground">
@@ -1789,7 +1804,7 @@ export function Secrets() {
             </>
           ) : (
             <span aria-current="page" className="truncate font-medium text-foreground">
-              All secrets
+              {t("secrets.inventory.allSecrets")}
             </span>
           )}
         </div>
@@ -1799,7 +1814,7 @@ export function Secrets() {
 
   if (!selectedCompanyId) {
     return (
-      <div className="p-6 text-sm text-muted-foreground">Select an organization to manage secrets.</div>
+      <div className="p-6 text-sm text-muted-foreground">{t("secrets.noOrganization")}</div>
     );
   }
 
@@ -1808,7 +1823,7 @@ export function Secrets() {
     <div className="flex max-w-6xl flex-col gap-4">
       <div className="flex items-center gap-2">
         <KeyRound className="h-5 w-5 text-muted-foreground" />
-        <h1 className="text-lg font-semibold">Secrets</h1>
+        <h1 className="text-lg font-semibold">{t("secrets.title")}</h1>
       </div>
 
       <Tabs
@@ -1818,9 +1833,9 @@ export function Secrets() {
       >
         <PageTabBar
           items={[
-            { value: "secrets", label: "Secrets" },
-            { value: "my-secrets", label: "My secrets" },
-            ...(hideVaultsTab ? [] : [{ value: "vaults", label: "Provider vaults" }]),
+            { value: "secrets", label: t("secrets.tabs.organization") },
+            { value: "my-secrets", label: t("secrets.tabs.mySecrets") },
+            ...(hideVaultsTab ? [] : [{ value: "vaults", label: t("secrets.tabs.providerVaults") }]),
             ...(hideProposalsTab
               ? []
               : [
@@ -1828,7 +1843,7 @@ export function Secrets() {
                     value: "proposals",
                     label: (
                       <span className="inline-flex items-center gap-1.5">
-                        Proposals
+                        {t("secrets.tabs.proposals")}
                         {pendingProposalCount > 0 ? (
                           <Badge
                             variant="outline"
@@ -1855,9 +1870,9 @@ export function Secrets() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by name, key, ref"
+                placeholder={t("secrets.inventory.searchPlaceholder")}
                 className="pl-7 text-xs sm:text-sm"
-                aria-label="Search secrets"
+                aria-label={t("secrets.inventory.searchLabel")}
                 data-page-search-target="true"
               />
             </div>
@@ -1873,7 +1888,7 @@ export function Secrets() {
             />
             <div
               role="group"
-              aria-label="View mode"
+              aria-label={t("secrets.inventory.viewMode")}
               className={cn(
                 "inline-flex items-center rounded-md border border-border p-0.5",
                 searching && "opacity-50",
@@ -1893,7 +1908,7 @@ export function Secrets() {
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {mode}
+                  {t(`secrets.inventory.viewModes.${mode}`)}
                 </button>
               ))}
             </div>
@@ -1913,15 +1928,15 @@ export function Secrets() {
                   setNewFolderError(null);
                 }}
               >
-                <Folder className="mr-1 h-3.5 w-3.5" /> New folder
+                <Folder className="mr-1 h-3.5 w-3.5" /> {t("secrets.inventory.newFolder")}
               </Button>
             ) : null}
             <Button onClick={openCreateSecret} size="sm">
-              <Plus className="h-3.5 w-3.5 mr-1" /> New secret
+              <Plus className="h-3.5 w-3.5 mr-1" /> {t("secrets.inventory.newSecret")}
             </Button>
           </div>
           {newFolderOpen && showFolderView ? (
-            <div className="flex flex-wrap items-start gap-2" role="group" aria-label="Create folder">
+            <div className="flex flex-wrap items-start gap-2" role="group" aria-label={t("secrets.inventory.createFolder")}>
               <div className="min-w-48 flex-1 sm:max-w-80">
                 <Input
                   value={newFolderName}
@@ -1933,8 +1948,8 @@ export function Secrets() {
                     if (event.key === "Enter") stageNewFolder();
                     if (event.key === "Escape") closeNewFolder();
                   }}
-                  placeholder="Folder name"
-                  aria-label="Folder name"
+                  placeholder={t("secrets.inventory.folderName")}
+                  aria-label={t("secrets.inventory.folderName")}
                   aria-invalid={Boolean(newFolderError)}
                   autoFocus
                 />
@@ -1945,17 +1960,17 @@ export function Secrets() {
                 ) : null}
               </div>
               <Button type="button" size="sm" onClick={stageNewFolder}>
-                Create folder
+                {t("secrets.inventory.createFolder")}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={closeNewFolder}>
-                Cancel
+                {t("common.cancel")}
               </Button>
             </div>
           ) : null}
           <div>
             {secretsQuery.isError || userDefinitionsQuery.isError ? (
               <div className="text-sm text-destructive flex items-center gap-2 py-4">
-                <AlertCircle className="h-4 w-4" /> Failed to load secrets:{" "}
+                <AlertCircle className="h-4 w-4" /> {t("secrets.inventory.loadFailed")}: {" "}
                 {((secretsQuery.error ?? userDefinitionsQuery.error) as Error).message}
                 <Button
                   variant="ghost"
@@ -1965,7 +1980,7 @@ export function Secrets() {
                     void userDefinitionsQuery.refetch();
                   }}
                 >
-                  Retry
+                  {t("common.retry")}
                 </Button>
               </div>
             ) : unifiedRows.length === 0 &&
@@ -1974,8 +1989,8 @@ export function Secrets() {
               !(showFolderView && folderPath) ? (
               <EmptyState
                 icon={KeyRound}
-                message="No secrets yet. Create a shared organization secret or one that each user supplies."
-                action="New secret"
+                message={t("secrets.inventory.empty")}
+                action={t("secrets.inventory.newSecret")}
                 onAction={openCreateSecret}
               />
             ) : (
@@ -1984,15 +1999,15 @@ export function Secrets() {
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                     {renderSecretsBreadcrumb()}
                     <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatSecretPathCounts(currentFolderSecretCount, folderListing.folders.length)}
+                      {formatSecretPathCounts(currentFolderSecretCount, folderListing.folders.length, t)}
                     </span>
                   </div>
                 ) : searching ? (
                   <div className="mb-3">
-                    <div className="text-sm font-medium text-foreground">Search results</div>
+                    <div className="text-sm font-medium text-foreground">{t("secrets.inventory.searchResults")}</div>
                     <div className="text-xs text-muted-foreground">
-                      {filteredRows.length} {filteredRows.length === 1 ? "match" : "matches"} across all
-                      folders{folderPath ? ` · searching everywhere, not just ${folderPath}` : ""}
+                      {t("secrets.inventory.matchCount", { count: filteredRows.length })} {t("secrets.inventory.acrossAllFolders")}
+                      {folderPath ? ` · ${t("secrets.inventory.searchingEverywhere", { path: folderPath })}` : ""}
                     </div>
                   </div>
                 ) : null}
@@ -2007,21 +2022,21 @@ export function Secrets() {
                   ) : showFolderView && folderPath && activeSecretFilterCount === 0 ? (
                     <EmptyState
                       icon={FolderOpen}
-                      message="No secrets in this folder yet."
-                      action="New secret here"
+                      message={t("secrets.inventory.emptyFolder")}
+                      action={t("secrets.inventory.newSecretHere")}
                       onAction={openCreateSecret}
                     />
                   ) : (
                     <EmptyState
                       icon={Search}
-                      message={searching ? "No secrets match your search." : "No secrets match your filters."}
+                      message={searching ? t("secrets.inventory.noSearchMatches") : t("secrets.inventory.noFilterMatches")}
                     />
                   )
                 ) : (
                   <>
                 <div
                   role="table"
-                  aria-label="Secrets"
+                  aria-label={t("secrets.inventory.tableLabel")}
                   className="hidden min-w-0 @min-[40rem]:block"
                   data-testid="secrets-table-view"
                 >
@@ -2029,11 +2044,11 @@ export function Secrets() {
                     role="row"
                     className="grid grid-cols-(--gtc-54) items-center gap-3 bg-muted/40 px-3 py-2 text-xs uppercase tracking-wide text-muted-foreground"
                   >
-                    <div role="columnheader" className="font-medium">Secret</div>
-                    <div role="columnheader" className="font-medium">Status</div>
-                    <div role="columnheader" className="font-medium">Version / coverage</div>
-                    <div role="columnheader" className="font-medium">Updated</div>
-                    <div role="columnheader" className="sr-only">Actions</div>
+                    <div role="columnheader" className="font-medium">{t("secrets.inventory.secretColumn")}</div>
+                    <div role="columnheader" className="font-medium">{t("secrets.inventory.statusColumn")}</div>
+                    <div role="columnheader" className="font-medium">{t("secrets.inventory.versionCoverageColumn")}</div>
+                    <div role="columnheader" className="font-medium">{t("secrets.inventory.updatedColumn")}</div>
+                    <div role="columnheader" className="sr-only">{t("secrets.inventory.actionsColumn")}</div>
                   </div>
                   <div role="rowgroup">
                     {showUpRow ? renderUpRow("table") : null}
@@ -2044,11 +2059,11 @@ export function Secrets() {
                       const updatedTooltip =
                         row.kind === "company"
                           ? [
-                              `Updated: ${formatRelative(row.secret.updatedAt)}`,
-                              `Last rotated: ${formatRelative(row.secret.lastRotatedAt)}`,
-                              `Last resolved: ${formatRelative(row.secret.lastResolvedAt)}`,
+                              t("secrets.inventory.updated", { time: formatRelative(row.secret.updatedAt) }),
+                              t("secrets.inventory.lastRotated", { time: formatRelative(row.secret.lastRotatedAt) }),
+                              t("secrets.inventory.lastResolved", { time: formatRelative(row.secret.lastResolvedAt) }),
                             ].join("\n")
-                          : `Updated: ${formatRelative(row.definition.updatedAt)}\nLast resolved: user values resolve per member`;
+                          : `${t("secrets.inventory.updated", { time: formatRelative(row.definition.updatedAt) })}\n${t("secrets.inventory.userValuesResolvePerMember")}`;
                       return (
                         <div
                           key={row.id}
@@ -2076,13 +2091,13 @@ export function Secrets() {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span
-                                      aria-label="Each user provides and owns their own value"
+                                      aria-label={t("secrets.inventory.eachUserOwnsValue")}
                                       className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-violet-500/30 bg-violet-500/5 text-violet-700 dark:text-violet-200"
                                     >
                                       <UserRound className="h-3 w-3" />
                                     </span>
                                   </TooltipTrigger>
-                                  <TooltipContent>Each user provides and owns their own value</TooltipContent>
+                                  <TooltipContent>{t("secrets.inventory.eachUserOwnsValue")}</TooltipContent>
                                 </Tooltip>
                               )}
                             </div>
@@ -2092,10 +2107,10 @@ export function Secrets() {
                             <div className="mt-1">
                               {row.kind === "company" ? (
                                 <MetaChip>
-                                  <ShieldCheck className="h-3 w-3" /> Organization
+                                  <ShieldCheck className="h-3 w-3" /> {t("secrets.inventory.organization")}
                                 </MetaChip>
                               ) : (
-                                <UserSecretChip label="Each user" />
+                                <UserSecretChip label={t("secrets.inventory.eachUser")} />
                               )}
                             </div>
                           </div>
@@ -2106,7 +2121,7 @@ export function Secrets() {
                             {row.kind === "company" ? (
                               <span className="truncate text-muted-foreground">
                                 <span className="font-mono text-foreground">v{row.secret.latestVersion}</span>
-                                <span> · {row.secret.managedMode === "external_reference" ? "linked" : "managed"}</span>
+                                <span> · {row.secret.managedMode === "external_reference" ? t("secrets.inventory.linked") : t("secrets.inventory.managed")}</span>
                               </span>
                             ) : (
                               <CoverageInline companyId={selectedCompanyId} definitionId={row.definition.id} compact />
@@ -2157,7 +2172,7 @@ export function Secrets() {
                           {row.kind === "company" ? (
                             <>
                               <MetaChip>
-                                <ShieldCheck className="h-3 w-3" /> Organization
+                                <ShieldCheck className="h-3 w-3" /> {t("secrets.inventory.organization")}
                               </MetaChip>
                               <SecretProviderIndicator
                                 secret={row.secret}
@@ -2168,7 +2183,7 @@ export function Secrets() {
                             </>
                           ) : (
                             <>
-                              <UserSecretChip label="Each user" />
+                              <UserSecretChip label={t("secrets.inventory.eachUser")} />
                               <StatusBadge status={status} />
                               <CoverageInline companyId={selectedCompanyId} definitionId={row.definition.id} compact />
                             </>
@@ -2179,13 +2194,13 @@ export function Secrets() {
                             {row.kind === "company" ? (
                               <>
                                 v{row.secret.latestVersion} ·{" "}
-                                {row.secret.managedMode === "external_reference" ? "linked" : "managed"}
+                                {row.secret.managedMode === "external_reference" ? t("secrets.inventory.linked") : t("secrets.inventory.managed")}
                               </>
                             ) : (
-                              "Member-owned values"
+                              t("secrets.inventory.memberOwnedValues")
                             )}
                           </span>
-                          <span>Updated {formatRelative(row.kind === "company" ? row.secret.updatedAt : row.definition.updatedAt)}</span>
+                          <span>{t("secrets.inventory.updatedAt", { time: formatRelative(row.kind === "company" ? row.secret.updatedAt : row.definition.updatedAt) })}</span>
                         </div>
                       </div>
                     );
@@ -3267,20 +3282,19 @@ export function Secrets() {
 }
 
 function SecretsHowToUse() {
+  const { t } = useTranslation();
   return (
     <div className="flex items-start gap-2 rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
       <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <div className="space-y-1">
-        <p className="font-medium text-foreground">Use secrets by binding them to runtime environment variables.</p>
+        <p className="font-medium text-foreground">{t("secrets.inventory.howToUseTitle")}</p>
         <p>
-          Create or link a secret here, then open an agent&apos;s Environment variables or a project&apos;s Env field.
-          Add the env key the process expects, for example <code className="font-mono">GH_TOKEN</code>, choose{" "}
-          <span className="font-medium text-foreground">Secret</span>, and select the stored secret version.
+          {t("secrets.inventory.howToUseInstructions", {
+            example: "GH_TOKEN",
+            secret: t("secrets.inventory.secretColumn"),
+          })}
         </p>
-        <p>
-          Paperclip resolves the value server-side when the run starts and injects it as that env var. Project env
-          applies to every task in the project and overrides agent env on matching keys.
-        </p>
+        <p>{t("secrets.inventory.howToUseResolution")}</p>
       </div>
     </div>
   );
@@ -3305,6 +3319,7 @@ function SecretsFiltersPopover({
   onProviderChange: (value: SecretProvider | "all") => void;
   onProvidedByChange: (value: ProvidedByFilter) => void;
 }) {
+  const { t } = useTranslation();
   const resetFilters = () => {
     onStatusChange("active");
     onProviderChange("all");
@@ -3312,10 +3327,10 @@ function SecretsFiltersPopover({
   };
 
   const statusOptions: Array<{ value: SecretStatus | "all"; label: string }> = [
-    { value: "active", label: "Active" },
-    { value: "all", label: "All statuses" },
-    { value: "disabled", label: "Disabled" },
-    { value: "archived", label: "Archived" },
+    { value: "active", label: t("secrets.status.active") },
+    { value: "all", label: t("secrets.inventory.allStatuses") },
+    { value: "disabled", label: t("secrets.status.disabled") },
+    { value: "archived", label: t("secrets.status.archived") },
   ];
 
   return (
@@ -3325,7 +3340,8 @@ function SecretsFiltersPopover({
           variant="outline"
           size="icon"
           className={cn("relative h-8 w-8 shrink-0", activeFilterCount > 0 && "text-blue-600 dark:text-blue-400")}
-          title={activeFilterCount > 0 ? `Filters: ${activeFilterCount}` : "Filter"}
+          title={activeFilterCount > 0 ? t("secrets.inventory.filtersCount", { count: activeFilterCount }) : t("secrets.inventory.filter")}
+          aria-label={activeFilterCount > 0 ? t("secrets.inventory.filtersCount", { count: activeFilterCount }) : t("secrets.inventory.filter")}
         >
           <Filter className="h-3.5 w-3.5" />
           {activeFilterCount > 0 ? (
@@ -3341,7 +3357,7 @@ function SecretsFiltersPopover({
       >
         <div className="space-y-3 p-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Filters</span>
+            <span className="text-sm font-medium">{t("secrets.inventory.filters")}</span>
             {activeFilterCount > 0 ? (
               <button
                 type="button"
@@ -3349,14 +3365,14 @@ function SecretsFiltersPopover({
                 onClick={resetFilters}
               >
                 <X className="h-3 w-3" />
-                Clear
+                {t("secrets.inventory.clear")}
               </button>
             ) : null}
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Status</span>
+              <span className="text-xs text-muted-foreground">{t("secrets.inventory.statusColumn")}</span>
               <div className="space-y-0.5">
                 {statusOptions.map((option) => (
                   <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 hover:bg-accent/50">
@@ -3371,12 +3387,12 @@ function SecretsFiltersPopover({
             </div>
 
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Provided by</span>
+              <span className="text-xs text-muted-foreground">{t("secrets.inventory.providedBy")}</span>
               <div className="space-y-0.5">
                 {[
-                  { value: "all" as const, label: "All sources" },
-                  { value: "company" as const, label: "Organization" },
-                  { value: "user" as const, label: "Each user" },
+                  { value: "all" as const, label: t("secrets.inventory.allSources") },
+                  { value: "company" as const, label: t("secrets.inventory.organization") },
+                  { value: "user" as const, label: t("secrets.inventory.eachUser") },
                 ].map((option) => (
                   <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 hover:bg-accent/50">
                     <Checkbox
@@ -3390,14 +3406,14 @@ function SecretsFiltersPopover({
             </div>
 
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Provider</span>
+              <span className="text-xs text-muted-foreground">{t("secrets.inventory.provider")}</span>
               <div className="max-h-48 space-y-0.5 overflow-y-auto pr-1">
                 <label className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 hover:bg-accent/50">
                   <Checkbox
                     checked={providerFilter === "all"}
                     onCheckedChange={() => onProviderChange("all")}
                   />
-                  <span className="text-sm">All providers</span>
+                  <span className="text-sm">{t("secrets.inventory.allProviders")}</span>
                 </label>
                 {providers.map((provider) => (
                   <label key={provider.id} className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 hover:bg-accent/50">
@@ -4191,25 +4207,35 @@ function CoverageInline({
   definitionId: string;
   compact?: boolean;
 }) {
+  const { t } = useTranslation();
   const coverageQuery = useQuery({
     queryKey: queryKeys.secrets.userDefinitionCoverage(companyId, definitionId),
     queryFn: () => secretsApi.userSecretDefinitionCoverage(companyId, definitionId),
     staleTime: 30_000,
   });
   const summary = coverageQuery.data;
-  if (coverageQuery.isPending) return <span className="text-muted-foreground">Loading…</span>;
-  if (coverageQuery.isError) return <span className="text-destructive">Coverage unavailable</span>;
+  if (coverageQuery.isPending) {
+    return <span className="text-muted-foreground">{compact ? t("secrets.inventory.coverageLoading") : "Loading…"}</span>;
+  }
+  if (coverageQuery.isError) {
+    return <span className="text-destructive">{compact ? t("secrets.inventory.coverageUnavailable") : "Coverage unavailable"}</span>;
+  }
   return (
     <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
       <Users className="h-3 w-3" />
       <span className="truncate">
         {compact && summary
-          ? `${summary.configuredCount}/${summary.configuredCount + summary.missingCount + summary.inactiveCount} set`
+          ? t("secrets.inventory.coverageSet", {
+              count: summary.configuredCount,
+              total: summary.configuredCount + summary.missingCount + summary.inactiveCount,
+            })
           : coverageSummaryLabel(summary)}
       </span>
       {summary && summary.missingCount > 0 ? (
         <span className="shrink-0 text-amber-600 dark:text-amber-400">
-          · {compact ? `${summary.missingCount} miss` : `${summary.missingCount} missing`}
+          · {compact
+            ? t("secrets.inventory.coverageMissingShort", { count: summary.missingCount })
+            : `${summary.missingCount} missing`}
         </span>
       ) : null}
     </span>
