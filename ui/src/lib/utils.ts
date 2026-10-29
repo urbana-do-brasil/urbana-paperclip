@@ -65,7 +65,7 @@ export function formatDate(date: Date | string): string {
 
 export function formatDateTime(
   date: Date | string,
-  options: { includeSeconds?: boolean; includeYear?: boolean; timeZone?: string } = {},
+  options: { includeSeconds?: boolean; includeYear?: boolean; timeZone?: string; timeZoneName?: Intl.DateTimeFormatOptions["timeZoneName"] } = {},
 ): string {
   return formatters().date(date, {
     timeZone: options.timeZone,
@@ -75,6 +75,7 @@ export function formatDateTime(
     hour: "numeric",
     minute: "2-digit",
     ...(options.includeSeconds ? { second: "2-digit" as const } : {}),
+    ...(options.timeZoneName ? { timeZoneName: options.timeZoneName } : {}),
   });
 }
 

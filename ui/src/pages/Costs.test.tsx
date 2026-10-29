@@ -617,6 +617,85 @@ describe("Shared Costs surfaces", () => {
     expect(container.textContent).toContain("No project-attributed run costs yet.");
   });
 
+  it.each([
+    ["providers", "Todos os provedores", "All providers"],
+    ["billers", "Todos os faturadores", "All billers"],
+  ] as const)("localizes the %s filter and preserves provider/biller data", async (tab, portugueseFilter, englishFilter) => {
+    for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
+    costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 0, rows: [] });
+    costsApiMocks.byProvider.mockResolvedValue([{
+      provider: "anthropic", biller: "openai", billingType: "metered_api", model: "claude-sonnet-4-5",
+      costCents: 250, inputTokens: 100, cachedInputTokens: 20, outputTokens: 30,
+      apiRunCount: 2, subscriptionRunCount: 1, subscriptionCachedInputTokens: 0,
+      subscriptionInputTokens: 0, subscriptionOutputTokens: 0,
+    }]);
+    costsApiMocks.byBiller.mockResolvedValue([{
+      biller: "openai", costCents: 250, inputTokens: 100, cachedInputTokens: 20, outputTokens: 30,
+      apiRunCount: 2, subscriptionRunCount: 1, subscriptionCachedInputTokens: 0,
+      subscriptionInputTokens: 0, subscriptionOutputTokens: 0, providerCount: 1, modelCount: 1,
+    }]);
+    costsApiMocks.quotaWindows.mockResolvedValue([]);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs embedded initialTab={tab} lockTab /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain(portugueseFilter));
+    });
+    expect(container.textContent).toContain(tab === "providers" ? "Anthropic" : "OpenAI");
+    if (tab === "providers") {
+      expect(container.textContent).toContain("claude-sonnet-4-5");
+      expect(container.textContent).toContain("O uso das janelas móveis não foi informado.");
+    }
+    if (tab === "billers") expect(container.textContent).toContain("Tipos de cobrança");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain(englishFilter);
+  });
+
+  it.each([
+    ["providers", "Não há eventos de custo neste período.", "No cost events in this period."],
+    ["billers", "Não há eventos faturáveis neste período.", "No billable events in this period."],
+  ] as const)("localizes empty %s cost results", async (tab, portugueseEmpty, englishEmpty) => {
+    for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
+    costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 0, rows: [] });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs embedded initialTab={tab} lockTab /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain(portugueseEmpty));
+    });
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain(englishEmpty);
+  });
+
+  it.each([
+    ["providers", "Não foi possível carregar os custos por provedor.", "Provider cost data could not be loaded."],
+    ["billers", "Não foi possível carregar os custos por faturador.", "Biller cost data could not be loaded."],
+  ] as const)("localizes initial %s cost loading failures without exposing API details", async (tab, portugueseError, englishError) => {
+    for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
+    costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 0, rows: [] });
+    const failedQuery = tab === "providers" ? costsApiMocks.byProvider : costsApiMocks.byBiller;
+    failedQuery.mockRejectedValue(new Error("private provider diagnostic"));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs embedded initialTab={tab} lockTab /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain(portugueseError));
+    });
+    expect(container.textContent).not.toContain("private provider diagnostic");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain(englishError);
+    expect(container.textContent).not.toContain("private provider diagnostic");
+  });
+
   it.each(surfaces)("preserves the %s heading, breadcrumbs and tab navigation", async (name, props) => {
     for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
     costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 1, rows: [] });

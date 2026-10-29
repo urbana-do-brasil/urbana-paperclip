@@ -1686,3 +1686,22 @@ OpenSpec estrita passaram. O typecheck completo continua com a falha
 preexistente de `SETUP_LOGIN_HINTS` no protótipo Storybook, documentada em
 3.7c1. Progresso: **144/173**; próxima tarefa: 3.7c4, provedores, billers, cotas
 e janelas de uso.
+
+### Continuação — provedores, billers e cotas (3.7c4)
+
+Filtros e cartões de custos por provedor/faturador, tipos de cobrança, cotas de
+assinatura e janelas móveis agora acompanham PT-BR/en. Estados de carregamento,
+vazio, indisponibilidade, falhas iniciais e falhas de atualização usam mensagens
+próprias. Nomes de provedores, faturadores, modelos, rótulos/detalhes externos,
+períodos, datas, valores e medidas foram preservados; datas, números e
+percentuais respeitam o locale. Falhas não expõem diagnósticos técnicos.
+
+`CostsProviderBiller.test.tsx`, `Costs.test.tsx` e
+`locale-validation.test.ts` passaram em **54/54 testes**, cobrindo filtros,
+vazio/erro nos dois idiomas, conta, janelas de Anthropic/Codex, tokens em cache,
+contagens, datas e preservação dos dados externos. O typecheck direcionado dos
+módulos e testes alterados, `check:tokens`, `check:token-gates`, `git diff
+--check`, JSON e validação OpenSpec estrita passaram. O typecheck completo da UI
+continua com a falha preexistente de `SETUP_LOGIN_HINTS` no protótipo Storybook,
+documentada em 3.7c1. Progresso: **145/173**; próxima tarefa: 3.7c5, ledger e
+timeline financeira.
