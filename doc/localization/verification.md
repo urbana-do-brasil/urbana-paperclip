@@ -2758,3 +2758,12 @@ anterior havia registrado o erro independente em
 `storybook/prototypes/NewAgentWizard.tsx` (`SETUP_LOGIN_HINTS` não exportado).
 Progresso: **230/253 tarefas**. Próxima: 3.10b, detalhe/edição/operação de
 rotinas.
+
+## Decomposição do detalhe de rotinas (3.10b)
+
+Antes da implementação, 3.10b foi dividida em cinco lotes: b1 (shell, navegação,
+resumo e edição básica), b2 (variáveis, segredos, políticas de entrega e
+salvamento), b3 (gatilhos, agenda e webhooks), b4 (execuções, atividade e
+histórico de versões) e b5 (feed de auditoria). O progresso continua em
+**230 tarefas concluídas**; com a decomposição, o total agora é **258**. Próxima:
+3.10b1, shell e visão geral do detalhe.
