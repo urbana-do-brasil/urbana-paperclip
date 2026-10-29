@@ -371,6 +371,48 @@
       }
     }
   },
+  "instanceAccess": {
+    "breadcrumbSettings": "Configurações",
+    "breadcrumbInstanceSettings": "Configurações da instância",
+    "breadcrumbAccess": "Acesso",
+    "loading": "Carregando o acesso da instância…",
+    "noPermission": "É necessário ter acesso de administração da instância para gerenciar usuários.",
+    "loadUsersFailed": "Não foi possível carregar os usuários.",
+    "loadOrganizationsFailed": "Não foi possível carregar as organizações. Tente novamente antes de alterar o acesso.",
+    "tryAgain": "Tentar novamente",
+    "title": "Acesso da instância",
+    "description": "Busque usuários, gerencie o status de administrador da instância e controle a quais organizações eles têm acesso.",
+    "searchUsers": "Buscar usuários",
+    "searchPlaceholder": "Busque por nome ou e-mail",
+    "activeMembershipCount_one": "{{count}} associação ativa à organização",
+    "activeMembershipCount_many": "{{count}} associações ativas a organizações",
+    "activeMembershipCount_other": "{{count}} associações ativas a organizações",
+    "noUsers": "Nenhum usuário corresponde à busca.",
+    "selectUser": "Selecione um usuário para consultar o acesso à instância.",
+    "loadingUserAccess": "Carregando o acesso do usuário…",
+    "loadUserAccessFailed": "Não foi possível carregar o acesso do usuário.",
+    "removeInstanceAdmin": "Remover administrador da instância",
+    "promoteInstanceAdmin": "Promover a administrador da instância",
+    "updatingInstanceRole": "Atualizando…",
+    "organizationAccess": "Acesso às organizações",
+    "organizationAccessDescription": "Altere a associação do usuário às organizações. Novos acessos criam uma associação ativa com a função {{role}}.",
+    "noOrganizations": "Não há organizações disponíveis para conceder acesso.",
+    "saving": "Salvando…",
+    "saveOrganizationAccess": "Salvar acesso às organizações",
+    "currentMemberships": "Associações atuais",
+    "membershipSummary": "{{role}} • {{status}}",
+    "unsetRole": "Não definida",
+    "noCurrentMemberships": "Este usuário não tem associações a organizações.",
+    "errors": {
+      "unknown": "Erro desconhecido"
+    },
+    "toasts": {
+      "organizationAccessUpdated": "Acesso às organizações atualizado",
+      "updateOrganizationAccessFailed": "Não foi possível atualizar o acesso às organizações",
+      "instanceRoleUpdated": "Função na instância atualizada",
+      "updateInstanceRoleFailed": "Não foi possível atualizar a função na instância"
+    }
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Adicionar outro agente a {{company}}",

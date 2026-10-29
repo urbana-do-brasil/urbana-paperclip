@@ -1832,3 +1832,18 @@ testes**. O typecheck direcionado dos componentes e testes alterados,
 `check:tokens`, `check:token-gates`, `git diff --check`, parse dos catálogos e
 validação OpenSpec estrita passaram. A jornada 3.8b está concluída; o progresso
 é **164/183 tarefas**. Próxima tarefa: 3.8c, concessões de acesso da instância.
+
+### Continuação — concessões de acesso da instância (3.8c)
+
+A tela de acesso da instância agora localiza navegação, busca de usuários,
+contagens, estados de carregamento/vazio/falha, papéis/status e concessões por
+organização em PT-BR/en. Nomes, e-mails, IDs, nomes de organizações, prefixos,
+limites de permissão e contratos de persistência foram preservados. A falha do
+diretório mantém a ação de retentativa e bloqueia alterações enquanto os dados
+estão incompletos.
+
+`InstanceAccess.test.tsx` e `locale-validation.test.ts` passaram em **17/17
+testes**. O typecheck direcionado da página/teste, `check:tokens`,
+`check:token-gates`, `git diff --check`, parse dos catálogos e validação OpenSpec
+estrita passaram. O progresso é **165/183 tarefas**; próxima tarefa: 3.8d,
+configurações pessoais, da empresa e da instância.

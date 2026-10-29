@@ -367,6 +367,47 @@
       }
     }
   },
+  "instanceAccess": {
+    "breadcrumbSettings": "Settings",
+    "breadcrumbInstanceSettings": "Instance settings",
+    "breadcrumbAccess": "Access",
+    "loading": "Loading instance access…",
+    "noPermission": "Instance admin access is required to manage users.",
+    "loadUsersFailed": "Failed to load users.",
+    "loadOrganizationsFailed": "Failed to load organizations. Try again before changing access.",
+    "tryAgain": "Try again",
+    "title": "Instance Access",
+    "description": "Search users, manage instance-admin status, and control which organizations they can access.",
+    "searchUsers": "Search users",
+    "searchPlaceholder": "Search by name or email",
+    "activeMembershipCount_one": "{{count}} active organization membership",
+    "activeMembershipCount_other": "{{count}} active organization memberships",
+    "noUsers": "No users match your search.",
+    "selectUser": "Select a user to inspect instance access.",
+    "loadingUserAccess": "Loading user access…",
+    "loadUserAccessFailed": "Failed to load user access.",
+    "removeInstanceAdmin": "Remove instance admin",
+    "promoteInstanceAdmin": "Promote to instance admin",
+    "updatingInstanceRole": "Updating…",
+    "organizationAccess": "Organization access",
+    "organizationAccessDescription": "Toggle organization membership for this user. New access defaults to an active {{role}} membership.",
+    "noOrganizations": "No organizations are available to grant access to.",
+    "saving": "Saving…",
+    "saveOrganizationAccess": "Save organization access",
+    "currentMemberships": "Current memberships",
+    "membershipSummary": "{{role}} • {{status}}",
+    "unsetRole": "Unset",
+    "noCurrentMemberships": "This user has no organization memberships.",
+    "errors": {
+      "unknown": "Unknown error"
+    },
+    "toasts": {
+      "organizationAccessUpdated": "Organization access updated",
+      "updateOrganizationAccessFailed": "Failed to update organization access",
+      "instanceRoleUpdated": "Instance role updated",
+      "updateInstanceRoleFailed": "Failed to update instance role"
+    }
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Add another agent to {{company}}",
