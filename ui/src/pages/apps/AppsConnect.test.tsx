@@ -845,6 +845,43 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(connectAppMock).not.toHaveBeenCalled();
   });
 
+  it("localizes OAuth return recovery in Brazilian Portuguese and keeps the provider name", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const draft = {
+      id: "conn-oauth-denied-pt",
+      applicationId: "app-notion",
+      status: "draft",
+      authKind: "oauth",
+      credentialPolicy: "shared",
+      config: { sourceTemplateKey: "notion", connectionMethodKey: "mcp-oauth" },
+      transportConfig: {},
+    };
+    mockSearch.value = `source=notion&resume=${draft.id}&oauth=denied&code=oauth_authorization_denied`;
+    listGalleryMock.mockResolvedValueOnce({ apps: [NOTION] });
+    listApplicationsMock.mockResolvedValueOnce({
+      applications: [{ id: "app-notion", status: "draft", metadata: { sourceTemplateKey: "notion" } }],
+    });
+    listConnectionsMock.mockResolvedValueOnce({ connections: [draft] });
+    startOAuthMock.mockResolvedValueOnce({
+      connectionId: draft.id,
+      provider: "notion",
+      authorizationUrl: "https://mcp.notion.com/authorize?state=retry",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+    });
+
+    await render();
+    await vi.waitFor(() => expect(container.textContent).toContain("Não foi possível conectar Notion"));
+    expect(container.textContent).toContain(
+      "A autorização foi cancelada ou recusada. A conexão salva não foi alterada.",
+    );
+    expect(buttonByText("Tentar novamente")).toBeTruthy();
+    expect(container.textContent).toContain("Login MCP seguro");
+
+    await act(async () => buttonByText("Tentar novamente")!.click());
+    await vi.waitFor(() => expect(startOAuthMock).toHaveBeenCalledWith(draft.id, { asCurrentUser: false }));
+    expect(navigateTopLevelMock).toHaveBeenCalledWith("https://mcp.notion.com/authorize?state=retry");
+  });
+
   it.each([
     ["shared", "Connects for everyone in your organization", "Any human in the organization", false],
     ["per_user", "Connects as you", "Just me", true],
@@ -1731,6 +1768,31 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     const continueButton = buttonByText("Continue to Notion");
     expect(continueButton).toBeDefined();
     expect(continueButton?.querySelector(".lucide-arrow-up-right")).not.toBeNull();
+  });
+
+  it("localizes the OAuth handoff and shows the exact authorization host in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockSearch.value = "source=notion";
+    listGalleryMock.mockResolvedValue({ apps: [NOTION] });
+    connectAppMock.mockResolvedValue({
+      connectionId: "conn-notion",
+      application: { id: "app-notion", name: "Notion" },
+      connection: { id: "conn-notion", credentialPolicy: "shared" },
+      actions: { readOnly: [], canMakeChanges: [] },
+      catalog: [],
+      suggestedDefaults: {},
+      auth: { kind: "oauth" },
+    });
+
+    await render();
+    expect(buttonByText("Continuar para Notion")).toBeTruthy();
+    await act(async () => buttonByText("Continuar para Notion")?.click());
+    await vi.waitFor(() => expect(navigateTopLevelMock).toHaveBeenCalledWith(
+      "https://mcp.notion.com/authorize?state=resumed",
+    ));
+
+    expect(container.textContent).toContain("Abrindo Notion");
+    expect(container.textContent).toContain("Continue em mcp.notion.com para escolher um espaço de trabalho e aprovar o acesso.");
   });
 
   it("keeps GitHub's personal identity defaults while its managed method awaits enrollment", async () => {

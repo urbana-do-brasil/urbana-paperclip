@@ -62,9 +62,9 @@ navegação, cabeçalho e estados) e 3.9f3b1 (estado sem conexão e ciclo de vid
 estão concluídas. O assistente genérico foi dividido em b2a–b2c; b2a (shell e
 seleção) e b2b (MCP personalizado e Zapier) estão verificadas. 3.9f3b2c foi
 dividida em c1 (credenciais/método), c2 (estados OAuth) e c3 (conclusão). c1
-(métodos e formulários de credenciais) está concluída.
-Próxima: 3.9f3b2c2, hand-off e estados OAuth. Progresso atual:
-**214/243 tarefas**.
+(métodos e formulários de credenciais) e c2 (hand-off e estados OAuth) estão
+concluídas. Próxima: 3.9f3b2c3, conclusão e resumo da conexão. Progresso atual:
+**215/243 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |

@@ -2518,3 +2518,22 @@ typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 O progresso atual é **214/243 tarefas**. Próxima: 3.9f3b2c2, hand-off e estados
 OAuth.
+
+### Hand-off e estados de OAuth (3.9f3b2c2)
+
+Os estados de preparação, redirecionamento, retorno OAuth, falha/recusa e retomada
+agora acompanham PT-BR/en. Também foram localizadas as mensagens de recuperação
+de conexões e o pré-requisito de cadastro do conector no Paperclip Cloud. O host
+de autorização exibido, URLs, callbacks, identidade, estado de autorização e
+mensagens dinâmicas de servidor/provedor permanecem preservados.
+
+`AppsConnect.test.tsx`, `locale-validation.test.ts` e
+`ConnectionSetupFlow.oauth.test.ts` passaram em **239/239 testes**, cobrindo
+retorno recusado em PT-BR, retomada da mesma conexão e apresentação do host de
+autorização sem expor a descrição arbitrária do provedor. `pnpm check:tokens`,
+`pnpm check:token-gates`, parse dos catálogos, `git diff --check` e
+`pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O progresso atual é **215/243 tarefas**. Próxima: 3.9f3b2c3, conclusão e resumo
+da conexão.
