@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getAppStoreDefinition } from "@paperclipai/shared";
 import type { AggregatorAppSnapshot, AggregatorAppsResponse } from "@paperclipai/shared/aggregator-apps";
+import { i18n } from "@/i18n";
 import { queryKeys } from "@/lib/queryKeys";
 import { rememberSkillSourceReturn, skillSourceReturnPath } from "@/lib/skill-source-connect-return";
 import { AppDetail } from "./AppDetail";
@@ -351,7 +352,8 @@ describe("AppDetail", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     sessionStorage.clear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -673,6 +675,17 @@ describe("AppDetail", () => {
     expect(container.textContent).toContain(expectedText);
     expect(container.textContent).not.toContain("Setup");
     expect(container.querySelector("section.bg-card")).toBeNull();
+  });
+
+  it("localizes the app detail header in Brazilian Portuguese while preserving the provider name", async () => {
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    expect(container.textContent).toContain("GitHub");
+    expect(container.textContent).toContain("Conectada");
+    expect(container.textContent).toContain("2 ações disponíveis");
+    expect(container.querySelector<HTMLButtonElement>('button[aria-label="Renomear app"]')).toBeTruthy();
   });
 
   it("counts only active catalog entries as available actions", async () => {

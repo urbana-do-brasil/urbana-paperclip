@@ -5361,9 +5361,43 @@
     "companySwitchedBody": "Switched to {{company}}."
   },
   "apps": {
+    "appDetail": {
+      "genericApp": "App",
+      "loadingConnection": "Loading connection…",
+      "noOrganization": "Select an organization to manage apps.",
+      "notFound": "We couldn't find that app.",
+      "backToConnectors": "Back to connectors",
+      "connectedToastTitle": "{{name}} connected",
+      "connectedToastSkills": "Choose a repository to import your skills.",
+      "connectedToastReady": "The connection is ready. Review permissions or test an action below.",
+      "tabs": { "permissions": "Permissions", "review": "Review" },
+      "status": {
+        "connected": "Connected",
+        "attention": "Needs attention",
+        "paused": "Paused",
+        "revoked": "Revoked"
+      },
+      "actionCount_one": "{{count}} action available",
+      "actionCount_other": "{{count}} actions available",
+      "retiredTitle": "Connection retired",
+      "retiredRemovalNote": "Remove each obsolete connection separately. Removing this one does not remove other connections.",
+      "addComposio": "Add Composio MCP connection",
+      "healthCheckFallback": "GitHub access could not be checked. Try again.",
+      "retryAccess": "Retry access",
+      "hostedAt": "hosted at {{host}}",
+      "renameLabel": "Rename app",
+      "appNameLabel": "App name",
+      "save": "Save",
+      "cancel": "Cancel",
+      "loadingMcpActions": "Loading MCP actions, this may take a minute.",
+      "loadingTools": "Loading tools…",
+      "loadError": "Couldn’t load tools for this app.",
+      "retry": "Try again"
+    },
     "connections": {
       "title": "Connections",
       "description": "The tools you’ve connected, and whether they’re working.",
+      "unverifiedServer": "Unverified server",
       "noOrganization": "Select an organization to manage apps.",
       "connectApp": "Connect an app",
       "status": {

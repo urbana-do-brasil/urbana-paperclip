@@ -2420,5 +2420,21 @@ check:tokens`, `pnpm check:token-gates`, parse dos catálogos, `git diff --check
 e `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
 typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
-Progresso atual: **209/228 tarefas**. Próxima: 3.9f3, conexão genérica e
-detalhe/administração do app.
+Após dividir 3.9f3 em sete lotes por superfície, o progresso atual é
+**209/235 tarefas**. Próxima: 3.9f3a, shell, navegação e estados do detalhe do
+app.
+
+### Shell e estados do detalhe de apps (3.9f3a)
+
+O shell do detalhe agora localiza título genérico, breadcrumb, abas, status da
+conexão, contagem de ações, rótulos acessíveis de renomeação, estados de
+carregamento/erro, conexão descontinuada e o fallback de saúde. Nomes de apps e
+provedores, rotas, enums internos, hosts e mensagens dinâmicas de erro/saúde
+continuam preservados.
+
+`AppDetail.test.tsx` e `locale-validation.test.ts` passaram em **91/91 testes**,
+incluindo a alternância para PT-BR e a preservação do nome `GitHub`. Os gates de
+tokens, JSON e OpenSpec estrito passaram. O typecheck da UI aponta somente o
+erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. Progresso atual: **210/235 tarefas**.
+Próxima: 3.9f3b, setup e ciclo de vida da conexão.

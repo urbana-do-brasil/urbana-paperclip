@@ -3,7 +3,7 @@ import { aiConnectionRouterPluginKey } from "@paperclipai/shared";
 import { ConnectionInstructionsSettings } from "@/features/connections/ConnectionInstructions";
 import { HonchoWorkspaceSettings } from "@/features/connections/HonchoWorkspaceSettings";
 import { BrowserUseSettingsPanel } from "./app-detail/BrowserUseSettingsPanel";
-import { isRetiredComposioConnection, RETIRED_COMPOSIO_MESSAGE, isRemoteMcpConnectorId, isRemoteMcpConnectorMethod } from "@paperclipai/shared";
+import { isRetiredComposioConnection, isRemoteMcpConnectorId, isRemoteMcpConnectorMethod } from "@paperclipai/shared";
 import { RemoteMcpManagement } from "@/features/connections/remote-mcp/RemoteMcpManagement";
 import { remoteMcpProviders } from "@/features/connections/remote-mcp/providers";
 import { ManagedAiConnectionDetails } from "@/components/ai-connections/ManagedAiConnectionDetails";
@@ -28,6 +28,7 @@ import { Navigate, useParams, useNavigate, useSearchParams } from "@/lib/router"
 import { useCompany } from "@/context/CompanyContext";
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";
 import { useToast } from "@/context/ToastContext";
+import { useTranslation } from "@/i18n";
 import { queryKeys } from "@/lib/queryKeys";
 import { consumeSkillSourceReturn } from "@/lib/skill-source-connect-return";
 import { toolsApi } from "@/api/tools";
@@ -52,7 +53,7 @@ import {
   appDefinitionSlug,
   type AppGalleryDisplayEntry,
 } from "./app-definition-display";
-import { appTabHref, appTabLabel, isAppTabKey, type AppTabKey } from "./app-tabs";
+import { appTabHref, isAppTabKey, type AppTabKey } from "./app-tabs";
 import { ConnectionProvenanceChip } from "./ConnectionProvenanceChip";
 import { IdentitiesSection } from "./app-detail/IdentitiesSection";
 import { PermissionsPanel } from "./app-detail/PermissionsPanel";
@@ -78,8 +79,9 @@ export { connectionAddress, connectionTransportLabel };
 
 export function AppDetail(props: { renderActions?: (connection: ToolConnection) => ReactNode; renderAgentSettings?: (connection: ToolConnection) => ReactNode; renderConnectionSettings?: (connection: ToolConnection) => ReactNode; onReconnect?: (connection: ToolConnection) => void } = {}) {
   const { connectionId = "" } = useParams<{ connectionId: string }>();
+  const { t } = useTranslation();
   const connection = useQuery({ queryKey: queryKeys.tools.connection(connectionId), queryFn: () => toolsApi.getConnection(connectionId), enabled: !!connectionId });
-  if (connection.isPending) return <p role="status">Loading connection…</p>;
+  if (connection.isPending) return <p role="status">{t("apps.appDetail.loadingConnection")}</p>;
   if (connection.error) return <p role="alert">{connection.error.message}</p>;
   const pluginKey = connection.data && aiConnectionRouterPluginKey(connection.data);
   return pluginKey ? <AiConnectionPoolConnector pluginKey={pluginKey} connection={connection.data} /> : <StandardAppDetail {...props} />;
@@ -98,6 +100,7 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { pushToast } = useToast();
+  const { t, i18n } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
 
@@ -221,10 +224,10 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
   const owner = connection ? connectionOwnerProfile(connection, userProfileById) : null;
   const baseAppName = connection
     ? logoEntry ? appDefinitionName(logoEntry) : humanizeConnectionDisplayName(connection)
-    : "App";
+    : t("apps.appDetail.genericApp");
   const appName = connection
-    ? connectionDisplayNameForOwner(connection, baseAppName, owner)
-    : "App";
+    ? connectionDisplayNameForOwner(connection, baseAppName, owner, i18n.resolvedLanguage)
+    : t("apps.appDetail.genericApp");
   const successNoticeShownFor = useRef<string | null>(null);
 
   useEffect(() => {
@@ -241,22 +244,22 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
       ? consumeSkillSourceReturn(connection.companyId)
       : null;
     pushToast({
-      title: `${appName} connected`,
-      body: skillSourcePath ? "Choose a repository to import your skills." : "The connection is ready. Review permissions or test an action below.",
+      title: t("apps.appDetail.connectedToastTitle", { name: appName }),
+      body: skillSourcePath ? t("apps.appDetail.connectedToastSkills") : t("apps.appDetail.connectedToastReady"),
       tone: "success",
     });
     navigate(skillSourcePath ?? appTabHref(connection.id, "permissions"), { replace: true });
-  }, [activeTab, appName, connection, navigate, pushToast, searchParams, selectedCompanyId]);
+  }, [activeTab, appName, connection, navigate, pushToast, searchParams, selectedCompanyId, t]);
 
   useEffect(() => {
     if (!activeTab) return;
     setBreadcrumbs([
-      { label: "Connectors", href: "/apps" },
+      { label: t("navigation.connectors"), href: "/apps" },
       { label: appName, href: appTabHref(connectionId, "permissions") },
-      { label: appTabLabel(activeTab) },
+      { label: t(`apps.appDetail.tabs.${activeTab}`) },
     ]);
     return () => setBreadcrumbs([]);
-  }, [setBreadcrumbs, appName, connectionId, activeTab]);
+  }, [setBreadcrumbs, appName, connectionId, activeTab, t]);
 
   const catalog = catalogQuery.data?.catalog ?? [];
   const profile = useMemo(
@@ -511,7 +514,7 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
   }
 
   if (!selectedCompanyId) {
-    return <div className="p-6 text-sm text-muted-foreground">Select an organization to manage apps.</div>;
+    return <div className="p-6 text-sm text-muted-foreground">{t("apps.appDetail.noOrganization")}</div>;
   }
   if (connectionQuery.isLoading) {
     return (
@@ -525,9 +528,9 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
   if (!connection) {
     return (
       <div className="max-w-3xl p-6">
-        <p className="text-sm text-muted-foreground">We couldn't find that app.</p>
+        <p className="text-sm text-muted-foreground">{t("apps.appDetail.notFound")}</p>
         <Button className="mt-4" variant="outline" onClick={() => navigate("/apps")}>
-          Back to connectors
+          {t("apps.appDetail.backToConnectors")}
         </Button>
       </div>
     );
@@ -537,10 +540,10 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
     return <div className="max-w-4xl space-y-6 pb-12">
       <h1 className="text-xl font-semibold">{appName}</h1>
       <section role="status" className="space-y-3 rounded-lg border border-border bg-muted p-4">
-        <h2 className="text-sm font-semibold">Connection retired</h2>
-        <p className="text-sm text-muted-foreground">{RETIRED_COMPOSIO_MESSAGE}</p>
-        <p className="text-sm text-muted-foreground">Remove each obsolete connection separately. Removing this one does not remove other connections.</p>
-        <Button variant="outline" onClick={() => navigate("/apps/connect?source=composio")}>Add Composio MCP connection</Button>
+        <h2 className="text-sm font-semibold">{t("apps.appDetail.retiredTitle")}</h2>
+        <p className="text-sm text-muted-foreground">{t("apps.inlineAccounts.message.retired")}</p>
+        <p className="text-sm text-muted-foreground">{t("apps.appDetail.retiredRemovalNote")}</p>
+        <Button variant="outline" onClick={() => navigate("/apps/connect?source=composio")}>{t("apps.appDetail.addComposio")}</Button>
       </section>
       {grantsQuery.data?.capabilities.canConfigure === true && <DangerZone
         appName={appName}
@@ -593,9 +596,9 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
 
       {status.tone === "attention" && connection.requiresReauthorization === false && (
         <div role="status">
-          <p>{connection.healthMessage || "GitHub access could not be checked. Try again."}</p>
+          <p>{connection.healthMessage || t("apps.appDetail.healthCheckFallback")}</p>
           <Button variant="outline" disabled={refreshGitHubAccess.isPending} onClick={() => refreshGitHubAccess.mutate()}>
-            Retry access
+            {t("apps.appDetail.retryAccess")}
           </Button>
         </div>
       )}
@@ -771,6 +774,7 @@ export function AppDetailHeader({
   onRenameCancel: () => void;
   onRenameSubmit: (value: string) => void;
 }) {
+  const { t } = useTranslation();
   const unverifiedHost = unverifiedRemoteHost(connection);
   return (
     <header>
@@ -793,17 +797,17 @@ export function AppDetailHeader({
               }}
             >
               <Input
-                aria-label="App name"
+                aria-label={t("apps.appDetail.appNameLabel")}
                 value={nameDraft}
                 onChange={(event) => onNameDraftChange(event.target.value)}
                 className="h-9 w-64 text-lg font-bold"
                 autoFocus
               />
               <Button type="submit" size="sm" disabled={renamePending || !nameDraft.trim()}>
-                {renamePending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
+                {renamePending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("apps.appDetail.save")}
               </Button>
               <Button type="button" size="sm" variant="ghost" onClick={onRenameCancel} disabled={renamePending}>
-                Cancel
+                {t("apps.appDetail.cancel")}
               </Button>
             </form>
           ) : (
@@ -813,7 +817,7 @@ export function AppDetailHeader({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-muted-foreground"
-                aria-label="Rename app"
+                aria-label={t("apps.appDetail.renameLabel")}
                 disabled={!canRename}
                 onClick={onRenameStart}
               >
@@ -825,12 +829,12 @@ export function AppDetailHeader({
             <StatusBadge status={status} />
             {connection.config?.provider !== "agentmail" && actionCount !== null && (
               <span className="text-xs text-muted-foreground">
-                {actionCount} {actionCount === 1 ? "action" : "actions"} available
+                {t("apps.appDetail.actionCount", { count: actionCount })}
               </span>
             )}
             {connectionDisplaySecondaryHint(connection) ? (
               <span className="text-xs text-muted-foreground">
-                {connectionDisplaySecondaryHint(connection)}
+                {t("apps.appDetail.hostedAt", { host: connection.name })}
               </span>
             ) : null}
             {unverifiedHost ? <UnverifiedServerBadge host={unverifiedHost} /> : null}
@@ -843,19 +847,21 @@ export function AppDetailHeader({
 }
 
 function ToolsLoading({ mcpActions = false }: { mcpActions?: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground" role="status">
       <Loader2 className="h-4 w-4 animate-spin" />
-      {mcpActions ? "Loading MCP actions, this may take a minute." : "Loading tools…"}
+      {mcpActions ? t("apps.appDetail.loadingMcpActions") : t("apps.appDetail.loadingTools")}
     </div>
   );
 }
 
 function ToolsLoadError({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3 py-8">
-      <p className="text-sm text-destructive">Couldn’t load tools for this app.</p>
-      <Button size="sm" variant="outline" onClick={onRetry}>Try again</Button>
+      <p className="text-sm text-destructive">{t("apps.appDetail.loadError")}</p>
+      <Button size="sm" variant="outline" onClick={onRetry}>{t("apps.appDetail.retry")}</Button>
     </div>
   );
 }
@@ -882,7 +888,7 @@ function unverifiedRemoteHost(connection: ToolConnection): string | null {
   }
 }
 
-type StatusInfo = { label: string; tone: "connected" | "attention" | "paused" };
+type StatusInfo = { label: "Connected" | "Needs attention" | "Paused" | "Revoked"; tone: "connected" | "attention" | "paused" };
 
 function statusFor(connection: ToolConnection): StatusInfo {
   if (connection.enabled === false || connection.status === "disabled") {
@@ -895,6 +901,13 @@ function statusFor(connection: ToolConnection): StatusInfo {
 }
 
 function StatusBadge({ status }: { status: StatusInfo }) {
+  const { t } = useTranslation();
+  const statusLabelKey: Record<StatusInfo["label"], string> = {
+    Connected: "apps.appDetail.status.connected",
+    "Needs attention": "apps.appDetail.status.attention",
+    Paused: "apps.appDetail.status.paused",
+    Revoked: "apps.appDetail.status.revoked",
+  };
   const klass: Record<StatusInfo["tone"], string> = {
     connected: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
     attention: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
@@ -908,7 +921,7 @@ function StatusBadge({ status }: { status: StatusInfo }) {
       )}
     >
       {status.tone === "connected" && <Check className="h-3 w-3" />}
-      {status.label}
+      {t(statusLabelKey[status.label])}
     </span>
   );
 }

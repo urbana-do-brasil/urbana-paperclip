@@ -5491,9 +5491,44 @@
     "companySwitchedBody": "Você foi redirecionado para {{company}}."
   },
   "apps": {
+    "appDetail": {
+      "genericApp": "App",
+      "loadingConnection": "Carregando conexão…",
+      "noOrganization": "Selecione uma organização para gerenciar apps.",
+      "notFound": "Não foi possível encontrar esse app.",
+      "backToConnectors": "Voltar aos conectores",
+      "connectedToastTitle": "{{name}} conectado",
+      "connectedToastSkills": "Escolha um repositório para importar suas skills.",
+      "connectedToastReady": "A conexão está pronta. Revise as permissões ou teste uma ação abaixo.",
+      "tabs": { "permissions": "Permissões", "review": "Revisão" },
+      "status": {
+        "connected": "Conectada",
+        "attention": "Requer atenção",
+        "paused": "Pausada",
+        "revoked": "Revogada"
+      },
+      "actionCount_one": "{{count}} ação disponível",
+      "actionCount_other": "{{count}} ações disponíveis",
+      "actionCount_many": "{{count}} ações disponíveis",
+      "retiredTitle": "Conexão descontinuada",
+      "retiredRemovalNote": "Remova cada conexão obsoleta separadamente. Remover esta não remove as outras conexões.",
+      "addComposio": "Adicionar conexão Composio MCP",
+      "healthCheckFallback": "Não foi possível verificar o acesso ao GitHub. Tente novamente.",
+      "retryAccess": "Tentar acesso novamente",
+      "hostedAt": "hospedado em {{host}}",
+      "renameLabel": "Renomear app",
+      "appNameLabel": "Nome do app",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "loadingMcpActions": "Carregando ações MCP; isso pode levar um minuto.",
+      "loadingTools": "Carregando ferramentas…",
+      "loadError": "Não foi possível carregar as ferramentas deste app.",
+      "retry": "Tentar novamente"
+    },
     "connections": {
       "title": "Conexões",
       "description": "As ferramentas que você conectou e o estado delas.",
+      "unverifiedServer": "Servidor não verificado",
       "noOrganization": "Selecione uma organização para gerenciar apps.",
       "connectApp": "Conectar um app",
       "status": {
