@@ -1,10 +1,11 @@
 import type { StatusCardRefreshPolicy, StatusCardUpdate } from "@paperclipai/shared";
+import { formatNumber } from "@/lib/utils";
 
 /** "1.1k tok" / "940 tok" — compact token count for footers and chips. */
 export function formatTokens(tokens: number | null | undefined): string | null {
   if (tokens === null || tokens === undefined) return null;
-  if (tokens < 1000) return `${tokens} tok`;
-  return `${(tokens / 1000).toFixed(1)}k tok`;
+  if (tokens < 1000) return `${formatNumber(tokens)} tok`;
+  return `${formatNumber(tokens / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}k tok`;
 }
 
 /**
@@ -14,9 +15,8 @@ export function formatTokens(tokens: number | null | undefined): string | null {
 export function formatCents(cents: number | null | undefined): string | null {
   if (cents === null || cents === undefined) return null;
   const dollars = cents / 100;
-  if (dollars === 0) return "$0.00";
-  if (dollars < 0.1) return `$${dollars.toFixed(3)}`;
-  return `$${dollars.toFixed(2)}`;
+  const digits = dollars !== 0 && dollars < 0.1 ? 3 : 2;
+  return formatNumber(dollars, { style: "currency", currency: "USD", minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
 export interface StatusCardRollup {

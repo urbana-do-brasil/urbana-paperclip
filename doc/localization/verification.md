@@ -3136,3 +3136,21 @@ custo permanece pendente em 3.10f2.
 o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **263/286**; próxima:
 3.10f2, cartões e formatação.
+
+3.10f2 foi dividida em f2a (formatação de tokens e USD) e f2b (cartões e
+políticas exibidas). O progresso da CLI é **263/288**; próxima: 3.10f2a.
+
+
+## Status cards — tokens e USD (3.10f2a)
+
+Quantidades compactas de tokens e valores em USD agora usam separadores e
+símbolo apropriados ao idioma, preservando a moeda e a precisão de valores abaixo
+de um centavo. Agregações e valores originais não foram alterados; mensagens da
+estimativa de custo permanecem para 3.10f3.
+
+`StatusCards/format.test.ts`, `StatusCardTile.test.tsx`, `StatusCards/index.test.tsx`
+e `locale-validation.test.ts` passaram em **35/35 testes**. Gates de tokens,
+JSON, `git diff --check` e OpenSpec estrito passaram. O typecheck da UI aponta
+somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **264/288**; próxima:
+3.10f2b, cartões e políticas.

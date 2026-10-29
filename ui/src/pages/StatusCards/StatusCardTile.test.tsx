@@ -5,8 +5,9 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StatusCard } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import { StatusCardTile } from "./StatusCardTile";
 import type { StatusCardView } from "./types";
 
@@ -105,7 +106,11 @@ function tile(card: StatusCardView, handlers: Partial<Record<"onOpen" | "onRefre
   );
 }
 
-beforeEach(() => {
+let previousLanguage = "pt-BR";
+beforeAll(() => { previousLanguage = i18n.language; });
+afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);

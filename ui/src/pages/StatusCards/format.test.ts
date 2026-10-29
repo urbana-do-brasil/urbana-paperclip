@@ -1,11 +1,32 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { StatusCardUpdate } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 
 import {
   estimateStatusCardCost,
+  formatCents,
+  formatTokens,
   rollupUpdates,
   rollupUpdatesToday,
 } from "./format";
+
+let previousLanguage = "pt-BR";
+beforeAll(() => { previousLanguage = i18n.language; });
+beforeEach(async () => { await i18n.changeLanguage("en"); });
+afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
+
+describe("status card number presentation", () => {
+  it("formats tokens and USD for the selected locale without converting currency", async () => {
+    expect(formatTokens(1100)).toBe("1.1k tok");
+    expect(formatCents(62)).toBe("$0.62");
+    expect(formatCents(0.6)).toBe("$0.006");
+    await i18n.changeLanguage("pt-BR");
+    expect(formatTokens(1100)).toBe("1,1k tok");
+    expect(formatCents(62)).toBe(new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(0.62));
+    expect(formatCents(0.6)).toBe(new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD", minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(0.006));
+    expect(formatCents(null)).toBeNull();
+  });
+});
 
 function update(overrides: Partial<StatusCardUpdate>): StatusCardUpdate {
   return {
