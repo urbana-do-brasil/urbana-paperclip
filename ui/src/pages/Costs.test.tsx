@@ -7,12 +7,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Costs } from "./Costs";
 import { CostByUserTable } from "../components/CostByUserTable";
 import { MemoryRouter } from "react-router-dom";
+import { i18n } from "../i18n";
 
 const resolveIncidentMock = vi.hoisted(() => vi.fn());
 const upsertPolicyMock = vi.hoisted(() => vi.fn());
 const budgetOverviewMock = vi.hoisted(() => vi.fn());
 const setBreadcrumbsMock = vi.hoisted(() => vi.fn());
 const decisionHistoryMock = vi.hoisted(() => vi.fn());
+const companyContextMock = vi.hoisted(() => ({ selectedCompanyId: "company-1" as string | null }));
 const costsApiMocks = vi.hoisted(() => ({
   summary: vi.fn(),
   byAgent: vi.fn(),
@@ -43,7 +45,7 @@ vi.mock("../api/costs", () => ({ costsApi: costsApiMocks }));
 vi.mock("../api/decision-models", () => ({ decisionModelsApi: { history: decisionHistoryMock } }));
 
 vi.mock("../context/CompanyContext", () => ({
-  useCompany: () => ({ selectedCompanyId: "company-1" }),
+  useCompany: () => ({ selectedCompanyId: companyContextMock.selectedCompanyId }),
 }));
 
 vi.mock("../context/BreadcrumbContext", () => ({
@@ -64,7 +66,9 @@ describe("Shared Costs surfaces", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+    companyContextMock.selectedCompanyId = "company-1";
     const usage = { inputTokens: 0, cachedInputTokens: 0, outputTokens: 0, costCents: "0", eventCount: 0, estimatedEventCount: 0, unpricedEventCount: 0 };
     subscriptionsMocks.report.mockResolvedValue({ canRefresh: false, asOf: "2026-10-08T00:00:00Z", accounts: [], monthlyTotals: [], activeCount: 0, unknownPriceCount: 0, unidentifiedAccountCount: 0, api: usage, subscription: usage, unknown: usage, unattributedSubscription: usage });
     decisionHistoryMock.mockResolvedValue([]);
@@ -80,10 +84,110 @@ describe("Shared Costs surfaces", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     act(() => root?.unmount());
     container.remove();
     vi.clearAllMocks();
+    await i18n.changeLanguage("en");
+  });
+
+  it("localizes Costs page chrome, period controls, and shared metrics in both languages", async () => {
+    for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
+    costsApiMocks.summary.mockResolvedValue({
+      spendCents: 1234,
+      budgetCents: 5000,
+      pricingComplete: true,
+      utilizationPercent: 24.68,
+      estimatedEventCount: 0,
+    });
+    costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 0, rows: [] });
+    costsApiMocks.financeSummary.mockResolvedValue({
+      netCents: 500,
+      debitCents: 700,
+      creditCents: 200,
+      estimatedDebitCents: 100,
+      eventCount: 2,
+      currencies: [],
+    });
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.querySelector("h1")?.textContent).toBe("Custos"));
+    });
+
+    expect(container.textContent).toContain("Mês até hoje");
+    expect(container.textContent).toContain("Gastos com API");
+    expect(container.textContent).toContain("Orçamento");
+    expect(container.textContent).toContain("24,68%");
+    expect(container.textContent).toContain("Cobranças registradas");
+    expect(container.textContent).toContain("Eventos financeiros");
+    expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toBe("Visão geral");
+
+    const customPreset = [...container.querySelectorAll("button")].find((button) => button.textContent === "Personalizado");
+    expect(customPreset).toBeTruthy();
+    await act(async () => customPreset!.click());
+    const dateInputs = container.querySelectorAll<HTMLInputElement>('input[type="date"]');
+    expect(dateInputs).toHaveLength(2);
+    expect(dateInputs[0].getAttribute("aria-label")).toBe("Data inicial");
+    expect(dateInputs[1].getAttribute("aria-label")).toBe("Data final");
+    expect(dateInputs[0].getAttribute("lang")).toBe("pt-BR");
+    expect(container.textContent).toContain("até");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.querySelector("h1")?.textContent).toBe("Costs");
+    expect(container.textContent).toContain("Month to Date");
+    expect(container.textContent).toContain("API spend");
+    expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toBe("Overview");
+    expect(container.querySelector<HTMLInputElement>('input[type="date"]')?.getAttribute("aria-label")).toBe("Start date");
+    expect(container.querySelector<HTMLInputElement>('input[type="date"]')?.getAttribute("lang")).toBe("en");
+    queryClient.clear();
+  });
+
+  it("localizes the organization access state in both languages", async () => {
+    companyContextMock.selectedCompanyId = null;
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs /></QueryClientProvider></MemoryRouter>);
+    });
+
+    expect(container.textContent).toContain("Selecione uma organização para ver os custos.");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("Select an organization to view costs.");
+    queryClient.clear();
+  });
+
+  it("localizes the overview load failure without exposing the API error", async () => {
+    for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
+    costsApiMocks.summary.mockRejectedValueOnce(new Error("private database detail"));
+    costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 0, rows: [] });
+    costsApiMocks.financeSummary.mockResolvedValue({
+      netCents: 0,
+      debitCents: 0,
+      creditCents: 0,
+      estimatedDebitCents: 0,
+      eventCount: 0,
+      currencies: [],
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain("Não foi possível carregar os dados de custos."));
+    });
+    expect(container.textContent).not.toContain("private database detail");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("Cost data could not be loaded.");
+    queryClient.clear();
   });
 
   it.each([0, 125])("shows $%s of known user spend while retaining an unpriced warning", async (costCents) => {
@@ -175,7 +279,7 @@ describe("Shared Costs surfaces", () => {
     if (field !== "amount") await act(async () => advanced.querySelector("summary")!.click());
     if (field === "unknown price") await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
     else {
-      const element = field === "reservation" ? container.querySelector<HTMLInputElement>('[aria-label="Reserve per run (USD)"]')! : container.querySelector<HTMLInputElement>('input:not([type="checkbox"]):not([aria-label])')!;
+      const element = field === "reservation" ? container.querySelector<HTMLInputElement>('[aria-label="Reserve per run (USD)"]')! : container.querySelector<HTMLInputElement>('[aria-label="Budget (USD)"]')!;
       await act(async () => {
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(element, "1");
         element.dispatchEvent(new Event("input", { bubbles: true }));

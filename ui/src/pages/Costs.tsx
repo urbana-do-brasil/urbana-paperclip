@@ -35,13 +35,14 @@ import { ProviderQuotaCard } from "../components/ProviderQuotaCard";
 import { StatusBadge } from "../components/StatusBadge";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useCompany } from "../context/CompanyContext";
-import { useDateRange, PRESET_KEYS, PRESET_LABELS } from "../hooks/useDateRange";
+import { useDateRange, PRESET_KEYS } from "../hooks/useDateRange";
 import { retainQuotaWindows } from "../lib/quota-refresh";
 import { queryKeys } from "../lib/queryKeys";
-import { billingTypeDisplayName, cn, formatCents, formatTokens, providerDisplayName } from "../lib/utils";
+import { billingTypeDisplayName, cn, formatCents, formatNumber, formatTokens, providerDisplayName } from "../lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from "../i18n";
 
 const NO_COMPANY = "__none__";
 export type CostsMainTab = "overview" | "budgets" | "providers" | "billers" | "finance" | "decisions";
@@ -173,6 +174,8 @@ export function Costs({
   lockTab = false,
   hideBudgetsTab = false,
 }: CostsProps = {}) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? i18n.language;
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
@@ -196,8 +199,8 @@ export function Costs({
   } = useDateRange();
 
   useEffect(() => {
-    if (!embedded) setBreadcrumbs([{ label: "Costs" }]);
-  }, [embedded, setBreadcrumbs]);
+    if (!embedded) setBreadcrumbs([{ label: t("costs.title") }]);
+  }, [embedded, setBreadcrumbs, t]);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -588,7 +591,7 @@ export function Costs({
   }), [budgetPolicies]);
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={DollarSign} message="Select an organization to view costs." />;
+    return <EmptyState icon={DollarSign} message={t("costs.selectOrganization")} />;
   }
 
   const showCustomPrompt = preset === "custom" && !customReady;
@@ -601,9 +604,9 @@ export function Costs({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               {embedded ? (
-                <h2 className="text-lg font-semibold text-foreground">Costs</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t("costs.title")}</h2>
               ) : (
-                <h1 className="text-3xl font-semibold tracking-tight">Costs</h1>
+                <h1 className="text-3xl font-semibold tracking-tight">{t("costs.title")}</h1>
               )}
             </div>
 
@@ -616,7 +619,7 @@ export function Costs({
                   onClick={() => setPreset(key)}
                   aria-pressed={preset === key}
                 >
-                  {PRESET_LABELS[key]}
+                  {t(`costs.dateRange.presets.${key}`)}
                 </Button>
               ))}
             </div>
@@ -626,13 +629,17 @@ export function Costs({
             <div className="flex flex-wrap items-center gap-2 border border-border p-3">
               <input
                 type="date"
+                aria-label={t("costs.dateRange.from")}
+                lang={locale}
                 value={customFrom}
                 onChange={(event) => setCustomFrom(event.target.value)}
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
               />
-              <span className="text-sm text-muted-foreground">to</span>
+              <span className="text-sm text-muted-foreground">{t("costs.dateRange.separator")}</span>
               <input
                 type="date"
+                aria-label={t("costs.dateRange.to")}
+                lang={locale}
                 value={customTo}
                 onChange={(event) => setCustomTo(event.target.value)}
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
@@ -642,51 +649,67 @@ export function Costs({
 
           {financeData?.summary.currencies?.some((row) => row.currency !== "USD") && (
             <p role="status" className="text-sm text-muted-foreground">
-              Finance headline totals are USD only. Other currencies are listed separately; no exchange-rate conversion is applied.
+              {t("costs.currencyNotice")}
             </p>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <MetricTile
-              label="API spend"
+              label={t("costs.metrics.apiSpend")}
               value={subscriptions ? subscriptions.api.unpricedEventCount === subscriptions.api.eventCount && subscriptions.api.eventCount > 0 ? "—" : formatCents(Number(subscriptions.api.costCents)) : "—"}
               subtitle={subscriptions ? <div className="space-y-1">
                 <CostEstimateLabel eventCount={subscriptions.api.eventCount} estimatedEventCount={subscriptions.api.estimatedEventCount} />
                 <div><SubscriptionTokenUsage usage={subscriptions.api} /></div>
-              </div> : subscriptionError ? "API usage is unavailable" : "API usage is loading"}
+              </div> : subscriptionError ? t("costs.metrics.apiUnavailable") : t("costs.metrics.apiLoading")}
               icon={DollarSign}
             />
             <SubscriptionCostCard key={companyId} companyId={companyId} report={subscriptions} error={subscriptionError} onChanged={invalidateSubscriptions} />
             <MetricTile
-              label="Budget"
-              value={activeBudgetIncidents.length > 0 ? String(activeBudgetIncidents.length) : (
+              label={t("costs.metrics.budget")}
+              value={activeBudgetIncidents.length > 0 ? formatNumber(activeBudgetIncidents.length) : (
                 spendData?.summary.budgetCents && spendData.summary.budgetCents > 0
-                  ? preset === "mtd" ? `${spendData.summary.utilizationPercent}%` : formatCents(spendData.summary.budgetCents)
-                  : "Open"
+                  ? preset === "mtd" ? `${formatNumber(spendData.summary.utilizationPercent)}%` : formatCents(spendData.summary.budgetCents)
+                  : t("costs.metrics.budgetOpen")
               )}
               subtitle={
                 activeBudgetIncidents.length > 0
-                  ? `${budgetData?.pausedAgentCount ?? 0} agents paused · ${budgetData?.pausedProjectCount ?? 0} projects paused`
+                  ? t("costs.metrics.budgetIncidentSummary", {
+                    agents: t("costs.metrics.agentsPaused", {
+                      count: budgetData?.pausedAgentCount ?? 0,
+                      displayCount: formatNumber(budgetData?.pausedAgentCount ?? 0),
+                    }),
+                    projects: t("costs.metrics.projectsPaused", {
+                      count: budgetData?.pausedProjectCount ?? 0,
+                      displayCount: formatNumber(budgetData?.pausedProjectCount ?? 0),
+                    }),
+                  })
                   : spendData?.summary.budgetCents && spendData.summary.budgetCents > 0
-                    ? preset === "mtd" ? `${formatCents(spendData.summary.spendCents)} of ${formatCents(spendData.summary.budgetCents)} this month` : "Monthly limit"
-                    : "No monthly cap configured"
+                    ? preset === "mtd"
+                      ? t("costs.metrics.budgetSpendThisMonth", {
+                        spend: formatCents(spendData.summary.spendCents),
+                        budget: formatCents(spendData.summary.budgetCents),
+                      })
+                      : t("costs.metrics.monthlyLimit")
+                    : t("costs.metrics.noMonthlyCap")
               }
               icon={Coins}
             />
             <MetricTile
-              label="Recorded charges"
+              label={t("costs.metrics.recordedCharges")}
               value={financeData ? formatCents(financeData.summary.netCents) : "—"}
               subtitle={financeData ? (
                 <>
-                  <span className="block whitespace-nowrap">{formatCents(financeData.summary.debitCents)} debits</span>
-                  <span className="block whitespace-nowrap">{formatCents(financeData.summary.creditCents)} credits</span>
+                  <span className="block whitespace-nowrap">{t("costs.metrics.debits", { amount: formatCents(financeData.summary.debitCents) })}</span>
+                  <span className="block whitespace-nowrap">{t("costs.metrics.credits", { amount: formatCents(financeData.summary.creditCents) })}</span>
                 </>
-              ) : "Financial data unavailable"}
+              ) : t("costs.metrics.financialUnavailable")}
               icon={ReceiptText}
             />
             <MetricTile
-              label="Finance events"
-              value={financeData ? String(financeData.summary.eventCount) : "—"}
-              subtitle={financeData ? `${formatCents(financeData.summary.estimatedDebitCents)} estimated in range` : "Financial data unavailable"}
+              label={t("costs.metrics.financeEvents")}
+              value={financeData ? formatNumber(financeData.summary.eventCount) : "—"}
+              subtitle={financeData
+                ? t("costs.metrics.estimatedInRange", { amount: formatCents(financeData.summary.estimatedDebitCents) })
+                : t("costs.metrics.financialUnavailable")}
               icon={ArrowUpRight}
             />
           </div>
@@ -717,39 +740,42 @@ export function Costs({
 
       {budgetError && !budgetData ? (
         <p role="status" className="text-sm text-muted-foreground">
-          Budget data could not be loaded. Please try again shortly.
+          {t("costs.errors.budgetLoad")}
         </p>
       ) : null}
       {((spendData && spendError) || (financeData && financeError) || (budgetData && budgetError) || providerError || billerError || weekError || weekBillerError || windowError) ? (
         <p role="status" className="text-sm text-muted-foreground">
-          Showing the last loaded data. Updates will resume automatically.
+          {t("costs.errors.staleData")}
         </p>
       ) : null}
 
-      {!!spendData?.summary.estimatedEventCount && <p role="status" className="text-sm text-muted-foreground">Includes {spendData.summary.estimatedEventCount} estimated {spendData.summary.estimatedEventCount === 1 ? "charge" : "charges"}. Token estimates use published rates and recorded assumptions; provider bills may differ.</p>}
+      {!!spendData?.summary.estimatedEventCount && <p role="status" className="text-sm text-muted-foreground">{t("costs.errors.estimatedCharges", {
+        count: spendData.summary.estimatedEventCount,
+        displayCount: formatNumber(spendData.summary.estimatedEventCount),
+      })}</p>}
       {incidentMutation.error && <p role="alert" className="text-sm text-destructive">Could not update the budget. Check any pending runs or unpriced usage shown on this page, then try again.</p>}
       <Tabs value={mainTab} onValueChange={(value) => { setMainTab(value as typeof mainTab); setSearchParams(current => { const next = new URLSearchParams(current); next.set("tab", value); return next; }, { replace: true }); }}>
         {!lockTab ? (
           <div className="max-w-full overflow-x-auto pb-2">
             <TabsList variant="line" className="justify-start">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              {!hideBudgetsTab ? <TabsTrigger value="budgets">Budgets</TabsTrigger> : null}
-              <TabsTrigger value="providers">Providers</TabsTrigger>
-              <TabsTrigger value="billers">Billers</TabsTrigger>
-              <TabsTrigger value="finance">Finance</TabsTrigger>
-              <TabsTrigger value="decisions">Decisions</TabsTrigger>
+              <TabsTrigger value="overview">{t("costs.tabs.overview")}</TabsTrigger>
+              {!hideBudgetsTab ? <TabsTrigger value="budgets">{t("costs.tabs.budgets")}</TabsTrigger> : null}
+              <TabsTrigger value="providers">{t("costs.tabs.providers")}</TabsTrigger>
+              <TabsTrigger value="billers">{t("costs.tabs.billers")}</TabsTrigger>
+              <TabsTrigger value="finance">{t("costs.tabs.finance")}</TabsTrigger>
+              <TabsTrigger value="decisions">{t("costs.tabs.decisions")}</TabsTrigger>
             </TabsList>
           </div>
         ) : null}
 
-        <TabsContent value="decisions" className="mt-4">{showCustomPrompt ? <p className="text-sm text-muted-foreground">Select a start and end date to load data.</p> : <DecisionHistory companyId={companyId} from={from} to={to} />}</TabsContent>
+        <TabsContent value="decisions" className="mt-4">{showCustomPrompt ? <p className="text-sm text-muted-foreground">{t("costs.states.selectDateRange")}</p> : <DecisionHistory companyId={companyId} from={from} to={to} />}</TabsContent>
         <TabsContent value="overview" className="mt-4 space-y-4">
           {showCustomPrompt ? (
-            <p className="text-sm text-muted-foreground">Select a start and end date to load data.</p>
+            <p className="text-sm text-muted-foreground">{t("costs.states.selectDateRange")}</p>
           ) : showOverviewLoading ? (
             <PageSkeleton variant="costs" />
           ) : overviewError ? (
-            <p className="text-sm text-destructive">Cost data could not be loaded. Please try again shortly.</p>
+            <p className="text-sm text-destructive">{t("costs.errors.overviewLoad")}</p>
           ) : (
             <>
               <div className="grid gap-4 xl:grid-cols-(--gtc-32)">

@@ -6167,5 +6167,65 @@
       "createOrganization": "Crie uma organização para ver as execuções ao vivo.",
       "selectOrganization": "Selecione uma organização para ver as execuções ao vivo."
     }
+  },
+  "costs": {
+    "title": "Custos",
+    "selectOrganization": "Selecione uma organização para ver os custos.",
+    "currencyNotice": "Os totais financeiros em destaque são somente em USD. Outras moedas aparecem separadamente; não é feita conversão cambial.",
+    "dateRange": {
+      "presets": {
+        "mtd": "Mês até hoje",
+        "7d": "7 dias",
+        "30d": "30 dias",
+        "ytd": "Ano até hoje",
+        "all": "Todo o período",
+        "custom": "Personalizado"
+      },
+      "from": "Data inicial",
+      "to": "Data final",
+      "separator": "até"
+    },
+    "metrics": {
+      "apiSpend": "Gastos com API",
+      "apiUnavailable": "Uso da API indisponível",
+      "apiLoading": "Carregando uso da API",
+      "budget": "Orçamento",
+      "budgetOpen": "Sem limite",
+      "agentsPaused_one": "{{displayCount}} agente pausado",
+      "agentsPaused_other": "{{displayCount}} agentes pausados",
+      "agentsPaused_many": "{{displayCount}} agentes pausados",
+      "projectsPaused_one": "{{displayCount}} projeto pausado",
+      "projectsPaused_other": "{{displayCount}} projetos pausados",
+      "projectsPaused_many": "{{displayCount}} projetos pausados",
+      "budgetIncidentSummary": "{{agents}} · {{projects}}",
+      "budgetSpendThisMonth": "{{spend}} de {{budget}} neste mês",
+      "monthlyLimit": "Limite mensal",
+      "noMonthlyCap": "Nenhum limite mensal configurado",
+      "recordedCharges": "Cobranças registradas",
+      "debits": "{{amount}} em débitos",
+      "credits": "{{amount}} em créditos",
+      "financialUnavailable": "Dados financeiros indisponíveis",
+      "financeEvents": "Eventos financeiros",
+      "estimatedInRange": "Estimativa no período: {{amount}}"
+    },
+    "errors": {
+      "budgetLoad": "Não foi possível carregar os dados do orçamento. Tente novamente em instantes.",
+      "overviewLoad": "Não foi possível carregar os dados de custos. Tente novamente em instantes.",
+      "staleData": "Exibindo os últimos dados carregados. As atualizações serão retomadas automaticamente.",
+      "estimatedCharges_one": "Inclui {{displayCount}} cobrança estimada. A estimativa de tokens usa tarifas publicadas e premissas registradas; a fatura do provedor pode ser diferente.",
+      "estimatedCharges_other": "Inclui {{displayCount}} cobranças estimadas. A estimativa de tokens usa tarifas publicadas e premissas registradas; a fatura do provedor pode ser diferente.",
+      "estimatedCharges_many": "Inclui {{displayCount}} cobranças estimadas. A estimativa de tokens usa tarifas publicadas e premissas registradas; a fatura do provedor pode ser diferente."
+    },
+    "tabs": {
+      "overview": "Visão geral",
+      "budgets": "Orçamentos",
+      "providers": "Provedores",
+      "billers": "Faturadores",
+      "finance": "Financeiro",
+      "decisions": "Decisões"
+    },
+    "states": {
+      "selectDateRange": "Selecione uma data inicial e final para carregar os dados."
+    }
   }
 }

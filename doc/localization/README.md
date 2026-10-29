@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **141 de 168 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **142 de 173 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -21,15 +21,16 @@ os três lotes estão concluídos. A aba de ferramentas configuráveis do agente
 detalhes da execução (e2); os dois lotes estão concluídos. A etapa 3.6f foi
 dividida entre visualizadores de log (f1), blocos da transcrição (f2) e Runner
 Inspector (f3); os três lotes estão concluídos. 3.7 foi dividido em seis lotes:
-o dashboard principal (3.7a) e execuções ao vivo (3.7b) estão concluídos; seguem
-custos/finanças, orçamento, atividade/timeline e auditoria (3.7c–f). Próxima:
-3.7c.
+o dashboard principal (3.7a), execuções ao vivo (3.7b) e moldura/período de
+custos (3.7c1) estão concluídos. 3.7c foi dividido em cinco lotes: moldura/
+período (c1), assinatura (c2), detalhamento (c3), provedores/billers (c4) e
+ledger (c5). Próxima: 3.7c2.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), portfólio de organizações, projetos e metas (3.5a–3.5e), agentes e execuções (3.6a–3.6f), dashboard e execuções ao vivo (3.7a–b) verificados. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), portfólio de organizações, projetos e metas (3.5a–3.5e), agentes e execuções (3.6a–3.6f), dashboard, execuções ao vivo e moldura de custos (3.7a–b e 3.7c1) verificados. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |

@@ -6020,5 +6020,62 @@
       "createOrganization": "Create an organization to view live runs.",
       "selectOrganization": "Select an organization to view live runs."
     }
+  },
+  "costs": {
+    "title": "Costs",
+    "selectOrganization": "Select an organization to view costs.",
+    "currencyNotice": "Finance headline totals are USD only. Other currencies are listed separately; no exchange-rate conversion is applied.",
+    "dateRange": {
+      "presets": {
+        "mtd": "Month to Date",
+        "7d": "7 Days",
+        "30d": "30 Days",
+        "ytd": "Year to Date",
+        "all": "All Time",
+        "custom": "Custom"
+      },
+      "from": "Start date",
+      "to": "End date",
+      "separator": "to"
+    },
+    "metrics": {
+      "apiSpend": "API spend",
+      "apiUnavailable": "API usage is unavailable",
+      "apiLoading": "API usage is loading",
+      "budget": "Budget",
+      "budgetOpen": "Open",
+      "agentsPaused_one": "{{displayCount}} agent paused",
+      "agentsPaused_other": "{{displayCount}} agents paused",
+      "projectsPaused_one": "{{displayCount}} project paused",
+      "projectsPaused_other": "{{displayCount}} projects paused",
+      "budgetIncidentSummary": "{{agents}} · {{projects}}",
+      "budgetSpendThisMonth": "{{spend}} of {{budget}} this month",
+      "monthlyLimit": "Monthly limit",
+      "noMonthlyCap": "No monthly cap configured",
+      "recordedCharges": "Recorded charges",
+      "debits": "{{amount}} debits",
+      "credits": "{{amount}} credits",
+      "financialUnavailable": "Financial data unavailable",
+      "financeEvents": "Finance events",
+      "estimatedInRange": "{{amount}} estimated in range"
+    },
+    "errors": {
+      "budgetLoad": "Budget data could not be loaded. Please try again shortly.",
+      "overviewLoad": "Cost data could not be loaded. Please try again shortly.",
+      "staleData": "Showing the last loaded data. Updates will resume automatically.",
+      "estimatedCharges_one": "Includes {{displayCount}} estimated charge. Token estimates use published rates and recorded assumptions; provider bills may differ.",
+      "estimatedCharges_other": "Includes {{displayCount}} estimated charges. Token estimates use published rates and recorded assumptions; provider bills may differ."
+    },
+    "tabs": {
+      "overview": "Overview",
+      "budgets": "Budgets",
+      "providers": "Providers",
+      "billers": "Billers",
+      "finance": "Finance",
+      "decisions": "Decisions"
+    },
+    "states": {
+      "selectDateRange": "Select a start and end date to load data."
+    }
   }
 }

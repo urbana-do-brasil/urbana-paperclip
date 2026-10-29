@@ -1628,3 +1628,24 @@ singular/múltiplo, nomes acessíveis e loading/vazio/falha. No conjunto dos lot
 módulos/testes alterados, `check:tokens`, `check:token-gates`, `git diff --check`
 e validação OpenSpec estrita passaram. O progresso é **141/168**; próxima
 tarefa: 3.7c, custos e finanças.
+
+### Continuação — moldura e período de custos (3.7c1)
+
+A página Costs agora localiza título e breadcrumb, presets, intervalo customizado
+com rótulos acessíveis, abas, aviso de moedas, métricas compartilhadas e estados
+sem organização/erro de carregamento em PT-BR/en. Datas de consulta, valores em
+USD, precisão percentual e destinos das abas foram preservados; falhas usam
+mensagens próprias sem expor detalhes técnicos. A assinatura e os demais
+detalhamentos de uso permanecem no lote 3.7c2; os detalhes por entidade,
+provedor/biller e ledger ficam em 3.7c3–c5.
+
+`Costs.test.tsx` e `locale-validation.test.ts` passaram em **41/41 testes**,
+incluindo mudança de idioma em runtime, acesso sem organização, presets e datas,
+métricas formatadas e erro de carregamento sem vazamento de mensagem técnica.
+O typecheck direcionado de Costs e seu teste passou. O typecheck integral da UI
+foi executado, mas está bloqueado por um erro não relacionado em
+`ui/storybook/prototypes/NewAgentWizard.tsx`: importa `SETUP_LOGIN_HINTS`, que
+`@/lib/agent-setup-fields` não exporta (o símbolo disponível é
+`SETUP_LOGIN_HINT_KEYS`). `check:tokens`, `check:token-gates`, `git diff --check`,
+JSON e validação OpenSpec estrita passaram. Progresso: **142/173**; próxima
+tarefa: 3.7c2, resumo de uso API/assinatura.
