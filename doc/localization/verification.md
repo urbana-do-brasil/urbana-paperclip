@@ -2166,3 +2166,18 @@ completo da UI foi executado e segue bloqueado somente pelo erro preexistente
 em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é
 exportado por `@/lib/agent-setup-fields`. O progresso é **190/206 tarefas**;
 próxima: 3.8f, handoff OAuth, consentimento MCP/Dot e conexões do assistente.
+
+
+### Retomada segura do handoff OAuth (3.8f1)
+
+A tela intermediária do Paperclip Cloud agora localiza os estados de preparação,
+renovação, falha, expiração, tentativa novamente e retorno em PT-BR/en. O ID de
+sessão pendente, URL de autorização, navegação de nível superior e mensagens
+arbitrárias recebidas do provedor continuam intactos; falhas sem mensagem
+usam texto próprio traduzido.
+
+`PaperclipCloudOAuthHandoff.test.tsx` e `locale-validation.test.ts` passaram em
+**16/16 testes**. `pnpm check:tokens`, `pnpm check:token-gates`, parse dos
+catálogos, `git diff --check` e validação OpenSpec estrita passaram. O progresso
+é **191/209 tarefas**; próxima: 3.8f2, consentimento MCP/Dot e revisão da
+autorização nos dois idiomas.

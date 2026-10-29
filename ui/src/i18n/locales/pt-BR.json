@@ -4187,6 +4187,17 @@
     "connectDotAgent": "Conectar agente Dot",
     "connectOrganization": "Conectar organização"
   },
+  "oauthHandoff": {
+    "errorTitle": "Não foi possível continuar o login",
+    "loadingTitle": "Preparando login seguro",
+    "prepareFailed": "O Paperclip não conseguiu preparar o login no provedor. Tente novamente.",
+    "refreshingSignIn": "O login no Paperclip está sendo renovado.",
+    "openingProvider": "O Paperclip está abrindo o provedor com segurança.",
+    "tryAgain": "Tentar novamente",
+    "returnToPaperclip": "Voltar ao Paperclip",
+    "expired": "Este login expirou. Volte ao Paperclip e inicie a conexão novamente.",
+    "refreshFailed": "O Paperclip não conseguiu renovar este login. Tente novamente para continuar."
+  },
   "companyImport": {
     "dotExternalBillingRequired": "{{provider}} exige a confirmação de que a cobrança é externa. Configure o adaptador Dot e ative {{setting}}."
   },
