@@ -1577,3 +1577,17 @@ streams e conteúdo no modo bruto permanecem preservados.
 `locale-validation.test.ts` passaram (**28/28**). Typecheck direcionado dos
 componentes/testes alterados, gates de tokens e `git diff --check` passaram.
 Progresso: **137/162**. Próxima tarefa: 3.6f3, Runner Inspector.
+
+### Continuação — Runner Inspector (3.6f3)
+
+O Runner Inspector localiza navegação, filtros, estados, resumo, passos do
+pipeline, rótulos de acesso, segurança, confirmações e controles das vistas de
+trace. Datas usam o locale selecionado. Os gates administrativos e de expiração
+permanecem inalterados; quadros JSON brutos, eventos PRP, nomes de método,
+provedores, IDs, valores, enums e mapeamentos continuam intactos.
+
+`RunnerInspector.test.tsx` e `locale-validation.test.ts` passaram (**21/21**),
+incluindo a experiência PT-BR sem acesso administrativo à captura bruta e os
+cenários existentes de redaction, reveal, revogação de acesso e correlação.
+Typecheck direcionado, gates de tokens e `git diff --check` passaram. A tarefa
+3.6f está concluída. Progresso: **139/162**. Próxima: 3.7, dashboard e custos.

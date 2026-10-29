@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
-import { createElement, type ReactNode } from "react";
+import { act, createElement, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { RunnerInspector } from "./RunnerInspector";
 
 const accessMock = vi.hoisted(() => vi.fn());
@@ -113,7 +114,8 @@ describe("RunnerInspector", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     window.history.replaceState(null, "", "/");
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -126,11 +128,12 @@ describe("RunnerInspector", () => {
     traceMock.mockResolvedValue({ trace: null, entries: [] });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root.unmount());
     container.remove();
     vi.restoreAllMocks();
     vi.clearAllMocks();
+    await i18n.changeLanguage("en");
   });
 
   it("keeps canonical inspection available when raw capture was disabled", async () => {
@@ -167,6 +170,32 @@ describe("RunnerInspector", () => {
     );
     flushSync(() => rerunButton?.click());
     expect(rerun).toHaveBeenCalledOnce();
+  });
+
+  it("localizes inspector navigation and access messaging in Portuguese", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    accessMock.mockResolvedValue({ source: "authenticated", isInstanceAdmin: false });
+    flushSync(() => root.render(
+      <RunnerInspector
+        runId="run-locale"
+        run={{ status: "succeeded", resultJson: null }}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    ));
+    await act(async () => { await flush(); });
+
+    expect(container.textContent).toContain("Inspetor do Runner");
+    expect(container.textContent).toContain("Relacione o tráfego exato do provedor");
+    expect(container.textContent).toContain("Visão geral");
+    expect(container.textContent).toContain("Pipeline");
+    expect(container.textContent).toContain("Rastreamento exato");
+    expect(container.textContent).toContain("Rastreamentos brutos do provedor exigem uma pessoa administradora da instância.");
+    expect(container.textContent).toContain("Os eventos PRP canônicos e as decisões de apresentação continuam disponíveis abaixo.");
+    expect(container.querySelector('input[placeholder="Buscar operações, campos e eventos"]')).not.toBeNull();
+    expect(container.textContent).toContain("Todas as direções");
+    expect(container.querySelector('[role="tablist"]')?.getAttribute("aria-label")).toBe("Visões do Inspetor do Runner");
+    expect(traceMock).not.toHaveBeenCalled();
   });
 
   it("shows redacted frames by default and warns before exact reveal", async () => {

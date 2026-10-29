@@ -2536,6 +2536,50 @@
       "systemMessages_one": "{{count}} system message",
       "systemMessages_other": "{{count}} system messages",
       "unknown": "unknown"
+    },
+    "runnerInspector": {
+      "title": "Runner Inspector",
+      "providerFrame": "Provider frame",
+      "fieldNotCarried": "Field was not carried into the next stage",
+      "unregisteredSurfaceReason": "No production surface registration exists for this event type.",
+      "description": "Correlate exact provider traffic with every interpretation stage, canonical PRP event, and production surface.",
+      "views": { "overview": "Overview", "pipeline": "Pipeline", "trace": "Exact trace", "ariaLabel": "Runner Inspector views" },
+      "accessDeniedTitle": "Raw provider traces require an instance administrator.",
+      "accessDeniedBody": "Canonical PRP events and presentation decisions remain inspectable below.",
+      "captureOffTitle": "Raw provider capture was off for this run.",
+      "captureOffBody": "Canonical PRP events and persisted presentation decisions remain available below.",
+      "rerunWithTrace": "Re-run with provider trace",
+      "loading": "Loading run pipeline…",
+      "stats": {
+        "provider": "Provider", "rawFrames": "Raw frames", "operations": "Operations", "prpEvents": "PRP events", "mappings": "Mappings", "runStatus": "Run status", "prpOnly": "PRP only",
+        "capturedThrough": "captured through {{provider}}", "captureOff": "capture was off", "noExactBytes": "no exact bytes", "correlatedGroups": "correlated groups", "visible": "{{count}} visible", "ignored": "{{count}} ignored", "rawCaptureOff": "Raw capture off"
+      },
+      "sections": {
+        "interpretationOutcomes": "Interpretation outcomes", "recentOperations": "Recent correlated operations", "sensitiveDebugData": "Sensitive debug data", "providerFrames": "Provider frames", "interpretationStages": "Interpretation stages", "canonicalEvents": "Canonical PRP events", "productionPresentation": "Production presentation", "semanticLineage": "Semantic finalization lineage"
+      },
+      "security": "Parsed frames are redacted on the server. Exact reveals and downloads are administrator-only, warned, audited, and automatically expire.",
+      "empty": {
+        "interpretations": "No interpretation records were persisted.", "operations": "No operations match these filters.", "selectOperation": "Select a correlated operation to inspect its pipeline.", "rawFrame": "This PRP event has no recoverable raw frame.", "interpretationStage": "No interpretation stage was recorded for this frame.", "providerEvents": "This provider operation emitted no canonical PRP events.", "presentation": "No presentation surface was emitted for this operation.", "rawFrames": "No raw frames were captured for this run.", "selectFrame": "Select a frame from the chronological trace.", "fieldMappings": "No field-level mapping was recorded at this stage.", "jsonMatches": "No fields match."
+      },
+      "filters": {
+        "search": "Search operations, fields, and events", "direction": "Direction", "allDirections": "All directions", "clientToProvider": "Client → provider", "providerToClient": "Provider → client", "providerStderr": "Provider stderr", "nativeMethod": "Native method", "allNativeMethods": "All native methods", "mapping": "Mapping", "allMappings": "All mappings", "prpType": "PRP type", "allPrpTypes": "All PRP types", "visibility": "Visibility", "visibleAndHidden": "Visible + hidden", "visible": "Visible", "hidden": "Hidden"
+      },
+      "productionEvent": { "visible": "Visible production event", "hidden": "Hidden production event", "none": "No production event" },
+      "frameCount_one": "{{count}} frame", "frameCount_other": "{{count}} frames", "frameRange": "frames {{first}}–{{last}}", "prpEventCount_one": "{{count}} PRP event", "prpEventCount_other": "{{count}} PRP events", "unmatchedEvent": "PRP {{source}} · no raw correlation",
+      "correlatedFrame_one": "{{count}} raw frame", "correlatedFrame_other": "{{count}} raw frames", "mappingStage_one": "{{count}} mapping stage", "mappingStage_other": "{{count}} mapping stages", "operationPrpEvent_one": "{{count}} PRP event", "operationPrpEvent_other": "{{count}} PRP events", "frame": "frame {{id}}", "framesBadge": "{{count}} frames",
+      "redactedByDefault": "server-redacted by default", "withheldPaths": "Withheld paths: {{paths}}", "revealExactFrame": "Reveal exact frame", "exactUnredactedFrame": "Exact unredacted frame", "searchExactFrame": "Search exact frame", "exactTraceFrame": "Exact trace frame #{{id}}", "canonicalEventJson": "Canonical event JSON", "whyNotVisible": "Why isn’t this visible?", "sequence": "seq {{sequence}}",
+      "visibleLabel": "Visible", "yes": "yes", "no": "no", "surface": "Surface", "container": "Container", "state": "State", "action": "Action", "reason": "Reason", "reasonCode": "Reason code", "productionSurfacePreview": "Production surface preview", "resolvedFinalResponse": "Resolved final response decision",
+      "lineageDescription": "Provider-native transport and model-authored tool arguments are separate layers. PRP normalized the model payload, then server policy chose the issue disposition.", "environmentConstraint": "was model-authored tool payload data, not a Codex app-server event. It was normalized into a non-blocking verification caveat.", "policy": "Policy", "decisionReason": "Decision reason", "normalizedCaveats": "Normalized caveats and ignored requests",
+      "trace": { "rawEnabled": "Raw trace enabled", "incomplete": "Incomplete", "truncated": "Truncated", "deleted": "Deleted", "expired": "Expired", "expiresInHours_one": "Expires in {{count}}h", "expiresInHours_other": "Expires in {{count}}h", "framesAndBytes": "{{frames}} frames · {{bytes}} · expires {{date}}" },
+      "json": { "search": "Search this JSON", "collapse": "Collapse JSON value", "expand": "Expand JSON value", "pathCopied": "JSON path copied", "copyPath": "Copy JSON path", "valueCopied": "Value copied", "copyValue": "Copy value", "copyFailed": "Copy failed" },
+      "mappings": { "action": "Action", "providerPath": "Provider path", "outputPath": "Output path", "reason": "Reason" },
+      "typedFields": { "eventType": "Event type", "sourceEvent": "Source event", "sequence": "Sequence", "itemType": "Item type", "status": "Status", "query": "Query" },
+      "confirm": {
+        "reveal": "This exact provider frame may contain prompts, tool arguments, secrets, or reasoning. Reveal it now?", "download": "Download the exact raw trace? It may contain sensitive prompts, tool arguments, and provider-only fields.", "delete": "Delete this raw trace immediately? This cannot be undone."
+      },
+      "downloadExactTrace": "Download exact trace", "deleteTrace": "Delete trace", "expires": "expires {{date}}", "providerSurface": "Production surface: {{surface}} · {{action}} in {{container}}",
+      "error": { "inspectionFailed": "Runner inspection failed", "traceDeletionFailed": "Raw trace deletion failed" },
+      "unknown": "unknown", "direction": { "client_to_provider": "client to provider", "provider_to_client": "provider to client", "provider_stderr": "provider stderr" }
     }
   },
   "mcpConnect": {

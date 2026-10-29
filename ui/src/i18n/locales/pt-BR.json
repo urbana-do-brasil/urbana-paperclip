@@ -2589,6 +2589,50 @@
       "systemMessages_other": "{{count}} mensagens do sistema",
       "systemMessages_many": "{{count}} mensagens do sistema",
       "unknown": "desconhecido"
+    },
+    "runnerInspector": {
+      "title": "Inspetor do Runner",
+      "providerFrame": "Quadro do provedor",
+      "fieldNotCarried": "O campo não foi levado para a etapa seguinte",
+      "unregisteredSurfaceReason": "Não há registro de superfície de produção para este tipo de evento.",
+      "description": "Relacione o tráfego exato do provedor com cada etapa de interpretação, evento PRP canônico e superfície de produção.",
+      "views": { "overview": "Visão geral", "pipeline": "Pipeline", "trace": "Rastreamento exato", "ariaLabel": "Visões do Inspetor do Runner" },
+      "accessDeniedTitle": "Rastreamentos brutos do provedor exigem uma pessoa administradora da instância.",
+      "accessDeniedBody": "Os eventos PRP canônicos e as decisões de apresentação continuam disponíveis abaixo.",
+      "captureOffTitle": "A captura bruta do provedor estava desativada nesta execução.",
+      "captureOffBody": "Os eventos PRP canônicos e as decisões de apresentação persistidas continuam disponíveis abaixo.",
+      "rerunWithTrace": "Executar novamente com rastreamento do provedor",
+      "loading": "Carregando o pipeline da execução…",
+      "stats": {
+        "provider": "Provedor", "rawFrames": "Quadros brutos", "operations": "Operações", "prpEvents": "Eventos PRP", "mappings": "Mapeamentos", "runStatus": "Status da execução", "prpOnly": "Somente PRP",
+        "capturedThrough": "capturado pelo {{provider}}", "captureOff": "captura desativada", "noExactBytes": "sem bytes exatos", "correlatedGroups": "grupos correlacionados", "visible": "{{count}} visíveis", "ignored": "{{count}} ignorados", "rawCaptureOff": "Captura bruta desativada"
+      },
+      "sections": {
+        "interpretationOutcomes": "Resultados da interpretação", "recentOperations": "Operações correlacionadas recentes", "sensitiveDebugData": "Dados sensíveis de depuração", "providerFrames": "Quadros do provedor", "interpretationStages": "Etapas de interpretação", "canonicalEvents": "Eventos PRP canônicos", "productionPresentation": "Apresentação em produção", "semanticLineage": "Histórico da finalização semântica"
+      },
+      "security": "Os quadros analisados são redigidos no servidor. A revelação e o download exatos exigem autorização administrativa, exibem avisos, são auditados e expiram automaticamente.",
+      "empty": {
+        "interpretations": "Nenhum registro de interpretação foi persistido.", "operations": "Nenhuma operação corresponde a estes filtros.", "selectOperation": "Selecione uma operação correlacionada para inspecionar o pipeline.", "rawFrame": "Este evento PRP não tem um quadro bruto recuperável.", "interpretationStage": "Nenhuma etapa de interpretação foi registrada para este quadro.", "providerEvents": "Esta operação do provedor não emitiu eventos PRP canônicos.", "presentation": "Nenhuma superfície de apresentação foi emitida para esta operação.", "rawFrames": "Nenhum quadro bruto foi capturado nesta execução.", "selectFrame": "Selecione um quadro no rastreamento cronológico.", "fieldMappings": "Nenhum mapeamento em nível de campo foi registrado nesta etapa.", "jsonMatches": "Nenhum campo corresponde à busca."
+      },
+      "filters": {
+        "search": "Buscar operações, campos e eventos", "direction": "Direção", "allDirections": "Todas as direções", "clientToProvider": "Cliente → provedor", "providerToClient": "Provedor → cliente", "providerStderr": "stderr do provedor", "nativeMethod": "Método nativo", "allNativeMethods": "Todos os métodos nativos", "mapping": "Mapeamento", "allMappings": "Todos os mapeamentos", "prpType": "Tipo de PRP", "allPrpTypes": "Todos os tipos de PRP", "visibility": "Visibilidade", "visibleAndHidden": "Visíveis + ocultos", "visible": "Visível", "hidden": "Oculto"
+      },
+      "productionEvent": { "visible": "Evento visível em produção", "hidden": "Evento oculto em produção", "none": "Nenhum evento em produção" },
+      "frameCount_one": "{{count}} quadro", "frameCount_other": "{{count}} quadros", "frameCount_many": "{{count}} quadros", "frameRange": "quadros {{first}}–{{last}}", "prpEventCount_one": "{{count}} evento PRP", "prpEventCount_other": "{{count}} eventos PRP", "prpEventCount_many": "{{count}} eventos PRP", "unmatchedEvent": "PRP {{source}} · sem correlação bruta",
+      "correlatedFrame_one": "{{count}} quadro bruto", "correlatedFrame_other": "{{count}} quadros brutos", "correlatedFrame_many": "{{count}} quadros brutos", "mappingStage_one": "{{count}} etapa de mapeamento", "mappingStage_other": "{{count}} etapas de mapeamento", "mappingStage_many": "{{count}} etapas de mapeamento", "operationPrpEvent_one": "{{count}} evento PRP", "operationPrpEvent_other": "{{count}} eventos PRP", "operationPrpEvent_many": "{{count}} eventos PRP", "frame": "quadro {{id}}", "framesBadge": "{{count}} quadros",
+      "redactedByDefault": "redigidos pelo servidor por padrão", "withheldPaths": "Caminhos omitidos: {{paths}}", "revealExactFrame": "Revelar quadro exato", "exactUnredactedFrame": "Quadro exato sem redação", "searchExactFrame": "Buscar neste quadro exato", "exactTraceFrame": "Quadro exato do rastreamento #{{id}}", "canonicalEventJson": "JSON do evento canônico", "whyNotVisible": "Por que isto não está visível?", "sequence": "seq {{sequence}}",
+      "visibleLabel": "Visível", "yes": "sim", "no": "não", "surface": "Superfície", "container": "Contêiner", "state": "Estado", "action": "Ação", "reason": "Motivo", "reasonCode": "Código do motivo", "productionSurfacePreview": "Prévia da superfície de produção", "resolvedFinalResponse": "Decisão final de resposta resolvida",
+      "lineageDescription": "O transporte nativo do provedor e os argumentos de ferramentas escritos pelo modelo são camadas separadas. O PRP normalizou o payload do modelo; depois, a política do servidor escolheu o resultado da tarefa.", "environmentConstraint": "era um dado de payload de ferramenta escrito pelo modelo, não um evento do app-server do Codex. Ele foi normalizado como uma ressalva de verificação não bloqueante.", "policy": "Política", "decisionReason": "Motivo da decisão", "normalizedCaveats": "Ressalvas normalizadas e solicitações ignoradas",
+      "trace": { "rawEnabled": "Rastreamento bruto ativo", "incomplete": "Incompleto", "truncated": "Truncado", "deleted": "Excluído", "expired": "Expirado", "expiresInHours_one": "Expira em {{count}} h", "expiresInHours_other": "Expira em {{count}} h", "expiresInHours_many": "Expira em {{count}} h", "framesAndBytes": "{{frames}} quadros · {{bytes}} · expira em {{date}}" },
+      "json": { "search": "Buscar neste JSON", "collapse": "Recolher valor JSON", "expand": "Expandir valor JSON", "pathCopied": "Caminho JSON copiado", "copyPath": "Copiar caminho JSON", "valueCopied": "Valor copiado", "copyValue": "Copiar valor", "copyFailed": "Falha ao copiar" },
+      "mappings": { "action": "Ação", "providerPath": "Caminho do provedor", "outputPath": "Caminho de saída", "reason": "Motivo" },
+      "typedFields": { "eventType": "Tipo de evento", "sourceEvent": "Evento de origem", "sequence": "Sequência", "itemType": "Tipo do item", "status": "Status", "query": "Consulta" },
+      "confirm": {
+        "reveal": "Este quadro exato do provedor pode conter prompts, argumentos de ferramentas, segredos ou raciocínio. Deseja revelá-lo agora?", "download": "Baixar o rastreamento bruto exato? Ele pode conter prompts sensíveis, argumentos de ferramentas e campos exclusivos do provedor.", "delete": "Excluir este rastreamento bruto agora? Esta ação não pode ser desfeita."
+      },
+      "downloadExactTrace": "Baixar rastreamento exato", "deleteTrace": "Excluir rastreamento", "expires": "expira em {{date}}", "providerSurface": "Superfície de produção: {{surface}} · {{action}} em {{container}}",
+      "error": { "inspectionFailed": "Não foi possível inspecionar o Runner", "traceDeletionFailed": "Não foi possível excluir o rastreamento bruto" },
+      "unknown": "desconhecido", "direction": { "client_to_provider": "cliente para provedor", "provider_to_client": "provedor para cliente", "provider_stderr": "stderr do provedor" }
     }
   },
   "mcpConnect": {
@@ -4101,7 +4145,7 @@
             "showMore_other": "Mostrar mais {{count}} resultados",
             "showMore_many": "Mostrar mais {{count}} resultados",
             "showFewer": "Mostrar menos resultados",
-            "additionalOutput": "Saída adicional do provedor disponível no Runner Inspector.",
+            "additionalOutput": "Saída adicional do provedor disponível no Inspetor do Runner.",
             "openPage": {
               "running": "Abrindo uma página da web",
               "completed": "Abriu uma página da web",
