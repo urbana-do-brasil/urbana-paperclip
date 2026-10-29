@@ -50,6 +50,17 @@ type ActionNoteKey =
   | "statusCards.detailShell.feedback.refreshQueued"
   | "statusCards.detailShell.feedback.runQueued";
 
+const CHANGE_KIND_TRANSLATION_KEYS: Record<string, string> = {
+  new: "statusCards.detailSummary.changeKinds.newIssue",
+  entered_query: "statusCards.detailSummary.changeKinds.newIssue",
+  removed: "statusCards.detailSummary.changeKinds.leftQuery",
+  left_query: "statusCards.detailSummary.changeKinds.leftQuery",
+  status: "statusCards.detailSummary.changeKinds.status",
+  assignee: "statusCards.detailSummary.changeKinds.assignee",
+  human_comment: "statusCards.detailSummary.changeKinds.humanComment",
+  updated: "statusCards.detailSummary.changeKinds.updated",
+};
+
 export function StatusCardDetailDrawer({
   card,
   companyId,
@@ -317,13 +328,17 @@ export function StatusCardDetailDrawer({
                       value={selectedRevisionId ?? "__latest__"}
                       onValueChange={(value) => setSelectedRevisionId(value === "__latest__" ? null : value)}
                     >
-                      <SelectTrigger size="sm" className="w-auto gap-1.5" aria-label="Select summary revision">
+                      <SelectTrigger
+                        size="sm"
+                        className="w-auto gap-1.5"
+                        aria-label={t("statusCards.detailSummary.selectRevision")}
+                      >
                         <History className="h-3.5 w-3.5" aria-hidden="true" />
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent align="end" position="popper">
                         <SelectItem value="__latest__" className="text-xs">
-                          Revision {latestRevisionNumber} · latest
+                          {t("statusCards.detailSummary.latestRevision", { revision: latestRevisionNumber })}
                         </SelectItem>
                         <SelectSeparator />
                         {summaryRevisions.slice(0, 30).map((update) => (
@@ -333,7 +348,11 @@ export function StatusCardDetailDrawer({
                             className="text-xs"
                             title={formatDateTime(update.startedAt)}
                           >
-                            Rev {revisionNumberOf(update)} · {updateKindLabel(update.kind)} · {relativeTime(update.startedAt)}
+                            {t("statusCards.detailSummary.revisionOption", {
+                              revision: revisionNumberOf(update),
+                              kind: updateKindLabel(update.kind),
+                              relativeTime: relativeTime(update.startedAt),
+                            })}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -349,8 +368,11 @@ export function StatusCardDetailDrawer({
               ) : selectedRevision ? (
                 <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground" title={formatDateTime(selectedRevision.startedAt)}>
-                    Revision {revisionNumberOf(selectedRevision)} · {updateKindLabel(selectedRevision.kind)} ·{" "}
-                    {relativeTime(selectedRevision.startedAt)}
+                    {t("statusCards.detailSummary.selectedRevision", {
+                      revision: revisionNumberOf(selectedRevision),
+                      kind: updateKindLabel(selectedRevision.kind),
+                      relativeTime: relativeTime(selectedRevision.startedAt),
+                    })}
                   </p>
                   {selectedRevisionBody ? (
                     <MarkdownBody className="text-sm leading-7">{selectedRevisionBody}</MarkdownBody>
@@ -358,13 +380,12 @@ export function StatusCardDetailDrawer({
                     <>
                       <MarkdownBody className="text-sm leading-7">{selectedRevision.changeSummary}</MarkdownBody>
                       <p className="text-xs text-muted-foreground/70">
-                        The full summary text for this revision is unavailable — showing its change summary. The
-                        integrated changes below are the live ledger for this revision.
+                        {t("statusCards.detailSummary.revisionBodyUnavailable")}
                       </p>
                     </>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      No change summary was recorded for this revision.
+                      {t("statusCards.detailSummary.noRevisionChangeSummary")}
                     </p>
                   )}
                 </div>
@@ -379,8 +400,8 @@ export function StatusCardDetailDrawer({
                       <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
                     )}
                     {setupRunning
-                      ? "Setting up — the first summary is generated automatically once this finishes."
-                      : "Setup didn’t finish. Run it now to try again."}
+                      ? t("statusCards.detailSummary.setupRunning")
+                      : t("statusCards.detailSummary.setupIncomplete")}
                   </p>
                   {setupRunning && card.generatingIssueId ? (
                     <Link
@@ -388,21 +409,24 @@ export function StatusCardDetailDrawer({
                       className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground underline-offset-2 hover:underline"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
-                      View setup task
+                      {t("statusCards.detailSummary.viewSetupTask")}
                     </Link>
                   ) : null}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No summary yet — the first one is generated automatically once this card finishes setting up.
+                  {t("statusCards.detailSummary.noSummaryYet")}
                 </p>
               )}
 
               {displayedChanges.length > 0 ? (
                 <section className="space-y-2">
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {selectedRevision ? "Integrated in this revision" : "Integrated in this update"} (
-                    {displayedChanges.length} {displayedChanges.length === 1 ? "change" : "changes"})
+                    {t(selectedRevision
+                      ? "statusCards.detailSummary.integratedRevision"
+                      : "statusCards.detailSummary.integratedUpdate")} ({t("statusCards.detailSummary.change", {
+                      count: displayedChanges.length,
+                    })})
                   </h3>
                   <div className="space-y-1.5">
                     {displayedChanges.map((change) => (
@@ -631,7 +655,9 @@ function WatchedIssueRow({ issue }: { issue: CompanySearchIssueSummary }) {
  * design-system consistency) and every row deep-links to the issue.
  */
 function ChangeRow({ change }: { change: StatusCardUpdate["changes"][number] }) {
+  const { t } = useTranslation();
   const isTransition = Boolean(change.from && change.to);
+  const changeKindKey = CHANGE_KIND_TRANSLATION_KEYS[change.changeKind];
   return (
     <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs">
       <Link
@@ -647,14 +673,10 @@ function ChangeRow({ change }: { change: StatusCardUpdate["changes"][number] }) 
           <IssueStatusBadge status={change.to!} />
         </span>
       ) : (
-        <span className="truncate text-muted-foreground">{describeChangeKind(change.changeKind)}</span>
+        <span className="truncate text-muted-foreground">
+          {changeKindKey ? t(changeKindKey) : change.changeKind.replace(/_/g, " ")}
+        </span>
       )}
     </div>
   );
-}
-
-function describeChangeKind(changeKind: string): string {
-  if (changeKind === "entered_query" || changeKind === "new") return "new issue matched the query";
-  if (changeKind === "left_query") return "left the query";
-  return changeKind.replace(/_/g, " ");
 }

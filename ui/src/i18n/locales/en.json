@@ -1772,6 +1772,30 @@
         "saveFailed": "Could not save settings."
       }
     },
+    "detailSummary": {
+      "selectRevision": "Select summary revision",
+      "latestRevision": "Revision {{revision}} · latest",
+      "revisionOption": "Rev. {{revision}} · {{kind}} · {{relativeTime}}",
+      "selectedRevision": "Revision {{revision}} · {{kind}} · {{relativeTime}}",
+      "revisionBodyUnavailable": "The full summary text for this revision is unavailable — showing its change summary. The integrated changes below are the live ledger for this revision.",
+      "noRevisionChangeSummary": "No change summary was recorded for this revision.",
+      "setupRunning": "Setting up — the first summary is generated automatically once this finishes.",
+      "setupIncomplete": "Setup didn’t finish. Run it now to try again.",
+      "viewSetupTask": "View setup task",
+      "noSummaryYet": "No summary yet — the first one is generated automatically once this card finishes setting up.",
+      "integratedRevision": "Integrated in this revision",
+      "integratedUpdate": "Integrated in this update",
+      "changeKinds": {
+        "newIssue": "New issue matched the query",
+        "leftQuery": "Left the query",
+        "status": "Status changed",
+        "assignee": "Assignee changed",
+        "humanComment": "Human comment added",
+        "updated": "Issue updated"
+      },
+      "change_one": "{{count}} change",
+      "change_other": "{{count}} changes"
+    },
       "settings": {
         "title": "Auto-update policy",
         "manual": "Manual only — updates when I press refresh",

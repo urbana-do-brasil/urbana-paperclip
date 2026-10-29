@@ -1816,6 +1816,31 @@
         "saveFailed": "Não foi possível salvar as configurações."
       }
     },
+    "detailSummary": {
+      "selectRevision": "Selecionar revisão do resumo",
+      "latestRevision": "Revisão {{revision}} · mais recente",
+      "revisionOption": "Rev. {{revision}} · {{kind}} · {{relativeTime}}",
+      "selectedRevision": "Revisão {{revision}} · {{kind}} · {{relativeTime}}",
+      "revisionBodyUnavailable": "O texto completo do resumo desta revisão está indisponível — exibindo o resumo das alterações. As alterações integradas abaixo são o registro desta revisão.",
+      "noRevisionChangeSummary": "Nenhum resumo das alterações foi registrado para esta revisão.",
+      "setupRunning": "Preparando — o primeiro resumo será gerado automaticamente quando isso terminar.",
+      "setupIncomplete": "A configuração não foi concluída. Execute agora para tentar novamente.",
+      "viewSetupTask": "Ver tarefa de configuração",
+      "noSummaryYet": "Ainda não há resumo — o primeiro será gerado automaticamente quando a configuração deste cartão terminar.",
+      "integratedRevision": "Integrado nesta revisão",
+      "integratedUpdate": "Integrado nesta atualização",
+      "changeKinds": {
+        "newIssue": "Novo item corresponde à consulta",
+        "leftQuery": "Deixou de corresponder à consulta",
+        "status": "Status alterado",
+        "assignee": "Pessoa responsável alterada",
+        "humanComment": "Novo comentário de uma pessoa",
+        "updated": "Item atualizado"
+      },
+      "change_one": "{{count}} alteração",
+      "change_many": "{{count}} alterações",
+      "change_other": "{{count}} alterações"
+    },
       "settings": {
         "title": "Política de atualização automática",
         "manual": "Somente manual — atualiza quando pressiono Atualizar",

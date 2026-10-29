@@ -3194,3 +3194,12 @@ Drawer, formatadores, cartões, lista e catálogos passaram em **48/48 testes**;
 gates de tokens e OpenSpec estrito passaram. O typecheck da UI segue limitado
 ao erro preexistente de `SETUP_LOGIN_HINTS` no Storybook. f4 foi dividida em
 cinco partes; progresso da CLI: **271/295**. Próxima: f4b, resumo/revisões.
+
+
+## Status cards — resumo e revisões (3.10f4b)
+
+Resumo, navegação de revisões, estados e alterações integradas acompanham
+PT-BR/en. Conteúdo gerado, relações e identificadores foram preservados. Drawer,
+formatadores, cartões, lista e catálogos: **52/52 testes**; typecheck da UI passou
+após corrigir a referência desatualizada no protótipo do Storybook. Progresso da
+CLI OpenSpec: **272/295**; próxima: 3.10f4d, histórico.

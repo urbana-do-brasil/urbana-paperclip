@@ -290,7 +290,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
       - [x] 3.10f3b Localizar políticas de atualização, limites e estimativa de custo; preservar configurações, quantidades, timezone e valores enviados. Criação, seletor, políticas e custo em PT-BR/en verificados em 64/64 testes; gates e OpenSpec passaram. Typecheck permanece limitado ao erro preexistente do Storybook. Progresso: 269/290; próxima: 3.10f4.
     - [ ] 3.10f4 Localizar detalhe, histórico, revisão, atividade e ações dos status cards; preservar conteúdo, IDs e operações. Decomposta em moldura/ações, resumo/revisões, formatadores, histórico e itens acompanhados/configurações.
       - [x] 3.10f4a Localizar moldura, abas, estado, ações e feedback do detalhe; preservar IDs, operações e dados dinâmicos. Moldura, abas, ações e feedback verificados em PT-BR/en; teste integrado junto a f4c: 48/48.
-      - [ ] 3.10f4b Localizar resumo, revisões e alterações integradas; preservar conteúdo e relações.
+      - [x] 3.10f4b Localizar resumo, revisões e alterações integradas; preservar conteúdo e relações. Resumo, revisões, estados e alterações em PT-BR/en; conteúdo, links e IDs preservados. Drawer, formatadores, cartões, lista e catálogos: 52/52; typecheck da UI passou.
       - [x] 3.10f4c Localizar formatadores de histórico, tipos de atualização e tokens; preservar valores e tipos desconhecidos. Formatadores de tokens e tipos de atualização verificados em PT-BR/en, incluindo decimais e fallback.
       - [ ] 3.10f4d Localizar histórico e atividade, incluindo estados e contagens; preservar dados e valores originais.
       - [ ] 3.10f4e Localizar itens acompanhados e configurações do detalhe, incluindo diagnóstico; preservar consultas, conteúdo e operações.
