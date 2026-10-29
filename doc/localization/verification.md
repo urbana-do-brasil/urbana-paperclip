@@ -2151,3 +2151,18 @@ O typecheck completo da UI continua apontando apenas o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
 por `@/lib/agent-setup-fields`. O progresso é **184/206 tarefas**; próxima:
 3.8e5, propostas de segredo e decisões de acesso.
+
+
+### Propostas e decisões de acesso a segredos (3.8e5)
+
+A aba de propostas agora localiza metadados, validade, estados vazios/erro, controles de decisão, diálogos de aprovação/recusa, orientação e feedback. Os cartões de acesso proposto na configuração do agente usam os mesmos rótulos; os estados terminais da interação de proposta no histórico da tarefa já usam o catálogo bilíngue compartilhado. A justificativa do agente, o motivo escrito na recusa, nomes de agentes e segredos, IDs, caminhos, fingerprint, e dados/respostas do servidor permanecem originais; valores de segredo não são renderizados. As mutações continuam enviando os mesmos identificadores, overrides, flag de cascade e razão de recusa.
+
+`ProposalsTab.render.test.tsx`, `AgentSecretAccessEditor.test.tsx`,
+`IssueThreadInteractionCard.test.tsx` e `locale-validation.test.ts` passaram em
+**115/115 testes**. `pnpm check:tokens`, `pnpm check:token-gates`, parse dos
+catálogos, `git diff --check` e `pnpm exec openspec validate
+localize-paperclip-pt-br --strict --no-interactive` passaram. O typecheck
+completo da UI foi executado e segue bloqueado somente pelo erro preexistente
+em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é
+exportado por `@/lib/agent-setup-fields`. O progresso é **190/206 tarefas**;
+próxima: 3.8f, handoff OAuth, consentimento MCP/Dot e conexões do assistente.

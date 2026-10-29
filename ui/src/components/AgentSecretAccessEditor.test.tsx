@@ -231,7 +231,7 @@ describe("AgentSecretAccessEditor component", () => {
     }
   });
 
-  it("renders pending binding proposals as Proposed rows with approve/reject", () => {
+  it("renders pending binding proposals as Proposed rows with approve/reject", async () => {
     const approved: string[] = [];
     const rejected: string[] = [];
     const proposal = {
@@ -291,5 +291,15 @@ describe("AgentSecretAccessEditor component", () => {
     )!;
     flushSync(() => rejectButton.click());
     expect(rejected).toEqual(["prop-1"]);
+
+    await i18n.changeLanguage("pt-BR");
+    flushSync(() => {});
+    expect(container.textContent).toContain("Acesso proposto");
+    expect(container.textContent).toContain("Proposto por ClaudeCoder");
+    expect(container.textContent).toContain("Bind Stripe for the billing agent.");
+    expect([...container.querySelectorAll("button")].map((button) => button.textContent?.trim()))
+      .toContain("Aprovar");
+    expect([...container.querySelectorAll("button")].map((button) => button.textContent?.trim()))
+      .toContain("Recusar");
   });
 });

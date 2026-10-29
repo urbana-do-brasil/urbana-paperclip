@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { CompanySecretProviderConfig, SecretProposalView } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { ProposalsTab } from "./ProposalsTab";
 
 const mockSecretsApi = vi.hoisted(() => ({
@@ -171,9 +172,11 @@ describe("ProposalsTab", () => {
     activeContainer = null;
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage("en");
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     mockSecretsApi.approveProposal.mockResolvedValue(makeSecretProposal({ status: "approved" }));
     mockSecretsApi.rejectProposal.mockResolvedValue(makeSecretProposal({ status: "rejected" }));
   });
@@ -190,7 +193,7 @@ describe("ProposalsTab", () => {
     expect(text).toContain("ClaudeCoder"); // proposer
     expect(text).toContain("PAP-14743"); // origin issue
     // Justification is framed as an untrusted, agent-authored claim (Q0 concern).
-    expect(text).toContain("Motivo informado pelo agente");
+    expect(text).toContain("Reason given by the agent");
     // Never renders a raw secret value.
     expect(text).not.toContain("ghp_");
   });
@@ -317,6 +320,38 @@ describe("ProposalsTab", () => {
 
     expect(mockSecretsApi.rejectProposal).toHaveBeenCalledWith("company-1", "prop-secret-1", {
       reason: "Not needed for this task.",
+    });
+  });
+
+  it("localizes review and rejection in PT-BR while preserving the authored text and API reason", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockSecretsApi.listProposals.mockResolvedValue([makeSecretProposal()]);
+    await renderTab();
+    await waitForReact(() => Boolean(findButton("Aprovar")));
+
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("Proposto por");
+    expect(text).toContain("Motivo informado pelo agente");
+    expect(text).toContain("Need the GitHub token to open the PR.");
+    expect(text).toContain("40 bytes");
+    expect(text).not.toContain("ghp_");
+
+    await act(async () => findButton("Recusar")?.click());
+    await flushReact();
+    const dialog = document.querySelector('[role="dialog"]');
+    const reason = dialog?.querySelector("#reject-reason") as HTMLTextAreaElement | null;
+    expect(reason?.placeholder).toBe("Por que esta proposta está sendo recusada?");
+    await act(async () => {
+      if (reason) setInputValue(reason, "Não é necessário para esta tarefa.");
+    });
+    await flushReact();
+    const confirm = [...(dialog?.querySelectorAll("button") ?? [])].find(
+      (button) => button.textContent?.trim() === "Recusar",
+    );
+    await act(async () => confirm?.click());
+    await waitForReact(() => mockSecretsApi.rejectProposal.mock.calls.length > 0);
+    expect(mockSecretsApi.rejectProposal).toHaveBeenCalledWith("company-1", "prop-secret-1", {
+      reason: "Não é necessário para esta tarefa.",
     });
   });
 });

@@ -294,10 +294,13 @@ export function AgentSecretAccessEditor({
       {bindingProposals.length > 0 && onApproveProposal && onRejectProposal ? (
         <div className="space-y-2">
           <div className="text-(length:--text-micro) font-medium uppercase tracking-wide text-muted-foreground">
-            Proposed access
+            {t("secrets.proposals.proposedAccess")}
           </div>
           {bindingProposals.map((proposal) => {
-            const secret = bindingSecretLabel(proposal);
+            const secret = bindingSecretLabel(proposal, {
+              secret: String(t("secrets.proposals.secretFallback")),
+              proposedSecret: String(t("secrets.proposals.proposedSecretFallback")),
+            });
             const envKey = bindingEnvKey(proposal);
             return (
               <div
@@ -314,7 +317,7 @@ export function AgentSecretAccessEditor({
                     {secret.pending ? <ProposedBadge /> : null}
                   </div>
                   <p className="flex flex-wrap items-center gap-1 text-muted-foreground">
-                    <span>proposed by {proposal.proposedBy.name}</span>
+                    <span>{t("secrets.proposals.proposedByName", { name: proposal.proposedBy.name })}</span>
                     <span aria-hidden="true">·</span>
                     <span className="truncate italic">“{proposal.justification}”</span>
                   </p>

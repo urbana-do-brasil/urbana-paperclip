@@ -30,7 +30,6 @@ import { queryKeys } from "../../lib/queryKeys";
 import {
   aliasFromConfigPath,
   deliveryModeForConfigPath,
-  deliveryModeLabel,
 } from "../../lib/secret-delivery";
 import { cn } from "../../lib/utils";
 import { copyTextToClipboard } from "../../lib/clipboard";
@@ -41,9 +40,14 @@ import { SecretPathName } from "./SecretPathName";
 /* -------------------------------------------------------------------------- */
 
 /** Short, non-reversible fingerprint label. Never renders the value. */
-export function fingerprintLabel(fingerprint: string | null, length: number | null): string {
-  const digest = fingerprint ? `sha256:${fingerprint.slice(0, 10)}…` : "no fingerprint";
-  const size = typeof length === "number" ? `${length} ${length === 1 ? "byte" : "bytes"}` : null;
+export function fingerprintLabel(
+  fingerprint: string | null,
+  length: number | null,
+  formatBytes: (length: number) => string = (size) => `${size} ${size === 1 ? "byte" : "bytes"}`,
+): string {
+  const digest = fingerprint ? `sha256:${fingerprint.slice(0, 10)}…` : "";
+  const size = typeof length === "number" ? formatBytes(length) : null;
+  if (!digest) return size ?? "no fingerprint";
   return size ? `${digest} · ${size}` : digest;
 }
 
@@ -62,7 +66,10 @@ export function FingerprintChip({
   className?: string;
 }) {
   const { pushToast } = useToastActions();
-  const label = fingerprintLabel(fingerprint, length);
+  const { t } = useTranslation();
+  const label = fingerprintLabel(fingerprint, length, (count) =>
+    String(t("secrets.proposals.bytes", { count })),
+  );
   if (!fingerprint) {
     return (
       <span className={cn("inline-flex items-center gap-1 font-mono", className)}>
@@ -77,10 +84,10 @@ export function FingerprintChip({
       type="button"
       onClick={() => {
         copyTextToClipboard(full)
-          .then(() => pushToast({ title: "Fingerprint copied", tone: "success" }))
-          .catch(() => pushToast({ title: "Couldn’t copy fingerprint", tone: "error" }));
+          .then(() => pushToast({ title: String(t("secrets.proposals.fingerprintCopied")), tone: "success" }))
+          .catch(() => pushToast({ title: String(t("secrets.proposals.fingerprintCopyFailed")), tone: "error" }));
       }}
-      title={`Copy full digest — ${full}`}
+      title={String(t("secrets.proposals.copyFullDigest", { digest: full }))}
       className={cn(
         "inline-flex items-center gap-1 font-mono hover:text-foreground",
         className,
@@ -138,6 +145,7 @@ export function AgentRefChip({
 
 /** Env-var vs API-access delivery badge for a binding `configPath`. */
 export function DeliveryBadge({ configPath }: { configPath: string | null }) {
+  const { t } = useTranslation();
   const mode = deliveryModeForConfigPath(configPath);
   const isEnv = mode === "env";
   const isApi = mode === "api";
@@ -152,13 +160,18 @@ export function DeliveryBadge({ configPath }: { configPath: string | null }) {
       )}
     >
       {isEnv ? <Variable className="size-3" /> : isApi ? <ServerCog className="size-3" /> : null}
-      {deliveryModeLabel(mode)}
+      {isEnv
+        ? String(t("secrets.proposals.deliveryModes.env"))
+        : isApi
+          ? String(t("secrets.proposals.deliveryModes.api"))
+          : String(t("secrets.proposals.deliveryModes.config"))}
     </Badge>
   );
 }
 
 /** Distinct "Proposed" pill used wherever a proposal is inlined among live rows. */
 export function ProposedBadge({ className }: { className?: string }) {
+  const { t } = useTranslation();
   return (
     <Badge
       variant="outline"
@@ -168,7 +181,7 @@ export function ProposedBadge({ className }: { className?: string }) {
         className,
       )}
     >
-      <ShieldAlert className="size-3" /> Proposed
+      <ShieldAlert className="size-3" /> {String(t("secrets.proposals.proposed"))}
     </Badge>
   );
 }
@@ -179,20 +192,23 @@ export function bindingEnvKey(proposal: SecretProposalView): string {
 }
 
 /** Human label for the secret a binding proposal references (live or cascade). */
-export function bindingSecretLabel(proposal: SecretProposalView): {
+export function bindingSecretLabel(
+  proposal: SecretProposalView,
+  fallbacks: { secret: string; proposedSecret: string },
+): {
   name: string;
   pending: boolean;
 } {
   if (proposal.secretProposalId) {
-    return { name: proposal.secretProposalName ?? "proposed secret", pending: true };
+    return { name: proposal.secretProposalName ?? fallbacks.proposedSecret, pending: true };
   }
-  return { name: proposal.secretName ?? "secret", pending: false };
+  return { name: proposal.secretName ?? fallbacks.secret, pending: false };
 }
 
-function readableError(error: unknown): string {
-  if (error instanceof ApiError) return error.message || `Request failed: ${error.status}`;
+function readableError(error: unknown, t: ReturnType<typeof useTranslation>["t"]): string {
+  if (error instanceof ApiError) return error.message || String(t("secrets.proposals.requestFailed", { status: error.status }));
   if (error instanceof Error) return error.message;
-  return "Something went wrong. Try again.";
+  return String(t("secrets.proposals.genericError"));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -232,6 +248,7 @@ export function useProposalReview(
 ): UseProposalReview {
   const queryClient = useQueryClient();
   const { pushToast } = useToastActions();
+  const { t } = useTranslation();
 
   const [approveDraft, setApproveDraft] = useState<ApproveDraft | null>(null);
   const [rejectTarget, setRejectTarget] = useState<SecretProposalView | null>(null);
@@ -265,18 +282,21 @@ export function useProposalReview(
     },
     onSuccess: (result) => {
       pushToast({
-        title: result.kind === "secret" ? "Secret approved" : "Binding approved",
+        title:
+          result.kind === "secret"
+            ? String(t("secrets.proposals.secretApproved"))
+            : String(t("secrets.proposals.bindingApproved")),
         body:
           result.kind === "secret"
-            ? (result.proposedName ?? "Secret created")
-            : `${result.target?.name ?? "Agent"} · ${bindingEnvKey(result) || "binding"}`,
+            ? (result.proposedName ?? String(t("secrets.proposals.secretCreated")))
+            : `${result.target?.name ?? String(t("secrets.proposals.agentFallback"))} · ${bindingEnvKey(result) || String(t("secrets.proposals.bindingFallback"))}`,
         tone: "success",
       });
       setApproveDraft(null);
       setError(null);
       invalidate();
     },
-    onError: (err) => setError(readableError(err)),
+    onError: (err) => setError(readableError(err, t)),
   });
 
   const rejectMutation = useMutation({
@@ -284,7 +304,7 @@ export function useProposalReview(
       secretsApi.rejectProposal(companyId!, proposal.id, { reason: reason.trim() }),
     onSuccess: (result) => {
       pushToast({
-        title: "Proposal rejected",
+        title: String(t("secrets.proposals.proposalRejected")),
         body: result.kind === "secret" ? (result.proposedName ?? undefined) : undefined,
         tone: "info",
       });
@@ -293,7 +313,7 @@ export function useProposalReview(
       setError(null);
       invalidate();
     },
-    onError: (err) => setError(readableError(err)),
+    onError: (err) => setError(readableError(err, t)),
   });
 
   const requestApprove = useCallback(
@@ -385,6 +405,7 @@ function ApproveDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   const isSecret = draft?.proposal.kind === "secret";
   const previewName = draft
     ? draft.folder.trim()
@@ -401,19 +422,21 @@ function ApproveDialog({
           <>
             <DialogHeader>
               <DialogTitle>
-                {isSecret ? "Approve & create secret" : "Approve binding"}
+                {isSecret
+                  ? String(t("secrets.proposals.approveCreateSecretTitle"))
+                  : String(t("secrets.proposals.approveBindingTitle"))}
               </DialogTitle>
               <DialogDescription>
                 {isSecret
-                  ? "The value is created as the proposing agent recorded it. Re-folder or rename it before it lands."
-                  : "Grant the target agent access to this secret. This runs with your permissions."}
+                  ? String(t("secrets.proposals.approveSecretDescription"))
+                  : String(t("secrets.proposals.approveBindingDescription"))}
               </DialogDescription>
             </DialogHeader>
 
             {/* Provenance recap — keeps the social-engineering surface visible. */}
             <div className="space-y-1.5 rounded-md border border-border bg-muted/30 p-2.5 text-xs">
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <span>Proposed by</span>
+                <span>{String(t("secrets.proposals.proposedBy"))}</span>
                 <AgentRefChip agent={draft.proposal.proposedBy} className="font-medium text-foreground" />
               </div>
               <ProposalJustification justification={draft.proposal.justification} />
@@ -423,7 +446,7 @@ function ApproveDialog({
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label htmlFor="approve-folder">Folder</Label>
+                    <Label htmlFor="approve-folder">{String(t("secrets.proposals.folder"))}</Label>
                     <Input
                       id="approve-folder"
                       value={draft.folder}
@@ -433,7 +456,7 @@ function ApproveDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="approve-name">Name</Label>
+                    <Label htmlFor="approve-name">{String(t("secrets.proposals.name"))}</Label>
                     <Input
                       id="approve-name"
                       value={draft.leaf}
@@ -446,27 +469,27 @@ function ApproveDialog({
                   </div>
                 </div>
                 <p className="text-(length:--text-micro) text-muted-foreground">
-                  Lands as{" "}
+                  {String(t("secrets.proposals.landsAs"))}{" "}
                   {previewName ? (
                     <SecretPathName name={previewName} className="font-mono" />
                   ) : (
-                    <span className="italic">enter a name</span>
+                    <span className="italic">{String(t("secrets.proposals.enterAName"))}</span>
                   )}
                 </p>
 
                 <div className="space-y-1">
-                  <Label htmlFor="approve-description">Description</Label>
+                    <Label htmlFor="approve-description">{String(t("secrets.proposals.descriptionLabel"))}</Label>
                   <Input
                     id="approve-description"
                     value={draft.description}
                     onChange={(event) => onChange({ ...draft, description: event.target.value })}
-                    placeholder="Optional"
+                    placeholder={String(t("secrets.proposals.optional"))}
                   />
                 </div>
 
                 {localConfigs.length > 0 ? (
                   <div className="space-y-1">
-                    <Label htmlFor="approve-provider-config">Provider vault</Label>
+                    <Label htmlFor="approve-provider-config">{String(t("secrets.proposals.providerVault"))}</Label>
                     <select
                       id="approve-provider-config"
                       value={draft.providerConfigId}
@@ -475,7 +498,7 @@ function ApproveDialog({
                       }
                       className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
-                      <option value="">Deployment default</option>
+                      <option value="">{String(t("secrets.proposals.deploymentDefault"))}</option>
                       {localConfigs.map((config) => (
                         <option key={config.id} value={config.id}>
                           {config.displayName}
@@ -504,16 +527,16 @@ function ApproveDialog({
 
             <DialogFooter>
               <Button variant="ghost" onClick={onCancel} disabled={pending}>
-                Cancel
+                {String(t("secrets.proposals.cancel"))}
               </Button>
               <Button onClick={onConfirm} disabled={pending || !canConfirm}>
                 {pending
-                  ? "Approving…"
+                  ? String(t("secrets.proposals.approving"))
                   : isSecret
-                    ? "Approve & create"
+                    ? String(t("secrets.proposals.approveAndCreate"))
                     : draft.cascade
-                      ? "Approve secret & bind"
-                      : "Approve binding"}
+                      ? String(t("secrets.proposals.approveSecretAndBind"))
+                      : String(t("secrets.proposals.approveBinding"))}
               </Button>
             </DialogFooter>
           </>
@@ -531,13 +554,17 @@ function BindingApproveBody({
   onChange: (next: ApproveDraft) => void;
 }) {
   const { proposal } = draft;
-  const secret = bindingSecretLabel(proposal);
+  const { t } = useTranslation();
+  const secret = bindingSecretLabel(proposal, {
+    secret: String(t("secrets.proposals.secretFallback")),
+    proposedSecret: String(t("secrets.proposals.proposedSecretFallback")),
+  });
   const envKey = bindingEnvKey(proposal);
   return (
     <div className="space-y-3 text-sm">
       <div className="space-y-2 rounded-md border border-border p-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">Target agent</span>
+          <span className="text-xs text-muted-foreground">{String(t("secrets.proposals.targetAgent"))}</span>
           {proposal.target ? (
             <AgentRefChip agent={proposal.target} className="text-sm font-medium" />
           ) : (
@@ -545,14 +572,14 @@ function BindingApproveBody({
           )}
         </div>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">Delivered as</span>
+          <span className="text-xs text-muted-foreground">{String(t("secrets.proposals.deliveredAs"))}</span>
           <span className="flex items-center gap-1.5">
             <DeliveryBadge configPath={proposal.configPath} />
             <code className="font-mono text-xs">{envKey || proposal.configPath}</code>
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">Secret</span>
+          <span className="text-xs text-muted-foreground">{String(t("secrets.proposals.secret"))}</span>
           <span className="flex items-center gap-1.5">
             <KeyRound className="size-3.5 text-muted-foreground" />
             <span className="font-medium">{secret.name}</span>
@@ -568,12 +595,10 @@ function BindingApproveBody({
             checked={draft.cascade}
             onCheckedChange={(checked) => onChange({ ...draft, cascade: checked === true })}
             className="mt-0.5"
-            aria-label="Also approve the proposed secret"
+            aria-label={String(t("secrets.proposals.alsoApproveProposedSecretAria"))}
           />
           <span className="text-foreground/90">
-            Also approve the proposed secret{" "}
-            <span className="font-medium">{secret.name}</span> and create it in the same step. The
-            binding can’t land without it.
+            {String(t("secrets.proposals.alsoApproveProposedSecretDescription", { secretName: secret.name }))}
           </span>
         </label>
       ) : null}
@@ -603,28 +628,28 @@ function RejectDialog({
   onConfirm: () => void;
 }) {
   const canConfirm = reason.trim().length > 0;
+  const { t } = useTranslation();
   return (
     <Dialog open={Boolean(proposal)} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="sm:max-w-md">
         {proposal ? (
           <>
             <DialogHeader>
-              <DialogTitle>Reject proposal</DialogTitle>
+            <DialogTitle>{String(t("secrets.proposals.rejectProposalTitle"))}</DialogTitle>
               <DialogDescription>
-                The reason is sent back to{" "}
-                <AgentRefChip agent={proposal.proposedBy} className="text-foreground" />. Dependent
-                bindings are rejected too.
+              {String(t("secrets.proposals.reasonSentBackTo"))}{" "}
+              <AgentRefChip agent={proposal.proposedBy} className="text-foreground" />. {String(t("secrets.proposals.dependentBindingsRejected"))}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-1">
-              <Label htmlFor="reject-reason">Reason</Label>
+              <Label htmlFor="reject-reason">{String(t("secrets.proposals.reason"))}</Label>
               <Textarea
                 id="reject-reason"
                 value={reason}
                 onChange={(event) => onReasonChange(event.target.value)}
                 rows={3}
                 autoFocus
-                placeholder="Why is this being rejected?"
+                placeholder={String(t("secrets.proposals.rejectionReasonPlaceholder"))}
               />
             </div>
             {error ? (
@@ -634,10 +659,12 @@ function RejectDialog({
             ) : null}
             <DialogFooter>
               <Button variant="ghost" onClick={onCancel} disabled={pending}>
-                Cancel
+                {String(t("secrets.proposals.cancel"))}
               </Button>
               <Button variant="destructive" onClick={onConfirm} disabled={pending || !canConfirm}>
-                {pending ? "Rejecting…" : "Reject"}
+                {pending
+                  ? String(t("secrets.proposals.rejecting"))
+                  : String(t("secrets.proposals.reject"))}
               </Button>
             </DialogFooter>
           </>
@@ -664,6 +691,7 @@ export function ProposalActions({
   disabled?: boolean;
   size?: "sm" | "xs";
 }) {
+  const { t } = useTranslation();
   const blocked = !proposal.viewerCanApprove;
   const heightClass = size === "xs" ? "h-7 px-2 text-xs" : "";
   const approveButton = (
@@ -673,7 +701,7 @@ export function ProposalActions({
       disabled={disabled || blocked}
       onClick={() => onApprove(proposal)}
     >
-      Approve
+      {String(t("secrets.proposals.approve"))}
     </Button>
   );
   return (
@@ -685,7 +713,7 @@ export function ProposalActions({
               <span tabIndex={0}>{approveButton}</span>
             </TooltipTrigger>
             <TooltipContent className="max-w-72">
-              {proposal.approveBlockReason ?? "You don’t have permission to approve this."}
+              {proposal.approveBlockReason ?? String(t("secrets.proposals.approvePermissionDenied"))}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -699,7 +727,7 @@ export function ProposalActions({
         disabled={disabled}
         onClick={() => onReject(proposal)}
       >
-        Reject
+        {String(t("secrets.proposals.reject"))}
       </Button>
     </div>
   );

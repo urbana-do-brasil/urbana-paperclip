@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -28,15 +29,19 @@ import {
   useProposalReview,
 } from "./proposal-review";
 
-/** ISO expiry → "expires in 12d" / "expires in 5h" / "expired". */
-function expiryLabel(expiresAt: string): { text: string; urgent: boolean } {
+/** ISO expiry → a localized no-expiry, hour, day, or expired state. */
+type ExpiryLabel =
+  | { kind: "noExpiry" | "expired"; urgent: boolean }
+  | { kind: "hours" | "days"; count: number; urgent: boolean };
+
+function expiryLabel(expiresAt: string): ExpiryLabel {
   const ms = new Date(expiresAt).getTime() - Date.now();
-  if (Number.isNaN(ms)) return { text: "no expiry", urgent: false };
-  if (ms <= 0) return { text: "expired", urgent: true };
+  if (Number.isNaN(ms)) return { kind: "noExpiry", urgent: false };
+  if (ms <= 0) return { kind: "expired", urgent: true };
   const hours = Math.floor(ms / 3_600_000);
-  if (hours < 24) return { text: `expires in ${hours}h`, urgent: true };
+  if (hours < 24) return { kind: "hours", count: hours, urgent: true };
   const days = Math.floor(hours / 24);
-  return { text: `expires in ${days}d`, urgent: days <= 2 };
+  return { kind: "days", count: days, urgent: days <= 2 };
 }
 
 function ProposalRow({
@@ -50,9 +55,28 @@ function ProposalRow({
   onReject: (p: SecretProposalView) => void;
   disabled: boolean;
 }) {
+  const { t } = useTranslation();
   const isSecret = proposal.kind === "secret";
   const expiry = expiryLabel(proposal.expiresAt);
-  const secret = bindingSecretLabel(proposal);
+  let expiryText: string;
+  switch (expiry.kind) {
+    case "hours":
+      expiryText = String(t("secrets.proposals.expiresInHours", { count: expiry.count }));
+      break;
+    case "days":
+      expiryText = String(t("secrets.proposals.expiresInDays", { count: expiry.count }));
+      break;
+    case "noExpiry":
+      expiryText = String(t("secrets.proposals.noExpiry"));
+      break;
+    case "expired":
+      expiryText = String(t("secrets.proposals.expired"));
+      break;
+  }
+  const secret = bindingSecretLabel(proposal, {
+    secret: String(t("secrets.proposals.secretFallback")),
+    proposedSecret: String(t("secrets.proposals.proposedSecretFallback")),
+  });
   const envKey = bindingEnvKey(proposal);
 
   return (
@@ -74,7 +98,7 @@ function ProposalRow({
               {proposal.target ? (
                 <AgentRefChip agent={proposal.target} className="font-medium" />
               ) : (
-                <span className="text-muted-foreground">agent</span>
+                <span className="text-muted-foreground">{String(t("secrets.proposals.agentFallback"))}</span>
               )}
               <DeliveryBadge configPath={proposal.configPath} />
               <code className="font-mono text-xs">{envKey || proposal.configPath}</code>
@@ -91,7 +115,7 @@ function ProposalRow({
         {/* Provenance meta */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
-            by <AgentRefChip agent={proposal.proposedBy} className="font-medium text-foreground" />
+            {String(t("secrets.proposals.proposedBy"))} <AgentRefChip agent={proposal.proposedBy} className="font-medium text-foreground" />
           </span>
           {proposal.originIssue ? (
             <>
@@ -117,7 +141,7 @@ function ProposalRow({
           ) : null}
           <span aria-hidden="true">·</span>
           <span className={cn(expiry.urgent && "text-amber-600 dark:text-amber-400")}>
-            {expiry.text}
+            {expiryText}
           </span>
         </div>
 
@@ -144,6 +168,7 @@ export function ProposalsTab({
   companyId: string;
   providerConfigs: CompanySecretProviderConfig[];
 }) {
+  const { t } = useTranslation();
   const proposalsQuery = useQuery({
     queryKey: queryKeys.secrets.proposals(companyId, "pending"),
     queryFn: () => secretsApi.listProposals(companyId, "pending"),
@@ -167,7 +192,7 @@ export function ProposalsTab({
   if (proposalsQuery.isError) {
     return (
       <div className="flex items-center gap-2 py-4 text-sm text-destructive">
-        <AlertCircle className="size-4" /> Couldn’t load proposals. Try again.
+        <AlertCircle className="size-4" /> {String(t("secrets.proposals.loadFailed"))}
       </div>
     );
   }
@@ -175,7 +200,7 @@ export function ProposalsTab({
   if (proposalsQuery.isPending) {
     return (
       <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> Loading proposals…
+        <Loader2 className="size-4 animate-spin" /> {String(t("secrets.proposals.loading"))}
       </div>
     );
   }
@@ -184,8 +209,8 @@ export function ProposalsTab({
     return (
       <EmptyState
         icon={Inbox}
-        title="No pending proposals"
-        message="When an agent proposes a secret or an access binding, it shows up here for review."
+        title={String(t("secrets.proposals.emptyTitle"))}
+        message={String(t("secrets.proposals.emptyDescription"))}
       />
     );
   }
@@ -193,8 +218,7 @@ export function ProposalsTab({
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
-        Agents propose credentials and access bindings; you approve or reject them here. Proposed
-        values are never shown — only a fingerprint and length.
+        {String(t("secrets.proposals.reviewHelp"))}
       </p>
       {sorted.map((proposal) => (
         <ProposalRow
