@@ -3241,3 +3241,14 @@ dados, flags e códigos foram preservados. Testes de help: **11/11**; testes
 do comando: **23/23**. Typecheck da CLI não foi repetido após encerramento por
 memória na rodada anterior. As demais operações e a regressão de processo 4.4
 continuam pendentes. Progresso: **277/297**.
+
+
+## Idioma nos prompts dos agentes (6.2a)
+
+O wake payload propaga o locale validado e o prompt compartilhado orienta
+comunicação humana em PT-BR/en. Snapshots antigos usam o padrão PT-BR; a opção
+de inglês técnico simplificado só exige ASD-STE100 para inglês. Conteúdo técnico
+e histórico são preservados. Preparação, prompt e caminho nativo passaram em
+**173/173 testes**; typecheck de adapter-utils passou. O typecheck do servidor
+foi encerrado por memória (SIGKILL). Outros carriers/adapters e respostas reais
+por runtime e modelo permanecem sem qualificação. Progresso: **278/298**.

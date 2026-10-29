@@ -20,6 +20,7 @@ import {
   isPaperclipExternalChatQuestionResponseTurn,
   isPaperclipExternalChatTurn,
   materializePaperclipSkillCopy,
+  normalizePaperclipWakePayload,
   PAPERCLIP_OPERATIONAL_SKILL_KEY,
   PAPERCLIP_FEEDBACK_SKILL_KEYS,
   refreshPaperclipWorkspaceEnvForExecution,
@@ -1299,11 +1300,12 @@ describe("renderPaperclipWakePrompt", () => {
   it("renders the simplified-english interaction directive only when the payload enables it", () => {
     const payload = {
       reason: "issue_commented",
+      communicationLocale: "en",
       issue: {
         id: "issue-1",
         identifier: "PAP-15936",
         title: "Interaction language",
-        description: null,
+        description: "Run `GET /api/health`; keep the HTTP 401 code intact.",
         descriptionTruncated: false,
         status: "in_progress",
       },
@@ -1325,8 +1327,45 @@ describe("renderPaperclipWakePrompt", () => {
     expect(
       JSON.parse(stringifyPaperclipWakePayload(enabled) ?? "{}"),
     ).toMatchObject({
+      communicationLocale: "en",
       simplifiedEnglishInteractions: true,
     });
+
+    const portuguese = {
+      ...payload,
+      communicationLocale: "pt-BR",
+      simplifiedEnglishInteractions: true,
+    };
+    for (const resumedSession of [false, true]) {
+      const prompt = renderPaperclipWakePrompt(portuguese, { resumedSession });
+      expect(prompt).toContain("Brazilian Portuguese (pt-BR)");
+      expect(prompt).toContain("brief and clear in Brazilian Portuguese (pt-BR)");
+      expect(prompt).not.toContain("ASD-STE100");
+      if (!resumedSession) {
+        expect(prompt).toContain("Run `GET /api/health`; keep the HTTP 401 code intact.");
+      }
+    }
+
+    const historical = { ...payload } as Record<string, unknown>;
+    delete historical.communicationLocale;
+    historical.simplifiedEnglishInteractions = true;
+    const normalizedHistorical = normalizePaperclipWakePayload(historical);
+    expect(normalizedHistorical).toMatchObject({
+      communicationLocale: "pt-BR",
+      simplifiedEnglishInteractions: true,
+    });
+    expect(renderPaperclipWakePrompt(historical)).toContain("Brazilian Portuguese (pt-BR)");
+    expect(renderPaperclipWakePrompt(historical)).not.toContain("ASD-STE100");
+    expect(JSON.parse(stringifyPaperclipWakePayload(historical) ?? "{}")).toMatchObject({
+      communicationLocale: "pt-BR",
+      simplifiedEnglishInteractions: true,
+    });
+
+    const invalidLocale = normalizePaperclipWakePayload({
+      ...payload,
+      communicationLocale: "es",
+    });
+    expect(invalidLocale?.communicationLocale).toBe("pt-BR");
   });
 
   it("suppresses the issue description when the prompt already carries the task-context markdown", () => {

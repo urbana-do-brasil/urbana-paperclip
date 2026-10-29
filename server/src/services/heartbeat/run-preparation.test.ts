@@ -139,3 +139,27 @@ describe("heartbeat run preparation module", () => {
     expect(secretsSvc.resolveEnvBindings).not.toHaveBeenCalled();
   });
 });
+
+describe("communication locale in the Paperclip wake payload", () => {
+  it.each([
+    [{}, "pt-BR"],
+    [{ communicationLocale: "en", communicationLocaleSource: "user" }, "en"],
+    [{ communicationLocale: "pt-BR", communicationLocaleSource: "explicit" }, "pt-BR"],
+    [{ communicationLocale: "es", communicationLocaleSource: "user" }, "pt-BR"],
+    [{ communicationLocale: "en", communicationLocaleSource: "untrusted" }, "pt-BR"],
+  ])("propagates only a validated locale from an otherwise empty run snapshot", async (contextSnapshot, expectedLocale) => {
+    const select = vi.fn();
+    const payload = await buildPaperclipWakePayload({
+      db: { select } as unknown as Db,
+      companyId: "company-one",
+      contextSnapshot,
+      simplifiedEnglishInteractions: true,
+    });
+
+    expect(payload).toMatchObject({
+      communicationLocale: expectedLocale,
+      simplifiedEnglishInteractions: true,
+    });
+    expect(select).not.toHaveBeenCalled();
+  });
+});

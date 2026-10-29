@@ -41,6 +41,7 @@ describe("native execution input external-chat framing", () => {
       const sourceRunId = "90000000-0000-4000-8000-000000000009";
       const wakePayload = {
         reason: "issue_commented",
+        communicationLocale: "en",
         externalChatProvider: "telegram",
         externalChatExecutionBound: true,
         interactionId,
@@ -134,6 +135,9 @@ describe("native execution input external-chat framing", () => {
       expect(input.task.prompt).not.toContain("Initial Slack communication preferences.");
       expect(input.task.title).toBe("External chat follow-up");
       expect(input.task.prompt).toContain("Amber");
+      expect(input.task.prompt).toContain(
+        "Write human-facing replies, comments, questions, confirmations, and options in English.",
+      );
       expect(input.task.prompt).not.toContain("## Questions that need a user response");
       expect(input.task.prompt).toContain(
         "semantic completion summary is the user-visible final answer",

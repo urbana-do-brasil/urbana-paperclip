@@ -2257,11 +2257,14 @@ export async function buildPaperclipWakePayload(input: {
     executionPolicy?: unknown;
   } | null;
   exposeLowTrustRaw?: boolean;
-  // Experimental: agents write user-interaction content in ASD-STE100
-  // Simplified Technical English (rendered as a prompt directive downstream).
+  // Experimental: simplify human interactions without overriding the captured
+  // locale. ASD-STE100 applies only when communicationLocale is English.
   simplifiedEnglishInteractions?: boolean;
 }) {
   const executionStage = parseObject(input.contextSnapshot.executionStage);
+  const communicationLocale =
+    readCommunicationLocaleSnapshot(input.contextSnapshot)?.communicationLocale ??
+    DEFAULT_USER_LOCALE;
   const commentIds = extractWakeCommentIds(input.contextSnapshot);
   const annotationCommentId = readNonEmptyString(
     input.contextSnapshot.annotationCommentId,
@@ -2292,14 +2295,6 @@ export async function buildPaperclipWakePayload(input: {
           )
           .then((rows) => rows[0] ?? null)
       : null);
-  if (
-    commentIds.length === 0 &&
-    Object.keys(executionStage).length === 0 &&
-    !issueSummary &&
-    !agentMessageText
-  )
-    return null;
-
   const commentRows =
     commentIds.length === 0
       ? []
@@ -2771,6 +2766,7 @@ export async function buildPaperclipWakePayload(input: {
     externalChatExecutionBound:
       input.contextSnapshot[PAPERCLIP_EXTERNAL_CHAT_EXECUTION_BOUND_KEY] ===
       true,
+    communicationLocale,
     simplifiedEnglishInteractions: input.simplifiedEnglishInteractions === true,
     dependencyBlockedInteraction:
       input.contextSnapshot.dependencyBlockedInteraction === true,
