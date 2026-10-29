@@ -1591,3 +1591,22 @@ incluindo a experiência PT-BR sem acesso administrativo à captura bruta e os
 cenários existentes de redaction, reveal, revogação de acesso e correlação.
 Typecheck direcionado, gates de tokens e `git diff --check` passaram. A tarefa
 3.6f está concluída. Progresso: **139/162**. Próxima: 3.7, dashboard e custos.
+
+### Continuação — dashboard principal (3.7a)
+
+O painel principal localiza os estados sem organização, avisos de agentes
+pausados/importados, resumo de impacto orçamentário, cartões de métricas,
+gráficos, estado sem tarefas e cabeçalhos de atividade/tarefas recentes em
+PT-BR/en. Datas de gráficos e tooltips, percentuais, números e valores USD
+acompanham o locale selecionado sem alterar o instante, a unidade nem o valor.
+IDs, enums/status desconhecidos, nomes/títulos de tarefas, mensagens técnicas
+de erro e ações permanecem intactos. Os cartões de execuções ao vivo são
+tratados em 3.7b; verbos e conteúdo estruturado dos eventos, em 3.7e; widgets de
+plugins permanecem no grupo 3.11.
+
+`ActivityCharts.test.tsx`, `Dashboard.test.ts`, `Dashboard.i18n.test.tsx` e
+`locale-validation.test.ts` passaram em **22/22 testes**, cobrindo os dois idiomas, pluralização, datas,
+percentuais, estados sem dados e preservação de códigos de erro. Typecheck
+direcionado dos módulos/testes alterados, `check:tokens`, `check:token-gates`,
+`git diff --check` e validação OpenSpec estrita passaram. O progresso é
+**140/168**; próxima tarefa: 3.7b, execuções ao vivo do dashboard.

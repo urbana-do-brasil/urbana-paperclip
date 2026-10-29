@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from "react";
-import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
+import { act } from "react";
 import type { HeartbeatRun } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RunActivityChart, SuccessRateChart } from "./ActivityCharts";
+import { i18n } from "@/i18n";
+import { IssueStatusChart, RunActivityChart, SuccessRateChart } from "./ActivityCharts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -13,7 +14,8 @@ import { RunActivityChart, SuccessRateChart } from "./ActivityCharts";
 let container: HTMLDivElement;
 let root: Root;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-04-20T12:00:00.000Z"));
   container = document.createElement("div");
@@ -21,14 +23,15 @@ beforeEach(() => {
   root = createRoot(container);
 });
 
-afterEach(() => {
-  flushSync(() => root.unmount());
+afterEach(async () => {
+  act(() => root.unmount());
   container.remove();
   vi.useRealTimers();
+  await i18n.changeLanguage("pt-BR");
 });
 
 function render(ui: ReactNode) {
-  flushSync(() => {
+  act(() => {
     root.render(ui);
   });
 }
@@ -108,7 +111,7 @@ describe("ActivityCharts", () => {
 
     expect(container.textContent).not.toContain("No runs yet");
     // Tooltip now carries the per-day breakdown (incl. failure error codes).
-    const dayCell = container.querySelector("[title^='2026-04-20: 2 runs']");
+    const dayCell = container.querySelector("[title*='2 runs']");
     expect(dayCell).not.toBeNull();
     expect(dayCell?.getAttribute("title")).toContain("provider_quota: 1");
   });
@@ -131,7 +134,46 @@ describe("ActivityCharts", () => {
     );
 
     expect(container.textContent).toContain("Recovered");
-    const dayCell = container.querySelector("[title*='recovered: 4']");
+    const dayCell = container.querySelector("[title*='Recovered: 4']");
     expect(dayCell).not.toBeNull();
+  });
+
+  it("localizes run and task charts while formatting dates and percentages in PT-BR", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+    });
+    render(
+      <>
+        <RunActivityChart
+          activity={[{
+            date: "2026-04-20",
+            succeeded: 2,
+            failed: 1,
+            recovered: 0,
+            other: 0,
+            total: 3,
+            failedByErrorCode: { provider_quota: 1 },
+          }]}
+        />
+        <IssueStatusChart issues={[{ status: "in_progress", createdAt: new Date("2026-04-20T12:00:00.000Z") }]} />
+        <SuccessRateChart
+          activity={[{
+            date: "2026-04-20",
+            succeeded: 2,
+            failed: 1,
+            recovered: 0,
+            other: 0,
+            total: 3,
+            failedByErrorCode: {},
+          }]}
+        />
+      </>,
+    );
+
+    expect(container.textContent).toContain("Concluída com sucesso");
+    expect(container.textContent).toContain("Em andamento");
+    expect(container.querySelector("[title*='execuç']")?.getAttribute("title")).toContain("20 de abr. de 2026");
+    expect(container.querySelector("[title*='67%']")).not.toBeNull();
+    expect(container.querySelector("[title*='2026-04-20']")).toBeNull();
   });
 });

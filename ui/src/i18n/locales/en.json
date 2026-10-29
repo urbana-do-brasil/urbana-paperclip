@@ -5898,5 +5898,102 @@
     "restartCommandAfter": "after the active work is safe to interrupt",
     "restartRequested": "Restart requested",
     "restartNow": "Restart now"
+  },
+  "dashboard": {
+    "empty": {
+      "welcome": "Welcome to Paperclip. Set up your first organization and agent to get started.",
+      "getStarted": "Get started",
+      "selectOrganization": "Create or select an organization to view the dashboard."
+    },
+    "paused": {
+      "importedTitle_one": "{{displayCount}} imported agent is paused and will not run.",
+      "importedTitle_other": "{{displayCount}} imported agents are paused and will not run.",
+      "resuming": "Resuming…",
+      "resumeAll": "Resume all",
+      "importedDescription": "Agents from an organization import arrive paused as a safety default. Resume them so assigned tasks can start.",
+      "allTitle": "All agents in this organization are paused — nothing will run.",
+      "reviewAgents": "Review agents",
+      "allDescription": "Resume at least one agent to let assigned tasks start."
+    },
+    "noAgents": {
+      "message": "You have no agents.",
+      "createOne": "Create one here"
+    },
+    "budget": {
+      "activeIncidents_one": "{{displayCount}} active budget incident",
+      "activeIncidents_other": "{{displayCount}} active budget incidents",
+      "agentsPaused_one": "{{displayCount}} agent paused",
+      "agentsPaused_other": "{{displayCount}} agents paused",
+      "projectsPaused_one": "{{displayCount}} project paused",
+      "projectsPaused_other": "{{displayCount}} projects paused",
+      "approvalsPending_one": "{{displayCount}} pending budget approval",
+      "approvalsPending_other": "{{displayCount}} pending budget approvals",
+      "impactSummary": "{{agents}} · {{projects}} · {{approvals}}",
+      "openBudgets": "Open budgets"
+    },
+    "metrics": {
+      "agentsEnabled": "Agents Enabled",
+      "agentsRunning_one": "{{displayCount}} running",
+      "agentsRunning_other": "{{displayCount}} running",
+      "agentsPaused_one": "{{displayCount}} paused",
+      "agentsPaused_other": "{{displayCount}} paused",
+      "agentsWithErrors_one": "{{displayCount}} error",
+      "agentsWithErrors_other": "{{displayCount}} errors",
+      "agentStates": "{{running}}, {{paused}}, {{errors}}",
+      "tasksInProgress": "Tasks In Progress",
+      "tasksOpen_one": "{{displayCount}} open",
+      "tasksOpen_other": "{{displayCount}} open",
+      "tasksBlocked_one": "{{displayCount}} blocked",
+      "tasksBlocked_other": "{{displayCount}} blocked",
+      "taskStates": "{{open}}, {{blocked}}",
+      "monthSpend": "Month Spend",
+      "budgetUtilization": "{{percent}} of {{amount}} budget",
+      "unlimitedBudget": "Unlimited budget",
+      "pendingApprovals": "Pending Approvals",
+      "budgetApprovalsAwaiting_one": "{{displayCount}} budget override awaiting board review",
+      "budgetApprovalsAwaiting_other": "{{displayCount}} budget overrides awaiting board review",
+      "awaitingBoardReview": "Awaiting board review"
+    },
+    "charts": {
+      "runActivity": "Run Activity",
+      "last14Days": "Last 14 days",
+      "tasksByPriority": "Tasks by Priority",
+      "tasksByStatus": "Tasks by Status",
+      "successRate": "Success Rate",
+      "noRuns": "No runs yet",
+      "noTasks": "No tasks",
+      "runCount_one": "{{date}}: {{displayCount}} run",
+      "runCount_other": "{{date}}: {{displayCount}} runs",
+      "runStatusCount": "  {{status}}: {{count}}",
+      "recoveredCount": "  {{status}}: {{count}} ({{suffix}})",
+      "recoveredSuffix": "retry succeeded",
+      "issueCount_one": "{{date}}: {{displayCount}} issue",
+      "issueCount_other": "{{date}}: {{displayCount}} issues",
+      "successRateTooltip": "{{date}}: {{rate}} ({{succeeded}}/{{total}})",
+      "status": {
+        "succeeded": "Succeeded",
+        "recovered": "Recovered",
+        "failed": "Failed",
+        "other": "Other"
+      },
+      "priority": {
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "taskStatus": {
+        "todo": "To Do",
+        "in_progress": "In Progress",
+        "in_review": "In Review",
+        "done": "Done",
+        "blocked": "Blocked",
+        "cancelled": "Cancelled",
+        "backlog": "Backlog"
+      }
+    },
+    "recentActivity": "Recent Activity",
+    "recentTasks": "Recent Tasks",
+    "noTasks": "No tasks yet."
   }
 }

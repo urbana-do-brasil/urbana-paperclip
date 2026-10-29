@@ -6031,5 +6031,115 @@
     "restartCommandAfter": "quando for seguro interromper o trabalho ativo",
     "restartRequested": "Reinicialização solicitada",
     "restartNow": "Reiniciar agora"
+  },
+  "dashboard": {
+    "empty": {
+      "welcome": "Bem-vindo ao Paperclip. Configure sua primeira organização e agente para começar.",
+      "getStarted": "Começar",
+      "selectOrganization": "Crie ou selecione uma organização para ver o painel."
+    },
+    "paused": {
+      "importedTitle_one": "{{displayCount}} agente importado está pausado e não será executado.",
+      "importedTitle_other": "{{displayCount}} agentes importados estão pausados e não serão executados.",
+      "importedTitle_many": "{{displayCount}} agentes importados estão pausados e não serão executados.",
+      "resuming": "Retomando…",
+      "resumeAll": "Retomar todos",
+      "importedDescription": "Como medida de segurança, os agentes importados de uma organização chegam pausados. Retome-os para iniciar as tarefas atribuídas.",
+      "allTitle": "Todos os agentes desta organização estão pausados — nada será executado.",
+      "reviewAgents": "Revisar agentes",
+      "allDescription": "Retome pelo menos um agente para iniciar as tarefas atribuídas."
+    },
+    "noAgents": {
+      "message": "Sua organização ainda não tem agentes.",
+      "createOne": "Crie um aqui"
+    },
+    "budget": {
+      "activeIncidents_one": "{{displayCount}} incidente de orçamento ativo",
+      "activeIncidents_other": "{{displayCount}} incidentes de orçamento ativos",
+      "activeIncidents_many": "{{displayCount}} incidentes de orçamento ativos",
+      "agentsPaused_one": "{{displayCount}} agente pausado",
+      "agentsPaused_other": "{{displayCount}} agentes pausados",
+      "agentsPaused_many": "{{displayCount}} agentes pausados",
+      "projectsPaused_one": "{{displayCount}} projeto pausado",
+      "projectsPaused_other": "{{displayCount}} projetos pausados",
+      "projectsPaused_many": "{{displayCount}} projetos pausados",
+      "approvalsPending_one": "{{displayCount}} aprovação de orçamento pendente",
+      "approvalsPending_other": "{{displayCount}} aprovações de orçamento pendentes",
+      "approvalsPending_many": "{{displayCount}} aprovações de orçamento pendentes",
+      "impactSummary": "{{agents}} · {{projects}} · {{approvals}}",
+      "openBudgets": "Abrir orçamentos"
+    },
+    "metrics": {
+      "agentsEnabled": "Agentes habilitados",
+      "agentsRunning_one": "{{displayCount}} em execução",
+      "agentsRunning_other": "{{displayCount}} em execução",
+      "agentsRunning_many": "{{displayCount}} em execução",
+      "agentsPaused_one": "{{displayCount}} pausado",
+      "agentsPaused_other": "{{displayCount}} pausados",
+      "agentsPaused_many": "{{displayCount}} pausados",
+      "agentsWithErrors_one": "{{displayCount}} com erro",
+      "agentsWithErrors_other": "{{displayCount}} com erro",
+      "agentsWithErrors_many": "{{displayCount}} com erro",
+      "agentStates": "{{running}}, {{paused}}, {{errors}}",
+      "tasksInProgress": "Tarefas em andamento",
+      "tasksOpen_one": "{{displayCount}} aberta",
+      "tasksOpen_other": "{{displayCount}} abertas",
+      "tasksOpen_many": "{{displayCount}} abertas",
+      "tasksBlocked_one": "{{displayCount}} bloqueada",
+      "tasksBlocked_other": "{{displayCount}} bloqueadas",
+      "tasksBlocked_many": "{{displayCount}} bloqueadas",
+      "taskStates": "{{open}}, {{blocked}}",
+      "monthSpend": "Gasto no mês",
+      "budgetUtilization": "{{percent}} do orçamento de {{amount}}",
+      "unlimitedBudget": "Orçamento ilimitado",
+      "pendingApprovals": "Aprovações pendentes",
+      "budgetApprovalsAwaiting_one": "{{displayCount}} alteração de orçamento aguarda revisão do quadro",
+      "budgetApprovalsAwaiting_other": "{{displayCount}} alterações de orçamento aguardam revisão do quadro",
+      "budgetApprovalsAwaiting_many": "{{displayCount}} alterações de orçamento aguardam revisão do quadro",
+      "awaitingBoardReview": "Aguardando revisão do quadro"
+    },
+    "charts": {
+      "runActivity": "Atividade das execuções",
+      "last14Days": "Últimos 14 dias",
+      "tasksByPriority": "Tarefas por prioridade",
+      "tasksByStatus": "Tarefas por status",
+      "successRate": "Taxa de sucesso",
+      "noRuns": "Ainda não há execuções",
+      "noTasks": "Não há tarefas",
+      "runCount_one": "{{date}}: {{displayCount}} execução",
+      "runCount_other": "{{date}}: {{displayCount}} execuções",
+      "runCount_many": "{{date}}: {{displayCount}} execuções",
+      "runStatusCount": "  {{status}}: {{count}}",
+      "recoveredCount": "  {{status}}: {{count}} ({{suffix}})",
+      "recoveredSuffix": "nova tentativa bem-sucedida",
+      "issueCount_one": "{{date}}: {{displayCount}} tarefa",
+      "issueCount_other": "{{date}}: {{displayCount}} tarefas",
+      "issueCount_many": "{{date}}: {{displayCount}} tarefas",
+      "successRateTooltip": "{{date}}: {{rate}} ({{succeeded}}/{{total}})",
+      "status": {
+        "succeeded": "Concluída com sucesso",
+        "recovered": "Recuperada",
+        "failed": "Falhou",
+        "other": "Outra"
+      },
+      "priority": {
+        "critical": "Crítica",
+        "high": "Alta",
+        "medium": "Média",
+        "low": "Baixa"
+      },
+      "taskStatus": {
+        "todo": "A fazer",
+        "in_progress": "Em andamento",
+        "in_review": "Em revisão",
+        "done": "Concluída",
+        "blocked": "Bloqueada",
+        "cancelled": "Cancelada",
+        "backlog": "Backlog"
+      }
+    },
+    "recentActivity": "Atividade recente",
+    "recentTasks": "Tarefas recentes",
+    "noTasks": "Ainda não há tarefas."
   }
 }
