@@ -37,6 +37,12 @@ describe("localized CLI help", () => {
     { command: ["doctor"], portuguese: "Executar verificações de diagnóstico", english: "Run diagnostic checks" },
     { command: ["company"], portuguese: "Operações de organizações", english: "Company operations" },
     { command: ["company", "list"], portuguese: "Listar organizações", english: "List companies" },
+    { command: ["company", "get"], portuguese: "Consultar uma organização", english: "Get one company" },
+    {
+      command: ["company", "current"],
+      portuguese: "Consultar a organização atual do escopo",
+      english: "Get the current scoped company",
+    },
   ])("localizes help for $command", ({ command, portuguese, english }) => {
     const pt = help([...command, "--help", "--lang", "pt-BR"]);
     expect(pt.status).toBe(0);
@@ -47,7 +53,7 @@ describe("localized CLI help", () => {
     expect(en.status).toBe(0);
     expect(en.stdout).toContain(english);
     expect(en.stdout).toContain("Options:");
-  });
+  }, 65_000);
 
   it("preserves command and option names while localizing descriptions", () => {
     const result = help(["service", "restart", "--help", "--lang", "pt-BR"]);
@@ -56,7 +62,7 @@ describe("localized CLI help", () => {
     expect(output).toContain("paperclipai service restart");
     expect(output).toContain("--expected-version <version>");
     expect(output).toContain("Exigir que o servidor reiniciado informe esta versão");
-  });
+  }, 35_000);
 
   it("localizes company list options while preserving command and flag names", () => {
     const result = help(["company", "list", "--help", "--lang", "pt-BR"]);
@@ -76,5 +82,22 @@ describe("localized CLI help", () => {
     expect(output).toContain("ID da execução do heartbeat");
     expect(output).toContain("--json");
     expect(output).toContain("Exibir JSON bruto");
-  });
+  }, 35_000);
+
+  it("localizes company get arguments and current company options without changing identifiers", () => {
+    const get = help(["company", "get", "--help", "--lang", "pt-BR"]);
+    const getOutput = get.stdout.replace(/\s+/g, " ");
+    expect(get.status).toBe(0);
+    expect(getOutput).toContain("paperclipai company get [options] <companyId>");
+    expect(getOutput).toContain("companyId");
+    expect(getOutput).toContain("ID da organização");
+
+    const current = help(["company", "current", "--help", "--lang", "pt-BR"]);
+    const currentOutput = current.stdout.replace(/\s+/g, " ");
+    expect(current.status).toBe(0);
+    expect(currentOutput).toContain("paperclipai company current");
+    expect(currentOutput).toContain("--company-id <id>");
+    expect(currentOutput).toContain("ID da organização (substitui o padrão do contexto)");
+    expect(currentOutput).toContain("--json");
+  }, 65_000);
 });

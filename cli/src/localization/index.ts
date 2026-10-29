@@ -15,6 +15,8 @@ const messages = {
     apiError: "API error",
     usage: "Usage:", arguments: "Arguments:", options: "Options:", globalOptions: "Global Options:", commands: "Commands:",
     emptyList: "(empty)",
+    emptyValue: "(null)",
+    companyCurrentUnavailable: "Current company is not available. Pass --company-id, set PAPERCLIP_COMPANY_ID, set a context profile companyId, or authenticate with an agent API key.",
   },
   "pt-BR": {
     description: "CLI do Paperclip — instale, diagnostique e configure sua instância",
@@ -26,6 +28,8 @@ const messages = {
     apiError: "Erro de API",
     usage: "Uso:", arguments: "Argumentos:", options: "Opções:", globalOptions: "Opções globais:", commands: "Comandos:",
     emptyList: "(vazio)",
+    emptyValue: "(nulo)",
+    companyCurrentUnavailable: "A organização atual não está disponível. Informe --company-id, defina PAPERCLIP_COMPANY_ID, configure companyId em um perfil de contexto ou autentique-se com uma chave de API de agente.",
   },
 } as const;
 

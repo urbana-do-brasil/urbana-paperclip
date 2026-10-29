@@ -25,7 +25,7 @@ import {
 import { getTelemetryClient, trackCompanyImported } from "../../telemetry.js";
 import { ApiRequestError, type PaperclipApiClient } from "../../client/http.js";
 import { openUrl } from "../../client/board-auth.js";
-import { cliMessage } from "../../localization/index.js";
+import { cliMessage, isCliJsonRequested } from "../../localization/index.js";
 import {
   binaryContentTypeByExtension,
   bytesToPortableFileEntry,
@@ -134,6 +134,8 @@ const IMPORT_INCLUDE_OPTIONS: Array<{
 ];
 
 const IMPORT_PREVIEW_SAMPLE_LIMIT = 6;
+const CURRENT_COMPANY_UNAVAILABLE_FALLBACK =
+  "Current company is not available. Pass --company-id, set PAPERCLIP_COMPANY_ID, set a context profile companyId, or authenticate with an agent API key.";
 
 type ImportSelectableGroup = "projects" | "issues" | "agents" | "skills";
 
@@ -1391,7 +1393,7 @@ export function registerCompanyCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const row = await ctx.api.get<Company>(apiPath`/api/companies/${companyId}`);
-          printOutput(row, { json: ctx.json });
+          printCompanyResult(row, ctx.json);
         } catch (err) {
           handleCommandError(err);
         }
@@ -1407,7 +1409,7 @@ export function registerCompanyCommands(program: Command): void {
           const ctx = resolveCommandContext(opts);
           const companyId = await resolveCurrentCompanyId(ctx);
           const row = await ctx.api.get<Company>(apiPath`/api/companies/${companyId}`);
-          printOutput(row, { json: ctx.json });
+          printCompanyResult(row, ctx.json);
         } catch (err) {
           handleCommandError(err);
         }
@@ -1999,6 +2001,14 @@ export function registerCompanyCommands(program: Command): void {
   );
 }
 
+function printCompanyResult(row: Company | null, json: boolean): void {
+  if (row === null && !json) {
+    console.log(pc.dim(cliMessage("emptyValue")));
+    return;
+  }
+  printOutput(row, { json });
+}
+
 async function listCompaniesForContext(ctx: {
   companyId?: string;
   api: { get<T>(path: string): Promise<T | null> };
@@ -2041,7 +2051,7 @@ async function resolveCurrentCompanyId(ctx: { companyId?: string; api: { get<T>(
   } catch (error) {
     if (error instanceof ApiRequestError && (error.status === 401 || error.status === 403)) {
       throw new Error(
-        "Current company is not available. Pass --company-id, set PAPERCLIP_COMPANY_ID, set a context profile companyId, or authenticate with an agent API key.",
+        currentCompanyUnavailableMessage(),
       );
     }
     throw error;
@@ -2050,8 +2060,14 @@ async function resolveCurrentCompanyId(ctx: { companyId?: string; api: { get<T>(
   const fromAgent = agent?.companyId?.trim();
   if (fromAgent) return fromAgent;
   throw new Error(
-    "Current company is not available. Pass --company-id, set PAPERCLIP_COMPANY_ID, set a context profile companyId, or authenticate with an agent API key.",
+    currentCompanyUnavailableMessage(),
   );
+}
+
+function currentCompanyUnavailableMessage(): string {
+  return isCliJsonRequested()
+    ? CURRENT_COMPANY_UNAVAILABLE_FALLBACK
+    : cliMessage("companyCurrentUnavailable");
 }
 
 function isBoardAccessRequiredError(error: unknown): error is ApiRequestError {

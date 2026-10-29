@@ -3231,3 +3231,13 @@ instruções em PT-BR/en. Conteúdo digitado, IDs, links, consultas e payloads s
 preservados; testes incluem salvamento e troca de idioma. Drawer e catálogos:
 **29/29**; typecheck da UI passou. f4 concluída; progresso **276/296**; próxima
 parte da UI: f5, gates e navegação.
+
+
+## CLI — consulta de organizações (4.3b)
+
+`company get` e `company current` localizam help, ausência de resultado e
+falha de resolução de contexto em PT-BR/en. JSON, mensagens estruturadas,
+dados, flags e códigos foram preservados. Testes de help: **11/11**; testes
+do comando: **23/23**. Typecheck da CLI não foi repetido após encerramento por
+memória na rodada anterior. As demais operações e a regressão de processo 4.4
+continuam pendentes. Progresso: **277/297**.
