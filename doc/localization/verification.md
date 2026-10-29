@@ -1723,3 +1723,22 @@ módulos e testes alterados, `check:tokens`, `check:token-gates`,
 completo da UI continua com a falha preexistente de `SETUP_LOGIN_HINTS` no
 protótipo Storybook, documentada em 3.7c1. Progresso: **146/173**; próxima
 tarefa: 3.7d, políticas e incidentes de orçamento.
+
+### Continuação — políticas e incidentes de orçamento (3.7d)
+
+Os controles e grupos de políticas de orçamento, métricas e estados da página de
+Custos e o cartão de incidente agora acompanham PT-BR/en. Rótulos de escopo,
+status, limites, valores, contabilização incompleta, aprovação pendente, erros,
+validação de valor decimal e ações de aumentar/retomar ou manter pausado foram
+verificados. A entrada de orçamento aceita vírgula decimal em PT-BR; USD, valores
+em centavos, limites mínimos, callbacks e decisões de pausa foram preservados.
+Falhas próprias usam mensagens genéricas sem expor diagnósticos da API.
+
+`Costs.test.tsx`, `BudgetIncidentCard.test.tsx`, `BudgetPolicyCard.test.tsx` e
+`locale-validation.test.ts` passaram em **60/60 testes**, cobrindo os dois
+idiomas, cartões, incidentes, limites, ações, estados vazios e falhas. O
+typecheck direcionado dos módulos e testes alterados, `check:tokens`,
+`check:token-gates`, `git diff --check`, JSON e validação OpenSpec estrita
+passaram. O typecheck completo da UI continua com a falha preexistente de
+`SETUP_LOGIN_HINTS` no protótipo Storybook, documentada em 3.7c1. Progresso:
+**147/173**; próxima tarefa: 3.7e, timeline e atividade da organização.

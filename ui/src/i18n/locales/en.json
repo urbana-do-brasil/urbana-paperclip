@@ -3050,6 +3050,25 @@
       "hardStop": "Hard stop",
       "healthy": "Healthy"
     },
+    "incidents": {
+      "status": {
+        "open": "Open",
+        "resolved": "Resolved",
+        "dismissed": "Dismissed",
+        "escalated": "Escalated",
+        "pendingApproval": "Pending approval"
+      },
+      "hardStopTitle": "{{scope}} hard stop",
+      "accountingIncomplete": "Accounting is incomplete. Known spend is {{amount}}; review pending or unpriced usage in the budget policy.",
+      "spendLimitReached": "Spending reached {{observed}} against a limit of {{limit}}.",
+      "projectPaused": "Project execution is paused. New work in this project will not start until you resolve the budget incident.",
+      "scopePaused": "This scope is paused. New heartbeats will not start until you resolve the budget incident.",
+      "newBudget": "New budget (USD)",
+      "raiseBudgetAndResume": "Raise budget & resume",
+      "applying": "Applying…",
+      "mustExceedSpend": "The new budget must exceed current observed spend.",
+      "keepPaused": "Keep paused"
+    },
     "pauseReasons": {
       "manual": "manual",
       "budget": "budget",
@@ -6166,6 +6185,33 @@
       "providerBreakdownLoading": "Loading upstream provider details…",
       "providerBreakdownUnavailable": "Upstream provider details could not be loaded.",
       "noUpstreamProviders": "No upstream provider details are available."
+    },
+    "budgets": {
+      "policyUpdateError": "Could not update the budget policy. Review your settings and try again.",
+      "incidentUpdateError": "Could not update the budget. Check any pending runs or unpriced usage shown on this page, then try again.",
+      "controlPlaneTitle": "Budget control plane",
+      "controlPlaneDescription": "Hard-stop spend limits for agents and projects. Provider subscription quota stays separate and appears under Providers.",
+      "activeIncidents": "Active incidents",
+      "activeThresholdCrossings": "Open soft or hard threshold crossings",
+      "pendingApprovals": "Pending approvals",
+      "overrideApprovals": "Budget override approvals awaiting board action",
+      "pausedAgents": "Paused agents",
+      "agentsBlockedByBudget": "Agent heartbeats blocked by budget",
+      "pausedProjects": "Paused projects",
+      "projectsBlockedByBudget": "Project execution blocked by budget",
+      "activeIncidentsTitle": "Active incidents",
+      "activeIncidentsDescription": "Resolve hard stops here by raising the budget or explicitly keeping the scope paused.",
+      "scopeHeadings": {
+        "company": "Organization budgets",
+        "agent": "Agent budgets",
+        "project": "Project budgets"
+      },
+      "scopeDescriptions": {
+        "company": "Organization-wide monthly policy.",
+        "agent": "Recurring monthly spend policies for individual agents.",
+        "project": "Lifetime spend policies for execution-bound projects."
+      },
+      "emptyPolicies": "No budget policies yet. Set agent and project budgets from their detail pages, or use the existing organization monthly budget control."
     },
     "ledger": {
       "summary": {

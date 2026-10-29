@@ -759,7 +759,7 @@ export function Costs({
         count: spendData.summary.estimatedEventCount,
         displayCount: formatNumber(spendData.summary.estimatedEventCount),
       })}</p>}
-      {incidentMutation.error && <p role="alert" className="text-sm text-destructive">Could not update the budget. Check any pending runs or unpriced usage shown on this page, then try again.</p>}
+      {incidentMutation.error && <p role="alert" className="text-sm text-destructive">{t("costs.budgets.incidentUpdateError")}</p>}
       <Tabs value={mainTab} onValueChange={(value) => { setMainTab(value as typeof mainTab); setSearchParams(current => { const next = new URLSearchParams(current); next.set("tab", value); return next; }, { replace: true }); }}>
         {!lockTab ? (
           <div className="max-w-full overflow-x-auto pb-2">
@@ -946,41 +946,39 @@ export function Costs({
         </TabsContent>
 
         <TabsContent value="budgets" className="mt-4 space-y-4">
-          {policyMutation.error && <p role="alert" className="text-sm text-destructive">Could not update the budget policy. Review your settings and try again.</p>}
+          {policyMutation.error && <p role="alert" className="text-sm text-destructive">{t("costs.budgets.policyUpdateError")}</p>}
           {budgetLoading ? (
             <PageSkeleton variant="costs" />
           ) : budgetError && !budgetData ? null : (
             <>
               <Card className="border-border/70 bg-(image:--gradient-extract-2)">
                 <CardHeader className="px-5 pt-5 pb-3">
-                  <CardTitle className="text-base">Budget control plane</CardTitle>
-                  <CardDescription>
-                    Hard-stop spend limits for agents and projects. Provider subscription quota stays separate and appears under Providers.
-                  </CardDescription>
+                  <CardTitle className="text-base">{t("costs.budgets.controlPlaneTitle")}</CardTitle>
+                  <CardDescription>{t("costs.budgets.controlPlaneDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-3 px-5 pb-5 pt-0 md:grid-cols-4">
                   <MetricTile
-                    label="Active incidents"
-                    value={String(activeBudgetIncidents.length)}
-                    subtitle="Open soft or hard threshold crossings"
+                    label={t("costs.budgets.activeIncidents")}
+                    value={formatNumber(activeBudgetIncidents.length)}
+                    subtitle={t("costs.budgets.activeThresholdCrossings")}
                     icon={ReceiptText}
                   />
                   <MetricTile
-                    label="Pending approvals"
-                    value={String(budgetData?.pendingApprovalCount ?? 0)}
-                    subtitle="Budget override approvals awaiting board action"
+                    label={t("costs.budgets.pendingApprovals")}
+                    value={formatNumber(budgetData?.pendingApprovalCount ?? 0)}
+                    subtitle={t("costs.budgets.overrideApprovals")}
                     icon={ArrowUpRight}
                   />
                   <MetricTile
-                    label="Paused agents"
-                    value={String(budgetData?.pausedAgentCount ?? 0)}
-                    subtitle="Agent heartbeats blocked by budget"
+                    label={t("costs.budgets.pausedAgents")}
+                    value={formatNumber(budgetData?.pausedAgentCount ?? 0)}
+                    subtitle={t("costs.budgets.agentsBlockedByBudget")}
                     icon={Coins}
                   />
                   <MetricTile
-                    label="Paused projects"
-                    value={String(budgetData?.pausedProjectCount ?? 0)}
-                    subtitle="Project execution blocked by budget"
+                    label={t("costs.budgets.pausedProjects")}
+                    value={formatNumber(budgetData?.pausedProjectCount ?? 0)}
+                    subtitle={t("costs.budgets.projectsBlockedByBudget")}
                     icon={DollarSign}
                   />
                 </CardContent>
@@ -989,10 +987,8 @@ export function Costs({
               {activeBudgetIncidents.length > 0 ? (
                 <div className="space-y-3">
                   <div>
-                    <h2 className="text-lg font-semibold">Active incidents</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Resolve hard stops here by raising the budget or explicitly keeping the scope paused.
-                    </p>
+                    <h2 className="text-lg font-semibold">{t("costs.budgets.activeIncidentsTitle")}</h2>
+                    <p className="text-sm text-muted-foreground">{t("costs.budgets.activeIncidentsDescription")}</p>
                   </div>
                   <div className="grid gap-4 xl:grid-cols-2">
                     {activeBudgetIncidents.map((incident) => (
@@ -1020,14 +1016,8 @@ export function Costs({
                   return (
                     <section key={scopeType} className="space-y-3">
                       <div>
-                        <h2 className="text-lg font-semibold capitalize">{scopeType === "company" ? "organization" : scopeType} budgets</h2>
-                        <p className="text-sm text-muted-foreground">
-                          {scopeType === "company"
-                            ? "Organization-wide monthly policy."
-                            : scopeType === "agent"
-                              ? "Recurring monthly spend policies for individual agents."
-                              : "Lifetime spend policies for execution-bound projects."}
-                        </p>
+                        <h2 className="text-lg font-semibold">{t(`costs.budgets.scopeHeadings.${scopeType}`)}</h2>
+                        <p className="text-sm text-muted-foreground">{t(`costs.budgets.scopeDescriptions.${scopeType}`)}</p>
                       </div>
                       <div className="grid gap-4 xl:grid-cols-2">
                         {rows.map((summary) => (
@@ -1049,7 +1039,7 @@ export function Costs({
                 {budgetPolicies.length === 0 ? (
                   <Card>
                     <CardContent className="px-5 py-8 text-sm text-muted-foreground">
-                      No budget policies yet. Set agent and project budgets from their detail pages, or use the existing organization monthly budget control.
+                      {t("costs.budgets.emptyPolicies")}
                     </CardContent>
                   </Card>
                 ) : null}

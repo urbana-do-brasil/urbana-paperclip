@@ -404,6 +404,81 @@ describe("Shared Costs surfaces", () => {
     for (const mock of Object.values(costsApiMocks)) expect(mock).not.toHaveBeenCalled();
   });
 
+  it("localizes budget controls, scope policies, incidents, and keeps the pause action intact", async () => {
+    const date = new Date("2026-10-01T00:00:00.000Z");
+    const policy = (scopeType: "company" | "agent" | "project", scopeId: string, scopeName: string, amount: number) => ({
+      policyId: `policy-${scopeId}`, companyId: "company-1", scopeType, scopeId, scopeName,
+      metric: "billed_cents", windowKind: scopeType === "project" ? "lifetime" : "calendar_month_utc",
+      amount, reservationCents: "0.0000000", warnPercent: 80, hardStopEnabled: true,
+      unpricedUsagePolicy: "block", notifyEnabled: true, isActive: true, observedAmount: 250,
+      remainingAmount: amount - 250, utilizationPercent: 25, unpricedEventCount: 0, pendingRunCount: 0,
+      status: "ok", paused: false, pauseReason: null, windowStart: date, windowEnd: date,
+    });
+    budgetOverviewMock.mockResolvedValue({
+      policies: [policy("company", "company-1", "Organização Urbana", 2_000), policy("agent", "agent-1", "Agente Varejo", 1_000), policy("project", "project-1", "Projeto Atlas", 5_000)],
+      activeIncidents: [{
+        id: "incident-1", companyId: "company-1", policyId: "policy-agent-1", scopeType: "agent", scopeId: "agent-1",
+        scopeName: "Agente Varejo", metric: "billed_cents", windowKind: "calendar_month_utc", windowStart: date,
+        windowEnd: date, thresholdType: "hard", amountLimit: 1_000, amountObserved: 1_200, status: "open",
+        approvalId: null, approvalStatus: null, resolvedAt: null, createdAt: date, updatedAt: date,
+      }],
+      pendingApprovalCount: 2, pausedAgentCount: 3, pausedProjectCount: 1,
+    });
+    resolveIncidentMock.mockResolvedValue({});
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs embedded initialTab="budgets" lockTab /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain("Controles de orçamento"));
+    });
+
+    expect(container.textContent).toContain("Incidentes ativos");
+    expect(container.textContent).toContain("Aprovações pendentes");
+    expect(container.textContent).toContain("Agentes pausados");
+    expect(container.textContent).toContain("Projetos pausados");
+    expect(container.textContent).toContain("Orçamentos da organização");
+    expect(container.textContent).toContain("Orçamentos de agentes");
+    expect(container.textContent).toContain("Orçamentos de projetos");
+    expect(container.textContent).toContain("Bloqueio rígido de Agente");
+    expect(container.textContent).toContain("Aumentar orçamento e retomar");
+    expect(container.textContent).toContain("Manter pausado");
+    expect(container.textContent).toContain("Agente Varejo");
+
+    const keepPausedButton = [...container.querySelectorAll("button")].find((candidate) => candidate.textContent?.trim() === "Manter pausado");
+    expect(keepPausedButton).toBeTruthy();
+    await act(async () => keepPausedButton!.click());
+    await act(async () => { await vi.waitFor(() => expect(resolveIncidentMock).toHaveBeenCalledWith("company-1", "incident-1", { incidentId: "incident-1", action: "keep_paused" })); });
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("Budget control plane");
+    expect(container.textContent).toContain("Organization budgets");
+    expect(container.textContent).toContain("Agent budgets");
+    expect(container.textContent).toContain("Project budgets");
+    expect(container.textContent).toContain("Agent hard stop");
+    expect(container.textContent).toContain("Raise budget & resume");
+    expect(container.textContent).toContain("Keep paused");
+    queryClient.clear();
+  });
+
+  it("localizes the empty budget policy state", async () => {
+    budgetOverviewMock.mockResolvedValue({ policies: [], activeIncidents: [], pendingApprovalCount: 0, pausedAgentCount: 0, pausedProjectCount: 0 });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs embedded initialTab="budgets" lockTab /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain("Ainda não há políticas de orçamento."));
+    });
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("No budget policies yet.");
+    queryClient.clear();
+  });
+
   it("opens linked decision history with real date bounds instead of report cache labels", async () => {
     for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
     costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 1, rows: [] });
@@ -477,6 +552,9 @@ describe("Shared Costs surfaces", () => {
     expect(container.textContent).toContain("Worker");
     expect(container.textContent).not.toContain("private SQL");
     expect(reservation.value).toBe(originalReservation);
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Não foi possível atualizar a política de orçamento.");
+    expect(container.textContent).not.toContain("private SQL");
     queryClient.clear();
   });
 
@@ -493,10 +571,15 @@ describe("Shared Costs surfaces", () => {
     await act(async () => { await vi.waitFor(() => expect(container.textContent).toContain("Raise budget & resume")); });
     await act(async () => [...container.querySelectorAll("button")].find(b => b.textContent === "Raise budget & resume")!.click());
     await act(async () => { await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain("Could not update the budget")); });
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Não foi possível atualizar o orçamento.");
     expect(resolveIncidentMock).toHaveBeenCalledWith("company-1", "incident", { incidentId: "incident", action: "raise_budget_and_resume", amount: 1200 });
-    expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toBe("Overview");
-    expect(container.textContent).toContain("Check any pending runs or unpriced usage shown on this page");
+    expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toBe("Visão geral");
+    expect(container.textContent).toContain("Confira as execuções pendentes ou os usos sem preço confiável exibidos nesta página");
     expect(container.textContent).not.toContain("private database error");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Could not update the budget");
+    expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toBe("Overview");
     queryClient.clear();
   });
 

@@ -3112,6 +3112,25 @@
       "hardStop": "Bloqueio rígido",
       "healthy": "Normal"
     },
+    "incidents": {
+      "status": {
+        "open": "Aberto",
+        "resolved": "Resolvido",
+        "dismissed": "Dispensado",
+        "escalated": "Encaminhado para revisão",
+        "pendingApproval": "Aguardando aprovação"
+      },
+      "hardStopTitle": "Bloqueio rígido de {{scope}}",
+      "accountingIncomplete": "A contabilização está incompleta. O gasto conhecido é {{amount}}; revise as execuções pendentes ou os usos sem preço confiável na política de orçamento.",
+      "spendLimitReached": "O gasto chegou a {{observed}} para um limite de {{limit}}.",
+      "projectPaused": "A execução do projeto está pausada. Novos trabalhos não começarão até que o incidente de orçamento seja resolvido.",
+      "scopePaused": "Este escopo está pausado. Novos ciclos automáticos não começarão até que o incidente de orçamento seja resolvido.",
+      "newBudget": "Novo orçamento (USD)",
+      "raiseBudgetAndResume": "Aumentar orçamento e retomar",
+      "applying": "Aplicando…",
+      "mustExceedSpend": "O novo orçamento precisa ser maior que o gasto observado atual.",
+      "keepPaused": "Manter pausado"
+    },
     "pauseReasons": {
       "manual": "pausa manual",
       "budget": "orçamento",
@@ -6325,6 +6344,33 @@
       "providerBreakdownLoading": "Carregando detalhes dos provedores de origem…",
       "providerBreakdownUnavailable": "Não foi possível carregar os detalhes dos provedores de origem.",
       "noUpstreamProviders": "Não há detalhes de provedores de origem disponíveis."
+    },
+    "budgets": {
+      "policyUpdateError": "Não foi possível atualizar a política de orçamento. Revise as configurações e tente novamente.",
+      "incidentUpdateError": "Não foi possível atualizar o orçamento. Confira as execuções pendentes ou os usos sem preço confiável exibidos nesta página e tente novamente.",
+      "controlPlaneTitle": "Controles de orçamento",
+      "controlPlaneDescription": "Limites de gasto que bloqueiam execuções de agentes e projetos. A cota da assinatura do provedor é independente e aparece em Provedores.",
+      "activeIncidents": "Incidentes ativos",
+      "activeThresholdCrossings": "Limites preventivos ou rígidos atingidos e ainda abertos",
+      "pendingApprovals": "Aprovações pendentes",
+      "overrideApprovals": "Aprovações de exceção de orçamento aguardando decisão do conselho",
+      "pausedAgents": "Agentes pausados",
+      "agentsBlockedByBudget": "Ciclos automáticos de agentes bloqueados pelo orçamento",
+      "pausedProjects": "Projetos pausados",
+      "projectsBlockedByBudget": "Execução de projetos bloqueada pelo orçamento",
+      "activeIncidentsTitle": "Incidentes ativos",
+      "activeIncidentsDescription": "Resolva bloqueios rígidos aumentando o orçamento ou mantendo explicitamente o escopo pausado.",
+      "scopeHeadings": {
+        "company": "Orçamentos da organização",
+        "agent": "Orçamentos de agentes",
+        "project": "Orçamentos de projetos"
+      },
+      "scopeDescriptions": {
+        "company": "Política mensal para toda a organização.",
+        "agent": "Políticas mensais recorrentes de gasto para cada agente.",
+        "project": "Políticas de gasto total para projetos vinculados à execução."
+      },
+      "emptyPolicies": "Ainda não há políticas de orçamento. Defina orçamentos de agentes e projetos nas respectivas páginas de detalhes ou use o controle mensal existente da organização."
     },
     "ledger": {
       "summary": {
