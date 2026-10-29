@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **93 de 118 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **97 de 121 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -16,7 +16,7 @@ A entrega ainda não foi implantada.
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), além do portfólio de organizações, coleção/criação de projetos, moldura, configuração, orçamento, acesso privado e workspaces vinculados (3.5a–b, 3.5c1–c4) verificados. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), além do portfólio de organizações, coleção/criação de projetos, moldura, configuração, orçamento, acesso privado, workspaces vinculados e metas (3.5a–b, 3.5c1–c4, 3.5d1–d3) verificados. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |
@@ -210,9 +210,11 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
 `PrivateTaskPrivacyControls.test.tsx` e `locale-validation.test.ts` passaram em
 **32/32 testes**. Typecheck direcionado, `check:tokens`, `check:token-gates`,
 `git diff --check` e validação OpenSpec estrita passaram. O progresso atual é
-  **93/118**; 3.5c4a localizou a política e configuração de execution
+  **97/121**; 3.5c4a localizou a política e configuração de execution
   workspaces; 3.5c4b localizou cartões, ações, estados e mensagens de workspaces
-  vinculados. O grupo 3.5c está concluído. Próxima: 3.5d (metas). A aplicação
+  vinculados. O grupo 3.5c está concluído. 3.5d foi dividida em coleção/árvore
+  (d1), criação (d2) e detalhes/propriedades (d3), e foi concluída. Próxima:
+  3.5e (lista geral e visualização de workspaces). A aplicação
   ainda não foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28

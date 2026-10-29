@@ -1334,6 +1334,69 @@
     "moreTasks_other": "+{{count}} mais",
     "moreTasks_many": "+{{count}} mais"
   },
+  "goalManagement": {
+    "collection": {
+      "title": "Metas",
+      "selectOrganization": "Selecione uma organização para ver as metas.",
+      "noGoals": "Ainda não há metas.",
+      "addGoal": "Adicionar meta",
+      "newGoal": "Nova meta"
+    },
+    "tree": {
+      "noGoals": "Nenhuma meta.",
+      "collapseSubtree": "Recolher as submetas de {{title}}",
+      "expandSubtree": "Expandir as submetas de {{title}}"
+    },
+    "status": {
+      "planned": "Planejada",
+      "active": "Ativa",
+      "achieved": "Alcançada",
+      "cancelled": "Cancelada"
+    },
+    "level": {
+      "company": "Organização",
+      "team": "Equipe",
+      "agent": "Agente",
+      "task": "Tarefa"
+    },
+    "creation": {
+      "newGoal": "Nova meta",
+      "newSubGoal": "Nova submeta",
+      "titlePlaceholder": "Título da meta",
+      "descriptionPlaceholder": "Adicionar descrição...",
+      "parentGoal": "Meta pai",
+      "noParent": "Sem meta pai",
+      "creating": "Criando…",
+      "createGoal": "Criar meta",
+      "createSubGoal": "Criar submeta",
+      "closeDialog": "Fechar diálogo de meta",
+      "expandDialog": "Expandir diálogo",
+      "shrinkDialog": "Reduzir diálogo"
+    },
+    "detail": {
+      "showProperties": "Mostrar propriedades",
+      "goalFallback": "Meta",
+      "descriptionPlaceholder": "Adicionar uma descrição...",
+      "subGoalsTab_one": "{{count}} submeta",
+      "subGoalsTab_other": "{{count}} submetas",
+      "subGoalsTab_many": "{{count}} submetas",
+      "projectsTab_one": "{{count}} projeto",
+      "projectsTab_other": "{{count}} projetos",
+      "projectsTab_many": "{{count}} projetos",
+      "addSubGoal": "Adicionar submeta",
+      "noSubGoals": "Nenhuma submeta.",
+      "noLinkedProjects": "Nenhum projeto vinculado."
+    },
+    "properties": {
+      "status": "Status",
+      "level": "Nível",
+      "owner": "Responsável",
+      "none": "Nenhum",
+      "parentGoal": "Meta pai",
+      "created": "Criada",
+      "updated": "Atualizada"
+    }
+  },
   "projectProperties": {
     "saving": "Salvando",
     "saved": "Salvo",

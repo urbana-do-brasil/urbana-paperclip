@@ -1287,6 +1287,67 @@
     "moreTasks_one": "+{{count}} more",
     "moreTasks_other": "+{{count}} more"
   },
+  "goalManagement": {
+    "collection": {
+      "title": "Goals",
+      "selectOrganization": "Select an organization to view goals.",
+      "noGoals": "No goals yet.",
+      "addGoal": "Add Goal",
+      "newGoal": "New Goal"
+    },
+    "tree": {
+      "noGoals": "No goals.",
+      "collapseSubtree": "Collapse {{title}} sub-goals",
+      "expandSubtree": "Expand {{title}} sub-goals"
+    },
+    "status": {
+      "planned": "Planned",
+      "active": "Active",
+      "achieved": "Achieved",
+      "cancelled": "Cancelled"
+    },
+    "level": {
+      "company": "Organization",
+      "team": "Team",
+      "agent": "Agent",
+      "task": "Task"
+    },
+    "creation": {
+      "newGoal": "New goal",
+      "newSubGoal": "New sub-goal",
+      "titlePlaceholder": "Goal title",
+      "descriptionPlaceholder": "Add description...",
+      "parentGoal": "Parent goal",
+      "noParent": "No parent",
+      "creating": "Creating…",
+      "createGoal": "Create goal",
+      "createSubGoal": "Create sub-goal",
+      "closeDialog": "Close goal dialog",
+      "expandDialog": "Expand dialog",
+      "shrinkDialog": "Shrink dialog"
+    },
+    "detail": {
+      "showProperties": "Show properties",
+      "goalFallback": "Goal",
+      "descriptionPlaceholder": "Add a description...",
+      "subGoalsTab_one": "{{count}} sub-goal",
+      "subGoalsTab_other": "{{count}} sub-goals",
+      "projectsTab_one": "{{count}} project",
+      "projectsTab_other": "{{count}} projects",
+      "addSubGoal": "Add sub-goal",
+      "noSubGoals": "No sub-goals.",
+      "noLinkedProjects": "No linked projects."
+    },
+    "properties": {
+      "status": "Status",
+      "level": "Level",
+      "owner": "Owner",
+      "none": "None",
+      "parentGoal": "Parent goal",
+      "created": "Created",
+      "updated": "Updated"
+    }
+  },
   "projectProperties": {
     "saving": "Saving",
     "saved": "Saved",

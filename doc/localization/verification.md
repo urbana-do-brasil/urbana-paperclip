@@ -1270,5 +1270,10 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
 - `ProjectProperties.concurrency.test.tsx`, `ProjectWorkspaceSummaryCard.test.tsx`,
   `ProjectWorkspacesContent.test.tsx` e `locale-validation.test.ts` passaram em
   **28/28 testes** nos dois idiomas. Typecheck direcionado, gates, diff check e
-  OpenSpec estrito passaram. Progresso OpenSpec: **93/118**. Próxima: 3.5d
-  (metas). A aplicação ainda não foi implantada.
+  OpenSpec estrito passaram. O grupo 3.5d está concluído: coleção/árvore,
+  criação de metas/submetas, propriedades, detalhes e projetos vinculados.
+  `Goals.test.tsx`, `NewGoalDialog.test.tsx`, `GoalProperties.test.tsx`,
+  `GoalDetail.test.tsx` e `locale-validation.test.ts` passaram em **21/21 testes**.
+  Typecheck direcionado e validação OpenSpec estrita passaram. Progresso OpenSpec:
+  **97/121**. Próxima: 3.5e (lista geral e visualização de workspaces). A
+  aplicação ainda não foi implantada.

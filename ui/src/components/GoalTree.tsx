@@ -4,6 +4,8 @@ import { StatusBadge } from "./StatusBadge";
 import { ChevronRight } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useState } from "react";
+import { useTranslation } from "@/i18n";
+import { goalLevelLabel, goalStatusLabel } from "../lib/goal-localization";
 
 interface GoalTreeProps {
   goals: Goal[];
@@ -21,6 +23,7 @@ interface GoalNodeProps {
 }
 
 function GoalNode({ goal, children, allGoals, depth, goalLink, onSelect }: GoalNodeProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const hasChildren = children.length > 0;
   const link = goalLink?.(goal);
@@ -35,7 +38,9 @@ function GoalNode({ goal, children, allGoals, depth, goalLink, onSelect }: GoalN
             e.stopPropagation();
             setExpanded(!expanded);
           }}
-          aria-label={`${goal.title} subtree`}
+          aria-label={t(expanded
+            ? "goalManagement.tree.collapseSubtree"
+            : "goalManagement.tree.expandSubtree", { title: goal.title })}
           aria-expanded={expanded}
         >
           <ChevronRight
@@ -45,9 +50,9 @@ function GoalNode({ goal, children, allGoals, depth, goalLink, onSelect }: GoalN
       ) : (
         <span className="w-4" />
       )}
-      <span className="text-xs text-muted-foreground capitalize">{goal.level}</span>
+      <span className="text-xs text-muted-foreground">{goalLevelLabel(goal.level, t)}</span>
       <span className="flex-1 truncate">{goal.title}</span>
-      <StatusBadge status={goal.status} />
+      <StatusBadge status={goal.status} label={goalStatusLabel(goal.status, t)} />
     </>
   );
 
@@ -94,11 +99,12 @@ function GoalNode({ goal, children, allGoals, depth, goalLink, onSelect }: GoalN
 }
 
 export function GoalTree({ goals, goalLink, onSelect }: GoalTreeProps) {
+  const { t } = useTranslation();
   const goalIds = new Set(goals.map((g) => g.id));
   const roots = goals.filter((g) => !g.parentId || !goalIds.has(g.parentId));
 
   if (goals.length === 0) {
-    return <p className="text-sm text-muted-foreground">No goals.</p>;
+    return <p className="text-sm text-muted-foreground">{t("goalManagement.tree.noGoals")}</p>;
   }
 
   return (

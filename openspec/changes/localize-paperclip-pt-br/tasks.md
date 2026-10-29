@@ -112,7 +112,10 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.5c4 Localizar política/configuração de workspaces e a visualização de workspaces vinculados; preservar caminhos, comandos, IDs, estados técnicos, ações e feature flags.
       - [x] 3.5c4a Localizar a política e os controles de configuração de execution workspaces, preservando comandos, valores, estados, callbacks e gates.
       - [x] 3.5c4b Localizar cartões, estados e ações dos workspaces vinculados ao projeto, preservando caminhos, IDs, rotas, serviços e tarefas associadas.
-  - [ ] 3.5d Localizar coleção, criação, hierarquia e detalhes de metas, preservando vínculos e estados.
+  - [x] 3.5d Localizar coleção, criação, hierarquia e detalhes de metas, preservando vínculos e estados.
+    - [x] 3.5d1 Localizar coleção de metas e árvore hierárquica, preservando IDs, relações pai/filho, expansão e rotas.
+    - [x] 3.5d2 Localizar o diálogo de criação de metas/submetas, preservando status, nível, vínculo pai, conteúdo e payloads.
+    - [x] 3.5d3 Localizar detalhes, propriedades, projetos vinculados e controles de meta, preservando vínculos, uploads e callbacks.
   - [ ] 3.5e Localizar a lista geral e a visualização de workspaces de projeto, preservando flags, rotas e operações.
 - [ ] 3.6 Migrar cadastro/configuração de agentes e visualizações de execução, incluindo descrições próprias e estados de ferramentas. Verificar fluxo de configuração e execução nas duas línguas, mantendo prompts técnicos e logs brutos originais. Spec: `localized-web-interface`.
 - [ ] 3.7 Migrar dashboard, custos, orçamento, timeline, atividade, auditoria e cartões de resumo em lotes por jornada. Verificar amostras com datas, timezone, percentuais e moeda original, pluralização e erros nos dois idiomas. Spec: `localized-web-interface`.
