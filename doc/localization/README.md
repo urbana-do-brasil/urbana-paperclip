@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **197 de 220 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **211 de 240 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -59,8 +59,9 @@ filtros e catálogo de apps) e 3.9f2 (inventário/saúde de conexões, contas in
 revisão de ações e remoção) também estão verificadas. 3.9f3 foi dividida em
 sete lotes de detalhe/configuração e f3b foi dividida em b1–b2; 3.9f3a (shell,
 navegação, cabeçalho e estados) e 3.9f3b1 (estado sem conexão e ciclo de vida)
-estão concluídas. Próxima: 3.9f3b2, assistente genérico de configuração.
-Progresso atual: **211/237 tarefas**.
+estão concluídas. O assistente genérico foi dividido em b2a–b2c; b2a (shell e
+seleção do app) está verificada. Próxima: 3.9f3b2b, servidor MCP personalizado
+e Zapier. Progresso atual: **212/240 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |

@@ -58,6 +58,7 @@ import { useNavigate, useParams, useSearchParams } from "@/lib/router";
 import { useCompany } from "@/context/CompanyContext";
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";
 import { useToast } from "@/context/ToastContext";
+import { useTranslation } from "@/i18n";
 import { useChatConnectorsEnabled, chatProviderVisible } from "@/hooks/useChatConnectorsEnabled";
 import { queryKeys } from "@/lib/queryKeys";
 import { RadioCardGroup } from "@/components/ui/radio-card";
@@ -341,7 +342,6 @@ type AppAccessSelection = "all_agents" | { agentIds: string[] };
 // PAP-659: identity and agent reach are no longer a step. They are resolved to
 // a default, stated in one line above the primary action, and changed either in
 // the Advanced disclosure on this screen or on the Permissions tab afterwards.
-const STEP_LABELS = ["Pick app", "Add your key"];
 const STEP_INDEX: Record<Exclude<Step, "success">, number> = {
   gallery: 0,
   key: 1,
@@ -349,7 +349,6 @@ const STEP_INDEX: Record<Exclude<Step, "success">, number> = {
 const SELECTED_APP_STEP_INDEX: Record<Exclude<Step, "gallery" | "success">, number> = {
   key: 0,
 };
-const ZAPIER_STEP_LABELS = ["Add MCP URL"];
 // Waiting for browser sign-in happens *inside* the flow's last step, so the
 // waiting screen reuses the step model of the flow that opened it. It must not
 // append a trailing step the flow never lands on: a stepper that grows from one
@@ -571,6 +570,7 @@ export interface ConnectionSetupFlowProps {
  * here so a provider can never drift between entry points.
  */
 export function ConnectionSetupFlow(props: ConnectionSetupFlowProps = {}) {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const params = useParams<{ appKey?: string }>();
   const { selectedCompanyId } = useCompany();
@@ -588,11 +588,11 @@ export function ConnectionSetupFlow(props: ConnectionSetupFlowProps = {}) {
   const existing = useQuery({ queryKey: ["tools", "connection", existingId], queryFn: () => toolsApi.getConnection(existingId!), enabled: lookup });
   const provider = source || existing.data?.config?.sourceTemplateKey;
   const method = searchParams.get("method") || existing.data?.config?.connectionMethodKey;
-  if (lookup && existing.isPending) return <p className="p-6 text-sm text-muted-foreground">Loading connection…</p>;
-  if (lookup && existing.isError) return <div role="alert" className="space-y-3 p-6"><p>Could not load this connection. Your saved access and credentials have not changed.</p><Button variant="outline" onClick={() => void existing.refetch()}>Try again</Button></div>;
+  if (lookup && existing.isPending) return <p className="p-6 text-sm text-muted-foreground">{t("apps.connectionSetup.loadingConnection")}</p>;
+  if (lookup && existing.isError) return <div role="alert" className="space-y-3 p-6"><p>{t("apps.connectionSetup.loadConnectionFailed")}</p><Button variant="outline" onClick={() => void existing.refetch()}>{t("apps.connectionSetup.tryAgain")}</Button></div>;
   if (isMemoryConnectorId(provider) && !(existing.data && existing.data.status !== "draft" && existing.data.config?.sourceTemplateKey === provider)) {
-    if (!memory.loaded) return <p className="p-6 text-sm text-muted-foreground">Loading connection settings…</p>;
-    if (!memory.enabled) return <p role="status" className="p-6 text-sm text-muted-foreground">Enable memory connectors in Settings → Experimental to set up this connection.</p>;
+    if (!memory.loaded) return <p className="p-6 text-sm text-muted-foreground">{t("apps.connectionSetup.loadingSettings")}</p>;
+    if (!memory.enabled) return <p role="status" className="p-6 text-sm text-muted-foreground">{t("apps.connectionSetup.enableMemoryConnectors")}</p>;
   }
   if (!props.byoOnly && (props.credentialSource ?? "paperclip_vault") === "paperclip_vault"
     && isRemoteMcpConnectorId(provider) && (!method || isRemoteMcpConnectorMethod(provider, method))) {
@@ -637,6 +637,12 @@ function StandardConnectionSetupFlow({
   const { enabled: memoryConnectorsEnabled } = useMemoryConnectorsEnabled();
   const { setBreadcrumbs } = useBreadcrumbs();
   const { pushToast } = useToast();
+  const { t } = useTranslation();
+  const genericStepLabels = [
+    t("apps.connectionSetup.steps.pickApp"),
+    t("apps.connectionSetup.steps.addKey"),
+  ];
+  const zapierStepLabels = [t("apps.connectionSetup.steps.addMcpUrl")];
   const [searchParams] = useSearchParams();
   const connectionIntentId = interactionId?.trim()
     || searchParams.get("intent")?.trim()
@@ -1003,11 +1009,15 @@ function StandardConnectionSetupFlow({
   useEffect(() => {
     if (host !== "page") return;
     setBreadcrumbs([
-      { label: "Connectors", href: "/apps" },
-      { label: vercelConnectMode ? "Vercel Connect" : byoOnly ? "Connect your own tool" : "Connect an app" },
+      { label: t("navigation.connectors"), href: "/apps" },
+      { label: vercelConnectMode
+        ? "Vercel Connect"
+        : byoOnly
+          ? t("apps.connectionSetup.breadcrumbs.connectOwnTool")
+          : t("apps.connectionSetup.breadcrumbs.connectApp") },
     ]);
     return () => setBreadcrumbs([]);
-  }, [byoOnly, host, setBreadcrumbs, vercelConnectMode]);
+  }, [byoOnly, host, setBreadcrumbs, t, vercelConnectMode]);
 
   const galleryQuery = useQuery({
     queryKey: queryKeys.apps.gallery(selectedCompanyId ?? "__none__"),
@@ -2296,7 +2306,7 @@ function StandardConnectionSetupFlow({
         }}
         // A pasted endpoint walks the generic three-step wizard, so keep that
         // model rather than dropping to the curated two-step one.
-        steps={{ labels: STEP_LABELS, activeIndex: STEP_INDEX.key }}
+        steps={{ labels: genericStepLabels, activeIndex: STEP_INDEX.key }}
         phase={oauthPhase}
         error={oauthError}
         authorizationHost={authorizationHost}
@@ -2359,19 +2369,19 @@ function StandardConnectionSetupFlow({
   /></> : undefined) : undefined;
   // One screen per connector (PAP-659): a selected app has a single step, so
   // its stepper collapses to nothing rather than showing one lonely dot.
-  const stepLabels = reconnectConnection?.connectionPurpose === "ai" ? ["Reconnect account"] : credentialStep !== undefined
-    ? ["Connect account"]
+  const stepLabels = reconnectConnection?.connectionPurpose === "ai" ? [t("apps.connectionSetup.steps.reconnectAccount")] : credentialStep !== undefined
+    ? [t("apps.connectionSetup.steps.connectAccount")]
     : zapierSource
-    ? ZAPIER_STEP_LABELS
+    ? zapierStepLabels
     : entry && setupCredentialSourceMethods.length > 1
-      ? ["Choose connection"]
+      ? [t("apps.connectionSetup.steps.chooseConnection")]
     : entry && setupCredentialSourceMethods[0]?.auth === "oauth"
-      ? ["Sign in"]
+      ? [t("apps.connectionSetup.steps.signIn")]
     : isGoogleSheetsRobotMethod(entry, connectionMethodKey)
-      ? ["Share sheet"]
+      ? [t("apps.connectionSetup.steps.shareSheet")]
       : entry
-        ? ["Add your key"]
-      : STEP_LABELS;
+        ? [t("apps.connectionSetup.steps.addKey")]
+      : genericStepLabels;
   const stepIndex = reconnectConnection?.connectionPurpose === "ai" ? 0 : (zapierSource || entry) && step !== "gallery" && step !== "success"
     ? SELECTED_APP_STEP_INDEX[step]
     : step === "success"
@@ -2386,11 +2396,11 @@ function StandardConnectionSetupFlow({
             subtitle={
               step === "gallery"
                 ? vercelConnectMode
-                  ? "Choose a reviewed app to connect through Vercel."
-                  : "Pick the app you want your agents to use."
+                  ? t("apps.connectionSetup.gallery.chooseVercelApp")
+                  : t("apps.connectionSetup.gallery.pickAppSubtitle")
                 : stepLabels.length <= 1
                   ? undefined
-                  : `Step ${stepIndex + 1} of ${stepLabels.length}`
+                  : t("apps.connectionSetup.stepProgress", { current: stepIndex + 1, total: stepLabels.length })
             }
             step={step}
             activeIndex={stepIndex}
@@ -2948,6 +2958,7 @@ function GalleryStep({
   onPick: (entry: AppDefinition) => void;
   onUseLink: (link: string) => void;
 }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [linkInput, setLinkInput] = useState(initialLink);
   const linkInputEdited = useRef(false);
@@ -2979,7 +2990,7 @@ function GalleryStep({
   const continueWithLink = () => {
     const next = normalizeAppLink(linkInput);
     if (!next) {
-      setLinkError("Paste a full http or https link.");
+      setLinkError(t("apps.connectionSetup.gallery.pasteFullLink"));
       return;
     }
     setLinkError(null);
@@ -3002,15 +3013,15 @@ function GalleryStep({
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-lg font-bold tracking-tight">Connect through Vercel</h2>
+              <h2 className="text-lg font-bold tracking-tight">{t("apps.connectionSetup.gallery.vercelTitle")}</h2>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Create and manage the provider connector in Vercel. Paperclip stores its reference and applies agent access, policy, approval, and audit controls here.
+                {t("apps.connectionSetup.gallery.vercelDescription")}
               </p>
             </div>
             {vercelConnectAvailability ? (
               <Button asChild variant="outline" size="sm" className="shrink-0">
                 <a href={vercelConnectAvailability.manageUrl} target="_blank" rel="noreferrer">
-                  Open Vercel Connect
+                  {t("apps.connectionSetup.gallery.openVercel")}
                   <ArrowUpRight className="ml-2 h-3.5 w-3.5" />
                 </a>
               </Button>
@@ -3018,7 +3029,7 @@ function GalleryStep({
           </div>
           {vercelConnectAvailability?.available === false ? (
             <InlineBanner tone="danger" compact className="mt-4">
-              {vercelConnectAvailability.reason ?? "Vercel Connect is unavailable on this instance."}
+              {vercelConnectAvailability.reason ?? t("apps.connectionSetup.gallery.vercelUnavailable")}
             </InlineBanner>
           ) : null}
         </div>
@@ -3031,7 +3042,7 @@ function GalleryStep({
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search apps…"
+              placeholder={t("apps.connectionSetup.gallery.searchApps")}
               className="h-11 pl-9"
             />
           </div>
@@ -3069,12 +3080,12 @@ function GalleryStep({
                   <div className="mt-3 text-xs font-semibold text-foreground">
                     {unavailable ? (
                       <span className="text-muted-foreground">
-                        {app.availability?.reason ?? vercelConnectAvailability?.reason ?? "Unavailable on this instance."}
+                        {app.availability?.reason ?? vercelConnectAvailability?.reason ?? t("apps.connectionSetup.gallery.unavailableOnInstance")}
                       </span>
                     ) : oauthBlocked ? (
-                      <span className="text-muted-foreground">Unavailable</span>
+                      <span className="text-muted-foreground">{t("apps.connectionSetup.gallery.unavailable")}</span>
                     ) : (
-                      <span>Connect →</span>
+                      <span>{t("apps.connectionSetup.gallery.connect")}</span>
                     )}
                   </div>
                 </button>
@@ -3083,7 +3094,9 @@ function GalleryStep({
           </div>
 
           {filtered.length === 0 && (
-            <div className="py-10 text-center text-sm text-muted-foreground">No apps match “{search}”.</div>
+            <div className="py-10 text-center text-sm text-muted-foreground">
+              {t("apps.connectionSetup.gallery.noAppsMatch", { search })}
+            </div>
           )}
         </>
       )}
@@ -3098,18 +3111,22 @@ function GalleryStep({
         <div>
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Link2 className="h-4 w-4 text-muted-foreground" />
-            {zapierSource ? "Connect Zapier" : byo ? "Connect your own MCP server" : "Connect with a link"}
+            {zapierSource
+              ? t("apps.connectionSetup.gallery.connectZapier")
+              : byo
+                ? t("apps.connectionSetup.gallery.connectOwnMcp")
+                : t("apps.connectionSetup.gallery.connectWithLink")}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {zapierSource
-              ? "Paste the complete MCP URL Zapier gives you, including its token."
+              ? t("apps.connectionSetup.gallery.pasteZapierUrl")
               : byo
-              ? "Paste your MCP server’s URL and every discovered tool will be available immediately."
-              : "Paste a setup link from an app that is not listed here."}
+              ? t("apps.connectionSetup.gallery.pasteOwnMcpUrl")
+              : t("apps.connectionSetup.gallery.pasteSetupLink")}
           </p>
           {!zapierSource && (
             <p className="mt-1 text-xs text-muted-foreground">
-              Any remote tool URL works here — including a local MCP server like{" "}
+              {t("apps.connectionSetup.gallery.remoteToolUrlHint")}{" "}
               <code className="rounded bg-muted px-1 py-0.5 text-xs">http://127.0.0.1:8848/mcp</code>.
             </p>
           )}
@@ -3117,7 +3134,7 @@ function GalleryStep({
             <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
               <div className="flex min-w-0 items-center gap-2 text-sm">
                 <AppLogo name={matchedEntry.name} logoUrl={matchedEntry.branding.logoUrl} darkLogoUrl={matchedEntry.branding.darkLogoUrl} size={24} />
-                <span className="truncate">This looks like {matchedEntry.name}.</span>
+                <span className="truncate">{t("apps.connectionSetup.gallery.thisLooksLike", { name: matchedEntry.name })}</span>
               </div>
               <Button
                 type="button"
@@ -3134,10 +3151,10 @@ function GalleryStep({
                 }}
               >
                 {matchedEntry.availability?.available === false
-                  ? "Not available"
+                  ? t("apps.connectionSetup.gallery.notAvailable")
                   : matchedEntry.slug === "zapier"
-                    ? "Continue"
-                    : `Use ${matchedEntry.name}`}
+                    ? t("apps.connectionSetup.gallery.continue")
+                    : t("apps.connectionSetup.gallery.useApp", { name: matchedEntry.name })}
               </Button>
             </div>
           )}
@@ -3149,7 +3166,7 @@ function GalleryStep({
               type={zapierSource || matchedEntry?.slug === "zapier" ? "password" : "url"}
               autoComplete="off"
               spellCheck={false}
-              aria-label="MCP server URL"
+              aria-label={t("apps.connectionSetup.gallery.serverUrl")}
               value={linkInput}
               onChange={(e) => {
                 linkInputEdited.current = true;
@@ -3163,7 +3180,7 @@ function GalleryStep({
               className="h-10"
             />
             <Button type="button" variant="outline" onClick={continueWithLink}>
-              Continue
+              {t("apps.connectionSetup.gallery.continueToUseLink")}
             </Button>
           </div>
           {linkError && <div className="text-xs text-destructive">{linkError}</div>}

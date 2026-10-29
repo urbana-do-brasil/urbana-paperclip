@@ -5466,6 +5466,61 @@
       "loadError": "Couldn’t load tools for this app.",
       "retry": "Try again"
     },
+    "connectionSetup": {
+      "loadingConnection": "Loading connection…",
+      "loadConnectionFailed": "Could not load this connection. Your saved access and credentials have not changed.",
+      "loadingSettings": "Loading connection settings…",
+      "enableMemoryConnectors": "Enable memory connectors in Settings → Experimental to set up this connection.",
+      "tryAgain": "Try again",
+      "cancel": "Cancel",
+      "stepProgress": "Step {{current}} of {{total}}",
+      "steps": {
+        "pickApp": "Pick app",
+        "addKey": "Add your key",
+        "addMcpUrl": "Add MCP URL",
+        "signIn": "Sign in",
+        "reconnectAccount": "Reconnect account",
+        "connectAccount": "Connect account",
+        "chooseConnection": "Choose connection",
+        "shareSheet": "Share sheet"
+      },
+      "header": {
+        "connectApp": "Connect {{name}}",
+        "connectOwnMcp": "Connect your own MCP server",
+        "setupProgress": "Setup progress"
+      },
+      "breadcrumbs": {
+        "connectApp": "Connect an app",
+        "connectOwnTool": "Connect your own tool"
+      },
+      "gallery": {
+        "pickAppSubtitle": "Pick the app you want your agents to use.",
+        "chooseVercelApp": "Choose a reviewed app to connect through Vercel.",
+        "searchApps": "Search apps…",
+        "noAppsMatch": "No apps match “{{search}}”.",
+        "unavailableOnInstance": "Unavailable on this instance.",
+        "unavailable": "Unavailable",
+        "connect": "Connect →",
+        "connectZapier": "Connect Zapier",
+        "connectOwnMcp": "Connect your own MCP server",
+        "connectWithLink": "Connect with a link",
+        "pasteZapierUrl": "Paste the complete MCP URL Zapier gives you, including its token.",
+        "pasteOwnMcpUrl": "Paste your MCP server’s URL and every discovered tool will be available immediately.",
+        "pasteSetupLink": "Paste a setup link from an app that is not listed here.",
+        "remoteToolUrlHint": "Any remote tool URL works here — including a local MCP server like",
+        "thisLooksLike": "This looks like {{name}}.",
+        "notAvailable": "Not available",
+        "continue": "Continue",
+        "useApp": "Use {{name}}",
+        "pasteFullLink": "Paste a full http or https link.",
+        "serverUrl": "MCP server URL",
+        "continueToUseLink": "Continue",
+        "vercelTitle": "Connect through Vercel",
+        "vercelDescription": "Create and manage the provider connector in Vercel. Paperclip stores its reference and applies agent access, policy, approval, and audit controls here.",
+        "openVercel": "Open Vercel Connect",
+        "vercelUnavailable": "Vercel Connect is unavailable on this instance."
+      }
+    },
     "connections": {
       "title": "Connections",
       "description": "The tools you’ve connected, and whether they’re working.",

@@ -2456,5 +2456,24 @@ ações em PT-BR e a preservação do nome `GitHub` e da mensagem dinâmica `Tok
 expired.`. Os gates de tokens, JSON, diff e OpenSpec estrito passaram. O
 typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
-Progresso atual: **211/237 tarefas**. Próxima: 3.9f3b2, assistente genérico de
-configuração.
+Ao concluir 3.9f3b1, o progresso era **211/237 tarefas**. Em seguida, o
+assistente genérico foi dividido em b2a–b2c (shell/seleção, MCP personalizado/
+Zapier e credenciais/OAuth), elevando o total para **240 tarefas**. Próxima:
+3.9f3b2a, shell e seleção do app.
+
+### Shell e seleção do assistente de conexão (3.9f3b2a)
+
+O shell e a galeria de conexão agora localizam cabeçalho, breadcrumb, progresso,
+busca, mensagens de resultado/indisponibilidade, campos e ações de configuração
+por link, inclusive seus rótulos acessíveis. Nomes e descrições de apps, URLs,
+hosts e motivos dinâmicos dos provedores permanecem intactos. O conteúdo
+específico do servidor MCP personalizado e do fluxo Zapier segue no próximo lote.
+
+`AppsConnect.test.tsx` e `locale-validation.test.ts` passaram em **214/214 testes**,
+incluindo a seleção em PT-BR e a preservação do nome `Zapier`. `pnpm check:tokens`,
+`pnpm check:token-gates`, parse dos catálogos e do manifesto, `git diff --check` e
+`pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI foi encerrado pelo sistema com código 137, sem diagnóstico de
+TypeScript; essa verificação ficou inconclusiva por limite de recursos. O
+progresso atual é **212/240 tarefas**. Próxima: 3.9f3b2b, configuração de MCP
+personalizado e Zapier.

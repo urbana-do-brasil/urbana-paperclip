@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CONNECTABLE_APP_DEFINITIONS, GOOGLE_WORKSPACE_CONNECTOR_PROFILES, getAppStoreDefinition } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
+import { i18n } from "@/i18n";
 import { aiConnectionsApi } from "@/api/ai-connections";
 import { queryKeys } from "@/lib/queryKeys";
 import { ConnectionSetupFlow } from "@/features/connections/ConnectionSetupFlow";
@@ -287,7 +288,8 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   let container: HTMLDivElement;
   let mountedRoot: Root | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.resetAllMocks();
     experimentalMock.mockResolvedValue({ enableChatConnectors: false });
     window.sessionStorage.clear();
@@ -378,6 +380,20 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await flushReact();
     return root;
   }
+
+  it("localizes the app selection shell in Brazilian Portuguese and preserves app names", async () => {
+    await i18n.changeLanguage("pt-BR");
+
+    await render();
+
+    expect(container.querySelector("h1")?.textContent).toBe("Conectar seu próprio servidor MCP");
+    expect(container.querySelector<HTMLInputElement>('input[placeholder="Buscar apps…"]')).toBeTruthy();
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="URL do servidor MCP"]')).toBeTruthy();
+    expect(container.textContent).toContain("Zapier");
+    expect(container.textContent).toContain("Conectar →");
+    expect(container.textContent).toContain("Conectar com um link");
+    expect(container.textContent).toContain("Escolha o app que você quer disponibilizar para seus agentes.");
+  });
 
   it("keeps Honcho setup blocked until the provider workspace is supplied", async () => {
     const honcho = CONNECTABLE_APP_DEFINITIONS.find((app) => app.slug === "honcho")!;

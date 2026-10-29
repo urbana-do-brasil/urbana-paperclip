@@ -5598,6 +5598,61 @@
       "loadError": "Não foi possível carregar as ferramentas deste app.",
       "retry": "Tentar novamente"
     },
+    "connectionSetup": {
+      "loadingConnection": "Carregando conexão…",
+      "loadConnectionFailed": "Não foi possível carregar esta conexão. Seu acesso salvo e suas credenciais não foram alterados.",
+      "loadingSettings": "Carregando as configurações da conexão…",
+      "enableMemoryConnectors": "Ative os conectores de memória em Configurações → Experimental para configurar esta conexão.",
+      "tryAgain": "Tentar novamente",
+      "cancel": "Cancelar",
+      "stepProgress": "Etapa {{current}} de {{total}}",
+      "steps": {
+        "pickApp": "Escolher app",
+        "addKey": "Adicionar sua chave",
+        "addMcpUrl": "Adicionar URL MCP",
+        "signIn": "Entrar",
+        "reconnectAccount": "Reconectar conta",
+        "connectAccount": "Conectar conta",
+        "chooseConnection": "Escolher conexão",
+        "shareSheet": "Compartilhar planilha"
+      },
+      "header": {
+        "connectApp": "Conectar {{name}}",
+        "connectOwnMcp": "Conectar seu próprio servidor MCP",
+        "setupProgress": "Progresso da configuração"
+      },
+      "breadcrumbs": {
+        "connectApp": "Conectar um app",
+        "connectOwnTool": "Conectar sua própria ferramenta"
+      },
+      "gallery": {
+        "pickAppSubtitle": "Escolha o app que você quer disponibilizar para seus agentes.",
+        "chooseVercelApp": "Escolha um app revisado para conectar pelo Vercel.",
+        "searchApps": "Buscar apps…",
+        "noAppsMatch": "Nenhum app corresponde a “{{search}}”.",
+        "unavailableOnInstance": "Indisponível nesta instância.",
+        "unavailable": "Indisponível",
+        "connect": "Conectar →",
+        "connectZapier": "Conectar Zapier",
+        "connectOwnMcp": "Conectar seu próprio servidor MCP",
+        "connectWithLink": "Conectar com um link",
+        "pasteZapierUrl": "Cole a URL MCP completa fornecida pelo Zapier, incluindo o token.",
+        "pasteOwnMcpUrl": "Cole a URL do servidor MCP; todas as ferramentas encontradas ficarão disponíveis imediatamente.",
+        "pasteSetupLink": "Cole o link de configuração de um app que não aparece na lista.",
+        "remoteToolUrlHint": "Você pode usar a URL de qualquer ferramenta remota — inclusive um servidor MCP local como",
+        "thisLooksLike": "Este link parece ser do {{name}}.",
+        "notAvailable": "Indisponível",
+        "continue": "Continuar",
+        "useApp": "Usar {{name}}",
+        "pasteFullLink": "Cole um link completo iniciado por http ou https.",
+        "serverUrl": "URL do servidor MCP",
+        "continueToUseLink": "Continuar",
+        "vercelTitle": "Conectar pelo Vercel",
+        "vercelDescription": "Crie e gerencie o conector do provedor no Vercel. O Paperclip armazena a referência e aplica aqui os controles de acesso dos agentes, políticas, aprovações e auditoria.",
+        "openVercel": "Abrir Vercel Connect",
+        "vercelUnavailable": "O Vercel Connect não está disponível nesta instância."
+      }
+    },
     "connections": {
       "title": "Conexões",
       "description": "As ferramentas que você conectou e o estado delas.",
