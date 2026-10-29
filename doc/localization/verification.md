@@ -2128,5 +2128,26 @@ em **24/24 testes**. `check:tokens`, `check:token-gates`, parse dos catálogos,
 `git diff --check` e validação OpenSpec estrita passaram. O typecheck completo
 da UI continua apontando apenas o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
-por `@/lib/agent-setup-fields`. O progresso é **183/206 tarefas**; próxima:
-3.8e4, seletores e bindings de segredos em agentes, ambientes e variáveis.
+por `@/lib/agent-setup-fields`.
+
+### Seletores e bindings em agentes e variáveis (3.8e4)
+
+O seletor reutilizado por formulários, o navegador hierárquico por pastas, os
+formulários para criar/guardar segredos e o editor compartilhado de variáveis
+agora localizam rótulos acessíveis, busca, versões, origens, requisitos,
+validações, estados de atenção, alterações não salvas e ações em PT-BR/en. Os
+campos `secret-ref` do formulário de configuração e o resumo de entrega ao
+agente também foram localizados. Chaves de ambiente, aliases, caminhos, nomes
+configurados, IDs, valores e referências de versão continuam inalterados; as
+versões apresentadas em português mantêm o valor `latest` no contrato.
+
+`SecretBindingPicker.test.tsx`, `JsonSchemaForm.test.tsx`,
+`EnvironmentVariablesEditor.test.tsx`, `EnvVarEditor.test.tsx`,
+`AgentSecretAccessEditor.test.tsx` e `locale-validation.test.ts` passaram em
+**80/80 testes**; os smokes de `AgentConfigForm.render.test.tsx` e
+`CompanyEnvironments.test.tsx` passaram em **1/1** cada. `check:tokens`,
+`check:token-gates`, parse dos catálogos e validação OpenSpec estrita passaram.
+O typecheck completo da UI continua apontando apenas o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
+por `@/lib/agent-setup-fields`. O progresso é **184/206 tarefas**; próxima:
+3.8e5, propostas de segredo e decisões de acesso.

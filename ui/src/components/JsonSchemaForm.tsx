@@ -8,6 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { isUuidLike, type EnvSecretRefBinding } from "@paperclipai/shared";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -601,6 +602,7 @@ const SecretField = React.memo(({
   defaultValue?: unknown;
   maxLength?: number;
 }) => {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const isTextArea = maxLength != null && maxLength > TEXTAREA_THRESHOLD;
 
@@ -668,7 +670,7 @@ const SecretField = React.memo(({
           value={
             stringValue.length === 0
               ? ""
-              : `Sensitive — ${stringValue.length} characters hidden. Click the eye to reveal.`
+              : t("secrets.schemaSecretField.hiddenCharacters", { count: stringValue.length })
           }
           readOnly
           placeholder={String(defaultValue ?? "")}
@@ -691,7 +693,7 @@ const SecretField = React.memo(({
           <Eye className="h-4 w-4 text-muted-foreground" />
         )}
         <span className="sr-only">
-          {isVisible ? "Hide secret" : "Show secret"}
+          {t(isVisible ? "secrets.schemaSecretField.hideSecret" : "secrets.schemaSecretField.showSecret")}
         </span>
       </Button>
     </div>
@@ -722,7 +724,7 @@ const SecretField = React.memo(({
           <Eye className="h-4 w-4 text-muted-foreground" />
         )}
         <span className="sr-only">
-          {isVisible ? "Hide secret" : "Show secret"}
+          {t(isVisible ? "secrets.schemaSecretField.hideSecret" : "secrets.schemaSecretField.showSecret")}
         </span>
       </Button>
     </div>
@@ -733,7 +735,7 @@ const SecretField = React.memo(({
       label={label}
       description={
         description ||
-        "Pick an existing organization secret, or paste a raw value (Paperclip will store it as a secret on save)."
+        t("secrets.schemaSecretField.description")
       }
       required={isRequired}
       error={error}
@@ -744,9 +746,9 @@ const SecretField = React.memo(({
           value={bindingValue}
           onChange={handlePickerChange}
           label=""
-          placeholder="Select an existing secret"
+          placeholder={t("secrets.schemaSecretField.selectExisting")}
           allowVersionSelector={false}
-          emptyHint="No active secrets yet. Create one or paste a raw value below."
+          emptyHint={t("secrets.schemaSecretField.emptyHint")}
           disabled={disabled}
         />
         {!isBoundToSecret ? (
@@ -763,7 +765,7 @@ const SecretField = React.memo(({
                   }}
                   disabled={disabled}
                 >
-                  Hide raw value input
+                  {t("secrets.schemaSecretField.hideRawInput")}
                 </button>
               ) : null}
             </div>
@@ -774,7 +776,7 @@ const SecretField = React.memo(({
               onClick={() => setShowRawInput(true)}
               disabled={disabled}
             >
-              Or paste a raw value
+              {t("secrets.schemaSecretField.pasteRawValue")}
             </button>
           )
         ) : null}

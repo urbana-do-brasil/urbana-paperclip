@@ -164,8 +164,10 @@ export function buildFixedClaudeOAuthBinding(): Record<string, EnvBinding> {
 export const ENV_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 export type NameIssueLevel = "error" | "warn";
+export type NameIssueCode = "invalid" | "duplicate" | "reserved";
 export interface NameIssue {
   level: NameIssueLevel;
+  code: NameIssueCode;
   message: string;
 }
 
@@ -181,14 +183,18 @@ export function validateName(
   const trimmed = name.trim();
   if (!trimmed) return null;
   if (!ENV_NAME_RE.test(trimmed)) {
-    return { level: "error", message: "Invalid name — use letters, digits and _" };
+    return { level: "error", code: "invalid", message: "Invalid name — use letters, digits and _" };
   }
   if (duplicateNames.has(trimmed)) {
-    return { level: "error", message: "Duplicate name" };
+    return { level: "error", code: "duplicate", message: "Duplicate name" };
   }
   for (const prefix of reservedPrefixes) {
     if (prefix && trimmed.startsWith(prefix)) {
-      return { level: "warn", message: "Reserved prefix — provided automatically and may be overridden" };
+      return {
+        level: "warn",
+        code: "reserved",
+        message: "Reserved prefix — provided automatically and may be overridden",
+      };
     }
   }
   return null;

@@ -167,7 +167,11 @@ describe("validateName", () => {
   });
 
   it("flags duplicates as errors", () => {
-    expect(validateName("DUP", new Set(["DUP"]), reserved)).toEqual({ level: "error", message: "Duplicate name" });
+    expect(validateName("DUP", new Set(["DUP"]), reserved)).toEqual({
+      level: "error",
+      code: "duplicate",
+      message: "Duplicate name",
+    });
   });
 
   it("flags reserved prefixes as warnings", () => {

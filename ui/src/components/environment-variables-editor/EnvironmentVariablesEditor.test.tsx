@@ -5,8 +5,10 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompanySecret, EnvBinding } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import { EnvironmentVariablesEditor } from "./index";
 import { SecretPicker } from "./SecretPicker";
+import { CreateSecretPopover } from "./CreateSecretPopover";
 
 // Radix (DropdownMenu/Popover) relies on Pointer Capture APIs that jsdom omits.
 const OriginalPointerEvent = globalThis.PointerEvent;
@@ -105,7 +107,8 @@ describe("EnvironmentVariablesEditor", () => {
     flushSync(() => root!.render(node));
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -131,6 +134,7 @@ describe("EnvironmentVariablesEditor", () => {
     }
     document.body.style.pointerEvents = "";
     vi.restoreAllMocks();
+    await i18n.changeLanguage("en");
   });
 
   const secrets = [makeSecret("s1", { name: "GITHUB_TOKEN", latestVersion: 3 })];
@@ -161,6 +165,99 @@ describe("EnvironmentVariablesEditor", () => {
     // Version tag reflects the actual bound version (not a static "latest").
     const versionTag = container.querySelector('button[aria-label="Version"]');
     expect(versionTag?.textContent).toBe("v2");
+  });
+
+  it("localizes a bound environment variable while preserving its key, secret id, and version payload", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onChange = vi.fn();
+    render(
+      <EnvironmentVariablesEditor
+        value={{ GH_TOKEN: { type: "secret_ref", secretId: "s1", version: "latest" } }}
+        secrets={secrets}
+        onChange={onChange}
+        onCreateSecret={async () => secrets[0]!}
+      />,
+    );
+
+    expect(container.textContent).toContain("Nome");
+    expect(container.textContent).toContain("Valor");
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Nome da variável"]')?.value).toBe("GH_TOKEN");
+    expect(container.querySelector('button[aria-label="Versão"]')?.textContent).toBe("mais recente");
+
+    const versionTag = container.querySelector<HTMLButtonElement>('button[aria-label="Versão"]')!;
+    pointerClick(versionTag);
+    await flush();
+    const pinnedVersion = [...document.querySelectorAll<HTMLElement>('[role="radio"]')].find(
+      (option) => option.textContent?.trim() === "v2",
+    );
+    expect(pinnedVersion).toBeTruthy();
+    pointerClick(pinnedVersion!);
+    await flush();
+    [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent?.trim() === "Salvar")!
+      .click();
+    await flush();
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      GH_TOKEN: { type: "secret_ref", secretId: "s1", version: 2 },
+    });
+  });
+
+  it("localizes secret folder navigation and search while preserving configured paths", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const configuredPath = "/paperclip-cloud/prod/provider/aws-access-key-id";
+    const onSelect = vi.fn();
+    render(
+      <SecretPicker
+        secretId=""
+        secrets={[
+          makeSecret("provider-key", { name: configuredPath, key: configuredPath }),
+          makeSecret("plain-key", { name: "PAPERCLIP_TOKEN", key: "PAPERCLIP_TOKEN" }),
+        ]}
+        onSelect={onSelect}
+        onCreateNew={() => {}}
+        disablePortal
+      />,
+    );
+
+    const combobox = container.querySelector<HTMLElement>('[role="combobox"]')!;
+    combobox.focus();
+    await flush();
+    expect(document.body.textContent).toContain("Navegar pelos segredos");
+    expect(document.querySelector('input[placeholder="Buscar segredos…"]')).toBeTruthy();
+
+    const folder = [...document.querySelectorAll<HTMLElement>("[cmdk-item]")].find((item) =>
+      item.textContent?.includes("paperclip-cloud"),
+    )!;
+    folder.click();
+    await flush();
+    expect(document.body.textContent).toContain("Subir uma pasta");
+    expect(document.body.textContent).toContain("/paperclip-cloud");
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("localizes inline create-secret fields and actions", async () => {
+    await i18n.changeLanguage("pt-BR");
+    render(
+      <CreateSecretPopover
+        initialName="api_token"
+        initialValue="secret-value"
+        onCancel={() => {}}
+        onSubmit={async () => {}}
+      />,
+    );
+
+    expect(container.textContent).toContain("Criar segredo");
+    expect(container.textContent).toContain("Nome");
+    expect(container.textContent).toContain("Valor");
+    expect([...container.querySelectorAll("button")].map((button) => button.textContent).join(" ")).toContain(
+      "Cancelar",
+    );
+    expect([...container.querySelectorAll("button")].map((button) => button.textContent).join(" ")).toContain(
+      "Criar e vincular",
+    );
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Nome do segredo"]')?.value).toBe("api_token");
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Valor do segredo"]')?.value).toBe("secret-value");
   });
 
   it("keeps long secret names clear of the latest version control", () => {

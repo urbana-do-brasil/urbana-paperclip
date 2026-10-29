@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import {
   SecretBindingPicker,
   SecretRefHintsContext,
@@ -31,7 +32,8 @@ describe("SecretBindingPicker", () => {
   let root: Root | null = null;
   let queryClient: QueryClient;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     queryClient = new QueryClient({
@@ -41,13 +43,14 @@ describe("SecretBindingPicker", () => {
     mockSecretsApi.list.mockResolvedValue([]);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     act(() => {
       root?.unmount();
     });
     root = null;
     container.remove();
     queryClient.clear();
+    await i18n.changeLanguage("en");
   });
 
   async function render(context: SecretRefHintsContextValue | undefined) {
@@ -91,6 +94,17 @@ describe("SecretBindingPicker", () => {
     expect(container.textContent).toContain("Owned by the Other Team organization");
     expect(container.textContent).not.toContain("Missing secret");
     expect(container.querySelector("select")?.className).not.toContain("border-destructive");
+  });
+
+  it("localizes binding labels and status while retaining the secret reference", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render(readyContext("disabled"));
+
+    expect(container.querySelector('select[aria-label="Segredo"]')).toBeTruthy();
+    expect(container.textContent).toContain("Este segredo está desativado");
+    expect(container.querySelector('select[aria-label="Versão"]')).toBeTruthy();
+    expect(container.querySelector('button[aria-label="Criar segredo"]')).toBeTruthy();
+    expect(container.querySelector('option[value="22222222-2222-2222-2222-222222222222"]')).toBeTruthy();
   });
 
   it("reports a deleted hinted secret as deleted", async () => {

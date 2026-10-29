@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import type { CompanySecret, EnvBinding, UserSecretDefinition } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { EnvironmentVariablesEditor } from "./environment-variables-editor";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,14 +42,16 @@ async function act(callback: () => void | Promise<void>) {
 let container: HTMLDivElement;
 let root: Root;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   container = document.createElement("div");
   document.body.appendChild(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
   container.remove();
+  await i18n.changeLanguage("en");
 });
 
 function render(props: Partial<React.ComponentProps<typeof EnvironmentVariablesEditor>>) {
