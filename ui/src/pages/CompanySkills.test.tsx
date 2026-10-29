@@ -21,6 +21,7 @@ import {
 import {
   CatalogDetailPane as ProductionCatalogDetailPane,
   DiscoveryGrid as ProductionDiscoveryGrid,
+  InstallPreviewDialog as ProductionInstallPreviewDialog,
   SkillDetailPage as ProductionSkillDetailPage,
 } from "./CompanySkills.production";
 import { skillStudioNewRoute } from "../lib/company-skill-routes";
@@ -990,6 +991,181 @@ async function verifyLocalizedSkillDetailVariant(Component: typeof SkillDetailPa
   expect(node.textContent).toContain("Review checklist");
 }
 
+async function verifyLocalizedSkillOperationsVariant(Component: typeof SkillDetailPage) {
+  await act(async () => { await i18n.changeLanguage("pt-BR"); });
+  const v1 = makeVersion(1, "# Demo Skill\n\nFirst revision");
+  const v2 = makeVersion(2, "# Demo Skill\n\nSecond revision");
+
+  const onToggleStar = vi.fn();
+  const onFork = vi.fn();
+  const onCheckUpdates = vi.fn();
+  const onInstallUpdate = vi.fn();
+  let node = await renderSkillDetail([v2, v1], {
+    activeTab: "overview",
+    detail: makeDetail(v2, {
+      sourceType: "github",
+      sourceBadge: "github",
+      sourceLabel: "GitHub",
+      sourceRef: "abcdef1234567",
+      starredByCurrentActor: true,
+      starCount: 4,
+      forkCount: 2,
+    }),
+    updateStatus: {
+      supported: true,
+      reason: null,
+      trackingRef: "main",
+      currentRef: "abcdef1234567",
+      latestRef: "1234567890abcdef",
+      hasUpdate: true,
+      installedHash: null,
+      originHash: null,
+      userModifiedAt: null,
+      updateHoldReason: null,
+      auditVerdict: null,
+      auditCodes: [],
+    },
+    onToggleStar,
+    onFork,
+    onCheckUpdates,
+    onInstallUpdate,
+  }, Component);
+
+  expect(node.textContent).toContain("Favoritada");
+  expect(node.textContent).toContain("Criar uma cópia");
+  expect(node.textContent).toContain("Verificar atualizações");
+  expect(node.textContent).toContain("Instalar atualização 1234567");
+  await click(node.querySelector('button[title="Desfavoritar esta skill"]') as HTMLButtonElement);
+  const forkButton = Array.from(node.querySelectorAll("button")).find((button) => button.textContent?.includes("Criar uma cópia"));
+  await click(forkButton as HTMLButtonElement);
+  await click(buttonsNamed(node, "Verificar atualizações")[0] as HTMLButtonElement);
+  const updateButton = Array.from(node.querySelectorAll("button")).find((button) => button.textContent?.includes("Instalar atualização 1234567"));
+  await click(updateButton as HTMLButtonElement);
+  expect(onToggleStar).toHaveBeenCalledOnce();
+  expect(onFork).toHaveBeenCalledOnce();
+  expect(onCheckUpdates).toHaveBeenCalledOnce();
+  expect(onInstallUpdate).toHaveBeenCalledOnce();
+
+  await act(async () => { root?.unmount(); });
+  root = null;
+  node.remove();
+  container = null;
+
+  node = await renderSkillDetail([v2, v1], { activeTab: "versions" }, Component);
+  expect(node.textContent).toContain("2 versões");
+  expect(node.textContent).toContain("Comparar");
+  expect(node.textContent).toContain("Ver diferenças");
+
+  await click(buttonsNamed(node, "Comparar")[0] as HTMLButtonElement);
+  expect(node.textContent).toContain("Comparação · arquivos da skill");
+  expect(node.textContent).toContain("Anterior");
+  expect(node.textContent).toContain("Novo");
+  expect(node.textContent).toContain("Inicial");
+  expect(node.textContent).toContain("Second revision");
+
+  await act(async () => { root?.unmount(); });
+  root = null;
+  node.remove();
+  container = null;
+
+  const attachedDetail = makeDetail(v2, {
+    usedByAgents: [{
+      id: "agent-engineering",
+      name: "Backend lead",
+      urlKey: "backend-lead",
+      adapterType: "openai_codex",
+      desired: true,
+      actualState: null,
+      versionId: v2.id,
+    }],
+    attachedAgentCount: 1,
+  });
+  const onUpdateSettings = vi.fn();
+  node = await renderSkillDetail([v2, v1], {
+    activeTab: "agents",
+    detail: attachedDetail,
+    attachAgents: [{
+      id: "agent-engineering",
+      name: "Backend lead",
+      adapterType: "openai_codex",
+      supportsSkills: true,
+      required: false,
+      icon: null,
+      paused: true,
+    }],
+    onUpdateSettings,
+  }, Component);
+
+  expect(node.textContent).toContain("1 agente associado");
+  expect(node.textContent).toContain("Adicionar a agente");
+  expect(node.textContent).toContain("Backend lead");
+  expect(node.textContent).toContain("openai_codex");
+  expect(node.textContent).toContain("Pausado");
+  expect(node.textContent).toContain("Visualizar");
+
+  await click(buttonsNamed(node, "Configurações")[0] as HTMLButtonElement);
+  const dialog = node.querySelector('[role="dialog"]') as HTMLElement;
+  expect(dialog.textContent).toContain("Configurações da skill");
+  expect(dialog.textContent).toContain("Defina como Demo Skill é categorizada e compartilhada.");
+  expect(dialog.textContent).toContain("Categorias");
+  expect(dialog.textContent).toContain("Compartilhamento");
+  expect(dialog.textContent).toContain("Organização — visível nesta organização");
+  expect(dialog.textContent).toContain("Privada — visível apenas na sua biblioteca");
+  expect(dialog.textContent).toContain("Zona de risco");
+  expect(dialog.textContent).toContain("Remova esta skill da biblioteca da organização.");
+
+  const categoryInput = dialog.querySelector("input") as HTMLInputElement;
+  await inputValue(categoryInput, "security-review, privacy");
+  await selectValue(dialog.querySelector("select") as HTMLSelectElement, "company");
+  await click(buttonsNamed(dialog, "Salvar configurações")[0] as HTMLButtonElement);
+  expect(onUpdateSettings).toHaveBeenCalledWith({
+    sharingScope: "company",
+    categories: ["security-review", "privacy"],
+  });
+
+  await act(async () => { root?.unmount(); });
+  root = null;
+  node.remove();
+  container = null;
+
+  const file: CompanySkillFileDetail = {
+    skillId: "skill-1",
+    path: "docs/Review Guide.md",
+    kind: "skill",
+    content: "# Review guide\n\nOriginal copy.",
+    language: "markdown",
+    markdown: true,
+    editable: true,
+  };
+  const onSave = vi.fn();
+  const setDraft = vi.fn();
+  const setEditMode = vi.fn();
+  node = await renderSkillDetail([v2, v1], {
+    activeTab: "files",
+    detail: makeDetail(v2),
+    selectedPath: file.path,
+    file,
+    editMode: true,
+    draft: "# Review guide\n\nUpdated copy.",
+    setDraft,
+    setEditMode,
+    onSave,
+  }, Component);
+
+  expect(node.textContent).toContain("docs/Review Guide.md");
+  expect(node.textContent).toContain("Alterações não salvas");
+  expect(buttonsNamed(node, "Cancelar").length).toBeGreaterThan(0);
+  expect(buttonsNamed(node, "Descartar")).toHaveLength(1);
+  expect(buttonsNamed(node, "Salvar alterações")).toHaveLength(1);
+  expect((node.querySelector("textarea") as HTMLTextAreaElement).value).toContain("Updated copy.");
+
+  await click(buttonsNamed(node, "Salvar")[0] as HTMLButtonElement);
+  expect(onSave).toHaveBeenCalledOnce();
+  await click(buttonsNamed(node, "Descartar")[0] as HTMLButtonElement);
+  expect(setDraft).toHaveBeenCalledWith(file.content);
+  expect(setEditMode).toHaveBeenCalledWith(false);
+}
+
 describe("Skill detail localization", () => {
   it("localizes the streamlined detail and file browser while preserving skill metadata", async () => {
     await verifyLocalizedSkillDetailVariant(SkillDetailPage);
@@ -997,6 +1173,16 @@ describe("Skill detail localization", () => {
 
   it("localizes the production detail and file browser while preserving skill metadata", async () => {
     await verifyLocalizedSkillDetailVariant(ProductionSkillDetailPage);
+  });
+});
+
+describe("Skill detail operations localization", () => {
+  it("localizes streamlined versions, agent association, sharing, and editing while preserving values", async () => {
+    await verifyLocalizedSkillOperationsVariant(SkillDetailPage);
+  });
+
+  it("localizes production versions, agent association, sharing, and editing while preserving values", async () => {
+    await verifyLocalizedSkillOperationsVariant(ProductionSkillDetailPage);
   });
 });
 
@@ -1341,6 +1527,66 @@ describe("install-time agent enablement", () => {
     };
   }
 
+  async function verifyLocalizedInstallPreview(Component: typeof InstallPreviewDialog) {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const onConfirm = vi.fn();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+
+    await act(async () => {
+      root?.render(
+        <Component
+          open
+          onOpenChange={vi.fn()}
+          skill={makeCatalogSkill()}
+          packageName="Paperclip"
+          packageVersion="2.0.0"
+          conflict={null}
+          defaultSlug="wireframe"
+          defaultForce={false}
+          defaultAction="install"
+          agents={agentOptions}
+          isPending={false}
+          error={null}
+          onConfirm={onConfirm}
+        />,
+      );
+    });
+
+    const node = container as ParentNode;
+    expect(node.textContent).toContain("Instalar skill · wireframe");
+    expect(node.textContent).toContain("Incluída");
+    expect(node.textContent).toContain("product");
+    expect(node.textContent).toContain("Confiança");
+    expect(node.textContent).toContain("Seguro");
+    expect(node.textContent).toContain("Compatibilidade");
+    expect(node.textContent).toContain("Compatível");
+    expect(node.textContent).toContain("Procedência");
+    expect(node.textContent).toContain("Arquivos (1)");
+    expect(node.textContent).toContain("SKILL.md");
+    expect(node.textContent).toContain("sha256:abc");
+    expect(node.textContent).toContain("Ativar para agentes");
+    expect(node.textContent).toContain("2 agentes selecionados");
+
+    await click(buttonsNamed(node, "Avançado")[0] as HTMLButtonElement);
+    expect(node.textContent).toContain("Substituição do slug");
+    expect(node.textContent).toContain("Forçar a substituição da skill com a mesma chave");
+
+    await click(buttonsNamed(node, "Instalar skill")[0] as HTMLButtonElement);
+    expect(onConfirm).toHaveBeenCalledWith({
+      slug: "wireframe",
+      force: false,
+      agentIds: expect.arrayContaining(["agent-ceo", "agent-designer"]),
+    });
+    expect(onConfirm.mock.calls[0][0].agentIds).toHaveLength(2);
+
+    await act(async () => { root?.unmount(); });
+    root = null;
+    container?.remove();
+    container = null;
+  }
+
   it("defaults to every skills-capable, non-required agent", () => {
     expect(defaultInstallAgentSelection(agentOptions)).toEqual(new Set(["agent-ceo", "agent-designer"]));
   });
@@ -1452,5 +1698,13 @@ describe("install-time agent enablement", () => {
     await click(buttonsNamed(node, "Install update")[0] as HTMLButtonElement);
 
     expect(onConfirm).toHaveBeenCalledWith({ slug: "wireframe", force: false, agentIds: [] });
+  });
+
+  it("localizes the streamlined install preview while preserving skill data and selected agent IDs", async () => {
+    await verifyLocalizedInstallPreview(InstallPreviewDialog);
+  });
+
+  it("localizes the production install preview while preserving skill data and selected agent IDs", async () => {
+    await verifyLocalizedInstallPreview(ProductionInstallPreviewDialog);
   });
 });

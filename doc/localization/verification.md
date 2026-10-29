@@ -2284,3 +2284,21 @@ de pastas, passaram em **74/74 testes**. `pnpm check:tokens`,
 estrita passaram. O typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 O progresso é **198/220 tarefas**; próxima: 3.9b2c, edição, versões e operações.
+
+### Operações da biblioteca de skills (3.9b2c)
+
+As variantes streamlined e production agora localizam os controles de edição e
+salvamento, histórico e comparação de versões, favoritos, fork e atualização,
+compartilhamento, associação de skills a agentes, instalação do catálogo,
+confirmação de remoção e mensagens de resultado. Valores fornecidos pelo usuário,
+conteúdo, nomes e categorias, caminhos, hashes, source refs, permissões, IDs de
+agentes e payloads permanecem intactos.
+
+`FolderControls.test.tsx`, `SkillFolderTree.test.tsx`,
+`skill-folder-tree.test.ts`, `CompanySkills.test.tsx` e
+`locale-validation.test.ts` passaram em **78/78 testes**. `pnpm check:tokens`,
+`pnpm check:token-gates`, parse dos JSONs de locale e cobertura, `git diff
+--check` e validação OpenSpec estrita passaram. O typecheck da UI aponta somente
+o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. O progresso é **199/220 tarefas**; próxima:
+3.9c, Skill Studio.

@@ -51,13 +51,14 @@ propostas) e 3.8f (OAuth/MCP e conexões de assistentes) também foram verificad
 descoberta/cartões da biblioteca nas variantes streamlined e production, estão
 concluídas. 3.9b2 foi dividida em b2a (árvore e gestão de pastas), b2b (detalhes
 e arquivos) e b2c (edição, versões e operações). 3.9b2a e 3.9b2b estão
-concluídas; próxima: 3.9b2c.
+concluídas; 3.9b2c (edição, versões e operações) também está concluída. Próxima:
+3.9c, Skill Studio.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Fontes de skills (3.9a), descoberta/cartões (3.9b1), árvores/gestão de pastas (3.9b2a) e detalhes/arquivos (3.9b2b) verificados; operações (3.9b2c), Skill Studio, catálogo de equipes, ferramentas e apps (3.9c–f) pendentes. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Grupo de skills 3.9a–b verificado, incluindo fontes, descoberta, biblioteca, pastas, detalhes, arquivos e operações nas variantes streamlined e production. Skill Studio, catálogo de equipes, ferramentas e apps (3.9c–f) pendentes. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |

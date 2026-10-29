@@ -535,7 +535,7 @@
         "ui/src/pages/CompanySkills.test.tsx",
         "ui/src/i18n/locale-validation.test.ts"
       ],
-      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia), 3.9b1 (descoberta/cartões), 3.9b2a (árvore e gestão de pastas) e 3.9b2b (detalhes e navegação de arquivos) verificadas em PT-BR/en nas variantes streamlined e production. Operações da biblioteca (3.9b2c), Skill Studio, catálogo de equipes, ferramentas e apps continuam pendentes em 3.9b–f; metadados/conteúdo externo são preservados."
+      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia) e 3.9b1–b2c (descoberta/cartões, árvore e gestão de pastas, detalhes/arquivos e operações da biblioteca) verificadas em PT-BR/en nas variantes streamlined e production. Skill Studio, catálogo de equipes, ferramentas e apps (3.9c–f) continuam pendentes; metadados e conteúdo externo são preservados."
     },
     {
       "id": "experimental",
@@ -1480,10 +1480,10 @@
   ],
   "checkpoint": {
     "date": "2026-10-29",
-    "completedTasks": 198,
+    "completedTasks": 199,
     "totalTasks": 220,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "3.8e (segredos) e 3.8f (OAuth/MCP e conexões de assistentes) verificadas. Em 3.9, 3.9a localizou fontes/importação; 3.9b1 localizou descoberta/cartões; 3.9b2a localizou árvore, breadcrumbs e gestão de pastas; e 3.9b2b localizou detalhes da biblioteca e do catálogo, procedência, confiança/compatibilidade e navegação de arquivos nas variantes streamlined e production. Metadados, nomes, descrições, caminhos, hashes e conteúdo autoral fornecidos foram preservados. SkillSources + SkillSourceTree + SkillPackagePreview + locale-validation: 27/27; CompanySkills + locale-validation: 44/44; FolderControls + SkillFolderTree + skill-folder-tree + CompanySkills + locale-validation (3.9b2a): 70/70; lote focado atual incluindo as duas variantes de CompanySkills: 74/74. `check:tokens`, `check:token-gates`, JSON, diff check e OpenSpec estrito passaram. O typecheck da UI continua bloqueado somente pelo erro preexistente em `storybook/prototypes/NewAgentWizard.tsx` (`SETUP_LOGIN_HINTS` não exportado). Progresso: 198/220. Próxima: 3.9b2c, edição, versões e operações."
+    "reason": "3.8e (segredos) e 3.8f (OAuth/MCP e conexões de assistentes) verificadas. Em 3.9, 3.9a localizou fontes/importação; 3.9b1 localizou descoberta/cartões; 3.9b2a localizou árvore e gestão de pastas; 3.9b2b localizou detalhes, procedência, confiança/compatibilidade e navegação de arquivos; e 3.9b2c localizou edição/salvamento, versões/comparação, favoritos/fork/atualização, compartilhamento, associação a agentes, instalação, remoção e feedback de operações nas variantes streamlined e production. Metadados, nomes, descrições, categorias, caminhos, hashes, conteúdo autoral, IDs e payloads foram preservados. CompanySkills + locale-validation e testes focados de pastas: 78/78; `check:tokens`, `check:token-gates`, JSON, diff check e OpenSpec estrito passaram. O typecheck da UI continua bloqueado somente pelo erro preexistente em `storybook/prototypes/NewAgentWizard.tsx` (`SETUP_LOGIN_HINTS` não exportado). Progresso: 199/220. Próxima: 3.9c, Skill Studio."
   }
 }
