@@ -1275,5 +1275,10 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
   `Goals.test.tsx`, `NewGoalDialog.test.tsx`, `GoalProperties.test.tsx`,
   `GoalDetail.test.tsx` e `locale-validation.test.ts` passaram em **21/21 testes**.
   Typecheck direcionado e validação OpenSpec estrita passaram. Progresso OpenSpec:
-  **97/121**. Próxima: 3.5e (lista geral e visualização de workspaces). A
-  aplicação ainda não foi implantada.
+  `Workspaces.test.tsx` e os testes dos cartões/conteúdo de workspace passaram
+  em **27/27 testes**, cobrindo rótulos nos dois idiomas, estados vazios,
+  agrupamento, paginação, rota, feature flag e locale-validation. Progresso
+  OpenSpec: **101/123**. 3.5e1 localizou a visão global e 3.5e2 localizou os
+  detalhes/configuração e serviços do workspace de projeto. O grupo 3.5 está
+  concluído; próxima tarefa: 3.6 (cadastro/configuração de agentes e execução).
+  A aplicação ainda não foi implantada.

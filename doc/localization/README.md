@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **97 de 121 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **101 de 123 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -210,11 +210,14 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
 `PrivateTaskPrivacyControls.test.tsx` e `locale-validation.test.ts` passaram em
 **32/32 testes**. Typecheck direcionado, `check:tokens`, `check:token-gates`,
 `git diff --check` e validação OpenSpec estrita passaram. O progresso atual é
-  **97/121**; 3.5c4a localizou a política e configuração de execution
+  **101/123**; 3.5c4a localizou a política e configuração de execution
   workspaces; 3.5c4b localizou cartões, ações, estados e mensagens de workspaces
   vinculados. O grupo 3.5c está concluído. 3.5d foi dividida em coleção/árvore
   (d1), criação (d2) e detalhes/propriedades (d3), e foi concluída. Próxima:
-  3.5e (lista geral e visualização de workspaces). A aplicação
+  3.5e1 localizou a visão global, incluindo agrupamento e paginação, mantendo o
+  gate de feature flag; 3.5e2 localizou detalhes/configuração e serviços de
+  workspaces de projeto. O grupo 3.5 está concluído; o próximo é 3.6, sobre
+  cadastro/configuração de agentes e visualizações de execução. A aplicação
   ainda não foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28

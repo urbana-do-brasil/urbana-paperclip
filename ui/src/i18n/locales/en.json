@@ -1249,6 +1249,17 @@
     }
   },
   "projectWorkspaceSummary": {
+    "global": {
+      "title": "Workspaces",
+      "summaryTitle": "Workspace summary",
+      "summaryDescription": "Summarizer tracks workspace activity, live services, and follow-up needs across projects.",
+      "noActivity": "No workspace activity yet.",
+      "workspaceCount_one": "{{count}} workspace",
+      "workspaceCount_other": "{{count}} workspaces",
+      "showingCount": "Showing {{shown}} of {{total}} workspaces.",
+      "loading": "Loading...",
+      "loadMore": "Load more"
+    },
     "noActivity": "No non-default workspace activity yet.",
     "cleanupAttention": "Cleanup attention needed",
     "kind": {
@@ -1286,6 +1297,85 @@
     },
     "moreTasks_one": "+{{count}} more",
     "moreTasks_other": "+{{count}} more"
+  },
+  "projectWorkspaceDetail": {
+    "loading": "Loading workspace…",
+    "loadFailed": "Failed to load workspace",
+    "notFound": "Workspace not found for this project.",
+    "saveFailed": "Failed to save workspace.",
+    "primaryUpdateFailed": "Failed to update workspace.",
+    "title": "Project workspace",
+    "backToWorkspaces": "Back to workspaces",
+    "makePrimary": "Make primary",
+    "isPrimary": "This is the project’s primary codebase workspace.",
+    "description": "Configure the concrete workspace Paperclip attaches to this project. These values drive per-workspace checkout behavior, default runtime services for child execution workspaces, and let you override setup or cleanup commands when one workspace needs special handling.",
+    "tabs": {
+      "configuration": "Configuration"
+    },
+    "visibility": {
+      "default": "Default",
+      "advanced": "Advanced"
+    },
+    "sourceTypes": {
+      "localPath": "Local git checkout",
+      "localPathDescription": "A local path Paperclip can use directly.",
+      "nonGitPath": "Local non-git path",
+      "nonGitPathDescription": "A local folder without git semantics.",
+      "gitRepo": "Remote git repo",
+      "gitRepoDescription": "A repo URL with optional refs and local checkout.",
+      "remoteManaged": "Remote-managed workspace",
+      "remoteManagedDescription": "A hosted workspace tracked by external reference."
+    },
+    "fields": {
+      "workspaceName": "Workspace name",
+      "workspaceNamePlaceholder": "Workspace name",
+      "visibility": "Visibility",
+      "sourceType": "Source type",
+      "localPath": "Local path",
+      "repoUrl": "Repo URL",
+      "repoRef": "Repo ref",
+      "defaultRef": "Default ref",
+      "sharedWorkspaceKey": "Shared workspace key",
+      "remoteProvider": "Remote provider",
+      "remoteWorkspaceRef": "Remote workspace ref",
+      "setupCommand": "Setup command",
+      "setupCommandHint": "Runs when this workspace needs custom bootstrap",
+      "cleanupCommand": "Cleanup command",
+      "cleanupCommandHint": "Runs before project-level execution workspace teardown",
+      "workspaceCommandsJson": "Workspace commands JSON",
+      "workspaceCommandsJsonHint": "Execution workspaces inherit this config unless they override it. Legacy `services` arrays still work, but `commands` supports both services and jobs."
+    },
+    "validation": {
+      "remoteWorkspaceReferenceRequired": "Remote-managed workspaces require a remote workspace ref or repo URL.",
+      "pathOrRepoRequired": "Workspace requires at least one local path or repo URL.",
+      "localPathAbsolute": "Local workspace path must be absolute.",
+      "repoUrlInvalid": "Repo URL must be a valid URL.",
+      "runtimeJsonObject": "Workspace commands JSON must be a JSON object.",
+      "invalidRuntimeJson": "Invalid JSON."
+    },
+    "advancedRuntimeJson": "Advanced runtime JSON",
+    "advancedRuntimeJsonHelp": "Paperclip derives Services and Jobs from this JSON. Prefer editing named commands first; use raw JSON for advanced lifecycle, port, readiness, or environment settings.",
+    "saveChanges": "Save changes",
+    "reset": "Reset",
+    "noUnsavedChanges": "No unsaved changes.",
+    "none": "None",
+    "facts": {
+      "heading": "Workspace facts",
+      "currentState": "Current state",
+      "project": "Project",
+      "workspaceId": "Workspace ID",
+      "localPath": "Local path",
+      "repo": "Repo",
+      "defaultRef": "Default ref",
+      "updated": "Updated"
+    },
+    "commands": {
+      "heading": "Workspace commands",
+      "servicesAndJobs": "Services and jobs",
+      "description": "Long-running services stay supervised here, while one-shot jobs run on demand against this workspace. Execution workspaces inherit this config unless they override it."
+    },
+    "loadingPlugin": "Loading workspace plugin...",
+    "backToConfiguration": "Back to configuration"
   },
   "goalManagement": {
     "collection": {

@@ -98,7 +98,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.4e4 Localizar filas de decisões/atenção, regras de entrada e interação, preservando decisões, razões e operações.
     - [x] 3.4e5 Localizar a fila standalone de solicitações de acesso/entrada, preservando convites, permissões e dados de solicitantes.
   - [x] 3.4f Localizar a busca global e seus resultados/filtros; preservar sintaxe, operadores e destinos.
-- [ ] 3.5 Migrar organizações, projetos, metas e workspaces em lotes por jornada. Verificar criação/configuração, troca de organização, labels de estado e permissões nas duas línguas sem alterar valores ou contratos. Spec: `localized-web-interface`.
+- [x] 3.5 Migrar organizações, projetos, metas e workspaces em lotes por jornada. Verificar criação/configuração, troca de organização, labels de estado e permissões nas duas línguas sem alterar valores ou contratos. Spec: `localized-web-interface`.
   - [x] 3.5a Localizar o portfólio de organizações, incluindo estado, seleção, renomeação, restauração, métricas e confirmações; preservar dados e ações.
   - [x] 3.5b Localizar a coleção e criação de projetos, incluindo estados vazios, filtros e permissões.
   - [x] 3.5c Localizar detalhes e configuração de projetos, orçamento, acesso e workspaces vinculados; preservar valores e gates.
@@ -116,7 +116,9 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.5d1 Localizar coleção de metas e árvore hierárquica, preservando IDs, relações pai/filho, expansão e rotas.
     - [x] 3.5d2 Localizar o diálogo de criação de metas/submetas, preservando status, nível, vínculo pai, conteúdo e payloads.
     - [x] 3.5d3 Localizar detalhes, propriedades, projetos vinculados e controles de meta, preservando vínculos, uploads e callbacks.
-  - [ ] 3.5e Localizar a lista geral e a visualização de workspaces de projeto, preservando flags, rotas e operações.
+  - [x] 3.5e Localizar a lista geral e a visualização de workspaces de projeto, preservando flags, rotas e operações.
+    - [x] 3.5e1 Localizar a visão global de workspaces, preservando feature flag, agrupamento, ordenação, paginação, links e operações.
+    - [x] 3.5e2 Localizar detalhes/configuração do workspace de projeto e serviços, preservando caminhos, comandos, valores, flags, plugins e callbacks.
 - [ ] 3.6 Migrar cadastro/configuração de agentes e visualizações de execução, incluindo descrições próprias e estados de ferramentas. Verificar fluxo de configuração e execução nas duas línguas, mantendo prompts técnicos e logs brutos originais. Spec: `localized-web-interface`.
 - [ ] 3.7 Migrar dashboard, custos, orçamento, timeline, atividade, auditoria e cartões de resumo em lotes por jornada. Verificar amostras com datas, timezone, percentuais e moeda original, pluralização e erros nos dois idiomas. Spec: `localized-web-interface`.
 - [ ] 3.8 Migrar aprovações, acesso, segredos e configurações pessoais/de instância além do seletor. Verificar os controles e estados de negação nos dois idiomas e confirmar que nenhuma tradução amplia permissões ou revela valores secretos. Spec: `localized-web-interface`.

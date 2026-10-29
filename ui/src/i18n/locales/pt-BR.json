@@ -1294,6 +1294,18 @@
     }
   },
   "projectWorkspaceSummary": {
+    "global": {
+      "title": "Espaços de trabalho",
+      "summaryTitle": "Resumo dos espaços de trabalho",
+      "summaryDescription": "O resumidor acompanha a atividade, os serviços em execução e os itens que exigem atenção nos espaços de trabalho dos projetos.",
+      "noActivity": "Ainda não há atividade em espaços de trabalho.",
+      "workspaceCount_one": "{{count}} espaço de trabalho",
+      "workspaceCount_other": "{{count}} espaços de trabalho",
+      "workspaceCount_many": "{{count}} espaços de trabalho",
+      "showingCount": "Exibindo {{shown}} de {{total}} espaços de trabalho.",
+      "loading": "Carregando...",
+      "loadMore": "Carregar mais"
+    },
     "noActivity": "Ainda não há atividade em espaços de trabalho não padrão.",
     "cleanupAttention": "A limpeza precisa de atenção",
     "kind": {
@@ -1333,6 +1345,85 @@
     "moreTasks_one": "+{{count}} mais",
     "moreTasks_other": "+{{count}} mais",
     "moreTasks_many": "+{{count}} mais"
+  },
+  "projectWorkspaceDetail": {
+    "loading": "Carregando espaço de trabalho…",
+    "loadFailed": "Não foi possível carregar o espaço de trabalho",
+    "notFound": "Este projeto não tem esse espaço de trabalho.",
+    "saveFailed": "Não foi possível salvar o espaço de trabalho.",
+    "primaryUpdateFailed": "Não foi possível atualizar o espaço de trabalho.",
+    "title": "Espaço de trabalho do projeto",
+    "backToWorkspaces": "Voltar aos espaços de trabalho",
+    "makePrimary": "Definir como principal",
+    "isPrimary": "Este é o espaço de trabalho principal da base de código do projeto.",
+    "description": "Configure o espaço de trabalho concreto que o Paperclip associa a este projeto. Esses valores definem o comportamento de cópia de cada espaço de trabalho e os serviços padrão de runtime para espaços de execução derivados; também permitem personalizar os comandos de configuração e limpeza de um espaço de trabalho específico.",
+    "tabs": {
+      "configuration": "Configuração"
+    },
+    "visibility": {
+      "default": "Padrão",
+      "advanced": "Avançada"
+    },
+    "sourceTypes": {
+      "localPath": "Cópia Git local",
+      "localPathDescription": "Um caminho local que o Paperclip pode usar diretamente.",
+      "nonGitPath": "Caminho local sem Git",
+      "nonGitPathDescription": "Uma pasta local sem recursos de Git.",
+      "gitRepo": "Repositório Git remoto",
+      "gitRepoDescription": "URL de repositório com referências opcionais e cópia local.",
+      "remoteManaged": "Espaço de trabalho remoto gerenciado",
+      "remoteManagedDescription": "Um espaço hospedado e identificado por uma referência externa."
+    },
+    "fields": {
+      "workspaceName": "Nome do espaço de trabalho",
+      "workspaceNamePlaceholder": "Nome do espaço de trabalho",
+      "visibility": "Visibilidade",
+      "sourceType": "Tipo de origem",
+      "localPath": "Caminho local",
+      "repoUrl": "URL do repositório",
+      "repoRef": "Referência do repositório",
+      "defaultRef": "Referência padrão",
+      "sharedWorkspaceKey": "Chave do espaço compartilhado",
+      "remoteProvider": "Provedor remoto",
+      "remoteWorkspaceRef": "Referência do espaço remoto",
+      "setupCommand": "Comando de configuração",
+      "setupCommandHint": "Executado quando este espaço precisar de uma configuração personalizada.",
+      "cleanupCommand": "Comando de limpeza",
+      "cleanupCommandHint": "Executado antes de desmontar o espaço de execução do projeto.",
+      "workspaceCommandsJson": "JSON dos comandos do espaço de trabalho",
+      "workspaceCommandsJsonHint": "Os espaços de execução herdam esta configuração, a menos que tenham uma configuração própria. Arrays legados de `services` continuam funcionando; `commands` aceita serviços e tarefas pontuais."
+    },
+    "validation": {
+      "remoteWorkspaceReferenceRequired": "Espaços remotos gerenciados exigem uma referência de espaço remoto ou uma URL de repositório.",
+      "pathOrRepoRequired": "O espaço de trabalho precisa de um caminho local ou de uma URL de repositório.",
+      "localPathAbsolute": "O caminho local do espaço de trabalho precisa ser absoluto.",
+      "repoUrlInvalid": "A URL do repositório é inválida.",
+      "runtimeJsonObject": "O JSON dos comandos do espaço de trabalho precisa ser um objeto JSON.",
+      "invalidRuntimeJson": "O JSON é inválido."
+    },
+    "advancedRuntimeJson": "JSON avançado do runtime",
+    "advancedRuntimeJsonHelp": "O Paperclip deriva Serviços e tarefas pontuais deste JSON. Prefira editar primeiro os comandos nomeados; use o JSON bruto para configurações avançadas de ciclo de vida, porta, prontidão ou ambiente.",
+    "saveChanges": "Salvar alterações",
+    "reset": "Redefinir",
+    "noUnsavedChanges": "Não há alterações pendentes.",
+    "none": "Nenhum",
+    "facts": {
+      "heading": "Dados do espaço de trabalho",
+      "currentState": "Estado atual",
+      "project": "Projeto",
+      "workspaceId": "ID do espaço de trabalho",
+      "localPath": "Caminho local",
+      "repo": "Repositório",
+      "defaultRef": "Referência padrão",
+      "updated": "Atualizado"
+    },
+    "commands": {
+      "heading": "Comandos do espaço de trabalho",
+      "servicesAndJobs": "Serviços e tarefas pontuais",
+      "description": "Os serviços de longa duração permanecem supervisionados aqui, enquanto as tarefas pontuais são executadas sob demanda neste espaço. Os espaços de execução herdam esta configuração, a menos que tenham uma configuração própria."
+    },
+    "loadingPlugin": "Carregando plugin do espaço de trabalho...",
+    "backToConfiguration": "Voltar à configuração"
   },
   "goalManagement": {
     "collection": {
