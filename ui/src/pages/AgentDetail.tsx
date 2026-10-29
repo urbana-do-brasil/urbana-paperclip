@@ -2013,6 +2013,7 @@ export function ConfigurationTab({
   content?: "runtime" | "permissions" | "secrets";
   canConfigureProviderTrace?: boolean;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { tab: urlTab } = useParams<{ tab?: string }>();
@@ -2126,7 +2127,7 @@ export function ConfigurationTab({
         environmentVariablesPlacement="configuration"
         compactTestFeedback
         sectionOrder={["identity", "adapter", "configuration", "environment", "environment-variables", "run-policy"]}
-        sectionTitles={{ adapter: "Adapter", configuration: "Configuration", identity: "Agent identity" }}
+        sectionTitles={{ adapter: "Adapter", configuration: "Configuration", identity: t("agentConfiguration.identity.section") }}
         canConfigureProviderTrace={canConfigureProviderTrace}
       /> : null}
 

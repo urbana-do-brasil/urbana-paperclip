@@ -343,6 +343,7 @@ function ConfigSections({ order, className, children }: {
 
 export function AgentConfigForm(props: AgentConfigFormProps) {
   const { mode, adapterModels: externalModels } = props;
+  const { t } = useTranslation();
   const isCreate = mode === "create";
   const cards = props.sectionLayout === "cards";
   const showAdapterTypeField = props.showAdapterTypeField ?? true;
@@ -1467,40 +1468,40 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       {!isCreate && (
         <div data-config-section="identity" className={cn(!cards && "border-b border-border")}>
           {cards
-            ? <h3 className="text-sm font-medium mb-3">{props.sectionTitles?.["identity"] ?? "Identity"}</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">Identity</div>
+            ? <h3 className="text-sm font-medium mb-3">{props.sectionTitles?.["identity"] ?? t("agentConfiguration.identity.section")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("agentConfiguration.identity.section")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
-            <Field label="Name" hint={help.name}>
+            <Field label={t("agentConfiguration.identity.name")} hint={t("agentConfiguration.identity.nameHint")}>
               <DraftInput
                 value={eff("identity", "name", props.agent.name)}
                 onCommit={(v) => mark("identity", "name", v)}
                 immediate
                 className={inputClass}
-                placeholder="Agent name"
+                placeholder={t("agentConfiguration.identity.namePlaceholder")}
               />
             </Field>
-            <Field label="Title" hint={help.title}>
+            <Field label={t("agentConfiguration.identity.title")} hint={t("agentConfiguration.identity.titleHint")}>
               <DraftInput
                 value={eff("identity", "title", props.agent.title ?? "")}
                 onCommit={(v) => mark("identity", "title", v || null)}
                 immediate
                 className={inputClass}
-                placeholder="e.g. VP of Engineering"
+                placeholder={t("agentConfiguration.identity.titlePlaceholder")}
               />
             </Field>
-            <Field label="Reports to" hint={help.reportsTo}>
+            <Field label={t("agentConfiguration.identity.reportsTo")} hint={t("agentConfiguration.identity.reportsToHint")}>
               <ReportsToPicker
                 agents={companyAgents}
                 value={eff("identity", "reportsTo", props.agent.reportsTo ?? null)}
                 onChange={(id) => mark("identity", "reportsTo", id)}
                 excludeAgentIds={[props.agent.id]}
-                chooseLabel="Choose manager…"
+                chooseLabel={t("agentConfiguration.identity.chooseManager")}
               />
             </Field>
             {isLocal && !props.hidePromptTemplate && (
               <>
-                <Field label="Prompt Template" hint={help.promptTemplate}>
+                <Field label={t("agentConfiguration.identity.promptTemplate")} hint={t("agentConfiguration.identity.promptTemplateHint")}>
                   <MarkdownEditor
                     value={eff(
                       "adapterConfig",
@@ -1518,7 +1519,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                   />
                 </Field>
                 <div className="rounded-md border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100">
-                  Prompt template is replayed on every heartbeat. Keep it compact and dynamic to avoid recurring token cost and cache churn.
+                  {t("agentConfiguration.identity.promptTemplateNotice")}
                 </div>
               </>
             )}
@@ -1533,12 +1534,12 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
         // Render the environment read-only instead of the selectable picker.
         <div data-config-section="environment" className={cn(!cards && (isCreate ? "border-t border-border" : "border-b border-border"))}>
           {cards
-            ? <h3 className="text-sm font-medium mb-3">Environment</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">Environment</div>
+            ? <h3 className="text-sm font-medium mb-3">{t("agentConfiguration.environment.heading")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("agentConfiguration.environment.heading")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
             <Field
-              label="Default environment"
+              label={t("agentConfiguration.environment.defaultLabel")}
               hint="This instance runs all agents in the Kubernetes sandbox. Local execution is disabled."
             >
               {kubernetesEnvironment ? (
@@ -1558,11 +1559,11 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       ) : showEnvironmentOverrideControl ? (
         <div data-config-section="environment" className={cn(!cards && (isCreate ? "border-t border-border" : "border-b border-border"))}>
           {cards
-            ? <h3 className="text-sm font-medium mb-3">Environment</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">Environment</div>
+            ? <h3 className="text-sm font-medium mb-3">{t("agentConfiguration.environment.heading")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("agentConfiguration.environment.heading")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
-            <Field label="Environment override">
+            <Field label={t("agentConfiguration.environment.override")}>
               <div className="space-y-2">
                 <select
                   className={inputClass}
@@ -1576,7 +1577,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                     mark("identity", "defaultEnvironmentId", nextValue || null);
                   }}
                 >
-                  <option value="">Default: {inheritedEnvironmentLabel}</option>
+                  <option value="">{t("agentConfiguration.environment.defaultOption", { environment: inheritedEnvironmentLabel })}</option>
                   {environmentOptions.map((environment) => (
                     <option key={environment.id} value={environment.id}>
                       {environmentDisplayLabel(environment)}

@@ -272,6 +272,7 @@ async function renderForm(
     content?: "configuration" | "secrets";
     environmentVariablesPlacement?: "configuration" | "secrets";
     hideInlineSave?: boolean;
+    hidePromptTemplate?: boolean;
     onDirtyChange?: (dirty: boolean) => void;
     onSaveActionChange?: (save: (() => void) | null) => void;
     onCancelActionChange?: (cancel: (() => void) | null) => void;
@@ -299,7 +300,7 @@ async function renderForm(
               mode="edit"
               agent={makeAgent(agentOverrides)}
               onSave={onSave}
-              hidePromptTemplate
+              hidePromptTemplate={options.hidePromptTemplate ?? true}
               content={options.content}
               environmentVariablesPlacement={options.environmentVariablesPlacement}
               hideInlineSave={options.hideInlineSave}
@@ -857,6 +858,69 @@ describe("AgentConfigForm environment selector", () => {
 
     expect(result.container.textContent).not.toContain("Environment override");
     expect(result.container.querySelector("select")).toBeNull();
+  });
+
+  it("localizes agent identity and default environment while preserving names and relationship IDs", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const currentManager = makeAgent({ id: "manager-1", name: "Ana Diretora", role: "engineer", status: "idle" });
+    const nextManager = makeAgent({ id: "manager-2", name: "Bia Designer", role: "designer", status: "idle" });
+    mockAgentsApi.list.mockResolvedValue([currentManager, nextManager]);
+    const result = await renderForm(
+      [
+        makeEnvironment({ id: "local-1", name: "Local", driver: "local" }),
+        makeEnvironment({ id: "sandbox-1", name: "E2B", driver: "sandbox", config: { provider: "e2b" } }),
+      ],
+      {
+        name: "Agente de análise",
+        title: "Analista sênior",
+        reportsTo: "manager-1",
+        adapterConfig: { promptTemplate: "Use {{ agent.name }} for the current task." },
+      },
+      { hidePromptTemplate: false },
+    );
+    roots.push(result.root);
+
+    const text = result.container.textContent ?? "";
+    expect(text).toContain("Identidade do agente");
+    expect(text).toContain("Nome");
+    expect(text).toContain("Cargo");
+    expect(text).toContain("Reporta-se a Ana Diretora");
+    expect(text).toContain("Modelo de prompt");
+    expect(text).toContain("O modelo de prompt é reaplicado a cada heartbeat.");
+    expect(text).toContain("Ambiente");
+    expect(text).toContain("Substituir ambiente padrão");
+    expect(result.container.querySelector<HTMLInputElement>('input[value="Agente de análise"]')).toBeTruthy();
+    expect(result.container.querySelector<HTMLInputElement>('input[value="Analista sênior"]')).toBeTruthy();
+    expect(result.container.querySelector<HTMLInputElement>('input[placeholder="Nome do agente"]')).toBeTruthy();
+    expect(result.container.querySelector<HTMLInputElement>('input[placeholder="Ex.: VP de Engenharia"]')).toBeTruthy();
+    expect(result.container.querySelector<HTMLTextAreaElement>("textarea")?.value)
+      .toBe("Use {{ agent.name }} for the current task.");
+    const environment = result.container.querySelector<HTMLSelectElement>("select")!;
+    expect(environment.textContent).toContain("Padrão: Local");
+    expect(environment.textContent).toContain("E2B · sandbox");
+
+    await clickByText(result.container, "Reporta-se a Ana Diretora");
+    await flushReact();
+    expect(document.body.textContent).toContain("Sem gerente");
+    expect(document.body.textContent).toContain("Designer");
+    expect(document.body.textContent).toContain("Engenharia");
+    const nextManagerOption = Array.from(document.querySelectorAll("button"))
+      .find((button) => button.textContent?.includes("Bia Designer"));
+    expect(nextManagerOption).toBeTruthy();
+    await clickElement(nextManagerOption);
+    await flushReact();
+
+    await act(async () => {
+      environment.value = "sandbox-1";
+      environment.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await flushReact();
+    await clickByText(result.container, "Save");
+
+    expect(result.onSave).toHaveBeenCalledWith(expect.objectContaining({
+      reportsTo: "manager-2",
+      defaultEnvironmentId: "sandbox-1",
+    }));
   });
 
   it("renders GPT-6 Astra and its model-specific reasoning efforts", async () => {
@@ -3805,7 +3869,8 @@ describe("AgentConfigForm managed-sandbox-only host surfaces", () => {
     );
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     mockAgentsApi.adapterModels.mockResolvedValue([]);
     mockAgentsApi.detectModel.mockResolvedValue(null);
     mockAgentsApi.list.mockResolvedValue([]);
@@ -3827,6 +3892,7 @@ describe("AgentConfigForm managed-sandbox-only host surfaces", () => {
     roots = [];
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("shows the host path and execution-engine fields when the policy is off", async () => {

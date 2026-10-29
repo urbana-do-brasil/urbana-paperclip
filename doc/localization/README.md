@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **111 de 144 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **112 de 144 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -246,7 +246,7 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
   controles de ciclo de vida, rastreamento do provedor e seleção do agente
   principal, preservando callbacks, permissões, IDs e respostas técnicas. Testes
   focados com a lista de agentes: 55/55; typecheck, gates e validação OpenSpec
-  passaram. O lote 3.6d1 está concluído. 3.6d2a localizou a navegação da ficha, o histórico de revisões e a barra de salvamento nos dois idiomas, preservando rotas, IDs e valores técnicos. Os testes focados passaram em 19/19; typecheck direcionado, gates e validação OpenSpec estrita passaram. Próxima: 3.6d2b. A aplicação ainda não
+  passaram. O lote 3.6d1 está concluído. 3.6d2a localizou a navegação da ficha, o histórico de revisões e a barra de salvamento nos dois idiomas, preservando rotas, IDs e valores técnicos. Os testes focados passaram em 19/19; typecheck direcionado, gates e validação OpenSpec estrita passaram. 3.6d2b localizou identidade, reporte e seleção do ambiente padrão do agente; conteúdo dos prompts, nomes, IDs, relações e payloads foram preservados. AgentConfigForm e locale-validation passaram em 112/112 testes; typecheck direcionado, gates e validação OpenSpec estrita passaram. Próxima: 3.6d2c. A aplicação ainda não
   foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28

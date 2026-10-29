@@ -1483,6 +1483,34 @@
       "restore": "Restaurar",
       "changed": "Alterado",
       "noTrackedChanges": "nenhuma alteração registrada"
+    },
+    "identity": {
+      "section": "Identidade do agente",
+      "name": "Nome",
+      "nameHint": "Nome de exibição do agente.",
+      "namePlaceholder": "Nome do agente",
+      "title": "Cargo",
+      "titleHint": "Cargo exibido no organograma.",
+      "titlePlaceholder": "Ex.: VP de Engenharia",
+      "reportsTo": "Reporta-se a",
+      "reportsToHint": "Agente ao qual este agente se reporta na hierarquia da organização.",
+      "chooseManager": "Escolher gerente…",
+      "disabledEmptyManager": "Reporta-se a: não se aplica (CEO)",
+      "noManager": "Sem gerente",
+      "currentManager": "Reporta-se a {{managerName}}{{terminatedSuffix}}",
+      "currentTerminatedManager": "Atual: {{managerName}}{{terminatedSuffix}}",
+      "terminatedSuffix": " (encerrado)",
+      "unknownManager": "Gerente desconhecido (ID desatualizado)",
+      "missingManager": "O gerente salvo não está mais nesta organização. Escolha outro gerente ou remova a relação.",
+      "promptTemplate": "Modelo de prompt",
+      "promptTemplateHint": "Enviado em cada heartbeat. Mantenha-o curto e dinâmico. Use-o para contextualizar a tarefa atual, não para instruções estáticas extensas.",
+      "promptTemplateNotice": "O modelo de prompt é reaplicado a cada heartbeat. Mantenha-o curto e dinâmico para evitar custo recorrente de tokens e alterações desnecessárias no cache."
+    },
+    "environment": {
+      "heading": "Ambiente",
+      "defaultLabel": "Ambiente padrão",
+      "override": "Substituir ambiente padrão",
+      "defaultOption": "Padrão: {{environment}}"
     }
   },
   "agentActions": {

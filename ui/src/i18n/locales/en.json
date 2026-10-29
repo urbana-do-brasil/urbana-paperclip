@@ -1441,6 +1441,34 @@
       "restore": "Restore",
       "changed": "Changed",
       "noTrackedChanges": "no tracked changes"
+    },
+    "identity": {
+      "section": "Agent identity",
+      "name": "Name",
+      "nameHint": "Display name for this agent.",
+      "namePlaceholder": "Agent name",
+      "title": "Title",
+      "titleHint": "Job title shown in the org chart.",
+      "titlePlaceholder": "e.g. VP of Engineering",
+      "reportsTo": "Reports to",
+      "reportsToHint": "The agent this one reports to in the org hierarchy.",
+      "chooseManager": "Choose manager…",
+      "disabledEmptyManager": "Reports to: N/A (CEO)",
+      "noManager": "No manager",
+      "currentManager": "Reports to {{managerName}}{{terminatedSuffix}}",
+      "currentTerminatedManager": "Current: {{managerName}}{{terminatedSuffix}}",
+      "terminatedSuffix": " (terminated)",
+      "unknownManager": "Unknown manager (stale ID)",
+      "missingManager": "Saved manager is missing from this organization. Choose a new manager or clear.",
+      "promptTemplate": "Prompt template",
+      "promptTemplateHint": "Sent on every heartbeat. Keep it compact and dynamic. Use it for current-task framing, not long static instructions.",
+      "promptTemplateNotice": "The prompt template is replayed on every heartbeat. Keep it compact and dynamic to avoid recurring token cost and cache churn."
+    },
+    "environment": {
+      "heading": "Environment",
+      "defaultLabel": "Default environment",
+      "override": "Environment override",
+      "defaultOption": "Default: {{environment}}"
     }
   },
   "agentActions": {
