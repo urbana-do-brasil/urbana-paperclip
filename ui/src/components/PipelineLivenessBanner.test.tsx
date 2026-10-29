@@ -50,4 +50,36 @@ describe("PipelineLivenessBanner localization", () => {
     expect(portugueseMarkup).toContain("2 peças esperadas ainda estão faltando.");
     expect(portugueseMarkup).toContain("A divisão está incompleta");
   });
+
+  it("localizes permission preflight failures and keeps the retry action unavailable", async () => {
+    const liveness: PipelineCaseLiveness = {
+      state: "blocked",
+      reason: "permission_preflight_failed",
+      message: "The configured responsible is missing pipeline access.",
+      automation: { fingerprint: "company:company-1:pipeline:pipeline-1:pipelines:write" },
+    };
+
+    const englishMarkup = renderToStaticMarkup(
+      <PipelineLivenessBanner liveness={liveness} onRetry={() => {}} />,
+    );
+    expect(englishMarkup).toContain("Permission needed before this can run");
+    expect(englishMarkup).toContain("The configured responsible is missing pipeline access.");
+    expect(englishMarkup).toContain("Required permission:");
+    expect(englishMarkup).toContain("pipelines:write");
+    expect(englishMarkup).toContain("on the target pipeline.");
+    expect(englishMarkup).toContain("Grant the access above to the configured responsible");
+    expect(englishMarkup).not.toContain("Re-run stage automation");
+
+    await i18n.changeLanguage("pt-BR");
+    const portugueseMarkup = renderToStaticMarkup(
+      <PipelineLivenessBanner liveness={liveness} onRetry={() => {}} />,
+    );
+    expect(portugueseMarkup).toContain("Permissão necessária antes de executar");
+    expect(portugueseMarkup).toContain("The configured responsible is missing pipeline access.");
+    expect(portugueseMarkup).toContain("Permissão necessária:");
+    expect(portugueseMarkup).toContain("pipelines:write");
+    expect(portugueseMarkup).toContain("no pipeline de destino.");
+    expect(portugueseMarkup).toContain("Conceda o acesso acima ao responsável configurado");
+    expect(portugueseMarkup).not.toContain("Executar automação da etapa novamente");
+  });
 });

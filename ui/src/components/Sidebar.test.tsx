@@ -831,6 +831,57 @@ describe("Sidebar", () => {
     });
   });
 
+  it.each(["en", "pt-BR"] as const)(
+    "navigates to Pipelines from the collapsed rail in both sidebar variants (%s)",
+    async (locale) => {
+      await i18n.changeLanguage(locale);
+      mockSidebar.collapsed = true;
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enablePipelines: true });
+
+      for (const render of [renderSidebar, renderProductionSidebar]) {
+        const root = await render();
+        const link = [...container.querySelectorAll("a")].find((anchor) => anchor.getAttribute("href") === "/pipelines");
+
+        expect(link?.textContent?.trim()).toBe(i18n.t("navigation.pipelines"));
+        expect(link?.parentElement?.getAttribute("data-slot")).toBe("tooltip-trigger");
+
+        flushSync(() => {
+          root.unmount();
+        });
+        container.replaceChildren();
+      }
+    },
+  );
+
+  it.each(["en", "pt-BR"] as const)(
+    "keeps Pipelines hidden in both sidebar variants when its flag is off, loading, or unavailable (%s)",
+    async (locale) => {
+      await i18n.changeLanguage(locale);
+      mockSidebar.collapsed = false;
+
+      const expectHiddenInBothVariants = async () => {
+        for (const render of [renderSidebar, renderProductionSidebar]) {
+          const root = await render();
+          expect([...container.querySelectorAll("a")].some((anchor) => anchor.getAttribute("href") === "/pipelines")).toBe(false);
+          expect(container.textContent).not.toContain(i18n.t("navigation.pipelines"));
+          flushSync(() => {
+            root.unmount();
+          });
+          container.replaceChildren();
+        }
+      };
+
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enablePipelines: false });
+      await expectHiddenInBothVariants();
+
+      mockInstanceSettingsApi.getExperimental.mockImplementation(() => new Promise(() => {}));
+      await expectHiddenInBothVariants();
+
+      mockInstanceSettingsApi.getExperimental.mockRejectedValue(new Error("settings unavailable"));
+      await expectHiddenInBothVariants();
+    },
+  );
+
   it("shows the Workspaces link when isolated workspaces are enabled", async () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: true });
     const root = await renderSidebar();

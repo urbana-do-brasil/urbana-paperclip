@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createElement, type ReactNode } from "react";
+import { act, createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
@@ -25,6 +25,15 @@ import {
   ReviewQueueDetailDialog,
   type ReviewQueueRow,
 } from "./Pipelines";
+
+// Radix menu interaction in jsdom needs PointerEvent, which older jsdom builds
+// do not expose. Keep the fallback local to this UI integration test.
+if (!globalThis.PointerEvent) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).PointerEvent = MouseEvent;
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mocks = vi.hoisted(() => ({
   queryData: new Map<string, unknown>(),
@@ -449,7 +458,9 @@ describe("Pipelines localization", () => {
   });
 
   afterEach(async () => {
-    for (const root of mountedRoots.splice(0)) root.unmount();
+    act(() => {
+      for (const root of mountedRoots.splice(0)) root.unmount();
+    });
     vi.useRealTimers();
     document.body.replaceChildren();
     mocks.queryData.clear();
@@ -726,6 +737,90 @@ describe("Pipelines localization", () => {
     expect(html).toContain("Revisão localizada");
     expect(html).toContain("Solicitar alterações");
     expect(html).toContain("Trabalho vinculado");
+  });
+
+  it.each(["pt-BR", "en"] as const)("shows the localized permission tooltip and disables the rerun action (%s)", async (locale) => {
+    await i18n.changeLanguage(locale);
+
+    const pipeline = {
+      id: "pipeline-1",
+      companyId: "company-1",
+      key: "user-pipeline-key",
+      name: "CUSTOM PIPELINE NAME",
+      description: null,
+      projectId: null,
+      enforceTransitions: false,
+      archivedAt: null,
+      stageCount: 1,
+      openCaseCount: 1,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      updatedAt: "2026-10-01T00:00:00.000Z",
+      stages: [{ id: "stage-working", pipelineId: "pipeline-1", key: "working", name: "CUSTOM WORKING STAGE", kind: "working", position: 0 }],
+      transitions: [],
+    } as PipelineDetail;
+    const detail = {
+      case: {
+        id: "item-1",
+        companyId: "company-1",
+        pipelineId: "pipeline-1",
+        stageId: "stage-working",
+        caseKey: "user-item-key",
+        title: "USER AUTHORED ITEM TITLE",
+        summary: null,
+        fields: {},
+        parentCaseId: null,
+        requestKey: null,
+        version: 4,
+        terminalKind: null,
+      },
+      stage: {
+        ...pipeline.stages[0],
+        config: { onEnter: { type: "run_routine", routineId: "routine-1" } },
+      },
+      pipeline,
+      allowedNextStages: [],
+      links: [],
+      blockers: [],
+      blocks: [],
+      childrenSummary: { childCount: 0, terminalChildCount: 0, loadedChildren: 0 },
+      activeWork: null,
+      liveness: {
+        state: "blocked",
+        reason: "permission_preflight_failed",
+        message: "The configured responsible needs pipeline access.",
+        automation: { fingerprint: "company:company-1:pipeline:pipeline-1:pipelines:write" },
+      },
+    } as unknown as PipelineCaseDetail;
+
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.detail("pipeline-1")), { data: pipeline, isLoading: false });
+    mocks.queryData.set(JSON.stringify(["pipelines", "item", "item-1"]), { data: detail, isLoading: false });
+    mocks.queryData.set(JSON.stringify(["pipelines", "item", "item-1", "children"]), { data: [], isLoading: false });
+    mocks.queryData.set(JSON.stringify(["pipelines", "item", "item-1", "events"]), { data: { items: [] }, isLoading: false });
+    mocks.queryData.set(JSON.stringify(["pipelines", "item", "item-1", "issue-links"]), { data: [], isLoading: false });
+    mocks.queryData.set(JSON.stringify(["pipelines", "item", "item-1", "outputs"]), { data: { items: [] }, isLoading: false });
+    mocks.queryData.set(JSON.stringify(["pipelines", "review-cases", "company-1", "pipeline", "pipeline-1"]), { data: [], isLoading: false });
+    queryKey(["pipelines", "item", "item-1", "automation-retry-plan", "previous_stage"]);
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    mountedRoots.push(root);
+    await act(async () => {
+      root.render(createElement(PipelineItemDetailView, { pipelineId: "pipeline-1", caseId: "item-1" }));
+    });
+
+    const trigger = container.querySelector('button[data-slot="dropdown-menu-trigger"]');
+    expect(trigger).not.toBeNull();
+    await act(async () => {
+      trigger?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+      trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await new Promise((resolve) => window.setTimeout(resolve, 10));
+    });
+
+    const rerunItem = Array.from(document.body.querySelectorAll('[data-slot="dropdown-menu-item"]'))
+      .find((item) => item.getAttribute("title") === i18n.t("pipelineManagement.detail.permissionStillMissing"));
+    expect(rerunItem).toBeTruthy();
+    expect(rerunItem?.getAttribute("aria-disabled")).toBe("true");
   });
 
   it("localizes the review queue in Portuguese and English while preserving server-provided copy", async () => {

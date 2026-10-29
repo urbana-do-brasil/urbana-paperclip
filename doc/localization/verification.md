@@ -3329,3 +3329,12 @@ configurados não substituem os do servidor. Um subprocesso Node real passou
 argumentos. As referências EN/PT-BR registram que o framework precisa consumir
 as variáveis para incluí-las no próprio prompt; isso não comprova resposta real.
 Progresso: **285/307**.
+
+
+## Pipelines — gates, navegação e permissões (3.10g2)
+
+Gate cobre flag ativa, inativa, carregamento e erro; Sidebar standard e
+production cobrem navegação e ocultação em ambos idiomas. Banner de permissão e
+ação de reexecução desabilitada foram verificados em PT-BR/en. Bateria focada:
+**79/79**; tooltip foi verificado pelo atributo `title`, não visualmente no
+navegador. Progresso: **286/307**.

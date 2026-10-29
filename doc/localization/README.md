@@ -89,7 +89,7 @@ e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
 em e2a (moldura/status/cópia) e e2b (propriedades/relações). O progresso atual
-é **285/307 tarefas** segundo a CLI do OpenSpec; 3.10f1–f3 estão concluídas.
+é **286/307 tarefas** segundo a CLI do OpenSpec; 3.10f1–f3 estão concluídas.
 3.10f3 foi dividida em f3a (criação/agente) e f3b (políticas/custo). Próxima:
 3.10g, revisão geral de gates e navegação, dividida em resumos ativos, pipelines, rotas e permissões/rotinas; status cards (3.10f) concluídos.
 
