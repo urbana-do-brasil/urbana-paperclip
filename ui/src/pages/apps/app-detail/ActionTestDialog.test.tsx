@@ -101,9 +101,9 @@ async function renderDialog(testEntry = entry) {
   await flushReact();
 }
 
-async function openAndRun(testEntry = entry) {
+async function openAndRun(testEntry = entry, runLabel = "Run") {
   await renderDialog(testEntry);
-  const button = [...document.body.querySelectorAll("button")].find((candidate) => candidate.textContent?.trim() === "Run");
+  const button = [...document.body.querySelectorAll("button")].find((candidate) => candidate.textContent?.trim() === runLabel);
   expect(button).toBeTruthy();
   await act(() => button!.click());
   await act(async () => { await new Promise((resolve) => window.setTimeout(resolve, 260)); });
@@ -244,7 +244,7 @@ describe("Permissions action Test dialog", () => {
     await renderDialog(formEntry);
 
     expect(document.body.textContent).toContain("Project Url");
-    const runButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Run");
+    const runButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Executar");
     expect(runButton).toBeTruthy();
     await act(() => runButton!.click());
     await flushReact();
@@ -533,11 +533,11 @@ describe("Permissions action Test dialog", () => {
   it("shows a tool error and opens its raw response", async () => {
     runTestCallMock.mockResolvedValue({
       decision: "allowed", invocationId: "error",
-      result: { content: "Asana denied access to this workspace.", data: { content: [{ type: "text", text: "Asana denied access to this workspace." }], isError: true }, error: "MCP tool returned an error result" },
+      result: { content: "PERMISSION_DENIED: Asana denied access to this workspace.", data: { content: [{ type: "text", text: "PERMISSION_DENIED: Asana denied access to this workspace." }], isError: true }, error: "MCP tool returned an error result" },
     });
     await openAndRun();
     expect(document.body.textContent).toContain("It didn't work.");
-    expect(document.body.textContent).toContain("Asana denied access to this workspace.");
+    expect(document.body.textContent).toContain("PERMISSION_DENIED: Asana denied access to this workspace.");
     expect(document.body.textContent).toContain("Hide raw response");
   });
 
@@ -549,6 +549,85 @@ describe("Permissions action Test dialog", () => {
     await openAndRun();
     expect(document.body.textContent).toContain("Hide raw response");
     expect(document.body.textContent).toContain("missing text");
+  });
+
+  it("localizes a successful run preview while preserving provider result data", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    runTestCallMock.mockResolvedValue({
+      decision: "allowed", invocationId: "localized-success",
+      result: {
+        content: '{"data":[{"name":"Q4 launch"},{"name":"Customer onboarding"}]}',
+        data: {
+          content: [{ type: "text", text: '{"data":[{"name":"Q4 launch"},{"name":"Customer onboarding"}]}' }],
+          structuredContent: { data: [{ name: "Q4 launch" }, { name: "Customer onboarding" }] },
+          isError: false, transport: "mcp_http",
+        },
+      },
+    });
+
+    await openAndRun(entry, "Executar");
+
+    expect(document.body.textContent).toContain("Concluído. 2 resultados retornados.");
+    expect(document.body.textContent).toContain("Prévia");
+    expect(document.body.querySelector("table")?.textContent).toContain("Q4 launch");
+    expect(document.body.textContent).not.toContain("structuredContent");
+    const raw = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Mostrar resposta bruta");
+    expect(raw).toBeTruthy();
+    await act(() => raw!.click());
+    expect(document.body.textContent).toContain("structuredContent");
+    expect(document.body.textContent).toContain("registro de auditoria");
+  });
+
+  it("localizes a tool failure and next steps while preserving provider text and codes", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    runTestCallMock.mockResolvedValue({
+      decision: "allowed", invocationId: "localized-error",
+      result: { content: "PERMISSION_DENIED: Asana denied access to this workspace.", data: { content: [{ type: "text", text: "PERMISSION_DENIED: Asana denied access to this workspace." }], isError: true }, error: "MCP tool returned an error result" },
+    });
+
+    await openAndRun(entry, "Executar");
+
+    expect(document.body.textContent).toContain("A execução falhou.");
+    expect(document.body.textContent).toContain("Resposta do Asana");
+    expect(document.body.textContent).toContain("PERMISSION_DENIED: Asana denied access to this workspace.");
+    expect(document.body.textContent).toContain("código: tool_error");
+    expect(document.body.textContent).toContain("O que tentar");
+    expect(document.body.textContent).toContain("A conta conectada talvez não tenha permissão para esta ação.");
+    expect(document.body.textContent).toContain("Ocultar resposta bruta");
+  });
+
+  it("localizes an execution request failure and preserves its technical detail", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    runTestCallMock.mockRejectedValueOnce(new Error("socket closed by gateway"));
+
+    await openAndRun(entry, "Executar");
+
+    expect(document.body.textContent).toContain("Não foi possível alcançar CEO.");
+    expect(document.body.textContent).toContain("socket closed by gateway");
+  });
+
+  it("localizes the running card and cancellation control in Brazilian Portuguese", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    let resolveRun: ((value: unknown) => void) | undefined;
+    runTestCallMock.mockReturnValue(new Promise((resolve) => { resolveRun = resolve; }));
+
+    await renderDialog();
+    const runButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Executar");
+    expect(runButton).toBeTruthy();
+    await act(() => runButton!.click());
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Executando…");
+    expect(document.body.textContent).toContain("Lendo de Asana como CEO.");
+    expect(document.body.textContent).toContain("Cancele para interromper");
+    const cancelButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Cancelar");
+    expect(cancelButton).toBeTruthy();
+    await act(() => cancelButton!.click());
+    expect(document.body.textContent).not.toContain("Executando…");
+
+    await act(() => resolveRun?.({ decision: "allowed", invocationId: "cancelled" }));
+    await flushReact();
+    expect(document.body.textContent).not.toContain("Concluído.");
   });
 
   it("keeps useful and generic error hints", () => {

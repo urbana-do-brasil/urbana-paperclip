@@ -64,8 +64,8 @@ seleção), b2b (MCP personalizado e Zapier) e b2c (credenciais, métodos, OAuth
 conclusão) estão concluídas. Com isso, 3.9f3b está concluída. 3.9f3c
 (permissões e acesso dos agentes) e 3.9f3d (identidades e contas associadas)
 estão concluídas. 3.9f3e foi dividida em e1–e3 para validar separadamente o
-diálogo/argumentos, execução/resultados e autorizações/retomada; e1 está
-concluída. Próxima: 3.9f3e2. Progresso atual: **219/246 tarefas**.
+diálogo/argumentos, execução/resultados e autorizações/retomada; e1 e e2 estão
+concluídas. Próxima: 3.9f3e3. Progresso atual: **220/246 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |

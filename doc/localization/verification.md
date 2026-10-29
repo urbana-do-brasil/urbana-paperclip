@@ -2598,8 +2598,8 @@ O progresso atual é **218/243 tarefas**. Próxima: 3.9f3e, teste manual de aç�
 
 O fluxo de teste manual tem três etapas para revisão focada: e1 (diálogo,
 seleção, badges e formulário de argumentos), e2 (execução e resultados) e e3
-(aprovação/hand-off de provider e retomada). e1 está concluída; e2 e e3 ainda
-estão pendentes. O progresso é **219/246 tarefas**; próxima: 3.9f3e2.
+(aprovação/hand-off de provider e retomada). e1 e e2 estão concluídas; e3 ainda
+está pendente. O progresso é **220/246 tarefas**; próxima: 3.9f3e3.
 
 ### Diálogo e formulário de argumentos (3.9f3e1)
 
@@ -2620,3 +2620,22 @@ openspec validate --all --strict --no-interactive` passaram. O typecheck da UI
 aponta somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. Progresso: **219/246 tarefas**. Próxima:
 3.9f3e2, execução e resultados.
+
+### Execução e resultados do teste manual (3.9f3e2)
+
+Os controles de execução, carregamento e cancelamento, resumos de sucesso,
+prévia de resultados estruturados, respostas brutas e orientação para falhas
+agora acompanham PT-BR/en. Mensagens e códigos de erro do servidor/provider,
+nomes e valores de campos, dados de resultado, identificadores, URLs e payloads
+permanecem intactos; as sugestões de recuperação estáticas foram localizadas.
+
+`ActionTestDialog.test.tsx`, `JsonSchemaForm.test.tsx`,
+`JsonSchemaForm.remote-mcp.test.tsx` e `locale-validation.test.ts` passaram em
+**55/55 testes**, incluindo sucesso estruturado, cancelamento, falha de chamada,
+preservação do texto/código do provider e abertura da resposta bruta. `pnpm
+check:tokens`, `pnpm check:token-gates`, parse dos catálogos, `git diff --check`
+e `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso: **220/246 tarefas**. Próxima: 3.9f3e3, aprovações e retomada do
+provider.
