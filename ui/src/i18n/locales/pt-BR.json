@@ -1787,6 +1787,60 @@
       "ariaLabel": "Alternar configuração experimental de resumos"
     }
   },
+  "summarySlotCard": {
+    "badges": {
+      "generating": "Gerando",
+      "historicalRevision": "Revisão anterior",
+      "latestRevision": "Revisão mais recente"
+    },
+    "actions": {
+      "refresh": "Atualizar",
+      "setupSummarizer": "Configurar o Summarizer",
+      "resumeAgent": "Retomar agente",
+      "resuming": "Retomando...",
+      "retry": "Tentar novamente",
+      "retrying": "Tentando novamente...",
+      "generate": "Gerar resumo",
+      "generating": "Gerando..."
+    },
+    "setup": {
+      "pendingApproval": "A configuração do Summarizer aguarda aprovação",
+      "title": "Configurar o Summarizer",
+      "description": "Os resumos são gerados pelo agente Summarizer integrado ao Paperclip. Configure o adaptador e o modelo antes de solicitar este resumo."
+    },
+    "paused": {
+      "title": "O Summarizer está pausado",
+      "body": "Os resumos existentes continuam disponíveis, mas novos resumos não serão gerados até que o agente seja retomado."
+    },
+    "errors": {
+      "requestTitle": "Falha ao solicitar resumo",
+      "generateFallback": "Não foi possível iniciar a geração do resumo.",
+      "loadTitle": "Não foi possível carregar o resumo",
+      "loadFallback": "Tente carregar o resumo novamente.",
+      "generationTitle": "Falha ao gerar resumo",
+      "generationFallback": "A tarefa de geração terminou sem gravar um resumo."
+    },
+    "generation": {
+      "title": "Gerando resumo",
+      "workingInIssue": "O Summarizer está trabalhando em",
+      "workingWithTool": "Trabalhando com {{toolName}}"
+    },
+    "empty": {
+      "title": "Ainda não há resumo",
+      "description": "Gere um resumo conciso do estado desta área."
+    },
+    "updated": "Atualizado {{relativeTime}}",
+    "revision": {
+      "latest": "Mais recente",
+      "label": "Revisão {{revision}}",
+      "option": "{{revision}} — {{date}}",
+      "latestOption": "Mais recente (revisão {{revision}}) — {{date}}",
+      "selectAria": "Selecionar revisão do resumo",
+      "count_one": "{{formattedCount}} revisão",
+      "count_other": "{{formattedCount}} revisões",
+      "count_many": "{{formattedCount}} revisões"
+    }
+  },
   "statusCards": {
     "history": {
       "tokenSplit": "{{input}} de entrada / {{output}} de saída",

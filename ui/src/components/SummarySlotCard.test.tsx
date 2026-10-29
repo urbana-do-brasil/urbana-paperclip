@@ -13,7 +13,9 @@ import type {
   SummarySlotIssueRef,
   SummarySlotRevision,
 } from "@paperclipai/shared";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { formatDateTime, formatNumber } from "@/lib/utils";
 import { SummarySlotCard } from "./SummarySlotCard";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -78,7 +80,9 @@ async function flushQueries() {
 }
 
 async function openRevisionSelect(container: HTMLElement) {
-  const trigger = container.querySelector<HTMLElement>('button[aria-label="Select summary revision"]');
+  const trigger = container.querySelector<HTMLElement>(
+    `button[aria-label="${i18n.t("summarySlotCard.revision.selectAria")}"]`,
+  );
   expect(trigger).not.toBeNull();
 
   await act(async () => {
@@ -121,10 +125,10 @@ function readySummarizer(): BuiltInAgentState {
   };
 }
 
-function needsSetupSummarizer(): BuiltInAgentState {
+function needsSetupSummarizer(status: "needs_setup" | "pending_approval" = "needs_setup"): BuiltInAgentState {
   return {
     ...readySummarizer(),
-    status: "needs_setup",
+    status,
     agentId: "agent-summarizer",
   };
 }
@@ -226,8 +230,11 @@ function renderCard(container: HTMLDivElement) {
 describe("SummarySlotCard", () => {
   let root: Root | null = null;
   let container: HTMLDivElement;
+  let previousLanguage = "pt-BR";
 
-  beforeEach(() => {
+  beforeAll(() => { previousLanguage = i18n.language; });
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({
@@ -250,6 +257,7 @@ describe("SummarySlotCard", () => {
     container.remove();
     vi.clearAllMocks();
   });
+  afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
 
   it("renders nothing and does not fetch slots when the summaries flag is off", async () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({
@@ -299,15 +307,19 @@ describe("SummarySlotCard", () => {
     expect(mockBuiltInAgentsApi.list).not.toHaveBeenCalled();
   });
 
-  it("shows setup CTA when the Summarizer built-in agent needs setup", async () => {
+  it.each([
+    ["en", "Set up the Summarizer", "Set up Summarizer"],
+    ["pt-BR", "Configurar o Summarizer", "Configurar o Summarizer"],
+  ])("localizes the setup CTA when the Summarizer needs setup in %s", async (locale, title, buttonLabel) => {
+    await i18n.changeLanguage(locale);
     mockBuiltInAgentsApi.list.mockResolvedValue([needsSetupSummarizer()]);
 
     root = renderCard(container);
     await flushQueries();
 
-    expect(container.textContent).toContain("Set up the Summarizer");
+    expect(container.textContent).toContain(title);
     const setupButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-      (button) => button.textContent === "Set up Summarizer",
+      (button) => button.textContent === buttonLabel,
     );
     expect(setupButton).not.toBeNull();
 
@@ -317,6 +329,20 @@ describe("SummarySlotCard", () => {
     await flushQueries();
 
     expect(container.querySelector('[data-testid="configure-modal"]')).not.toBeNull();
+  });
+
+  it.each([
+    ["en", "Summarizer setup is pending approval"],
+    ["pt-BR", "A configuração do Summarizer aguarda aprovação"],
+  ])("localizes pending setup approval in %s without offering setup", async (locale, message) => {
+    await i18n.changeLanguage(locale);
+    mockBuiltInAgentsApi.list.mockResolvedValue([needsSetupSummarizer("pending_approval")]);
+
+    root = renderCard(container);
+    await flushQueries();
+
+    expect(container.textContent).toContain(message);
+    expect([...container.querySelectorAll("button")].some((button) => button.textContent?.includes("Summarizer"))).toBe(false);
   });
 
   it("clears a stale generation failure after setup succeeds", async () => {
@@ -355,13 +381,17 @@ describe("SummarySlotCard", () => {
     expect(container.textContent).not.toContain("Summary request failed");
   });
 
-  it("shows the empty state and starts generation", async () => {
+  it.each([
+    ["en", "No summary yet", "Generate summary"],
+    ["pt-BR", "Ainda não há resumo", "Gerar resumo"],
+  ])("localizes the empty state and starts generation in %s", async (locale, emptyTitle, generateLabel) => {
+    await i18n.changeLanguage(locale);
     root = renderCard(container);
     await flushQueries();
 
-    expect(container.textContent).toContain("No summary yet");
+    expect(container.textContent).toContain(emptyTitle);
     const generateButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-      (button) => button.textContent?.includes("Generate summary"),
+      (button) => button.textContent?.includes(generateLabel),
     );
     expect(generateButton).not.toBeNull();
 
@@ -378,20 +408,96 @@ describe("SummarySlotCard", () => {
     });
   });
 
-  it("shows only the resume prerequisite when the Summarizer is paused", async () => {
+  it("updates a local generation-error fallback when the language changes", async () => {
+    mockSummarySlotsApi.generate.mockRejectedValue(null);
+    root = renderCard(container);
+    await flushQueries();
+
+    const generateButton = [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent?.includes("Generate summary"));
+    await act(async () => { generateButton?.click(); });
+    await flushQueries();
+
+    expect(container.textContent).toContain("Summary request failed");
+    expect(container.textContent).toContain("Summary generation could not be started.");
+
+    await i18n.changeLanguage("pt-BR");
+    await flushQueries();
+    expect(container.textContent).toContain("Falha ao solicitar resumo");
+    expect(container.textContent).toContain("Não foi possível iniciar a geração do resumo.");
+  });
+
+  it("preserves an external generation error while localizing its title", async () => {
+    mockSummarySlotsApi.generate.mockRejectedValue(new Error("RAW SUMMARIZER ERROR"));
+    root = renderCard(container);
+    await flushQueries();
+
+    const generateButton = [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent?.includes("Generate summary"));
+    await act(async () => { generateButton?.click(); });
+    await flushQueries();
+
+    expect(container.textContent).toContain("Summary request failed");
+    expect(container.textContent).toContain("RAW SUMMARIZER ERROR");
+    await i18n.changeLanguage("pt-BR");
+    await flushQueries();
+    expect(container.textContent).toContain("Falha ao solicitar resumo");
+    expect(container.textContent).toContain("RAW SUMMARIZER ERROR");
+  });
+
+  it("localizes summary read-failure chrome and preserves the external detail", async () => {
+    mockSummarySlotsApi.get.mockRejectedValue(new Error("RAW SUMMARY READ ERROR"));
+    root = renderCard(container);
+    await flushQueries();
+
+    expect(container.textContent).toContain("Summary could not be loaded");
+    expect(container.textContent).toContain("RAW SUMMARY READ ERROR");
+    expect(container.textContent).toContain("Retry");
+    await i18n.changeLanguage("pt-BR");
+    await flushQueries();
+    expect(container.textContent).toContain("Não foi possível carregar o resumo");
+    expect(container.textContent).toContain("RAW SUMMARY READ ERROR");
+    expect(container.textContent).toContain("Tentar novamente");
+  });
+
+  it.each([
+    ["en", "Summary could not be loaded", "Try loading the summary again."],
+    ["pt-BR", "Não foi possível carregar o resumo", "Tente carregar o resumo novamente."],
+  ])("localizes the read-failure fallback in %s", async (locale, title, fallback) => {
+    await i18n.changeLanguage(locale);
+    mockSummarySlotsApi.get.mockRejectedValue(null);
+    root = renderCard(container);
+    await flushQueries();
+
+    expect(container.textContent).toContain(title);
+    expect(container.textContent).toContain(fallback);
+    expect(container.querySelector("button")?.textContent).toContain(
+      i18n.t("summarySlotCard.actions.retry"),
+    );
+  });
+
+  it.each([
+    ["en", "Summarizer is paused", "Resume agent"],
+    ["pt-BR", "O Summarizer está pausado", "Retomar agente"],
+  ])("localizes the paused prerequisite in %s", async (locale, title, resumeLabel) => {
+    await i18n.changeLanguage(locale);
     mockBuiltInAgentsApi.list.mockResolvedValue([pausedSummarizer()]);
 
     root = renderCard(container);
     await flushQueries();
 
-    expect(container.textContent).toContain("Summarizer is paused");
+    expect(container.textContent).toContain(title);
     expect(container.textContent).not.toContain("No summary yet");
     expect(container.textContent).not.toContain("Generate summary");
-    expect([...container.querySelectorAll("button")].filter((button) => button.textContent === "Resume agent"))
+    expect([...container.querySelectorAll("button")].filter((button) => button.textContent === resumeLabel))
       .toHaveLength(1);
   });
 
-  it("shows an active generating state with the linked task", async () => {
+  it.each([
+    ["en", "Generating summary"],
+    ["pt-BR", "Gerando resumo"],
+  ])("localizes an active generating state in %s and preserves its task link", async (locale, label) => {
+    await i18n.changeLanguage(locale);
     mockSummarySlotsApi.get.mockResolvedValue({
       slot: slot({ status: "generating", generatingIssueId: "issue-1" }),
       document: null,
@@ -404,7 +510,7 @@ describe("SummarySlotCard", () => {
     expect(container.firstElementChild?.tagName).toBe("SECTION");
     expect(container.firstElementChild?.className).toContain("space-y-4");
     expect(container.querySelector('[data-slot="card"]')).toBeNull();
-    expect(container.textContent).toContain("Generating summary");
+    expect(container.textContent).toContain(label);
     expect(container.textContent).toContain("PAP-14000: Summarize project");
     expect(container.querySelector('a[href="/issues/PAP-14000"]')).not.toBeNull();
     expect(container.querySelector('a[href="/issues/PAP-14000"]')?.closest("div")?.parentElement?.className)
@@ -468,11 +574,23 @@ describe("SummarySlotCard", () => {
 
     await openRevisionSelect(container);
 
-    expect(document.body.textContent).toContain("Latest (Rev 3) - Jul 14");
-    expect(document.body.textContent).toContain("Rev 1 - Jul 13");
-    expect(document.body.textContent).toContain("Rev 2 - Jul 14");
+    const latestOption = i18n.t("summarySlotCard.revision.latestOption", {
+      revision: formatNumber(3),
+      date: formatDateTime(localAt(14, 17), { includeYear: false }),
+    });
+    const firstRevisionOption = i18n.t("summarySlotCard.revision.option", {
+      revision: i18n.t("summarySlotCard.revision.label", { revision: formatNumber(1) }),
+      date: formatDateTime(localAt(13, 17), { includeYear: false }),
+    });
+    const secondRevisionOption = i18n.t("summarySlotCard.revision.option", {
+      revision: i18n.t("summarySlotCard.revision.label", { revision: formatNumber(2) }),
+      date: formatDateTime(localAt(14, 9), { includeYear: false }),
+    });
+    expect(document.body.textContent).toContain(latestOption);
+    expect(document.body.textContent).toContain(firstRevisionOption);
+    expect(document.body.textContent).toContain(secondRevisionOption);
 
-    await chooseRevisionOption("Rev 1 - Jul 13");
+    await chooseRevisionOption(firstRevisionOption);
 
     expect(container.textContent).toContain("Historical revision");
     expect(container.textContent).toContain("Old body");
@@ -489,6 +607,20 @@ describe("SummarySlotCard", () => {
 
     expect(container.textContent).toContain("Current body");
     expect(container.textContent).not.toContain("Historical revision");
+
+    await i18n.changeLanguage("pt-BR");
+    await flushQueries();
+    expect(container.querySelector('button[aria-label="Selecionar revisão do resumo"]')).not.toBeNull();
+    expect(container.textContent).toContain("3 revisões");
+    expect(container.textContent).toContain("Atualizado");
+    await openRevisionSelect(container);
+    expect(document.body.textContent).toContain("Mais recente (revisão 3)");
+    const portugueseFirstOption = i18n.t("summarySlotCard.revision.option", {
+      revision: i18n.t("summarySlotCard.revision.label", { revision: formatNumber(1) }),
+      date: formatDateTime(localAt(13, 17), { includeYear: false }),
+    });
+    expect(document.body.textContent).toContain(portugueseFirstOption);
+    expect(portugueseFirstOption).not.toBe(firstRevisionOption);
   });
 
   it("limits the revision picker to the 30 newest revisions", async () => {
@@ -524,13 +656,17 @@ describe("SummarySlotCard", () => {
 
     const options = Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]'));
     expect(options).toHaveLength(30);
-    expect(options.some((option) => option.textContent?.includes("Latest (Rev 32)"))).toBe(true);
-    expect(options.some((option) => option.textContent?.includes("Rev 3 -"))).toBe(true);
-    expect(options.some((option) => option.textContent?.includes("Rev 2 -"))).toBe(false);
-    expect(options.some((option) => option.textContent?.includes("Rev 1 -"))).toBe(false);
+    expect(options.some((option) => option.textContent?.includes("Latest (revision 32)"))).toBe(true);
+    expect(options.some((option) => option.textContent?.includes("Revision 3 —"))).toBe(true);
+    expect(options.some((option) => option.textContent?.includes("Revision 2 —"))).toBe(false);
+    expect(options.some((option) => option.textContent?.includes("Revision 1 —"))).toBe(false);
   });
 
-  it("shows stopped generation as a failed retryable state", async () => {
+  it.each([
+    ["en", "Summary generation failed", "Retry"],
+    ["pt-BR", "Falha ao gerar resumo", "Tentar novamente"],
+  ])("localizes a stopped generation while preserving the failure detail in %s", async (locale, title, retryLabel) => {
+    await i18n.changeLanguage(locale);
     mockSummarySlotsApi.get.mockResolvedValue({
       slot: slot({
         status: "failed",
@@ -544,11 +680,11 @@ describe("SummarySlotCard", () => {
     root = renderCard(container);
     await flushQueries();
 
-    expect(container.textContent).toContain("Summary generation failed");
+    expect(container.textContent).toContain(title);
     expect(container.textContent).toContain("PAP-14000 finished without writing a summary");
     expect(container.querySelector('[role="note"]')?.className).toContain("text-red-700");
     const retryButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-      (button) => button.textContent === "Retry",
+      (button) => button.textContent === retryLabel,
     );
     expect(retryButton).not.toBeNull();
 
@@ -558,5 +694,25 @@ describe("SummarySlotCard", () => {
     await flushQueries();
 
     expect(mockSummarySlotsApi.generate).toHaveBeenCalled();
+  });
+
+  it.each([
+    ["en", "Summary generation failed", "The generation task ended before writing a summary."],
+    ["pt-BR", "Falha ao gerar resumo", "A tarefa de geração terminou sem gravar um resumo."],
+  ])("localizes a missing generation failure reason in %s", async (locale, title, fallback) => {
+    await i18n.changeLanguage(locale);
+    mockSummarySlotsApi.get.mockResolvedValue({
+      slot: slot({ status: "failed", failureReason: null, generatingIssueId: "issue-1" }),
+      document: null,
+      generatingIssue: issue({ status: "done" }),
+    } satisfies GetSummarySlotResponse);
+    root = renderCard(container);
+    await flushQueries();
+
+    expect(container.textContent).toContain(title);
+    expect(container.textContent).toContain(fallback);
+    expect([...container.querySelectorAll("button")].some(
+      (button) => button.textContent === i18n.t("summarySlotCard.actions.retry"),
+    )).toBe(true);
   });
 });

@@ -3338,3 +3338,12 @@ production cobrem navegação e ocultação em ambos idiomas. Banner de permiss�
 ação de reexecução desabilitada foram verificados em PT-BR/en. Bateria focada:
 **79/79**; tooltip foi verificado pelo atributo `title`, não visualmente no
 navegador. Progresso: **286/307**.
+
+
+## Resumos ativos (3.10g1)
+
+SummarySlotCard localiza geração, configuração, pausas, falhas, revisões,
+datas e plurais em PT-BR/en, preservando conteúdo, IDs, operações e erros
+externos. Os testes cobrem mudança de idioma e fallback: **45/45**; typecheck
+da UI passou. Avisos React de `act` e Vite foram emitidos pelos testes. A
+apresentação específica de 403 permanece em 3.10g4. Progresso: **287/307**.
