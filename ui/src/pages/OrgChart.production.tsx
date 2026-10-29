@@ -12,9 +12,11 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "../components/EmptyState";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { Download, Maximize2, Minus, Network, Plus, Upload } from "lucide-react";
-import { AGENT_ROLE_LABELS, type Agent } from "@paperclipai/shared";
+import type { Agent } from "@paperclipai/shared";
 import { useCloudInstance } from "@/hooks/useCloudInstance";
 import { useHiddenSettings } from "@/hooks/useHiddenSettings";
+import { useTranslation } from "@/i18n";
+import { agentRoleLabel, agentStatusLabel } from "../lib/agent-directory-labels";
 
 // Layout constants
 const CARD_W = 200;
@@ -174,6 +176,7 @@ const defaultDotColor = "var(--hex-a3a3a3)";
 // ── Main component ──────────────────────────────────────────────────────
 
 export function OrgChart() {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const navigate = useNavigate();
@@ -204,8 +207,8 @@ export function OrgChart() {
   }, [agents]);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Org Chart" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("orgChart.title") }]);
+  }, [setBreadcrumbs, t]);
 
   // Layout computation
   const layout = useMemo(() => layoutForest(orgTree ?? []), [orgTree]);
@@ -439,7 +442,7 @@ export function OrgChart() {
   }, [pan, zoom]);
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={Network} message="Select a company to view the org chart." />;
+    return <EmptyState icon={Network} message={t("orgChart.selectOrganization")} />;
   }
 
   if (isLoading) {
@@ -447,7 +450,7 @@ export function OrgChart() {
   }
 
   if (orgTree && orgTree.length === 0) {
-    return <EmptyState icon={Network} message="No organizational hierarchy defined." />;
+    return <EmptyState icon={Network} message={t("orgChart.noHierarchy")} />;
   }
 
   return (
@@ -457,7 +460,7 @@ export function OrgChart() {
           <Link to="/company/import">
             <Button variant="outline" size="sm">
               <Upload className="mr-1.5 h-3.5 w-3.5" />
-              Import company
+              {t("orgChart.importOrganization")}
             </Button>
           </Link>
         )}
@@ -465,7 +468,7 @@ export function OrgChart() {
           <Link to="/company/export">
             <Button variant="outline" size="sm">
               <Download className="mr-1.5 h-3.5 w-3.5" />
-              Export company
+              {t("orgChart.exportOrganization")}
             </Button>
           </Link>
         )}
@@ -502,8 +505,8 @@ export function OrgChart() {
                 });
               }
             }}
-            title="Zoom in"
-            aria-label="Zoom in"
+            title={t("orgChart.zoomIn")}
+            aria-label={t("orgChart.zoomIn")}
           >
             <Plus className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
           </button>
@@ -518,16 +521,16 @@ export function OrgChart() {
                 });
               }
             }}
-            title="Zoom out"
-            aria-label="Zoom out"
+            title={t("orgChart.zoomOut")}
+            aria-label={t("orgChart.zoomOut")}
           >
             <Minus className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
           </button>
           <button
             className="flex size-9 items-center justify-center rounded border border-border bg-background text-(length:--text-nano) transition-colors hover:bg-accent sm:size-7"
             onClick={fitToScreen}
-            title="Fit to screen"
-            aria-label="Fit chart to screen"
+            title={t("orgChart.fitToScreen")}
+            aria-label={t("orgChart.fitToScreen")}
           >
             <Maximize2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
           </button>
@@ -579,7 +582,14 @@ export function OrgChart() {
               <Card
                 key={node.id}
                 data-org-card
-                className="block absolute py-0 hover:shadow-md hover:border-foreground/20 transition-(--tp-box-shadow-border-color) duration-150 cursor-pointer select-none"
+                role="link"
+                tabIndex={0}
+                aria-label={t("orgChart.agentCardLabel", {
+                  name: node.name,
+                  role: agent?.title ?? agentRoleLabel(node.role, t),
+                  status: agentStatusLabel(node.status, t),
+                })}
+                className="block absolute py-0 hover:shadow-md hover:border-foreground/20 transition-(--tp-box-shadow-border-color) duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 style={{
                   left: node.x,
                   top: node.y,
@@ -587,6 +597,11 @@ export function OrgChart() {
                   minHeight: CARD_H,
                 }}
                 onClick={() => navigate(agent ? agentUrl(agent) : `/agents/${node.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return;
+                  event.preventDefault();
+                  navigate(agent ? agentUrl(agent) : `/agents/${node.id}`);
+                }}
                 onClickCapture={(e) => {
                   if (!suppressNextCardClick.current) return;
                   suppressNextCardClick.current = false;
@@ -611,7 +626,7 @@ export function OrgChart() {
                       {node.name}
                     </span>
                     <span className="text-(length:--text-micro) text-muted-foreground leading-tight mt-0.5">
-                      {agent?.title ?? roleLabel(node.role)}
+                      {agent?.title ?? agentRoleLabel(node.role, t)}
                     </span>
                     {agent && (
                       <span className="text-(length:--text-nano) text-muted-foreground/60 font-mono leading-tight mt-1">
@@ -632,10 +647,4 @@ export function OrgChart() {
       </div>
     </div>
   );
-}
-
-const roleLabels: Record<string, string> = AGENT_ROLE_LABELS;
-
-function roleLabel(role: string): string {
-  return roleLabels[role] ?? role;
 }

@@ -1218,6 +1218,17 @@
       }
     }
   },
+  "orgChart": {
+    "title": "Org Chart",
+    "selectOrganization": "Select an organization to view the org chart.",
+    "noHierarchy": "No organizational hierarchy defined.",
+    "importOrganization": "Import organization",
+    "exportOrganization": "Export organization",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitToScreen": "Fit chart to screen",
+    "agentCardLabel": "Open {{name}} agent profile. Role: {{role}}. Status: {{status}}."
+  },
   "organizationPortfolio": {
     "breadcrumb": "Organizations",
     "newOrganization": "New Organization",

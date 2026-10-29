@@ -1278,12 +1278,14 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
   `Workspaces.test.tsx` e os testes dos cartões/conteúdo de workspace passaram
   em **27/27 testes**, cobrindo rótulos nos dois idiomas, estados vazios,
   agrupamento, paginação, rota, feature flag e locale-validation. Progresso
-  OpenSpec: **102/129**. 3.5e1 localizou a visão global e 3.5e2 localizou os
+  OpenSpec: **103/129**. 3.5e1 localizou a visão global e 3.5e2 localizou os
   detalhes/configuração e serviços do workspace de projeto. O grupo 3.5 está
   concluído. A tarefa 3.6 foi dividida em seis lotes verificáveis, cobrindo
   roster, gráfico organizacional, onboarding, perfil/configuração, execuções e
   transcrições/ferramentas. 3.6a localizou o roster nas variantes streamlined e
   production, com filtros, papéis, status, metadados de ambiente, estados vazios
-  e acessibilidade; testes focados passaram em 44/44 e o typecheck direcionado
-  passou. Próxima: 3.6b (gráfico organizacional).
+  e acessibilidade. 3.6b localizou o gráfico organizacional nas duas variantes,
+  com estados vazios, importação/exportação, zoom e cartões acessíveis por
+  teclado, preservando hierarquia e destinos. Os testes focados passaram em
+  46/46; o typecheck direcionado passou. Próxima: 3.6c (cadastro/onboarding).
   A aplicação ainda não foi implantada.

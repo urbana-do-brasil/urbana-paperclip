@@ -1260,6 +1260,17 @@
       }
     }
   },
+  "orgChart": {
+    "title": "Gráfico organizacional",
+    "selectOrganization": "Selecione uma organização para ver o gráfico organizacional.",
+    "noHierarchy": "Nenhuma hierarquia organizacional foi definida.",
+    "importOrganization": "Importar organização",
+    "exportOrganization": "Exportar organização",
+    "zoomIn": "Aumentar zoom",
+    "zoomOut": "Reduzir zoom",
+    "fitToScreen": "Ajustar gráfico à tela",
+    "agentCardLabel": "Abrir o perfil do agente {{name}}. Função: {{role}}. Status: {{status}}."
+  },
   "organizationPortfolio": {
     "breadcrumb": "Organizações",
     "newOrganization": "Nova organização",

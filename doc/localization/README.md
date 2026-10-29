@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **102 de 129 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **103 de 129 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -210,7 +210,7 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
 `PrivateTaskPrivacyControls.test.tsx` e `locale-validation.test.ts` passaram em
 **32/32 testes**. Typecheck direcionado, `check:tokens`, `check:token-gates`,
 `git diff --check` e validação OpenSpec estrita passaram. O progresso atual é
-  **102/129**; 3.5c4a localizou a política e configuração de execution
+  **103/129**; 3.5c4a localizou a política e configuração de execution
   workspaces; 3.5c4b localizou cartões, ações, estados e mensagens de workspaces
   vinculados. O grupo 3.5c está concluído. 3.5d foi dividida em coleção/árvore
   (d1), criação (d2) e detalhes/propriedades (d3), e foi concluída. Próxima:
@@ -220,9 +220,11 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
   cadastro/configuração de agentes e visualizações de execução, divididos em
   seis lotes verificáveis (3.6a–3.6f). 3.6a localizou o roster nas variantes
   streamlined e production, incluindo filtros, papéis, status, metadados de
-  ambiente, estados vazios e acessibilidade, mantendo IDs, dados e rotas. Os
-  testes focados passaram em 44/44 e o typecheck direcionado passou. Próxima:
-  3.6b, gráfico organizacional. A aplicação
+  ambiente, estados vazios e acessibilidade, mantendo IDs, dados e rotas. 3.6b
+  localizou o gráfico organizacional nas duas variantes, com estados vazios,
+  importação/exportação, zoom e cartões acessíveis por teclado, preservando
+  hierarquia e destinos. Os testes focados passaram em 46/46 e o typecheck
+  direcionado passou. Próxima: 3.6c, fluxo de cadastro/onboarding. A aplicação
   ainda não foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28
