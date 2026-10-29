@@ -2981,3 +2981,18 @@ issues) e e5 (gates/navegação). A coleção (e1) foi subdividida em e1a
 (busca/filtros/preferências de visualização) e e1b (onboarding/linhas/árvore/
 estados) por abranger muitos controles e estados na mesma página. Progresso:
 **249/274 tarefas**. Próxima: 3.10e1a, busca e filtros da coleção de casos.
+
+
+## Casos — controles da coleção (3.10e1a)
+
+Busca, filtros, status, colunas, ordenação, agrupamento e alternância entre lista
+e árvore agora acompanham PT-BR/en. Os testes verificam consultas e preferências
+persistidas, inclusive os valores técnicos de tipo, coluna, ordenação e grupo.
+Nomes de projetos, tipos e rótulos fornecidos pela API permanecem intactos.
+
+`Cases.test.tsx` passou em **14/14 testes** e `locale-validation.test.ts` em
+**12/12**. `check:tokens`, `check:token-gates`, JSON, `git diff --check` e
+OpenSpec estrito passaram. O typecheck da UI aponta somente o erro preexistente
+em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é
+exportado. Progresso: **250/274 tarefas**. Próxima: 3.10e1b, linhas, árvore e
+estados da coleção.

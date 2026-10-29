@@ -1725,6 +1725,77 @@
       "runRoutine": "Run routine"
     }
   },
+  "caseManagement": {
+    "collection": {
+      "changeStatus": "Change case status",
+      "search": {
+        "placeholder": "Search cases...",
+        "label": "Search cases"
+      },
+      "toolbar": {
+        "filters": "Filters",
+        "columns": "Columns",
+        "sort": "Sort",
+        "group": "Group",
+        "showFlatList": "Show flat case list",
+        "showTree": "Show parent/children tree"
+      },
+      "filters": {
+        "search": "Search",
+        "type": "Type",
+        "status": "Status",
+        "project": "Project",
+        "label": "Label",
+        "noProject": "No project",
+        "noTypes": "No types yet",
+        "allLabels": "All labels",
+        "clear": "Clear filters",
+        "clearAll": "Clear all",
+        "all": "All",
+        "projectFallback": "Project",
+        "labelFallback": "Label"
+      },
+      "statuses": {
+        "draft": "Draft",
+        "inProgress": "In progress",
+        "inReview": "In review",
+        "approved": "Approved",
+        "done": "Done",
+        "cancelled": "Cancelled"
+      },
+      "columns": {
+        "id": "ID",
+        "key": "Key",
+        "title": "Title",
+        "status": "Status",
+        "updated": "Updated",
+        "created": "Created at",
+        "type": "Type",
+        "project": "Project",
+        "parent": "Parent case"
+      },
+      "sort": {
+        "updated": "Last updated",
+        "created": "Created at",
+        "title": "Title",
+        "status": "Status",
+        "id": "ID",
+        "type": "Type",
+        "project": "Project"
+      },
+      "groups": {
+        "type": "Type",
+        "project": "Project",
+        "status": "Status",
+        "none": "None"
+      },
+      "columnPicker": {
+        "desktopRows": "Desktop case rows",
+        "chooseVisible": "Choose visible columns",
+        "resetDefaults": "Reset defaults"
+      }
+    }
+  },
   "pipelineManagement": {
   "detail": {
     "liveness": {

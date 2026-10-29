@@ -1769,6 +1769,77 @@
       "runRoutine": "Executar rotina"
     }
   },
+  "caseManagement": {
+    "collection": {
+      "changeStatus": "Alterar o status do caso",
+      "search": {
+        "placeholder": "Buscar casos...",
+        "label": "Buscar casos"
+      },
+      "toolbar": {
+        "filters": "Filtros",
+        "columns": "Colunas",
+        "sort": "Ordenar",
+        "group": "Agrupar",
+        "showFlatList": "Mostrar lista simples de casos",
+        "showTree": "Mostrar árvore de casos"
+      },
+      "filters": {
+        "search": "Busca",
+        "type": "Tipo",
+        "status": "Status",
+        "project": "Projeto",
+        "label": "Rótulo",
+        "noProject": "Sem projeto",
+        "noTypes": "Ainda não há tipos",
+        "allLabels": "Todos os rótulos",
+        "clear": "Limpar filtros",
+        "clearAll": "Limpar tudo",
+        "all": "Todos",
+        "projectFallback": "Projeto",
+        "labelFallback": "Rótulo"
+      },
+      "statuses": {
+        "draft": "Rascunho",
+        "inProgress": "Em andamento",
+        "inReview": "Em revisão",
+        "approved": "Aprovado",
+        "done": "Concluído",
+        "cancelled": "Cancelado"
+      },
+      "columns": {
+        "id": "ID",
+        "key": "Chave",
+        "title": "Título",
+        "status": "Status",
+        "updated": "Atualizado",
+        "created": "Criado em",
+        "type": "Tipo",
+        "project": "Projeto",
+        "parent": "Caso pai"
+      },
+      "sort": {
+        "updated": "Última atualização",
+        "created": "Data de criação",
+        "title": "Título",
+        "status": "Status",
+        "id": "ID",
+        "type": "Tipo",
+        "project": "Projeto"
+      },
+      "groups": {
+        "type": "Tipo",
+        "project": "Projeto",
+        "status": "Status",
+        "none": "Nenhum"
+      },
+      "columnPicker": {
+        "desktopRows": "Linhas de casos no desktop",
+        "chooseVisible": "Escolha as colunas visíveis",
+        "resetDefaults": "Restaurar padrão"
+      }
+    }
+  },
   "pipelineManagement": {
   "detail": {
     "liveness": {

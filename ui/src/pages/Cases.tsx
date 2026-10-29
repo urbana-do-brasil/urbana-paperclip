@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { CaseCopyableToken } from "@/components/CaseIdentifierKey";
 import { hasBlockingShortcutDialog, isKeyboardShortcutTextInputTarget } from "@/lib/keyboardShortcuts";
+import { useTranslation } from "@/i18n";
 import { cn, relativeTime } from "@/lib/utils";
 
 type GroupBy = "type" | "project" | "status" | "none";
@@ -38,38 +39,38 @@ type CaseViewState = {
   treeView: boolean;
 };
 
-const STATUS_FILTER_OPTIONS: { value: CaseStatus; label: string }[] = [
-  { value: "draft", label: "Draft" },
-  { value: "in_progress", label: "In progress" },
-  { value: "in_review", label: "In review" },
-  { value: "approved", label: "Approved" },
-  { value: "done", label: "Done" },
-  { value: "cancelled", label: "Cancelled" },
+const STATUS_FILTER_OPTIONS: { value: CaseStatus; labelKey: string }[] = [
+  { value: "draft", labelKey: "caseManagement.collection.statuses.draft" },
+  { value: "in_progress", labelKey: "caseManagement.collection.statuses.inProgress" },
+  { value: "in_review", labelKey: "caseManagement.collection.statuses.inReview" },
+  { value: "approved", labelKey: "caseManagement.collection.statuses.approved" },
+  { value: "done", labelKey: "caseManagement.collection.statuses.done" },
+  { value: "cancelled", labelKey: "caseManagement.collection.statuses.cancelled" },
 ];
 
 const ALL = "__all__";
 const DEFAULT_STATUS_FILTERS: CaseStatus[] = CASE_STATUSES.filter((status) => !TERMINAL_CASE_STATUSES.includes(status));
 const DEFAULT_CASE_COLUMNS: CaseColumn[] = ["id", "title", "status", "updated"];
 const CASE_COLUMN_ORDER: CaseColumn[] = ["id", "key", "title", "type", "status", "updated", "created", "project", "parent"];
-const CASE_COLUMN_LABELS: Record<CaseColumn, string> = {
-  id: "ID",
-  key: "Key",
-  title: "Title",
-  status: "Status",
-  updated: "Updated",
-  created: "Created at",
-  type: "Type",
-  project: "Project",
-  parent: "Parent case",
+const CASE_COLUMN_LABEL_KEYS: Record<CaseColumn, string> = {
+  id: "caseManagement.collection.columns.id",
+  key: "caseManagement.collection.columns.key",
+  title: "caseManagement.collection.columns.title",
+  status: "caseManagement.collection.columns.status",
+  updated: "caseManagement.collection.columns.updated",
+  created: "caseManagement.collection.columns.created",
+  type: "caseManagement.collection.columns.type",
+  project: "caseManagement.collection.columns.project",
+  parent: "caseManagement.collection.columns.parent",
 };
-const CASE_SORT_LABELS: Record<CaseSortField, string> = {
-  updated: "Last updated",
-  created: "Created at",
-  title: "Title",
-  status: "Status",
-  id: "ID",
-  type: "Type",
-  project: "Project",
+const CASE_SORT_LABEL_KEYS: Record<CaseSortField, string> = {
+  updated: "caseManagement.collection.sort.updated",
+  created: "caseManagement.collection.sort.created",
+  title: "caseManagement.collection.sort.title",
+  status: "caseManagement.collection.sort.status",
+  id: "caseManagement.collection.sort.id",
+  type: "caseManagement.collection.sort.type",
+  project: "caseManagement.collection.sort.project",
 };
 const defaultCaseViewState: CaseViewState = {
   search: "",
@@ -211,7 +212,9 @@ function CaseStatusPicker({
   onChange: (next: CaseStatus) => void;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const selectedStatus = STATUS_FILTER_OPTIONS.find((option) => option.value === status);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -219,13 +222,13 @@ function CaseStatusPicker({
           type="button"
           disabled={disabled}
           className="inline-flex items-center gap-1 rounded-md hover:bg-accent/50 disabled:opacity-50"
-          aria-label="Change case status"
+          aria-label={t("caseManagement.collection.changeStatus")}
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
           }}
         >
-          <StatusBadge status={status} />
+          <StatusBadge status={status} label={selectedStatus ? t(selectedStatus.labelKey) : undefined} />
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
       </PopoverTrigger>
@@ -247,7 +250,7 @@ function CaseStatusPicker({
             }}
             className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left hover:bg-accent"
           >
-            <StatusBadge status={option.value} />
+            <StatusBadge status={option.value} label={t(option.labelKey)} />
             {option.value === status && <Check className="h-4 w-4 text-muted-foreground" />}
           </button>
         ))}
@@ -482,13 +485,14 @@ function CaseColumnHeader({
   visibleColumnSet: ReadonlySet<CaseColumn>;
   trailingColumns: CaseColumn[];
 }) {
+  const { t } = useTranslation();
   return (
     <div className="hidden border-b border-border px-2 py-1 text-(length:--text-micro) font-medium uppercase tracking-(--tracking-caps) text-muted-foreground sm:flex sm:items-center">
       {trailingColumns.length > 0 ? (
         <span className="grid min-w-0 flex-1 items-center gap-2" style={{ gridTemplateColumns: caseTrailingGridTemplate(trailingColumns) }}>
           {trailingColumns.map((column) => (
             <span key={column} className={cn("truncate", (column === "updated" || column === "created") && "text-right")}>
-              {CASE_COLUMN_LABELS[column]}
+              {t(CASE_COLUMN_LABEL_KEYS[column])}
             </span>
           ))}
         </span>
@@ -635,14 +639,15 @@ function CaseColumnPicker({
   onToggle: (column: CaseColumn, enabled: boolean) => void;
   onReset: () => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <CaseToolbarButton icon={Columns3} title="Columns" active={!sameStringSet([...visibleColumns], DEFAULT_CASE_COLUMNS)}>
+    <CaseToolbarButton icon={Columns3} title={t("caseManagement.collection.toolbar.columns")} active={!sameStringSet([...visibleColumns], DEFAULT_CASE_COLUMNS)}>
       <PopoverContent align="end" className="w-(--sz-300px) p-1.5">
         <div className="px-2 pb-1 pt-1.5">
           <div className="text-(length:--text-nano) font-semibold uppercase tracking-(--tracking-caps) text-muted-foreground">
-            Desktop case rows
+            {t("caseManagement.collection.columnPicker.desktopRows")}
           </div>
-          <div className="text-sm font-medium text-foreground">Choose visible columns</div>
+          <div className="text-sm font-medium text-foreground">{t("caseManagement.collection.columnPicker.chooseVisible")}</div>
         </div>
         <div className="space-y-0.5">
           {CASE_COLUMN_ORDER.map((column) => (
@@ -652,7 +657,7 @@ function CaseColumnPicker({
               className="flex w-full items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-accent/50"
               onClick={() => onToggle(column, !visibleColumns.has(column))}
             >
-              <span>{CASE_COLUMN_LABELS[column]}</span>
+              <span>{t(CASE_COLUMN_LABEL_KEYS[column])}</span>
               {visibleColumns.has(column) ? <Check className="h-3.5 w-3.5 text-muted-foreground" /> : null}
             </button>
           ))}
@@ -663,7 +668,7 @@ function CaseColumnPicker({
             className="flex w-full items-center justify-between rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent/50"
             onClick={onReset}
           >
-            Reset defaults
+            {t("caseManagement.collection.columnPicker.resetDefaults")}
           </button>
         </div>
       </PopoverContent>
@@ -680,10 +685,11 @@ function CaseSortPicker({
   sortDir: "asc" | "desc";
   onChange: (patch: Pick<CaseViewState, "sortField" | "sortDir">) => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <CaseToolbarButton icon={ArrowUpDown} title="Sort" active={sortField !== "updated" || sortDir !== "desc"}>
+    <CaseToolbarButton icon={ArrowUpDown} title={t("caseManagement.collection.toolbar.sort")} active={sortField !== "updated" || sortDir !== "desc"}>
       <PopoverContent align="end" className="w-48 p-2">
-        {(Object.keys(CASE_SORT_LABELS) as CaseSortField[]).map((field) => (
+        {(Object.keys(CASE_SORT_LABEL_KEYS) as CaseSortField[]).map((field) => (
           <button
             key={field}
             type="button"
@@ -699,7 +705,7 @@ function CaseSortPicker({
               }
             }}
           >
-            <span>{CASE_SORT_LABELS[field]}</span>
+            <span>{t(CASE_SORT_LABEL_KEYS[field])}</span>
             {sortField === field ? (
               <span className="text-xs text-muted-foreground">{sortDir === "asc" ? "↑" : "↓"}</span>
             ) : null}
@@ -739,6 +745,7 @@ function CasesEmptyHero() {
 }
 
 export function Cases() {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
@@ -1018,33 +1025,38 @@ export function Cases() {
   }, [selectedIndex]);
 
   const activeFilters: FilterValue[] = [];
-  if (viewState.search.trim()) activeFilters.push({ key: "search", label: "Search", value: viewState.search.trim() });
+  if (viewState.search.trim()) activeFilters.push({ key: "search", label: t("caseManagement.collection.filters.search"), value: viewState.search.trim() });
   if (viewState.typeFilters.length > 0) {
-    activeFilters.push({ key: "type", label: "Type", value: viewState.typeFilters.join(", ") });
+    activeFilters.push({ key: "type", label: t("caseManagement.collection.filters.type"), value: viewState.typeFilters.join(", ") });
   }
   if (!usesDefaultStatusFilter) {
     activeFilters.push({
       key: "status",
-      label: "Status",
+      label: t("caseManagement.collection.filters.status"),
       value: viewState.statusFilters.length === CASE_STATUSES.length
-        ? "All"
+        ? t("caseManagement.collection.filters.all")
         : viewState.statusFilters
-          .map((status) => STATUS_FILTER_OPTIONS.find((option) => option.value === status)?.label ?? status)
+          .map((status) => {
+            const option = STATUS_FILTER_OPTIONS.find((candidate) => candidate.value === status);
+            return option ? t(option.labelKey) : status;
+          })
           .join(", "),
     });
   }
   if (viewState.projectFilters.length > 0) {
     activeFilters.push({
       key: "project",
-      label: "Project",
+      label: t("caseManagement.collection.filters.project"),
       value: viewState.projectFilters
-        .map((projectId) => projectId === ALL ? "No project" : projectName.get(projectId) ?? "Project")
+        .map((projectId) => projectId === ALL
+          ? t("caseManagement.collection.filters.noProject")
+          : projectName.get(projectId) ?? t("caseManagement.collection.filters.projectFallback"))
         .join(", "),
     });
   }
   if (viewState.labelFilter !== ALL) {
-    const name = (labelsQuery.data ?? []).find((l) => l.id === viewState.labelFilter)?.name ?? "Label";
-    activeFilters.push({ key: "label", label: "Label", value: name });
+    const name = (labelsQuery.data ?? []).find((l) => l.id === viewState.labelFilter)?.name ?? t("caseManagement.collection.filters.labelFallback");
+    activeFilters.push({ key: "label", label: t("caseManagement.collection.filters.label"), value: name });
   }
 
   function removeFilter(key: string) {
@@ -1205,9 +1217,9 @@ export function Cases() {
               <Input
                 value={viewState.search}
                 onChange={(e) => updateView({ search: e.target.value })}
-                placeholder="Search cases..."
+                placeholder={t("caseManagement.collection.search.placeholder")}
                 className="pl-7 text-xs sm:text-sm"
-                aria-label="Search cases"
+                aria-label={t("caseManagement.collection.search.label")}
                 data-page-search-target="true"
               />
             </div>
@@ -1218,8 +1230,8 @@ export function Cases() {
                 variant="outline"
                 size="icon"
                 className={cn("h-8 w-8 shrink-0", viewState.treeView && "bg-accent")}
-                title={viewState.treeView ? "Show flat case list" : "Show parent/children tree"}
-                aria-label={viewState.treeView ? "Show flat case list" : "Show parent/children tree"}
+                title={t(viewState.treeView ? "caseManagement.collection.toolbar.showFlatList" : "caseManagement.collection.toolbar.showTree")}
+                aria-label={t(viewState.treeView ? "caseManagement.collection.toolbar.showFlatList" : "caseManagement.collection.toolbar.showTree")}
                 aria-pressed={viewState.treeView}
                 onClick={() => updateView({ treeView: !viewState.treeView })}
               >
@@ -1232,13 +1244,13 @@ export function Cases() {
                 onReset={resetColumns}
               />
 
-              <CaseToolbarButton icon={Filter} title="Filters" active={hasActiveFilters}>
+              <CaseToolbarButton icon={Filter} title={t("caseManagement.collection.toolbar.filters")} active={hasActiveFilters}>
                 <PopoverContent align="end" className="w-72 p-3">
                   <div className="grid gap-3">
-                    <FilterField label="Type">
+                    <FilterField label={t("caseManagement.collection.filters.type")}>
                       <div className="max-h-40 overflow-y-auto">
                         {distinctTypes.length === 0 ? (
-                          <p className="px-1 py-1 text-xs text-muted-foreground">No types yet</p>
+                          <p className="px-1 py-1 text-xs text-muted-foreground">{t("caseManagement.collection.filters.noTypes")}</p>
                         ) : distinctTypes.map((type) => (
                           <FilterCheckboxRow
                             key={type}
@@ -1249,22 +1261,22 @@ export function Cases() {
                         ))}
                       </div>
                     </FilterField>
-                    <FilterField label="Status">
+                    <FilterField label={t("caseManagement.collection.filters.status")}>
                       <div>
                         {STATUS_FILTER_OPTIONS.map((option) => (
                           <FilterCheckboxRow
                             key={option.value}
-                            label={option.label}
+                            label={t(option.labelKey)}
                             checked={viewState.statusFilters.includes(option.value)}
                             onCheckedChange={(checked) => toggleStatusFilter(option.value, checked)}
                           />
                         ))}
                       </div>
                     </FilterField>
-                    <FilterField label="Project">
+                    <FilterField label={t("caseManagement.collection.filters.project")}>
                       <div className="max-h-40 overflow-y-auto">
                         <FilterCheckboxRow
-                          label="No project"
+                          label={t("caseManagement.collection.filters.noProject")}
                           checked={viewState.projectFilters.includes(ALL)}
                           onCheckedChange={(checked) => toggleStringFilter("projectFilters", ALL, checked)}
                         />
@@ -1278,10 +1290,10 @@ export function Cases() {
                         ))}
                       </div>
                     </FilterField>
-                    <FilterField label="Label">
+                    <FilterField label={t("caseManagement.collection.filters.label")}>
                       <div className="max-h-40 overflow-y-auto">
                         <FilterCheckboxRow
-                          label="All labels"
+                          label={t("caseManagement.collection.filters.allLabels")}
                           checked={viewState.labelFilter === ALL}
                           onCheckedChange={(checked) => {
                             if (checked) updateView({ labelFilter: ALL });
@@ -1298,7 +1310,7 @@ export function Cases() {
                       </div>
                     </FilterField>
                     <Button type="button" variant="ghost" size="sm" onClick={clearFilters} disabled={!hasActiveFilters}>
-                      Clear filters
+                      {t("caseManagement.collection.filters.clear")}
                     </Button>
                   </div>
                 </PopoverContent>
@@ -1310,14 +1322,14 @@ export function Cases() {
                 onChange={updateView}
               />
 
-              <CaseToolbarButton icon={Layers} title="Group" active={viewState.groupBy !== "type"}>
+              <CaseToolbarButton icon={Layers} title={t("caseManagement.collection.toolbar.group")} active={viewState.groupBy !== "type"}>
                 <PopoverContent align="end" className="w-44 p-2">
                   {([
-                    ["type", "Type"],
-                    ["project", "Project"],
-                    ["status", "Status"],
-                    ["none", "None"],
-                  ] as const).map(([value, label]) => (
+                    ["type", "caseManagement.collection.groups.type"],
+                    ["project", "caseManagement.collection.groups.project"],
+                    ["status", "caseManagement.collection.groups.status"],
+                    ["none", "caseManagement.collection.groups.none"],
+                  ] as const).map(([value, labelKey]) => (
                     <button
                       key={value}
                       type="button"
@@ -1327,7 +1339,7 @@ export function Cases() {
                       )}
                       onClick={() => updateView({ groupBy: value })}
                     >
-                      <span>{label}</span>
+                      <span>{t(labelKey)}</span>
                       {viewState.groupBy === value && <Check className="h-3.5 w-3.5" />}
                     </button>
                   ))}
@@ -1336,7 +1348,12 @@ export function Cases() {
             </div>
           </div>
 
-          <FilterBar filters={activeFilters} onRemove={removeFilter} onClear={clearFilters} />
+          <FilterBar
+            filters={activeFilters}
+            onRemove={removeFilter}
+            onClear={clearFilters}
+            clearAllLabel={t("caseManagement.collection.filters.clearAll")}
+          />
 
           {filtered.length === 0 ? (
             <EmptyState icon={SearchX} message="No cases match these filters." action="Clear filters" onAction={clearFilters} />
