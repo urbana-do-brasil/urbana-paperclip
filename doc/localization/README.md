@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **103 de 129 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **104 de 131 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -210,7 +210,7 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
 `PrivateTaskPrivacyControls.test.tsx` e `locale-validation.test.ts` passaram em
 **32/32 testes**. Typecheck direcionado, `check:tokens`, `check:token-gates`,
 `git diff --check` e validação OpenSpec estrita passaram. O progresso atual é
-  **103/129**; 3.5c4a localizou a política e configuração de execution
+  **103/131**; 3.5c4a localizou a política e configuração de execution
   workspaces; 3.5c4b localizou cartões, ações, estados e mensagens de workspaces
   vinculados. O grupo 3.5c está concluído. 3.5d foi dividida em coleção/árvore
   (d1), criação (d2) e detalhes/propriedades (d3), e foi concluída. Próxima:
@@ -224,7 +224,11 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
   localizou o gráfico organizacional nas duas variantes, com estados vazios,
   importação/exportação, zoom e cartões acessíveis por teclado, preservando
   hierarquia e destinos. Os testes focados passaram em 46/46 e o typecheck
-  direcionado passou. Próxima: 3.6c, fluxo de cadastro/onboarding. A aplicação
+  direcionado passou. 3.6c foi dividida em cadastro/configuração/teste de runtime
+  (c1) e conexões/autenticação/convites externos (c2). 3.6c1 localizou entrada,
+  identidade, escolha de adaptador, configuração do runtime e cartão de teste,
+  mantendo nomes, flags, opções, segredos, modelos, prompts e payloads; testes
+  focados: 66/66, typecheck direcionado e gates passaram. Próxima: 3.6c2. A aplicação
   ainda não foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28

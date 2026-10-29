@@ -123,6 +123,8 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 3.6a Localizar o roster de agentes nas variantes streamlined e production, incluindo filtros, metadados, estados e acessibilidade; preservar IDs, rotas e dados. O gráfico organizacional é coberto em 3.6b.
   - [x] 3.6b Localizar o gráfico organizacional e sua visualização embutida nas variantes suportadas, incluindo estados, metadados e controles acessíveis; preservar hierarquia, IDs e rotas.
   - [ ] 3.6c Localizar o fluxo de cadastro/onboarding de agentes, incluindo escolha de adaptador/provedor, conexão e teste de runtime; preservar credenciais, valores, flags e callbacks.
+    - [x] 3.6c1 Localizar entrada, identidade, escolha de adaptador, configuração do runtime e teste de criação; preservar nomes, flags, opções e payloads. Catálogos EN/PT-BR, testes focados (66/66), typecheck direcionado, gates de tokens e diff check passaram.
+    - [ ] 3.6c2 Localizar conexão/autenticação de provedores e convites para agentes externos, incluindo estados de login/pareamento; preservar segredos, prompts técnicos, valores e callbacks.
   - [ ] 3.6d Localizar identidade, visão geral e configuração do agente, incluindo instruções próprias, formulários e ferramentas configuráveis; preservar prompts/conteúdo técnico, valores, permissões e payloads.
   - [ ] 3.6e Localizar histórico/detalhes de execução do agente, incluindo status, horários, ações, loading/erro e estados vazios; preservar IDs, estados estruturados, dados e operações.
   - [ ] 3.6f Localizar a apresentação de transcrições e estados próprios de ferramentas, preservando logs brutos, argumentos/resultados, nomes externos, dados do provedor e protocolos.

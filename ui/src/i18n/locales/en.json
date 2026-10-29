@@ -1229,6 +1229,172 @@
     "fitToScreen": "Fit chart to screen",
     "agentCardLabel": "Open {{name}} agent profile. Role: {{role}}. Status: {{status}}."
   },
+  "agentSetup": {
+    "page": {
+      "agents": "Agents",
+      "newAgent": "New agent"
+    },
+    "selectOrganization": "Select an organization to create an agent.",
+    "environmentErrorFallback": "Could not resolve the environment.",
+    "validation": {
+      "dotBilling": "Acknowledge external provider billing before creating your Dot agent.",
+      "modelFormat": "Choose or enter a model in provider/model format.",
+      "githubUrl": "Enter a GitHub repository URL.",
+      "cursorApiKey": "Enter a Cursor API key.",
+      "organizationSecret": "Enter {{envKey}} or select an organization secret.",
+      "hermesBaseUrl": "Enter the Hermes API base URL.",
+      "kimiModel": "Enter the Kimi API model name."
+    },
+    "testErrorFallback": "Could not test the agent.",
+    "createErrorFallback": "Could not create the agent.",
+    "credentialCleanupError": "{{original}}Could not remove an unused setup credential. Remove it from Secrets before retrying.",
+    "savedAgent": {
+      "loadError": "Could not load the created agent. Return to Agents to view it.",
+      "loading": "Loading your agent…"
+    },
+    "basics": {
+      "progress": "New agent progress",
+      "stepName": "1. Name",
+      "stepAdapter": "2. Adapter",
+      "meetYourAgent": "Meet your next agent",
+      "chooseAdapterTitle": "Choose an adapter",
+      "nameDescription": "Start with a name. Make them your own.",
+      "adapterDescription": "How should {{name}} work?",
+      "nameLabel": "Agent name",
+      "namePlaceholder": "e.g. Darnold",
+      "inviteExternal": "Invite an external agent",
+      "loadingAdapters": "Loading adapters…",
+      "adapterLegend": "Adapter",
+      "runner": "Runner",
+      "runnerOptions": {
+        "codex": "Codex (app server)",
+        "claude": "Claude (ACPX)",
+        "grok": "Grok Build (ACPX)",
+        "opencode": "OpenCode"
+      },
+      "cancel": "Cancel",
+      "back": "Back",
+      "chooseAdapterAction": "Choose adapter",
+      "configureAgentAction": "Configure agent"
+    },
+    "setup": {
+      "steps": {
+        "connect": "Connect",
+        "configure": "Configure",
+        "confirmation": "Confirmation"
+      },
+      "defaultModel": "Default",
+      "cursorCloud": "Cursor Cloud",
+      "hermesGateway": "Hermes Gateway",
+      "localMachine": "Local machine",
+      "nativeRunner": "Native app server runner",
+      "paperclipRunner": "Paperclip Runner",
+      "unavailableAdapter": "This adapter is unavailable. Choose an enabled adapter.",
+      "noManagedEnvironment": "No managed environment is available. Configure an environment before continuing.",
+      "stepsLabel": "Agent setup steps",
+      "connectModel": "Connect a model",
+      "loadingConnectionSettings": "Loading connection settings…",
+      "submittedForApproval": "Agent submitted for approval",
+      "dotCreated": "Your Dot agent has been created",
+      "ready": "Your agent is ready",
+      "adapter": "Adapter",
+      "model": "Model",
+      "environment": "Environment",
+      "approvalRequired": "An organization administrator must approve this agent before it can work.",
+      "dotPairingNext": "Pair your Dot and test event delivery in configuration before assigning work.",
+      "assignTaskNext": "Assign a task when you’re ready for this agent to work.",
+      "backToAgents": "Back to Agents",
+      "editConfiguration": "Edit configuration",
+      "pairDot": "Pair Dot",
+      "assignTask": "Assign {{name}} a Task",
+      "loginHints": {
+        "cursor": "Use a Cursor API key, or run agent login on the selected environment’s host.",
+        "gemini": "Use a Gemini API key, or an existing supported Gemini CLI login on the selected environment’s host.",
+        "kimi": "Use a Kimi API key and model settings below, or run kimi login on the selected environment’s host.",
+        "grok": "Grok Build uses its CLI sign-in. Run grok login on the selected environment’s host, then test the connection here.",
+        "hermes": "Use a provider API key, or the existing Hermes provider configuration on the selected environment’s host."
+      },
+      "configureHeading": "Configure your agent",
+      "dotPairingPrompt": "Create this agent, then copy its pairing prompt to your Dot.",
+      "enableAssistantConnections": "Enable Assistant connections (MCP) in Experimental settings before pairing.",
+      "allowExternallyBilledProvider": "Allow externally billed provider",
+      "dotBillingHint": "Dot does not report token usage or cost. Paperclip cannot enforce a provider spend ceiling; known company and agent budget limits still apply.",
+      "modelLoadError": "Could not load models. Retry or enter a model ID manually.",
+      "thinkingEffort": "Thinking effort",
+      "automatic": "Auto",
+      "apiKeyProvider": "API key provider",
+      "getApiKey": "get API key",
+      "usingSavedKey": "Using saved key",
+      "required": "Required",
+      "optionalIfConfigured": "Optional if already configured",
+      "organizationSecret": "Or use an organization secret",
+      "keysSavedAsSecrets": "New keys are saved as organization secrets when you finish setup.",
+      "providerModelFormat": "Use a {{provider}}/model ID.",
+      "hermesBaseUrl": "Hermes API base URL",
+      "kimiModelName": "Kimi API model name",
+      "kimiProtocol": "Kimi API protocol",
+      "kimiBaseUrl": "Kimi API base URL",
+      "optionalProviderEndpoint": "Optional override for your provider endpoint.",
+      "providerDefault": "Provider default",
+      "githubRepository": "GitHub repository",
+      "branch": "Branch",
+      "repositoryDefault": "Repository default",
+      "defaultEnvironment": "Default: {{environment}}",
+      "connection": "Connection",
+      "connectModelAction": "Connect model",
+      "creating": "Creating…",
+      "finishSetup": "Finish setup"
+    },
+    "runtimeTest": {
+      "ariaLabel": "Runtime test",
+      "idle": {
+        "title": "Test your agent",
+        "description": "Check that your runtime and model can respond.",
+        "action": "Run test"
+      },
+      "running": {
+        "title": "Testing connection",
+        "description": "Checking the runtime and waiting for a model response…",
+        "action": "Testing…"
+      },
+      "pass": {
+        "title": "Connection successful",
+        "description": "Your runtime checks passed. Review the details below.",
+        "action": "Test again"
+      },
+      "warn": {
+        "title": "Connection needs attention",
+        "description": "Review the test details before running your agent.",
+        "action": "Test again"
+      },
+      "fail": {
+        "title": "Couldn't connect",
+        "description": "Check your model and provider connection, then try again.",
+        "action": "Retry test"
+      },
+      "prerequisites": {
+        "idle": { "title": "Check prerequisites", "description": "Check instance settings and public connection configuration.", "action": "Check setup" },
+        "running": { "title": "Checking prerequisites", "description": "Checking instance settings and public connection configuration…", "action": "Checking…" },
+        "pass": { "title": "Setup checks passed", "description": "Review the setup details before assigning work.", "action": "Check again" },
+        "warn": { "title": "Pairing required", "description": "Create this agent, then pair it and verify event delivery.", "action": "Check again" },
+        "fail": { "title": "Prerequisite check failed", "description": "Review the setup details and retry.", "action": "Retry check" }
+      },
+      "details": "Test details"
+    }
+  },
+  "modelSelector": {
+    "model": "Model",
+    "hint": "Override the default model used by the adapter.",
+    "default": "Default",
+    "loadingModels": "Loading models…",
+    "selectRequired": "Select model (required)",
+    "selectModel": "Select model",
+    "enterCustomModel": "Enter custom model…",
+    "modelId": "Model ID",
+    "modelIdPlaceholder": "Enter model ID or alias",
+    "refreshing": "Refreshing…",
+    "refreshModels": "Refresh models"
+  },
   "organizationPortfolio": {
     "breadcrumb": "Organizations",
     "newOrganization": "New Organization",

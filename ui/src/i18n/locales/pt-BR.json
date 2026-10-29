@@ -1271,6 +1271,172 @@
     "fitToScreen": "Ajustar gráfico à tela",
     "agentCardLabel": "Abrir o perfil do agente {{name}}. Função: {{role}}. Status: {{status}}."
   },
+  "agentSetup": {
+    "page": {
+      "agents": "Agentes",
+      "newAgent": "Novo agente"
+    },
+    "selectOrganization": "Selecione uma organização para criar um agente.",
+    "environmentErrorFallback": "Não foi possível identificar o ambiente.",
+    "validation": {
+      "dotBilling": "Confirme a cobrança pelo provedor externo antes de criar seu agente Dot.",
+      "modelFormat": "Escolha ou informe um modelo no formato provedor/modelo.",
+      "githubUrl": "Informe a URL de um repositório do GitHub.",
+      "cursorApiKey": "Informe uma chave de API do Cursor.",
+      "organizationSecret": "Informe {{envKey}} ou selecione um segredo da organização.",
+      "hermesBaseUrl": "Informe a URL base da API do Hermes.",
+      "kimiModel": "Informe o nome do modelo da API do Kimi."
+    },
+    "testErrorFallback": "Não foi possível testar o agente.",
+    "createErrorFallback": "Não foi possível criar o agente.",
+    "credentialCleanupError": "{{original}}Não foi possível remover uma credencial de configuração não utilizada. Remova-a de Segredos antes de tentar novamente.",
+    "savedAgent": {
+      "loadError": "Não foi possível carregar o agente criado. Volte para Agentes para visualizá-lo.",
+      "loading": "Carregando seu agente…"
+    },
+    "basics": {
+      "progress": "Progresso da criação do agente",
+      "stepName": "1. Nome",
+      "stepAdapter": "2. Adaptador",
+      "meetYourAgent": "Conheça seu próximo agente",
+      "chooseAdapterTitle": "Escolha um adaptador",
+      "nameDescription": "Comece com um nome. Personalize seu agente.",
+      "adapterDescription": "Como {{name}} deve trabalhar?",
+      "nameLabel": "Nome do agente",
+      "namePlaceholder": "ex.: Darnold",
+      "inviteExternal": "Convidar um agente externo",
+      "loadingAdapters": "Carregando adaptadores…",
+      "adapterLegend": "Adaptador",
+      "runner": "Executor",
+      "runnerOptions": {
+        "codex": "Codex (servidor de aplicações)",
+        "claude": "Claude (ACPX)",
+        "grok": "Grok Build (ACPX)",
+        "opencode": "OpenCode"
+      },
+      "cancel": "Cancelar",
+      "back": "Voltar",
+      "chooseAdapterAction": "Escolher adaptador",
+      "configureAgentAction": "Configurar agente"
+    },
+    "setup": {
+      "steps": {
+        "connect": "Conexão",
+        "configure": "Configuração",
+        "confirmation": "Confirmação"
+      },
+      "defaultModel": "Padrão",
+      "cursorCloud": "Cursor Cloud",
+      "hermesGateway": "Hermes Gateway",
+      "localMachine": "Máquina local",
+      "nativeRunner": "Executor nativo do servidor de aplicações",
+      "paperclipRunner": "Paperclip Runner",
+      "unavailableAdapter": "Este adaptador não está disponível. Escolha um adaptador habilitado.",
+      "noManagedEnvironment": "Nenhum ambiente gerenciado está disponível. Configure um ambiente antes de continuar.",
+      "stepsLabel": "Etapas de configuração do agente",
+      "connectModel": "Conectar um modelo",
+      "loadingConnectionSettings": "Carregando configurações de conexão…",
+      "submittedForApproval": "Agente enviado para aprovação",
+      "dotCreated": "Seu agente Dot foi criado",
+      "ready": "Seu agente está pronto",
+      "adapter": "Adaptador",
+      "model": "Modelo",
+      "environment": "Ambiente",
+      "approvalRequired": "Um administrador da organização precisa aprovar este agente antes que ele possa trabalhar.",
+      "dotPairingNext": "Pareie seu Dot e teste a entrega de eventos na configuração antes de atribuir trabalho.",
+      "assignTaskNext": "Atribua uma tarefa quando quiser que este agente comece a trabalhar.",
+      "backToAgents": "Voltar para Agentes",
+      "editConfiguration": "Editar configuração",
+      "pairDot": "Parear Dot",
+      "assignTask": "Atribuir uma tarefa a {{name}}",
+      "loginHints": {
+        "cursor": "Use uma chave de API do Cursor ou execute agent login no host do ambiente selecionado.",
+        "gemini": "Use uma chave de API do Gemini ou um login existente e compatível do Gemini CLI no host do ambiente selecionado.",
+        "kimi": "Use uma chave de API do Kimi e as configurações de modelo abaixo ou execute kimi login no host do ambiente selecionado.",
+        "grok": "O Grok Build usa o login do CLI. Execute grok login no host do ambiente selecionado e teste a conexão aqui.",
+        "hermes": "Use uma chave de API de um provedor ou a configuração existente do provedor Hermes no host do ambiente selecionado."
+      },
+      "configureHeading": "Configure seu agente",
+      "dotPairingPrompt": "Crie este agente e copie a mensagem de pareamento para seu Dot.",
+      "enableAssistantConnections": "Ative as conexões do Assistant (MCP) nas configurações experimentais antes de parear.",
+      "allowExternallyBilledProvider": "Permitir cobrança pelo provedor externo",
+      "dotBillingHint": "O Dot não informa o uso nem o custo de tokens. O Paperclip não consegue impor um limite de gastos do provedor; os limites conhecidos de orçamento da organização e do agente continuam valendo.",
+      "modelLoadError": "Não foi possível carregar os modelos. Tente novamente ou informe manualmente o ID de um modelo.",
+      "thinkingEffort": "Nível de raciocínio",
+      "automatic": "Automático",
+      "apiKeyProvider": "Provedor da chave de API",
+      "getApiKey": "obter chave de API",
+      "usingSavedKey": "Usando chave salva",
+      "required": "Obrigatório",
+      "optionalIfConfigured": "Opcional se já estiver configurado",
+      "organizationSecret": "Ou use um segredo da organização",
+      "keysSavedAsSecrets": "As novas chaves serão salvas como segredos da organização ao concluir a configuração.",
+      "providerModelFormat": "Use um ID de modelo no formato {{provider}}/model.",
+      "hermesBaseUrl": "URL base da API Hermes",
+      "kimiModelName": "Nome do modelo da API Kimi",
+      "kimiProtocol": "Protocolo da API Kimi",
+      "kimiBaseUrl": "URL base da API Kimi",
+      "optionalProviderEndpoint": "Substituição opcional do endpoint do provedor.",
+      "providerDefault": "Padrão do provedor",
+      "githubRepository": "Repositório do GitHub",
+      "branch": "Branch",
+      "repositoryDefault": "Branch padrão do repositório",
+      "defaultEnvironment": "Padrão: {{environment}}",
+      "connection": "Conexão",
+      "connectModelAction": "Conectar modelo",
+      "creating": "Criando…",
+      "finishSetup": "Concluir configuração"
+    },
+    "runtimeTest": {
+      "ariaLabel": "Teste do runtime",
+      "idle": {
+        "title": "Teste seu agente",
+        "description": "Verifique se o runtime e o modelo conseguem responder.",
+        "action": "Executar teste"
+      },
+      "running": {
+        "title": "Testando conexão",
+        "description": "Verificando o runtime e aguardando uma resposta do modelo…",
+        "action": "Testando…"
+      },
+      "pass": {
+        "title": "Conexão bem-sucedida",
+        "description": "As verificações do runtime passaram. Revise os detalhes abaixo.",
+        "action": "Testar novamente"
+      },
+      "warn": {
+        "title": "A conexão precisa de atenção",
+        "description": "Revise os detalhes do teste antes de executar o agente.",
+        "action": "Testar novamente"
+      },
+      "fail": {
+        "title": "Não foi possível conectar",
+        "description": "Verifique o modelo e a conexão com o provedor e tente novamente.",
+        "action": "Tentar teste novamente"
+      },
+      "prerequisites": {
+        "idle": { "title": "Verificar pré-requisitos", "description": "Verifique as configurações da instância e a configuração da conexão pública.", "action": "Verificar configuração" },
+        "running": { "title": "Verificando pré-requisitos", "description": "Verificando as configurações da instância e a configuração da conexão pública…", "action": "Verificando…" },
+        "pass": { "title": "Verificações de configuração aprovadas", "description": "Revise os detalhes da configuração antes de atribuir trabalho.", "action": "Verificar novamente" },
+        "warn": { "title": "Pareamento necessário", "description": "Crie este agente, pareie-o e verifique a entrega de eventos.", "action": "Verificar novamente" },
+        "fail": { "title": "Falha na verificação de pré-requisitos", "description": "Revise os detalhes da configuração e tente novamente.", "action": "Tentar verificação novamente" }
+      },
+      "details": "Detalhes do teste"
+    }
+  },
+  "modelSelector": {
+    "model": "Modelo",
+    "hint": "Substitui o modelo padrão usado pelo adaptador.",
+    "default": "Padrão",
+    "loadingModels": "Carregando modelos…",
+    "selectRequired": "Selecione um modelo (obrigatório)",
+    "selectModel": "Selecionar modelo",
+    "enterCustomModel": "Informar modelo personalizado…",
+    "modelId": "ID do modelo",
+    "modelIdPlaceholder": "Informe o ID ou alias do modelo",
+    "refreshing": "Atualizando…",
+    "refreshModels": "Atualizar modelos"
+  },
   "organizationPortfolio": {
     "breadcrumb": "Organizações",
     "newOrganization": "Nova organização",
