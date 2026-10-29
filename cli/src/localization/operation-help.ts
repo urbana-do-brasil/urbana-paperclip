@@ -70,6 +70,17 @@ const operationHelp: Record<string, CommandHelp> = {
       "--payload-json": { en: "UpdateCompany JSON payload", "pt-BR": "Payload JSON de UpdateCompany" },
     },
   },
+  "company branding:update": {
+    description: { en: "Update company branding", "pt-BR": "Atualizar a identidade visual da organização" },
+    arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": {
+        en: "UpdateCompanyBranding JSON payload",
+        "pt-BR": "Payload JSON de UpdateCompanyBranding",
+      },
+    },
+  },
   "company archive": {
     description: { en: "Archive a company", "pt-BR": "Arquivar uma organização" },
     arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },

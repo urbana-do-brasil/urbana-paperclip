@@ -3269,3 +3269,11 @@ PT-BR/en; payloads, rotas, JSON, erros estruturados e códigos foram preservados
 Testes company: **27/27**; help focado: **4/4**. Branding, importação/exportação
 e demais operações continuam pendentes; typecheck da CLI não foi repetido.
 Progresso: **280/300**.
+
+
+## CLI — branding de organizações (4.3e)
+
+`company branding:update` localiza help em PT-BR/en e mantém payload, rota,
+JSON e erros estruturados. Testes company: **29/29**; help focado: **2/2**.
+Typecheck da CLI não foi repetido. Importação/exportação e outros grupos de
+comandos permanecem pendentes. Progresso: **281/301**.

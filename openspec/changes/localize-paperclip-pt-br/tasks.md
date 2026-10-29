@@ -307,6 +307,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3b Localizar consulta por ID e organização atual, incluindo help, resultado nulo e resolução de contexto; preservar JSON, flags, dados, mensagens estruturadas e códigos. Help: 11/11; company: 23/23. Demais operações e regressão de processo permanecem pendentes.
   - [x] 4.3c Localizar help e resultado vazio de company stats; preservar dados, JSON, falhas estruturadas e códigos. Company: 25/25; help direcionado: 1/1.
   - [x] 4.3d Localizar help e mensagens próprias de company create/update/archive; preservar rotas, payloads, JSON, erros estruturados e códigos. Company: 27/27; help focado: 4/4. Branding e importação/exportação continuam pendentes.
+  - [x] 4.3e Localizar help de company branding:update e verificar payload, rota, falhas e JSON nos dois idiomas. Company: 29/29; help focado: 2/2. Importação/exportação e demais grupos continuam pendentes.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação

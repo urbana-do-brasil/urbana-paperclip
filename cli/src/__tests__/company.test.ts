@@ -566,6 +566,89 @@ describe("company CLI commands", () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
+  it("preserves the company branding update payload, endpoint, and JSON response", async () => {
+    const brandingPayload = {
+      name: "Acme Studio",
+      description: null,
+      logoAssetId: "44444444-4444-4444-8444-444444444444",
+    };
+    const responseCompany = company(brandingPayload);
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(responseCompany))
+      .mockResolvedValueOnce(jsonResponse(responseCompany));
+    const base = [
+      "company", "branding:update", COMPANY_ID,
+      "--payload-json", JSON.stringify(brandingPayload),
+      "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json",
+    ];
+
+    setCliLocale("pt-BR");
+    await runCommand(base);
+    const ptJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(base);
+    const enJson = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptJson).toBe(enJson);
+    expect(JSON.parse(ptJson)).toEqual(responseCompany);
+    expect(fetchMock.mock.calls.map(([url, init]) => [url, init?.method, init?.body])).toEqual([
+      [
+        `http://paperclip.test/api/companies/${COMPANY_ID}/branding`,
+        "PATCH",
+        JSON.stringify(brandingPayload),
+      ],
+      [
+        `http://paperclip.test/api/companies/${COMPANY_ID}/branding`,
+        "PATCH",
+        JSON.stringify(brandingPayload),
+      ],
+    ]);
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("preserves company branding validation and structured errors across locales", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "Invalid branding fields", details: { field: "logoAssetId" }, messageKey: "validation" }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Invalid branding fields", details: { field: "logoAssetId" }, messageKey: "validation" }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured branding failure", details: { code: "BRANDING_REJECTED" } }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured branding failure", details: { code: "BRANDING_REJECTED" } }, 422));
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+      throw new Error(`exit:${code ?? 0}`);
+    }) as typeof process.exit);
+    const args = [
+      "company", "branding:update", COMPANY_ID,
+      "--payload-json", "{\"name\":\"Acme Studio\"}",
+      "--api-base", "http://paperclip.test", "--api-key", "board-token",
+    ];
+
+    process.argv = ["node", "paperclipai", "company", "branding:update", COMPANY_ID];
+    setCliLocale("pt-BR");
+    await expect(runCommand(args)).rejects.toThrow("exit:1");
+    const ptHumanError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    process.argv = ["node", "paperclipai", "company", "branding:update", COMPANY_ID];
+    setCliLocale("en");
+    await expect(runCommand(args)).rejects.toThrow("exit:1");
+    const enHumanError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    process.argv = ["node", "paperclipai", "company", "branding:update", COMPANY_ID, "--json"];
+    setCliLocale("pt-BR");
+    await expect(runCommand([...args, "--json"])).rejects.toThrow("exit:1");
+    const ptJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    process.argv = ["node", "paperclipai", "company", "branding:update", COMPANY_ID, "--json"];
+    setCliLocale("en");
+    await expect(runCommand([...args, "--json"])).rejects.toThrow("exit:1");
+    const enJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptHumanError).toContain("Erro de API 422: Os dados enviados são inválidos.");
+    expect(ptHumanError).toContain('details={"field":"logoAssetId"}');
+    expect(enHumanError).toContain("API error 422: The submitted data is invalid.");
+    expect(enHumanError).toContain('details={"field":"logoAssetId"}');
+    expect(ptJsonError).toBe(enJsonError);
+    expect(ptJsonError).toBe('API error 422: Structured branding failure details={"code":"BRANDING_REJECTED"}');
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1, 1, 1]);
+  });
+
   it("preserves update and archive error status, details, and --json presentation", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ error: "Update rejected", details: { field: "name" }, messageKey: "validation" }, 422))

@@ -46,6 +46,11 @@ describe("localized CLI help", () => {
     { command: ["company", "stats"], portuguese: "Consultar estatísticas da organização", english: "Get company stats" },
     { command: ["company", "create"], portuguese: "Criar uma organização", english: "Create a company" },
     { command: ["company", "update"], portuguese: "Atualizar uma organização", english: "Update a company" },
+    {
+      command: ["company", "branding:update"],
+      portuguese: "Atualizar a identidade visual da organização",
+      english: "Update company branding",
+    },
     { command: ["company", "archive"], portuguese: "Arquivar uma organização", english: "Archive a company" },
   ])("localizes help for $command", ({ command, portuguese, english }) => {
     const pt = help([...command, "--help", "--lang", "pt-BR"]);
@@ -128,4 +133,14 @@ describe("localized CLI help", () => {
     expect(archiveOutput).toContain("companyId ID da organização");
     expect(archiveOutput).toContain("--api-key <token>");
   }, 65_000);
+
+  it("localizes company branding payload help while keeping its route command stable", () => {
+    const result = help(["company", "branding:update", "--help", "--lang", "pt-BR"]);
+    const output = result.stdout.replace(/\s+/g, " ");
+    expect(result.status).toBe(0);
+    expect(output).toContain("paperclipai company branding:update [options] <companyId>");
+    expect(output).toContain("companyId ID da organização");
+    expect(output).toContain("--payload-json <json>");
+    expect(output).toContain("Payload JSON de UpdateCompanyBranding");
+  }, 35_000);
 });
