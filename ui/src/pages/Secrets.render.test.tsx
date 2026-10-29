@@ -457,6 +457,83 @@ describe("Secrets page layout", () => {
     await i18n.changeLanguage("en");
   });
 
+  it("localizes external secret creation while preserving the provider reference payload", async () => {
+    await i18n.changeLanguage("pt-BR");
+    window.localStorage.setItem("paperclip.secrets.viewMode", "flat");
+    mockSecretsApi.create.mockResolvedValue(
+      makeCompanySecret({ id: "created-external", name: "Token da integração", key: "token-da-integracao" }),
+    );
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    const newSecretButton = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Novo segredo",
+    ) as HTMLButtonElement;
+    await act(async () => newSecretButton.click());
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Escolha quem fornece o valor.");
+    expect(document.body.textContent).toContain("Valor gerenciado");
+    expect(document.body.textContent).toContain("Referência externa");
+    expect(document.body.querySelector('label[for="new-secret-name"]')?.textContent).toBe("Nome");
+    expect(document.body.querySelector('label[for="new-secret-value"]')?.textContent).toBe("Valor");
+    expect(document.body.querySelector('label[for="new-secret-key"]')?.textContent).toBe("Chave");
+
+    const externalModeButton = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Referência externa",
+    ) as HTMLButtonElement;
+    await act(async () => {
+      externalModeButton.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      externalModeButton.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      externalModeButton.click();
+    });
+    await flushReact();
+
+    expect(document.body.querySelector('label[for="new-secret-ref"]')?.textContent).toBe("Referência externa");
+    expect(document.body.textContent).toContain("Segredos existentes no provedor são apenas resolvidos pelo Paperclip.");
+    await act(async () => {
+      setInputValue(document.getElementById("new-secret-name") as HTMLInputElement, "Token da integração");
+      setInputValue(
+        document.getElementById("new-secret-ref") as HTMLInputElement,
+        "arn:aws:secretsmanager:us-east-1:000000000000:secret:token",
+      );
+    });
+    await flushReact();
+
+    const linkButton = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Vincular referência",
+    ) as HTMLButtonElement;
+    await act(async () => linkButton.click());
+    await flushReact();
+    await flushReact();
+
+    expect(mockSecretsApi.create).toHaveBeenCalledWith(
+      "company-1",
+      expect.objectContaining({
+        name: "Token da integração",
+        managedMode: "external_reference",
+        externalRef: "arn:aws:secretsmanager:us-east-1:000000000000:secret:token",
+      }),
+    );
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Segredo criado", body: "Token da integração" }),
+    );
+    await act(async () => root.unmount());
+    await i18n.changeLanguage("en");
+  });
+
   it("uses the shared search/filter/tab affordances and keeps vault sections quiet", async () => {
     const root = createRoot(container);
     const queryClient = new QueryClient({
@@ -1089,6 +1166,7 @@ describe("Secrets page layout", () => {
   });
 
   it("explains AWS managed secret creation failures with actionable safe details", async () => {
+    await i18n.changeLanguage("pt-BR");
     const rawProviderMessage =
       "AccessDeniedException: arn:aws:sts::123456789012:assumed-role/prod/Paperclip is not authorized";
     mockSecretsApi.create.mockRejectedValueOnce(
@@ -1126,7 +1204,7 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const newSecretButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("New secret"),
+      (button) => button.textContent?.includes("Novo segredo"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       newSecretButton?.click();
@@ -1141,7 +1219,7 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const createButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Create secret",
+      (button) => button.textContent?.trim() === "Criar segredo",
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       createButton?.click();
@@ -1150,9 +1228,11 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const errorBanner = document.querySelector('[data-testid="secret-create-error"]');
-    expect(errorBanner?.textContent).toContain("AWS secret creation needs CreateSecret permission");
+    expect(errorBanner?.textContent).toContain("A criação de segredos na AWS exige a permissão CreateSecret");
     expect(errorBanner?.textContent).toContain("secretsmanager:CreateSecret");
     expect(errorBanner?.textContent).toContain("us-east-1");
+    expect(errorBanner?.textContent).toContain("Detalhes seguros da solicitação/erro");
+    expect(errorBanner?.textContent).toContain("Copiar");
     expect(errorBanner?.textContent).toContain("link it as an external reference");
     expect(errorBanner?.textContent).toContain("vault-aws");
     expect(errorBanner?.textContent).not.toContain(rawProviderMessage);
@@ -1161,6 +1241,7 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("renders generic secret creation failures with a stable selector", async () => {

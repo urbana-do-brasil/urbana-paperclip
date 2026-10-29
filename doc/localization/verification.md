@@ -1945,8 +1945,9 @@ próxima: 3.8e1a, inventário de segredos da organização.
 O shell e a listagem da aba de segredos agora localizam abas, busca, filtros,
 alternância pasta/lista, navegação e contagens de pastas, estados vazios/erro,
 colunas, status, metadados, ações de linha, indicação do provedor e datas em
-PT-BR/en, inclusive validação da criação de pastas. Nomes, chaves, caminhos e referências fornecidos por usuários ou
-provedores permanecem intactos; enums, IDs, consultas, permissões e dados de
+PT-BR/en, inclusive validação da criação de pastas. Nomes, chaves, caminhos e
+referências fornecidos por usuários ou provedores permanecem intactos; enums,
+IDs, consultas, permissões e dados de
 segredo não foram alterados. As superfícies de detalhes, edição/rotação, cofres,
 valores pessoais e propostas continuam nos lotes posteriores.
 
@@ -1957,5 +1958,24 @@ validação OpenSpec estrita passaram. A suíte de render ainda emite avisos
 React `act`, sem falhas nos testes. O typecheck completo da UI
 permanece bloqueado pelo erro não relacionado em `storybook/prototypes/NewAgentWizard.tsx`:
 o import `SETUP_LOGIN_HINTS` não é exportado por `@/lib/agent-setup-fields`.
-O progresso é **174/198 tarefas**; próxima: 3.8e1b, criação, edição, rotação e
-arquivamento de valores/referências.
+3.8e1b foi decomposta em criação (b1), rotação e referências (b2), e ciclo de
+vida/status (b3). A contagem então era **174/201 tarefas**; próxima: 3.8e1b1,
+formulário e feedback da criação de segredos gerenciados/externos.
+
+### Continuação — criação de segredos compartilhados (3.8e1b1)
+
+O formulário de criação agora localiza em PT-BR/en os modos gerenciado e
+referência externa, campos, dicas, estados de provedor/cofre, erros próprios,
+feedback e detalhes seguros de erros AWS. Referências, valores, nomes/chaves,
+IDs, enums, payloads e mensagens técnicas do servidor/provedor permanecem
+preservados; o valor inserido não foi adicionado à apresentação.
+
+`Secrets.render.test.tsx` e `locale-validation.test.ts` passaram em **47/47
+testes**, incluindo criação de referência externa e erro AWS traduzido com
+redaction preservada. `check:tokens`, `check:token-gates`, parse dos catálogos,
+`git diff --check` e validação OpenSpec estrita passaram. A suíte de render
+emite avisos React `act`, sem falhas. O typecheck completo da UI continua
+bloqueado pelo erro não relacionado em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado por `@/lib/agent-setup-fields`. O progresso
+é **175/201 tarefas**; próxima: 3.8e1b2, atualização e rotação de
+valores/referências.

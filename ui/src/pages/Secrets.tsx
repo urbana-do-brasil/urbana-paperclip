@@ -482,16 +482,21 @@ export function getCreateProviderBlockReason(
   mode: CreateMode,
   health: SecretProviderHealthResponse | null,
   providerConfig?: CompanySecretProviderConfig | null,
+  t?: Translate,
 ) {
-  if (!provider) return "Select a provider.";
+  if (!provider) return t ? t("secrets.creation.selectProvider") : "Select a provider.";
   if (mode === "managed" && provider.supportsManagedValues === false) {
-    return `${provider.label} does not support Paperclip-managed secret values.`;
+    return t
+      ? t("secrets.creation.providerUnsupportedManaged", { provider: provider.label })
+      : `${provider.label} does not support Paperclip-managed secret values.`;
   }
   if (mode === "external" && provider.supportsExternalReferences === false) {
-    return `${provider.label} does not support linked external references.`;
+    return t
+      ? t("secrets.creation.providerUnsupportedExternal", { provider: provider.label })
+      : `${provider.label} does not support linked external references.`;
   }
   const selectedProviderConfigBlockReason = providerConfig?.provider === provider.id
-    ? getProviderConfigBlockReason(providerConfig)
+    ? getProviderConfigBlockReason(providerConfig, t)
     : null;
   const selectedProviderConfigReady =
     providerConfig?.provider === provider.id && !selectedProviderConfigBlockReason;
@@ -499,15 +504,21 @@ export function getCreateProviderBlockReason(
     if (selectedProviderConfigReady) return null;
     if (selectedProviderConfigBlockReason) return selectedProviderConfigBlockReason;
     const healthEntry = healthEntryForProvider(health, provider.id);
-    const deploymentMessage = `Deployment default ${provider.label} is not configured.`;
-    const nextStep = " Select a ready provider vault or configure the deployment default.";
+    const deploymentMessage = t
+      ? t("secrets.creation.deploymentDefaultMissing", { provider: provider.label })
+      : `Deployment default ${provider.label} is not configured.`;
+    const nextStep = t
+      ? ` ${t("secrets.creation.selectReadyVault")}`
+      : " Select a ready provider vault or configure the deployment default.";
     return healthEntry?.message
       ? `${deploymentMessage}${nextStep} ${healthEntry.message}`
       : `${deploymentMessage}${nextStep}`;
   }
   const healthEntry = healthEntryForProvider(health, provider.id);
   if (healthEntry?.status === "error") {
-    return `${provider.label} health check failed: ${healthEntry.message}`;
+    return t
+      ? t("secrets.creation.providerHealthFailed", { provider: provider.label, message: healthEntry.message })
+      : `${provider.label} health check failed: ${healthEntry.message}`;
   }
   return null;
 }
@@ -516,6 +527,7 @@ function providerHealthText(
   provider: SecretProviderDescriptor | null | undefined,
   health: SecretProviderHealthResponse | null,
   providerConfig?: CompanySecretProviderConfig | null,
+  t?: Translate,
 ) {
   if (!provider) return null;
   if (
@@ -523,7 +535,9 @@ function providerHealthText(
     providerConfig?.provider === provider.id &&
     !getProviderConfigBlockReason(providerConfig)
   ) {
-    return `Using selected provider vault. Deployment default ${provider.label} is not configured.`;
+    return t
+      ? t("secrets.creation.providerVaultSelected", { provider: provider.label })
+      : `Using selected provider vault. Deployment default ${provider.label} is not configured.`;
   }
   const entry = healthEntryForProvider(health, provider.id);
   if (!entry) return null;
@@ -538,12 +552,21 @@ function detailString(details: Record<string, unknown> | undefined, key: string)
 
 export function getProviderConfigBlockReason(
   config: CompanySecretProviderConfig | null | undefined,
+  t?: Translate,
 ) {
   if (!config) return null;
-  if (config.status === "disabled") return "This provider vault is disabled.";
-  if (config.status === "coming_soon") return "This provider vault is saved as draft metadata only.";
+  if (config.status === "disabled") {
+    return t ? t("secrets.creation.providerVaultDisabled") : "This provider vault is disabled.";
+  }
+  if (config.status === "coming_soon") {
+    return t
+      ? t("secrets.creation.providerVaultDraft")
+      : "This provider vault is saved as draft metadata only.";
+  }
   if (config.healthStatus === "error") {
-    return config.healthMessage ?? "This provider vault health check failed.";
+    return config.healthMessage ?? (
+      t ? t("secrets.creation.providerVaultHealthFailed") : "This provider vault health check failed."
+    );
   }
   return null;
 }
@@ -865,12 +888,14 @@ export function Secrets() {
     createMode,
     providerHealthQuery.data ?? null,
     selectedCreateProviderConfig,
-  ) ?? getProviderConfigBlockReason(selectedCreateProviderConfig);
-  const rotateProviderBlockReason = getProviderConfigBlockReason(selectedRotateProviderConfig);
+    t,
+  ) ?? getProviderConfigBlockReason(selectedCreateProviderConfig, t);
+  const rotateProviderBlockReason = getProviderConfigBlockReason(selectedRotateProviderConfig, t);
   const createProviderHealthText = providerHealthText(
     selectedCreateProvider,
     providerHealthQuery.data ?? null,
     selectedCreateProviderConfig,
+    t,
   );
   const awsManagedPathPreview = getAwsManagedPathPreview({
     provider: selectedCreateProvider,
@@ -1132,10 +1157,10 @@ export function Secrets() {
       pushToast({
         title:
           result.kind === "company"
-            ? "Secret created"
+            ? t("secrets.creation.secretCreated")
             : result.action === "updated"
-              ? "User-provided secret updated"
-              : "User-provided secret created",
+              ? t("secrets.creation.userSecretUpdated")
+              : t("secrets.creation.userSecretCreated"),
         body: result.item.name,
         tone: "success",
       });
@@ -2599,15 +2624,13 @@ export function Secrets() {
       >
         <DialogContent className="max-h-(--sz-calc-18) overflow-y-auto p-4 sm:max-w-lg sm:p-6">
           <DialogHeader>
-            <DialogTitle>{editingDefinition ? "Edit user-provided secret" : "Create secret"}</DialogTitle>
-            <DialogDescription>
-              Choose who provides the value. Shared fields keep their values when you switch modes.
-            </DialogDescription>
+            <DialogTitle>{editingDefinition ? t("secrets.creation.editUserTitle") : t("secrets.creation.title")}</DialogTitle>
+            <DialogDescription>{t("secrets.creation.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {!editingDefinition ? (
               <div className="space-y-1.5">
-                <p className="text-xs font-medium text-foreground">Who provides the value?</p>
+                <p className="text-xs font-medium text-foreground">{t("secrets.creation.whoProvides")}</p>
                 <Tabs
                   value={secretValueProvider}
                   onValueChange={(value) => {
@@ -2625,12 +2648,12 @@ export function Secrets() {
                   }}
                 >
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="company">Organization</TabsTrigger>
-                    <TabsTrigger value="user">Each user</TabsTrigger>
+                    <TabsTrigger value="company">{t("secrets.creation.organization")}</TabsTrigger>
+                    <TabsTrigger value="user">{t("secrets.creation.eachUser")}</TabsTrigger>
                   </TabsList>
                 </Tabs>
                 <p className="text-(length:--text-micro) text-muted-foreground">
-                  Organization stores one shared value. Each user lets every member supply their own value under My secrets.
+                  {t("secrets.creation.providerChoiceHelp")}
                 </p>
               </div>
             ) : null}
@@ -2638,14 +2661,14 @@ export function Secrets() {
             {secretValueProvider === "company" && !editingDefinition ? (
               <Tabs value={createMode} onValueChange={(value) => setCreateMode(value as CreateMode)}>
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="managed">Managed value</TabsTrigger>
-                  <TabsTrigger value="external">External reference</TabsTrigger>
+                  <TabsTrigger value="managed">{t("secrets.creation.managedValue")}</TabsTrigger>
+                  <TabsTrigger value="external">{t("secrets.creation.externalReference")}</TabsTrigger>
                 </TabsList>
               </Tabs>
             ) : null}
 
             <div>
-              <label className="text-xs font-medium" htmlFor="new-secret-name">Name</label>
+              <label className="text-xs font-medium" htmlFor="new-secret-name">{t("secrets.creation.name")}</label>
               {createNamePrefix && !editingDefinition ? (
                 <div className="flex h-9 w-full min-w-0 items-center gap-1.5 rounded-md border border-input bg-transparent px-2 shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-3">
                   <span
@@ -2656,7 +2679,7 @@ export function Secrets() {
                     <button
                       type="button"
                       className="shrink-0 rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      aria-label="Remove folder prefix"
+                      aria-label={t("secrets.creation.removeFolderPrefix")}
                       onClick={() => setCreateNamePrefix(null)}
                     >
                       <X className="h-3 w-3" />
@@ -2678,7 +2701,7 @@ export function Secrets() {
                             : normalizeSecretKeyForPreview(name),
                       }));
                     }}
-                    placeholder="clientsecret"
+                    placeholder={t("secrets.creation.pathLeafPlaceholder")}
                     autoFocus
                   />
                 </div>
@@ -2698,20 +2721,20 @@ export function Secrets() {
                           : normalizeSecretKeyForPreview(name),
                     }));
                   }}
-                  placeholder={secretValueProvider === "user" ? "Personal GitHub token" : "/dev/foo/bar"}
+                  placeholder={t(secretValueProvider === "user" ? "secrets.creation.userNamePlaceholder" : "secrets.creation.companyNamePlaceholder")}
                   autoFocus
                 />
               )}
               {createNamePrefix && !editingDefinition ? (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Creating in {folderPath} — remove the chip to type a different path.
+                  {t("secrets.creation.folderPrefixHint", { path: folderPath })}
                 </p>
               ) : null}
             </div>
 
             {secretValueProvider === "company" && createMode === "managed" ? (
               <div>
-                <label className="text-xs font-medium" htmlFor="new-secret-value">Value</label>
+                <label className="text-xs font-medium" htmlFor="new-secret-value">{t("secrets.creation.value")}</label>
                 <Textarea
                   id="new-secret-value"
                   value={createForm.value}
@@ -2720,37 +2743,35 @@ export function Secrets() {
                   }
                   rows={3}
                   className="min-w-0 overflow-x-hidden break-all font-mono text-xs"
-                  placeholder="Stored once, never re-displayed"
+                  placeholder={t("secrets.creation.valuePlaceholder")}
                 />
               </div>
             ) : null}
             {secretValueProvider === "company" && createMode === "external" ? (
               <div>
-                <label className="text-xs font-medium" htmlFor="new-secret-ref">External reference</label>
+                <label className="text-xs font-medium" htmlFor="new-secret-ref">{t("secrets.creation.externalReference")}</label>
                 <Input
                   id="new-secret-ref"
                   value={createForm.externalRef}
                   onChange={(event) =>
                     setCreateForm((current) => ({ ...current, externalRef: event.target.value }))
                   }
-                  placeholder="arn:aws:secretsmanager:..."
+                  placeholder={t("secrets.creation.externalReferencePlaceholder")}
                   className="font-mono text-xs"
                 />
                 <p className="text-(length:--text-micro) text-muted-foreground mt-1">
-                  Existing provider secrets are resolve-only in Paperclip. Rotate the value in the provider,
-                  then update this reference only if the path, ARN, or version changes.
+                  {t("secrets.creation.externalReferenceHelp")}
                 </p>
               </div>
             ) : null}
             {secretValueProvider === "user" ? (
               <>
                 <div className="rounded-md border border-violet-500/30 bg-violet-500/5 p-2 text-(length:--text-micro) text-violet-800 dark:text-violet-200">
-                  Every member supplies their own value under My secrets. Agents resolve the responsible
-                  user&apos;s value at runtime.
+                  {t("secrets.creation.userValueNotice")}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-foreground" htmlFor="new-secret-usage-guidance">
-                    Usage guidance <span className="text-muted-foreground/70">(optional)</span>
+                    {t("secrets.creation.usageGuidance")} <span className="text-muted-foreground/70">{t("secrets.creation.optional")}</span>
                   </label>
                   <Textarea
                     id="new-secret-usage-guidance"
@@ -2758,7 +2779,7 @@ export function Secrets() {
                     onChange={(event) =>
                       setCreateForm((current) => ({ ...current, usageGuidance: event.target.value }))
                     }
-                    placeholder="Tell members how to create their token, required scopes, etc."
+                    placeholder={t("secrets.creation.usageGuidancePlaceholder")}
                     className="min-h-(--sz-70px) text-sm"
                   />
                 </div>
@@ -2767,7 +2788,7 @@ export function Secrets() {
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-xs font-medium" htmlFor="new-secret-key">Key</label>
+                <label className="text-xs font-medium" htmlFor="new-secret-key">{t("secrets.creation.key")}</label>
                 {!createKeyEditable && !editingDefinition ? (
                   <Button
                     type="button"
@@ -2776,7 +2797,7 @@ export function Secrets() {
                     className="h-5 px-1.5 text-(length:--text-micro) text-muted-foreground"
                     onClick={() => setCreateKeyEditable(true)}
                   >
-                    <Pencil className="mr-1 h-3 w-3" /> Edit
+                    <Pencil className="mr-1 h-3 w-3" /> {t("secrets.creation.edit")}
                   </Button>
                 ) : null}
               </div>
@@ -2790,7 +2811,7 @@ export function Secrets() {
                   setCreateKeyDirty(true);
                   setCreateForm((current) => ({ ...current, key: event.target.value }));
                 }}
-                placeholder={secretValueProvider === "user" ? "PERSONAL_GH_TOKEN" : "auto from name"}
+                placeholder={secretValueProvider === "user" ? "PERSONAL_GH_TOKEN" : t("secrets.creation.keyPlaceholderAuto")}
                 disabled={Boolean(editingDefinition)}
                 className={cn(
                   "font-mono text-sm",
@@ -2799,18 +2820,18 @@ export function Secrets() {
               />
               <p className="mt-1 text-(length:--text-micro) text-muted-foreground">
                 {editingDefinition
-                  ? "Stable env binding key. Cannot be changed."
+                  ? t("secrets.creation.stableKey")
                   : !createKeyEditable
-                    ? "Generated from the name."
+                    ? t("secrets.creation.keyGenerated")
                     : secretValueProvider === "user"
-                      ? "Env-style key used by user-secret bindings."
-                      : "Shared secret keys keep lowercase dash normalization."}
+                      ? t("secrets.creation.userKeyHint")
+                      : t("secrets.creation.sharedKeyHint")}
               </p>
             </div>
 
             <div>
               <label className="text-xs font-medium" htmlFor="new-secret-description">
-                Description <span className="text-muted-foreground/70">(optional)</span>
+                {t("secrets.creation.descriptionLabel")} <span className="text-muted-foreground/70">{t("secrets.creation.optional")}</span>
               </label>
               <Input
                 id="new-secret-description"
@@ -2818,7 +2839,7 @@ export function Secrets() {
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, description: event.target.value }))
                 }
-                placeholder="What is this secret used for? (no values)"
+                placeholder={t("secrets.creation.descriptionPlaceholder")}
               />
             </div>
 
@@ -2826,7 +2847,7 @@ export function Secrets() {
               <>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs font-medium" htmlFor="new-secret-provider">Provider</label>
+                  <label className="text-xs font-medium" htmlFor="new-secret-provider">{t("secrets.creation.provider")}</label>
                   <select
                     id="new-secret-provider"
                     className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none"
@@ -2858,9 +2879,9 @@ export function Secrets() {
                         {provider.label}
                         {provider.configured === false &&
                         !getSelectableProviderConfig(providerConfigs, provider.id)
-                          ? " (deployment default missing)"
+                          ? ` (${t("secrets.creation.deploymentDefaultMissingOption")})`
                           : provider.requiresExternalRef
-                            ? " (external only)"
+                            ? ` (${t("secrets.creation.externalOnlyOption")})`
                             : ""}
                       </option>
                     ))}
@@ -2875,7 +2896,7 @@ export function Secrets() {
                   ) : null}
                 </div>
                 <div>
-                  <label className="text-xs font-medium" htmlFor="new-secret-vault">Provider vault</label>
+                  <label className="text-xs font-medium" htmlFor="new-secret-vault">{t("secrets.creation.providerVault")}</label>
                   <select
                     id="new-secret-vault"
                     className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none"
@@ -2884,13 +2905,13 @@ export function Secrets() {
                       setCreateForm((current) => ({ ...current, providerConfigId: event.target.value }))
                     }
                   >
-                    <option value="">Deployment default</option>
+                    <option value="">{t("secrets.creation.deploymentDefault")}</option>
                     {createProviderConfigs.map((config) => {
-                      const blockReason = getProviderConfigBlockReason(config);
+                      const blockReason = getProviderConfigBlockReason(config, t);
                       return (
                         <option key={config.id} value={config.id} disabled={Boolean(blockReason)}>
                           {config.displayName}
-                          {config.isDefault ? " (default)" : ""}
+                          {config.isDefault ? ` (${t("secrets.creation.defaultOption")})` : ""}
                           {blockReason ? ` (${blockReason})` : ""}
                         </option>
                       );
@@ -2903,11 +2924,10 @@ export function Secrets() {
                 </div>
                 {createMode === "managed" ? (
                   <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-(length:--text-micro) text-emerald-700 dark:text-emerald-300">
-                    Paperclip-managed secrets are created in the selected provider and future rotations
-                    write a new provider version through Paperclip.
+                    {t("secrets.creation.managedInfo")}
                     {awsManagedPathPreview ? (
                       <div className="mt-1">
-                        AWS managed path:{" "}
+                        {t("secrets.creation.awsManagedPath")}{" "}
                         <code className="break-all rounded bg-background/70 px-1 py-0.5">
                           {awsManagedPathPreview}
                         </code>
@@ -2927,7 +2947,7 @@ export function Secrets() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={() => {
@@ -2945,12 +2965,12 @@ export function Secrets() {
             >
               {createMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
               {editingDefinition
-                ? "Save changes"
+                ? t("secrets.creation.saveChanges")
                 : secretValueProvider === "user"
-                  ? "Create user-provided secret"
+                  ? t("secrets.creation.createUserSecret")
                   : createMode === "managed"
-                    ? "Create secret"
-                    : "Link reference"}
+                    ? t("secrets.creation.createSecret")
+                    : t("secrets.creation.linkReference")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3119,7 +3139,7 @@ export function Secrets() {
             >
               <option value="">Deployment default</option>
               {selectedRotateProviderConfigs.map((config) => {
-                const blockReason = getProviderConfigBlockReason(config);
+                const blockReason = getProviderConfigBlockReason(config, t);
                 return (
                   <option key={config.id} value={config.id} disabled={Boolean(blockReason)}>
                     {config.displayName}
@@ -3469,12 +3489,13 @@ function providerFamilyIcon(provider: SecretProvider) {
 }
 
 function ProviderVaultInlineWarning({ config }: { config: CompanySecretProviderConfig }) {
-  const blockReason = getProviderConfigBlockReason(config);
+  const { t } = useTranslation();
+  const blockReason = getProviderConfigBlockReason(config, t);
   const message = blockReason ?? config.healthMessage;
   if (!message) {
     return (
       <p className="mt-1 text-(length:--text-micro) text-muted-foreground">
-        {config.isDefault ? "Default vault" : "Vault"} · {config.status.replace("_", " ")}
+        {config.isDefault ? t("secrets.creation.defaultVault") : t("secrets.creation.vault")} · {t(`secrets.creation.providerConfigStatus.${config.status}`)}
       </p>
     );
   }
@@ -3943,10 +3964,15 @@ function AwsProviderVaultDiscoveryPanel({
  * into a bug report, so the button has to confirm the clipboard took it.
  */
 function CopyDetailsButton({ text }: { text: string }) {
+  const { t } = useTranslation();
   const { copied, failed, copy } = useCopyAction();
   return (
     <Button type="button" variant="ghost" size="sm" onClick={() => void copy(text)}>
-      {copied ? "Copied" : failed ? "Copy failed" : "Copy"}
+      {copied
+        ? t("secrets.creation.copied")
+        : failed
+          ? t("secrets.creation.copyFailed")
+          : t("secrets.creation.copy")}
     </Button>
   );
 }
@@ -3958,6 +3984,7 @@ function AwsProviderVaultDiscoveryError({
   form: ProviderVaultForm;
   error: unknown;
 }) {
+  const { t } = useTranslation();
   const details = apiErrorDetails(error);
   const isAccessDenied = isAwsDiscoveryAccessDenied(error);
   const region = (details?.region ?? form.region.trim()) || "unspecified";
@@ -4022,7 +4049,7 @@ function AwsProviderVaultDiscoveryError({
           </dl>
           <div className="rounded-md border border-destructive/20 bg-background/70 p-2 text-foreground">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <span className="font-medium text-muted-foreground">Safe request/error details</span>
+              <span className="font-medium text-muted-foreground">{t("secrets.creation.safeErrorDetails")}</span>
               <CopyDetailsButton text={detailsText} />
             </div>
             <pre className="max-h-36 overflow-auto whitespace-pre-wrap break-words font-mono text-(length:--text-micro) leading-relaxed">
@@ -4044,6 +4071,7 @@ function SecretCreateError({
   provider: SecretProvider;
   providerConfigId: string | null;
 }) {
+  const { t } = useTranslation();
   const details = apiErrorDetails(error);
   const message = readableErrorMessage(error);
   const isAwsCreateError =
@@ -4082,7 +4110,7 @@ function SecretCreateError({
         <div className="min-w-0 flex-1 space-y-2">
           <div>
             <p className="font-medium">
-              {isAccessDenied ? "AWS secret creation needs CreateSecret permission" : "AWS secret creation failed"}
+              {isAccessDenied ? t("secrets.creation.awsCreatePermission") : t("secrets.creation.awsCreateFailed")}
             </p>
             <p className="mt-1 leading-relaxed text-destructive/85">
               {details?.actionableMessage ?? message}
@@ -4094,28 +4122,28 @@ function SecretCreateError({
           <dl className="grid gap-1 text-destructive/80 sm:grid-cols-2">
             {details?.requiredCapability ? (
               <div>
-                <dt className="font-medium">Required IAM capability</dt>
+                <dt className="font-medium">{t("secrets.creation.requiredIam")}</dt>
                 <dd className="font-mono">{details.requiredCapability}</dd>
               </div>
             ) : null}
             {details?.region ? (
               <div>
-                <dt className="font-medium">Region</dt>
+                <dt className="font-medium">{t("secrets.creation.region")}</dt>
                 <dd>{details.region}</dd>
               </div>
             ) : null}
             <div>
-              <dt className="font-medium">Provider vault</dt>
-              <dd className="break-all">{details?.providerConfigId ?? providerConfigId ?? "Deployment default"}</dd>
+              <dt className="font-medium">{t("secrets.creation.providerVault")}</dt>
+              <dd className="break-all">{details?.providerConfigId ?? providerConfigId ?? t("secrets.creation.deploymentDefault")}</dd>
             </div>
             <div>
-              <dt className="font-medium">Operation</dt>
+              <dt className="font-medium">{t("secrets.creation.operation")}</dt>
               <dd>{details?.operation ?? "secret.create"}</dd>
             </div>
           </dl>
           <div className="rounded-md border border-destructive/20 bg-background/70 p-2 text-foreground">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <span className="font-medium text-muted-foreground">Safe request/error details</span>
+              <span className="font-medium text-muted-foreground">{t("secrets.creation.safeErrorDetails")}</span>
               <CopyDetailsButton text={detailsText} />
             </div>
             <pre className="max-h-36 overflow-auto whitespace-pre-wrap break-words font-mono text-(length:--text-micro) leading-relaxed">
