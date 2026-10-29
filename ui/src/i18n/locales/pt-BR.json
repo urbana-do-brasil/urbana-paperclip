@@ -2335,6 +2335,37 @@
       }
     }
   },
+  "agentRuns": {
+    "latest": {
+      "live": "Execução em andamento",
+      "latest": "Última execução"
+    },
+    "list": {
+      "empty": "Ainda não há execuções.",
+      "backToRuns": "Voltar às execuções"
+    },
+    "sources": {
+      "timer": "Agendamento",
+      "assignment": "Atribuição",
+      "onDemand": "Sob demanda",
+      "automation": "Automação"
+    },
+    "status": {
+      "queued": "Na fila",
+      "scheduled_retry": "Nova tentativa agendada",
+      "running": "Em execução",
+      "succeeded": "Concluída",
+      "interrupted": "Interrompida",
+      "failed": "Falhou",
+      "cancelled": "Cancelada",
+      "timed_out": "Tempo esgotado"
+    },
+    "sourceResolved": {
+      "title": "O sistema agrupou esta execução como um falso positivo resolvido pela origem.",
+      "ariaLabel": "Agrupamento de watchdog resolvido pela origem",
+      "label": "Resolvido pela origem"
+    }
+  },
   "mcpConnect": {
     "device": {
       "title": "Conecte seu assistente ao Paperclip",

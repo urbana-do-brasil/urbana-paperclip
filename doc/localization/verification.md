@@ -1514,5 +1514,18 @@ mensagens técnicas da API permanecem intactos.
 `AgentToolsTab.test.tsx` passou (**8/8**), incluindo uma verificação em PT-BR
 dos rótulos, nomes e identificadores técnicos; `locale-validation.test.ts`
 passou (**12/12**). Typecheck direcionado, gates de tokens, `git diff --check` e
-validação OpenSpec estrita passaram. Progresso: **133/159**. Próxima tarefa:
-3.6e, histórico e detalhes de execução do agente.
+validação OpenSpec estrita passaram. Progresso: **134/160**. A etapa 3.6e foi
+dividida em cartões/lista (e1) e detalhes da execução (e2).
+
+### Continuação — cartões e histórico de execuções (3.6e1)
+
+Os cartões de execução recente e as linhas da lista localizam título, status,
+origem e estado vazio nas variantes streamlined e production. Datas relativas
+usam o locale selecionado. Identificadores, resumos fornecidos pelo agente,
+valores de métricas e rotas permanecem intactos; o status em forma de ícone
+também recebe rótulo acessível no idioma da interface.
+
+`AgentDetail.run-history.test.tsx` passou (**4/4**), cobrindo as duas variantes,
+o resumo/ID/rota preservados e o estado vazio; `locale-validation.test.ts`
+passou (**12/12**). Typecheck direcionado, gates de tokens, `git diff --check` e
+validação OpenSpec estrita passaram. Próxima tarefa: 3.6e2, detalhes da execução.

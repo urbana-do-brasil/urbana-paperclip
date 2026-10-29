@@ -234,10 +234,10 @@ function formatEnvForDisplay(envValue: unknown, censorUsernameInLogs: boolean): 
 }
 
 const sourceLabels: Record<string, string> = {
-  timer: "Timer",
-  assignment: "Assignment",
-  on_demand: "On-demand",
-  automation: "Automation",
+  timer: "agentRuns.sources.timer",
+  assignment: "agentRuns.sources.assignment",
+  on_demand: "agentRuns.sources.onDemand",
+  automation: "agentRuns.sources.automation",
 };
 
 const LIVE_SCROLL_BOTTOM_TOLERANCE_PX = 32;
@@ -1587,7 +1587,7 @@ export function resolveLatestRunNavigation(
   return { task, runHref, rowHref };
 }
 
-function LatestRunCard({
+export function LatestRunCard({
   runs,
   agentId,
   issuesById,
@@ -1596,6 +1596,7 @@ function LatestRunCard({
   agentId: string;
   issuesById: Map<string, LatestRunIssue>;
 }) {
+  const { t } = useTranslation();
   const sorted = useMemo(
     () =>
       [...runs].sort(
@@ -1677,7 +1678,7 @@ function LatestRunCard({
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
               </span>
             )}
-            <span>{isLive ? "Live Run" : "Latest Run"}</span>
+            <span>{isLive ? t("agentRuns.latest.live") : t("agentRuns.latest.latest")}</span>
             <span className="font-mono text-xs font-normal text-muted-foreground">
               &middot; {run.id.slice(0, 8)}
             </span>
@@ -1694,7 +1695,7 @@ function LatestRunCard({
       >
         <div className="flex items-center gap-2">
           <StatusIcon className={cn("h-3.5 w-3.5", statusInfo.color, run.status === "running" && "animate-spin")} />
-          <StatusBadge status={run.status} />
+          <StatusBadge status={run.status} label={t(`agentRuns.status.${run.status}`, { defaultValue: run.status.replace(/[_-]/g, " ") })} />
           {task ? (
             <>
               <StatusGlyph status={task.status} size="sm" />
@@ -1713,7 +1714,7 @@ function LatestRunCard({
                   : run.invocationSource === "on_demand" ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300"
                   : "bg-muted text-muted-foreground"
               )}>
-                {sourceLabels[run.invocationSource] ?? run.invocationSource}
+                {sourceLabels[run.invocationSource] ? t(sourceLabels[run.invocationSource]!) : run.invocationSource}
               </Badge>
             </>
           )}
@@ -1761,7 +1762,7 @@ export function AgentOverview({
     ?? asNonEmptyString(agent.adapterConfig?.modelName)
     ?? asNonEmptyString(agent.runtimeConfig?.model)
     ?? t("agentOverview.adapterDefault");
-  const lastRun = runs[0] ?? null;
+    const lastRun = runs[0] ?? null;
   const identity = useQuery({
     queryKey: [...queryKeys.agents.identity(agent.id), lastRun?.id, lastRun?.status],
     queryFn: () => agentsApi.getIdentity(agent.id, agent.companyId),
@@ -1814,7 +1815,9 @@ export function AgentOverview({
             <SummaryRow label={t("agentOverview.model")}><span className="max-w-64 truncate text-sm font-mono">{configuredModel}</span></SummaryRow>
             <SummaryRow label={t("agentOverview.session")}><span className="max-w-64 truncate text-sm font-mono">{runtimeState?.sessionDisplayId ?? runtimeState?.sessionId ?? t("agentOverview.noSession")}</span></SummaryRow>
             <SummaryRow label={t("agentOverview.lastRun")}>
-              <span className="text-sm">{lastRun ? `${lastRun.status} · ${relativeTime(lastRun.createdAt)}` : t("agentOverview.noRuns")}</span>
+            <span className="text-sm">{lastRun
+              ? `${t(`agentRuns.status.${lastRun.status}`, { defaultValue: lastRun.status.replace(/[_-]/g, " ") })} · ${relativeTime(lastRun.createdAt)}`
+              : t("agentOverview.noRuns")}</span>
             </SummaryRow>
           </div>
         </section>
@@ -3288,7 +3291,8 @@ function PromptEditorSkeleton() {
 
 /* ---- Runs Tab ---- */
 
-function RunListItem({ run, isSelected, agentId }: { run: HeartbeatRun; isSelected: boolean; agentId: string }) {
+export function RunListItem({ run, isSelected, agentId }: { run: HeartbeatRun; isSelected: boolean; agentId: string }) {
+  const { t } = useTranslation();
   const statusInfo = runStatusIcons[run.status] ?? { icon: Clock, color: "text-neutral-400" };
   const StatusIcon = statusInfo.icon;
   const metrics = runMetrics(run);
@@ -3306,7 +3310,11 @@ function RunListItem({ run, isSelected, agentId }: { run: HeartbeatRun; isSelect
       )}
     >
       <div className="flex items-center gap-2">
-        <StatusIcon className={cn("h-3.5 w-3.5 shrink-0", statusInfo.color, run.status === "running" && "animate-spin")} />
+        <StatusIcon
+          role="img"
+          aria-label={t(`agentRuns.status.${run.status}`, { defaultValue: run.status.replace(/[_-]/g, " ") })}
+          className={cn("h-3.5 w-3.5 shrink-0", statusInfo.color, run.status === "running" && "animate-spin")}
+        />
         <span className="font-mono text-xs text-muted-foreground">
           {run.id.slice(0, 8)}
         </span>
@@ -3317,7 +3325,7 @@ function RunListItem({ run, isSelected, agentId }: { run: HeartbeatRun; isSelect
             : run.invocationSource === "on_demand" ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300"
             : "bg-muted text-muted-foreground"
         )}>
-          {sourceLabels[run.invocationSource] ?? run.invocationSource}
+          {sourceLabels[run.invocationSource] ? t(sourceLabels[run.invocationSource]!) : run.invocationSource}
         </Badge>
         {sourceResolvedFold ? <SourceResolvedFoldBadge showIcon={false} className="shrink-0 text-(length:--text-nano) py-0" /> : null}
         <span className="ml-auto text-(length:--text-micro) text-muted-foreground shrink-0">
@@ -3339,7 +3347,7 @@ function RunListItem({ run, isSelected, agentId }: { run: HeartbeatRun; isSelect
   );
 }
 
-function RunsTab({
+export function RunsTab({
   runs,
   companyId,
   agentId,
@@ -3357,9 +3365,10 @@ function RunsTab({
   adapterConfig: Record<string, unknown>;
 }) {
   const { isMobile } = useSidebar();
+  const { t } = useTranslation();
 
   if (runs.length === 0) {
-    return <p className="text-sm text-muted-foreground">No runs yet.</p>;
+    return <p className="text-sm text-muted-foreground">{t("agentRuns.list.empty")}</p>;
   }
 
   // Sort by created descending
@@ -3381,7 +3390,7 @@ function RunsTab({
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors no-underline"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back to runs
+            {t("agentRuns.list.backToRuns")}
           </Link>
           <RunDetail key={selectedRun.id} run={selectedRun} agentRouteId={agentRouteId} adapterType={adapterType} adapterConfig={adapterConfig} />
         </div>

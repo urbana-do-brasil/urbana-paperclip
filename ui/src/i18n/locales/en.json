@@ -2291,6 +2291,37 @@
       }
     }
   },
+  "agentRuns": {
+    "latest": {
+      "live": "Live Run",
+      "latest": "Latest Run"
+    },
+    "list": {
+      "empty": "No runs yet.",
+      "backToRuns": "Back to runs"
+    },
+    "sources": {
+      "timer": "Timer",
+      "assignment": "Assignment",
+      "onDemand": "On-demand",
+      "automation": "Automation"
+    },
+    "status": {
+      "queued": "Queued",
+      "scheduled_retry": "Scheduled retry",
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "interrupted": "Interrupted",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "timed_out": "Timed out"
+    },
+    "sourceResolved": {
+      "title": "The system folded this run as a source-resolved false positive.",
+      "ariaLabel": "Source-resolved watchdog fold",
+      "label": "Source-resolved"
+    }
+  },
   "mcpConnect": {
     "device": {
       "title": "Connect your assistant to Paperclip",
