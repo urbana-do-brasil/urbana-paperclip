@@ -540,9 +540,12 @@
         "ui/src/pages/tools/profiles/ProfilesIndex.test.tsx",
         "ui/src/pages/tools/ToolsAccess.test.tsx",
         "ui/src/pages/AgentToolsTab.test.tsx",
+        "ui/src/pages/tools/PasteConfigTab.test.tsx",
+        "ui/src/pages/tools/McpConfigHelpDialog.test.tsx",
+        "ui/src/pages/tools/GatewaysTab.test.tsx",
         "ui/src/i18n/locale-validation.test.ts"
       ],
-      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia), 3.9b1–b2c (descoberta/cartões, árvore e gestão de pastas, detalhes/arquivos e operações da biblioteca), 3.9c (Skill Studio) e 3.9d (catálogo e instalação/configuração de equipes) verificadas em PT-BR/en. 3.9e1–e2 verifica navegação, lista, assistente, detalhe e administração de perfis, gates de acesso e aba de ferramentas do agente, também em PT-BR/en; 3.9e3 (gateway MCP nomeado, tokens e configuração colada) permanece pendente, assim como descoberta/conexão de apps (3.9f). Biblioteca e catálogo de skills foram conferidos nas variantes streamlined e production; a superfície do catálogo de equipes compartilha sua implementação entre as variantes. Nomes e descrições de pacotes, apps, perfis e ferramentas fornecidos, conteúdo externo, compatibilidade, permissões, IDs, referências e payloads foram preservados."
+      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia), 3.9b1–b2c (descoberta/cartões, árvore e gestão de pastas, detalhes/arquivos e operações da biblioteca), 3.9c (Skill Studio), 3.9d (catálogo e instalação/configuração de equipes) e 3.9e1–e3 (perfis, acesso, gateways MCP, tokens e configuração colada) foram verificadas em PT-BR/en. Descoberta/conexão de apps (3.9f) permanece pendente. Biblioteca e catálogo de skills foram conferidos nas variantes streamlined e production; a superfície do catálogo de equipes compartilha sua implementação entre as variantes. Nomes e descrições de pacotes, apps, perfis e ferramentas fornecidos, conteúdo externo, compatibilidade, permissões, IDs, referências e payloads foram preservados."
     },
     {
       "id": "experimental",
@@ -1487,10 +1490,10 @@
   ],
   "checkpoint": {
     "date": "2026-10-29",
-    "completedTasks": 205,
+    "completedTasks": 207,
     "totalTasks": 223,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Em 3.9a–d, fontes e biblioteca de skills, Skill Studio e catálogo/instalação de equipes foram verificados em PT-BR/en. 3.9e1–e2 localizou navegação, lista, assistente, detalhe e administração de perfis, gates de acesso e ferramentas do agente; nomes externos, permissões, IDs, estados/enums, rotas, decisões e payloads foram preservados. Bateria focal de ProfileDetail, ProfileWizard, ProfilesIndex, ToolsAccess, AgentToolsTab e locale: 56/56; check:tokens, check:token-gates, JSON, git diff --check e OpenSpec estrito passaram. O typecheck da UI aponta somente o erro preexistente em storybook/prototypes/NewAgentWizard.tsx (SETUP_LOGIN_HINTS não exportado). Progresso: 205/223. Próxima: 3.9e3, configuração avançada, gateways MCP e configuração colada."
+    "reason": "Em 3.9a–d, fontes e biblioteca de skills, Skill Studio e catálogo/instalação de equipes foram verificados em PT-BR/en. 3.9e1–e3 localizou perfis, acesso, gateways MCP, tokens e configuração colada; nomes externos, permissões, URLs, JSON MCP, IDs, estados/enums, ações, credenciais e payloads foram preservados. Bateria focal de PasteConfigTab, McpConfigHelpDialog, GatewaysTab e locale: 39/39; check:tokens, check:token-gates, JSON, git diff --check e OpenSpec estrito passaram. O typecheck da UI aponta somente o erro preexistente em storybook/prototypes/NewAgentWizard.tsx (SETUP_LOGIN_HINTS não exportado). Progresso: 207/223. Próxima: 3.9f, descoberta, conexão e gestão de apps."
   }
 }

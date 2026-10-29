@@ -2359,5 +2359,24 @@ estados de detalhe, preservação de decisões enviadas à API e conteúdo exter
 `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
 typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
-Progresso real pelo manifesto: **205/223 tarefas**. Próxima: 3.9e3,
-configuração avançada, gateways MCP e configuração colada.
+Progresso real pelo manifesto neste checkpoint: **205/223 tarefas**. A próxima
+atividade era 3.9e3, configuração avançada, gateways MCP e configuração colada.
+
+### Configuração avançada e gateways MCP (3.9e3)
+
+A tela de configuração colada e a ajuda para gerar JSON MCP acompanham o idioma
+selecionado, inclusive o prompt copiável. Gateways nomeados, escopos,
+responsáveis, criação/rotação e revogação de tokens, snippets e estados vazios
+também estão em PT-BR/en. Foram mantidos os campos e valores do JSON MCP,
+URLs, nomes de cabeçalho, IDs, nomes fornecidos, ações `tools/list` e
+`tools/call`, valores de credenciais/tokens, conteúdo de snippets e payloads.
+
+`PasteConfigTab.test.tsx`, `McpConfigHelpDialog.test.tsx`,
+`GatewaysTab.test.tsx` e `locale-validation.test.ts` passaram em **39/39 testes**,
+incluindo prompt em PT-BR e preservação da estrutura MCP. `pnpm check:tokens`,
+`pnpm check:token-gates`, parse dos catálogos, `git diff --check` e
+`pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso real pelo manifesto: **207/223 tarefas**. Próxima: 3.9f, descoberta,
+conexão e gestão de apps.

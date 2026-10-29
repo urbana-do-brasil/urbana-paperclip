@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectToolAppResult, McpJsonImportPreview } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import { PasteConfigTab } from "./PasteConfigTab";
 
 const toolsApiMock = vi.hoisted(() => ({
@@ -174,7 +175,8 @@ function oauthConnectResult(startUrl: string | null = null): ConnectToolAppResul
 describe("PasteConfigTab — discoverability copy (PAP-11091)", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -211,12 +213,25 @@ describe("PasteConfigTab — discoverability copy (PAP-11091)", () => {
     expect(link).toBeTruthy();
     expect(link?.getAttribute("href")).toBe("/apps");
   });
+
+  it("localizes the paste-config guidance while keeping the apps route stable", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render();
+
+    expect(container.textContent).toContain('Cole o trecho de configuração MCP do README da ferramenta');
+    expect(container.textContent).toContain("Tem apenas uma URL?");
+    const link = Array.from(container.querySelectorAll("a")).find((a) => a.textContent?.includes("conexões de apps planejadas"));
+    expect(link?.getAttribute("href")).toBe("/apps");
+    expect(container.querySelector("textarea")?.placeholder).toContain('"mcpServers"');
+    expect(container.querySelector("textarea")?.placeholder).toContain('"GITHUB_TOKEN"');
+  });
 });
 
 describe("PasteConfigTab — activation handoff (PAP-11092)", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });

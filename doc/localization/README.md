@@ -53,14 +53,15 @@ concluídas. 3.9b2 foi dividida em b2a (árvore e gestão de pastas), b2b (detal
 e arquivos) e b2c (edição, versões e operações). 3.9b2a e 3.9b2b estão
 concluídas; 3.9b2c (edição, versões e operações), 3.9c (Skill Studio) e 3.9d
 (catálogo de equipes e instalação/configuração) também estão concluídas. 3.9e1–e2
-(perfis, permissões, assistente e detalhe) estão verificadas; próxima: 3.9e3,
-configuração avançada de ferramentas, gateways MCP e configuração colada.
+(perfis, permissões, assistente e detalhe) e 3.9e3 (configuração colada, prompt
+de ajuda, gateways MCP e tokens) estão verificadas em PT-BR/en. Próxima: 3.9f,
+descoberta, conexão e gestão de apps.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d e perfis/ferramentas de agentes (3.9e1–e2) verificadas. Configuração avançada/gateways (3.9e3) e apps (3.9f) pendentes. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d e administração de perfis/ferramentas (3.9e1–e3) verificadas. Descoberta, conexão e gestão de apps (3.9f) pendentes. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |

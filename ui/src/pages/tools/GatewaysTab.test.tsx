@@ -274,4 +274,25 @@ describe("GatewaysTab", () => {
     expect(container.textContent).toContain("revoked 3 hours ago");
     expect(container.textContent).toContain("No snippets available.");
   });
+
+  it("localizes gateway controls and metadata but preserves MCP action identifiers", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listGatewaysMock.mockResolvedValue({
+      gateways: [gateway({ tokens: [token()], clientSnippets: [] })],
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await render(
+      <QueryClientProvider client={client}>
+        <GatewaysTab companyId="company-1" />
+      </QueryClientProvider>,
+    );
+
+    expect(container.textContent).toContain("Gateways MCP nomeados");
+    expect(container.textContent).toContain("Responsável");
+    expect(container.textContent).toContain("Ferramentas permitidas");
+    expect(container.textContent).toContain("2 ferramentas permitidas");
+    expect(container.textContent).toContain("tools/list, tools/call");
+    expect(container.textContent).toContain("expira");
+    expect(container.textContent).toContain("Nenhum trecho disponível.");
+  });
 });
