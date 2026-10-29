@@ -312,15 +312,18 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3a Localizar help e saída humana da listagem de organizações, preservando comandos, flags, dados e JSON; testes bilíngues de sucesso, vazio e falha e paridade de JSON: 28/28. As demais operações e a regressão de processo de 4.4 permanecem pendentes.
   - [x] 4.3b Localizar consulta por ID e organização atual, incluindo help, resultado nulo e resolução de contexto; preservar JSON, flags, dados, mensagens estruturadas e códigos. Help: 11/11; company: 23/23. Demais operações e regressão de processo permanecem pendentes.
   - [x] 4.3c Localizar help e resultado vazio de company stats; preservar dados, JSON, falhas estruturadas e códigos. Company: 25/25; help direcionado: 1/1.
-  - [x] 4.3d Localizar help e mensagens próprias de company create/update/archive; preservar rotas, payloads, JSON, erros estruturados e códigos. Company: 27/27; help focado: 4/4. Branding e importação/exportação continuam pendentes.
-  - [x] 4.3e Localizar help de company branding:update e verificar payload, rota, falhas e JSON nos dois idiomas. Company: 29/29; help focado: 2/2. Importação/exportação e demais grupos continuam pendentes.
+  - [x] 4.3d Localizar help e mensagens próprias de company create/update/archive; preservar rotas, payloads, JSON, erros estruturados e códigos. Company: 27/27; help focado: 4/4.
+  - [x] 4.3e Localizar help de company branding:update e verificar payload, rota, falhas e JSON nos dois idiomas. Company: 29/29; help focado: 2/2.
+  - [x] 4.3f Localizar company export, preservando payload, arquivos e JSON; manter erros estruturados estáveis entre idiomas. Testes focados: 29/29 em três arquivos; typecheck da CLI terminou com exit 137 por limite de memória. company import e demais grupos permanecem pendentes.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação
 
 - [x] 5.1 Criar mapa de tópicos/slugs e fontes de documentação pública e registrar exclusões de material interno; implementar rota de ajuda com Markdown seguro, navegação por idioma e deep links no bundle. Verificar tópico PT-BR/en, acesso sem login, ausência de consultas privadas, markup não executável e recursos empacotados. Spec: `localized-help`.
 - [ ] 5.2 Traduzir início, conceitos e guias de operação da interface, em lotes por jornada, mantendo equivalentes ingleses. Verificar paridade de tópicos, glossário, links e uma revisão humana dos exemplos e da equivalência de instruções. Spec: `localized-help`.
+  - [x] 5.2a Traduzir e incluir no bundle público o guia de política de execução; preservar blocos de código, links e instruções. Gate de cobertura: 68 tópicos; testes do checker: 4/4; conteúdo/HelpPage: 9/9. Revisão humana ainda pendente.
 - [ ] 5.3 Traduzir guias de instalação, configuração, administração, CLI, agentes e adapters destinados aos operadores, em lotes por tópico. Verificar comandos, variáveis e links preservados, exemplos contra fixtures/ambiente descartável e lacunas eventualmente existentes na documentação de origem. Spec: `localized-help`.
+  - [x] 5.3a Traduzir e incluir no bundle público o guia de configuração OpenClaw/Docker; preservar blocos de código, comandos, variáveis e URLs. Gate de cobertura: 68 tópicos; testes do checker: 4/4; conteúdo/HelpPage: 9/9. Smoke operacional e revisão humana ainda pendentes.
 - [x] 5.4 Conectar Documentation ao idioma efetivo, adicionar troca de idioma por tópico e fallback inglês identificado. Verificar navegação da aplicação para ajuda, link direto compartilhado, idioma explícito sem alterar conta e check que reprova um guia PT-BR ausente. Specs: `localized-help`, `localization-quality`.
 
 ## 6. Comunicação dos agentes no idioma escolhido

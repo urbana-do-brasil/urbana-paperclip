@@ -3376,3 +3376,22 @@ agora usa o feed escopado existente quando `entityType=routine` e há ID; feed
 geral e escopo incompleto mantêm o comportamento anterior. Outros tipos não
 foram generalizados. App, feed de rotina e AuditHub: **19/19**; typecheck UI
 passou. 3.10g concluída; progresso: **292/309**.
+
+
+## Exportação da organização na CLI (4.3f)
+
+`company export` localiza help, mensagens humanas de sucesso/aviso e erros de
+destino; em `--json`, a saída e erros estruturados permanecem estáveis. Payload
+e arquivos foram preservados. Três arquivos de teste passaram: **29/29**. O
+typecheck da CLI terminou com exit 137 por limite de memória. Importação e os
+demais grupos de comandos continuam pendentes.
+
+## Guias de política de execução e OpenClaw/Docker (5.2a/5.3a)
+
+Os guias foram traduzidos, incluídos em `topics.json` e no bundle público, com
+blocos cercados de código idênticos às fontes. A cobertura reconhece **68
+tópicos**; checker de cobertura **4/4** e conteúdo/HelpPage **9/9**. Os testes
+verificam fontes e estrutura, não a qualidade semântica: revisão humana e smoke
+operacional do guia OpenClaw permanecem pendentes.
+
+Checkpoint OpenSpec reconciliado: **295/312 tarefas**.
