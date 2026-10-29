@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createClientMetadataResolver, mcpRedirectMatches } from "../services/public-mcp/client-metadata.js";
-import { mcpInvitation, mcpSetupMarkdown } from "@paperclipai/shared";
+import { mcpInvitation, mcpSetupMarkdown, mcpSetupSteps } from "@paperclipai/shared";
 import { renderMcpSetup } from "../services/public-mcp/setup.js";
 
 const id = "https://assistant.example/client.json";
@@ -71,13 +71,34 @@ describe("assistant invitation content", () => {
   it("contains no credential and tells a cold client to verify actual access", () => {
     const resource = "https://paperclip.example/mcp/paperclip";
     const company = { id: "44444444-4444-4444-8444-444444444444", name: "Butter" };
-    expect(mcpInvitation(resource, company)).toContain("company=" + company.id);
-    const markdown = mcpSetupMarkdown(resource, company.id);
-    expect(markdown).toContain("paperclip_connection");
-    expect(markdown).toContain("restart");
-    expect(markdown).not.toContain("paperclip_whoami");
-    expect(markdown).not.toContain("pcmcp_at_");
-    expect(renderMcpSetup(resource, company.id)).toContain("Instructions for assistants");
-    expect(renderMcpSetup(resource, company.id)).not.toContain(company.name);
+    const invitationEn = mcpInvitation(resource, company, "en");
+    const invitationPt = mcpInvitation(resource, company, "pt-BR");
+    expect(invitationEn).toContain("company=" + company.id);
+    expect(invitationEn).toContain("Connect to my Butter Paperclip organization");
+    expect(invitationEn).toContain("locale=en");
+    expect(invitationPt).toContain("Conecte-se à minha organização Butter do Paperclip");
+    expect(invitationPt).toContain("locale=pt-BR");
+
+    const markdownEn = mcpSetupMarkdown(resource, company.id, "en");
+    const markdownPt = mcpSetupMarkdown(resource, company.id, "pt-BR");
+    expect(markdownEn).toContain("paperclip_connection");
+    expect(markdownEn).toContain("restart");
+    expect(markdownPt).toContain("paperclip_connection");
+    expect(markdownPt).toContain("reinicie o cliente");
+    expect(markdownPt).toContain("## Após a aprovação");
+    for (const assistant of ["codex", "claude", "opencode", "browser", "headless", "other"] as const) {
+      const englishSteps = mcpSetupSteps(resource, assistant, "en");
+      const portugueseSteps = mcpSetupSteps(resource, assistant, "pt-BR");
+      expect(portugueseSteps.map(step => step.code)).toEqual(englishSteps.map(step => step.code));
+      expect(portugueseSteps.map(step => step.text)).not.toEqual(englishSteps.map(step => step.text));
+    }
+
+    expect(markdownEn).not.toContain("paperclip_whoami");
+    expect(markdownEn).not.toContain("pcmcp_at_");
+    const pagePt = renderMcpSetup(resource, company.id, "pt-BR");
+    expect(pagePt).toContain('<html lang="pt-BR">');
+    expect(pagePt).toContain("Instruções para assistentes");
+    expect(pagePt).toContain("locale=pt-BR");
+    expect(pagePt).not.toContain(company.name);
   });
 });

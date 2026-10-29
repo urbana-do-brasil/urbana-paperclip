@@ -1,4 +1,5 @@
 import type { McpConnection, ToolConnection } from "@paperclipai/shared";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
 import { humanizeConnectionDisplayName } from "@paperclipai/shared";
 import { Identity } from "@/components/Identity";
 import type { CompanyUserProfile } from "@/lib/company-members";
@@ -57,6 +58,17 @@ export function assistantConnectionDisplayName(connection: McpConnection): strin
   const clientName = connection.clientName.trim();
   const owner = connection.user ? `${possessive(ownerGivenName(connection.user.name))} ` : "";
   return `${owner}${clientName} connection`;
+}
+
+/** Localize only the generic relationship label; preserve owner/client names. */
+export function assistantConnectionDisplayNameForLocale(
+  connection: McpConnection,
+  locale: SupportedLocale,
+): string {
+  if (locale === "en") return assistantConnectionDisplayName(connection);
+  const clientName = connection.clientName.trim();
+  if (!connection.user) return `Conexão ${clientName}`;
+  return `Conexão ${clientName} de ${ownerGivenName(connection.user.name)}`;
 }
 
 export function ConnectionOwnerIdentity({ owner }: { owner: ConnectionOwnerProfile | null }) {

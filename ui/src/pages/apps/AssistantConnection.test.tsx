@@ -41,6 +41,36 @@ describe("assistant setup from Connections", () => {
     expect(container.textContent).not.toContain("Open setup instructions");
     expect(mocks.revoke).not.toHaveBeenCalled();
   });
+  it("localizes assistant setup and revocation in PT-BR while preserving identifiers and URLs", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mocks.connections.mockResolvedValue([grant]);
+    await render();
+
+    expect(container.textContent).toContain("Conexão de assistente (MCP)");
+    expect(container.textContent).toContain("Conecte seu assistente ao Paperclip.");
+    expect(container.textContent).toContain("Verifique `opencode --version` e a configuração existente.");
+    expect(container.textContent).toContain("Conectado como você · Leitura e gravação");
+    expect(container.textContent).toContain("Conexão OpenCode de Dotta");
+
+    const copyInvitation = container.querySelector<HTMLButtonElement>('[aria-label="Copiar convite"]');
+    expect(copyInvitation).not.toBeNull();
+    await act(async () => copyInvitation?.click());
+    const invitation = String(mocks.copy.mock.calls.at(-1)?.[0]);
+    expect(invitation).toContain("Conecte-se à minha organização Butter do Paperclip");
+    expect(invitation).toContain("locale=pt-BR");
+    expect(invitation).toContain("company=butter");
+    expect(invitation).toContain("https://canonical.example/mcp/setup");
+
+    const revoke = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Revogar",
+    );
+    mocks.connections.mockResolvedValue([]);
+    await act(async () => revoke?.click());
+    await flush();
+    expect(mocks.revoke).toHaveBeenCalledWith("grant", expect.anything());
+    expect(container.textContent).not.toContain("Conexão OpenCode de Dotta");
+    expect(container.textContent).toContain("Ainda não há assistentes conectados a Butter.");
+  });
   it("surfaces catalog status failures and recovers without claiming there are no connections", async () => {
     mocks.connections.mockRejectedValue(new Error("offline"));
     await render(<AssistantConnectionCard onNavigate={vi.fn()} />);

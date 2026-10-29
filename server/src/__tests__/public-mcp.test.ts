@@ -101,6 +101,13 @@ describe.skipIf(!support.supported)("public MCP OAuth and tool boundary", () => 
       expect(metadata.body.resource).toBe(config.resource);
       expect(select).toHaveBeenCalled();
       expect((await request(app).get("/mcp/setup.md")).status).toBe(200);
+      const setupPt = await request(app).get("/mcp/setup.md?locale=pt-BR");
+      expect(setupPt.status).toBe(200);
+      expect(setupPt.text).toContain("# Conecte seu assistente ao Paperclip");
+      expect(setupPt.text).toContain("Não crie tarefas nem comentários apenas para testar a conexão.");
+      const setupEn = await request(app).get("/mcp/setup.md?locale=en");
+      expect(setupEn.status).toBe(200);
+      expect(setupEn.text).toContain("# Connect your assistant to Paperclip");
       expect((await request(app).post("/mcp/paperclip")).status).toBe(401);
     } finally {
       select.mockRestore();

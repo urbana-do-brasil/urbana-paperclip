@@ -2194,3 +2194,24 @@ Dot, identidade de organização fixa e origem/branding não confiáveis.
 
 `McpConnect.test.tsx`: **24/24 testes**. O progresso é **192/209 tarefas**;
 próxima: 3.8f3, instruções e gestão das conexões pessoais dos assistentes.
+
+
+### Configuração e gestão de conexões de assistentes (3.8f3)
+
+A tela autenticada de configuração e gestão e os links públicos `/mcp/setup` e
+`/mcp/setup.md` agora apresentam instruções em PT-BR/en. O locale acompanha o
+convite e o link Markdown; comandos, URLs de conexão, escopos, identidades,
+autorização e payloads técnicos permanecem intactos. A revogação continua usando
+o mesmo identificador e endpoint.
+
+`AssistantConnection.test.tsx`, `public-mcp-client-metadata.test.ts` e
+`public-mcp.test.ts` passaram em conjunto com **38 testes aprovados**; outros
+**76 foram ignorados**, pois o ambiente não dispõe de suporte ao PostgreSQL
+embutido usado pela suíte de rotas. `locale-validation.test.ts`: **12/12**;
+`@paperclipai/shared` typecheck, `check:tokens`, `check:token-gates`, parse dos
+catálogos, `git diff --check` e validação OpenSpec estrita passaram. O typecheck
+da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O typecheck completo do servidor foi encerrado pelo sistema com SIGKILL (137)
+durante a preparação do runner, por limite de memória. O progresso é
+**194/209 tarefas**; próxima: 3.9, skills, ferramentas, apps e catálogos.
