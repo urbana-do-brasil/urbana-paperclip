@@ -2767,3 +2767,22 @@ salvamento), b3 (gatilhos, agenda e webhooks), b4 (execuções, atividade e
 histórico de versões) e b5 (feed de auditoria). O progresso continua em
 **230 tarefas concluídas**; com a decomposição, o total agora é **258**. Próxima:
 3.10b1, shell e visão geral do detalhe.
+
+## Rotinas — shell e resumo do detalhe (3.10b1)
+
+O shell, navegação contextual, breadcrumbs, placeholders de título/seção e visão
+geral somente de leitura acompanham PT-BR/en nas variantes streamlined e
+production. Também foram localizados os estados sem organização e de falha de
+carregamento, além de rótulos acessíveis e estados de status. Valores, links,
+compatibilidade de rotas e mensagens de erro fornecidas pelo servidor foram
+preservados. A edição da visão geral, variáveis, segredos, salvamento, gatilhos,
+execuções e auditoria permanecem nas etapas seguintes.
+
+`RoutineOverview.test.tsx`, `RoutineSubSidebar.test.tsx`,
+`RoutineSectionHeading.test.tsx`, `RoutineDetailPlaceholder.test.tsx`,
+`RoutineDetail.test.tsx` e `locale-validation.test.ts` passaram em **28/28
+testes focados**. O typecheck direcionado dos arquivos alterados passou. O
+typecheck completo da UI foi encerrado pelo limite de memória (código 137), sem
+diagnóstico de TypeScript. `check:tokens`, `check:token-gates`, JSON, `git diff
+--check` e OpenSpec estrito passaram. Progresso: **231/258 tarefas**. Próxima:
+3.10b2, edição da visão geral, variáveis, segredos e salvamento.

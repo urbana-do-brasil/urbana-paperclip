@@ -13,6 +13,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Link } from "@/lib/router";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 import {
   ROUTINE_SECTION_KEYS,
   type RoutineSectionKey,
@@ -29,32 +30,35 @@ import {
 
 type NavItem = {
   key: RoutineSectionKey;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
 };
 
 type NavGroup = {
-  label: string;
+  key: string;
+  labelKey: string;
   items: NavItem[];
 };
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Routine",
+    key: "routine",
+    labelKey: "routines.detail.nav.routine",
     items: [
-      { key: "overview", label: "Overview", icon: Circle },
-      { key: "triggers", label: "Triggers", icon: Clock3 },
-      { key: "variables", label: "Variables", icon: LayoutGrid },
-      { key: "secrets", label: "Secrets", icon: KeyRound },
-      { key: "delivery", label: "Delivery", icon: Send },
+      { key: "overview", labelKey: "routines.detail.sections.overview", icon: Circle },
+      { key: "triggers", labelKey: "routines.detail.sections.triggers", icon: Clock3 },
+      { key: "variables", labelKey: "routines.detail.sections.variables", icon: LayoutGrid },
+      { key: "secrets", labelKey: "routines.detail.sections.secrets", icon: KeyRound },
+      { key: "delivery", labelKey: "routines.detail.sections.delivery", icon: Send },
     ],
   },
   {
-    label: "Operate",
+    key: "operate",
+    labelKey: "routines.detail.nav.operate",
     items: [
-      { key: "runs", label: "Runs", icon: Play },
-      { key: "activity", label: "Activity", icon: ActivityIcon },
-      { key: "history", label: "History", icon: HistoryIcon },
+      { key: "runs", labelKey: "routines.detail.sections.runs", icon: Play },
+      { key: "activity", labelKey: "routines.detail.sections.activity", icon: ActivityIcon },
+      { key: "history", labelKey: "routines.detail.nav.history", icon: HistoryIcon },
     ],
   },
 ];
@@ -74,6 +78,7 @@ export function RoutineSubSidebar({
   hasLiveRun: boolean;
   onNavigate: (section: RoutineSectionKey) => void;
 }) {
+  const { t } = useTranslation();
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
   const focusItem = (index: number) => {
@@ -109,13 +114,13 @@ export function RoutineSubSidebar({
 
   return (
     <nav
-      aria-label="Routine sections"
+      aria-label={t("routines.detail.sectionNavigation")}
       className="hidden h-full w-52 shrink-0 flex-col gap-4 overflow-y-auto border-r border-border bg-background px-3 py-4 md:flex"
     >
       {NAV_GROUPS.map((group) => (
-        <div key={group.label} className="flex flex-col gap-0.5">
+        <div key={group.key} className="flex flex-col gap-0.5">
           <p className="mx-2 px-2 pb-1 text-(length:--text-nano) font-medium uppercase tracking-widest font-mono text-muted-foreground/60">
-            {group.label}
+            {t(group.labelKey)}
           </p>
           {group.items.map((item) => {
             flatIndex += 1;
@@ -147,12 +152,12 @@ export function RoutineSubSidebar({
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate">{t(item.labelKey)}</span>
                 {showLiveDot ? (
                   <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500 motion-safe:animate-pulse" />
                 ) : dirty ? (
                   <span
-                    aria-label="Unsaved changes"
+                    aria-label={t("routines.detail.unsavedChanges")}
                     className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 ring-2 ring-background"
                   />
                 ) : null}
@@ -175,6 +180,7 @@ export function RoutineSectionPicker({
   onNavigate: (section: RoutineSectionKey) => void;
   isSectionDirty: (section: RoutineSectionKey) => boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="sticky top-0 z-10 border-b border-border bg-background px-4 py-2 md:hidden">
       <Select
@@ -185,20 +191,20 @@ export function RoutineSectionPicker({
           }
         }}
       >
-        <SelectTrigger className="h-11 w-full" aria-label="Routine section">
+        <SelectTrigger className="h-11 w-full" aria-label={t("routines.detail.sectionSelector")}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {NAV_GROUPS.map((group) => (
-            <SelectGroup key={group.label}>
+            <SelectGroup key={group.key}>
               <SelectLabel className="uppercase tracking-(--tracking-eyebrow) text-(length:--text-micro)">
-                {group.label}
+                {t(group.labelKey)}
               </SelectLabel>
               {group.items.map((item) => (
                 <SelectItem key={item.key} value={item.key} className="h-11">
                   <span className="flex items-center gap-2">
                     <item.icon className="h-3.5 w-3.5" />
-                    {item.label}
+                    {t(item.labelKey)}
                     {isSectionDirty(item.key) ? (
                       <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                     ) : null}

@@ -2,7 +2,8 @@
 
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { RoutineSectionHeading } from "./RoutineSectionHeading";
 
 const copyTextToClipboard = vi.hoisted(() => vi.fn(async () => {}));
@@ -24,9 +25,14 @@ async function act(callback: () => void | Promise<void>) {
 describe("RoutineSectionHeading", () => {
   let container: HTMLDivElement;
 
-  afterEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  afterEach(async () => {
     container?.remove();
     copyTextToClipboard.mockClear();
+    await i18n.changeLanguage("en");
   });
 
   it("copies the description markdown from the button next to the heading", async () => {
@@ -69,5 +75,25 @@ describe("RoutineSectionHeading", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("localizes the copy-description action in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(<RoutineSectionHeading title="Resumo" copyText="Descrição" />);
+    });
+
+    const button = container.querySelector<HTMLButtonElement>('button[aria-label="Copiar descrição"]');
+    expect(button?.title).toBe("Copiar descrição");
+    await act(async () => {
+      button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(copyTextToClipboard).toHaveBeenCalledWith("Descrição");
+    expect(document.body.textContent).toContain("Descrição copiada");
+
+    await act(async () => root.unmount());
   });
 });

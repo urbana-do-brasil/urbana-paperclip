@@ -5,8 +5,10 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import type { RoutineDetail, RoutineRunSummary } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { RoutineDetailContext, type RoutineDetailContextValue } from "./routine-sections/context";
 import {
+  formatRoutineTimestamp,
   RoutineOverview,
   routineRunIssue,
   summarizeRoutineSchedule,
@@ -139,7 +141,8 @@ describe("RoutineOverview", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     issueRowRender.mockClear();
     vi.spyOn(Date, "now").mockReturnValue(new Date("2026-08-31T17:00:00.000Z").getTime());
     container = document.createElement("div");
@@ -147,10 +150,11 @@ describe("RoutineOverview", () => {
     root = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root.unmount());
     container.remove();
     vi.restoreAllMocks();
+    await i18n.changeLanguage("en");
   });
 
   it("summarizes enabled schedules and their next run", () => {
@@ -205,5 +209,33 @@ describe("RoutineOverview", () => {
       .not.toBeNull();
     expect(container.querySelector('a[href="/routines/routine-1/activity"]'))
       .not.toBeNull();
+  });
+
+  it("localizes overview facts and schedule summaries in PT-BR while preserving technical values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    expect(summarizeRoutineSchedule(routine.triggers)).toMatchObject({
+      label: "1 agendamento ativo",
+      detail: "0 9 * * 1-5 · America/Los_Angeles",
+    });
+    expect(summarizeRoutineSchedule([{ ...routine.triggers[0]!, kind: "webhook", enabled: true }])).toMatchObject({
+      label: "1 webhook ativo",
+      detail: "Executada ao receber solicitações",
+    });
+
+    flushSync(() => root.render(
+      <RoutineDetailContext.Provider value={contextFixture()}>
+        <RoutineOverview />
+      </RoutineDetailContext.Provider>,
+    ));
+
+    expect(container.textContent).toContain("Estado");
+    expect(container.textContent).toContain("Ativa");
+    expect(container.textContent).toContain("Próxima execução");
+    expect(container.textContent).toContain("Agente padrão");
+    expect(container.textContent).toContain("Execuções recentes");
+    expect(container.textContent).toContain("Concluída");
+    expect(container.textContent).toContain("America/Los_Angeles");
+    expect(container.textContent).toContain("Prepare the release digest");
+    expect(formatRoutineTimestamp(triggeredAt, "pt-BR")).toContain("ago.");
   });
 });

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "@/i18n";
 import { Navigate, useNavigate, useParams } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Repeat, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { ApiError } from "../api/client";
 import {
   routinesApi,
@@ -23,7 +24,7 @@ import { copyTextToClipboard } from "../lib/clipboard";
 import { routineOverviewCopyText } from "../lib/routine-description-copy";
 import { buildMarkdownMentionOptions } from "../lib/company-members";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
-import { EmptyState } from "../components/EmptyState";
+import { RoutineDetailPlaceholder } from "../components/RoutineDetailPlaceholder";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { type InlineEntityOption } from "../components/InlineEntitySelector";
 import { type MarkdownEditorRef, type MentionOption } from "../components/MarkdownEditor";
@@ -83,17 +84,6 @@ export function buildRoutineProjectOptions(
       searchText: project.description ?? "",
     }));
 }
-
-const SECTION_TITLES: Record<RoutineSectionKey, string> = {
-  overview: "Overview",
-  triggers: "Triggers",
-  variables: "Variables",
-  secrets: "Secrets",
-  delivery: "Delivery",
-  runs: "Runs",
-  activity: "Activity",
-  history: "History",
-};
 
 function isRoutineSection(value: string | undefined | null): value is RoutineSectionKey {
   return value != null && ROUTINE_SECTION_KEYS.includes(value as RoutineSectionKey);
@@ -156,6 +146,7 @@ function buildRoutineMutationPayload(input: RoutineEditDraft) {
 }
 
 export function RoutineDetail() {
+  const { t } = useTranslation();
   const { routineId, section: sectionParam } = useParams<{ routineId: string; section?: string }>();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
@@ -349,14 +340,14 @@ export function RoutineDetail() {
 
   useEffect(() => {
     if (!routine) return;
-    setBreadcrumbs([{ label: "Routines", href: "/routines" }, { label: routine.title }]);
+    setBreadcrumbs([{ label: t("routines.list.title"), href: "/routines" }, { label: routine.title }]);
     if (!routineDefaults) return;
     const changedRoutine = hydratedRoutineIdRef.current !== routine.id;
     if (changedRoutine || !isEditDirty) {
       setEditDraft(routineDefaults);
       hydratedRoutineIdRef.current = routine.id;
     }
-  }, [routine, routineDefaults, isEditDirty, setBreadcrumbs]);
+  }, [routine, routineDefaults, isEditDirty, setBreadcrumbs, t]);
 
   useEffect(() => {
     autoResizeTextarea(titleInputRef.current);
@@ -677,7 +668,7 @@ export function RoutineDetail() {
   );
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={Repeat} message="Select a company to view routines." />;
+    return <RoutineDetailPlaceholder reason="no-organization" />;
   }
 
   // Back-compat redirect: `?tab=x` → `/routines/:id/x`.
@@ -701,24 +692,19 @@ export function RoutineDetail() {
   }
 
   if (error || !routine || !routineDefaults) {
-    return (
-      <EmptyState
-        icon={AlertCircle}
-        message={error instanceof Error ? error.message : "We couldn't load this routine."}
-      />
-    );
+    return <RoutineDetailPlaceholder reason="load-error" error={error} />;
   }
 
   const automationEnabled = routine.status === "active";
   const automationToggleDisabled = updateRoutineStatus.isPending || routine.status === "archived";
   const automationLabel =
     routine.status === "archived"
-      ? "Archived"
+      ? t("routines.detail.status.archived")
       : !routine.assigneeAgentId
-        ? "Draft"
+        ? t("routines.detail.status.draft")
         : automationEnabled
-          ? "Active"
-          : "Paused";
+          ? t("routines.detail.status.active")
+          : t("routines.detail.status.paused");
   const automationLabelClassName =
     routine.status === "archived"
       ? "text-muted-foreground"
@@ -801,7 +787,7 @@ export function RoutineDetail() {
         href="#routine-section"
         className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-20 focus:rounded focus:bg-background focus:px-3 focus:py-1.5 focus:text-sm"
       >
-        Skip to section
+        {t("routines.detail.skipToSection")}
       </a>
 
       {/* Bounded to the main scroll area's height so the header + sub-nav stay
@@ -815,7 +801,7 @@ export function RoutineDetail() {
               ref={titleInputRef}
               data-autosize-title
               className="min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-base font-semibold leading-7 outline-none placeholder:text-muted-foreground/50"
-              placeholder="Routine title"
+              placeholder={t("routines.detail.titlePlaceholder")}
               rows={1}
               value={editDraft.title}
               onChange={(event) => {
@@ -849,7 +835,7 @@ export function RoutineDetail() {
                 checked={automationEnabled}
                 onCheckedChange={contextValue.onToggleAutomation}
                 disabled={automationToggleDisabled}
-                aria-label={automationEnabled ? "Pause automatic triggers" : "Enable automatic triggers"}
+                aria-label={automationEnabled ? t("routines.detail.pauseAutomaticTriggers") : t("routines.detail.enableAutomaticTriggers")}
               />
               <span className={`text-sm font-medium ${automationLabelClassName}`}>{automationLabel}</span>
             </div>
@@ -882,7 +868,7 @@ export function RoutineDetail() {
               className={isEditableSection ? "mx-auto w-full max-w-3xl" : "w-full"}
             >
               <RoutineSectionHeading
-                title={SECTION_TITLES[section]}
+                title={t(`routines.detail.sections.${section}`)}
                 copyText={section === "overview"
                   ? routineOverviewCopyText({
                       editing: true,
