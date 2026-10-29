@@ -645,6 +645,85 @@
     "plugins": "Plugins",
     "adapters": "Adapters"
   },
+  "instanceGeneral": {
+    "loading": "Loading general settings...",
+    "title": "General",
+    "description": "Configure instance-wide preferences",
+    "descriptionIncluding": "including {{topics}}.",
+    "topics": {
+      "logDisplay": "log display",
+      "backupRetention": "backup retention",
+      "dataSharing": "data sharing"
+    },
+    "errors": {
+      "updateFailed": "Failed to update general settings.",
+      "loadFailed": "Failed to load general settings.",
+      "signOutFailed": "Failed to sign out."
+    },
+    "deployment": {
+      "title": "Deployment and auth",
+      "localTrustedDescription": "Local trusted mode is optimized for a local operator. Browser requests run as local board context and no sign-in is required.",
+      "publicDescription": "Authenticated public mode requires sign-in for board access and is intended for public URLs.",
+      "privateDescription": "Authenticated private mode requires sign-in and is intended for LAN, VPN, or other private-network deployments.",
+      "authReadiness": "Auth readiness",
+      "bootstrapStatus": "Bootstrap status",
+      "bootstrapInvite": "Bootstrap invite",
+      "mode": {
+        "localTrusted": "Local trusted",
+        "authenticated": "Authenticated {{exposure}}"
+      },
+      "exposure": {
+        "public": "public",
+        "private": "private"
+      }
+    },
+    "status": {
+      "ready": "Ready",
+      "notReady": "Not ready",
+      "setupRequired": "Setup required",
+      "active": "Active",
+      "none": "None"
+    },
+    "logCensor": {
+      "title": "Censor username in logs",
+      "description": "Hide the username segment in home-directory paths and similar operator-visible log output. Standalone username mentions outside of paths are not yet masked in the live transcript view. This is off by default.",
+      "toggle": "Toggle username log censoring"
+    },
+    "backupRetention": {
+      "title": "Backup retention",
+      "description": "Configure how long automatic database backups are retained. Backups run roughly every hour and are compressed with gzip. Within the daily window all backups are kept; beyond that, one backup per week and one per month are preserved.",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "weeks_one": "{{count}} week",
+      "weeks_other": "{{count}} weeks",
+      "months_one": "{{count}} month",
+      "months_other": "{{count}} months"
+    },
+    "feedbackSharing": {
+      "title": "AI feedback sharing",
+      "description": "Control whether thumbs up and thumbs down votes can send the voted AI output to Paperclip Labs. Votes are always saved locally.",
+      "readTerms": "Read our terms of service",
+      "promptNotice": "No default is saved yet. The next thumbs up or thumbs down choice will ask once and then save the answer here.",
+      "alwaysAllow": "Always allow",
+      "alwaysAllowDescription": "Share voted AI outputs automatically.",
+      "dontAllow": "Don't allow",
+      "dontAllowDescription": "Keep voted AI outputs local only.",
+      "debugBeforeKey": "To retest the first-use prompt in local dev, remove the",
+      "debugAfterKey": "key from the",
+      "debugRowSuffix": "JSON row for this instance, or set it back to",
+      "debugPromptPrefix": "Unset and",
+      "debugPromptSuffix": "both mean no default has been chosen yet."
+    },
+    "signOut": {
+      "title": "Sign out",
+      "description": "Sign out of this Paperclip instance. You will be redirected to the login page.",
+      "action": "Sign out",
+      "pending": "Signing out..."
+    }
+  },
   "companySettings": {
     "noOrganizationSelected": "No organization selected. Select an organization from the switcher above.",
     "general": "General",

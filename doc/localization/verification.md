@@ -1917,3 +1917,23 @@ arquivo não alterado: `storybook/prototypes/NewAgentWizard.tsx` importa
 `SETUP_LOGIN_HINTS`, que não é exportado por `@/lib/agent-setup-fields` (o
 símbolo disponível é `SETUP_LOGIN_HINT_KEYS`). O progresso é **171/190 tarefas**;
 próxima: 3.8d3, preferências gerais da instância.
+
+### Continuação — preferências gerais da instância (3.8d3)
+
+As preferências gerais agora localizam status/modo de implantação e autenticação,
+censura de nomes em logs, períodos de retenção de backups, compartilhamento de
+feedback de IA, avisos, termos e saída da sessão em PT-BR/en. A exibição das
+seções ocultas por operador continua baseada nos mesmos IDs. Modos, status,
+valores de retenção e consentimento, caminhos/URLs, payloads e operações de
+autenticação não foram alterados.
+
+`InstanceGeneralSettings.test.tsx` e `locale-validation.test.ts` passaram em
+**22/22 testes**, cobrindo modos privado/público/local confiável, estados de
+bootstrap, atualização de censura, retenção e consentimento, saída Cloud/local
+e restrições durante operações pendentes. `check:tokens`, `check:token-gates`,
+parse dos catálogos, `git diff --check` e validação OpenSpec estrita passaram.
+O typecheck completo da UI permanece bloqueado pelo erro em arquivo não
+alterado: `storybook/prototypes/NewAgentWizard.tsx` importa
+`SETUP_LOGIN_HINTS`, símbolo não exportado por `@/lib/agent-setup-fields`.
+O progresso é **173/190 tarefas**; 3.8d está concluída. Próxima: 3.8e, segredos
+e cofres.

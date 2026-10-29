@@ -654,6 +654,88 @@
     "plugins": "Plugins",
     "adapters": "Adaptadores"
   },
+  "instanceGeneral": {
+    "loading": "Carregando configurações gerais...",
+    "title": "Geral",
+    "description": "Configure as preferências gerais da instância",
+    "descriptionIncluding": "incluindo {{topics}}.",
+    "topics": {
+      "logDisplay": "exibição de logs",
+      "backupRetention": "retenção de backups",
+      "dataSharing": "compartilhamento de dados"
+    },
+    "errors": {
+      "updateFailed": "Não foi possível atualizar as configurações gerais.",
+      "loadFailed": "Não foi possível carregar as configurações gerais.",
+      "signOutFailed": "Não foi possível sair."
+    },
+    "deployment": {
+      "title": "Implantação e autenticação",
+      "localTrustedDescription": "O modo local confiável é otimizado para quem opera a instância localmente. As solicitações do navegador usam o contexto local do conselho e não exigem autenticação.",
+      "publicDescription": "O modo público autenticado exige autenticação para acessar o conselho e foi pensado para URLs públicas.",
+      "privateDescription": "O modo privado autenticado exige autenticação e foi pensado para redes locais, VPNs ou outras redes privadas.",
+      "authReadiness": "Prontidão da autenticação",
+      "bootstrapStatus": "Status da configuração inicial",
+      "bootstrapInvite": "Convite de configuração inicial",
+      "mode": {
+        "localTrusted": "Acesso local confiável",
+        "authenticated": "Autenticado · {{exposure}}"
+      },
+      "exposure": {
+        "public": "público",
+        "private": "privado"
+      }
+    },
+    "status": {
+      "ready": "Pronto",
+      "notReady": "Não pronto",
+      "setupRequired": "Configuração necessária",
+      "active": "Ativo",
+      "none": "Nenhum"
+    },
+    "logCensor": {
+      "title": "Ocultar nome de usuário nos logs",
+      "description": "Oculte o trecho com o nome de usuário em caminhos do diretório pessoal e em outras saídas de log visíveis para quem opera a instância. Menções ao nome de usuário fora de caminhos ainda não são ocultadas na transcrição ao vivo. Esta opção vem desativada.",
+      "toggle": "Alternar ocultação do nome de usuário nos logs"
+    },
+    "backupRetention": {
+      "title": "Retenção de backups",
+      "description": "Configure por quanto tempo os backups automáticos do banco de dados serão mantidos. Eles são gerados aproximadamente a cada hora e compactados com gzip. Todos os backups da janela diária são mantidos; depois desse período, um backup por semana e um por mês são preservados.",
+      "daily": "Diária",
+      "weekly": "Semanal",
+      "monthly": "Mensal",
+      "days_one": "{{count}} dia",
+      "days_many": "{{count}} dias",
+      "days_other": "{{count}} dias",
+      "weeks_one": "{{count}} semana",
+      "weeks_many": "{{count}} semanas",
+      "weeks_other": "{{count}} semanas",
+      "months_one": "{{count}} mês",
+      "months_many": "{{count}} meses",
+      "months_other": "{{count}} meses"
+    },
+    "feedbackSharing": {
+      "title": "Compartilhamento de feedback sobre IA",
+      "description": "Defina se votos positivos e negativos podem enviar a resposta de IA avaliada para o Paperclip Labs. Os votos são sempre salvos localmente.",
+      "readTerms": "Leia nossos termos de serviço",
+      "promptNotice": "Ainda não há um padrão salvo. Na próxima avaliação positiva ou negativa, perguntaremos uma vez e salvaremos sua resposta aqui.",
+      "alwaysAllow": "Permitir sempre",
+      "alwaysAllowDescription": "Compartilhar automaticamente as respostas de IA avaliadas.",
+      "dontAllow": "Não permitir",
+      "dontAllowDescription": "Manter as respostas de IA avaliadas apenas localmente.",
+      "debugBeforeKey": "Para testar novamente o aviso exibido no primeiro uso durante o desenvolvimento local, remova a chave",
+      "debugAfterKey": "da linha",
+      "debugRowSuffix": "no banco de dados desta instância ou defina-a novamente como",
+      "debugPromptPrefix": "O valor não definido e",
+      "debugPromptSuffix": "significam que ainda não há um padrão escolhido."
+    },
+    "signOut": {
+      "title": "Sair",
+      "description": "Saia desta instância do Paperclip. Você será redirecionado à página de login.",
+      "action": "Sair",
+      "pending": "Saindo..."
+    }
+  },
   "companySettings": {
     "noOrganizationSelected": "Nenhuma organização selecionada. Selecione uma organização no seletor acima.",
     "general": "Geral",
