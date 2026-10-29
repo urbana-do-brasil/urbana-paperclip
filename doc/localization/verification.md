@@ -1338,3 +1338,19 @@ localizados.
 localize-paperclip-pt-br --strict` também passaram. O progresso está em
 **115/153**; próxima tarefa: pareamento e controles do OpenAI Dot
 (3.6d2c2b2).
+
+### Continuação — controles de Dot no formulário do agente (3.6d2c2b2a)
+
+O formulário do Runner localiza o pareamento do Dot, os controles de leitura de
+anexos, acesso a arquivos/comandos do workspace e confirmação de cobrança
+externa. Também estão localizados o resumo de segurança, estados da conexão,
+assinatura de eventos, atribuição, atenção necessária, instruções de setup e
+ações de pareamento/teste/revogação. Os acessos continuam desativados por
+default; códigos de pareamento, URLs, estados desconhecidos e flags não são
+traduzidos nem alterados.
+
+`codex-local/config-fields.test.tsx`, `DotRunnerConnection.test.tsx` e
+`locale-validation.test.ts` passaram em **45/45 testes**. Typecheck direcionado,
+`check:tokens`, `check:token-gates`, `git diff --check` e validação OpenSpec
+estrita passaram. O progresso atual é **116/156**; próxima tarefa: revisão de
+escopo e pareamento MCP (3.6d2c2b2b).

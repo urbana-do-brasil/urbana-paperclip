@@ -122,8 +122,22 @@ describe("Paperclip Runner Codex configuration", () => {
     expect(await renderRunner({ provider: "codex" }, "Provedor de execução", true)).not.toContain("OpenAI Dot");
     const dot = await renderRunner({ provider: "openai_dot" });
     expect(dot).not.toContain('aria-label="Provedor de execução"');
-    expect(dot).toContain("Dot connection");
-    expect(dot).toContain("Allow externally billed provider");
+    expect(dot).toContain("Conexão do Dot");
+    expect(dot).toContain("Permitir provedor com cobrança externa");
+  });
+
+  it("localizes Dot controls and keeps all access toggles disabled by default", async () => {
+    const html = await renderRunner({ provider: "openai_dot" });
+    expect(html).toContain("Ler anexos da tarefa");
+    expect(html).toContain("Arquivos e comandos do workspace");
+    expect(html).toContain("Permitir provedor com cobrança externa");
+    const switches = new DOMParser().parseFromString(html, "text/html").querySelectorAll('[role="switch"]');
+    expect(Array.from(switches, item => ({ label: item.getAttribute("aria-label"), checked: item.getAttribute("aria-checked") })))
+      .toEqual(expect.arrayContaining([
+        { label: "Ler anexos da tarefa", checked: "false" },
+        { label: "Arquivos e comandos do workspace", checked: "false" },
+        { label: "Permitir provedor com cobrança externa", checked: "false" },
+      ]));
   });
   it.each([
     [undefined, "Full auto (approve all)"],

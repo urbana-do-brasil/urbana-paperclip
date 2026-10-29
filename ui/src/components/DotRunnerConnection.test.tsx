@@ -34,6 +34,27 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => root.unmount()); await i18n.changeLanguage("en"); client.clear(); container.remove(); vi.resetAllMocks(); });
 
+it("localizes Dot security guidance and connection state in Portuguese", async () => {
+  await i18n.changeLanguage("pt-BR");
+  api.get.mockResolvedValue({
+    enabled: false,
+    resourceUrl: "https://paperclip.example/mcp/runner",
+    binding: { ...binding, status: "ready", subscriptionVerified: false, hasPendingChallenge: true,
+      assignment: { status: "offered", attentionRequired: true } },
+  });
+  await render();
+
+  expect(container.textContent).toContain("O Dot gerencia o próprio modelo e as ferramentas externas.");
+  expect(container.textContent).toContain("Ative o OpenAI Dot e as conexões com assistentes (MCP)");
+  expect(container.textContent).toContain("URL MCP privada do plugin:");
+  expect(container.textContent).toContain("Conexão: pronta.");
+  expect(container.textContent).toContain("Assinatura de eventos: necessária.");
+  expect(container.textContent).toContain("Atribuição: aguardando o Dot aceitar.");
+  expect(container.textContent).toContain("O Dot não informa atividade útil há 15 minutos.");
+  expect(container.textContent).toContain("Aguardando o Dot ler e confirmar o desafio simples da caixa postal.");
+  expect(Array.from(container.querySelectorAll("button")).map(button => button.textContent)).toContain("Revogar conexão");
+});
+
 it("restores the server binding when the form is reopened after pairing without saving", async () => {
   api.post.mockImplementation(async () => {
     api.get.mockResolvedValue({ enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", binding });
