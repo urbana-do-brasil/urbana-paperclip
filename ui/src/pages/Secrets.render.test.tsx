@@ -706,6 +706,7 @@ describe("Secrets page layout", () => {
   });
 
   it("keeps references reachable from the compact secrets row and detail drawer", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockSecretsApi.list.mockResolvedValue([makeCompanySecret()]);
     mockSecretsApi.usage.mockResolvedValue({
       secretId: "secret-openai",
@@ -732,6 +733,32 @@ describe("Secrets page layout", () => {
         },
       ],
     });
+    mockSecretsApi.accessEvents.mockResolvedValue([
+      {
+        id: "access-event-1",
+        companyId: "company-1",
+        secretId: "secret-openai",
+        userSecretDefinitionId: null,
+        secretScope: "company",
+        version: 1,
+        provider: "local_encrypted",
+        responsibleUserId: null,
+        credentialOwnerUserId: null,
+        credentialSubjectType: null,
+        credentialSubjectId: null,
+        actorType: "agent",
+        actorId: "agent-1",
+        consumerType: "agent_api",
+        consumerId: "run-abc123",
+        configPath: "access.OPENAI_API_KEY",
+        issueId: null,
+        heartbeatRunId: null,
+        pluginId: null,
+        outcome: "success",
+        errorCode: null,
+        createdAt: new Date("2026-10-29T00:00:00.000Z"),
+      },
+    ]);
 
     const root = createRoot(container);
     const queryClient = new QueryClient({
@@ -751,7 +778,7 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const referencesButton = container.querySelector(
-      'button[aria-label="Actions for OPENAI_API_KEY"]',
+      'button[aria-label="Ações para OPENAI_API_KEY"]',
     ) as HTMLButtonElement | null;
     expect(referencesButton).not.toBeNull();
 
@@ -763,9 +790,12 @@ describe("Secrets page layout", () => {
     });
     await flushReact();
 
-    await waitForReact(() => document.body.textContent?.includes("View in Usage") ?? false);
+    await waitForReact(() => document.body.textContent?.includes("Ver no uso") ?? false);
+    expect(document.body.textContent).toContain("Modo de gerenciamento");
+    expect(document.body.textContent).toContain("Referências");
+    expect(document.body.textContent).toContain("O Paperclip nunca volta a exibir valores armazenados.");
     const viewUsageButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("View in Usage"),
+      (button) => button.textContent?.includes("Ver no uso"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       viewUsageButton?.click();
@@ -775,10 +805,27 @@ describe("Secrets page layout", () => {
     expect(mockSecretsApi.usage).toHaveBeenCalledWith("secret-openai");
     expect(document.body.textContent).toContain("CodexCoder");
     expect(document.body.textContent).toContain("env.OPENAI_API_KEY");
+    expect(document.body.textContent).toContain("Variável de ambiente");
+    expect(document.body.textContent).toContain("obrigatório");
+
+    const accessEventsTab = Array.from(document.body.querySelectorAll('[role="tab"]')).find(
+      (tab) => tab.textContent?.trim() === "Eventos de acesso",
+    ) as HTMLButtonElement | undefined;
+    expect(accessEventsTab).not.toBeUndefined();
+    await act(async () => {
+      accessEventsTab?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      accessEventsTab?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      accessEventsTab?.click();
+    });
+    await flushReact();
+    expect(document.body.textContent).toContain("API do agente");
+    expect(document.body.textContent).toContain("Sucesso");
+    expect(document.body.textContent).toContain("run-abc123");
 
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("opens the secret detail sheet from a ?secret= deep link", async () => {
@@ -1753,6 +1800,7 @@ describe("Secrets page layout", () => {
   });
 
   it("grants and revokes agent access from the secret detail sheet", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockSecretsApi.list.mockResolvedValue([makeCompanySecret()]);
     mockSecretsApi.usage.mockResolvedValue({ secretId: "secret-openai", bindings: [] });
     mockSecretsApi.accessEvents.mockResolvedValue([]);
@@ -1804,7 +1852,7 @@ describe("Secrets page layout", () => {
     await waitForReact(() => document.body.textContent?.includes("Reviewer") ?? false);
 
     // Existing access is listed right in the Details tab.
-    expect(document.body.textContent).toContain("Agent access");
+    expect(document.body.textContent).toContain("Acesso dos agentes");
     expect(document.body.textContent).toContain("Reviewer");
 
     const agentSelect = document.getElementById("agent-access-agent") as HTMLButtonElement;
@@ -1818,15 +1866,15 @@ describe("Secrets page layout", () => {
 
     // Agents that already have access are not offered again.
     expect(document.body.textContent).toContain("CodexCoder");
-    expect(document.body.querySelector('[aria-label="Select Reviewer"]')).toBeNull();
+    expect(document.body.querySelector('[aria-label="Selecionar Reviewer"]')).toBeNull();
 
     await act(async () => {
-      (document.body.querySelector('[aria-label="Select CodexCoder"]') as HTMLButtonElement | null)?.click();
+      (document.body.querySelector('[aria-label="Selecionar CodexCoder"]') as HTMLButtonElement | null)?.click();
     });
     await flushReact();
 
     const addButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Add",
+      (button) => button.textContent?.trim() === "Adicionar",
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       addButton?.click();
@@ -1846,7 +1894,7 @@ describe("Secrets page layout", () => {
     );
 
     const revokeButton = document.body.querySelector(
-      'button[aria-label="Remove access for Reviewer"]',
+      'button[aria-label="Remover acesso de Reviewer"]',
     ) as HTMLButtonElement | null;
     expect(revokeButton).not.toBeNull();
     await act(async () => {
@@ -1864,6 +1912,7 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("shows an empty AWS discovery result without blocking manual entry", async () => {

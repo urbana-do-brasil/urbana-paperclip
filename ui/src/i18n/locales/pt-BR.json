@@ -120,6 +120,102 @@
       "restoreDescription": "Restaurar <strong>{{name}}</strong> para o status ativo, permitindo que os vínculos voltem a usá-lo.",
       "restore": "Restaurar"
     },
+    "details": {
+      "tabs": {
+        "details": "Detalhes",
+        "usage": "Uso",
+        "usageCount": "Uso ({{count}})",
+        "accessEvents": "Eventos de acesso"
+      },
+      "managementMode": "Modo de gerenciamento",
+      "externalArn": "ARN externo",
+      "latestVersion": "Versão mais recente",
+      "references": "Referências",
+      "bindingCount_one": "{{count}} vínculo",
+      "bindingCount_many": "{{count}} vínculos",
+      "bindingCount_other": "{{count}} vínculos",
+      "viewInUsage": "Ver no uso",
+      "created": "Criado",
+      "lastRotated": "Última rotação",
+      "lastResolved": "Última resolução",
+      "secretDescription": "Segredo {{key}} do provedor {{provider}}",
+      "copyLink": "Copiar link",
+      "managedDescription": "O Paperclip cria este segredo no provedor e grava novas versões nas próximas rotações.",
+      "externalWritableDescription": "O Paperclip consulta esta referência no provedor e pode gravar novos valores ao usar Atualizar valor.",
+      "externalReadOnlyDescription": "O Paperclip consulta esta referência no provedor, mas não faz a rotação do valor.",
+      "neverRedisplayValues": "O Paperclip nunca volta a exibir valores armazenados."
+    },
+    "usage": {
+      "loading": "Carregando…",
+      "empty": "Ainda não há vínculos ativos. Adicione este segredo à configuração de um agente, projeto, ambiente ou plugin para começar a usá-lo.",
+      "targetTypes": {
+        "agent": "Agente",
+        "project": "Projeto",
+        "environment": "Ambiente",
+        "routine": "Rotina",
+        "plugin": "Plugin",
+        "issue": "Tarefa",
+        "run": "Execução",
+        "tool_connection": "Conexão com ferramenta",
+        "system": "Sistema"
+      },
+      "deliveryModes": {
+        "env": "Variável de ambiente",
+        "api": "Acesso à API",
+        "config": "Configuração"
+      },
+      "latestVersionSelector": "mais recente",
+      "apiAlias": "Alias da API",
+      "required": "obrigatório",
+      "optional": "opcional"
+    },
+    "audit": {
+      "loading": "Carregando…",
+      "empty": "Ainda não há eventos de acesso. Cada resolução em tempo de execução registra aqui uma entrada com dados ocultos.",
+      "userSecret": "Segredo do usuário",
+      "responsibleUser": "Usuário responsável",
+      "credentialOwner": "Titular da credencial",
+      "consumerTypes": {
+        "agent": "Agente",
+        "project": "Projeto",
+        "environment": "Ambiente",
+        "routine": "Rotina",
+        "plugin": "Plugin",
+        "issue": "Tarefa",
+        "run": "Execução",
+        "tool_connection": "Conexão com ferramenta",
+        "system": "Sistema",
+        "agent_api": "API do agente",
+        "plugin_worker": "Worker do plugin"
+      },
+      "outcomes": {
+        "success": "Sucesso",
+        "failure": "Falha",
+        "missing": "Ausente",
+        "inactive": "Inativo",
+        "not_allowed": "Não permitido",
+        "optional_omitted": "Opcional omitido",
+        "provider_error": "Erro do provedor"
+      }
+    },
+    "agentAccess": {
+      "title": "Acesso dos agentes",
+      "companyHelp": "Adicione aqui para injetar este segredo como variável de ambiente no início da execução. As permissões de acesso à API (consultadas sob demanda, sem variável de ambiente) são gerenciadas nas configurações de acesso a segredos de cada agente e aparecem abaixo.",
+      "userHelp": "Estes agentes resolvem o valor de cada usuário responsável como variável de ambiente no início da execução.",
+      "loadingAgents": "Carregando agentes…",
+      "agentListUnavailable": "Não foi possível carregar os agentes. Gerencie o acesso nas configurações de cada agente.",
+      "noAccess": "Nenhum agente tem acesso ainda.",
+      "envBadge": "Ambiente",
+      "apiBadge": "API",
+      "removeAccessFor": "Remover acesso de {{name}}",
+      "agent": "Agente",
+      "envVar": "Variável de ambiente",
+      "add": "Adicionar",
+      "invalidEnvKey": "As chaves de ambiente usam letras, números e sublinhados, e não podem começar com um número.",
+      "accessGranted": "Acesso concedido",
+      "accessGrantedBody": "{{name}} agora recebe {{key}}",
+      "accessRemoved": "Acesso removido"
+    },
     "inventory": {
       "searchPlaceholder": "Buscar por nome, chave ou referência",
       "searchLabel": "Buscar segredos",

@@ -2016,3 +2016,24 @@ O typecheck completo da UI segue bloqueado pelo erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
 por `@/lib/agent-setup-fields`. O progresso é **177/201 tarefas**; próxima:
 3.8e1c, detalhes e auditoria dos segredos compartilhados.
+
+### Continuação — detalhes, uso, acesso e auditoria de segredos (3.8e1c)
+
+O drawer de detalhes localiza metadados, datas relativas, modo de gerenciamento,
+referência do provedor, contagem de vínculos e navegação às abas de uso e eventos.
+A lista de vínculos traduz tipo de consumidor, modo de entrega, seleção da versão
+mais recente e indicação de obrigatório/opcional. Eventos localizam tipos de
+consumidor, resultados, escopos e identificação de pessoas responsáveis. A seção
+de acesso a agentes também localiza permissões, campos, validação de chaves,
+estados, controles e toasts.
+
+Valores de segredos permanecem ocultos. Nomes/labels e IDs de agentes e
+consumidores, aliases, config paths, referências, códigos de erro, escopos,
+status e contratos enviados às APIs foram preservados. `Secrets.render.test.tsx`
+e `locale-validation.test.ts` passaram em **48/48 testes**, incluindo detalhes,
+vínculos, eventos e concessão/revogação em PT-BR. `check:tokens`,
+`check:token-gates`, parse dos catálogos, `git diff --check` e validação OpenSpec
+estrita passaram. O typecheck completo da UI segue bloqueado pelo erro não
+relacionado em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS`
+não é exportado por `@/lib/agent-setup-fields`. O progresso é **178/201
+tarefas**; próxima: 3.8e2, segredos pessoais e definições por usuário.

@@ -71,9 +71,7 @@ import { envKeyFromSecretName } from "../components/environment-variables-editor
 import {
   AGENT_ACCESS_CONFIG_PATH_PREFIX,
   aliasFromConfigPath,
-  consumerTypeLabel,
   deliveryModeForConfigPath,
-  deliveryModeLabel,
 } from "../lib/secret-delivery";
 import { queryKeys } from "../lib/queryKeys";
 import { EmptyState } from "../components/EmptyState";
@@ -350,17 +348,19 @@ function normalizeUserSecretKeyForPreview(input: string) {
 }
 
 
-function modeLabel(managedMode: SecretManagedMode) {
-  return managedMode === "paperclip_managed" ? "Paperclip-managed" : "Linked external";
+function modeLabel(managedMode: SecretManagedMode, t: Translate) {
+  return managedMode === "paperclip_managed"
+    ? t("secrets.inventory.paperclipManaged")
+    : t("secrets.inventory.linkedExternal");
 }
 
-function modeDescription(managedMode: SecretManagedMode, canWriteExternalValue = false) {
+function modeDescription(managedMode: SecretManagedMode, t: Translate, canWriteExternalValue = false) {
   if (managedMode === "paperclip_managed") {
-    return "Paperclip owns create and rotation writes for this provider secret.";
+    return t("secrets.details.managedDescription");
   }
   return canWriteExternalValue
-    ? "Paperclip resolves this provider reference and can write new values to it via Update value."
-    : "Paperclip resolves this provider reference but does not rotate the provider value.";
+    ? t("secrets.details.externalWritableDescription")
+    : t("secrets.details.externalReadOnlyDescription");
 }
 
 function statusLabel(status: SecretStatus, t: Translate) {
@@ -623,9 +623,9 @@ export function findCreateProviderReplacement({
   );
 }
 
-function providerVaultLabel(configs: CompanySecretProviderConfig[], id: string | null | undefined) {
-  if (!id) return "Deployment default";
-  return configs.find((config) => config.id === id)?.displayName ?? "Unknown vault";
+function providerVaultLabel(configs: CompanySecretProviderConfig[], id: string | null | undefined, t: Translate) {
+  if (!id) return t("secrets.creation.deploymentDefault");
+  return configs.find((config) => config.id === id)?.displayName ?? t("secrets.inventory.unknownVault");
 }
 
 function buildProviderVaultConfig(form: ProviderVaultForm): Record<string, unknown> {
@@ -2308,7 +2308,10 @@ export function Secrets() {
                   </span>
                 </SheetTitle>
                 <SheetDescription className="sr-only">
-                  {providerLabel(providers, selectedSecret.provider)} secret {selectedSecret.key}
+                  {t("secrets.details.secretDescription", {
+                    provider: providerLabel(providers, selectedSecret.provider),
+                    key: selectedSecret.key,
+                  })}
                 </SheetDescription>
                 <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-muted/20 px-2 py-1.5">
                   <code className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
@@ -2321,14 +2324,14 @@ export function Secrets() {
                     className="h-7 shrink-0 px-2 text-xs"
                     onClick={() => copySecretKey(selectedSecret.key)}
                   >
-                    <Copy className="mr-1 h-3.5 w-3.5" /> Copy
+                    <Copy className="mr-1 h-3.5 w-3.5" /> {t("secrets.creation.copy")}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   <MetaChip>
-                    <ShieldCheck className="h-3 w-3" /> Organization
+                    <ShieldCheck className="h-3 w-3" /> {t("secrets.creation.organization")}
                   </MetaChip>
-                  <MetaChip>{modeLabel(selectedSecret.managedMode)}</MetaChip>
+                  <MetaChip>{modeLabel(selectedSecret.managedMode, t)}</MetaChip>
                   <MetaChip>{providerLabel(providers, selectedSecret.provider)}</MetaChip>
                   <MetaChip>v{selectedSecret.latestVersion}</MetaChip>
                 </div>
@@ -2342,7 +2345,7 @@ export function Secrets() {
                   {rotateActionLabel(selectedSecret)}
                 </Button>
                 <Button variant="outline" size="sm" onClick={copyDetailLink}>
-                  <Link2 className="h-3.5 w-3.5 mr-1" /> Copy link
+                  <Link2 className="h-3.5 w-3.5 mr-1" /> {t("secrets.details.copyLink")}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -2400,9 +2403,14 @@ export function Secrets() {
                 <div className="border-b border-border px-4">
                   <PageTabBar
                     items={[
-                      { value: "details", label: "Details" },
-                      { value: "usage", label: usageQuery.data ? `Usage (${usageQuery.data.bindings.length})` : "Usage" },
-                      { value: "events", label: "Access events" },
+                      { value: "details", label: t("secrets.details.tabs.details") },
+                      {
+                        value: "usage",
+                        label: usageQuery.data
+                          ? t("secrets.details.tabs.usageCount", { count: usageQuery.data.bindings.length })
+                          : t("secrets.details.tabs.usage"),
+                      },
+                      { value: "events", label: t("secrets.details.tabs.accessEvents") },
                     ]}
                     align="start"
                     value={secretDetailTab}
@@ -4512,6 +4520,7 @@ function AgentAccessSection({
   companyId: string;
   reference: AgentAccessReference;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { pushToast } = useToastActions();
   const [selectedAgentId, setSelectedAgentId] = useState("");
@@ -4596,7 +4605,11 @@ function AgentAccessSection({
       setEnvKeyDirty(false);
       setAccessError(null);
       invalidateAfterChange(variables.agentId);
-      pushToast({ title: "Access granted", body: `${agent.name} now receives ${variables.key}`, tone: "success" });
+      pushToast({
+        title: t("secrets.agentAccess.accessGranted"),
+        body: t("secrets.agentAccess.accessGrantedBody", { name: agent.name, key: variables.key }),
+        tone: "success",
+      });
     },
     onError: (error) => setAccessError(readableErrorMessage(error)),
   });
@@ -4620,7 +4633,7 @@ function AgentAccessSection({
     onSuccess: (agent, variables) => {
       setAccessError(null);
       invalidateAfterChange(variables.agentId);
-      pushToast({ title: "Access removed", body: agent.name, tone: "info" });
+      pushToast({ title: t("secrets.agentAccess.accessRemoved"), body: agent.name, tone: "info" });
     },
     onError: (error) => setAccessError(readableErrorMessage(error)),
   });
@@ -4632,18 +4645,18 @@ function AgentAccessSection({
     <section className="rounded-md border border-border bg-muted/20 p-3">
       <div className="flex items-center gap-1.5">
         <Users className="h-3.5 w-3.5 text-muted-foreground" />
-        <h3 className="text-xs font-medium text-foreground">Agent access</h3>
+        <h3 className="text-xs font-medium text-foreground">{t("secrets.agentAccess.title")}</h3>
       </div>
       <p className="mt-0.5 text-(length:--text-micro) text-muted-foreground">
         {reference.kind === "company"
-          ? "Add here to inject this secret as an environment variable at run start. API-access grants (fetched on demand, no env var) are managed from each agent's Secret access settings and shown below."
-          : "These agents resolve the responsible user's value as an environment variable at run start."}
+          ? t("secrets.agentAccess.companyHelp")
+          : t("secrets.agentAccess.userHelp")}
       </p>
       {agentsQuery.isPending ? (
-        <p className="mt-2 text-(length:--text-micro) text-muted-foreground">Loading agents…</p>
+        <p className="mt-2 text-(length:--text-micro) text-muted-foreground">{t("secrets.agentAccess.loadingAgents")}</p>
       ) : agentsQuery.isError ? (
         <p className="mt-2 text-(length:--text-micro) text-muted-foreground">
-          Agent list unavailable. Manage access from each agent&apos;s configuration instead.
+          {t("secrets.agentAccess.agentListUnavailable")}
         </p>
       ) : (
         <>
@@ -4661,7 +4674,7 @@ function AgentAccessSection({
                         variant="outline"
                         className="h-5 px-1.5 text-(length:--text-nano) font-normal border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300"
                       >
-                        Env · {envKeys.join(", ")}
+                        {t("secrets.agentAccess.envBadge")} · {envKeys.join(", ")}
                       </Badge>
                     ) : null}
                     {apiAliases.length > 0 ? (
@@ -4669,7 +4682,7 @@ function AgentAccessSection({
                         variant="outline"
                         className="h-5 px-1.5 text-(length:--text-nano) font-normal border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300"
                       >
-                        API · {apiAliases.join(", ")}
+                        {t("secrets.agentAccess.apiBadge")} · {apiAliases.join(", ")}
                       </Badge>
                     ) : null}
                   </span>
@@ -4678,7 +4691,7 @@ function AgentAccessSection({
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 shrink-0 p-0 text-muted-foreground"
-                    aria-label={`Remove access for ${agent.name}`}
+                    aria-label={t("secrets.agentAccess.removeAccessFor", { name: agent.name })}
                     disabled={revokeMutation.isPending}
                     onClick={() => revokeMutation.mutate({ agentId: agent.id })}
                   >
@@ -4688,7 +4701,7 @@ function AgentAccessSection({
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-(length:--text-micro) text-muted-foreground">No agents have access yet.</p>
+            <p className="mt-2 text-(length:--text-micro) text-muted-foreground">{t("secrets.agentAccess.noAccess")}</p>
           )}
           <div className="mt-2 flex items-end gap-2">
             <div className="min-w-0 flex-1">
@@ -4696,7 +4709,7 @@ function AgentAccessSection({
                 className="text-(length:--text-micro) font-medium text-muted-foreground"
                 htmlFor="agent-access-agent"
               >
-                Agent
+                {t("secrets.agentAccess.agent")}
               </label>
               <AgentSelect
                 id="agent-access-agent"
@@ -4704,7 +4717,7 @@ function AgentAccessSection({
                 value={selectedAgentId}
                 onChange={setSelectedAgentId}
                 triggerClassName="h-8 text-xs"
-                emptyMessage="No agents available."
+                emptyMessage={t("agentPicker.empty")}
               />
             </div>
             <div className="min-w-0 flex-1">
@@ -4712,7 +4725,7 @@ function AgentAccessSection({
                 className="text-(length:--text-micro) font-medium text-muted-foreground"
                 htmlFor="agent-access-env-key"
               >
-                Env var
+                {t("secrets.agentAccess.envVar")}
               </label>
               <Input
                 id="agent-access-env-key"
@@ -4737,12 +4750,12 @@ function AgentAccessSection({
               ) : (
                 <Plus className="mr-1 h-3.5 w-3.5" />
               )}
-              Add
+              {t("secrets.agentAccess.add")}
             </Button>
           </div>
           {effectiveEnvKey && !envKeyValid ? (
             <p className="mt-1 text-(length:--text-micro) text-destructive">
-              Env keys use letters, digits, and underscores, and cannot start with a digit.
+              {t("secrets.agentAccess.invalidEnvKey")}
             </p>
           ) : null}
           {accessError ? (
@@ -4752,6 +4765,29 @@ function AgentAccessSection({
       )}
     </section>
   );
+}
+
+const secretTargetTypeKeys: Record<string, string> = {
+  agent: "secrets.usage.targetTypes.agent",
+  project: "secrets.usage.targetTypes.project",
+  environment: "secrets.usage.targetTypes.environment",
+  routine: "secrets.usage.targetTypes.routine",
+  plugin: "secrets.usage.targetTypes.plugin",
+  issue: "secrets.usage.targetTypes.issue",
+  run: "secrets.usage.targetTypes.run",
+  tool_connection: "secrets.usage.targetTypes.tool_connection",
+  system: "secrets.usage.targetTypes.system",
+};
+
+function secretTargetTypeLabel(type: string, t: Translate) {
+  const key = secretTargetTypeKeys[type];
+  return key ? t(key) : type.replaceAll("_", " ");
+}
+
+function secretConsumerTypeLabel(type: SecretAccessEvent["consumerType"], t: Translate) {
+  if (type === "agent_api") return t("secrets.audit.consumerTypes.agent_api");
+  if (type === "plugin_worker") return t("secrets.audit.consumerTypes.plugin_worker");
+  return t(`secrets.audit.consumerTypes.${type}`);
 }
 
 function SecretDetailsTab({
@@ -4765,50 +4801,52 @@ function SecretDetailsTab({
   providerConfigs: CompanySecretProviderConfig[];
   onViewUsage: () => void;
 }) {
-  const bindingLabel = (secret.referenceCount ?? 0) === 1
-    ? "1 binding"
-    : `${secret.referenceCount ?? 0} bindings`;
+  const { t } = useTranslation();
+  const bindingLabel = t("secrets.details.bindingCount", { count: secret.referenceCount ?? 0 });
 
   return (
     <dl className="divide-y divide-border/60 text-xs">
-      <DetailRow label="Description">
+      <DetailRow label={t("secrets.creation.descriptionLabel")}>
         <span>{secret.description ?? <span className="text-muted-foreground">—</span>}</span>
       </DetailRow>
-      <DetailRow label="Provided by">Organization</DetailRow>
-      <DetailRow label="Custody">{modeLabel(secret.managedMode)}</DetailRow>
-      <DetailRow label="Provider">{providerLabel(providers, secret.provider)}</DetailRow>
-      <DetailRow label="Provider vault">{providerVaultLabel(providerConfigs, secret.providerConfigId)}</DetailRow>
-      <DetailRow label="External ARN">
+      <DetailRow label={t("secrets.inventory.providedBy")}>{t("secrets.creation.organization")}</DetailRow>
+      <DetailRow label={t("secrets.details.managementMode")}>{modeLabel(secret.managedMode, t)}</DetailRow>
+      <DetailRow label={t("secrets.creation.provider")}>{providerLabel(providers, secret.provider)}</DetailRow>
+      <DetailRow label={t("secrets.creation.providerVault")}>
+        {providerVaultLabel(providerConfigs, secret.providerConfigId, t)}
+      </DetailRow>
+      <DetailRow label={t("secrets.details.externalArn")}>
         {secret.externalRef ? (
           <span className="break-all font-mono">{secret.externalRef}</span>
         ) : (
           <span className="text-muted-foreground">—</span>
         )}
       </DetailRow>
-      <DetailRow label="Latest version">v{secret.latestVersion}</DetailRow>
-      <DetailRow label="References">
+      <DetailRow label={t("secrets.details.latestVersion")}>v{secret.latestVersion}</DetailRow>
+      <DetailRow label={t("secrets.details.references")}>
         <button
           type="button"
           className="inline-flex items-center gap-1 text-left text-primary hover:underline"
           onClick={onViewUsage}
         >
           {bindingLabel}
-          <span className="text-muted-foreground">· View in Usage</span>
+          <span className="text-muted-foreground">· {t("secrets.details.viewInUsage")}</span>
         </button>
       </DetailRow>
-      <DetailRow label="Created">{formatRelative(secret.createdAt)}</DetailRow>
-      <DetailRow label="Updated">{formatRelative(secret.updatedAt)}</DetailRow>
-      <DetailRow label="Last rotated">{formatRelative(secret.lastRotatedAt)}</DetailRow>
-      <DetailRow label="Last resolved">{formatRelative(secret.lastResolvedAt)}</DetailRow>
+      <DetailRow label={t("secrets.details.created")}>{formatRelative(secret.createdAt)}</DetailRow>
+      <DetailRow label={t("secrets.inventory.updatedColumn")}>{formatRelative(secret.updatedAt)}</DetailRow>
+      <DetailRow label={t("secrets.details.lastRotated")}>{formatRelative(secret.lastRotatedAt)}</DetailRow>
+      <DetailRow label={t("secrets.details.lastResolved")}>{formatRelative(secret.lastResolvedAt)}</DetailRow>
       <div className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-(length:--text-micro) text-amber-700 dark:text-amber-300">
         {modeDescription(
           secret.managedMode,
+          t,
           Boolean(
             secret.externalRef &&
               providers.find((provider) => provider.id === secret.provider)?.supportsExternalValueWrites,
           ),
         )}{" "}
-        Paperclip never re-displays stored values.
+        {t("secrets.details.neverRedisplayValues")}
       </div>
     </dl>
   );
@@ -4824,13 +4862,14 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 }
 
 export function SecretUsageTab({ loading, bindings }: { loading: boolean; bindings: CompanySecretUsageBinding[] }) {
+  const { t } = useTranslation();
   if (loading) {
-    return <div className="py-6 text-center text-xs text-muted-foreground">Loading…</div>;
+    return <div className="py-6 text-center text-xs text-muted-foreground">{t("secrets.usage.loading")}</div>;
   }
   if (bindings.length === 0) {
     return (
       <div className="py-6 text-center text-xs text-muted-foreground">
-        No active bindings. Add this secret in agent, project, environment, or plugin config to start using it.
+        {t("secrets.usage.empty")}
       </div>
     );
   }
@@ -4845,7 +4884,7 @@ export function SecretUsageTab({ loading, bindings }: { loading: boolean; bindin
           >
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-1.5">
-                <span className="font-medium capitalize">{binding.target.type}</span>
+                <span className="font-medium">{secretTargetTypeLabel(binding.target.type, t)}</span>
                 <Badge
                   variant="outline"
                   className={cn(
@@ -4857,10 +4896,14 @@ export function SecretUsageTab({ loading, bindings }: { loading: boolean; bindin
                         : null,
                   )}
                 >
-                  {deliveryModeLabel(deliveryMode)}
+                  {t(`secrets.usage.deliveryModes.${deliveryMode}`)}
                 </Badge>
               </span>
-              <span className="font-mono text-muted-foreground">v{binding.versionSelector}</span>
+              <span className="font-mono text-muted-foreground">
+                {binding.versionSelector === "latest"
+                  ? t("secrets.usage.latestVersionSelector")
+                  : `v${binding.versionSelector}`}
+              </span>
             </div>
             <div className="mt-0.5 flex min-w-0 items-center gap-2">
               {binding.target.href ? (
@@ -4881,11 +4924,11 @@ export function SecretUsageTab({ loading, bindings }: { loading: boolean; bindin
             </div>
             <div className="text-(length:--text-micro) text-muted-foreground">
               {deliveryMode === "api" ? (
-                <>API alias <span className="font-mono">{aliasFromConfigPath(binding.configPath)}</span></>
+                <>{t("secrets.usage.apiAlias")} <span className="font-mono">{aliasFromConfigPath(binding.configPath)}</span></>
               ) : (
                 <span className="font-mono">{binding.configPath}</span>
               )}{" "}
-              {binding.required ? "· required" : "· optional"}
+              · {binding.required ? t("secrets.usage.required") : t("secrets.usage.optional")}
             </div>
           </div>
         );
@@ -4903,6 +4946,7 @@ export function SecretEventsTab({
   events: SecretAccessEvent[];
   companyId: string;
 }) {
+  const { t } = useTranslation();
   // Resolve responsible/owner user ids to human names for user-scoped events.
   const anyUserScoped = events.some(
     (event) =>
@@ -4923,12 +4967,12 @@ export function SecretEventsTab({
   };
 
   if (loading) {
-    return <div className="py-6 text-center text-xs text-muted-foreground">Loading…</div>;
+    return <div className="py-6 text-center text-xs text-muted-foreground">{t("secrets.audit.loading")}</div>;
   }
   if (events.length === 0) {
     return (
       <div className="py-6 text-center text-xs text-muted-foreground">
-        No access events recorded yet. Each runtime resolution writes a redacted entry here.
+        {t("secrets.audit.empty")}
       </div>
     );
   }
@@ -4938,14 +4982,14 @@ export function SecretEventsTab({
         <div key={event.id} className="rounded border border-border px-2 py-1.5 text-xs">
           <div className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-1.5">
-              <span>{consumerTypeLabel(event.consumerType)}</span>
-              <span className="capitalize">· {event.outcome}</span>
+              <span>{secretConsumerTypeLabel(event.consumerType, t)}</span>
+              <span>· {t(`secrets.audit.outcomes.${event.outcome}`)}</span>
               {event.secretScope === "user" ? (
                 <Badge
                   variant="outline"
                   className="border-violet-500/30 bg-violet-500/10 text-(length:--text-nano) text-violet-700 dark:text-violet-300"
                 >
-                  User secret
+                  {t("secrets.audit.userSecret")}
                 </Badge>
               ) : null}
             </span>
@@ -4956,13 +5000,13 @@ export function SecretEventsTab({
           </div>
           {event.responsibleUserId ? (
             <div className="text-(length:--text-micro) text-muted-foreground">
-              Responsible user: <span className="text-foreground">{userLabel(event.responsibleUserId)}</span>
+              {t("secrets.audit.responsibleUser")}: <span className="text-foreground">{userLabel(event.responsibleUserId)}</span>
             </div>
           ) : null}
           {event.credentialOwnerUserId &&
           event.credentialOwnerUserId !== event.responsibleUserId ? (
             <div className="text-(length:--text-micro) text-muted-foreground">
-              Credential owner: <span className="text-foreground">{userLabel(event.credentialOwnerUserId)}</span>
+              {t("secrets.audit.credentialOwner")}: <span className="text-foreground">{userLabel(event.credentialOwnerUserId)}</span>
             </div>
           ) : null}
           {event.errorCode ? (

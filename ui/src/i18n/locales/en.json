@@ -120,6 +120,101 @@
       "restoreDescription": "Restore <strong>{{name}}</strong> to active status so bindings can use it again.",
       "restore": "Restore"
     },
+    "details": {
+      "tabs": {
+        "details": "Details",
+        "usage": "Usage",
+        "usageCount": "Usage ({{count}})",
+        "accessEvents": "Access events"
+      },
+      "managementMode": "Management mode",
+      "externalArn": "External ARN",
+      "latestVersion": "Latest version",
+      "references": "References",
+      "bindingCount_one": "{{count}} binding",
+      "bindingCount_other": "{{count}} bindings",
+      "viewInUsage": "View in Usage",
+      "created": "Created",
+      "lastRotated": "Last rotated",
+      "lastResolved": "Last resolved",
+      "secretDescription": "{{provider}} secret {{key}}",
+      "copyLink": "Copy link",
+      "managedDescription": "Paperclip creates this secret in the provider and writes new versions during future rotations.",
+      "externalWritableDescription": "Paperclip resolves this provider reference and can write new values through Update value.",
+      "externalReadOnlyDescription": "Paperclip resolves this provider reference but does not rotate the provider value.",
+      "neverRedisplayValues": "Paperclip never re-displays stored values."
+    },
+    "usage": {
+      "loading": "Loading…",
+      "empty": "No active bindings. Add this secret to an agent, project, environment, or plugin configuration to start using it.",
+      "targetTypes": {
+        "agent": "Agent",
+        "project": "Project",
+        "environment": "Environment",
+        "routine": "Routine",
+        "plugin": "Plugin",
+        "issue": "Issue",
+        "run": "Run",
+        "tool_connection": "Tool connection",
+        "system": "System"
+      },
+      "deliveryModes": {
+        "env": "Env var",
+        "api": "API access",
+        "config": "Config"
+      },
+      "latestVersionSelector": "latest",
+      "apiAlias": "API alias",
+      "required": "required",
+      "optional": "optional"
+    },
+    "audit": {
+      "loading": "Loading…",
+      "empty": "No access events recorded yet. Each runtime resolution writes a redacted entry here.",
+      "userSecret": "User secret",
+      "responsibleUser": "Responsible user",
+      "credentialOwner": "Credential owner",
+      "consumerTypes": {
+        "agent": "Agent",
+        "project": "Project",
+        "environment": "Environment",
+        "routine": "Routine",
+        "plugin": "Plugin",
+        "issue": "Issue",
+        "run": "Run",
+        "tool_connection": "Tool connection",
+        "system": "System",
+        "agent_api": "Agent API",
+        "plugin_worker": "Plugin worker"
+      },
+      "outcomes": {
+        "success": "Success",
+        "failure": "Failure",
+        "missing": "Missing",
+        "inactive": "Inactive",
+        "not_allowed": "Not allowed",
+        "optional_omitted": "Optional omitted",
+        "provider_error": "Provider error"
+      }
+    },
+    "agentAccess": {
+      "title": "Agent access",
+      "companyHelp": "Add here to inject this secret as an environment variable at run start. API-access grants (fetched on demand, no env var) are managed from each agent's Secret access settings and shown below.",
+      "userHelp": "These agents resolve the responsible user's value as an environment variable at run start.",
+      "loadingAgents": "Loading agents…",
+      "agentListUnavailable": "Agent list unavailable. Manage access from each agent's configuration instead.",
+      "noAccess": "No agents have access yet.",
+      "envBadge": "Env",
+      "apiBadge": "API",
+      "removeAccessFor": "Remove access for {{name}}",
+      "agent": "Agent",
+      "envVar": "Env var",
+      "add": "Add",
+      "invalidEnvKey": "Env keys use letters, digits, and underscores, and cannot start with a digit.",
+      "accessGranted": "Access granted",
+      "accessGrantedBody": "{{name}} now receives {{key}}",
+      "accessRemoved": "Access removed"
+    },
     "inventory": {
       "searchPlaceholder": "Search by name, key, ref",
       "searchLabel": "Search secrets",
