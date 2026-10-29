@@ -10,6 +10,8 @@ import type {
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 const mockToolsApi = vi.hoisted(() => ({
   getEffectiveProfilesForAgent: vi.fn(),
@@ -105,7 +107,8 @@ describe("AgentToolsTab", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockToolsApi.getEffectiveProfilesForAgent.mockReset();
@@ -130,6 +133,7 @@ describe("AgentToolsTab", () => {
     });
     container.remove();
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   async function renderTab() {
@@ -442,5 +446,71 @@ describe("AgentToolsTab", () => {
     expect(mockToolsApi.putConnectionInstalls).toHaveBeenCalledWith("conn-1", [
       { targetType: "agent", targetId: "agent-1" },
     ]);
+  });
+
+  it("localizes agent tool access while preserving tool IDs, app names, and routes", async () => {
+    const allowed = makeCatalogEntry({
+      id: "cat-allow",
+      connectionId: "conn-pt",
+      toolName: "github.read_repo",
+      title: "Read repo",
+      riskLevel: "high",
+      isReadOnly: true,
+      isWrite: false,
+      isDestructive: false,
+    });
+    const denied = makeCatalogEntry({
+      id: "cat-deny",
+      connectionId: "conn-pt",
+      toolName: "github.delete_repo",
+      riskLevel: "critical",
+      isReadOnly: false,
+      isWrite: true,
+      isDestructive: true,
+    });
+    mockToolsApi.getEffectiveProfilesForAgent.mockResolvedValue({
+      agentId: "agent-1",
+      profiles: [],
+      entries: [],
+      bindings: [],
+      allowedTools: [allowed],
+      allowedToolNames: ["github.read_repo"],
+      installedConnections: [],
+    } satisfies ToolProfileEffectiveSummary);
+    mockToolsApi.listConnections.mockResolvedValue({
+      connections: [{
+        id: "conn-pt",
+        companyId: "company-1",
+        name: "GitHub corporativo",
+        enabled: true,
+        status: "active",
+        config: { sourceTemplateKey: "github" },
+        transportConfig: {},
+        installs: [],
+      }],
+    });
+    mockToolsApi.listPolicies.mockResolvedValue({
+      policies: [makePolicy({ id: "pol-pt", name: "Aprovação do repositório" })],
+    });
+    mockToolsApi.listCatalog.mockResolvedValue({ catalog: [allowed, denied] });
+
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    await renderTab();
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("Identidade do GitHub");
+    expect(text).toContain("Usar o GitHub da pessoa responsável");
+    expect(text).toContain("Aplicativos instalados");
+    expect(text).toContain("GitHub corporativo");
+    expect(text).toContain("Ferramentas permitidas");
+    expect(text).toContain("1 ferramenta");
+    expect(text).toContain("somente leitura");
+    expect(text).toContain("alto");
+    expect(text).toContain("Aprovação do repositório");
+    expect(text).toContain("exigir aprovação");
+    expect(text).toContain("github.read_repo");
+    expect(text).toContain("Read repo");
+    expect(text).toContain("github.delete_repo");
+    expect(container.querySelector('a[href="/apps/conn-pt/permissions"]')?.textContent).toBe("Abrir permissões");
   });
 });

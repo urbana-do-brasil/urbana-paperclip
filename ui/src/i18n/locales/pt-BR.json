@@ -2226,6 +2226,115 @@
       "configurationRequired": "Conclua a configuração desta conexão antes que os agentes recebam suas instruções."
     }
   },
+  "agentTools": {
+    "githubIdentity": {
+      "heading": "Identidade do GitHub",
+      "checking": "Verificando a identidade do GitHub…",
+      "loadFailed": "Não foi possível carregar a identidade do GitHub",
+      "loadFailureDetail": "O Paperclip não conseguiu verificar a conexão atual deste agente. A configuração existente não foi alterada.",
+      "dedicatedAccount": "Conta dedicada do GitHub",
+      "dedicatedAccountDetail": "Usada somente por {{agent}}. Esta conexão dedicada tem prioridade sobre o GitHub da pessoa responsável.",
+      "useResponsibleGitHub": "Usar o GitHub da pessoa responsável",
+      "responsibleGitHubDetail": "No início de cada execução, o Paperclip usa a conexão pessoal do GitHub da pessoa responsável pela tarefa.",
+      "personalConnected": "Sua conta está conectada.",
+      "personalConnectedAs": "Sua conta está conectada como @{{login}}.",
+      "retry": "Tentar novamente",
+      "manageIdentity": "Gerenciar identidade do GitHub",
+      "manageMyGitHub": "Gerenciar meu GitHub",
+      "connectMyGitHub": "Conectar meu GitHub",
+      "useDedicatedAccount": "Usar uma conta dedicada"
+    },
+    "install": {
+      "heading": "Aplicativos instalados",
+      "description": "Os aplicativos instalados carregam ferramentas no contexto de {{agent}} em cada execução. Aplicativos apenas permitidos não aumentam o custo de contexto.",
+      "accessExplanation": "Ter acesso significa que o aplicativo está permitido. Instalado significa que suas ferramentas são incluídas no contexto de execução deste agente.",
+      "empty": "Ainda não há aplicativos permitidos. Vincule um perfil de acesso para disponibilizar aplicativos aqui.",
+      "installOnAgent": "Instalar {{connection}} para {{agent}}",
+      "saving": "Salvando…",
+      "installedForEveryAgent": "Instalado para todos os agentes pela página do aplicativo. Remova a instalação para todos nessa página.",
+      "loadedInContext": "Incluído no contexto de execução deste agente.",
+      "installHint": "Tem acesso — selecione para incluir as ferramentas no contexto deste agente.",
+      "openPermissions": "Abrir permissões",
+      "permittedButNotInstalled": "Permitido, mas não instalado — as ferramentas não aparecerão nas execuções.",
+      "installedForAll": "Instalado para todos",
+      "installed": "Instalado",
+      "permittedOnly": "Somente permitido",
+      "notPermitted": "Não permitido",
+      "saveFailed": "Não foi possível salvar",
+      "unsaved": "Alterações não salvas",
+      "saved": "Salvo"
+    },
+    "effective": {
+      "loading": "Calculando acesso efetivo…",
+      "heading": "Acesso efetivo",
+      "bodyStart": "Este é exatamente o conjunto de ferramentas que o Paperclip aceitará para {{agent}}. Alterações em perfis e políticas aparecem em cerca de cinco segundos. O prompt do agente pode restringir esta lista, mas",
+      "cannotExpand": "não pode ampliá-la",
+      "bodyEnd": "— todo o restante é bloqueado por padrão."
+    },
+    "allowed": {
+      "heading": "Ferramentas permitidas",
+      "count_one": "{{count}} ferramenta",
+      "count_other": "{{count}} ferramentas",
+      "count_many": "{{count}} ferramentas",
+      "empty": "Nenhuma ferramenta está permitida para este agente. Vincule um perfil de ferramentas para conceder acesso.",
+      "tool": "Ferramenta",
+      "capability": "Capacidade",
+      "risk": "Risco",
+      "source": "Origem"
+    },
+    "whyTools": "Por que estas ferramentas?",
+    "profiles": {
+      "heading": "Perfis de acesso",
+      "checkAccess": "Verificar acesso",
+      "empty": "Nenhum perfil ativo se aplica a este agente; por isso, ele não tem ferramentas permitidas.",
+      "organizationDefault": "Padrão da organização"
+    },
+    "policies": {
+      "heading": "Políticas ativas",
+      "loading": "Carregando políticas…",
+      "empty": "Nenhuma política habilitada altera atualmente a lista de ferramentas permitidas deste agente.",
+      "title": "Política nº {{order}}: {{name}}",
+      "effects": {
+        "allow": "permitir",
+        "block": "bloquear",
+        "deny": "negar",
+        "requireApproval": "exigir aprovação",
+        "redact": "ocultar conteúdo",
+        "rateLimit": "limitar frequência"
+      }
+    },
+    "unavailable": {
+      "heading": "Ferramentas indisponíveis",
+      "loading": "Verificando ferramentas…",
+      "none": "Todas as ferramentas conhecidas que este agente poderia mencionar estão permitidas.",
+      "description": "Ferramentas que o agente poderia mencionar, mas que o Paperclip bloquearia:",
+      "more": "+{{count}} mais"
+    },
+    "errors": {
+      "forbidden": "Você não tem permissão para ver esta tela. Ferramentas e acesso exigem acesso ao painel ou de administração.",
+      "routeUnavailable": "Ferramentas e acesso ainda não estão disponíveis neste servidor. Atualize a página após a próxima implantação.",
+      "generic": "Algo deu errado.",
+      "couldNotLoad": "Não foi possível carregar esta visualização",
+      "retry": "Tentar novamente"
+    },
+    "shared": {
+      "unknown": "desconhecido",
+      "riskLevels": {
+        "low": "baixo",
+        "medium": "médio",
+        "high": "alto",
+        "critical": "crítico",
+        "read": "leitura",
+        "write": "escrita",
+        "destructive": "destrutivo"
+      },
+      "capabilities": {
+        "readOnly": "somente leitura",
+        "write": "escrita",
+        "destructive": "destrutiva"
+      }
+    }
+  },
   "mcpConnect": {
     "device": {
       "title": "Conecte seu assistente ao Paperclip",

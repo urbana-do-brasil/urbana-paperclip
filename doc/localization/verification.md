@@ -1502,3 +1502,17 @@ localizados e preservação do provedor, nome da conexão e texto personalizado;
 tokens, `git diff --check` e validação OpenSpec estrita passaram. Progresso:
 **132/159**. Próxima tarefa: 3.6d4, ferramentas configuráveis no contexto do
 agente.
+
+### Continuação — ferramentas configuráveis do agente (3.6d4)
+
+A aba de ferramentas do agente agora localiza a identidade GitHub, o acesso
+efetivo, a instalação de conexões, perfis, políticas, catálogo, capacidades,
+níveis de risco e estados de carregamento/falha em PT-BR/en. IDs, nomes de
+ferramentas/conexões/políticas, login externo, grants, rotas, permissões e
+mensagens técnicas da API permanecem intactos.
+
+`AgentToolsTab.test.tsx` passou (**8/8**), incluindo uma verificação em PT-BR
+dos rótulos, nomes e identificadores técnicos; `locale-validation.test.ts`
+passou (**12/12**). Typecheck direcionado, gates de tokens, `git diff --check` e
+validação OpenSpec estrita passaram. Progresso: **133/159**. Próxima tarefa:
+3.6e, histórico e detalhes de execução do agente.

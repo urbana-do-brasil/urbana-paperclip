@@ -11,15 +11,15 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { ApiError } from "@/api/client";
 
 /** Risk classification badge for a catalog tool. */
-export function RiskBadge({ risk }: { risk: ToolRiskLevel | null | undefined }) {
-  if (!risk) return <Badge variant="outline">unknown</Badge>;
+export function RiskBadge({ risk, labels }: { risk: ToolRiskLevel | null | undefined; labels?: Partial<Record<ToolRiskLevel | "unknown", string>> }) {
+  if (!risk) return <Badge variant="outline">{labels?.unknown ?? "unknown"}</Badge>;
   const variant =
     risk === "high" || risk === "critical"
       ? "destructive"
       : risk === "medium"
         ? "secondary"
         : "outline";
-  return <Badge variant={variant}>{risk}</Badge>;
+  return <Badge variant={variant}>{labels?.[risk] ?? risk}</Badge>;
 }
 
 /** Read/Write/Destructive capability chips. */
@@ -27,16 +27,18 @@ export function CapabilityBadges({
   isReadOnly,
   isWrite,
   isDestructive,
+  labels,
 }: {
   isReadOnly?: boolean;
   isWrite?: boolean;
   isDestructive?: boolean;
+  labels?: Partial<Record<"readOnly" | "write" | "destructive", string>>;
 }) {
   return (
     <span className="inline-flex flex-wrap gap-1">
-      {isReadOnly ? <Badge variant="outline">read-only</Badge> : null}
-      {isWrite ? <Badge variant="secondary">write</Badge> : null}
-      {isDestructive ? <Badge variant="destructive">destructive</Badge> : null}
+      {isReadOnly ? <Badge variant="outline">{labels?.readOnly ?? "read-only"}</Badge> : null}
+      {isWrite ? <Badge variant="secondary">{labels?.write ?? "write"}</Badge> : null}
+      {isDestructive ? <Badge variant="destructive">{labels?.destructive ?? "destructive"}</Badge> : null}
     </span>
   );
 }
@@ -167,21 +169,21 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
 }
 
 /** Actionable error surface — surfaces the server message and HTTP status. */
-export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+export function ErrorState({ error, onRetry, labels }: { error: unknown; onRetry?: () => void; labels?: Partial<Record<"forbidden" | "routeUnavailable" | "generic" | "couldNotLoad" | "retry", string>> }) {
   let message: string;
   if (error instanceof ApiError) {
     if (error.status === 403) {
-      message = "You do not have permission to view this. Tools & Access requires board/admin access.";
+      message = labels?.forbidden ?? "You do not have permission to view this. Tools & Access requires board/admin access.";
     } else if (error.status === 404 || /route not found/i.test(error.message)) {
       // Snapshot-skew window: the route exists in this build but not on the live server snapshot yet.
-      message = "Tools & Access isn't available on this server yet — try refreshing after the next deployment.";
+      message = labels?.routeUnavailable ?? "Tools & Access isn't available on this server yet — try refreshing after the next deployment.";
     } else {
       message = error.message;
     }
   } else if (error instanceof Error) {
     message = error.message;
   } else {
-    message = "Something went wrong.";
+    message = labels?.generic ?? "Something went wrong.";
   }
   return (
     <Card className="border-destructive/40">
@@ -189,7 +191,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
         <div className="flex items-start gap-2 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <p className="font-medium">Could not load this view</p>
+            <p className="font-medium">{labels?.couldNotLoad ?? "Could not load this view"}</p>
             <p className="text-destructive/80">{message}</p>
           </div>
         </div>
@@ -199,7 +201,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
             onClick={onRetry}
             className="self-start rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent"
           >
-            Retry
+            {labels?.retry ?? "Retry"}
           </button>
         ) : null}
       </CardContent>

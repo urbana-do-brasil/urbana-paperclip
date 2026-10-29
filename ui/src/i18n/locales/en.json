@@ -2183,6 +2183,114 @@
       "configurationRequired": "Complete this connection’s configuration before agents receive its instructions."
     }
   },
+  "agentTools": {
+    "githubIdentity": {
+      "heading": "GitHub identity",
+      "checking": "Checking GitHub identity…",
+      "loadFailed": "Could not load GitHub identity",
+      "loadFailureDetail": "Paperclip could not verify this agent’s current connection. Your existing setup was not changed.",
+      "dedicatedAccount": "Dedicated GitHub account",
+      "dedicatedAccountDetail": "Used only by {{agent}}. This dedicated connection takes precedence over the responsible person's GitHub.",
+      "useResponsibleGitHub": "Use responsible person's GitHub",
+      "responsibleGitHubDetail": "At run start, Paperclip uses the personal GitHub connection of the person responsible for the task.",
+      "personalConnected": "Your account is connected.",
+      "personalConnectedAs": "Your account is connected as @{{login}}.",
+      "retry": "Retry",
+      "manageIdentity": "Manage GitHub identity",
+      "manageMyGitHub": "Manage my GitHub",
+      "connectMyGitHub": "Connect my GitHub",
+      "useDedicatedAccount": "Use a dedicated account"
+    },
+    "install": {
+      "heading": "Installed apps",
+      "description": "Installed apps load tools into {{agent}}’s context on every run. Apps that are only permitted do not add context cost.",
+      "accessExplanation": "Has access means the app is permitted. Installed means its tools are added to this agent’s runtime context.",
+      "empty": "No permitted apps yet. Bind an access profile to make apps available here.",
+      "installOnAgent": "Install {{connection}} on {{agent}}",
+      "saving": "Saving…",
+      "installedForEveryAgent": "Installed from the app page for every agent. Remove the all-agent install there.",
+      "loadedInContext": "Loaded into this agent’s runtime context.",
+      "installHint": "Has access — select to load its tools into this agent’s context.",
+      "openPermissions": "Open permissions",
+      "permittedButNotInstalled": "Permitted but not installed — tools will not appear in runs.",
+      "installedForAll": "Installed for all",
+      "installed": "Installed",
+      "permittedOnly": "Permitted only",
+      "notPermitted": "Not permitted",
+      "saveFailed": "Could not save",
+      "unsaved": "Unsaved changes",
+      "saved": "Saved"
+    },
+    "effective": {
+      "loading": "Resolving effective access…",
+      "heading": "Effective access",
+      "bodyStart": "This is exactly the tool set Paperclip will accept for {{agent}}. Profile and policy edits are reflected within about five seconds. The agent’s prompt can narrow this list but",
+      "cannotExpand": "cannot expand it",
+      "bodyEnd": "— everything else is blocked by default."
+    },
+    "allowed": {
+      "heading": "Allowed tools",
+      "count_one": "{{count}} tool",
+      "count_other": "{{count}} tools",
+      "empty": "No tools are allowed for this agent. Bind a tool profile to grant access.",
+      "tool": "Tool",
+      "capability": "Capability",
+      "risk": "Risk",
+      "source": "Source"
+    },
+    "whyTools": "Why these tools?",
+    "profiles": {
+      "heading": "Access profiles",
+      "checkAccess": "Check access",
+      "empty": "No active profile applies to this agent, so it has no allowed tools.",
+      "organizationDefault": "Organization default"
+    },
+    "policies": {
+      "heading": "Active policies",
+      "loading": "Loading policies…",
+      "empty": "No enabled policy currently changes this agent’s allow list.",
+      "title": "Policy #{{order}}: {{name}}",
+      "effects": {
+        "allow": "allow",
+        "block": "block",
+        "deny": "deny",
+        "requireApproval": "require approval",
+        "redact": "redact",
+        "rateLimit": "rate limit"
+      }
+    },
+    "unavailable": {
+      "heading": "Unavailable tools",
+      "loading": "Checking tools…",
+      "none": "Every known tool this agent could name is allowed.",
+      "description": "Tools the agent could name but Paperclip would block:",
+      "more": "+{{count}} more"
+    },
+    "errors": {
+      "forbidden": "You do not have permission to view this. Tools & Access requires board/admin access.",
+      "routeUnavailable": "Tools & Access isn’t available on this server yet — try refreshing after the next deployment.",
+      "generic": "Something went wrong.",
+      "couldNotLoad": "Could not load this view",
+      "retry": "Retry"
+    },
+    "shared": {
+      "unknown": "unknown",
+      "riskLevels": {
+        "low": "low",
+        "medium": "medium",
+        "high": "high",
+        "critical": "critical",
+        "read": "read",
+        "write": "write",
+        "destructive": "destructive"
+      },
+      "capabilities": {
+        "readOnly": "read-only",
+        "write": "write",
+        "destructive": "destructive"
+      }
+    }
+  },
   "mcpConnect": {
     "device": {
       "title": "Connect your assistant to Paperclip",
