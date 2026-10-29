@@ -2899,3 +2899,20 @@ testes**. O typecheck direcionado, `check:tokens`, `check:token-gates`, JSON,
 `git diff --check` e OpenSpec estrito passaram. Progresso: **241/265 tarefas**.
 3.10b4 (execuções, atividade e histórico) foi concluída. Próxima: 3.10b5,
 feed de auditoria de rotinas.
+
+
+## Rotinas — auditoria escopada (3.10b5)
+
+O feed de auditoria escopado à rotina já havia sido localizado no AuditHub em
+3.7f. A revisão confirmou a navegação por `entityType`/`entityId`, o uso da
+atividade da rotina, estados de carregamento/falha/vazio, datas, eventos
+conhecidos e detalhes expansíveis. Autoria, referências, IDs, mensagens e
+diagnósticos dinâmicos, ações desconhecidas e payloads permanecem originais.
+Esse destino é alcançável no AuditHub streamlined; a página production continua
+apresentando o feed geral e não tem a mesma visão escopada. A verificação de
+alcance por flag continua listada para 3.10g.
+
+`RoutineAuditActivity.test.tsx`, `AuditHub.test.tsx`, `audit-navigation.test.ts`
+e `locale-validation.test.ts` passaram em **27/27 testes**. O typecheck
+direcionado, JSON, `git diff --check` e OpenSpec estrito passaram. Progresso:
+**243/265 tarefas**. Próxima: 3.10c, pipelines.
