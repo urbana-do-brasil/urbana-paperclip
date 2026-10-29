@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **85 de 114 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **89 de 116 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -16,7 +16,7 @@ A entrega ainda não foi implantada.
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), além do portfólio de organizações, coleção/criação de projetos, moldura e configuração básica do detalhe (3.5a–b, 3.5c1–c2) verificados. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), além do portfólio de organizações, coleção/criação de projetos, moldura, configuração, orçamento e acesso privado (3.5a–b, 3.5c1–c3) verificados. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |
@@ -195,9 +195,23 @@ exposição de caminhos locais continua obrigatória.
 **23/23 testes**. `check:tokens`, `check:token-gates`, `git diff --check`,
 `openspec validate localize-paperclip-pt-br --strict` e o typecheck direcionado
 dos módulos alterados passaram. O typecheck completo da UI foi encerrado pelo
-limite de memória do ambiente. A subtarefa está concluída e o progresso atual é
-**85/114**; próxima: 3.5c3, orçamento e acesso/privacidade. A aplicação ainda
-não foi implantada.
+limite de memória do ambiente. A subtarefa está concluída; naquele checkpoint,
+o progresso era **85/114**. A aplicação ainda não foi implantada.
+
+Para tornar 3.5c3 revisável, ela foi dividida em 3.5c3a (política de orçamento)
+e 3.5c3b (visibilidade e acesso privado). Ambas foram concluídas. O cartão
+compartilhado de política de orçamento foi localizado para projetos, agentes e
+custos; as demais superfícies de custos continuam no escopo de 3.7. A gestão de
+acesso localiza visibilidade, confirmação de abertura, participantes, avisos e
+estados sem alterar permissões, proteção de responsáveis ou payloads.
+
+`BudgetPolicyCard.test.tsx`, `ProjectAccessMembers.test.tsx`,
+`ProjectProperties.save-indicator.test.tsx`,
+`PrivateTaskPrivacyControls.test.tsx` e `locale-validation.test.ts` passaram em
+**32/32 testes**. Typecheck direcionado, `check:tokens`, `check:token-gates`,
+`git diff --check` e validação OpenSpec estrita passaram. O progresso atual é
+**89/116**; próxima: 3.5c4, políticas de workspace e espaços de trabalho
+vinculados. A aplicação ainda não foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28
 

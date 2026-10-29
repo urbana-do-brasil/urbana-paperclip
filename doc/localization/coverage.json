@@ -7,7 +7,7 @@
     "pt-BR",
     "en"
   ],
-  "notice": "Cobertura parcial. Preferência de idioma, entrada/autenticação, navegação e controles compartilhados (3.3), metadados de erros, coleção/criação, detalhe e recovery da tarefa (3.4c1–3.4c3c5), compositor da conversa (3.4d1), estados vazios/fallback (3.4d2a), comentários/autoria (3.4d2b), status/duração de runs (3.4d2c1), timeline (3.4d2c2a), atividade de provider nos transcripts padrão/experimental (3.4d2c2b–c), CLI 4.1/4.2 e distribuição da ajuda pública foram verificados em seus lotes. Perguntas/formulários (3.4d3a), confirmações genéricas/plano (3.4d3b1), seleção de opções (3.4d3b2) e aprovações de tools/propostas de segredo (3.4d3c1) e autorizações/conexões externas (3.4d3c2) foram verificadas; árvore de tarefas sugeridas (3.4d3d1) foi verificada; decisões por item (3.4d3d2), anotações documentais (3.4d4), controles de execução (3.4d5), controles gerais (3.4e1), linhas de atenção (3.4e2), visualização de trabalho bloqueado da Inbox (3.4e3), filas de decisões/atenção (3.4e4) e fila standalone de acesso (3.4e5) e busca global (3.4f) foram verificadas. O portfólio de organizações (3.5a), a coleção/criação de projetos (3.5b), a moldura do detalhe (3.5c1), os campos/arquivamento (3.5c2a) e repositórios/codebase (3.5c2b) também foram verificados. O typecheck completo da UI foi encerrado pelo limite de memória; o typecheck direcionado de 3.5c2b passou. Demais jornadas web, comandos operacionais, revisão semântica dos guias e comunicação efetiva dos agentes continuam pendentes.",
+  "notice": "Cobertura parcial. Preferência de idioma, entrada/autenticação, navegação e controles compartilhados (3.3), metadados de erros, coleção/criação, detalhe e recovery da tarefa (3.4c1–3.4c3c5), compositor da conversa (3.4d1), estados vazios/fallback (3.4d2a), comentários/autoria (3.4d2b), status/duração de runs (3.4d2c1), timeline (3.4d2c2a), atividade de provider nos transcripts padrão/experimental (3.4d2c2b–c), CLI 4.1/4.2 e distribuição da ajuda pública foram verificados em seus lotes. Perguntas/formulários (3.4d3a), confirmações genéricas/plano (3.4d3b1), seleção de opções (3.4d3b2) e aprovações de tools/propostas de segredo (3.4d3c1) e autorizações/conexões externas (3.4d3c2) foram verificadas; árvore de tarefas sugeridas (3.4d3d1) foi verificada; decisões por item (3.4d3d2), anotações documentais (3.4d4), controles de execução (3.4d5), controles gerais (3.4e1), linhas de atenção (3.4e2), visualização de trabalho bloqueado da Inbox (3.4e3), filas de decisões/atenção (3.4e4) e fila standalone de acesso (3.4e5) e busca global (3.4f) foram verificadas. O portfólio de organizações (3.5a), a coleção/criação de projetos (3.5b), a moldura do detalhe (3.5c1), a configuração básica (3.5c2), o orçamento compartilhado (3.5c3a) e a visibilidade/acesso privado (3.5c3b) também foram verificados. O componente de orçamento é localizado em custos e agentes, mas as demais superfícies desses fluxos continuam pendentes. O typecheck completo da UI foi encerrado pelo limite de memória; typechecks direcionados dos lotes 3.5c2b e 3.5c3 passaram. Demais jornadas web, comandos operacionais, revisão semântica dos guias e comunicação efetiva dos agentes continuam pendentes.",
   "requiredStates": [
     "success",
     "empty",
@@ -344,7 +344,9 @@
         "ui/src/components/SearchableSelect.tsx",
         "ui/src/components/ProjectRepositories.tsx",
         "ui/src/components/LegacyProjectRepository.tsx",
-        "ui/src/components/PathInstructionsModal.tsx"
+        "ui/src/components/PathInstructionsModal.tsx",
+        "ui/src/components/BudgetPolicyCard.tsx",
+        "ui/src/components/ProjectAccessMembers.tsx"
       ],
       "status": "pending",
       "evidence": [
@@ -359,10 +361,13 @@
         "ui/src/components/ProjectProperties.managed-sandbox.test.tsx",
         "ui/src/components/ProjectRepositories.test.tsx",
         "ui/src/components/PathInstructionsModal.test.tsx",
-        "ui/src/i18n/locale-validation.test.ts"
+        "ui/src/i18n/locale-validation.test.ts",
+        "ui/src/components/BudgetPolicyCard.test.tsx",
+        "ui/src/components/ProjectAccessMembers.test.tsx",
+        "ui/src/components/PrivateTaskPrivacyControls.test.tsx"
       ],
       "partialSources": [
-        "3.5 foi refinada em lotes verificáveis 3.5a–3.5e; o detalhe/configuração foi dividido em 3.5c1–3.5c4 e a configuração básica em 3.5c2a–3.5c2b. 3.5a localizou o portfólio de organizações; 3.5b localizou coleção/criação de projetos, ordenação, participação, estados, favoritos e seleção opcional de repositórios GitHub; 3.5c1 localizou breadcrumbs, cabeçalho, abas, avisos de participação/orçamento, atribuição do plugin, resumo e seletor de ícone/cor; 3.5c2a localizou nome/descrição, datas, feedback de salvamento e arquivamento; 3.5c2b localizou repositórios, codebase, pastas locais e instruções de caminho. Os testes preservam nomes, descrições, IDs, enums, payloads, permissões, rotas, caminhos e comandos. 3.5a passou em 15/15 testes; 3.5b, em 38/38; 3.5c1, em 11/11 (23/23 incluindo locale-validation); 3.5c2a, em 16/16 incluindo locale-validation; 3.5c2b, em 23/23 incluindo locale-validation. Typecheck direcionado do lote, gates de tokens, diff check e validação OpenSpec passaram; o typecheck completo da UI foi encerrado pelo limite de memória. Próxima jornada: 3.5c3, orçamento e acesso/privacidade; os grupos 3.5 e projetos permanecem pending."
+        "3.5 foi refinada em lotes verificáveis 3.5a–3.5e; o detalhe/configuração foi dividido em 3.5c1–3.5c4 e a configuração básica em 3.5c2a–3.5c2b. 3.5a localizou o portfólio de organizações; 3.5b localizou coleção/criação de projetos, ordenação, participação, estados, favoritos e seleção opcional de repositórios GitHub; 3.5c1 localizou breadcrumbs, cabeçalho, abas, avisos de participação/orçamento, atribuição do plugin, resumo e seletor de ícone/cor; 3.5c2a localizou nome/descrição, datas, feedback de salvamento e arquivamento; 3.5c2b localizou repositórios, codebase, pastas locais e instruções de caminho; 3.5c3a localizou o cartão compartilhado de orçamento, inclusive nos contextos de projetos, agentes e custos, e sua entrada aceita separador decimal PT-BR sem alterar USD, valores ou callbacks; 3.5c3b localizou visibilidade, confirmação de abertura e gestão de acesso privado, mantendo proteção de responsáveis e gates. Os testes preservam nomes, descrições, IDs, enums, payloads, permissões, rotas, caminhos, comandos e moeda. 3.5a passou em 15/15; 3.5b, em 38/38; 3.5c1, em 23/23 incluindo locale-validation; 3.5c2a, em 16/16; 3.5c2b, em 23/23; 3.5c3a–b, em 32/32, todos com locale-validation conforme registrado. Typecheck direcionado dos lotes, gates de tokens, diff check e validação OpenSpec passaram; o typecheck completo da UI foi encerrado pelo limite de memória. Próxima jornada: 3.5c4; os grupos 3.5 e projetos permanecem pending."
       ]
     },
     {
@@ -385,10 +390,16 @@
         "ui/src/pages/Dashboard.tsx",
         "ui/src/pages/Costs.tsx",
         "ui/src/pages/Timeline.tsx",
-        "ui/src/pages/audit/"
+        "ui/src/pages/audit/",
+        "ui/src/components/BudgetPolicyCard.tsx"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [
+        "ui/src/components/BudgetPolicyCard.test.tsx"
+      ],
+      "partialSources": [
+        "O componente compartilhado BudgetPolicyCard está localizado em todos os seus usos, incluindo projetos, agentes e a página de custos, com USD, valores, limites, estados, separador decimal PT-BR e callbacks preservados. As demais páginas, cartões de incidentes, atividades, datas e auditoria seguem pendentes e serão cobertos em 3.6–3.7."
+      ]
     },
     {
       "id": "administration",
@@ -1364,10 +1375,10 @@
   ],
   "checkpoint": {
     "date": "2026-10-29",
-    "completedTasks": 85,
-    "totalTasks": 114,
+    "completedTasks": 89,
+    "totalTasks": 116,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "As subtarefas 3.5a, 3.5b, 3.5c1, 3.5c2a e 3.5c2b foram verificadas. 3.5a localizou o portfólio de organizações; 3.5b localizou coleção/criação de projetos, participação, favoritos e repositórios GitHub; 3.5c1 localizou moldura, breadcrumbs, abas, avisos, resumo e controles de ícone/cor do detalhe; 3.5c2a localizou nome/descrição, datas, feedback de salvamento e arquivamento; 3.5c2b localizou repositórios, codebase, pastas locais e instruções de caminho, preservando valores, payloads, rotas, permissões, caminhos, comandos e callbacks. Testes: 15/15 em 3.5a; 38/38 em 3.5b; 23/23 em 3.5c1; 16/16 em 3.5c2a; 23/23 em 3.5c2b, todos incluindo locale-validation conforme registrado. Typecheck direcionado do lote, gates de tokens, diff check e validação OpenSpec passaram; o typecheck completo da UI foi encerrado pelo limite de memória. Progresso: 85/114. Próxima jornada: 3.5c3, orçamento e acesso/privacidade."
+    "reason": "As subtarefas 3.5a, 3.5b, 3.5c1, 3.5c2a, 3.5c2b, 3.5c3a e 3.5c3b foram verificadas; os pais 3.5c2 e 3.5c3 também foram concluídos. 3.5a localizou o portfólio de organizações; 3.5b localizou coleção/criação de projetos, participação, favoritos e repositórios GitHub; 3.5c1 localizou a moldura do detalhe; 3.5c2 localizou campos, datas, arquivamento, repositórios, codebase e caminhos locais; 3.5c3a localizou o cartão compartilhado de orçamento, aceitando decimal PT-BR e preservando USD, valores e callbacks; 3.5c3b localizou visibilidade e gestão de acesso privado, mantendo confirmação, proteção de responsáveis e gates de autorização. Testes: 15/15 em 3.5a; 38/38 em 3.5b; 23/23 em 3.5c1; 16/16 em 3.5c2a; 23/23 em 3.5c2b; 32/32 em 3.5c3a–b, incluindo locale-validation. Typecheck direcionado dos módulos e testes alterados, gates de tokens, diff check e validação OpenSpec passaram; o typecheck completo da UI foi encerrado pelo limite de memória. Progresso: 89/116. Próxima jornada: 3.5c4, política e visualização de workspaces."
   }
 }

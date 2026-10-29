@@ -1318,6 +1318,19 @@
     "cancel": "Cancelar",
     "archiveProject": "Arquivar projeto",
     "unarchiveProject": "Restaurar projeto",
+    "visibility": {
+      "label": "Visibilidade",
+      "privateProject": "Projeto privado",
+      "private": "Privado",
+      "openToCompany": "Aberto para a organização",
+      "privateDescription": "Somente quem tem acesso pode encontrar este projeto. Tarefas compartilhadas diretamente continuam acessíveis por conta própria.",
+      "openDescription": "Todas as pessoas da organização podem encontrar este projeto. Tarefas privadas individualmente mantêm suas próprias regras de acesso.",
+      "keepPrivate": "Manter privado",
+      "openConfirmation": {
+        "title": "Abrir este projeto para a organização?",
+        "description": "Todas as pessoas da organização poderão encontrar este projeto. As tarefas privadas continuarão privadas. Quem tiver acesso às tarefas somente por este projeto perderá esse acesso. Compartilhe as tarefas diretamente primeiro se quiser manter esse acesso."
+      }
+    },
     "codebase": {
       "title": "Base de código",
       "helpLabel": "Ajuda sobre a base de código",
@@ -1349,6 +1362,89 @@
     "edit": "Editar",
     "cancel": "Cancelar",
     "saveUrl": "Salvar URL"
+  },
+  "budgetPolicy": {
+    "scopeTypes": {
+      "company": "Organização",
+      "agent": "Agente",
+      "project": "Projeto"
+    },
+    "windows": {
+      "lifetime": "Orçamento total",
+      "calendarMonthUtc": "Orçamento mensal (UTC)"
+    },
+    "status": {
+      "paused": "Pausado",
+      "warning": "Atenção",
+      "hardStop": "Bloqueio rígido",
+      "healthy": "Normal"
+    },
+    "pauseReasons": {
+      "manual": "pausa manual",
+      "budget": "orçamento",
+      "system": "gerenciado pelo sistema",
+      "companyArchived": "organização arquivada",
+      "import": "importação"
+    },
+    "observed": "Observado",
+    "percentOfLimit": "{{percent}}% do limite",
+    "noCapConfigured": "Nenhum limite configurado",
+    "budget": "Orçamento",
+    "disabled": "Desativado",
+    "softAlertAt": "Alerta preventivo em {{percent}}%",
+    "pausedFor": "pausado por {{reason}}",
+    "pendingRuns_one": "{{count}} execução concluída aguarda contabilização.",
+    "pendingRuns_many": "{{count}} execuções concluídas aguardam contabilização.",
+    "pendingRuns_other": "{{count}} execuções concluídas aguardam contabilização.",
+    "unpricedEvents_one": "{{count}} evento de uso não tem preço confiável. Seu custo fica fora do gasto conhecido.",
+    "unpricedEvents_many": "{{count}} eventos de uso não têm preço confiável. Seus custos ficam fora do gasto conhecido.",
+    "unpricedEvents_other": "{{count}} eventos de uso não têm preço confiável. Seus custos ficam fora do gasto conhecido.",
+    "remaining": "Restante",
+    "unlimited": "Sem limite",
+    "utilizationAria": "Utilização do orçamento: {{percent}}% usado",
+    "projectPausedDescription": "A execução deste projeto está pausada até que o bloqueio de orçamento seja resolvido.",
+    "scopePausedDescription": "Os ciclos automáticos deste escopo estão pausados até que o bloqueio de orçamento seja resolvido.",
+    "amountLabel": "Orçamento (USD)",
+    "amountPlaceholder": "0,00",
+    "saving": "Salvando…",
+    "updateBudget": "Atualizar orçamento",
+    "setBudget": "Definir orçamento",
+    "invalidAmount": "Informe um valor em dólares válido e não negativo.",
+    "advancedSettings": "Configurações avançadas",
+    "blockUnpricedUsage": "Bloquear novos trabalhos quando o uso não tiver preço confiável",
+    "reservation": {
+      "label": "Reserva por execução (USD)",
+      "invalid": "Informe um valor válido igual ou maior que zero.",
+      "help": "Estimativa reservada antes do início de cada execução. Zero desativa a estimativa. As cobranças reais do provedor podem ser maiores.",
+      "update": "Atualizar reserva"
+    }
+  },
+  "projectAccess": {
+    "manageAccess": "Gerenciar acesso",
+    "viewAccess": "Ver acesso",
+    "closeDialog": "Fechar acesso do projeto",
+    "dialogTitle": "Acesso ao projeto privado",
+    "dialogDescription": "Pessoas e agentes com acesso podem encontrar este projeto e ler todas as tarefas dele. Uma tarefa também pode ser compartilhada diretamente.",
+    "people": "Pessoas",
+    "agents": "Agentes",
+    "unknownUser": "Usuário desconhecido",
+    "unknownMember": "Pessoa desconhecida",
+    "directoryLoadFailed": "Não foi possível carregar o diretório de acesso da organização.",
+    "addPlaceholder": "Adicionar uma pessoa ou um agente",
+    "searchPlaceholder": "Buscar pessoas e agentes",
+    "emptyMembers": "Não há mais integrantes da organização para adicionar",
+    "add": "Adicionar",
+    "sharedAgentWarning": "Este agente pode manter informações privadas do projeto na memória e no espaço de trabalho para execuções futuras. Remover o acesso não apaga o que ele já aprendeu.",
+    "owner": "Proprietário",
+    "agent": "Agente",
+    "person": "Pessoa",
+    "removeMember": "Remover {{name}}",
+    "loading": "Carregando acessos…",
+    "membersLoadFailed": "Não foi possível carregar quem tem acesso ao projeto.",
+    "addedToast": "Acesso ao projeto concedido",
+    "addFailedToast": "Não foi possível conceder acesso ao projeto",
+    "removedToast": "Acesso ao projeto removido",
+    "removeFailedToast": "Não foi possível remover o acesso ao projeto"
   },
   "pathInstructions": {
     "choose": "Escolher",

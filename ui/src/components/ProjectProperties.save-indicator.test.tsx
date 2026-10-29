@@ -28,6 +28,7 @@ vi.mock("../api/goals", () => ({ goalsApi: { list: vi.fn().mockResolvedValue([])
 vi.mock("../api/secrets", () => ({ secretsApi: { list: vi.fn().mockResolvedValue([]), listUserSecretDefinitions: vi.fn().mockResolvedValue([]), create: vi.fn() } }));
 vi.mock("../api/environments", () => ({ environmentsApi: { list: vi.fn().mockResolvedValue([]) } }));
 vi.mock("../api/instanceSettings", () => ({ instanceSettingsApi: { getExperimental: vi.fn().mockResolvedValue({ enableIsolatedWorkspaces: true }) } }));
+vi.mock("@/context/ToastContext", () => ({ useToastActions: () => ({ pushToast: vi.fn() }) }));
 
 vi.mock("../context/CompanyContext", () => ({
   useCompany: () => ({ companies: [{ id: "company-1", issuePrefix: "PAP" }], selectedCompanyId: "company-1", setSelectedCompanyId: vi.fn() }),
@@ -63,6 +64,8 @@ function primedClient() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   client.setQueryData(queryKeys.health, { hiddenSettings: [] });
   client.setQueryData(queryKeys.instance.experimentalSettings, { enableIsolatedWorkspaces: true });
+  client.setQueryData(queryKeys.auth.session, { user: { id: "privacy-owner" } });
+  client.setQueryData(queryKeys.access.currentBoardAccess, { memberships: [] });
   return client;
 }
 
@@ -83,14 +86,19 @@ afterEach(async () => {
   await reactAct(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 });
 
-function render(getFieldSaveState: (field: string) => ProjectFieldSaveState, onArchive: (archived: boolean) => void = noop) {
+function render(
+  getFieldSaveState: (field: string) => ProjectFieldSaveState,
+  onArchive: (archived: boolean) => void = noop,
+  onFieldUpdate: (field: string, data: Record<string, unknown>) => void = noop,
+  project: Project = makeProject(),
+) {
   act(() => {
     root.render(
       <QueryClientProvider client={primedClient()}>
         <TooltipProvider>
           <ProjectProperties
-            project={makeProject()}
-            onFieldUpdate={noop}
+            project={project}
+            onFieldUpdate={onFieldUpdate}
             getFieldSaveState={getFieldSaveState}
             onArchive={onArchive}
           />
@@ -159,5 +167,33 @@ describe("ProjectProperties save indicator placement", () => {
     expect(confirmButton).toBeTruthy();
     act(() => confirmButton?.click());
     expect(onArchive).toHaveBeenCalledWith(true);
+  });
+
+  it("localizes private project visibility and retains the explicit open-confirmation gate", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    const onFieldUpdate = vi.fn();
+    render(
+      () => "idle",
+      noop,
+      onFieldUpdate,
+      makeProject({ visibility: "private", privacyOwnerUserId: "privacy-owner" }),
+    );
+
+    expect(labelSpan("Visibilidade")).not.toBeNull();
+    expect(container.textContent).toContain("Somente quem tem acesso pode encontrar este projeto.");
+    expect(container.textContent).toContain("Gerenciar acesso");
+    const visibilitySwitch = container.querySelector('button[role="switch"][aria-label="Projeto privado"]') as HTMLButtonElement | null;
+    expect(visibilitySwitch).not.toBeNull();
+    expect(visibilitySwitch!.disabled).toBe(false);
+
+    act(() => visibilitySwitch!.click());
+    expect(document.body.textContent).toContain("Abrir este projeto para a organização?");
+    expect(document.body.textContent).toContain("Quem tiver acesso às tarefas somente por este projeto perderá esse acesso.");
+    const confirm = [...document.body.querySelectorAll("button")]
+      .find((candidate) => candidate.textContent?.trim() === "Aberto para a organização");
+    expect(confirm).toBeTruthy();
+    act(() => confirm?.click());
+
+    expect(onFieldUpdate).toHaveBeenCalledWith("visibility", { visibility: "open" });
   });
 });

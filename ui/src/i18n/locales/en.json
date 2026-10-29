@@ -1273,6 +1273,19 @@
     "cancel": "Cancel",
     "archiveProject": "Archive project",
     "unarchiveProject": "Unarchive project",
+    "visibility": {
+      "label": "Visibility",
+      "privateProject": "Private project",
+      "private": "Private",
+      "openToCompany": "Open to company",
+      "privateDescription": "Only access members can discover this project. Tasks shared directly remain readable on their own.",
+      "openDescription": "Everyone in the company can discover this project. Individually private tasks keep their own access rules.",
+      "keepPrivate": "Keep private",
+      "openConfirmation": {
+        "title": "Open this project to the company?",
+        "description": "Everyone in the company will be able to discover this project. Its private tasks stay private. Members who only have access through this project will lose access to those tasks. Share tasks directly first if you want them to keep access."
+      }
+    },
     "codebase": {
       "title": "Codebase",
       "helpLabel": "Codebase help",
@@ -1304,6 +1317,87 @@
     "edit": "Edit",
     "cancel": "Cancel",
     "saveUrl": "Save URL"
+  },
+  "budgetPolicy": {
+    "scopeTypes": {
+      "company": "Organization",
+      "agent": "Agent",
+      "project": "Project"
+    },
+    "windows": {
+      "lifetime": "Lifetime budget",
+      "calendarMonthUtc": "Monthly UTC budget"
+    },
+    "status": {
+      "paused": "Paused",
+      "warning": "Warning",
+      "hardStop": "Hard stop",
+      "healthy": "Healthy"
+    },
+    "pauseReasons": {
+      "manual": "manual",
+      "budget": "budget",
+      "system": "system-managed",
+      "companyArchived": "organization archived",
+      "import": "imported"
+    },
+    "observed": "Observed",
+    "percentOfLimit": "{{percent}}% of limit",
+    "noCapConfigured": "No cap configured",
+    "budget": "Budget",
+    "disabled": "Disabled",
+    "softAlertAt": "Soft alert at {{percent}}%",
+    "pausedFor": "paused for {{reason}}",
+    "pendingRuns_one": "{{count}} completed run is awaiting accounting.",
+    "pendingRuns_other": "{{count}} completed runs are awaiting accounting.",
+    "unpricedEvents_one": "{{count}} usage event has no reliable price. Its cost is excluded from known spend.",
+    "unpricedEvents_other": "{{count}} usage events have no reliable price. Their cost is excluded from known spend.",
+    "remaining": "Remaining",
+    "unlimited": "Unlimited",
+    "utilizationAria": "Budget utilization: {{percent}}% used",
+    "projectPausedDescription": "Execution is paused for this project until the budget block is resolved.",
+    "scopePausedDescription": "Heartbeats are paused for this scope until the budget block is resolved.",
+    "amountLabel": "Budget (USD)",
+    "amountPlaceholder": "0.00",
+    "saving": "Saving…",
+    "updateBudget": "Update budget",
+    "setBudget": "Set budget",
+    "invalidAmount": "Enter a valid non-negative dollar amount.",
+    "advancedSettings": "Advanced settings",
+    "blockUnpricedUsage": "Block new work when usage has no reliable price",
+    "reservation": {
+      "label": "Reserve per run (USD)",
+      "invalid": "Enter a valid amount of zero or more.",
+      "help": "An estimate held before each run starts. Zero disables the estimate. Actual provider charges may exceed it.",
+      "update": "Update reservation"
+    }
+  },
+  "projectAccess": {
+    "manageAccess": "Manage access",
+    "viewAccess": "View access",
+    "closeDialog": "Close project access",
+    "dialogTitle": "Private project access",
+    "dialogDescription": "People and agents with access can discover this project and read every task in it. A task can still be shared directly.",
+    "people": "People",
+    "agents": "Agents",
+    "unknownUser": "Unknown user",
+    "unknownMember": "Unknown member",
+    "directoryLoadFailed": "Couldn't load the company access directory.",
+    "addPlaceholder": "Add a person or agent",
+    "searchPlaceholder": "Search people and agents",
+    "emptyMembers": "No more company members to add",
+    "add": "Add",
+    "sharedAgentWarning": "This agent can retain private project context in its memory and workspace for later runs. Removing access cannot erase what it has already learned.",
+    "owner": "Owner",
+    "agent": "Agent",
+    "person": "Person",
+    "removeMember": "Remove {{name}}",
+    "loading": "Loading access…",
+    "membersLoadFailed": "Couldn't load project access members.",
+    "addedToast": "Project access added",
+    "addFailedToast": "Couldn't add project access",
+    "removedToast": "Project access removed",
+    "removeFailedToast": "Couldn't remove project access"
   },
   "pathInstructions": {
     "choose": "Choose",

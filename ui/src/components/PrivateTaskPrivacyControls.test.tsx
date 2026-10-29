@@ -4,6 +4,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { queryKeys } from "@/lib/queryKeys";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 const api = vi.hoisted(() => ({ getIssue: vi.fn(), getProject: vi.fn(), constraints: vi.fn(), setVisibility: vi.fn(),
   members: vi.fn(), add: vi.fn(), remove: vi.fn(), directory: vi.fn() }));
 vi.mock("@/api/issues", () => ({ issuesApi: { get: api.getIssue, privacyConstraints: api.constraints, setVisibility: api.setVisibility } }));
@@ -22,7 +24,7 @@ const originalScrollIntoView = Element.prototype.scrollIntoView;
 let root: Root;
 let container: HTMLDivElement;
 let client: QueryClient;
-beforeEach(() => {
+beforeEach(async () => {
     vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
     Element.prototype.scrollIntoView = () => {};
   vi.resetAllMocks();
@@ -32,10 +34,12 @@ beforeEach(() => {
   container = document.createElement("div"); document.body.append(container);
   root = createRoot(container);
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  await i18n.changeLanguage("en");
 });
-afterEach(() => { flushSync(() => root.unmount()); client.clear(); document.body.innerHTML = "";
+afterEach(async () => { flushSync(() => root.unmount()); client.clear(); document.body.innerHTML = "";
     vi.unstubAllGlobals();
-    Element.prototype.scrollIntoView = originalScrollIntoView; });
+    Element.prototype.scrollIntoView = originalScrollIntoView;
+    await i18n.changeLanguage(DEFAULT_LOCALE); });
 function render(node: React.ReactNode) { flushSync(() => root.render(<QueryClientProvider client={client}>{node}</QueryClientProvider>)); }
 function publicButton() { return [...document.body.querySelectorAll("button")].find(b => b.textContent?.trim() === "Make public")!; }
 function actions(scope: { privacyParentIssueId?: string; projectId?: string } = {}) {

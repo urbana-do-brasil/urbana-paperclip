@@ -1239,5 +1239,29 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
   `openspec validate localize-paperclip-pt-br --strict` e o typecheck direcionado
   dos módulos alterados passaram. O typecheck completo da UI foi encerrado pelo
   limite de memória do ambiente.
-- 3.5c2b está concluída; progresso OpenSpec: **85/114**. Próxima: 3.5c3,
-  orçamento e acesso/privacidade. A aplicação ainda não foi implantada.
+- 3.5c2b está concluída; naquele checkpoint, o progresso OpenSpec era
+  **85/114**. A aplicação ainda não foi implantada.
+
+### Orçamento e acesso privado do projeto (3.5c3a–3.5c3b)
+
+- A política compartilhada de orçamento localiza valores, períodos UTC/total,
+  estados, limite e uso observado, avisos, pausas, execuções pendentes, uso sem
+  preço confiável e configurações avançadas. A moeda permanece USD; a entrada
+  decimal aceita vírgula em PT-BR e continua enviando os mesmos centavos e
+  contratos. Como o cartão também aparece em custos e agentes, suas strings
+  foram localizadas em todos os contextos; as demais superfícies de custos e
+  agentes continuam parcialmente cobertas nas tarefas 3.7 e 3.6.
+- A configuração do projeto localiza a visibilidade, os efeitos de abrir um
+  projeto privado, a confirmação de mudança, a lista de pessoas/agentes, a
+  proteção de responsáveis e o aviso sobre contexto privado retido por agentes
+  compartilhados. Estados de somente leitura, decisões de acesso, callbacks,
+  payloads e gates de autorização permanecem inalterados.
+- `BudgetPolicyCard.test.tsx`, `ProjectAccessMembers.test.tsx`,
+  `ProjectProperties.save-indicator.test.tsx`,
+  `PrivateTaskPrivacyControls.test.tsx` e `locale-validation.test.ts` passaram
+  em **32/32 testes**. Typecheck direcionado dos módulos e testes alterados,
+  `check:tokens`, `check:token-gates`, `git diff --check` e
+  `openspec validate localize-paperclip-pt-br --strict` passaram.
+- 3.5c2 e 3.5c3 estão concluídas; progresso OpenSpec: **89/116**. Próxima:
+  3.5c4, política e visualização de workspaces. A aplicação ainda não foi
+  implantada.
