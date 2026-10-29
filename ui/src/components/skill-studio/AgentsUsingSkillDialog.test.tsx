@@ -11,6 +11,8 @@ import type {
   CompanySkillVersion,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import {
   AgentsUsingSkillBadge,
   AgentsUsingSkillDialog,
@@ -178,7 +180,8 @@ function makeSkill(overrides: Partial<CompanySkillDetail> = {}): CompanySkillDet
   };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   mockAgentsApi.list.mockResolvedValue([]);
   mockAgentsApi.skills.mockResolvedValue({
     adapterType: "claude_local",
@@ -194,12 +197,20 @@ beforeEach(() => {
   mockPushToast.mockReset();
 });
 
-afterEach(() => {
+afterEach(async () => {
   teardown();
   vi.clearAllMocks();
+  await i18n.changeLanguage(DEFAULT_LOCALE);
 });
 
 describe("AgentsUsingSkillBadge", () => {
+  it("renders the attachment action in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderNode(<AgentsUsingSkillBadge companyId="company-1" skill={makeSkill()} />);
+    const badge = findButton("0 agentes");
+    expect(badge.getAttribute("aria-label")).toBe("0 agentes usam esta skill");
+  });
+
   it("renders a muted '0 agents' button with an a11y label when unused", async () => {
     await renderNode(<AgentsUsingSkillBadge companyId="company-1" skill={makeSkill()} />);
     const badge = findButton("0 agents");
@@ -223,6 +234,23 @@ describe("AgentsUsingSkillBadge", () => {
 });
 
 describe("AgentsUsingSkillDialog", () => {
+  it("localizes the non-manageable assignment dialog in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderNode(
+      <AgentsUsingSkillDialog
+        open
+        onOpenChange={() => {}}
+        companyId="company-1"
+        skill={makeSkill({ usedByAgents: [] })}
+        canManage={false}
+      />,
+    );
+
+    expect(document.body.textContent).toContain("Agentes que usam Demo Skill");
+    expect(document.body.textContent).toContain("Nenhum agente tem esta skill atribuída ainda.");
+    expect(document.body.textContent).toContain("Esta skill não está atribuída a nenhum agente.");
+  });
+
   it("shows a version select with Latest (vN) and a static '—' when no version history", async () => {
     mockCompanySkillsApi.versions.mockResolvedValue([
       makeVersion({ id: "ver-3", revisionNumber: 3 }),

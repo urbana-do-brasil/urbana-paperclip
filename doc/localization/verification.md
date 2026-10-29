@@ -2297,8 +2297,28 @@ agentes e payloads permanecem intactos.
 `FolderControls.test.tsx`, `SkillFolderTree.test.tsx`,
 `skill-folder-tree.test.ts`, `CompanySkills.test.tsx` e
 `locale-validation.test.ts` passaram em **78/78 testes**. `pnpm check:tokens`,
-`pnpm check:token-gates`, parse dos JSONs de locale e cobertura, `git diff
---check` e validação OpenSpec estrita passaram. O typecheck da UI aponta somente
+`pnpm check:token-gates`, parse dos JSONs de locale e cobertura, `git diff --check`
+e validação OpenSpec estrita passaram. O typecheck da UI aponta somente
 o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. O progresso é **199/220 tarefas**; próxima:
 3.9c, Skill Studio.
+
+### Skill Studio (3.9c)
+
+O Skill Studio dedicado agora alterna entre PT-BR e inglês em sua criação,
+edição, arquivos, entradas de teste, modelos de execução, execuções, detalhes,
+interações, histórico de versões e navegação mobile. Também foram localizados
+os fluxos de associação de skills a agentes, criação de cópias/forks, lineage e
+avisos de skills sincronizadas com projetos. A troca de idioma mantém o rascunho
+em edição. Nomes de skills/agentes/arquivos e categorias fornecidas, Markdown,
+prompts, conteúdo de entradas/modelos, caminhos, IDs, dados de origem e payloads
+permanecem intactos.
+
+`SkillStudio.test.tsx`, `AgentsUsingSkillDialog.test.tsx`,
+`ForkSkillDialog.test.tsx`, `skill-fork.test.ts` e
+`locale-validation.test.ts` passaram em **61/61 testes**, incluindo a troca de
+idioma e superfícies de fork/associação em PT-BR. `pnpm check:tokens`,
+`pnpm check:token-gates`, parse de JSON, `git diff --check` e validação OpenSpec
+estrita passaram. O typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O progresso é **200/220 tarefas**; próxima: 3.9d, catálogo de equipes.

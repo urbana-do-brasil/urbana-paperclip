@@ -10,6 +10,8 @@ import type {
   CompanySkillListItem,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { SkillStudio } from "./SkillStudio";
 
 const routeState = vi.hoisted(() => ({
@@ -259,7 +261,8 @@ function buttonsNamed(node: ParentNode, name: string) {
   );
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   routeState.pathname = "/skills/studio/new";
   routeState.search = "";
   routeState.skillId = "new";
@@ -309,16 +312,32 @@ beforeEach(() => {
   mockIssuesApi.rejectInteraction.mockResolvedValue({});
 });
 
-afterEach(() => {
+afterEach(async () => {
   root?.unmount();
   root = null;
   container?.remove();
   container = null;
   document.body.innerHTML = "";
   vi.clearAllMocks();
+  await i18n.changeLanguage(DEFAULT_LOCALE);
 });
 
 describe("SkillStudio create mode", () => {
+  it("localizes the Skill Studio and keeps the draft when switching languages", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const node = await renderStudio();
+
+    await waitFor(() => expect(node.textContent).toContain("Criar uma nova skill"));
+    expect(node.textContent).toContain("Informações básicas");
+    expect(node.textContent).toContain("Compartilhamento");
+
+    await inputValue(node.querySelector("#skill-name") as HTMLInputElement, "Revisão de código");
+    await act(async () => { await i18n.changeLanguage("en"); });
+
+    expect(node.textContent).toContain("Create a new skill");
+    expect((node.querySelector("#skill-name") as HTMLInputElement).value).toBe("Revisão de código");
+  });
+
   it("renders /skills/studio/new as create mode instead of loading skill id new", async () => {
     const node = await renderStudio();
 
@@ -670,5 +689,20 @@ describe("SkillStudio editor frontmatter", () => {
       link.getAttribute("href")?.includes("/skills/studio/new?forkFrom"),
     );
     expect(staleForkLink).toBeUndefined();
+  });
+
+  it("localizes project-synced skill notices and preserves the workspace path", async () => {
+    mockCompanySkillsApi.detail.mockResolvedValueOnce(makeSkill({
+      metadata: { sourceKind: "project_scan" },
+      sourcePath: "apps/paperclip/skills/review",
+    }));
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+
+    const node = await renderStudio();
+
+    await waitFor(() => expect(node.textContent).toContain("Esta skill está em"));
+    expect(node.textContent).toContain("apps/paperclip/skills/review");
+    expect(node.textContent).toContain("As alterações são gravadas na árvore de trabalho do projeto e não são commitadas.");
+    expect(node.textContent).toContain("Editar uma cópia");
   });
 });

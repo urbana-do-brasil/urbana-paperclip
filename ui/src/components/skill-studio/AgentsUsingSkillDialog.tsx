@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { t } from "@/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2, Users } from "lucide-react";
 import type {
@@ -56,7 +57,7 @@ export function AgentsUsingSkillBadge({
 }) {
   const [open, setOpen] = useState(false);
   const count = skill.usedByAgents.length;
-  const label = `${count} ${count === 1 ? "agent uses" : "agents use"} this skill`;
+  const label = t(count === 1 ? "skillStudio.agentUsesSkill_one" : "skillStudio.agentUsesSkill_other", { count });
 
   return (
     <>
@@ -72,7 +73,7 @@ export function AgentsUsingSkillBadge({
         )}
       >
         <Users className="h-3.5 w-3.5" aria-hidden="true" />
-        {count} {count === 1 ? "agent" : "agents"}
+        {count} {t(count === 1 ? "skillStudio.agent_one" : "skillStudio.agent_other")}
       </button>
       <AgentsUsingSkillDialog
         open={open}
@@ -201,11 +202,11 @@ export function AgentsUsingSkillDialog({
       ]);
     },
     onError: (error) => {
-      const message = error instanceof Error ? error.message : "Failed to update agent skills.";
+      const message = error instanceof Error ? error.message : t("skillStudio.failedToUpdateAgentSkills");
       toast?.pushToast({
         tone: "error",
-        title: "Update failed",
-        body: message.includes("403") ? "You don't have permission to change this agent's skills." : message,
+        title: t("skillStudio.agentSkillsUpdateFailed"),
+        body: message.includes("403") ? t("skillStudio.noPermissionToChangeAgentSkills") : message,
       });
     },
   });
@@ -232,11 +233,11 @@ export function AgentsUsingSkillDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Agents using {skill.name}</DialogTitle>
+          <DialogTitle>{t("skillStudio.agentsUsingSkill", { name: skill.name })}</DialogTitle>
           <DialogDescription>
             {count === 0
-              ? "No agents have this skill assigned yet."
-              : `${count} ${count === 1 ? "agent has" : "agents have"} this skill in their desired set.`}
+              ? t("skillStudio.noAgentsAssignedYet")
+              : t("skillStudio.agentsAssigned", { count })}
           </DialogDescription>
         </DialogHeader>
 
@@ -244,8 +245,8 @@ export function AgentsUsingSkillDialog({
           {count === 0 ? (
             <div className="rounded-md border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
               {canManage
-                ? "Add an agent below to assign this skill."
-                : "This skill isn't assigned to any agents."}
+                ? t("skillStudio.addAgentBelow")
+                : t("skillStudio.skillNotAssigned")}
             </div>
           ) : (
             <ul className="divide-y divide-border">
@@ -340,12 +341,15 @@ function AgentRow({
 
       <div className="flex shrink-0 flex-col items-end gap-0.5">
         {!hasVersions ? (
-          <span className="text-sm text-muted-foreground" aria-label={`${agent.name} version`}>
+          <span
+            className="text-sm text-muted-foreground"
+            aria-label={t("skillStudio.agentVersion", { name: agent.name })}
+          >
             —
           </span>
         ) : canManage ? (
           <select
-            aria-label={`${agent.name} skill version`}
+            aria-label={t("skillStudio.agentSkillVersion", { name: agent.name })}
             value={agent.versionId ?? LATEST_VALUE}
             disabled={busy}
             onChange={(event) =>
@@ -354,7 +358,7 @@ function AgentRow({
             className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground disabled:opacity-60"
           >
             <option value={LATEST_VALUE}>
-              Latest{latestRevision !== null ? ` (v${latestRevision})` : ""}
+              {t("skillStudio.latest")}{latestRevision !== null ? ` (v${latestRevision})` : ""}
             </option>
             {versions.map((version) => (
               <option key={version.id} value={version.id}>
@@ -367,12 +371,12 @@ function AgentRow({
           <span className="text-xs text-muted-foreground">
             {agent.versionId
               ? `v${pinnedRevision ?? "?"}`
-              : `Latest${latestRevision !== null ? ` (v${latestRevision})` : ""}`}
+              : `${t("skillStudio.latest")}${latestRevision !== null ? ` (v${latestRevision})` : ""}`}
           </span>
         )}
         {behindLatest > 0 ? (
           <span className="text-(length:--text-nano) text-amber-500">
-            {behindLatest} version{behindLatest === 1 ? "" : "s"} behind latest
+            {t("skillStudio.versionsBehindLatest", { count: behindLatest })}
           </span>
         ) : null}
       </div>
@@ -385,12 +389,12 @@ function AgentRow({
               size="sm"
               onClick={onRemove}
               disabled={busy}
-              aria-label={`Confirm removing this skill from ${agent.name}`}
+              aria-label={t("skillStudio.confirmRemoveSkillFromAgent", { name: agent.name })}
             >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Remove"}
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("skillStudio.remove")}
             </Button>
             <Button variant="ghost" size="sm" onClick={onCancelRemove} disabled={busy}>
-              Cancel
+              {t("skillStudio.cancel")}
             </Button>
           </div>
         ) : (
@@ -400,7 +404,7 @@ function AgentRow({
             onClick={onRequestRemove}
             disabled={busy}
             className="shrink-0 text-muted-foreground hover:text-destructive"
-            aria-label={`Remove this skill from ${agent.name}`}
+            aria-label={t("skillStudio.removeSkillFromAgent", { name: agent.name })}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -439,10 +443,10 @@ function AddAgentPicker({
       value=""
       groups={groups}
       loading={loading}
-      loadingMessage="Loading agents..."
-      placeholder="Add agent…"
-      searchPlaceholder="Search agents..."
-      emptyMessage="All eligible agents already have this skill."
+      loadingMessage={t("skillStudio.loadingAgents")}
+      placeholder={t("skillStudio.addAgent")}
+      searchPlaceholder={t("skillStudio.searchAgents")}
+      emptyMessage={t("skillStudio.allEligibleAgentsAssigned")}
       disabled={disabled}
       onValueChange={(_value, option) => {
         onSelect(option.agent);
@@ -453,7 +457,7 @@ function AddAgentPicker({
       renderValue={() => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-          Add agent…
+          {t("skillStudio.addAgent")}
         </span>
       )}
       renderOption={(option) => (
