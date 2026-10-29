@@ -3366,3 +3366,13 @@ PT-BR/en. Cases antes ocultava o detalhe retornado pela API; agora a
 apresentação localiza o contexto e preserva esse detalhe. **52/52 testes**
 focados e typecheck UI passaram. A parte de rotinas production segue em g4b.
 Progresso: **289/309**.
+
+
+## Rotinas production e auditoria escopada (3.10g4b)
+
+A árvore real do App verifica lista, detalhe e aliases de rotinas nos dois
+shells em PT-BR/en, com páginas/shells simulados. CompanyActivity production
+agora usa o feed escopado existente quando `entityType=routine` e há ID; feed
+geral e escopo incompleto mantêm o comportamento anterior. Outros tipos não
+foram generalizados. App, feed de rotina e AuditHub: **19/19**; typecheck UI
+passou. 3.10g concluída; progresso: **292/309**.

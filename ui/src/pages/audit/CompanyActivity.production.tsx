@@ -5,6 +5,8 @@ import { useCompany } from "../../context/CompanyContext";
 import { useBreadcrumbs } from "../../context/BreadcrumbContext";
 import { EmptyState } from "../../components/EmptyState";
 import { AuditFeed, type AuditFeedMode } from "./AuditFeed.production";
+import { RoutineAuditActivity } from "./RoutineAuditActivity";
+import { auditScopeFromSearchParams } from "./audit-navigation";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -20,6 +22,7 @@ export function CompanyActivity() {
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const [searchParams, setSearchParams] = useSearchParams();
+  const scope = auditScopeFromSearchParams(searchParams);
   const mode: AuditFeedMode = searchParams.get("mode") === "agents" ? "agents" : "all";
 
   useEffect(() => {
@@ -45,6 +48,13 @@ export function CompanyActivity() {
 
   if (!selectedCompanyId) {
     return <EmptyState icon={History} message={t("organizationActivity.selectOrganization")} />;
+  }
+
+  // The streamlined AuditHub gives routine links a combined routine-scoped
+  // feed (routine + its triggers/runs). Preserve that scope in the production
+  // shell instead of silently dropping its entityId in the older company feed.
+  if (scope.entityType === "routine" && scope.entityId) {
+    return <RoutineAuditActivity companyId={selectedCompanyId} routineId={scope.entityId} />;
   }
 
   return <AuditFeed companyId={selectedCompanyId} mode={mode} onModeChange={handleModeChange} />;
