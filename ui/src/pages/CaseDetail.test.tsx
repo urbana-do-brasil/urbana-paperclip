@@ -525,6 +525,26 @@ describe("CaseDetail", () => {
     act(() => root.unmount());
   });
 
+  it("shows activity errors and retries the activity query", async () => {
+    mockCasesApi.listEvents.mockRejectedValueOnce(new Error("server detail")).mockResolvedValueOnce([]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => expect(container.textContent).toContain("Hermes agent launch post"));
+    const activity = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Atividade");
+    expect(activity).toBeTruthy();
+    act(() => {
+      activity!.focus();
+      activity!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    });
+    await waitForAssertion(() => expect(container.textContent).toContain("Não foi possível carregar a atividade."));
+    expect(container.textContent).not.toContain("server detail");
+    const retry = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Tentar novamente");
+    act(() => retry!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => expect(container.textContent).toContain("Ainda não há atividade."));
+    expect(mockCasesApi.listEvents).toHaveBeenCalledTimes(2);
+    act(() => root.unmount());
+  });
+
   it("localizes properties and relationships while preserving label and task data", async () => {
     const label = { id: "label-1", companyId: "company-1", name: "USER LABEL", color: PROJECT_COLORS[0], createdAt: new Date(), updatedAt: new Date() };
     const caseWithParent = {

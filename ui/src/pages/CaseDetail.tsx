@@ -725,7 +725,7 @@ export function CaseDetail() {
         </TabsContent>
 
         <TabsContent value="activity">
-          <CaseActivityFeed events={events} />
+          <CaseActivityFeed events={events} loading={eventsQuery.isLoading && !eventsQuery.data} error={eventsQuery.isError && !eventsQuery.data} onRetry={() => void eventsQuery.refetch()} />
         </TabsContent>
       </Tabs>
     </div>

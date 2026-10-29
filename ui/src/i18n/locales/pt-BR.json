@@ -1770,6 +1770,36 @@
     }
   },
   "caseManagement": {
+    "activity": {
+      "loading": "Carregando atividade...",
+      "error": "Não foi possível carregar a atividade.",
+      "empty": "Ainda não há atividade.",
+      "noMatches": "Nenhum evento corresponde a este filtro.",
+      "all": "Toda a atividade",
+      "filterLabel": "Filtro de atividade",
+      "filterCount_one": "{{formattedCount}} filtro",
+      "filterCount_other": "{{formattedCount}} filtros",
+      "filterCount_many": "{{formattedCount}} filtros",
+      "eventCount_one": "{{shown}} de {{total}} evento",
+      "eventCount_other": "{{shown}} de {{total}} eventos",
+      "eventCount_many": "{{shown}} de {{total}} eventos",
+      "issue": "tarefa",
+      "via": "via",
+      "actor": { "agent": "Agente", "user": "Usuário", "system": "Sistema" },
+      "events": {
+        "created": "criado",
+        "updated": "atualizado",
+        "fieldsChanged": "campos alterados",
+        "statusChanged": "status alterado",
+        "issueLinked": "tarefa vinculada",
+        "issueUnlinked": "tarefa desvinculada",
+        "documentRevised": "documento revisado",
+        "childLinked": "caso filho vinculado",
+        "attachmentAdded": "anexo adicionado",
+        "labelAdded": "rótulo adicionado",
+        "labelRemoved": "rótulo removido"
+      }
+    },
     "properties": {
       "relationships": "Relações do caso",
       "parent": "Caso pai",

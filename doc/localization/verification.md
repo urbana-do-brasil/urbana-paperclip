@@ -3050,3 +3050,20 @@ intactos.
 o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **256/279**. Próxima:
 3.10e3, atividade, documentos e anexos.
+
+3.10e3 foi dividida em e3a (feed de atividade) e e3b (documentos e anexos).
+O progresso da CLI OpenSpec é **256/281**; próxima: 3.10e3a.
+
+
+## Casos — feed de atividade (3.10e3a)
+
+Eventos e status conhecidos, filtros, contagens, autoria de fallback e estados
+de carregamento/falha agora acompanham PT-BR/en. Uma falha permite nova tentativa
+sem se passar por histórico vazio. Nomes de agentes e tarefas, links, payloads e
+eventos ou status desconhecidos permanecem intactos.
+
+`CaseActivityFeed.test.tsx`, `CaseDetail.test.tsx` e `locale-validation.test.ts`
+passaram em **31/31 testes**. Gates de tokens, JSON, `git diff --check` e
+OpenSpec estrito passaram. O typecheck da UI aponta somente o erro preexistente
+em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é
+exportado. Progresso da CLI: **257/281**; próxima: 3.10e3b, documentos e anexos.

@@ -1726,6 +1726,34 @@
     }
   },
   "caseManagement": {
+    "activity": {
+      "loading": "Loading activity...",
+      "error": "Could not load activity.",
+      "empty": "No activity yet.",
+      "noMatches": "No events match this filter.",
+      "all": "All activity",
+      "filterLabel": "Activity filter",
+      "filterCount_one": "{{formattedCount}} filter",
+      "filterCount_other": "{{formattedCount}} filters",
+      "eventCount_one": "{{shown}} of {{total}} event",
+      "eventCount_other": "{{shown}} of {{total}} events",
+      "issue": "issue",
+      "via": "via",
+      "actor": { "agent": "Agent", "user": "User", "system": "System" },
+      "events": {
+        "created": "created",
+        "updated": "updated",
+        "fieldsChanged": "fields changed",
+        "statusChanged": "status changed",
+        "issueLinked": "issue linked",
+        "issueUnlinked": "issue unlinked",
+        "documentRevised": "document revised",
+        "childLinked": "child linked",
+        "attachmentAdded": "attachment added",
+        "labelAdded": "label added",
+        "labelRemoved": "label removed"
+      }
+    },
     "properties": {
       "relationships": "Case relationships",
       "parent": "Parent",
