@@ -97,6 +97,96 @@
       "failed": "Failed"
     }
   },
+  "approvalPage": {
+    "breadcrumb": "Approvals",
+    "tabs": {
+      "label": "Approval status",
+      "pending": "Pending",
+      "all": "All"
+    },
+    "selectOrganization": "Select an organization first.",
+    "notFound": "Approval not found.",
+    "loadError": "Failed to load approvals.",
+    "empty": {
+      "pending": "No pending approvals.",
+      "all": "No approvals yet."
+    },
+    "types": {
+      "hire_agent": "Hire Agent",
+      "approve_ceo_strategy": "CEO Strategy",
+      "budget_override_required": "Budget Override",
+      "request_board_approval": "Board Approval"
+    },
+    "statuses": {
+      "pending": "Pending",
+      "revision_requested": "Revision requested",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "typeWithSubject": "{{type}}: {{subject}}",
+    "requestedBy": "Requested by",
+    "created": "Approval request created {{time}}",
+    "decisionNote": "Decision note:",
+    "linkedTasks": "Linked tasks",
+    "linkedTasksRemainOpen": "Linked tasks remain open until the requesting agent follows up and closes them.",
+    "confirmed": "Approval confirmed",
+    "requestingAgentNotified": "The requesting agent was notified to review this approval and its linked tasks.",
+    "reviewLinkedTask": "Review linked task",
+    "reviewLinkedTasks": "Review linked tasks",
+    "openHiredAgent": "Open hired agent",
+    "backToApprovals": "Back to approvals",
+    "seeFullRequest": "See full request",
+    "budgetStopBefore": "Resolve this budget stop from the budget controls on",
+    "actions": {
+      "approve": "Approve",
+      "approving": "Approving…",
+      "reject": "Reject",
+      "rejecting": "Rejecting…",
+      "viewDetails": "View details",
+      "requestRevision": "Request revision",
+      "requestingRevision": "Requesting revision…",
+      "markResubmitted": "Mark resubmitted",
+      "resubmitting": "Resubmitting…",
+      "deleteDisapprovedAgent": "Delete disapproved agent",
+      "deletingAgent": "Deleting agent…",
+      "deleteDisapprovedAgentConfirm": "Delete this disapproved agent? This cannot be undone.",
+      "postComment": "Post comment",
+      "posting": "Posting…"
+    },
+    "commentsHeading": "Comments ({{count}})",
+    "commentPlaceholder": "Add a comment…",
+    "board": "Board",
+    "agent": "Agent",
+    "payload": {
+      "fields": {
+        "name": "Name",
+        "role": "Role",
+        "title": "Title",
+        "icon": "Icon",
+        "capabilities": "Capabilities",
+        "adapter": "Adapter",
+        "skills": "Skills",
+        "scope": "Scope",
+        "window": "Window",
+        "metric": "Metric"
+      },
+      "limitObserved": "Limit {{limit}} · Observed {{observed}}",
+      "summary": "Summary",
+      "recommendedAction": "Recommended action",
+      "onApproval": "On approval",
+      "risks": "Risks",
+      "proposedComment": "Proposed comment"
+    },
+    "errors": {
+      "approve": "Failed to approve this request.",
+      "reject": "Failed to reject this request.",
+      "revision": "Failed to request a revision.",
+      "resubmit": "Failed to resubmit this request.",
+      "comment": "Failed to post the comment.",
+      "delete": "Failed to delete the agent."
+    }
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Add another agent to {{company}}",

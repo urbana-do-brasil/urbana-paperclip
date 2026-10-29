@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **160 de 175 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **161 de 181 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -30,7 +30,9 @@ concluídos. 3.7c foi dividido em cinco lotes: moldura/período (c1), assinatura
 incidentes de orçamento (3.7d), timeline e atividade da organização (3.7e)
 também estão concluídos. A etapa 3.7a–f, incluindo auditoria, execuções e hub,
 está concluída. Próxima: 3.8, aprovações, acesso, segredos e configurações
-pessoais/de instância.
+pessoais/de instância. A etapa 3.8 foi dividida em seis jornadas; 3.8a, lista e
+detalhe de aprovações formais, está concluída. Próxima: 3.8b, acesso e convites
+da empresa/fila de solicitações.
 
 | Etapa | Situação |
 | --- | --- |

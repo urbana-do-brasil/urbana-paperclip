@@ -1785,3 +1785,19 @@ evidências já estavam concluídas nos lotes anteriores. O estado atual é
 **160/175 tarefas**; próxima tarefa: 3.8, migração de aprovações, acesso,
 segredos e configurações pessoais/de instância. O escopo geral de localização
 permanece parcial.
+
+### Continuação — aprovações formais (3.8a)
+
+A lista, os cartões e o detalhe de aprovações agora localizam filtros, estados,
+payloads próprios, ações, comentários, datas, breadcrumbs e acessibilidade em
+PT-BR/en. Mensagens livres propostas por agentes/pessoas, notas, IDs, rotas,
+status desconhecidos, payloads expandidos e contratos de mutação permanecem
+intactos. Falhas com metadados conhecidos usam a apresentação local; detalhes
+externos sem mapeamento continuam preservados.
+
+`ApprovalCard.test.tsx`, `ApprovalPayload.test.tsx` e
+`locale-validation.test.ts` passaram em **21/21 testes**. O typecheck direcionado
+dos componentes, páginas e testes alterados, `check:tokens`, `check:token-gates`,
+`git diff --check`, parse dos catálogos e validação OpenSpec estrita passaram.
+O estado atual é **161/181 tarefas**; próxima tarefa: 3.8b, acesso e convites da
+empresa e fila de solicitações.

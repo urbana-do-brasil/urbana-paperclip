@@ -97,6 +97,96 @@
       "failed": "Falhou"
     }
   },
+  "approvalPage": {
+    "breadcrumb": "Aprovações",
+    "tabs": {
+      "label": "Status das aprovações",
+      "pending": "Pendentes",
+      "all": "Todas"
+    },
+    "selectOrganization": "Selecione uma organização primeiro.",
+    "notFound": "Aprovação não encontrada.",
+    "loadError": "Não foi possível carregar as aprovações.",
+    "empty": {
+      "pending": "Não há aprovações pendentes.",
+      "all": "Ainda não há aprovações."
+    },
+    "types": {
+      "hire_agent": "Contratação de agente",
+      "approve_ceo_strategy": "Estratégia do CEO",
+      "budget_override_required": "Aprovação de orçamento",
+      "request_board_approval": "Aprovação do conselho"
+    },
+    "statuses": {
+      "pending": "Pendente",
+      "revision_requested": "Revisão solicitada",
+      "approved": "Aprovada",
+      "rejected": "Rejeitada",
+      "cancelled": "Cancelada"
+    },
+    "typeWithSubject": "{{type}}: {{subject}}",
+    "requestedBy": "Solicitada por",
+    "created": "Solicitação de aprovação criada {{time}}",
+    "decisionNote": "Nota da decisão:",
+    "linkedTasks": "Tarefas vinculadas",
+    "linkedTasksRemainOpen": "As tarefas vinculadas permanecem abertas até que o agente solicitante retome o trabalho e as conclua.",
+    "confirmed": "Aprovação confirmada",
+    "requestingAgentNotified": "O agente solicitante foi avisado para revisar esta aprovação e as tarefas vinculadas.",
+    "reviewLinkedTask": "Revisar tarefa vinculada",
+    "reviewLinkedTasks": "Revisar tarefas vinculadas",
+    "openHiredAgent": "Abrir agente contratado",
+    "backToApprovals": "Voltar para aprovações",
+    "seeFullRequest": "Ver solicitação completa",
+    "budgetStopBefore": "Resolva esta interrupção de orçamento nos controles de orçamento em",
+    "actions": {
+      "approve": "Aprovar",
+      "approving": "Aprovando…",
+      "reject": "Rejeitar",
+      "rejecting": "Rejeitando…",
+      "viewDetails": "Ver detalhes",
+      "requestRevision": "Solicitar revisão",
+      "requestingRevision": "Solicitando revisão…",
+      "markResubmitted": "Marcar como reenviada",
+      "resubmitting": "Reenviando…",
+      "deleteDisapprovedAgent": "Excluir agente reprovado",
+      "deletingAgent": "Excluindo agente…",
+      "deleteDisapprovedAgentConfirm": "Excluir este agente reprovado? Esta ação não pode ser desfeita.",
+      "postComment": "Publicar comentário",
+      "posting": "Publicando…"
+    },
+    "commentsHeading": "Comentários ({{count}})",
+    "commentPlaceholder": "Adicionar um comentário…",
+    "board": "Conselho",
+    "agent": "Agente",
+    "payload": {
+      "fields": {
+        "name": "Nome",
+        "role": "Função",
+        "title": "Título",
+        "icon": "Ícone",
+        "capabilities": "Capacidades",
+        "adapter": "Adaptador",
+        "skills": "Skills",
+        "scope": "Escopo",
+        "window": "Período",
+        "metric": "Métrica"
+      },
+      "limitObserved": "Limite {{limit}} · Observado {{observed}}",
+      "summary": "Resumo",
+      "recommendedAction": "Ação recomendada",
+      "onApproval": "Após a aprovação",
+      "risks": "Riscos",
+      "proposedComment": "Comentário proposto"
+    },
+    "errors": {
+      "approve": "Não foi possível aprovar esta solicitação.",
+      "reject": "Não foi possível rejeitar esta solicitação.",
+      "revision": "Não foi possível solicitar uma revisão.",
+      "resubmit": "Não foi possível reenviar esta solicitação.",
+      "comment": "Não foi possível publicar o comentário.",
+      "delete": "Não foi possível excluir o agente."
+    }
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Adicionar outro agente a {{company}}",
