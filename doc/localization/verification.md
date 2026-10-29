@@ -2858,3 +2858,12 @@ e ações/status desconhecidos permanecem intactos.
 testes**. O typecheck direcionado, `check:tokens`, `check:token-gates`, JSON,
 `git diff --check` e OpenSpec estrito passaram. Progresso: **237/263 tarefas**.
 Próxima: 3.10b4c, histórico e restauração de revisões.
+
+
+## Decomposição do histórico de revisões (3.10b4c)
+
+O componente de histórico reúne lista/seleção, prévia, conflitos de edição,
+comparação e restauração. Para manter a revisão focada, b4c foi dividida em c1
+(lista, estados, prévias e conflitos) e c2 (diff, confirmação, restauração e
+feedback). O contador OpenSpec passou a **265 tarefas**; progresso: **237/265**.
+Próxima: 3.10b4c1.
