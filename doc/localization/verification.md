@@ -1705,3 +1705,21 @@ módulos e testes alterados, `check:tokens`, `check:token-gates`, `git diff
 continua com a falha preexistente de `SETUP_LOGIN_HINTS` no protótipo Storybook,
 documentada em 3.7c1. Progresso: **145/173**; próxima tarefa: 3.7c5, ledger e
 timeline financeira.
+
+### Continuação — ledger e timeline financeira (3.7c5)
+
+O resumo do livro-caixa, agrupamentos por faturador e tipo, tipos de evento,
+relatórios de custos do provedor, timeline e estados de carregamento, vazio,
+seleção de período e falha agora acompanham PT-BR/en. Rótulos próprios e
+pluralização são localizados; moeda, valores, IDs, descrições, nomes de
+provedores/modelos, faturas, regiões, metadados e classificações de origem são
+preservados. Erros da API continuam sem detalhes técnicos na interface.
+
+`Costs.test.tsx`, `CostsProviderBiller.test.tsx` e
+`locale-validation.test.ts` passaram em **58/58 testes**, cobrindo as duas
+línguas, dados de origem e estados vazios/data/falha. O typecheck direcionado dos
+módulos e testes alterados, `check:tokens`, `check:token-gates`,
+`git diff --check`, JSON e validação OpenSpec estrita passaram. O typecheck
+completo da UI continua com a falha preexistente de `SETUP_LOGIN_HINTS` no
+protótipo Storybook, documentada em 3.7c1. Progresso: **146/173**; próxima
+tarefa: 3.7d, políticas e incidentes de orçamento.

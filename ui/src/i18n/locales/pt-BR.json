@@ -6326,6 +6326,81 @@
       "providerBreakdownUnavailable": "Não foi possível carregar os detalhes dos provedores de origem.",
       "noUpstreamProviders": "Não há detalhes de provedores de origem disponíveis."
     },
+    "ledger": {
+      "summary": {
+        "title": "Livro-caixa",
+        "description": "Cobranças no nível da conta que não correspondem a uma única solicitação de inferência.",
+        "debits": "Débitos",
+        "eventsInRange_one": "{{displayCount}} evento no período",
+        "eventsInRange_other": "{{displayCount}} eventos no período",
+        "eventsInRange_many": "{{displayCount}} eventos no período",
+        "credits": "Créditos",
+        "creditsDescription": "Estornos, compensações e devoluções de créditos",
+        "net": "Saldo líquido",
+        "netDescription": "Débitos menos créditos no período selecionado",
+        "estimated": "Estimado",
+        "estimatedDescription": "Débitos estimados que ainda não têm uma fatura como fonte definitiva"
+      },
+      "counts": {
+        "events_one": "{{displayCount}} evento",
+        "events_other": "{{displayCount}} eventos",
+        "events_many": "{{displayCount}} eventos",
+        "kinds_one": "{{displayCount}} tipo",
+        "kinds_other": "{{displayCount}} tipos",
+        "kinds_many": "{{displayCount}} tipos",
+        "billers_one": "{{displayCount}} faturador",
+        "billers_other": "{{displayCount}} faturadores",
+        "billers_many": "{{displayCount}} faturadores"
+      },
+      "billerGroups": {
+        "title": "Por faturador",
+        "description": "Eventos financeiros no nível da conta, agrupados por quem fez a cobrança ou concedeu o crédito.",
+        "empty": "Ainda não há eventos financeiros.",
+        "net": "líquido",
+        "debits": "débitos",
+        "credits": "créditos",
+        "estimated": "estimado"
+      },
+      "kindGroups": {
+        "title": "Composição dos eventos financeiros",
+        "description": "Cobranças no nível da conta agrupadas por tipo de evento.",
+        "empty": "Não há eventos financeiros neste período.",
+        "debits": "{{amount}} em débitos"
+      },
+      "timeline": {
+        "title": "Eventos financeiros recentes",
+        "description": "Cobranças de provedores, assinaturas, taxas e créditos. Exibidos separadamente das estimativas de custo das execuções.",
+        "empty": "Não há eventos financeiros registrados neste período. Eles aparecem quando são informados pela API, CLI ou uma integração compatível.",
+        "providerCostReport": "Relatório de custos do provedor",
+        "debit": "Débito",
+        "credit": "Crédito",
+        "invoice": "fatura",
+        "region": "região",
+        "pricingTier": "faixa de preço",
+        "estimated": "estimado",
+        "providerSeparator": " → "
+      },
+      "providerReportNotice": "Relatórios de custos da API do provedor: {{amount}}. Os totais dos relatórios se sobrepõem às faturas e às estimativas de execução e são exibidos separadamente das cobranças registradas.",
+      "loading": "Carregando eventos financeiros…",
+      "loadError": "Não foi possível carregar os eventos financeiros. Tente novamente em instantes.",
+      "selectDateRange": "Selecione uma data inicial e final para carregar os dados.",
+      "eventKinds": {
+        "inference_charge": "Cobrança por inferência",
+        "platform_fee": "Taxa da plataforma",
+        "credit_purchase": "Compra de créditos",
+        "credit_refund": "Estorno de créditos",
+        "credit_expiry": "Expiração de créditos",
+        "byok_fee": "Taxa BYOK",
+        "gateway_overhead": "Custos operacionais do gateway",
+        "log_storage_charge": "Armazenamento de logs",
+        "logpush_charge": "Logpush",
+        "provisioned_capacity_charge": "Capacidade provisionada",
+        "training_charge": "Treinamento",
+        "custom_model_import_charge": "Importação de modelo personalizado",
+        "custom_model_storage_charge": "Armazenamento de modelo personalizado",
+        "manual_adjustment": "Ajuste manual"
+      }
+    },
     "quota": {
       "title": "Cota da assinatura",
       "subscriptionAccount": "Conta de assinatura",

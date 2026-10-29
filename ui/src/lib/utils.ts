@@ -209,27 +209,15 @@ export function visibleRunCostUsd(
 }
 
 export function financeEventKindDisplayName(eventKind: FinanceEventKind): string {
-  const map: Record<FinanceEventKind, string> = {
-    inference_charge: "Inference charge",
-    platform_fee: "Platform fee",
-    credit_purchase: "Credit purchase",
-    credit_refund: "Credit refund",
-    credit_expiry: "Credit expiry",
-    byok_fee: "BYOK fee",
-    gateway_overhead: "Gateway overhead",
-    log_storage_charge: "Log storage",
-    logpush_charge: "Logpush",
-    provisioned_capacity_charge: "Provisioned capacity",
-    training_charge: "Training",
-    custom_model_import_charge: "Custom model import",
-    custom_model_storage_charge: "Custom model storage",
-    manual_adjustment: "Manual adjustment",
-  };
-  return map[eventKind];
+  const key = `costs.ledger.eventKinds.${eventKind}`;
+  const label = t(key);
+  return label === key ? eventKind : label;
 }
 
 export function financeDirectionDisplayName(direction: FinanceDirection): string {
-  return direction === "credit" ? "Credit" : "Debit";
+  const key = `costs.ledger.timeline.${direction}`;
+  const label = t(key);
+  return label === key ? direction : label;
 }
 
 /** Build an issue URL using the human-readable identifier when available. */

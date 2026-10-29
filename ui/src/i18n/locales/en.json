@@ -6167,6 +6167,77 @@
       "providerBreakdownUnavailable": "Upstream provider details could not be loaded.",
       "noUpstreamProviders": "No upstream provider details are available."
     },
+    "ledger": {
+      "summary": {
+        "title": "Finance ledger",
+        "description": "Account-level charges that do not map to a single inference request.",
+        "debits": "Debits",
+        "eventsInRange_one": "{{displayCount}} total event in range",
+        "eventsInRange_other": "{{displayCount}} total events in range",
+        "credits": "Credits",
+        "creditsDescription": "Refunds, offsets, and credit returns",
+        "net": "Net",
+        "netDescription": "Debit minus credit for the selected period",
+        "estimated": "Estimated",
+        "estimatedDescription": "Estimated debits that are not yet invoice-authoritative"
+      },
+      "counts": {
+        "events_one": "{{displayCount}} event",
+        "events_other": "{{displayCount}} events",
+        "kinds_one": "{{displayCount}} kind",
+        "kinds_other": "{{displayCount}} kinds",
+        "billers_one": "{{displayCount}} biller",
+        "billers_other": "{{displayCount}} billers"
+      },
+      "billerGroups": {
+        "title": "By biller",
+        "description": "Account-level financial events grouped by who charged or credited them.",
+        "empty": "No finance events yet.",
+        "net": "net",
+        "debits": "debits",
+        "credits": "credits",
+        "estimated": "estimated"
+      },
+      "kindGroups": {
+        "title": "Financial event mix",
+        "description": "Account-level charges grouped by event kind.",
+        "empty": "No finance events in this period.",
+        "debits": "{{amount}} debits"
+      },
+      "timeline": {
+        "title": "Recent financial events",
+        "description": "Provider charges, subscriptions, fees, and credits. Reported separately from run-cost estimates.",
+        "empty": "No financial events recorded in this period. Events appear when reported through the API, CLI, or a supported integration.",
+        "providerCostReport": "Provider cost report",
+        "debit": "Debit",
+        "credit": "Credit",
+        "invoice": "invoice",
+        "region": "region",
+        "pricingTier": "tier",
+        "estimated": "estimated",
+        "providerSeparator": " → "
+      },
+      "providerReportNotice": "Provider API cost reports: {{amount}}. Report totals overlap invoices and run estimates and are shown separately from recorded charges.",
+      "loading": "Loading financial events…",
+      "loadError": "Financial events could not be loaded. Please try again shortly.",
+      "selectDateRange": "Select a start and end date to load data.",
+      "eventKinds": {
+        "inference_charge": "Inference charge",
+        "platform_fee": "Platform fee",
+        "credit_purchase": "Credit purchase",
+        "credit_refund": "Credit refund",
+        "credit_expiry": "Credit expiry",
+        "byok_fee": "BYOK fee",
+        "gateway_overhead": "Gateway overhead",
+        "log_storage_charge": "Log storage",
+        "logpush_charge": "Logpush",
+        "provisioned_capacity_charge": "Provisioned capacity",
+        "training_charge": "Training",
+        "custom_model_import_charge": "Custom model import",
+        "custom_model_storage_charge": "Custom model storage",
+        "manual_adjustment": "Manual adjustment"
+      }
+    },
     "quota": {
       "title": "Subscription quota",
       "subscriptionAccount": "Subscription account",

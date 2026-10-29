@@ -163,6 +163,168 @@ describe("Shared Costs surfaces", () => {
     queryClient.clear();
   });
 
+  it("localizes the finance ledger, groupings, and event timeline while preserving source data", async () => {
+    for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
+    costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 0, rows: [] });
+    costsApiMocks.summary.mockResolvedValue({ spendCents: 0, budgetCents: 0, pricingComplete: true });
+    costsApiMocks.financeSummary.mockResolvedValue({
+      companyId: "company-1", currency: "USD", currencies: [], netCents: 700, debitCents: 1000,
+      creditCents: 300, estimatedDebitCents: 200, eventCount: 2,
+      providerReportedCents: 450, providerReportedCentsExact: "450.0000000",
+    });
+    costsApiMocks.financeByBiller.mockResolvedValue([{
+      currency: "EUR", biller: "acme-cloud", debitCents: 1000, creditCents: 300, netCents: 700,
+      estimatedDebitCents: 200, eventCount: 2, kindCount: 1,
+    }]);
+    costsApiMocks.financeByKind.mockResolvedValue([{
+      currency: "EUR", eventKind: "inference_charge", debitCents: 1000, creditCents: 300, netCents: 700,
+      estimatedDebitCents: 200, eventCount: 2, billerCount: 1,
+    }]);
+    costsApiMocks.financeEvents.mockResolvedValue([{
+      id: "event-1", companyId: "company-1", agentId: null, issueId: null, projectId: null, goalId: null,
+      heartbeatRunId: null, costEventId: null, billingCode: null, description: "Monthly gateway charge",
+      eventKind: "inference_charge", direction: "debit", biller: "acme-cloud", provider: "openai",
+      executionAdapterType: null, pricingTier: "premium-v2", region: "eu-west", model: "gpt-6-sol",
+      quantity: 1, unit: "request", amountCents: 1000, currency: "EUR", estimated: true,
+      externalInvoiceId: "invoice-2026-04", idempotencyKey: "source-key-1", metadataJson: null,
+      occurredAt: new Date("2026-04-10T12:00:00Z"), createdAt: new Date("2026-04-10T12:00:00Z"),
+    }, {
+      id: "event-2", companyId: "company-1", agentId: null, issueId: null, projectId: null, goalId: null,
+      heartbeatRunId: null, costEventId: null, billingCode: null, description: "Provider-reported adjustment",
+      eventKind: "credit_refund", direction: "credit", biller: "acme-cloud", provider: null,
+      executionAdapterType: null, pricingTier: null, region: null, model: null, quantity: null, unit: null,
+      amountCents: 300, currency: "EUR", estimated: false, externalInvoiceId: null, idempotencyKey: null,
+      metadataJson: { source: "provider_cost_report" }, occurredAt: new Date("2026-04-11T12:00:00Z"),
+      createdAt: new Date("2026-04-11T12:00:00Z"),
+    }]);
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs embedded initialTab="finance" lockTab /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain("Relatórios de custos da API do provedor"));
+    });
+
+    expect(container.textContent).toContain("Livro-caixa");
+    expect(container.textContent).toContain("Débitos");
+    expect(container.textContent).toContain("Por faturador");
+    expect(container.textContent).toContain("Composição dos eventos financeiros");
+    expect(container.textContent).toContain("Cobrança por inferência");
+    expect(container.textContent).toContain("Eventos financeiros recentes");
+    expect(container.textContent).toContain("Débito");
+    expect(container.textContent).toContain("Crédito");
+    expect(container.textContent).toContain("fatura invoice-2026-04");
+    expect(container.textContent).toContain("região eu-west");
+    expect(container.textContent).toContain("faixa de preço premium-v2");
+    expect(container.textContent).toContain("estimado");
+    expect(container.textContent).toContain("Monthly gateway charge");
+    expect(container.textContent).toContain("Provider-reported adjustment");
+    expect(container.textContent).toContain("acme-cloud");
+    expect(container.textContent).toContain("gpt-6-sol");
+    expect(container.textContent).toContain("EUR");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("Finance ledger");
+    expect(container.textContent).toContain("By biller");
+    expect(container.textContent).toContain("Financial event mix");
+    expect(container.textContent).toContain("Inference charge");
+    expect(container.textContent).toContain("Recent financial events");
+    expect(container.textContent).toContain("Provider cost report");
+    expect(container.textContent).toContain("invoice invoice-2026-04");
+    expect(container.textContent).toContain("region eu-west");
+    expect(container.textContent).toContain("tier premium-v2");
+    expect(container.textContent).toContain("estimated");
+    expect(container.textContent).toContain("Monthly gateway charge");
+    expect(container.textContent).toContain("EUR");
+    queryClient.clear();
+  });
+
+  it("localizes empty and custom-date finance ledger states", async () => {
+    for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
+    costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 0, rows: [] });
+    costsApiMocks.summary.mockResolvedValue({ spendCents: 0, budgetCents: 0, pricingComplete: true });
+    costsApiMocks.financeSummary.mockResolvedValue({
+      companyId: "company-1", currency: "USD", currencies: [], netCents: 0, debitCents: 0,
+      creditCents: 0, estimatedDebitCents: 0, eventCount: 0,
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs embedded initialTab="finance" lockTab /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain("Ainda não há eventos financeiros."));
+    });
+    expect(container.textContent).toContain("Não há eventos financeiros neste período.");
+    expect(container.textContent).toContain("Não há eventos financeiros registrados neste período.");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("No finance events yet.");
+    expect(container.textContent).toContain("No finance events in this period.");
+    expect(container.textContent).toContain("No financial events recorded in this period.");
+
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const customRange = [...container.querySelectorAll("button")].find((button) => button.textContent === "Personalizado");
+    expect(customRange).toBeTruthy();
+    await act(async () => customRange!.click());
+    expect(container.textContent).toContain("Selecione uma data inicial e final para carregar os dados.");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("Select a start and end date to load data.");
+    queryClient.clear();
+  });
+
+  it("localizes finance ledger load failures without exposing API details", async () => {
+    for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
+    costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 0, rows: [] });
+    costsApiMocks.summary.mockResolvedValue({ spendCents: 0, budgetCents: 0, pricingComplete: true });
+    costsApiMocks.financeSummary.mockRejectedValue(new Error("private finance diagnostic"));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs embedded initialTab="finance" lockTab /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain("Não foi possível carregar os eventos financeiros."));
+    });
+    expect(container.textContent).not.toContain("private finance diagnostic");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("Financial events could not be loaded.");
+    expect(container.textContent).not.toContain("private finance diagnostic");
+    queryClient.clear();
+  });
+
+  it("localizes the finance summary loading state in both languages", async () => {
+    for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
+    costsApiMocks.byUser.mockResolvedValue({ activeUserCount: 0, rows: [] });
+    costsApiMocks.summary.mockResolvedValue({ spendCents: 0, budgetCents: 0, pricingComplete: true });
+    let resolveFinanceSummary!: (value: unknown) => void;
+    costsApiMocks.financeSummary.mockReturnValue(new Promise((resolve) => { resolveFinanceSummary = resolve; }));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    root = createRoot(container);
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+      root.render(<MemoryRouter><QueryClientProvider client={queryClient}><Costs /></QueryClientProvider></MemoryRouter>);
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(container.textContent).toContain("Carregando eventos financeiros…"));
+    });
+    await act(async () => { await i18n.changeLanguage("en"); });
+    expect(container.textContent).toContain("Loading financial events…");
+
+    await act(async () => resolveFinanceSummary({
+      companyId: "company-1", currency: "USD", currencies: [], netCents: 0, debitCents: 0,
+      creditCents: 0, estimatedDebitCents: 0, eventCount: 0,
+    }));
+    await act(async () => { await vi.waitFor(() => expect(container.textContent).not.toContain("Loading financial events…")); });
+    queryClient.clear();
+  });
+
   it("localizes the overview load failure without exposing the API error", async () => {
     for (const mock of Object.values(costsApiMocks)) mock.mockResolvedValue([]);
     costsApiMocks.summary.mockRejectedValueOnce(new Error("private database detail"));
