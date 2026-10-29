@@ -251,6 +251,23 @@
         "valueUpdated": "Valor atualizado"
       }
     },
+    "userDefinition": {
+      "sheetDescription": "Definição de segredo fornecido por usuário: {{key}}",
+      "statusUpdated": "Status da definição alterado para {{status}}",
+      "statusUpdateFailed": "Não foi possível atualizar o status da definição",
+      "removed": "Definição de segredo fornecido por usuário removida",
+      "deleteFailed": "Não foi possível excluir a definição",
+      "deleteTitle": "Excluir definição de segredo fornecido por usuário?",
+      "deleteDescription": "Remove permanentemente <strong>{{name}}</strong> de toda a organização. Os valores existentes dos membros ficarão sem referência, e os vínculos ativos precisarão ser remapeados.",
+      "details": {
+        "providedBy": "Fornecido por",
+        "updated": "Atualizado",
+        "memberValuesNotice": "Nenhum valor é armazenado nesta definição administrativa. Cada membro gerencia seu próprio valor em Meus segredos.",
+        "usageDescription": "Vincule variáveis de ambiente do runtime a este segredo selecionando <userSecret>Segredo do usuário</userSecret> e escolhendo <code>{{key}}</code>.",
+        "memberGuidance": "Orientações para membros",
+        "accessEventsNotice": "Os eventos de acesso são registrados no valor armazenado por cada membro quando ocorre uma resolução durante a execução."
+      }
+    },
     "inventory": {
       "searchPlaceholder": "Buscar por nome, chave ou referência",
       "searchLabel": "Buscar segredos",

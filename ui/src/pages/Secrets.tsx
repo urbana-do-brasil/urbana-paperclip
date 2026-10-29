@@ -1262,13 +1262,17 @@ export function Secrets() {
     mutationFn: ({ definition, status }: { definition: UserSecretDefinition; status: SecretStatus }) =>
       secretsApi.updateUserSecretDefinition(selectedCompanyId!, definition.id, { status }),
     onSuccess: (updated) => {
-      pushToast({ title: `User-provided secret ${updated.status}`, body: updated.name, tone: "info" });
+      pushToast({
+        title: t("secrets.userDefinition.statusUpdated", { status: statusLabel(updated.status, t) }),
+        body: updated.name,
+        tone: "info",
+      });
       invalidateAll([updated.id]);
     },
     onError: (error) => {
       pushToast({
-        title: "Status update failed",
-        body: error instanceof Error ? error.message : "Try again",
+        title: t("secrets.userDefinition.statusUpdateFailed"),
+        body: error instanceof Error ? error.message : t("common.retry"),
         tone: "error",
       });
     },
@@ -1295,15 +1299,15 @@ export function Secrets() {
     mutationFn: (definition: UserSecretDefinition) =>
       secretsApi.removeUserSecretDefinition(selectedCompanyId!, definition.id),
     onSuccess: (_response, definition) => {
-      pushToast({ title: "User-provided secret removed", body: definition.name, tone: "info" });
+      pushToast({ title: t("secrets.userDefinition.removed"), body: definition.name, tone: "info" });
       setDefinitionDeleteConfirm(null);
       if (selectedDefinitionId === definition.id) setDetailSelection(null);
       invalidateAll([definition.id]);
     },
     onError: (error) => {
       pushToast({
-        title: "Delete failed",
-        body: error instanceof Error ? error.message : "Try again",
+        title: t("secrets.userDefinition.deleteFailed"),
+        body: error instanceof Error ? error.message : t("common.retry"),
         tone: "error",
       });
     },
@@ -2456,7 +2460,7 @@ export function Secrets() {
                   </span>
                 </SheetTitle>
                 <SheetDescription className="sr-only">
-                  Each user secret definition {selectedDefinition.key}
+                  {t("secrets.userDefinition.sheetDescription", { key: selectedDefinition.key })}
                 </SheetDescription>
                 <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-muted/20 px-2 py-1.5">
                   <code className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
@@ -2469,11 +2473,11 @@ export function Secrets() {
                     className="h-7 shrink-0 px-2 text-xs"
                     onClick={() => copySecretKey(selectedDefinition.key)}
                   >
-                    <Copy className="mr-1 h-3.5 w-3.5" /> Copy
+                    <Copy className="mr-1 h-3.5 w-3.5" /> {t("secrets.creation.copy")}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <UserSecretChip label="Each user" />
+                  <UserSecretChip label={t("secrets.inventory.eachUser")} />
                   <MetaChip>
                     <CoverageInline companyId={selectedCompanyId} definitionId={selectedDefinition.id} compact />
                   </MetaChip>
@@ -2490,17 +2494,23 @@ export function Secrets() {
                   disabled={selectedDefinition.status !== "active"}
                 >
                   <KeyRound className="h-3.5 w-3.5 mr-1" />
-                  {selectedDefinitionMyEntry?.secret ? "Update my value" : "Set my value"}
+                  {selectedDefinitionMyEntry?.secret
+                    ? t("secrets.inventory.updateMyValue")
+                    : t("secrets.inventory.setMyValue")}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" aria-label={`More actions for ${selectedDefinition.name}`}>
-                      <MoreHorizontal className="mr-1 h-3.5 w-3.5" /> More
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label={t("secrets.inventory.actionsFor", { name: selectedDefinition.name })}
+                    >
+                      <MoreHorizontal className="mr-1 h-3.5 w-3.5" /> {t("secrets.lifecycle.moreActions")}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52">
                     <DropdownMenuItem onSelect={() => openEditDefinition(selectedDefinition)}>
-                      <Pencil className="h-4 w-4" /> Edit definition
+                      <Pencil className="h-4 w-4" /> {t("secrets.inventory.editDefinition")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -2517,7 +2527,9 @@ export function Secrets() {
                       ) : (
                         <CheckCircle2 className="h-4 w-4" />
                       )}
-                      {selectedDefinition.status === "active" ? "Disable" : "Activate"}
+                      {selectedDefinition.status === "active"
+                        ? t("secrets.inventory.disable")
+                        : t("secrets.inventory.activate")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={definitionStatusMutation.isPending}
@@ -2533,11 +2545,13 @@ export function Secrets() {
                       ) : (
                         <Archive className="h-4 w-4" />
                       )}
-                      {selectedDefinition.status === "archived" ? "Unarchive" : "Archive"}
+                      {selectedDefinition.status === "archived"
+                        ? t("secrets.inventory.unarchive")
+                        : t("secrets.inventory.archive")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem variant="destructive" onSelect={() => setDefinitionDeleteConfirm(selectedDefinition)}>
-                      <Trash2 className="h-4 w-4" /> Delete definition
+                      <Trash2 className="h-4 w-4" /> {t("secrets.inventory.deleteDefinition")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -2546,10 +2560,10 @@ export function Secrets() {
                 <div className="border-b border-border px-4">
                   <PageTabBar
                     items={[
-                      { value: "details", label: "Details" },
+                      { value: "details", label: t("secrets.details.tabs.details") },
                       { value: "coverage", label: "Coverage" },
-                      { value: "usage", label: "Usage" },
-                      { value: "events", label: "Access events" },
+                      { value: "usage", label: t("secrets.details.tabs.usage") },
+                      { value: "events", label: t("secrets.details.tabs.accessEvents") },
                     ]}
                     align="start"
                     value={secretDetailTab}
@@ -3322,14 +3336,19 @@ export function Secrets() {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete user-provided secret</DialogTitle>
+            <DialogTitle>{t("secrets.userDefinition.deleteTitle")}</DialogTitle>
             <DialogDescription>
-              Permanently removes <strong>{definitionDeleteConfirm?.name}</strong> for the whole organization.
-              Existing member values become unreferenced and active bindings must be remapped.
+              <Trans
+                i18nKey="secrets.userDefinition.deleteDescription"
+                values={{ name: definitionDeleteConfirm?.name }}
+                components={{ strong: <strong /> }}
+              />
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDefinitionDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDefinitionDeleteConfirm(null)}>
+              {t("common.cancel")}
+            </Button>
             <Button
               variant="destructive"
               onClick={() =>
@@ -3338,7 +3357,7 @@ export function Secrets() {
               disabled={deleteDefinitionMutation.isPending}
             >
               {deleteDefinitionMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-              Delete
+              {t("secrets.inventory.deleteDefinition")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -4362,16 +4381,21 @@ function UserSecretDetailsTab({
   definition: UserSecretDefinition;
   onViewCoverage: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <dl className="divide-y divide-border/60 text-xs">
-      <DetailRow label="Description">
+      <DetailRow label={t("secrets.creation.descriptionLabel")}>
         <span>{definition.description ?? <span className="text-muted-foreground">—</span>}</span>
       </DetailRow>
-      <DetailRow label="Provided by">Each user</DetailRow>
-      <DetailRow label="Key">
+      <DetailRow label={t("secrets.userDefinition.details.providedBy")}>
+        {t("secrets.inventory.eachUser")}
+      </DetailRow>
+      <DetailRow label={t("secrets.creation.key")}>
         <code>{definition.key}</code>
       </DetailRow>
-      <DetailRow label="Status"><StatusBadge status={definition.status} /></DetailRow>
+      <DetailRow label={t("secrets.inventory.statusColumn")}>
+        <StatusBadge status={definition.status} />
+      </DetailRow>
       <DetailRow label="Coverage">
         <button
           type="button"
@@ -4382,13 +4406,13 @@ function UserSecretDetailsTab({
           <span className="shrink-0 text-muted-foreground">· View in Coverage</span>
         </button>
       </DetailRow>
-      <DetailRow label="Created">{formatRelative(definition.createdAt)}</DetailRow>
-      <DetailRow label="Updated">{formatRelative(definition.updatedAt)}</DetailRow>
-      <DetailRow label="Usage guidance">
+      <DetailRow label={t("secrets.details.created")}>{formatRelative(definition.createdAt)}</DetailRow>
+      <DetailRow label={t("secrets.userDefinition.details.updated")}>{formatRelative(definition.updatedAt)}</DetailRow>
+      <DetailRow label={t("secrets.creation.usageGuidance")}>
         {definition.usageGuidance ?? <span className="text-muted-foreground">—</span>}
       </DetailRow>
       <div className="mt-3 rounded-md border border-violet-500/30 bg-violet-500/5 p-2 text-(length:--text-micro) text-violet-800 dark:text-violet-200">
-        No value is stored on this admin row. Each member manages their own value under My secrets.
+        {t("secrets.userDefinition.details.memberValuesNotice")}
       </div>
     </dl>
   );
@@ -4448,16 +4472,24 @@ function UserSecretCoverageTab({
 }
 
 function UserSecretUsageTab({ definition }: { definition: UserSecretDefinition }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3 text-xs text-muted-foreground">
       <div className="rounded-md border border-border bg-muted/20 p-3">
-        Bind runtime environment variables to this user-provided secret by choosing{" "}
-        <span className="font-medium text-foreground">User secret</span> and selecting{" "}
-        <code className="font-mono">{definition.key}</code>.
+        <Trans
+          i18nKey="secrets.userDefinition.details.usageDescription"
+          values={{ key: definition.key }}
+          components={{
+            userSecret: <span className="font-medium text-foreground" />,
+            code: <code className="font-mono" />,
+          }}
+        />
       </div>
       {definition.usageGuidance ? (
         <div>
-          <p className="mb-1 text-(length:--text-micro) uppercase tracking-wide text-muted-foreground">Member guidance</p>
+          <p className="mb-1 text-(length:--text-micro) uppercase tracking-wide text-muted-foreground">
+            {t("secrets.userDefinition.details.memberGuidance")}
+          </p>
           <p className="text-foreground">{definition.usageGuidance}</p>
         </div>
       ) : null}
@@ -4466,9 +4498,10 @@ function UserSecretUsageTab({ definition }: { definition: UserSecretDefinition }
 }
 
 function UserSecretAccessEventsTab() {
+  const { t } = useTranslation();
   return (
     <div className="py-6 text-center text-xs text-muted-foreground">
-      Access events are recorded on each member&apos;s stored value when runtime resolution occurs.
+      {t("secrets.userDefinition.details.accessEventsNotice")}
     </div>
   );
 }

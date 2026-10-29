@@ -249,6 +249,23 @@
         "valueUpdated": "Value updated"
       }
     },
+    "userDefinition": {
+      "sheetDescription": "User-provided secret definition {{key}}",
+      "statusUpdated": "Definition status changed to {{status}}",
+      "statusUpdateFailed": "Definition status update failed",
+      "removed": "User-provided secret definition removed",
+      "deleteFailed": "Could not delete the definition",
+      "deleteTitle": "Delete user-provided secret definition?",
+      "deleteDescription": "Permanently removes <strong>{{name}}</strong> for the whole organization. Existing member values become unreferenced and active bindings must be remapped.",
+      "details": {
+        "providedBy": "Provided by",
+        "updated": "Updated",
+        "memberValuesNotice": "No value is stored on this admin row. Each member manages their own value under My secrets.",
+        "usageDescription": "Bind runtime environment variables to this user-provided secret by choosing <userSecret>User secret</userSecret> and selecting <code>{{key}}</code>.",
+        "memberGuidance": "Member guidance",
+        "accessEventsNotice": "Access events are recorded on each member's stored value when runtime resolution occurs."
+      }
+    },
     "inventory": {
       "searchPlaceholder": "Search by name, key, ref",
       "searchLabel": "Search secrets",

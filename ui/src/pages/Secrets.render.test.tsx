@@ -1351,6 +1351,207 @@ describe("Secrets page layout", () => {
     });
   });
 
+  it("localizes user-secret definition details and preserves member-authored guidance on edit", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const definition = makeUserSecretDefinition();
+    mockSecretsApi.listUserSecretDefinitions.mockResolvedValue([definition]);
+    mockSecretsApi.listMyUserSecrets.mockResolvedValue([{ definition, secret: null }]);
+    mockSecretsApi.updateUserSecretDefinition.mockResolvedValue({
+      ...definition,
+      description: "Descrição atualizada pela equipe",
+      usageGuidance: "Crie um token com acesso de leitura ao repositório.",
+    });
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    const definitionRow = Array.from(container.querySelectorAll("[role='row']")).find(
+      (row) => row.textContent?.includes(definition.name),
+    ) as HTMLElement | undefined;
+    await act(async () => definitionRow?.click());
+    await waitForReact(() => document.body.textContent?.includes("Orientações de uso") ?? false);
+
+    expect(document.body.textContent).toContain("Definição de segredo fornecido por usuário");
+    expect(document.body.textContent).toContain("Fornecido por");
+    expect(document.body.textContent).toContain("Cada usuário");
+    expect(document.body.textContent).toContain("Ativo");
+    expect(document.body.textContent).toContain(definition.description);
+    expect(document.body.textContent).toContain(definition.usageGuidance);
+    expect(document.body.textContent).toContain(
+      "Nenhum valor é armazenado nesta definição administrativa.",
+    );
+
+    const detailSheet = document.body.querySelector('[role="dialog"]');
+    const usageTab = Array.from(detailSheet?.querySelectorAll('[role="tab"]') ?? []).find(
+      (button) => button.textContent?.trim() === "Uso",
+    );
+    await act(async () => {
+      usageTab?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, pointerType: "mouse" }));
+      usageTab?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      usageTab?.click();
+    });
+    await flushReact();
+    expect(document.body.textContent).toContain(
+      "Vincule variáveis de ambiente do runtime a este segredo selecionando",
+    );
+    expect(document.body.textContent).toContain("Segredo do usuário");
+    expect(document.body.textContent).toContain(definition.usageGuidance);
+
+    const eventsTab = Array.from(detailSheet?.querySelectorAll('[role="tab"]') ?? []).find(
+      (button) => button.textContent?.trim() === "Eventos de acesso",
+    );
+    await act(async () => {
+      eventsTab?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, pointerType: "mouse" }));
+      eventsTab?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      eventsTab?.click();
+    });
+    await flushReact();
+    expect(document.body.textContent).toContain(
+      "Os eventos de acesso são registrados no valor armazenado por cada membro",
+    );
+
+    const moreButton = document.body.querySelector<HTMLButtonElement>(
+      'button[aria-label="Ações para Personal GitHub token"]',
+    );
+    expect(moreButton).not.toBeNull();
+    await act(async () => {
+      moreButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+      moreButton?.click();
+    });
+    await flushReact();
+    const editAction = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find(
+      (item) => item.textContent?.trim() === "Editar definição",
+    ) as HTMLElement | undefined;
+    expect(editAction).not.toBeUndefined();
+    await act(async () => editAction?.click());
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Editar segredo do usuário");
+    const descriptionInput = document.getElementById("new-secret-description") as HTMLInputElement;
+    const usageInput = document.getElementById("new-secret-usage-guidance") as HTMLTextAreaElement;
+    await act(async () => {
+      setInputValue(descriptionInput, "Descrição atualizada pela equipe");
+      setTextareaValue(usageInput, "Crie um token com acesso de leitura ao repositório.");
+    });
+    const saveButton = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Salvar alterações",
+    ) as HTMLButtonElement | undefined;
+    expect(saveButton).not.toBeUndefined();
+    await act(async () => saveButton?.click());
+    await flushReact();
+
+    expect(mockSecretsApi.updateUserSecretDefinition).toHaveBeenCalledWith(
+      "company-1",
+      definition.id,
+      {
+        name: definition.name,
+        description: "Descrição atualizada pela equipe",
+        usageGuidance: "Crie um token com acesso de leitura ao repositório.",
+      },
+    );
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Segredo do usuário atualizado", tone: "success" }),
+    );
+
+    await act(async () => root.unmount());
+  });
+
+  it("localizes user-secret status and delete actions without changing API states", async () => {
+    await i18n.changeLanguage("pt-BR");
+    let definition = makeUserSecretDefinition();
+    mockSecretsApi.listUserSecretDefinitions.mockImplementation(async () => [definition]);
+    mockSecretsApi.listMyUserSecrets.mockResolvedValue([{ definition, secret: null }]);
+    mockSecretsApi.updateUserSecretDefinition.mockImplementation(
+      async (_companyId: string, id: string, input: Partial<UserSecretDefinition>) => {
+        definition = { ...definition, ...input, id };
+        return definition;
+      },
+    );
+    mockSecretsApi.removeUserSecretDefinition.mockResolvedValue({ id: definition.id });
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+    const definitionRow = Array.from(container.querySelectorAll("[role='row']")).find(
+      (row) => row.textContent?.includes(definition.name),
+    ) as HTMLElement | undefined;
+    await act(async () => definitionRow?.click());
+    await waitForReact(() => document.body.querySelector('button[aria-label="Ações para Personal GitHub token"]') !== null);
+
+    async function openMoreActions() {
+      const moreButton = document.body.querySelector<HTMLButtonElement>(
+        'button[aria-label="Ações para Personal GitHub token"]',
+      );
+      await act(async () => {
+        moreButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+        moreButton?.click();
+      });
+      await flushReact();
+    }
+
+    async function selectAction(label: string) {
+      const action = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find(
+        (item) => item.textContent?.trim() === label,
+      ) as HTMLElement | undefined;
+      expect(action).not.toBeUndefined();
+      await act(async () => action?.click());
+      await flushReact();
+      await flushReact();
+    }
+
+    await openMoreActions();
+    await selectAction("Desativar");
+    expect(mockSecretsApi.updateUserSecretDefinition).toHaveBeenCalledWith(
+      "company-1",
+      "def-github",
+      { status: "disabled" },
+    );
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Status da definição alterado para Desativado", tone: "info" }),
+    );
+
+    await openMoreActions();
+    await selectAction("Excluir definição");
+    const deleteDialog = Array.from(document.body.querySelectorAll('[role="dialog"]')).find(
+      (dialog) => dialog.textContent?.includes("Excluir definição de segredo fornecido por usuário?"),
+    ) as HTMLElement | undefined;
+    expect(deleteDialog?.textContent).toContain(definition.name);
+    expect(deleteDialog?.textContent).toContain("Os valores existentes dos membros ficarão sem referência");
+    const confirmDelete = Array.from(deleteDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Excluir definição",
+    ) as HTMLButtonElement | undefined;
+    await act(async () => confirmDelete?.click());
+    await flushReact();
+
+    expect(mockSecretsApi.removeUserSecretDefinition).toHaveBeenCalledWith("company-1", "def-github");
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Definição de segredo fornecido por usuário removida", tone: "info" }),
+    );
+
+    await act(async () => root.unmount());
+  });
+
   it("keeps the new secret value textarea width-constrained for long tokens", async () => {
     const root = createRoot(container);
     const queryClient = new QueryClient({

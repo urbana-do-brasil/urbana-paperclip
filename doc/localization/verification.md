@@ -2057,3 +2057,20 @@ da UI permanece bloqueado pelo erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
 por `@/lib/agent-setup-fields`. O progresso é **179/204 tarefas**; próxima:
 3.8e2b, administração das definições fornecidas por usuário.
+
+### Continuação — administração de definições de segredo pessoal (3.8e2b)
+
+A experiência administrativa das definições fornecidas por usuário agora
+localiza detalhes, orientações próprias, comandos de edição, status, exclusão e
+feedback em PT-BR/en. Conteúdo escrito pela organização para nome, descrição e
+orientação dos membros permanece intacto; chaves, IDs, enums/status enviados à
+API, callbacks, permissões e erros detalhados do servidor não foram alterados.
+
+`Secrets.render.test.tsx` e `locale-validation.test.ts` passaram em **50/50
+testes**, cobrindo detalhes, instruções de uso, eventos de acesso, edição com
+payload preservado, desativação e exclusão em PT-BR. `check:tokens`, `check:token-gates`, parse dos
+catálogos, `git diff --check` e validação OpenSpec estrita passaram. O typecheck
+completo da UI continua apontando apenas o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
+por `@/lib/agent-setup-fields`. O progresso é **180/204 tarefas**; próxima:
+3.8e2c, cobertura por membro, estados ausentes e avisos de segredo obrigatório.
