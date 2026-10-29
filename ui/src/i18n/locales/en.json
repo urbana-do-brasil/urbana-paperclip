@@ -1726,7 +1726,38 @@
     }
   },
   "caseManagement": {
+    "identity": {
+      "caseId": "case ID",
+      "caseKey": "case key",
+      "copy": "Copy {{label}} {{value}}",
+      "copied": "Copied"
+    },
     "collection": {
+      "title": "Cases",
+      "experimental": "Experimental",
+      "selectOrganization": "Select an organization to view cases.",
+      "loadError": "Could not load cases.",
+      "retry": "Try again",
+      "noMatches": "No cases match these filters.",
+      "unknownProject": "Unknown project",
+      "groupCount_one": "{{formattedCount}} case",
+      "groupCount_other": "{{formattedCount}} cases",
+      "row": {
+        "none": "None",
+        "parent": "Parent",
+        "expand": "Expand {{title}}",
+        "collapse": "Collapse {{title}}"
+      },
+      "onboarding": {
+        "title": "No cases yet",
+        "description": "Cases are durable work products — blog posts, tweet storms, docs pages — that tasks create and iterate on. In v1 they're created by agents, not from the UI.",
+        "instruction": "To start creating cases, add this to a skill:",
+        "example": "\"Create a case of type blog_post with fields\n{slug, target_audience, publish_url} and key <release>/<slug>.\"",
+        "apiPrefix": "See the paperclip skill →",
+        "apiSuffix": "for the API.",
+        "flagPrefix": "Feature is gated by the",
+        "flagSuffix": "experimental flag (Settings → Experimental)."
+      },
       "changeStatus": "Change case status",
       "search": {
         "placeholder": "Search cases...",

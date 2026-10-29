@@ -13,7 +13,7 @@ function act(callback: () => void) {
   flushSync(callback);
 }
 
-const companyState = vi.hoisted(() => ({ selectedCompanyId: "company-1" }));
+const companyState = vi.hoisted(() => ({ selectedCompanyId: "company-1" as string | null }));
 const mockCasesApi = vi.hoisted(() => ({ list: vi.fn() }));
 const mockProjectsApi = vi.hoisted(() => ({ list: vi.fn() }));
 const mockIssuesApi = vi.hoisted(() => ({ listLabels: vi.fn() }));
@@ -181,6 +181,7 @@ describe("Cases list", () => {
     i18n.addResourceBundle("en", "translation", caseCollectionMessages.en, true, true);
     i18n.addResourceBundle("pt-BR", "translation", caseCollectionMessages["pt-BR"], true, true);
     await i18n.changeLanguage("en");
+    companyState.selectedCompanyId = "company-1";
     window.localStorage.clear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -790,6 +791,96 @@ describe("Cases list", () => {
     act(() => statusGroup!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
     expect(JSON.parse(window.localStorage.getItem("paperclip:cases:company-1:view") ?? "{}").groupBy).toBe("status");
 
+    act(() => root.unmount());
+  });
+
+  it("localizes the onboarding and preserves the example's technical fields", async () => {
+    mockCasesApi.list.mockResolvedValue([]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Ainda não há casos");
+      expect(container.textContent).toContain("Crie um caso do tipo blog_post");
+      expect(container.textContent).toContain("{slug, target_audience, publish_url}");
+      expect(container.textContent).toContain("<release>/<slug>");
+      expect(container.textContent).toContain("references/cases.md");
+      expect(container.textContent).toContain("enableCases");
+    });
+    act(() => root.unmount());
+  });
+
+  it("shows a localized load error and retries instead of presenting onboarding", async () => {
+    mockCasesApi.list.mockRejectedValueOnce(new Error("backend detail"))
+      .mockResolvedValueOnce([createCase({ id: "a", title: "USER CASE" })]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Não foi possível carregar os casos.");
+      expect(container.textContent).not.toContain("Ainda não há casos");
+      expect(container.textContent).not.toContain("backend detail");
+    });
+    const retry = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Tentar novamente");
+    expect(retry).toBeTruthy();
+    act(() => retry!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => expect(container.textContent).toContain("USER CASE"));
+    act(() => root.unmount());
+  });
+
+  it("preserves the collapsed status group when the language changes", async () => {
+    window.localStorage.setItem("paperclip:cases:company-1:view", JSON.stringify({ groupBy: "status" }));
+    mockCasesApi.list.mockResolvedValue([createCase({ id: "a", title: "USER CASE", status: "in_progress" })]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("1 caso");
+      expect(container.textContent).toContain("USER CASE");
+    });
+    const group = Array.from(container.querySelectorAll("button[aria-expanded='true']"))
+      .find((button) => button.textContent?.trim() === "Em andamento");
+    expect(group).toBeTruthy();
+    act(() => group!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(container.textContent).not.toContain("USER CASE");
+    await i18n.changeLanguage("en");
+    await waitForAssertion(() => {
+      const englishGroup = Array.from(container.querySelectorAll("button[aria-expanded='false']"))
+        .find((button) => button.textContent?.trim() === "In progress");
+      expect(englishGroup).toBeTruthy();
+      expect(container.textContent).toContain("1 case");
+      expect(container.textContent).not.toContain("USER CASE");
+    });
+    act(() => root.unmount());
+  });
+
+  it("localizes tree and copy controls without changing identifiers", async () => {
+    window.localStorage.setItem("paperclip:cases:company-1:view", JSON.stringify({ treeView: true }));
+    mockCasesApi.list.mockResolvedValue([
+      createCase({ id: "parent", identifier: "PAP-C1", title: "USER PARENT" }),
+      createCase({ id: "child", identifier: "PAP-C2", title: "USER CHILD", parentCaseId: "parent" }),
+    ]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => expect(container.textContent).toContain("USER CHILD"));
+    const collapse = container.querySelector<HTMLButtonElement>('button[aria-label="Recolher USER PARENT"]');
+    expect(collapse).toBeTruthy();
+    const copy = container.querySelector<HTMLButtonElement>('button[aria-label="Copiar ID do caso PAP-C1"]');
+    expect(copy).toBeTruthy();
+    act(() => copy!.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+    await waitForAssertion(() => {
+      expect(mockCopyTextToClipboard).toHaveBeenCalledWith("PAP-C1");
+      expect(copy!.parentElement?.textContent).toContain("Copiado");
+    });
+    act(() => collapse!.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+    expect(container.textContent).not.toContain("USER CHILD");
+    expect(container.querySelector('button[aria-label="Expandir USER PARENT"]')).toBeTruthy();
+    act(() => root.unmount());
+  });
+
+  it("asks for an organization without querying cases", async () => {
+    companyState.selectedCompanyId = null;
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    expect(container.textContent).toContain("Selecione uma organização para ver os casos.");
+    expect(mockCasesApi.list).not.toHaveBeenCalled();
     act(() => root.unmount());
   });
 });

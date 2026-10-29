@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { CaseCopyableToken } from "@/components/CaseIdentifierKey";
 import { hasBlockingShortcutDialog, isKeyboardShortcutTextInputTarget } from "@/lib/keyboardShortcuts";
 import { useTranslation } from "@/i18n";
-import { cn, relativeTime } from "@/lib/utils";
+import { cn, formatNumber, relativeTime } from "@/lib/utils";
 
 type GroupBy = "type" | "project" | "status" | "none";
 type CaseColumn = "id" | "key" | "title" | "status" | "updated" | "created" | "type" | "project" | "parent";
@@ -282,6 +282,7 @@ function CaseTrailingColumns({
   treeCollapsed?: boolean;
   onTreeToggle?: (caseId: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <span className="grid min-w-0 flex-1 items-center gap-2" style={{ gridTemplateColumns: caseTrailingGridTemplate(columns) }}>
       {columns.map((column) => {
@@ -307,7 +308,7 @@ function CaseTrailingColumns({
               stopPropagation
             />
           ) : (
-            <span key={column} className="min-w-0 truncate text-xs text-muted-foreground">None</span>
+            <span key={column} className="min-w-0 truncate text-xs text-muted-foreground">{t("caseManagement.collection.row.none")}</span>
           );
         }
         if (column === "title") {
@@ -326,7 +327,7 @@ function CaseTrailingColumns({
                     <button
                       type="button"
                       className="flex h-4 w-4 items-center justify-center rounded-sm transition-colors hover:bg-accent/50"
-                      aria-label={`${treeCollapsed ? "Expand" : "Collapse"} ${row.title}`}
+                      aria-label={t(treeCollapsed ? "caseManagement.collection.row.expand" : "caseManagement.collection.row.collapse", { title: row.title })}
                       aria-expanded={!treeCollapsed}
                       onClick={(event) => {
                         event.preventDefault();
@@ -360,12 +361,12 @@ function CaseTrailingColumns({
           return <span key={column} className="min-w-0 truncate text-xs text-muted-foreground">{row.caseType}</span>;
         }
         if (column === "project") {
-          return <span key={column} className="min-w-0 truncate text-xs text-muted-foreground">{projectName ?? "No project"}</span>;
+          return <span key={column} className="min-w-0 truncate text-xs text-muted-foreground">{projectName ?? t("caseManagement.collection.filters.noProject")}</span>;
         }
         if (column === "parent") {
           return (
             <span key={column} className="min-w-0 truncate font-mono text-xs text-muted-foreground">
-              {row.parentCaseId ? "Parent" : "None"}
+              {row.parentCaseId ? t("caseManagement.collection.row.parent") : t("caseManagement.collection.row.none")}
             </span>
           );
         }
@@ -518,6 +519,7 @@ function CaseGroup({
   onSelect: () => void;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="mt-6 first:mt-0">
       <div
@@ -532,7 +534,7 @@ function CaseGroup({
           onToggle={onToggle}
           trailing={(
             <span className="text-xs text-muted-foreground tabular-nums">
-              {count} {count === 1 ? "case" : "cases"}
+              {t("caseManagement.collection.groupCount", { count, formattedCount: formatNumber(count) })}
             </span>
           )}
         />
@@ -718,27 +720,25 @@ function CaseSortPicker({
 
 /** Full-page onboarding hero shown when the company has zero cases (§6). */
 function CasesEmptyHero() {
+  const { t } = useTranslation();
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-4 py-16 text-center">
       <Layers className="h-10 w-10 text-muted-foreground" />
-      <h2 className="text-lg font-semibold">No cases yet</h2>
+      <h2 className="text-lg font-semibold">{t("caseManagement.collection.onboarding.title")}</h2>
       <p className="text-sm text-muted-foreground">
-        Cases are durable work products — blog posts, tweet storms, docs pages — that tasks create and
-        iterate on. In v1 they&apos;re created by agents, not from the UI.
+        {t("caseManagement.collection.onboarding.description")}
       </p>
       <div className="w-full space-y-2 rounded-lg border border-border bg-muted/50 p-4 text-left">
-        <p className="text-sm font-medium">To start creating cases, add this to a skill:</p>
+        <p className="text-sm font-medium">{t("caseManagement.collection.onboarding.instruction")}</p>
         <pre className="overflow-x-auto rounded bg-background/60 p-3 font-mono text-xs text-muted-foreground">
-{`"Create a case of type blog_post with fields
-{slug, target_audience, publish_url} and key <release>/<slug>."`}
+          {t("caseManagement.collection.onboarding.example")}
         </pre>
         <p className="text-xs text-muted-foreground">
-          See the paperclip skill → <code className="font-mono">references/cases.md</code> for the API.
+          {t("caseManagement.collection.onboarding.apiPrefix")} <code className="font-mono">references/cases.md</code> {t("caseManagement.collection.onboarding.apiSuffix")}
         </p>
       </div>
       <p className="text-xs text-muted-foreground">
-        Feature is gated by the <code className="font-mono">enableCases</code> experimental flag
-        (Settings → Experimental).
+        {t("caseManagement.collection.onboarding.flagPrefix")} <code className="font-mono">enableCases</code> {t("caseManagement.collection.onboarding.flagSuffix")}
       </p>
     </div>
   );
@@ -760,8 +760,8 @@ export function Cases() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Cases" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("caseManagement.collection.title") }]);
+  }, [setBreadcrumbs, t]);
 
   useEffect(() => {
     setViewState(loadCaseViewState(viewStorageKey));
@@ -904,8 +904,16 @@ export function Cases() {
     }
     return [...map.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([label, rows]) => ({ key: label, label, rows }));
-  }, [sorted, viewState.groupBy, projectName]);
+      .map(([key, rows]) => {
+        const statusOption = viewState.groupBy === "status" ? STATUS_FILTER_OPTIONS.find((option) => option.value === key) : undefined;
+        const projectId = rows[0]?.projectId;
+        const label = statusOption ? t(statusOption.labelKey)
+          : viewState.groupBy === "project" && !projectId ? t("caseManagement.collection.filters.noProject")
+          : viewState.groupBy === "project" && projectId && !projectName.has(projectId) ? t("caseManagement.collection.unknownProject")
+          : key;
+        return { key, label, rows };
+      });
+  }, [sorted, viewState.groupBy, projectName, t]);
 
   const treeRows = useMemo((): CaseTreeRow[] => {
     const rowById = new Map(sortedTreeSource.map((row) => [row.id, row]));
@@ -1193,7 +1201,11 @@ export function Cases() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [caseHref, keyboardNavItems, navigate, selectedIndex, viewState.treeView]);
 
+  if (!selectedCompanyId) return <EmptyState icon={SearchX} message={t("caseManagement.collection.selectOrganization")} />;
   if (casesQuery.isLoading) return <PageSkeleton variant="list" />;
+  if (casesQuery.isError && !casesQuery.data) {
+    return <EmptyState icon={SearchX} message={t("caseManagement.collection.loadError")} action={t("caseManagement.collection.retry")} onAction={() => void casesQuery.refetch()} hideActionIcon />;
+  }
 
   const noCasesAtAll = allCases.length === 0 && activeFilters.length === 0;
   const hasActiveFilters = activeFilters.length > 0;
@@ -1202,8 +1214,8 @@ export function Cases() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold">Cases</h1>
-          <Badge variant="secondary">Experimental</Badge>
+          <h1 className="text-xl font-bold">{t("caseManagement.collection.title")}</h1>
+          <Badge variant="secondary">{t("caseManagement.collection.experimental")}</Badge>
         </div>
       </div>
 
@@ -1356,7 +1368,7 @@ export function Cases() {
           />
 
           {filtered.length === 0 ? (
-            <EmptyState icon={SearchX} message="No cases match these filters." action="Clear filters" onAction={clearFilters} />
+            <EmptyState icon={SearchX} message={t("caseManagement.collection.noMatches")} action={t("caseManagement.collection.filters.clear")} onAction={clearFilters} hideActionIcon />
           ) : (
             <div ref={caseListRef}>
               <CaseColumnHeader visibleColumnSet={visibleColumnSet} trailingColumns={trailingColumns} />

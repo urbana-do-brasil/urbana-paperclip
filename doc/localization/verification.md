@@ -2996,3 +2996,23 @@ OpenSpec estrito passaram. O typecheck da UI aponta somente o erro preexistente
 em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é
 exportado. Progresso: **250/274 tarefas**. Próxima: 3.10e1b, linhas, árvore e
 estados da coleção.
+
+
+## Casos — linhas, árvore e estados da coleção (3.10e1b)
+
+O onboarding, título/breadcrumb, linhas, grupos, contagens, árvore e cópia de
+identificadores agora acompanham PT-BR/en. Uma falha de consulta apresenta uma
+mensagem e nova tentativa, em vez de parecer uma coleção vazia. Títulos, nomes,
+relações, identificadores e nomes técnicos do exemplo permanecem intactos; o
+estado de expansão continua preservado ao mudar o idioma.
+
+`Cases.test.tsx`, `CaseDetail.test.tsx`, `CaseChildrenTree.test.tsx` e
+`locale-validation.test.ts` passaram em **40/40 testes**. Gates de tokens,
+JSON, `git diff --check` e OpenSpec estrito passaram. O typecheck da UI aponta
+somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado.
+
+A contagem foi reconciliada com `openspec instructions apply --json`, que conta
+as tarefas principais e as subtarefas. O progresso real é **253/277**; registros
+anteriores apresentam a contagem manual usada nos checkpoints anteriores.
+Próxima: 3.10e2, detalhe e propriedades de casos.

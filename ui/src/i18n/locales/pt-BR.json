@@ -1770,7 +1770,39 @@
     }
   },
   "caseManagement": {
+    "identity": {
+      "caseId": "ID do caso",
+      "caseKey": "chave do caso",
+      "copy": "Copiar {{label}} {{value}}",
+      "copied": "Copiado"
+    },
     "collection": {
+      "title": "Casos",
+      "experimental": "Experimental",
+      "selectOrganization": "Selecione uma organização para ver os casos.",
+      "loadError": "Não foi possível carregar os casos.",
+      "retry": "Tentar novamente",
+      "noMatches": "Nenhum caso corresponde a estes filtros.",
+      "unknownProject": "Projeto desconhecido",
+      "groupCount_one": "{{formattedCount}} caso",
+      "groupCount_other": "{{formattedCount}} casos",
+      "groupCount_many": "{{formattedCount}} casos",
+      "row": {
+        "none": "Nenhum",
+        "parent": "Caso pai",
+        "expand": "Expandir {{title}}",
+        "collapse": "Recolher {{title}}"
+      },
+      "onboarding": {
+        "title": "Ainda não há casos",
+        "description": "Casos são produtos de trabalho duráveis — publicações de blog, sequências de posts e páginas de documentação — criados e aprimorados por tarefas. Na v1, são criados por agentes e não pela interface.",
+        "instruction": "Para começar a criar casos, adicione isto a uma skill:",
+        "example": "\"Crie um caso do tipo blog_post com os campos\n{slug, target_audience, publish_url} e a chave <release>/<slug>.\"",
+        "apiPrefix": "Consulte a skill paperclip →",
+        "apiSuffix": "para a API.",
+        "flagPrefix": "O recurso depende da flag experimental",
+        "flagSuffix": "(Configurações → Experimental)."
+      },
       "changeStatus": "Alterar o status do caso",
       "search": {
         "placeholder": "Buscar casos...",

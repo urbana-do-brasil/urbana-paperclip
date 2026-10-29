@@ -279,7 +279,7 @@ describe("CaseDetail", () => {
 
     await waitForAssertion(() => {
       expect(mockCopyTextToClipboard).toHaveBeenCalledWith("PAP-C7");
-      expect(caseIdButton!.parentElement?.textContent).toContain("Copied");
+      expect(caseIdButton!.parentElement?.textContent).toContain("Copiado");
     });
 
     act(() => root.unmount());
@@ -306,7 +306,7 @@ describe("CaseDetail", () => {
 
     await waitForAssertion(() => {
       expect(mockCopyTextToClipboard).toHaveBeenCalledWith("v2026.707/hermes-agent-post");
-      expect(keyButton!.parentElement?.textContent).toContain("Copied");
+      expect(keyButton!.parentElement?.textContent).toContain("Copiado");
     });
 
     act(() => root.unmount());
@@ -407,7 +407,7 @@ describe("CaseDetail", () => {
 
     await waitForAssertion(() => {
       expect(mockCopyTextToClipboard).toHaveBeenCalledWith("v2026.707/hermes-agent-post");
-      expect(keyValue!.parentElement?.textContent).toContain("Copied");
+      expect(keyValue!.parentElement?.textContent).toContain("Copiado");
     });
 
     const titleValue = Array.from(panelContainer.querySelectorAll("button")).find((button) =>
