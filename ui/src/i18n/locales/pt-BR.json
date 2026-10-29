@@ -1866,6 +1866,26 @@
         "failed": "Falhou"
       }
     },
+    "detailWatched": {
+      "setupEmpty": "Este cartão ainda está sendo configurado — os itens acompanhados aparecerão aqui quando estiver pronto.",
+      "loading": "Buscando itens correspondentes…",
+      "queryFailedTitle": "Não foi possível carregar os itens correspondentes",
+      "queryFailedFallback": "Tente novamente.",
+      "noMatches": "A consulta compilada não corresponde a nenhum item no momento.",
+      "mentionedInLatest": "Mencionado na atualização mais recente"
+    },
+    "detailSettings": {
+      "cardName": "Nome do cartão",
+      "cardNamePlaceholder": "Gerado automaticamente a partir da consulta",
+      "watchesAndReports": "O que este cartão acompanha e informa",
+      "watchesAndReportsHelp": "Esta mensagem define o cartão inteiro: o agente compila a consulta de acompanhamento a partir dela e a segue como instrução para cada atualização. Editá-la recria o cartão.",
+      "agent": "Agente",
+      "save": "Salvar",
+      "queryDebug": "Depurar consulta",
+      "queryNotCompiledJson": "// consulta ainda não compilada",
+      "queryCompiled": "Compilado pelo Summarizer {{relativeTime}} · versão {{version}}. Edite acima o campo “O que este cartão acompanha e informa” para recriá-lo.",
+      "queryNotCompiled": "Ainda não compilada. A consulta será criada automaticamente quando a configuração do cartão terminar."
+    },
       "settings": {
         "title": "Política de atualização automática",
         "manual": "Somente manual — atualiza quando pressiono Atualizar",

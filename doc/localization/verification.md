@@ -3222,3 +3222,12 @@ contagens e rótulos conhecidos de estado e gatilho. Dados, valores desconhecido
 e mensagens externas permanecem intactos. Drawer, formatadores, cartões, lista
 e catálogos: **56/56**; typecheck da UI passou. Progresso: **274/296**; próxima
 parte da interface: 3.10f4e, itens acompanhados e configurações.
+
+
+## Status cards — itens acompanhados e configurações (3.10f4e)
+
+As abas de itens acompanhados e configurações/debug localizam estados, ações e
+instruções em PT-BR/en. Conteúdo digitado, IDs, links, consultas e payloads são
+preservados; testes incluem salvamento e troca de idioma. Drawer e catálogos:
+**29/29**; typecheck da UI passou. f4 concluída; progresso **276/296**; próxima
+parte da UI: f5, gates e navegação.

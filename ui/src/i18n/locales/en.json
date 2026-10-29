@@ -1819,6 +1819,26 @@
         "failed": "Failed"
       }
     },
+    "detailWatched": {
+      "setupEmpty": "This card is still setting up — the issues it watches appear here once it's ready.",
+      "loading": "Matching issues…",
+      "queryFailedTitle": "Could not load matched issues",
+      "queryFailedFallback": "Try again.",
+      "noMatches": "The compiled query matches no issues right now.",
+      "mentionedInLatest": "Mentioned in the latest update"
+    },
+    "detailSettings": {
+      "cardName": "Card name",
+      "cardNamePlaceholder": "Auto-named from the query",
+      "watchesAndReports": "What this card watches & reports",
+      "watchesAndReportsHelp": "This one message drives the whole card: the agent compiles the watch query from it and follows it as the instructions for every update. Editing it rebuilds the card.",
+      "agent": "Agent",
+      "save": "Save",
+      "queryDebug": "Query debug",
+      "queryNotCompiledJson": "// query not compiled yet",
+      "queryCompiled": "Compiled by Summarizer {{relativeTime}} · version {{version}}. Edit “What this card watches” above to rebuild it.",
+      "queryNotCompiled": "Not compiled yet. The query builds automatically once the card finishes setting up."
+    },
       "settings": {
         "title": "Auto-update policy",
         "manual": "Manual only — updates when I press refresh",

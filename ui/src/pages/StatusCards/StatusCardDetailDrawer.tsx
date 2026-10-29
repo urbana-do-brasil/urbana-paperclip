@@ -517,15 +517,17 @@ export function StatusCardDetailDrawer({
             <TabsContent value="watched" className="mt-0 space-y-3">
               {card.queries.length === 0 && (card.mentionedIssueIds?.length ?? 0) === 0 ? (
                 <div className="rounded-md border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
-                  This card is still setting up — the issues it watches appear here once it's ready.
+                  {t("statusCards.detailWatched.setupEmpty")}
                 </div>
               ) : dryRunQuery.isLoading ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Matching issues…
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("statusCards.detailWatched.loading")}
                 </div>
               ) : dryRunQuery.isError ? (
-                <InlineBanner tone="danger" title="Could not load matched issues">
-                  {dryRunQuery.error instanceof Error ? dryRunQuery.error.message : "Try again."}
+                <InlineBanner tone="danger" title={t("statusCards.detailWatched.queryFailedTitle")}>
+                  {dryRunQuery.error instanceof Error
+                    ? dryRunQuery.error.message
+                    : t("statusCards.detailWatched.queryFailedFallback")}
                 </InlineBanner>
               ) : (
                 <MatchedIssueList
@@ -537,33 +539,32 @@ export function StatusCardDetailDrawer({
 
             <TabsContent value="settings" className="mt-0 space-y-6">
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Card name</h3>
+                <h3 className="text-sm font-semibold">{t("statusCards.detailSettings.cardName")}</h3>
                 <Input
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Auto-named from the query"
+                  placeholder={t("statusCards.detailSettings.cardNamePlaceholder")}
                   className="text-sm"
-                  aria-label="Card name"
+                  aria-label={t("statusCards.detailSettings.cardName")}
                 />
               </section>
 
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">What this card watches & reports</h3>
+                <h3 className="text-sm font-semibold">{t("statusCards.detailSettings.watchesAndReports")}</h3>
                 <Textarea
                   value={interest}
                   onChange={(event) => setInterest(event.target.value)}
                   rows={3}
                   className="text-sm"
-                  aria-label="What this card watches & reports"
+                  aria-label={t("statusCards.detailSettings.watchesAndReports")}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This one message drives the whole card: the agent compiles the watch query from it
-                  and follows it as the instructions for every update. Editing it rebuilds the card.
+                  {t("statusCards.detailSettings.watchesAndReportsHelp")}
                 </p>
               </section>
 
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Agent</h3>
+                <h3 className="text-sm font-semibold">{t("statusCards.detailSettings.agent")}</h3>
                 <SummarizerAgentSelect
                   companyId={card.companyId}
                   value={summarizerAgentId}
@@ -579,7 +580,7 @@ export function StatusCardDetailDrawer({
               <div className="flex justify-end border-t border-border pt-4">
                 <Button onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending}>
                   {saveSettingsMutation.isPending ? <Loader2 className="animate-spin" /> : null}
-                  Save
+                  {t("statusCards.detailSettings.save")}
                 </Button>
               </div>
             </TabsContent>
@@ -597,24 +598,28 @@ export function StatusCardDetailDrawer({
  * inspectable without leaving Settings.
  */
 function QueryDebugSection({ card }: { card: StatusCardView }) {
+  const { t } = useTranslation();
   const queryJson = JSON.stringify({ queries: card.queries, limit: 50 }, null, 2);
   return (
     <Collapsible className="rounded-md border border-border">
       <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 px-3 py-2.5 text-sm font-semibold">
         <span className="flex items-center gap-2">
-          Query debug
+          {t("statusCards.detailSettings.queryDebug")}
           <Badge variant="secondary">v{card.queryVersion}</Badge>
         </span>
         <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-2 border-t border-border px-3 py-3">
         <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 font-mono text-xs text-foreground">
-          {card.queries.length > 0 ? queryJson : "// query not compiled yet"}
+          {card.queries.length > 0 ? queryJson : t("statusCards.detailSettings.queryNotCompiledJson")}
         </pre>
         <p className="text-xs text-muted-foreground">
           {card.queryCompiledAt
-            ? `Compiled by Summarizer ${relativeTime(card.queryCompiledAt)} · version ${card.queryVersion}. Edit “What this card watches” above to rebuild it.`
-            : "Not compiled yet. The query builds automatically once the card finishes setting up."}
+            ? t("statusCards.detailSettings.queryCompiled", {
+              relativeTime: relativeTime(card.queryCompiledAt),
+              version: card.queryVersion,
+            })
+            : t("statusCards.detailSettings.queryNotCompiled")}
         </p>
       </CollapsibleContent>
     </Collapsible>
@@ -628,6 +633,7 @@ function QueryDebugSection({ card }: { card: StatusCardView }) {
  * join the watched set too and render as their own group below the matches.
  */
 function MatchedIssueList({ queries, mentioned }: { queries: StatusCardDryRun["queries"]; mentioned: CompanySearchIssueSummary[] }) {
+  const { t } = useTranslation();
   const seen = new Set<string>();
   const matched: CompanySearchIssueSummary[] = [];
   for (const { result } of queries) {
@@ -641,7 +647,7 @@ function MatchedIssueList({ queries, mentioned }: { queries: StatusCardDryRun["q
   if (matched.length === 0 && mentionedOnly.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
-        The compiled query matches no issues right now.
+        {t("statusCards.detailWatched.noMatches")}
       </div>
     );
   }
@@ -656,7 +662,7 @@ function MatchedIssueList({ queries, mentioned }: { queries: StatusCardDryRun["q
       ) : null}
       {mentionedOnly.length > 0 ? (
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground">Mentioned in the latest update</p>
+          <p className="text-xs font-medium text-muted-foreground">{t("statusCards.detailWatched.mentionedInLatest")}</p>
           {mentionedOnly.map((issue) => (
             <WatchedIssueRow key={issue.id} issue={issue} />
           ))}

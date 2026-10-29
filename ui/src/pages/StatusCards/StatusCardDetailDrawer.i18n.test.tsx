@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StatusCard, StatusCardSummaryRevision, StatusCardUpdate } from "@paperclipai/shared";
+import type { StatusCardDryRun } from "@/api/statusCards";
 import { i18n } from "@/i18n";
 import type { StatusCardView } from "./types";
 import { StatusCardDetailDrawer } from "./StatusCardDetailDrawer";
@@ -127,6 +128,17 @@ function visibleText() {
 
 function buttonNamed(name: string) {
   return Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.trim() === name);
+}
+
+function buttonContaining(name: string) {
+  return Array.from(document.body.querySelectorAll<HTMLButtonElement>("button"))
+    .find((button) => button.textContent?.includes(name));
+}
+
+function setNativeTextValue(element: HTMLInputElement | HTMLTextAreaElement, value: string) {
+  const prototype = element instanceof HTMLInputElement ? HTMLInputElement.prototype : HTMLTextAreaElement.prototype;
+  Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(element, value);
+  element.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function summaryUpdate(
@@ -491,5 +503,183 @@ describe("StatusCardDetailDrawer shell localization", () => {
     await act(async () => { await i18n.changeLanguage("en"); });
     await flush();
     expect(visibleText()).toContain("Try again.");
+  });
+
+  it("localizes the watched setup prompt", async () => {
+    await render(baseCard(), "watched");
+    await flush();
+
+    expect(visibleText()).toContain("Este cartão ainda está sendo configurado");
+    expect(visibleText()).toContain("os itens acompanhados aparecerão aqui quando estiver pronto.");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("This card is still setting up — the issues it watches appear here once it's ready.");
+  });
+
+  it("localizes watched matching and empty states", async () => {
+    const query = { q: "PAP-824", scope: "issues", limit: 25, sort: "updated" } as unknown as StatusCardView["queries"][number];
+    let finishDryRun!: (result: StatusCardDryRun) => void;
+    statusCardsApi.dryRun.mockReturnValue(new Promise((resolve) => { finishDryRun = resolve; }));
+    await render(baseCard({ queries: [query] }), "watched");
+    await flush();
+
+    expect(visibleText()).toContain("Buscando itens correspondentes…");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("Matching issues…");
+    finishDryRun({ cardId: "card-1", queryVersion: 0, queries: [], mentionedIssues: [] });
+    await flush();
+    expect(visibleText()).toContain("The compiled query matches no issues right now.");
+
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    await flush();
+    expect(visibleText()).toContain("A consulta compilada não corresponde a nenhum item no momento.");
+  });
+
+  it("localizes mentioned watched issues while preserving issue IDs and links", async () => {
+    const query = { q: "dynamic query text", scope: "issues", limit: 25, sort: "updated" } as unknown as StatusCardView["queries"][number];
+    const matchedIssueId = "00000000-0000-4000-8000-000000000091";
+    const mentionedIssueId = "00000000-0000-4000-8000-000000000092";
+    const matchedIssue = {
+      id: matchedIssueId,
+      identifier: "PAP-824",
+      title: "DYNAMIC MATCHED ISSUE TITLE",
+      status: "blocked",
+      priority: "high",
+      assigneeAgentId: null,
+      assigneeUserId: null,
+      projectId: null,
+      updatedAt: new Date().toISOString(),
+    };
+    const mentionedIssue = {
+      ...matchedIssue,
+      id: mentionedIssueId,
+      identifier: null,
+      title: "DYNAMIC MENTIONED ISSUE TITLE",
+    };
+    statusCardsApi.dryRun.mockResolvedValue({
+      queries: [{ query, result: { results: [{ issue: matchedIssue }] } }],
+      mentionedIssues: [mentionedIssue],
+    } as unknown as StatusCardDryRun);
+
+    await render(baseCard({ queries: [query], mentionedIssueIds: [mentionedIssueId] }), "watched");
+    await flush();
+
+    expect(visibleText()).toContain("Mencionado na atualização mais recente");
+    expect(visibleText()).toContain("DYNAMIC MATCHED ISSUE TITLE");
+    expect(visibleText()).toContain("DYNAMIC MENTIONED ISSUE TITLE");
+    expect(document.body.querySelector('a[href="/issues/PAP-824"]')).toBeTruthy();
+    expect(document.body.querySelector(`a[href="/issues/${mentionedIssueId}"]`)).toBeTruthy();
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("Mentioned in the latest update");
+    expect(visibleText()).toContain("DYNAMIC MATCHED ISSUE TITLE");
+    expect(visibleText()).toContain("DYNAMIC MENTIONED ISSUE TITLE");
+    expect(document.body.querySelector('a[href="/issues/PAP-824"]')).toBeTruthy();
+    expect(document.body.querySelector(`a[href="/issues/${mentionedIssueId}"]`)).toBeTruthy();
+  });
+
+  it("localizes watched query errors and preserves the external error", async () => {
+    const query = { q: "dynamic query text", scope: "issues", limit: 25 } as unknown as StatusCardView["queries"][number];
+    statusCardsApi.dryRun.mockRejectedValue(new Error("RAW ISSUE SEARCH ERROR"));
+    await render(baseCard({ queries: [query] }), "watched");
+    await flush();
+
+    expect(visibleText()).toContain("Não foi possível carregar os itens correspondentes");
+    expect(visibleText()).toContain("RAW ISSUE SEARCH ERROR");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("Could not load matched issues");
+    expect(visibleText()).toContain("RAW ISSUE SEARCH ERROR");
+  });
+
+  it("uses the localized fallback for a watched query error without an Error message", async () => {
+    const query = { q: "dynamic query text", scope: "issues", limit: 25 } as unknown as StatusCardView["queries"][number];
+    statusCardsApi.dryRun.mockRejectedValue("opaque issue search failure");
+    await render(baseCard({ queries: [query] }), "watched");
+    await flush();
+
+    expect(visibleText()).toContain("Tente novamente.");
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("Try again.");
+  });
+
+  it("localizes settings/debug and preserves typed text, query JSON, IDs, and save payload across languages", async () => {
+    const query = {
+      q: "PAP-824 literal query",
+      scope: "issues",
+      limit: 25,
+      sort: "updated",
+      status: ["blocked"],
+    } as unknown as StatusCardView["queries"][number];
+    const card = baseCard({
+      agentId: "00000000-0000-4000-8000-000000000081",
+      queries: [query],
+      queryVersion: 7,
+      queryCompiledAt: new Date().toISOString(),
+    });
+    await render(card, "settings");
+    await flush();
+
+    expect(visibleText()).toContain("Nome do cartão");
+    expect(visibleText()).toContain("O que este cartão acompanha e informa");
+    expect(visibleText()).toContain("Esta mensagem define o cartão inteiro");
+    expect(visibleText()).toContain("Agente");
+    expect(buttonContaining("Depurar consulta")).toBeTruthy();
+    expect(buttonNamed("Salvar")).toBeTruthy();
+
+    await act(async () => { buttonContaining("Depurar consulta")!.click(); });
+    await flush();
+    const expectedQueryJson = JSON.stringify({ queries: [query], limit: 50 }, null, 2);
+    expect(document.body.querySelector("pre")?.textContent).toBe(expectedQueryJson);
+    expect(visibleText()).toContain("Compilado pelo Summarizer");
+
+    const titleInput = document.body.querySelector<HTMLInputElement>('input[aria-label="Nome do cartão"]')!;
+    const interestInput = document.body.querySelector<HTMLTextAreaElement>('textarea[aria-label="O que este cartão acompanha e informa"]')!;
+    await act(async () => {
+      setNativeTextValue(titleInput, "  USER-EDITED CARD NAME  ");
+      setNativeTextValue(interestInput, "  Track exact issue PAP-824  ");
+    });
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+
+    expect(visibleText()).toContain("Card name");
+    expect(visibleText()).toContain("What this card watches & reports");
+    expect(visibleText()).toContain("Agent");
+    expect(buttonContaining("Query debug")).toBeTruthy();
+    expect(buttonNamed("Save")).toBeTruthy();
+    expect(document.body.querySelector<HTMLInputElement>('input[aria-label="Card name"]')?.value).toBe("  USER-EDITED CARD NAME  ");
+    expect(document.body.querySelector<HTMLTextAreaElement>('textarea[aria-label="What this card watches & reports"]')?.value).toBe("  Track exact issue PAP-824  ");
+    expect(document.body.querySelector("pre")?.textContent).toBe(expectedQueryJson);
+    expect(visibleText()).toContain("Compiled by Summarizer");
+
+    await act(async () => { buttonNamed("Save")!.click(); await Promise.resolve(); });
+    await flush();
+    expect(statusCardsApi.patch).toHaveBeenCalledWith(card.id, {
+      title: "USER-EDITED CARD NAME",
+      titlePinned: true,
+      interestPrompt: "Track exact issue PAP-824",
+      agentId: "00000000-0000-4000-8000-000000000081",
+      refreshPolicy: card.refreshPolicy,
+    });
+  });
+
+  it("localizes the uncompiled query debug placeholder", async () => {
+    await render(baseCard({ queryCompiledAt: null }), "settings");
+    await flush();
+    await act(async () => { buttonContaining("Depurar consulta")!.click(); });
+    await flush();
+
+    expect(document.body.querySelector("pre")?.textContent).toBe("// consulta ainda não compilada");
+    expect(visibleText()).toContain("Ainda não compilada. A consulta será criada automaticamente");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(document.body.querySelector("pre")?.textContent).toBe("// query not compiled yet");
+    expect(visibleText()).toContain("Not compiled yet. The query builds automatically");
   });
 });

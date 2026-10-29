@@ -89,15 +89,15 @@ e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
 em e2a (moldura/status/cópia) e e2b (propriedades/relações). O progresso atual
-é **274/296 tarefas** segundo a CLI do OpenSpec; 3.10f1–f3 estão concluídas.
+é **276/296 tarefas** segundo a CLI do OpenSpec; 3.10f1–f3 estão concluídas.
 3.10f3 foi dividida em f3a (criação/agente) e f3b (políticas/custo). Próxima:
-3.10f4e, itens acompanhados e configurações; moldura, resumo, formatação e histórico (f4a–f4d) concluídos.
+3.10f5, gates e navegação; detalhe e histórico (f4a–f4e) concluídos.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2), detalhe de apps (3.9f3a–g), configurações de provedores/gestores de contas (3.9f4), gateways MCP de apps (3.9f5), coleção/criação de rotinas (3.10a), operações de rotinas (3.10b1–b5), pipelines (3.10c1–c3), fila/learnings (3.10d1–d2), casos (3.10e1–e5) e lista, cartões, criação e políticas de status cards (3.10f1–f3) verificadas. 3.10b–e estão concluídas; f3 foi dividida em f3a/f3b. f4 foi dividida em cinco partes; f4a–f4d concluídas. Próxima: 3.10f4e. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2), detalhe de apps (3.9f3a–g), configurações de provedores/gestores de contas (3.9f4), gateways MCP de apps (3.9f5), coleção/criação de rotinas (3.10a), operações de rotinas (3.10b1–b5), pipelines (3.10c1–c3), fila/learnings (3.10d1–d2), casos (3.10e1–e5) e lista, cartões, criação e políticas de status cards (3.10f1–f3) verificadas. 3.10b–e estão concluídas; f3 foi dividida em f3a/f3b. f4 foi dividida em cinco partes; f4a–f4e concluídas. Próxima: 3.10f5. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; listagem de organizações (4.3a) verificada; demais comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |
