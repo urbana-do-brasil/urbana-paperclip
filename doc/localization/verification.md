@@ -2598,8 +2598,8 @@ O progresso atual é **218/243 tarefas**. Próxima: 3.9f3e, teste manual de aç�
 
 O fluxo de teste manual tem três etapas para revisão focada: e1 (diálogo,
 seleção, badges e formulário de argumentos), e2 (execução e resultados) e e3
-(aprovação/hand-off de provider e retomada). e1 e e2 estão concluídas; e3 ainda
-está pendente. O progresso é **220/246 tarefas**; próxima: 3.9f3e3.
+(aprovação/hand-off de provider e retomada). e1, e2 e e3 estão concluídas. O
+progresso é **221/246 tarefas**; próxima: 3.9f3f.
 
 ### Diálogo e formulário de argumentos (3.9f3e1)
 
@@ -2639,3 +2639,25 @@ typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 Progresso: **220/246 tarefas**. Próxima: 3.9f3e3, aprovações e retomada do
 provider.
+
+### Aprovações Ask-first e retomada de provider (3.9f3e3)
+
+Os estados de aprovação Ask-first, revisão/cancelamento do pedido e hand-off de
+autorização do provider acompanham PT-BR/en. O painel mostra links seguros com
+host, mensagem original, IDs e expiração; a retomada mostra a permissão efetiva
+e coleta os argumentos solicitados. Recusa, cancelamento e expiração têm
+orientações localizadas. URLs, hosts, mensagens dinâmicas, IDs de execução e
+solicitação, decisões, status e payloads foram preservados. A retomada envia o
+ID de execução existente e o nome da ferramenta de retomada, sem repetir a
+chamada original.
+
+`ActionTestDialog.test.tsx`, `JsonSchemaForm.test.tsx`,
+`JsonSchemaForm.remote-mcp.test.tsx` e `locale-validation.test.ts` passaram em
+**62/62 testes**, incluindo a transição Ask-first para cancelado/expirado,
+hand-off de autorização, retomada aprovada, recusa/cancelamento, expiração e
+preservação do endereço, IDs e payloads. `pnpm check:tokens`, `pnpm
+check:token-gates`, parse dos catálogos, `git diff --check` e `pnpm exec
+openspec validate --all --strict --no-interactive` passaram. O typecheck da UI
+aponta somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. Progresso: **221/246 tarefas**. Próxima:
+3.9f3f, atividade e histórico da conexão.

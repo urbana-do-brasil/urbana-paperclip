@@ -64,14 +64,14 @@ seleção), b2b (MCP personalizado e Zapier) e b2c (credenciais, métodos, OAuth
 conclusão) estão concluídas. Com isso, 3.9f3b está concluída. 3.9f3c
 (permissões e acesso dos agentes) e 3.9f3d (identidades e contas associadas)
 estão concluídas. 3.9f3e foi dividida em e1–e3 para validar separadamente o
-diálogo/argumentos, execução/resultados e autorizações/retomada; e1 e e2 estão
-concluídas. Próxima: 3.9f3e3. Progresso atual: **220/246 tarefas**.
+diálogo/argumentos, execução/resultados e autorizações/retomada; as três etapas
+estão concluídas. Próxima: 3.9f3f. Progresso atual: **221/246 tarefas**.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3) e descoberta/inventário de conexões (3.9f1–f2) verificadas. Detalhe, configuração e gestão de apps (3.9f3–f5) pendentes. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2) e diálogo/configuração de apps (3.9f3a–e) verificadas. Atividade/painéis avançados e configuração/gestão de apps (3.9f3f–g, f4–f5) pendentes. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |

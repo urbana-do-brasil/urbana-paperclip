@@ -10,6 +10,7 @@ import { i18n } from "@/i18n";
 import { ActionTestDialog, errorHints } from "./ActionTestDialog";
 
 const listTestAgentsMock = vi.hoisted(() => vi.fn());
+const listCatalogMock = vi.hoisted(() => vi.fn());
 const getTestAgentAccessMock = vi.hoisted(() => vi.fn());
 const runTestCallMock = vi.hoisted(() => vi.fn());
 const getTestCallStatusMock = vi.hoisted(() => vi.fn());
@@ -18,6 +19,7 @@ const declineActionRequestMock = vi.hoisted(() => vi.fn());
 vi.mock("@/api/tools", () => ({
   toolsApi: {
     listTestAgents: (connectionId: string) => listTestAgentsMock(connectionId),
+    listCatalog: (connectionId: string) => listCatalogMock(connectionId),
     getTestAgentAccess: (connectionId: string, agentId: string) => getTestAgentAccessMock(connectionId, agentId),
     runTestCall: (connectionId: string, input: unknown) => runTestCallMock(connectionId, input),
     getTestCallStatus: (connectionId: string, requestId: string) => getTestCallStatusMock(connectionId, requestId),
@@ -73,6 +75,18 @@ const askFirstEntry = {
   isWrite: true,
 } as ToolCatalogEntry;
 
+const resumeToolEntry = {
+  ...entry,
+  id: "provider-resume-action",
+  toolName: "resume_provider_request",
+  title: "Resume provider request",
+  inputSchema: {
+    type: "object",
+    required: ["confirmation_code"],
+    properties: { confirmation_code: { type: "string" } },
+  },
+} as ToolCatalogEntry;
+
 let container: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 let client: QueryClient;
@@ -121,13 +135,41 @@ function allowAskFirst() {
   runTestCallMock.mockResolvedValue({ decision: "ask_first", invocationId: "ask-invocation", actionRequestId: "request-1" });
 }
 
-function requestStatus(phase: "waiting" | "running" | "done" | "denied") {
+function requestStatus(phase: "waiting" | "running" | "done" | "denied" | "cancelled" | "expired") {
   return {
     actionRequestId: "request-1", invocationId: "ask-invocation", phase,
     parameters: {}, requestedAt: "2026-10-01T00:00:00.000Z",
     resolvedAt: phase === "waiting" ? null : "2026-10-01T00:00:05.000Z",
     durationMs: phase === "done" ? 1200 : null,
   };
+}
+
+function allowProviderResume(expiresAt: string) {
+  getTestAgentAccessMock.mockResolvedValue({
+    access: {
+      connectionId: "conn-1", toolCount: 2, allowedCount: 2, askFirstCount: 0, offCount: 0,
+      lastChangedAt: null, lastChangedByAgentId: null, lastChangedByName: null,
+      tools: [
+        { toolName: "list_projects", gatewayToolName: "asana__list_projects", displayName: "List projects", risk: "read", decision: "allowed", reasonCode: null, matchedPolicyIds: [] },
+        { toolName: resumeToolEntry.toolName, gatewayToolName: "provider__resume_request", displayName: "Resume provider request", risk: "write", decision: "allowed", reasonCode: null, matchedPolicyIds: [] },
+      ],
+    },
+  });
+  listCatalogMock.mockResolvedValue({ catalog: [resumeToolEntry] });
+  runTestCallMock.mockResolvedValueOnce({
+    decision: "allowed",
+    invocationId: "provider-original-invocation",
+    upstreamPending: {
+      kind: "approval",
+      links: [{ url: "https://provider.example/authorize?state=keep-this-state", host: "provider.example", elicitationId: "provider-request-88" }],
+      executionId: "provider-execution-77",
+      elicitationId: "provider-request-88",
+      resumeTool: resumeToolEntry.toolName,
+      expiresAt,
+      message: "Provider message: confirm access to the Urbana workspace.",
+      requestedSchema: resumeToolEntry.inputSchema,
+    },
+  });
 }
 
 beforeEach(async () => {
@@ -139,6 +181,7 @@ beforeEach(async () => {
   listTestAgentsMock.mockReset().mockResolvedValue({
     agents: [{ id: "agent-ceo", name: "CEO", role: "ceo", title: "CEO", status: "active", orgDepth: 0 }],
   });
+  listCatalogMock.mockReset().mockResolvedValue({ catalog: [] });
   getTestAgentAccessMock.mockReset().mockResolvedValue({
     access: {
       connectionId: "conn-1", toolCount: 1, allowedCount: 1, askFirstCount: 0, offCount: 0,
@@ -528,6 +571,147 @@ describe("Permissions action Test dialog", () => {
     await openAndRun(askFirstEntry);
     expect(document.body.textContent).toContain("Denied — see Review for why");
     expect(document.body.textContent).not.toContain("Cancel this request");
+  });
+
+  it("localizes an Ask-first request and preserves its Review and cancellation contracts", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    allowAskFirst();
+    getTestCallStatusMock.mockResolvedValue(requestStatus("waiting"));
+    declineActionRequestMock.mockResolvedValueOnce(undefined);
+
+    await openAndRun(askFirstEntry, "Executar");
+
+    expect(document.body.textContent).toContain("Enviado para aprovação.");
+    expect(document.body.textContent).toContain("CEO precisa da sua aprovação antes da execução.");
+    expect(document.body.textContent).toContain("AçãoCreate task");
+    expect(document.body.textContent).toContain("Conclua abaixo a solicitação existente.");
+    expect(document.body.querySelector('a[href="/apps/conn-1/review"]')).toBeTruthy();
+    const cancelButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Cancelar esta solicitação");
+    expect(cancelButton).toBeTruthy();
+    await act(() => cancelButton!.click());
+    await flushReact();
+
+    expect(declineActionRequestMock).toHaveBeenCalledWith("company-1", "request-1");
+    expect(document.body.textContent).toContain("Cancelada");
+    expect(runTestCallMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("localizes an expired Ask-first request and removes its cancellation action", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    allowAskFirst();
+    getTestCallStatusMock.mockResolvedValue(requestStatus("expired"));
+
+    await openAndRun(askFirstEntry, "Executar");
+
+    expect(document.body.textContent).toContain("Expirada — envie novamente");
+    expect(document.body.textContent).not.toContain("Cancelar esta solicitação");
+  });
+
+  it("localizes provider authorization hand-off while preserving its URL, host, message, and IDs", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const authorizationUrl = "https://provider.example/authorize?state=keep-this-state";
+    runTestCallMock.mockResolvedValueOnce({
+      decision: "allowed", invocationId: "provider-authorization",
+      upstreamPending: {
+        kind: "authorization",
+        links: [{ url: authorizationUrl, host: "provider.example", elicitationId: "provider-request-88" }],
+        executionId: "provider-execution-77",
+        elicitationId: "provider-request-88",
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        message: "Provider message: confirm access to the Urbana workspace.",
+      },
+    });
+
+    await openAndRun(entry, "Executar");
+
+    expect(document.body.textContent).toContain("Autorização necessária para Asana");
+    expect(document.body.textContent).toContain("O Paperclip permitiu esta chamada.");
+    expect(document.body.textContent).toContain("Provider message: confirm access to the Urbana workspace.");
+    expect(document.body.textContent).toContain("Execução: provider-execution-77");
+    expect(document.body.textContent).toContain("Solicitação: provider-request-88");
+    expect(document.body.textContent).toContain("A aprovação expira às");
+    expect(document.body.textContent).toContain("Após autorizar, confira o resultado do provedor");
+    const continueLink = document.body.querySelector<HTMLAnchorElement>(`a[href="${authorizationUrl}"]`);
+    expect(continueLink?.textContent).toBe("Continuar em provider.example");
+  });
+
+  it("resumes a provider approval in PT-BR with the same execution and action payload", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    allowProviderResume(new Date(Date.now() + 60_000).toISOString());
+    runTestCallMock.mockResolvedValueOnce({
+      decision: "allowed", invocationId: "provider-resumed",
+      result: { content: "Provider accepted the request.", data: { content: [{ type: "text", text: "Provider accepted the request." }], isError: false } },
+    });
+
+    await openAndRun(entry, "Executar");
+
+    expect(document.body.textContent).toContain("Revise a solicitação do provedor e retome esta execução como CEO.");
+    expect(document.body.textContent).toContain("Permissão para retomarPermitida");
+    expect(document.body.textContent).toContain("Continuar em provider.example");
+    const confirmation = document.body.querySelector<HTMLInputElement>('input[aria-label="Confirmation Code"]');
+    expect(confirmation).toBeTruthy();
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    await act(() => {
+      setValue!.call(confirmation, "confirm-provider-request");
+      confirmation!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    const approveButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Aprovar e retomar");
+    expect(approveButton).toBeTruthy();
+    await act(() => approveButton!.click());
+    await flushReact();
+
+    expect(runTestCallMock).toHaveBeenNthCalledWith(1, "conn-1", { agentId: "agent-ceo", toolName: "list_projects", parameters: {} });
+    expect(runTestCallMock).toHaveBeenNthCalledWith(2, "conn-1", {
+      agentId: "agent-ceo",
+      toolName: "resume_provider_request",
+      parameters: { executionId: "provider-execution-77", action: "accept", content: JSON.stringify({ confirmation_code: "confirm-provider-request" }) },
+    });
+    expect(document.body.textContent).toContain("Provider accepted the request.");
+    expect(runTestCallMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["decline", "Recusar", "Solicitação recusada", "Provider request was declined by the user"],
+    ["cancel", "Cancelar solicitação", "Solicitação cancelada", "Provider request was cancelled by the user"],
+  ] as const)("localizes provider %s and keeps the original call stopped", async (action, buttonLabel, heading, providerMessage) => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    allowProviderResume(new Date(Date.now() + 60_000).toISOString());
+    runTestCallMock.mockResolvedValueOnce({
+      decision: "allowed", invocationId: `provider-${action}`,
+      error: { message: providerMessage, reasonCode: "tool_error" },
+    });
+
+    await openAndRun(entry, "Executar");
+
+    const actionButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === buttonLabel);
+    expect(actionButton).toBeTruthy();
+    await act(() => actionButton!.click());
+    await flushReact();
+
+    expect(document.body.textContent).toContain(heading);
+    expect(document.body.textContent).toContain(providerMessage);
+    expect(document.body.textContent).toContain("A chamada original não foi repetida.");
+    expect(document.body.textContent).toContain("Execução: provider-execution-77");
+    expect(runTestCallMock).toHaveBeenNthCalledWith(2, "conn-1", {
+      agentId: "agent-ceo",
+      toolName: "resume_provider_request",
+      parameters: { executionId: "provider-execution-77", action },
+    });
+    expect(runTestCallMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("localizes expired provider approvals and blocks resuming them", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    allowProviderResume(new Date(Date.now() - 60_000).toISOString());
+
+    await openAndRun(entry, "Executar");
+
+    expect(document.body.textContent).toContain("Esta aprovação do provedor expirou.");
+    expect(document.body.textContent).toContain("Confira o provedor antes de iniciar uma nova ação.");
+    const approveButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Aprovar e retomar");
+    expect(approveButton?.hasAttribute("disabled")).toBe(true);
+    expect(runTestCallMock).toHaveBeenCalledTimes(1);
   });
 
   it("shows a tool error and opens its raw response", async () => {
