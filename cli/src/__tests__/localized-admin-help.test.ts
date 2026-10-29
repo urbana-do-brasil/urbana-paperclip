@@ -44,6 +44,9 @@ describe("localized CLI help", () => {
       english: "Get the current scoped company",
     },
     { command: ["company", "stats"], portuguese: "Consultar estatísticas da organização", english: "Get company stats" },
+    { command: ["company", "create"], portuguese: "Criar uma organização", english: "Create a company" },
+    { command: ["company", "update"], portuguese: "Atualizar uma organização", english: "Update a company" },
+    { command: ["company", "archive"], portuguese: "Arquivar uma organização", english: "Archive a company" },
   ])("localizes help for $command", ({ command, portuguese, english }) => {
     const pt = help([...command, "--help", "--lang", "pt-BR"]);
     expect(pt.status).toBe(0);
@@ -100,5 +103,29 @@ describe("localized CLI help", () => {
     expect(currentOutput).toContain("--company-id <id>");
     expect(currentOutput).toContain("ID da organização (substitui o padrão do contexto)");
     expect(currentOutput).toContain("--json");
+  }, 65_000);
+
+  it("localizes company mutation payload help without translating argument or flag names", () => {
+    const create = help(["company", "create", "--help", "--lang", "pt-BR"]);
+    const createOutput = create.stdout.replace(/\s+/g, " ");
+    expect(create.status).toBe(0);
+    expect(createOutput).toContain("paperclipai company create");
+    expect(createOutput).toContain("--payload-json <json>");
+    expect(createOutput).toContain("Payload JSON de CreateCompany");
+
+    const update = help(["company", "update", "--help", "--lang", "pt-BR"]);
+    const updateOutput = update.stdout.replace(/\s+/g, " ");
+    expect(update.status).toBe(0);
+    expect(updateOutput).toContain("paperclipai company update [options] <companyId>");
+    expect(updateOutput).toContain("companyId ID da organização");
+    expect(updateOutput).toContain("--payload-json <json>");
+    expect(updateOutput).toContain("Payload JSON de UpdateCompany");
+
+    const archive = help(["company", "archive", "--help", "--lang", "pt-BR"]);
+    const archiveOutput = archive.stdout.replace(/\s+/g, " ");
+    expect(archive.status).toBe(0);
+    expect(archiveOutput).toContain("paperclipai company archive [options] <companyId>");
+    expect(archiveOutput).toContain("companyId ID da organização");
+    expect(archiveOutput).toContain("--api-key <token>");
   }, 65_000);
 });

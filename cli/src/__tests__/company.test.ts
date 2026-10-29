@@ -476,31 +476,142 @@ describe("company CLI commands", () => {
     expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject([{ id: COMPANY_ID, name: "Paperclip" }]);
   });
 
-  it("explains that company creation requires board instance-admin authentication under agent auth", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403));
-    vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+  it("localizes the company creation authorization guidance but stabilizes --json output", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403));
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
       throw new Error(`exit:${code ?? 0}`);
     }) as typeof process.exit);
+    const args = ["company", "create", "--payload-json", "{\"name\":\"Disposable\"}", "--api-base", "http://paperclip.test", "--api-key", "agent-token"];
 
-    await expect(runCommand([
-      "company",
-      "create",
-      "--payload-json",
-      "{\"name\":\"Disposable\"}",
-      "--api-base",
-      "http://paperclip.test",
-      "--api-key",
-      "agent-token",
-      "--json",
-    ])).rejects.toThrow("exit:1");
+    process.argv = ["node", "paperclipai", "company", "create"];
+    setCliLocale("pt-BR");
+    await expect(runCommand(args)).rejects.toThrow("exit:1");
+    const ptHuman = String(errorSpy.mock.calls.at(-1)?.[0]);
+    process.argv = ["node", "paperclipai", "company", "create"];
+    setCliLocale("en");
+    await expect(runCommand(args)).rejects.toThrow("exit:1");
+    const enHuman = String(errorSpy.mock.calls.at(-1)?.[0]);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/companies",
-      expect.objectContaining({ method: "POST" }),
-    );
-    const rendered = String(errorSpy.mock.calls[0]?.[0]);
-    expect(rendered).toContain("Creating companies requires board/instance-admin authentication");
-    expect(rendered).toContain("company list --json");
+    process.argv = ["node", "paperclipai", "company", "create", "--json"];
+    setCliLocale("pt-BR");
+    await expect(runCommand([...args, "--json"])).rejects.toThrow("exit:1");
+    const ptJson = String(errorSpy.mock.calls.at(-1)?.[0]);
+    process.argv = ["node", "paperclipai", "company", "create", "--json"];
+    setCliLocale("en");
+    await expect(runCommand([...args, "--json"])).rejects.toThrow("exit:1");
+    const enJson = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptHuman).toContain("Para criar organizações é necessária autenticação board/instance-admin.");
+    expect(ptHuman).toContain("paperclipai company list --json");
+    expect(enHuman).toContain("Creating companies requires board/instance-admin authentication");
+    expect(enHuman).toContain("paperclipai company list --json");
+    expect(ptJson).toBe(enJson);
+    expect(ptJson).toContain("Creating companies requires board/instance-admin authentication");
+    expect(fetchMock.mock.calls.map(([url, init]) => [url, init?.method, init?.body])).toEqual([
+      ...Array.from({ length: 4 }, () => [
+        "http://paperclip.test/api/companies",
+        "POST",
+        "{\"name\":\"Disposable\"}",
+      ]),
+    ]);
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1, 1, 1]);
+  });
+
+  it("preserves create, update, and archive payload and JSON contracts", async () => {
+    const createPayload = { name: "Acme", issuePrefix: "ACME", budgetMonthlyCents: 25000 };
+    const updatePayload = { name: "Acme Labs", requireBoardApprovalForNewAgents: true };
+    const created = company({ name: "Acme", issuePrefix: "ACME", budgetMonthlyCents: 25000 });
+    const updated = company({ name: "Acme Labs", requireBoardApprovalForNewAgents: true });
+    const archived = company({ status: "archived" });
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(created))
+      .mockResolvedValueOnce(jsonResponse(updated))
+      .mockResolvedValueOnce(jsonResponse(archived))
+      .mockResolvedValueOnce(jsonResponse(created))
+      .mockResolvedValueOnce(jsonResponse(updated))
+      .mockResolvedValueOnce(jsonResponse(archived));
+    const base = ["--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"];
+
+    const runMutations = async (locale: "pt-BR" | "en") => {
+      setCliLocale(locale);
+      await runCommand(["company", "create", "--payload-json", JSON.stringify(createPayload), ...base]);
+      const createOutput = String(logSpy.mock.calls.at(-1)?.[0]);
+      await runCommand(["company", "update", COMPANY_ID, "--payload-json", JSON.stringify(updatePayload), ...base]);
+      const updateOutput = String(logSpy.mock.calls.at(-1)?.[0]);
+      await runCommand(["company", "archive", COMPANY_ID, ...base]);
+      const archiveOutput = String(logSpy.mock.calls.at(-1)?.[0]);
+      return { createOutput, updateOutput, archiveOutput };
+    };
+
+    const pt = await runMutations("pt-BR");
+    const en = await runMutations("en");
+
+    expect(pt).toEqual(en);
+    expect(JSON.parse(pt.createOutput)).toEqual(created);
+    expect(JSON.parse(pt.updateOutput)).toEqual(updated);
+    expect(JSON.parse(pt.archiveOutput)).toEqual(archived);
+    expect(fetchMock.mock.calls.map(([url, init]) => [init?.method ?? "GET", url, init?.body])).toEqual([
+      ["POST", "http://paperclip.test/api/companies", JSON.stringify(createPayload)],
+      ["PATCH", `http://paperclip.test/api/companies/${COMPANY_ID}`, JSON.stringify(updatePayload)],
+      ["POST", `http://paperclip.test/api/companies/${COMPANY_ID}/archive`, "{}"],
+      ["POST", "http://paperclip.test/api/companies", JSON.stringify(createPayload)],
+      ["PATCH", `http://paperclip.test/api/companies/${COMPANY_ID}`, JSON.stringify(updatePayload)],
+      ["POST", `http://paperclip.test/api/companies/${COMPANY_ID}/archive`, "{}"],
+    ]);
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("preserves update and archive error status, details, and --json presentation", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "Update rejected", details: { field: "name" }, messageKey: "validation" }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Update rejected", details: { field: "name" }, messageKey: "validation" }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured update failure", details: { code: "UPDATE_REJECTED" } }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured update failure", details: { code: "UPDATE_REJECTED" } }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Archive conflict", details: { code: "ACTIVE_AGENTS" } }, 409))
+      .mockResolvedValueOnce(jsonResponse({ error: "Archive conflict", details: { code: "ACTIVE_AGENTS" } }, 409))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured archive failure", details: { code: "ARCHIVE_REJECTED" } }, 409))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured archive failure", details: { code: "ARCHIVE_REJECTED" } }, 409));
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+      throw new Error(`exit:${code ?? 0}`);
+    }) as typeof process.exit);
+    const base = ["--api-base", "http://paperclip.test", "--api-key", "board-token"];
+    const payload = JSON.stringify({ name: "Renamed" });
+    const runFailure = async (operation: "update" | "archive", locale: "pt-BR" | "en", json: boolean) => {
+      setCliLocale(locale);
+      const args = operation === "update"
+        ? ["company", "update", COMPANY_ID, "--payload-json", payload, ...base]
+        : ["company", "archive", COMPANY_ID, ...base];
+      process.argv = ["node", "paperclipai", ...args, ...(json ? ["--json"] : [])];
+      await expect(runCommand([...args, ...(json ? ["--json"] : [])])).rejects.toThrow("exit:1");
+      return String(errorSpy.mock.calls.at(-1)?.[0]);
+    };
+
+    const ptUpdateHuman = await runFailure("update", "pt-BR", false);
+    const enUpdateHuman = await runFailure("update", "en", false);
+    const ptUpdateJson = await runFailure("update", "pt-BR", true);
+    const enUpdateJson = await runFailure("update", "en", true);
+    const ptArchiveHuman = await runFailure("archive", "pt-BR", false);
+    const enArchiveHuman = await runFailure("archive", "en", false);
+    const ptArchiveJson = await runFailure("archive", "pt-BR", true);
+    const enArchiveJson = await runFailure("archive", "en", true);
+
+    expect(ptUpdateHuman).toContain("Erro de API 422: Os dados enviados são inválidos.");
+    expect(ptUpdateHuman).toContain('details={"field":"name"}');
+    expect(enUpdateHuman).toContain("API error 422: The submitted data is invalid.");
+    expect(ptUpdateJson).toBe(enUpdateJson);
+    expect(ptUpdateJson).toBe('API error 422: Structured update failure details={"code":"UPDATE_REJECTED"}');
+    expect(ptArchiveHuman).toContain("Erro de API 409: Não foi possível concluir a solicitação. Detalhes: Archive conflict");
+    expect(ptArchiveHuman).toContain('details={"code":"ACTIVE_AGENTS"}');
+    expect(enArchiveHuman).toContain("API error 409: The request could not be completed. Details: Archive conflict");
+    expect(ptArchiveJson).toBe(enArchiveJson);
+    expect(ptArchiveJson).toBe('API error 409: Structured archive failure details={"code":"ARCHIVE_REJECTED"}');
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual(Array.from({ length: 8 }, () => 1));
   });
 });
 

@@ -55,6 +55,26 @@ const operationHelp: Record<string, CommandHelp> = {
     description: { en: "Get company stats", "pt-BR": "Consultar estatísticas da organização" },
     options: commonClientOptions,
   },
+  "company create": {
+    description: { en: "Create a company", "pt-BR": "Criar uma organização" },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "CreateCompany JSON payload", "pt-BR": "Payload JSON de CreateCompany" },
+    },
+  },
+  "company update": {
+    description: { en: "Update a company", "pt-BR": "Atualizar uma organização" },
+    arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "UpdateCompany JSON payload", "pt-BR": "Payload JSON de UpdateCompany" },
+    },
+  },
+  "company archive": {
+    description: { en: "Archive a company", "pt-BR": "Arquivar uma organização" },
+    arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
+    options: commonClientOptions,
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {

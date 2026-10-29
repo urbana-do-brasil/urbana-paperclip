@@ -3260,3 +3260,12 @@ por runtime e modelo permanecem sem qualificação. Progresso: **278/298**.
 JSON, falhas estruturadas e códigos. Testes do comando: **25/25**; help
 direcionado: **1/1**. Typecheck da CLI não foi repetido. Demais operações e
 regressão de processo 4.4 continuam pendentes. Progresso: **279/299**.
+
+
+## CLI — criação e gestão de organizações (4.3d)
+
+Help e mensagens próprias de `company create`, `update` e `archive` acompanham
+PT-BR/en; payloads, rotas, JSON, erros estruturados e códigos foram preservados.
+Testes company: **27/27**; help focado: **4/4**. Branding, importação/exportação
+e demais operações continuam pendentes; typecheck da CLI não foi repetido.
+Progresso: **280/300**.

@@ -136,6 +136,8 @@ const IMPORT_INCLUDE_OPTIONS: Array<{
 const IMPORT_PREVIEW_SAMPLE_LIMIT = 6;
 const CURRENT_COMPANY_UNAVAILABLE_FALLBACK =
   "Current company is not available. Pass --company-id, set PAPERCLIP_COMPANY_ID, set a context profile companyId, or authenticate with an agent API key.";
+const COMPANY_CREATE_PERMISSION_FALLBACK =
+  "Creating companies requires board/instance-admin authentication. Agent API keys are scoped to one company; use `paperclipai company list --json` or `paperclipai company current --json` to select the scoped company, or rerun create with a board token/login.";
 
 type ImportSelectableGroup = "projects" | "issues" | "agents" | "skills";
 
@@ -2033,12 +2035,16 @@ async function createCompanyForContext(ctx: {
     return await ctx.api.post("/api/companies", payload);
   } catch (error) {
     if (isBoardAccessRequiredError(error) || isInstanceAdminRequiredError(error)) {
-      throw new Error(
-        "Creating companies requires board/instance-admin authentication. Agent API keys are scoped to one company; use `paperclipai company list --json` or `paperclipai company current --json` to select the scoped company, or rerun create with a board token/login.",
-      );
+      throw new Error(companyCreatePermissionMessage());
     }
     throw error;
   }
+}
+
+function companyCreatePermissionMessage(): string {
+  return isCliJsonRequested()
+    ? COMPANY_CREATE_PERMISSION_FALLBACK
+    : cliMessage("companyCreatePermissionRequired");
 }
 
 async function resolveCurrentCompanyId(ctx: { companyId?: string; api: { get<T>(path: string): Promise<T | null> } }): Promise<string> {

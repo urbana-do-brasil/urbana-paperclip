@@ -17,6 +17,7 @@ const messages = {
     emptyList: "(empty)",
     emptyValue: "(null)",
     companyCurrentUnavailable: "Current company is not available. Pass --company-id, set PAPERCLIP_COMPANY_ID, set a context profile companyId, or authenticate with an agent API key.",
+    companyCreatePermissionRequired: "Creating companies requires board/instance-admin authentication. Agent API keys are scoped to one company; use `paperclipai company list --json` or `paperclipai company current --json` to select the scoped company, or rerun create with a board token/login.",
   },
   "pt-BR": {
     description: "CLI do Paperclip — instale, diagnostique e configure sua instância",
@@ -30,6 +31,7 @@ const messages = {
     emptyList: "(vazio)",
     emptyValue: "(nulo)",
     companyCurrentUnavailable: "A organização atual não está disponível. Informe --company-id, defina PAPERCLIP_COMPANY_ID, configure companyId em um perfil de contexto ou autentique-se com uma chave de API de agente.",
+    companyCreatePermissionRequired: "Para criar organizações é necessária autenticação board/instance-admin. Chaves de API de agente são limitadas a uma organização; use `paperclipai company list --json` ou `paperclipai company current --json` para selecionar a organização do escopo, ou execute create novamente com um token do board/login.",
   },
 } as const;
 
