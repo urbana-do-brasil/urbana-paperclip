@@ -1147,6 +1147,77 @@
       "years_other": "{{count}}y"
     }
   },
+  "agentDirectory": {
+    "breadcrumb": "Agents",
+    "selectOrganization": "Select an organization to view agents.",
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "paused": "Paused",
+      "error": "Error",
+      "builtin": "Built-in"
+    },
+    "roles": {
+      "ceo": "CEO",
+      "cto": "CTO",
+      "cmo": "CMO",
+      "cfo": "CFO",
+      "security": "Security",
+      "engineer": "Engineer",
+      "designer": "Designer",
+      "pm": "PM",
+      "qa": "QA",
+      "devops": "DevOps",
+      "researcher": "Researcher",
+      "general": "General"
+    },
+    "status": {
+      "idle": "idle",
+      "running": "running",
+      "paused": "paused",
+      "error": "error",
+      "pending_approval": "pending approval",
+      "terminated": "terminated"
+    },
+    "count_one": "{{count}} agent",
+    "count_other": "{{count}} agents",
+    "newAgent": "New Agent",
+    "empty": "Create your first agent to get started.",
+    "noMatchingAgents": "No agents match the selected status.",
+    "noOrgHierarchy": "No organizational hierarchy defined.",
+    "loadError": "Could not load agents.",
+    "invalidReportingChain": "Invalid reporting chain",
+    "setUp": "Set up",
+    "chat": "Chat",
+    "live": "Live",
+    "view": {
+      "groupLabel": "Agent view",
+      "list": "List view",
+      "orgChart": "Org chart view"
+    },
+    "environment": {
+      "local": "Local",
+      "paperclipHost": "Paperclip host",
+      "localTitle": "Local - Paperclip host",
+      "loading": "Loading environment",
+      "sandbox": "Sandbox",
+      "sandboxProvider": "{{provider}} sandbox provider",
+      "managedByPaperclip": "Managed by Paperclip",
+      "unknown": "Unknown environment"
+    },
+    "builtInLifecycle": {
+      "pendingApproval": {
+        "title": "Waiting on board hire approval before the feature can run",
+        "label": "Pending approval",
+        "compact": "Approval"
+      },
+      "needsSetup": {
+        "title": "Needs adapter/model setup before the feature can run",
+        "label": "Needs setup",
+        "compact": "Setup"
+      }
+    }
+  },
   "organizationPortfolio": {
     "breadcrumb": "Organizations",
     "newOrganization": "New Organization",

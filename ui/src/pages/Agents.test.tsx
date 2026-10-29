@@ -11,6 +11,8 @@ import type { BuiltInAgentState } from "../api/builtInAgents";
 import { Agents } from "./Agents";
 import { Agents as ProductionAgents } from "./Agents.production";
 import type { AgentOrgChainHealth } from "@paperclipai/shared";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 
 const mockRouterState = vi.hoisted(() => ({
   pathname: "/agents/all",
@@ -298,7 +300,8 @@ describe("Agents", () => {
   let root: ReturnType<typeof createRoot> | null;
   let queryClient: QueryClient;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     mockRouterState.pathname = "/agents/all";
     mockRouterState.navigate.mockClear();
     container = document.createElement("div");
@@ -356,6 +359,7 @@ describe("Agents", () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it.each([
@@ -414,6 +418,49 @@ describe("Agents", () => {
     const heartbeatCell = container.querySelector(".whitespace-nowrap.w-24");
     expect(heartbeatCell).not.toBeNull();
     expect(heartbeatCell?.textContent).not.toContain("\n");
+  });
+
+  it.each([
+    ["streamlined", Agents],
+    ["production", ProductionAgents],
+  ] as const)("localizes the %s agent roster without changing agent data", async (_mode, AgentList) => {
+    await i18n.changeLanguage("pt-BR");
+    mockAgentsApi.list.mockResolvedValue([makeAgent({ name: "Alpha", role: "engineer", status: "active" })]);
+    mockBuiltInAgentsApi.list.mockResolvedValue([
+      makeBuiltInAgentState({ status: "needs_setup", agentId: "agent-1" }),
+    ]);
+    mockInstanceSettingsApi.get.mockResolvedValue(makeInstanceSettings({ enableBuiltInAgents: true }));
+    root = createRoot(container);
+    await act(async () => {
+      root!.render(
+        <QueryClientProvider client={queryClient}>
+          <ToastProvider>
+            <AgentList />
+          </ToastProvider>
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    const listToggle = container.querySelector<HTMLButtonElement>('button[aria-label="Visualização em lista"]');
+    expect(listToggle).not.toBeNull();
+    await act(async () => { listToggle?.click(); });
+    await flushReact();
+
+    expect(container.textContent).toContain("Todos");
+    expect(container.textContent).toContain("Ativos");
+    expect(container.textContent).toContain("Integrados");
+    expect(container.textContent).toContain("1 agente");
+    expect(container.textContent).toContain("Novo agente");
+    expect(container.textContent).toContain("Alpha");
+    expect(container.textContent).toContain("Engenharia");
+    expect(container.textContent).toContain("ocioso");
+    expect(container.textContent).toContain("Precisa configurar");
+    expect(container.textContent).toContain("Configurar");
+    expect(container.textContent).not.toContain("New Agent");
+    expect(findAgentRow(container, "Alpha")?.getAttribute("href")).toBe("/agents/alpha");
+    expect(mockSetBreadcrumbs).toHaveBeenCalledWith([{ label: "Agentes" }]);
   });
 
   it("switches between the preserved list and the interactive org chart with icon buttons", async () => {

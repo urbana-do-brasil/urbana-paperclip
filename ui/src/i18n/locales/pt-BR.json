@@ -1188,6 +1188,78 @@
       "years_many": "há {{count}} anos"
     }
   },
+  "agentDirectory": {
+    "breadcrumb": "Agentes",
+    "selectOrganization": "Selecione uma organização para ver os agentes.",
+    "filters": {
+      "all": "Todos",
+      "active": "Ativos",
+      "paused": "Pausados",
+      "error": "Com erro",
+      "builtin": "Integrados"
+    },
+    "roles": {
+      "ceo": "CEO",
+      "cto": "CTO",
+      "cmo": "CMO",
+      "cfo": "CFO",
+      "security": "Segurança",
+      "engineer": "Engenharia",
+      "designer": "Design",
+      "pm": "Gerente de produto (PM)",
+      "qa": "QA",
+      "devops": "DevOps",
+      "researcher": "Pesquisa",
+      "general": "Geral"
+    },
+    "status": {
+      "idle": "ocioso",
+      "running": "em execução",
+      "paused": "pausado",
+      "error": "com erro",
+      "pending_approval": "aguardando aprovação",
+      "terminated": "encerrado"
+    },
+    "count_one": "{{count}} agente",
+    "count_other": "{{count}} agentes",
+    "count_many": "{{count}} agentes",
+    "newAgent": "Novo agente",
+    "empty": "Crie seu primeiro agente para começar.",
+    "noMatchingAgents": "Nenhum agente corresponde ao status selecionado.",
+    "noOrgHierarchy": "Nenhuma hierarquia organizacional foi definida.",
+    "loadError": "Não foi possível carregar os agentes.",
+    "invalidReportingChain": "Hierarquia de reporte inválida",
+    "setUp": "Configurar",
+    "chat": "Conversa",
+    "live": "Ao vivo",
+    "view": {
+      "groupLabel": "Visualização de agentes",
+      "list": "Visualização em lista",
+      "orgChart": "Visualização do gráfico organizacional"
+    },
+    "environment": {
+      "local": "Local",
+      "paperclipHost": "Servidor Paperclip",
+      "localTitle": "Local - servidor Paperclip",
+      "loading": "Carregando ambiente",
+      "sandbox": "Sandbox",
+      "sandboxProvider": "{{provider}} (provedor de sandbox)",
+      "managedByPaperclip": "Gerenciado pelo Paperclip",
+      "unknown": "Ambiente desconhecido"
+    },
+    "builtInLifecycle": {
+      "pendingApproval": {
+        "title": "Aguardando aprovação do conselho para contratação antes que o recurso possa ser executado",
+        "label": "Aguardando aprovação",
+        "compact": "Aprovação"
+      },
+      "needsSetup": {
+        "title": "Precisa configurar o adaptador e o modelo antes que o recurso possa ser executado",
+        "label": "Precisa configurar",
+        "compact": "Configuração"
+      }
+    }
+  },
   "organizationPortfolio": {
     "breadcrumb": "Organizações",
     "newOrganization": "Nova organização",

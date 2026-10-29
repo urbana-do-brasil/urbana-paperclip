@@ -45,7 +45,7 @@ export function StatusBadge({ status, label }: { status: string; label?: string 
  * `--status-agent-*` base hue via the `.status-chip` color-mix helper. `active`
  * renders as "idle" (alias for dead code).
  */
-export function AgentStatusBadge({ status }: { status: string }) {
+export function AgentStatusBadge({ status, label: localizedLabel }: { status: string; label?: string }) {
   const cssVar = agentStatusVar[status] ?? agentStatusVarDefault;
   const label = status === "active" ? "idle" : status;
   return (
@@ -53,7 +53,7 @@ export function AgentStatusBadge({ status }: { status: string }) {
       className="status-chip inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium leading-none whitespace-nowrap shrink-0"
       style={scStyle(cssVar)}
     >
-      {label.replace(/_/g, " ")}
+      {localizedLabel ?? label.replace(/_/g, " ")}
     </span>
   );
 }
