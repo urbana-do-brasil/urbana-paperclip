@@ -1456,5 +1456,19 @@ A suíte `AgentConfigForm.render.test.tsx` passou (**103/103**), incluindo a
 barra/estado de salvamento em PT-BR, o rótulo de teste do ambiente e a falha de
 sandbox gerenciado indisponível. `locale-validation.test.ts` passou (**12/12**).
 Typecheck direcionado, gates de tokens, `git diff --check` e validação OpenSpec
-estrita passaram. Progresso: **129/156**. Próxima tarefa: 3.6d3, editor de
-instruções do agente.
+estrita passaram. Progresso ao concluir d2e: **129/156**; a decomposição de d3
+acrescentou três lotes ao total atual.
+
+### Continuação — editor e arquivos de instruções (3.6d3a)
+
+O editor de instruções localiza avisos, configuração gerenciada/externa, modo,
+caminhos, arquivo de entrada, árvore, estados e ações em PT-BR/en. Nomes e
+caminhos como `AGENTS.md`, conteúdo fornecido ao agente, metadados técnicos e
+payloads permanecem intactos. O seletor do editor traduz a apresentação de
+leitura/edição/texto bruto sem alterar os modos salvos.
+
+`AgentDetail.instructions.test.tsx` passou (**13/13**), incluindo uma verificação
+PT-BR que confirma a preservação literal do prompt e do caminho do arquivo;
+`locale-validation.test.ts` passou (**12/12**). Typecheck direcionado, gates de
+tokens, `git diff --check` e validação OpenSpec estrita passaram. Progresso:
+**130/159**. Próxima tarefa: 3.6d3b, histórico/diff e edições preservadas.

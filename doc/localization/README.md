@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **129 de 156 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **130 de 159 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -14,8 +14,9 @@ A entrega ainda não foi implantada.
 
 Os adaptadores Codex/Runner, sete adaptadores locais, gateways, HTTP/process,
 campos de schemas built-in, política de ambiente/execução, teste do ambiente e
-feedback de salvamento estão localizados em 3.6d2. A próxima tarefa é o editor
-de instruções do agente (3.6d3).
+feedback de salvamento estão localizados em 3.6d2. A tarefa 3.6d3 foi dividida
+em editor/arquivos (d3a), histórico/diff (d3b) e instruções de conexão (d3c);
+o editor/arquivos (d3a) está concluído e o próximo lote é 3.6d3b.
 
 | Etapa | Situação |
 | --- | --- |

@@ -6,6 +6,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Agent, AgentInstructionsBundle, AgentInstructionsFileDetail, AgentInstructionsFileSummary } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { AgentFileRunNotice, PromptsTab } from "./AgentDetail";
 import { queryKeys } from "../lib/queryKeys";
 
@@ -225,7 +227,8 @@ describe("PromptsTab instruction editor", () => {
   let queryClient: QueryClient;
   let saveAction: (() => void) | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
@@ -261,6 +264,7 @@ describe("PromptsTab instruction editor", () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   async function renderPromptsTab(
@@ -294,8 +298,13 @@ describe("PromptsTab instruction editor", () => {
   }
 
   async function selectInstructionMode(mode: "Read" | "Edit" | "Raw") {
+    const labels = {
+      Read: i18n.t("agentInstructions.view.read"),
+      Edit: i18n.t("agentInstructions.view.edit"),
+      Raw: i18n.t("agentInstructions.view.raw"),
+    };
     await act(async () => {
-      buttonByText(container, mode.toLowerCase()).click();
+      buttonByText(container, labels[mode]).click();
     });
     await flushReact();
   }
@@ -349,6 +358,37 @@ describe("PromptsTab instruction editor", () => {
         "company-1",
       );
     });
+  });
+
+  it("localizes the instruction editor while preserving file paths and prompt content", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const summary = makeSummary("AGENTS.md", "AGENTS.md");
+    const originalContent = "# Keep this prompt intact\n\nNever translate agent-owned instructions.";
+    await renderPromptsTab(
+      makeBundle("AGENTS.md", [summary], { warnings: ["This adapter does not implement skill sync yet."] }),
+      { "AGENTS.md": makeDetail(summary, originalContent) },
+    );
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-testid="markdown-body"]')?.textContent).toBe(originalContent);
+    });
+    expect(container.textContent).toContain("As instruções salvas afetam a próxima execução.");
+    expect(container.textContent).toContain("Este adaptador ainda não implementa a sincronização de habilidades.");
+    expect(container.textContent).toContain("Arquivos");
+    expect(container.textContent).toContain("AGENTS.md");
+    expect(container.querySelector('[aria-label="Adicionar arquivo do agente"]')).toBeTruthy();
+    expect(container.querySelector('[role="group"][aria-label="Visualização do arquivo de instruções"]')).toBeTruthy();
+
+    await selectInstructionMode("Edit");
+    const editor = container.querySelector<HTMLTextAreaElement>('[data-testid="markdown-editor"]');
+    expect(editor?.placeholder).toBe("# Instruções do agente");
+    expect(editor?.value).toBe(originalContent);
+
+    await act(async () => buttonByText(container, "Avançado").click());
+    await flushReact();
+    expect(container.textContent).toContain("Gerenciado");
+    expect(container.textContent).toContain("Caminho raiz");
+    expect(container.textContent).toContain("Arquivo de entrada");
   });
 
   it("loads preserved edits against the displayed head and retains their pinned base after a conflict", async () => {
