@@ -2661,3 +2661,22 @@ openspec validate --all --strict --no-interactive` passaram. O typecheck da UI
 aponta somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. Progresso: **221/246 tarefas**. Próxima:
 3.9f3f, atividade e histórico da conexão.
+
+### Atividade e histórico de conexão (3.9f3f)
+
+O painel legado de atividade localiza o título, o estado vazio, tempos relativos,
+atribuição de quem executou testes, resumos de chamadas, resultados de aprovação,
+eventos do ciclo de vida da conexão, alterações de permissões e links de revisão.
+Nomes de agentes, apps e ferramentas, identificadores, mensagens e dados do
+servidor/provedor permanecem intactos. A aba de atividade atual redireciona para
+o feed geral de auditoria; esse comportamento foi preservado, e o painel legado
+continua sem import ativo.
+
+`ActivityPanel.test.tsx`, `ActivityPanel.render.test.tsx` e
+`locale-validation.test.ts` passaram em **27/27 testes**, incluindo PT-BR/en,
+atribuição do executor, nomes externos, eventos de lista de permissões,
+pluralização, links e tempo relativo. `pnpm check:tokens`,
+`pnpm check:token-gates`, parse dos catálogos, `git diff --check` e validação
+OpenSpec estrita passaram. O typecheck da UI aponta somente o erro preexistente
+em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+Progresso: **222/246 tarefas**. Próxima: 3.9f3g, painéis avançados genéricos.

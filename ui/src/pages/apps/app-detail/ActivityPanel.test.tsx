@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { ToolCallEvent } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import { humanizeEvent, isTestEvent, resolveActorLabel } from "./ActivityPanel";
+
+const en = i18n.getFixedT("en");
+const pt = i18n.getFixedT("pt-BR");
 
 function event(overrides: Partial<ToolCallEvent>): ToolCallEvent {
   return {
@@ -49,17 +53,19 @@ describe("isTestEvent", () => {
 
 describe("resolveActorLabel", () => {
   it("prefers the directory display name", () => {
-    expect(resolveActorLabel("user-1", new Map([["user-1", "Dotta"]]))).toBe("Dotta");
+    expect(resolveActorLabel("user-1", new Map([["user-1", "Dotta"]]), en)).toBe("Dotta");
   });
 
   it("falls back to 'Board' for the local board principal", () => {
-    expect(resolveActorLabel("local-board", new Map())).toBe("Board");
-    expect(resolveActorLabel("local-board", undefined)).toBe("Board");
+    expect(resolveActorLabel("local-board", new Map(), en)).toBe("Board");
+    expect(resolveActorLabel("local-board", undefined, en)).toBe("Board");
+    expect(resolveActorLabel("local-board", undefined, pt)).toBe("Quadro");
   });
 
   it("falls back to 'Someone' for an unknown actor", () => {
-    expect(resolveActorLabel("user-x", new Map())).toBe("Someone");
-    expect(resolveActorLabel(null, new Map())).toBe("Someone");
+    expect(resolveActorLabel("user-x", new Map(), en)).toBe("Someone");
+    expect(resolveActorLabel(null, new Map(), en)).toBe("Someone");
+    expect(resolveActorLabel(null, new Map(), pt)).toBe("Alguém");
   });
 });
 
@@ -68,6 +74,7 @@ describe("humanizeEvent test-tab attribution", () => {
     const { primary } = humanizeEvent(
       event({ actorType: "user", actorId: "user-1", metadata: { source: "test" } }),
       "BenchmarkForensics",
+      en,
       undefined,
       "Dotta",
     );
@@ -75,7 +82,7 @@ describe("humanizeEvent test-tab attribution", () => {
   });
 
   it("renders a real heartbeat call without the tested-as prefix", () => {
-    const { primary } = humanizeEvent(event({}), "BenchmarkForensics");
+    const { primary } = humanizeEvent(event({}), "BenchmarkForensics", en);
     expect(primary).toBe("BenchmarkForensics used Read Values");
   });
 
@@ -83,6 +90,7 @@ describe("humanizeEvent test-tab attribution", () => {
     const { primary } = humanizeEvent(
       event({ eventType: "call_denied", outcome: "denied", metadata: { source: "test" } }),
       "BenchmarkForensics",
+      en,
       undefined,
       "Board",
     );
@@ -93,7 +101,27 @@ describe("humanizeEvent test-tab attribution", () => {
     const { primary } = humanizeEvent(
       event({ eventType: "call_denied", outcome: "denied" }),
       "BenchmarkForensics",
+      en,
+      undefined,
+      undefined,
     );
     expect(primary).toBe("Blocked Read Values - it isn't turned on");
+  });
+
+  it("localizes event summaries while preserving external action and agent names", () => {
+    const { primary } = humanizeEvent(event({}), "BenchmarkForensics", pt);
+    expect(primary).toBe("BenchmarkForensics usou Read Values");
+  });
+
+  it("localizes failure and blocked states with the unnamed agent fallback", () => {
+    const failed = humanizeEvent(
+      event({ eventType: "call_failed", outcome: "failure" }), null, pt,
+    );
+    const blocked = humanizeEvent(
+      event({ eventType: "call_denied", outcome: "denied" }), null, pt,
+    );
+    expect(failed.primary).toBe("Read Values não funcionou para um agente");
+    expect(blocked.primary).toBe("Read Values foi bloqueada porque não está ativada");
+    expect(pt("apps.appDetail.activity.actionsNeedReview", { count: 2 })).toBe("2 novas ações precisam de revisão");
   });
 });
