@@ -3099,3 +3099,20 @@ intactos. Referências não são transformadas quando a opção está desativada
 o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **260/281**; próxima:
 3.10e5, gates e navegação.
+
+
+## Casos — gates, rotas e navegação (3.10e5)
+
+O gate foi verificado com configuração ligada, desligada, carregando e com
+falha, incluindo conteúdo PT-BR/en. As sidebars streamlined e production
+mostram Casos apenas com a flag ativa. As rotas reais de lista e detalhe foram
+verificadas com o gate ativo: flag desligada ou falha de leitura redireciona ao
+dashboard; rotas sem prefixo continuam resolvendo para a organização ativa.
+
+`CasesExperimentalGate.test.tsx`, `Sidebar.test.tsx`, `IssueCasesPanel.test.tsx`
+e `locale-validation.test.ts` passaram em **70/70 testes**;
+`App.cases-routing.test.tsx` passou em **5/5**. Gates de tokens, JSON,
+`git diff --check` e OpenSpec estrito passaram. O typecheck da UI aponta somente
+o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
+`SETUP_LOGIN_HINTS` não é exportado. Progresso da CLI: **262/281**; próxima:
+3.10f, status cards.

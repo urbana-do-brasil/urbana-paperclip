@@ -258,6 +258,41 @@ describe("Sidebar", () => {
     flushSync(() => root.unmount());
   });
 
+  it.each([
+    ["standard", false, "pt-BR", "Casos"],
+    ["standard", false, "en", "Cases"],
+    ["production", true, "pt-BR", "Casos"],
+    ["production", true, "en", "Cases"],
+  ])("shows enabled Cases navigation in the %s sidebar for %s", async (_variant, production, locale, label) => {
+    await i18n.changeLanguage(locale as string);
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableCases: true });
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    const link = container.querySelector('a[href="/cases"]');
+    expect(link?.textContent).toContain(label);
+    flushSync(() => root.unmount());
+  });
+
+  it.each([["standard", false], ["production", true]])("hides Cases navigation in the %s sidebar when disabled or unavailable", async (_variant, production) => {
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableCases: false });
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    expect(container.querySelector('a[href="/cases"]')).toBeNull();
+    flushSync(() => root.unmount());
+  });
+
+  it.each([["standard", false], ["production", true]])("does not show Cases navigation in the %s sidebar while settings load", async (_variant, production) => {
+    mockInstanceSettingsApi.getExperimental.mockImplementation(() => new Promise(() => {}));
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    expect(container.querySelector('a[href="/cases"]')).toBeNull();
+    flushSync(() => root.unmount());
+  });
+
+  it.each([["standard", false], ["production", true]])("hides Cases navigation in the %s sidebar if settings fail", async (_variant, production) => {
+    mockInstanceSettingsApi.getExperimental.mockRejectedValue(new Error("forbidden"));
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    expect(container.querySelector('a[href="/cases"]')).toBeNull();
+    flushSync(() => root.unmount());
+  });
+
   it("renders plugin sidebar launchers inside the Work section", async () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({
       enableIsolatedWorkspaces: false,

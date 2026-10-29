@@ -12,8 +12,15 @@ import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
+
+const mockSettings = vi.hoisted(() => ({ getExperimental: vi.fn() }));
+vi.mock("./api/instanceSettings", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./api/instanceSettings")>();
+  return { ...actual, instanceSettingsApi: { ...actual.instanceSettingsApi, getExperimental: mockSettings.getExperimental } };
+});
 
 // jsdom's CSS parser rejects the custom-property marker rule stitches inserts
 // (`--sxs{--sxs:N}`), pulled into <App>'s eager import graph transitively via
@@ -50,11 +57,6 @@ vi.mock("./components/Layout", async () => {
   return { Layout: () => <Outlet /> };
 });
 
-// The experimental gate would otherwise hide the page behind a feature flag.
-vi.mock("./components/CasesExperimentalGate", () => ({
-  CasesExperimentalGate: ({ children }: { children: ReactNode }) => <>{children}</>,
-}));
-
 // Rendered by <App> outside <Routes> and needs DialogProvider; irrelevant here.
 vi.mock("./components/OnboardingWizardVariant", () => ({
   OnboardingWizardVariant: () => null,
@@ -63,6 +65,7 @@ vi.mock("./components/OnboardingWizardVariant", () => ({
 // Sentinel pages so we can assert *which* route resolved.
 vi.mock("./pages/Cases", () => ({ Cases: () => <div>CASES_LIST_PAGE</div> }));
 vi.mock("./pages/CaseDetail", () => ({ CaseDetail: () => <div>CASE_DETAIL_PAGE</div> }));
+vi.mock("./pages/Dashboard", () => ({ Dashboard: () => <div>DASHBOARD_PAGE</div> }));
 
 // Cloud access is unrelated to the route-table regression. Let it fall through
 // synchronously so this test does not poll its three query transitions.
@@ -90,11 +93,14 @@ vi.mock("./context/CompanyContext", () => ({
 
 async function renderAppAt(container: HTMLElement, path: string) {
   const root = createRoot(container);
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   flushSync(() => {
     root.render(
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>,
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
   });
   return root;
@@ -119,6 +125,7 @@ describe("App Cases routing (PAP-13002)", () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
+    mockSettings.getExperimental.mockResolvedValue({ enableCases: true });
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -140,6 +147,23 @@ describe("App Cases routing (PAP-13002)", () => {
     const root = await renderAppAt(container, "/cases/PAP-C5");
     await waitForRoute(container, "CASE_DETAIL_PAGE");
     expect(container.textContent).not.toContain("No organization matches prefix");
+    flushSync(() => root.unmount());
+  });
+
+  it.each(["/PAP/cases", "/PAP/cases/PAP-C5"])("blocks direct %s when the flag is disabled", async (path) => {
+    mockSettings.getExperimental.mockResolvedValue({ enableCases: false });
+    const root = await renderAppAt(container, path);
+    await waitForRoute(container, "DASHBOARD_PAGE");
+    expect(container.textContent).not.toContain("CASES_LIST_PAGE");
+    expect(container.textContent).not.toContain("CASE_DETAIL_PAGE");
+    flushSync(() => root.unmount());
+  });
+
+  it("blocks a direct case route when settings cannot be read", async () => {
+    mockSettings.getExperimental.mockRejectedValue(new Error("forbidden"));
+    const root = await renderAppAt(container, "/PAP/cases/PAP-C5");
+    await waitForRoute(container, "DASHBOARD_PAGE");
+    expect(container.textContent).not.toContain("CASE_DETAIL_PAGE");
     flushSync(() => root.unmount());
   });
 });
