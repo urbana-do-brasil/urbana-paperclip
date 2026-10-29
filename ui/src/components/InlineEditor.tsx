@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "../lib/utils";
 import { MarkdownBody, type MarkdownExternalReferenceMap } from "./MarkdownBody";
 import { MarkdownEditor, type MarkdownEditorRef, type MentionOption } from "./MarkdownEditor";
@@ -60,7 +61,7 @@ export function InlineEditor({
   onSave,
   as: Tag = "span",
   className,
-  placeholder = "Click to edit...",
+  placeholder: placeholderProp,
   multiline = false,
   nullable = false,
   imageUploadHandler,
@@ -71,6 +72,8 @@ export function InlineEditor({
   defaultEditing = false,
   onEditingChange,
 }: InlineEditorProps) {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t("inlineEditor.clickToEdit");
   const [editing, setEditing] = useState(false);
   const [multilineEditing, setMultilineEditing] = useState(multiline && defaultEditing);
   const [multilineFocused, setMultilineFocused] = useState(false);
@@ -374,12 +377,12 @@ export function InlineEditor({
             )}
           >
             {autosaveState === "saving"
-              ? "Autosaving..."
+              ? t("inlineEditor.saving")
               : autosaveState === "saved"
-                ? "Saved"
+                ? t("inlineEditor.saved")
                 : autosaveState === "error"
-                  ? "Could not save"
-                  : "Idle"}
+                  ? t("inlineEditor.saveFailed")
+                  : t("inlineEditor.idle")}
           </span>
         </div>
       </div>
@@ -392,6 +395,8 @@ export function InlineEditor({
       <textarea
         ref={inputRef}
         value={draft}
+        aria-label={placeholder}
+        placeholder={placeholder}
         rows={1}
         onChange={(e) => {
           setDraft(e.target.value);

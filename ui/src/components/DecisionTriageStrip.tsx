@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlarmClock, CalendarClock, ChevronDown, Loader2, Plus, UserPlus, X } from "lucide-react";
 import { buildAgentMentionHref, type Agent, type AttentionItem, type AttentionSourceKind } from "@paperclipai/shared";
@@ -26,16 +27,16 @@ const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
 /** Snooze presets shared with the row menu, resolved at click time. */
-const SNOOZE_PRESETS: ReadonlyArray<{ label: string; resolve: () => string }> = [
-  { label: "1 hour", resolve: () => new Date(Date.now() + HOUR_MS).toISOString() },
-  { label: "4 hours", resolve: () => new Date(Date.now() + 4 * HOUR_MS).toISOString() },
-  { label: "Tomorrow", resolve: () => {
+const SNOOZE_PRESETS: ReadonlyArray<{ id: string; resolve: () => string }> = [
+  { id: "oneHour", resolve: () => new Date(Date.now() + HOUR_MS).toISOString() },
+  { id: "fourHours", resolve: () => new Date(Date.now() + 4 * HOUR_MS).toISOString() },
+  { id: "tomorrow", resolve: () => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     d.setHours(9, 0, 0, 0);
     return d.toISOString();
   } },
-  { label: "Next week", resolve: () => new Date(Date.now() + 7 * DAY_MS).toISOString() },
+  { id: "nextWeek", resolve: () => new Date(Date.now() + 7 * DAY_MS).toISOString() },
 ];
 
 /** Slugify a queue title into a URL-safe kebab key the API will accept. */
@@ -49,16 +50,16 @@ function toQueueKey(title: string): string {
 }
 
 /** Compact countdown/overdue label for an expiry timestamp. */
-function expiryLabel(expiresAt: string): { text: string; overdue: boolean } {
+function expiryLabel(expiresAt: string, t: ReturnType<typeof useTranslation>["t"]): { text: string; overdue: boolean } {
   const diff = new Date(expiresAt).getTime() - Date.now();
   if (!Number.isFinite(diff)) return { text: "", overdue: false };
-  if (diff <= 0) return { text: "Expired", overdue: true };
+  if (diff <= 0) return { text: t("attentionQueue.triage.expiryExpired"), overdue: true };
   const mins = Math.round(diff / 60000);
-  if (mins < 60) return { text: `Expires in ${mins}m`, overdue: false };
+  if (mins < 60) return { text: t("attentionQueue.triage.expiresInMinutes", { count: mins }), overdue: false };
   const hrs = Math.round(mins / 60);
-  if (hrs < 24) return { text: `Expires in ${hrs}h`, overdue: false };
+  if (hrs < 24) return { text: t("attentionQueue.triage.expiresInHours", { count: hrs }), overdue: false };
   const days = Math.round(hrs / 24);
-  return { text: `Expires in ${days}d`, overdue: false };
+  return { text: t("attentionQueue.triage.expiresInDays", { count: days }), overdue: false };
 }
 
 interface DecisionTriageStripProps {
@@ -77,6 +78,7 @@ interface DecisionTriageStripProps {
  * expiry chip surfaces the underlying decision's TTL read-only.
  */
 export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageStripProps) {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const { pushToast } = useToastActions();
   const sourceKind = item.sourceKind;
@@ -92,10 +94,10 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
     queryClient.invalidateQueries({ queryKey: queryKeys.decisionQueues.triage(companyId, sourceKind, sourceId) });
   };
 
-  const onError = (verb: string) => (error: unknown) =>
+  const onError = (key: string) => (error: unknown) =>
     pushToast({
-      title: `Could not ${verb}`,
-      body: error instanceof Error ? error.message : "Please try again.",
+      title: t(`attentionQueue.toasts.${key}`),
+      body: error instanceof Error ? error.message : t("attentionQueue.toasts.pleaseTryAgain"),
       tone: "error",
     });
 
@@ -103,27 +105,27 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
     mutationFn: (decideBy: string | null) =>
       decisionQueuesApi.updateTriage(companyId, sourceKind, sourceId, { decideBy }),
     onSuccess: invalidate,
-    onError: onError("set when to decide"),
+    onError: onError("couldNotSetDecideBy"),
   });
   const setSnooze = useMutation({
     mutationFn: (snoozedUntil: string | null) =>
       decisionQueuesApi.updateTriage(companyId, sourceKind, sourceId, { snoozedUntil }),
     onSuccess: invalidate,
-    onError: onError("snooze"),
+    onError: onError("couldNotSnooze"),
   });
   const addToQueue = useMutation({
     mutationFn: (key: string) => decisionQueuesApi.addItem(companyId, key, sourceKind, sourceId),
     onSuccess: invalidate,
-    onError: onError("add to queue"),
+    onError: onError("couldNotAddToQueue"),
   });
   const removeFromQueue = useMutation({
     mutationFn: (key: string) => decisionQueuesApi.removeItem(companyId, key, sourceKind, sourceId),
     onSuccess: invalidate,
-    onError: onError("remove from queue"),
+    onError: onError("couldNotRemoveFromQueue"),
   });
   const routeToAgent = useMutation({
     mutationFn: (agent: Agent) => {
-      if (!relatedIssueId) throw new Error("This decision has no linked task to route from.");
+      if (!relatedIssueId) throw new Error(t("attentionQueue.triage.noLinkedTask"));
       const mention = `[@${agent.name}](${buildAgentMentionHref(agent.id)})`;
       const body =
         `${mention} — could you look at this decision${taskRef ? ` on ${taskRef.identifier}` : ""}, `
@@ -132,9 +134,9 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
     },
     onSuccess: (_result, agent) => {
       invalidate();
-      pushToast({ title: `Asked ${agent.name} for a recommendation`, tone: "success" });
+      pushToast({ title: t("attentionQueue.toasts.askedAgent", { agent: agent.name }), tone: "success" });
     },
-    onError: onError("ask that agent for a recommendation"),
+    onError: onError("couldNotAskAgent"),
   });
 
   const pending = setDecideBy.isPending || setSnooze.isPending || addToQueue.isPending || removeFromQueue.isPending;
@@ -151,7 +153,7 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
     >
       {/* Expiry — read-only countdown so a dying confirmation is visible. */}
       {item.expiresAt && (() => {
-        const { text, overdue } = expiryLabel(item.expiresAt);
+        const { text, overdue } = expiryLabel(item.expiresAt, t);
         if (!text) return null;
         return (
           <div className="flex items-center gap-1.5 text-xs">
@@ -163,8 +165,8 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
 
       {/* When to decide — the importance signal that drives desk ordering. */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground">When to decide</span>
-        <div className="flex flex-wrap items-center gap-1" role="group" aria-label="When to decide">
+        <span className="text-xs font-medium text-muted-foreground">{t("attentionQueue.decideBy.label")}</span>
+        <div className="flex flex-wrap items-center gap-1" role="group" aria-label={t("attentionQueue.decideBy.label")}>
           {DECIDE_BY_OPTIONS.map(([value, label]) => (
             <SegmentButton
               key={value}
@@ -172,19 +174,20 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
               disabled={pending}
               onClick={() => setDecideBy.mutate(decideBy === value ? null : value)}
             >
-              {label}
+              {t(`attentionQueue.decideBy.${value}`, { defaultValue: label })}
             </SegmentButton>
           ))}
           <Popover>
             <PopoverTrigger asChild>
               <SegmentButton active={isDatePreset} disabled={pending}>
                 <CalendarClock className="h-3.5 w-3.5" />
-                {isDatePreset ? decideByLabel(decideBy) : "Pick date"}
+                {isDatePreset ? decideByLabel(decideBy, t, i18n.resolvedLanguage) : t("attentionQueue.decideBy.pickDate")}
               </SegmentButton>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-auto p-2">
               <input
                 type="date"
+                aria-label={t("attentionQueue.decideBy.pickDate")}
                 defaultValue={isDatePreset ? decideBy ?? "" : ""}
                 className="rounded-sm border border-border bg-background px-2 py-1 text-xs"
                 onChange={(event) => {
@@ -201,7 +204,7 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
 
       {/* Queues — current membership as removable chips + add/create. */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground">Queues</span>
+        <span className="text-xs font-medium text-muted-foreground">{t("attentionQueue.triage.queues")}</span>
         {item.queues.map((queue) => (
           <span
             key={queue.key}
@@ -211,7 +214,7 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
             <button
               type="button"
               className="text-muted-foreground hover:text-destructive disabled:opacity-50"
-              aria-label={`Remove from ${queue.title}`}
+              aria-label={t("attentionQueue.triage.removeQueue", { queue: queue.title })}
               disabled={pending}
               onClick={() => removeFromQueue.mutate(queue.key)}
             >
@@ -232,14 +235,16 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
         {item.snoozedUntil ? (
           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <AlarmClock className="h-3.5 w-3.5" />
-            Snoozed until {new Date(item.snoozedUntil).toLocaleString()}
+            {t("attentionQueue.triage.snoozedUntil", {
+              time: new Date(item.snoozedUntil).toLocaleString(i18n.resolvedLanguage),
+            })}
             <button
               type="button"
               className="text-muted-foreground hover:text-foreground"
               disabled={pending}
               onClick={() => setSnooze.mutate(null)}
             >
-              Clear
+              {t("attentionQueue.snooze.clear")}
             </button>
           </span>
         ) : (
@@ -247,14 +252,16 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="outline" size="xs" className="h-7 gap-1" disabled={pending}>
                 <AlarmClock className="h-3.5 w-3.5" />
-                Snooze
+                {t("attentionQueue.snooze.trigger")}
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               {SNOOZE_PRESETS.map((preset) => (
-                <DropdownMenuItem key={preset.label} onClick={() => setSnooze.mutate(preset.resolve())}>
-                  {preset.label}
+                <DropdownMenuItem key={preset.id} onClick={() => setSnooze.mutate(preset.resolve())}>
+                  {preset.id === "oneHour"
+                    ? t("attentionQueue.snooze.hour", { count: 1 })
+                    : t(`attentionQueue.snooze.${preset.id}`)}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -264,7 +271,7 @@ export function DecisionTriageStrip({ item, companyId, agents }: DecisionTriageS
         <AskAgentPicker
           agents={agents ?? []}
           disabled={routeToAgent.isPending || !relatedIssueId}
-          disabledReason={!relatedIssueId ? "No linked task to ask about" : undefined}
+          disabledReason={!relatedIssueId ? t("attentionQueue.triage.noLinkedTask") : undefined}
           onRoute={(agent) => routeToAgent.mutate(agent)}
         />
         {pending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
@@ -313,6 +320,7 @@ function QueuePicker({
   disabled?: boolean;
   onAdd: (key: string) => void;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { pushToast } = useToastActions();
   const [open, setOpen] = useState(false);
@@ -335,8 +343,8 @@ function QueuePicker({
     },
     onError: (error) =>
       pushToast({
-        title: "Could not create queue",
-        body: error instanceof Error ? error.message : "Please try again.",
+        title: t("attentionQueue.toasts.couldNotCreateQueue"),
+        body: error instanceof Error ? error.message : t("attentionQueue.toasts.pleaseTryAgain"),
         tone: "error",
       }),
   });
@@ -348,7 +356,7 @@ function QueuePicker({
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" size="xs" className="h-7 gap-1" disabled={disabled}>
           <Plus className="h-3.5 w-3.5" />
-          Queue
+          {t("attentionQueue.triage.queue")}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-56 p-1">
@@ -362,23 +370,23 @@ function QueuePicker({
                 if (event.key === "Enter" && title.trim()) create.mutate(title);
                 if (event.key === "Escape") setCreating(false);
               }}
-              placeholder="New queue name…"
+              placeholder={t("attentionQueue.triage.newQueueName")}
               className="w-full rounded-sm border border-border bg-background px-2 py-1 text-xs"
             />
             <div className="flex justify-end gap-1">
               <Button type="button" variant="ghost" size="xs" onClick={() => setCreating(false)}>
-                Cancel
+                {t("attentionQueue.triage.cancel")}
               </Button>
               <Button type="button" size="xs" disabled={!title.trim() || create.isPending} onClick={() => create.mutate(title)}>
                 {create.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
-                Create
+                {t("attentionQueue.triage.createQueue")}
               </Button>
             </div>
           </div>
         ) : (
           <div className="max-h-64 space-y-0.5 overflow-y-auto">
             {available.length === 0 && (
-              <p className="px-2 py-1.5 text-xs text-muted-foreground">No other queues yet.</p>
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">{t("attentionQueue.triage.noOtherQueues")}</p>
             )}
             {available.map((queue) => (
               <button
@@ -405,7 +413,7 @@ function QueuePicker({
               onClick={() => setCreating(true)}
             >
               <Plus className="h-3.5 w-3.5" />
-              New queue…
+              {t("attentionQueue.triage.newQueue")}
             </button>
           </div>
         )}
@@ -435,6 +443,7 @@ function AskAgentPicker({
   disabledReason?: string;
   onRoute: (agent: Agent) => void;
 }) {
+  const { t } = useTranslation();
   const active = agents.filter((agent) => agent.status !== "terminated");
   return (
     <DropdownMenu>
@@ -448,7 +457,7 @@ function AskAgentPicker({
           title={disabledReason}
         >
           <UserPlus className="h-3.5 w-3.5" />
-          Ask agent for recommendation
+          {t("attentionQueue.triage.askAgent")}
           <ChevronDown className="h-3 w-3" />
         </Button>
       </DropdownMenuTrigger>

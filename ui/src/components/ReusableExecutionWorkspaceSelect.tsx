@@ -8,6 +8,7 @@ import {
   type ReusableWorkspaceOption,
 } from "@/lib/reusable-execution-workspaces";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 
 const COMPACT_TRIGGER_CLASS = "h-8 px-2 py-1.5 text-xs font-normal";
 
@@ -28,7 +29,7 @@ export function ReusableExecutionWorkspaceSelect<TWorkspace extends ReusableExec
   value,
   workspaces,
   onValueChange,
-  placeholder = "Choose an existing workspace",
+  placeholder,
   loading = false,
   error = false,
   disabled = false,
@@ -36,17 +37,23 @@ export function ReusableExecutionWorkspaceSelect<TWorkspace extends ReusableExec
   triggerClassName,
   disablePortal,
 }: ReusableExecutionWorkspaceSelectProps<TWorkspace>) {
-  const groups = useMemo(() => buildReusableExecutionWorkspaceOptionGroups(workspaces), [workspaces]);
+  const { t } = useTranslation();
+  const groups = useMemo(() => buildReusableExecutionWorkspaceOptionGroups(workspaces).map((group) => ({
+    ...group,
+    label: group.id === "recent"
+      ? t("taskDetail.workspace.recent")
+      : t("taskDetail.workspace.allWorkspaces"),
+  })), [t, workspaces]);
 
   return (
     <SearchableSelect<string, ReusableWorkspaceOption<TWorkspace>>
       value={value}
       groups={groups}
       onValueChange={onValueChange}
-      placeholder={placeholder}
-      searchPlaceholder="Search workspaces..."
-      emptyMessage={error ? "Workspaces failed to load." : "No matching workspaces."}
-      loadingMessage="Loading workspaces..."
+      placeholder={placeholder ?? t("taskDetail.workspace.chooseExisting")}
+      searchPlaceholder={t("taskDetail.workspace.search")}
+      emptyMessage={error ? t("taskDetail.workspace.loadFailed") : t("taskDetail.workspace.noMatching")}
+      loadingMessage={t("taskDetail.workspace.loading")}
       loading={loading}
       disabled={disabled}
       className={className}
@@ -58,7 +65,9 @@ export function ReusableExecutionWorkspaceSelect<TWorkspace extends ReusableExec
         <span className="flex min-w-0 flex-col">
           <span className={cn("truncate", selected && "font-medium")}>{option.label}</span>
           <span className="truncate text-(length:--text-micro) text-muted-foreground">
-            {option.workspace.status ? `${option.workspace.status} - ` : ""}
+            {option.workspace.status
+              ? `${t(`taskDetail.workspace.status.${option.workspace.status}`, { defaultValue: option.workspace.status })} - `
+              : ""}
             {option.description}
           </span>
         </span>

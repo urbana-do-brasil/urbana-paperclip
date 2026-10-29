@@ -3,6 +3,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { i18n } from "../i18n";
 import { BlockedReasonChip } from "./BlockedReasonChip";
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -10,7 +11,8 @@ import { BlockedReasonChip } from "./BlockedReasonChip";
 describe("BlockedReasonChip", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -30,11 +32,30 @@ describe("BlockedReasonChip", () => {
     expect(chip).not.toBeNull();
     expect(chip?.getAttribute("data-variant")).toBe("needs_decision");
     expect(chip?.getAttribute("data-severity")).toBe("high");
-    expect(chip?.getAttribute("aria-label")).toBe("Reason: Needs decision, severity high");
+    expect(chip?.getAttribute("aria-label")).toBe("Reason: Pending board decision, severity high");
     expect(chip?.textContent).toContain("Needs decision");
     act(() => {
       root.unmount();
     });
+  });
+
+  it("localizes reason, group, and severity labels in PT-BR", async () => {
+    const previousLanguage = i18n.language;
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    try {
+      act(() => {
+        root.render(<BlockedReasonChip reason="pending_board_decision" severity="high" />);
+      });
+      const chip = container.querySelector('[data-testid="blocked-reason-chip"]');
+      expect(chip?.textContent).toContain("Precisa de decisão");
+      expect(chip?.getAttribute("aria-label")).toBe(
+        "Motivo: Aguardando decisão do conselho, gravidade alta",
+      );
+    } finally {
+      act(() => root.unmount());
+      await i18n.changeLanguage(previousLanguage);
+    }
   });
 
   it("includes a severity dot for critical and high but not medium/low", () => {

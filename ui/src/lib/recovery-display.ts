@@ -20,6 +20,7 @@ export type RecoveryTranslationValues = {
   count?: number;
   duration?: string;
   identifier?: string;
+  interval?: string;
   maxAttempts?: number;
 };
 

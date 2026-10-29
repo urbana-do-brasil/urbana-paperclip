@@ -25,15 +25,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ArrowUpDown, Check, Hexagon, Plus } from "lucide-react";
 import { Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { useTranslation } from "../i18n";
 
 type ProjectSortField = "name" | "updated" | "created" | "targetDate";
 type ProjectSortDir = "asc" | "desc";
 
-const PROJECT_SORT_OPTIONS: Array<{ field: ProjectSortField; label: string }> = [
-  { field: "name", label: "Name" },
-  { field: "updated", label: "Updated" },
-  { field: "created", label: "Created" },
-  { field: "targetDate", label: "Target date" },
+const PROJECT_SORT_OPTIONS: Array<{ field: ProjectSortField; labelKey: string }> = [
+  { field: "name", labelKey: "name" },
+  { field: "updated", labelKey: "updated" },
+  { field: "created", labelKey: "created" },
+  { field: "targetDate", labelKey: "targetDate" },
 ];
 
 function compareProjectNames(left: Project, right: Project) {
@@ -78,6 +79,7 @@ function sortProjects(projects: Project[], sortField: ProjectSortField, sortDir:
 }
 
 export function Projects() {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { openNewProject } = useDialogActions();
   const { setBreadcrumbs } = useBreadcrumbs();
@@ -85,8 +87,8 @@ export function Projects() {
   const [sortDir, setSortDir] = useState<ProjectSortDir>("asc");
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Projects" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("projectCatalog.breadcrumb") }]);
+  }, [setBreadcrumbs, t]);
 
   const { data: allProjects, isLoading, error } = useQuery({
     queryKey: queryKeys.projects.list(selectedCompanyId!),
@@ -117,10 +119,10 @@ export function Projects() {
 
     return groups;
   }, [membershipsQuery.data, sortedProjects]);
-  const sortLabel = PROJECT_SORT_OPTIONS.find((option) => option.field === sortField)?.label ?? "Name";
+  const sortLabel = t(`projectCatalog.sortOptions.${sortField}`);
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={Hexagon} message="Select an organization to view projects." />;
+    return <EmptyState icon={Hexagon} message={t("projectCatalog.selectOrganization")} />;
   }
 
   if (isLoading) {
@@ -132,9 +134,15 @@ export function Projects() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="w-fit text-xs" title="Sort">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-fit text-xs"
+              title={t("projectCatalog.sort")}
+              aria-label={t("projectCatalog.sort")}
+            >
               <ArrowUpDown className="h-3.5 w-3.5 sm:h-3 sm:w-3 sm:mr-1" />
-              <span>Sort: {sortLabel}</span>
+              <span>{t("projectCatalog.sortPrefix")} {sortLabel}</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-44 p-0">
@@ -157,11 +165,13 @@ export function Projects() {
                     setSortDir(option.field === "name" || option.field === "targetDate" ? "asc" : "desc");
                   }}
                 >
-                  <span>{option.label}</span>
+                  <span>{t(`projectCatalog.sortOptions.${option.labelKey}`)}</span>
                   {sortField === option.field ? (
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Check className="h-3 w-3" />
-                      {sortDir === "asc" ? "Asc" : "Desc"}
+                      {sortDir === "asc"
+                        ? t("projectCatalog.sortOptions.ascending")
+                        : t("projectCatalog.sortOptions.descending")}
                     </span>
                   ) : null}
                 </button>
@@ -171,17 +181,21 @@ export function Projects() {
         </Popover>
         <Button size="sm" variant="outline" onClick={openNewProject}>
           <Plus className="h-4 w-4 mr-1" />
-          Add Project
+          {t("projectCatalog.addProject")}
         </Button>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {error && (
+        <p className="text-sm text-destructive">
+          {t("projectCatalog.loadError")} {error.message}
+        </p>
+      )}
 
       {!isLoading && projects.length === 0 && (
         <EmptyState
           icon={Hexagon}
-          message="No projects yet."
-          action="Add Project"
+          message={t("projectCatalog.noProjects")}
+          action={t("projectCatalog.addProject")}
           onAction={openNewProject}
         />
       )}
@@ -189,22 +203,30 @@ export function Projects() {
       {projects.length > 0 && (
         <div className="space-y-6">
           {([
-            ["My Projects", groupedProjects.mine],
-            ["Other Projects", groupedProjects.other],
-          ] as const).map(([label, sectionProjects]) => {
+            { key: "mine", label: t("projectCatalog.groups.mine"), projects: groupedProjects.mine },
+            { key: "other", label: t("projectCatalog.groups.other"), projects: groupedProjects.other },
+          ] as const).map(({ key, label, projects: sectionProjects }) => {
             if (sectionProjects.length === 0) return null;
 
             return (
-              <section key={label} className="space-y-2">
+              <section key={key} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-medium">{label}</h2>
                   <span className="text-xs text-muted-foreground">
-                    {sectionProjects.length} project{sectionProjects.length === 1 ? "" : "s"}
+                    {t("projectCatalog.projectCount", {
+                      count: sectionProjects.length,
+                      formattedCount: formatNumber(sectionProjects.length),
+                    })}
                   </span>
                 </div>
                 <Card className="block py-0 overflow-hidden divide-y divide-border">
                   {sectionProjects.map((project) => {
                     const state = resourceMembershipState(membershipsQuery.data, "project", project.id);
+                    const projectTaskCount = project.taskCount ?? 0;
+                    const taskCountLabel = t("projectCatalog.taskCount", {
+                      count: projectTaskCount,
+                      formattedCount: formatNumber(projectTaskCount),
+                    });
                     const pending = membershipMutation.isPending &&
                       membershipMutation.variables?.resourceType === "project" &&
                       membershipMutation.variables.resourceId === project.id;
@@ -222,12 +244,17 @@ export function Projects() {
                         className={state === "left" ? "group text-foreground/55" : "group"}
                         trailing={
                           <div className="flex items-center gap-3">
-                            {project.visibility === "private" ? <Lock className="size-4 shrink-0 text-muted-foreground" aria-label="Private project" /> : null}
+                            {project.visibility === "private" ? (
+                              <Lock
+                                className="size-4 shrink-0 text-muted-foreground"
+                                aria-label={t("projectCatalog.privateProject")}
+                              />
+                            ) : null}
                             <span
                               className="hidden text-xs text-muted-foreground tabular-nums sm:inline"
-                              title={`${formatNumber(project.taskCount ?? 0)} task${(project.taskCount ?? 0) === 1 ? "" : "s"}`}
+                              title={taskCountLabel}
                             >
-                              {formatNumber(project.taskCount ?? 0)} task{(project.taskCount ?? 0) === 1 ? "" : "s"}
+                              {taskCountLabel}
                             </span>
                             {project.budget && (
                               <span className="hidden text-xs text-muted-foreground tabular-nums sm:inline">
@@ -239,7 +266,12 @@ export function Projects() {
                                 {formatDate(project.targetDate)}
                               </span>
                             )}
-                            <StatusBadge status={project.status} />
+                            <StatusBadge
+                              status={project.status}
+                              label={t(`projectCatalog.status.${project.status}`, {
+                                defaultValue: project.status.replace(/[_-]/g, " "),
+                              })}
+                            />
                             <MembershipAction
                               state={state}
                               pending={joinLeavePending}

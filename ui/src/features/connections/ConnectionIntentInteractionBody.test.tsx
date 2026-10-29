@@ -8,9 +8,11 @@ import type {
   ToolConnection,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import {
   connectedConnectionIntentInteraction,
   issueThreadInteractionFixtureMeta,
+  pendingConnectionAccessInteraction,
   pendingConnectionIntentInteraction,
   retryConnectionIntentInteraction,
 } from "@/fixtures/issueThreadInteractionFixtures";
@@ -198,7 +200,8 @@ function button(label: string) {
   ) as HTMLButtonElement | undefined;
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   sessionStorage.clear();
   emailCredentialsMock.mockReset().mockResolvedValue([]);
   emailListMock.mockReset().mockResolvedValue([]);
@@ -234,6 +237,7 @@ afterEach(async () => {
     .forEach((node) => node.remove());
   root = null;
   host = null;
+  await i18n.changeLanguage("pt-BR");
 });
 
 describe("ConnectionIntentInteractionBody states and audience", () => {
@@ -268,6 +272,58 @@ describe("ConnectionIntentInteractionBody states and audience", () => {
     expect(document.body.innerHTML).not.toMatch(
       /authorizationUrl|bearer|credential/i,
     );
+  });
+
+  it("localizes access controls and lifecycle copy while preserving providers and tool identifiers", async () => {
+    await i18n.changeLanguage("pt-BR");
+    setupOptionsMock.mockResolvedValue({
+      requestedAgentId: pendingConnectionAccessInteraction.payload.requestingAgentId,
+      existingConnections: [],
+      canGrantAccess: true,
+    });
+    getAgentMock.mockResolvedValue({
+      id: pendingConnectionAccessInteraction.payload.requestingAgentId,
+      name: pendingConnectionAccessInteraction.payload.requestingAgentName,
+    });
+    renderBody(pendingConnectionAccessInteraction);
+    await waitForAssertion(() => expect(
+      document.querySelector('[data-testid="connection-intent-access-request"] ul')?.getAttribute("aria-label"),
+    ).toBe("Permissões das ferramentas"));
+
+    expect(document.body.textContent).toContain("Conceder acesso de Researcher a “My Composio”?");
+    expect(document.body.textContent).toContain("COMPOSIO_SEARCH_TOOLS");
+    expect(document.body.textContent).toContain("COMPOSIO_MANAGE_CONNECTIONS");
+    expect(document.body.textContent).toContain("Permitida");
+    expect(document.body.textContent).toContain("Perguntar antes");
+    expect(button("Agora não")).toBeDefined();
+    expect(button("Conceder acesso")?.disabled).toBe(false);
+
+    await act(() => button("Agora não")?.click());
+    await flush();
+    expect(declineMock).toHaveBeenCalledWith(pendingConnectionAccessInteraction.id);
+
+    await act(() => root!.render(
+      <QueryClientProvider client={queryClient}>
+        <ConnectionIntentInteractionBody
+          interaction={connectedConnectionIntentInteraction}
+          currentUserId={issueThreadInteractionFixtureMeta.currentUserId}
+          addresseeLabel="Carol"
+        />
+      </QueryClientProvider>,
+    ));
+    expect(document.body.textContent).toContain("Notion conectado");
+    expect(document.body.textContent).toContain("Researcher pode usar esta conexão na próxima execução.");
+  });
+
+  it("localizes waiting policy text without exposing connection setup to other readers", async () => {
+    await i18n.changeLanguage("pt-BR");
+    renderBody(pendingConnectionIntentInteraction, "other-user");
+
+    expect(document.body.textContent).toContain("Aguardando Carol");
+    expect(document.body.textContent).toContain("Somente a pessoa endereçada pode escolher uma identidade ou autorizar esta conexão.");
+    expect(button("Conectar")).toBeUndefined();
+    expect(setupOptionsMock).not.toHaveBeenCalled();
+    expect(document.body.innerHTML).not.toMatch(/authorizationUrl|bearer|credential/i);
   });
 });
 

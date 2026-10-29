@@ -2,10 +2,12 @@
 
 import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
+import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
 import { Search, buildSearchUrl } from "./Search";
 
 const companyState = vi.hoisted(() => ({
@@ -160,7 +162,10 @@ describe("buildSearchUrl", () => {
 describe("Search page", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
     container = document.createElement("div");
     document.body.appendChild(container);
     breadcrumbState.setBreadcrumbs.mockReset();
@@ -178,8 +183,11 @@ describe("Search page", () => {
     window.localStorage.clear();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
   });
 
   it("issues a search request when ?q is in the URL and renders the result", async () => {
@@ -1004,6 +1012,62 @@ describe("Search page", () => {
       expect(container.textContent).toContain("Loosen a filter");
       expect(container.textContent).toContain("+12 results");
       expect(container.textContent).toContain("Clear all filters");
+    });
+
+    flushSync(() => {
+      root.unmount();
+    });
+  });
+
+  it("renders the global search UI in Brazilian Portuguese without changing search filter values", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+    });
+    searchApiMock.search.mockResolvedValue(emptyResponse({
+      countsByType: { issue: 1, comment: 0, document: 0, artifact: 0, agent: 0, project: 0 },
+      results: [
+        {
+          id: "issue-pt",
+          type: "issue",
+          score: 100,
+          title: "Tarefa de autenticação",
+          href: "/PAP/issues/PAP-101",
+          matchedFields: ["comment"],
+          sourceLabel: null,
+          snippet: "Falha de autenticação",
+          snippets: [{ field: "comment", label: "Comment", text: "Falha de autenticação", highlights: [] }],
+          issue: {
+            id: "issue-pt",
+            identifier: "PAP-101",
+            title: "Tarefa de autenticação",
+            status: "todo",
+            priority: "medium",
+            assigneeAgentId: null,
+            assigneeUserId: null,
+            projectId: null,
+            updatedAt: new Date().toISOString(),
+          },
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+    }));
+
+    const { root } = renderSearch("/search?q=auth&status=todo", container);
+
+    await waitForAssertion(() => {
+      const input = container.querySelector('input[aria-label="Consulta de busca"]') as HTMLInputElement;
+      expect(input?.placeholder).toContain("Buscar tarefas");
+      expect(container.textContent).toContain("Tarefas");
+      expect(container.textContent).toContain("1 resultado");
+      expect(container.textContent).toContain("A fazer");
+      expect(container.textContent).toContain("Falha de autenticação");
+      expect(container.querySelector('button[aria-label="Remover filtro Status: A fazer"]')).not.toBeNull();
+      expect(searchApiMock.search).toHaveBeenCalledWith("company-1", {
+        q: "auth",
+        scope: "all",
+        limit: 20,
+        status: ["todo"],
+      });
     });
 
     flushSync(() => {

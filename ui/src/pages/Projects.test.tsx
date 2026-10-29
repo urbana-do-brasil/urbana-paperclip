@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
 
-import type { ReactNode } from "react";
+import { act as reactAct, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Project } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "../context/ToastContext";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { Projects } from "./Projects";
 
 const mockProjectsApi = vi.hoisted(() => ({
@@ -114,7 +116,8 @@ describe("Projects", () => {
   let root: ReturnType<typeof createRoot> | null;
   let queryClient: QueryClient;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await reactAct(async () => { await i18n.changeLanguage("en"); });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
@@ -139,6 +142,7 @@ describe("Projects", () => {
         urlKey: "alpha",
         name: "Alpha",
         description: "First project",
+        taskCount: 1234,
         updatedAt: new Date("2026-01-01T00:00:00Z"),
       }),
     ]);
@@ -166,6 +170,7 @@ describe("Projects", () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await reactAct(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
   });
 
   async function renderProjects() {
@@ -216,7 +221,7 @@ describe("Projects", () => {
     expect(content.indexOf("Alpha")).toBeLessThan(content.indexOf("Charlie"));
     expect(content.indexOf("Charlie")).toBeLessThan(content.indexOf("Other Projects"));
     expect(content.indexOf("Other Projects")).toBeLessThan(content.indexOf("Bravo"));
-    expect(content).toContain("in progress");
+    expect(content).toContain("In progress");
   });
 
   it("sorts grouped projects by the selected field", async () => {
@@ -240,5 +245,20 @@ describe("Projects", () => {
 
     expect(hiddenDescriptionLine).not.toBeNull();
     expect(hiddenDescriptionLine?.className).toContain("min-h-4");
+  });
+
+  it("localizes project labels while preserving project data and actions in Brazilian Portuguese", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    await renderProjects();
+
+    const content = container.textContent ?? "";
+    expect(container.querySelector('button[title="Ordenar"]')?.textContent).toContain("Ordenação: Nome");
+    expect(content).toContain("Meus projetos");
+    expect(content).toContain("1.234 tarefas");
+    expect(content).toContain("Em andamento");
+    expect(container.querySelector('button[aria-label="Sair de Alpha"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Favoritar Alpha"]')).not.toBeNull();
+    expect(container.querySelector('a[href="/projects/alpha"]')?.textContent).toContain("Alpha");
+    expect(mockProjectsApi.list).toHaveBeenCalledWith("company-1");
   });
 });

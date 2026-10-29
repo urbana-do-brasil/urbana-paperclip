@@ -50,15 +50,68 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.4b4 Localizar quadro kanban, colunas, cartões, carregamento e estados de arrastar/soltar.
     - [ ] 3.4b5 Localizar criação de tarefas e validação do formulário acionadas pela coleção, preservando defaults e dados de usuário.
       - [x] 3.4b5a Localizar conteúdo, avisos, documentos/anexos e estados de acesso/workspace do diálogo sem alterar dados herdados ou fornecidos pelo usuário.
-      - [ ] 3.4b5b Localizar controles compartilhados do compositor de criação e seletores, preservando defaults, ações e valores técnicos.
-      - [ ] 3.4b5c Localizar estados de envio, erros, alertas de anexos e confirmação de criação, preservando comportamento idempotente e contratos da tarefa.
-  - [ ] 3.4c Localizar detalhe da tarefa, propriedades, relações, anexos e estados de execução; preservar IDs e dados dinâmicos.
-  - [ ] 3.4d Localizar comentários, conversa, perguntas e ações de interação/execução na tarefa sem traduzir o histórico existente.
+      - [x] 3.4b5b Localizar controles compartilhados do compositor de criação e seletores, preservando defaults, ações e valores técnicos.
+      - [x] 3.4b5c Localizar estados de envio, erros, alertas de anexos e confirmação de criação, preservando comportamento idempotente e contratos da tarefa.
+  - [x] 3.4c Localizar detalhe da tarefa, propriedades, relações, anexos e estados de execução; preservar IDs e dados dinâmicos.
+    - [x] 3.4c1 Localizar cabeçalho, título/descrição, controles e propriedades editáveis da tarefa, preservando IDs, dados e contratos.
+    - [x] 3.4c2 Localizar hierarquia, relações, origem, subtarefas e bloqueios no detalhe, preservando destinos e vínculos.
+    - [x] 3.4c3 Localizar documentos, anexos, work products, workspaces e estados de execução/recovery sem alterar conteúdo original ou ações.
+      - [x] 3.4c3a Localizar documentos, anexos e work products, preservando conteúdo, metadados e operações.
+      - [x] 3.4c3b Localizar seleção, estado, serviço e encerramento de workspaces sem alterar caminhos ou ações.
+        - [x] 3.4c3b1 Localizar seleção, reutilização e estado de workspaces no detalhe de tarefas sem alterar preferências, IDs ou caminhos.
+        - [x] 3.4c3b2 Localizar controles e estados de serviços/jobs de workspaces sem alterar comandos, IDs ou ações.
+        - [x] 3.4c3b3 Localizar checagem de prontidão, bloqueios, avisos e encerramento/limpeza de workspaces sem alterar operações ou dados do Git.
+      - [x] 3.4c3c Localizar políticas de execução, monitoramento, watchdog, retries e estados de recovery sem alterar valores técnicos.
+        - [x] 3.4c3c1 Localizar políticas de execução e controles de monitoramento/retry nas propriedades da tarefa, preservando valores, datas e payloads.
+        - [x] 3.4c3c2 Localizar configuração, status e mensagens do watchdog no detalhe da tarefa, preservando instruções e vínculos fornecidos pelo usuário.
+        - [x] 3.4c3c3 Localizar banners de monitoramento, retry agendado e detalhes de retry, preservando agendamento, razões técnicas e ações.
+        - [x] 3.4c3c4 Localizar estados, resumos, responsáveis e linhagem de tentativas nos cartões de recovery, preservando conteúdo de diagnóstico.
+        - [x] 3.4c3c5 Localizar decisões, ações, confirmações e fluxos de reparo/reemissão do recovery, sem alterar comandos, branches, IDs ou operações.
+  - [x] 3.4d Localizar comentários, conversa, perguntas e ações de interação/execução na tarefa, incluindo anotações vinculadas a documentos, sem traduzir o histórico existente.
+    - [x] 3.4d1 Localizar composer de comentários/conversa, envio, anexos e drafts, preservando o texto escrito, arquivos e a idempotência da submissão.
+    - [x] 3.4d2 Localizar o transcript e os estados de atividade/conversa — autoria, horários, avisos, vazio, carregamento e falhas — preservando comentários históricos, conteúdo de agentes e diagnósticos.
+      - [x] 3.4d2a Localizar estado vazio, salto para mensagens recentes e renderer de fallback/erro, preservando conteúdo de mensagens e saídas técnicas.
+      - [x] 3.4d2b Localizar comentários humanos/de agentes, autoria, horários, estados pendentes/na fila/removidos e ações do transcript, preservando nomes e conteúdo histórico.
+      - [x] 3.4d2c Localizar status, autoria e atividade de runs/transcripts, preservando mensagens de agentes, payloads de tools, diagnósticos e valores técnicos.
+        - [x] 3.4d2c1 Localizar status, duração, espera e resumo de tools em runs/transcripts, preservando nomes de tools, mensagens e valores técnicos.
+        - [x] 3.4d2c2 Localizar eventos de atividade, autoria/status de runs e avisos de provider no transcript, preservando conteúdo, diagnósticos e metadados técnicos.
+          - [x] 3.4d2c2a Localizar eventos da timeline e seus rótulos de autoria/alteração, preservando nomes, valores, referências e ações.
+          - [x] 3.4d2c2b Localizar a atividade de provider e os controles de saída técnica no transcript padrão, preservando título/resumo informado pelo provider e dados brutos.
+          - [x] 3.4d2c2c Localizar apresentações estruturadas de atividade de provider na conversa experimental, preservando metadados, snippets, resultados e status desconhecidos.
+    - [x] 3.4d3 Localizar perguntas, confirmações e interações estruturadas, preservando enunciados, opções fornecidas, respostas e contratos de submissão.
+      - [x] 3.4d3a Localizar formulários, validação, respostas e estados de perguntas nas apresentações clássica e experimental, preservando prompts, opções e conteúdo enviado.
+      - [x] 3.4d3b Localizar confirmações genéricas e de plano, incluindo estados, motivos e ações, preservando payloads e contratos de aprovação.
+        - [x] 3.4d3b1 Localizar confirmações genéricas e aprovação de plano, preservando instruções, revisão do documento e payloads.
+        - [x] 3.4d3b2 Localizar confirmações por opções, preservando opções fornecidas, seleção e contrato de envio.
+      - [x] 3.4d3c Localizar confirmações especializadas e interações de conexão.
+        - [x] 3.4d3c1 Localizar aprovações de tools e propostas de segredo, preservando nomes, argumentos, justificativas e dados de auditoria.
+        - [x] 3.4d3c2 Localizar autorizações/conexões externas, preservando providers, consentimento, URLs e políticas de destinatário.
+      - [x] 3.4d3d Localizar as demais interações estruturadas e seus resumos.
+        - [x] 3.4d3d1 Localizar a árvore de tarefas sugeridas, preservando tarefas, metadados e seleção de criação.
+        - [x] 3.4d3d2 Localizar decisões por item e respectivos resumos/estados, preservando identificadores e valores desconhecidos.
+    - [x] 3.4d4 Localizar anotações/comentários vinculados a documentos e seus destinos, preservando seleção original, conteúdo e referências.
+    - [x] 3.4d5 Localizar controles de execução e estados de runs apresentados na conversa, preservando comandos, IDs e operações.
   - [ ] 3.4e Localizar Inbox e filas de atenção, incluindo aprovações, falhas e solicitações de acesso que aparecem nesses fluxos.
-  - [ ] 3.4f Localizar a busca global e seus resultados/filtros; preservar sintaxe, operadores e destinos.
+    - [x] 3.4e1 Localizar abas, busca, filtros, agrupamento e estados gerais do Inbox nas variantes streamlined e legada, preservando rotas e preferências.
+    - [x] 3.4e2 Localizar linhas de falhas, aprovações, solicitações e alertas no Inbox, preservando diagnósticos, dados de origem, IDs e callbacks.
+    - [x] 3.4e3 Localizar a visualização de trabalho bloqueado, incluindo filtros, ordenação, agrupamento, estados e navegação de recovery.
+    - [x] 3.4e4 Localizar filas de decisões/atenção, regras de entrada e interação, preservando decisões, razões e operações.
+    - [x] 3.4e5 Localizar a fila standalone de solicitações de acesso/entrada, preservando convites, permissões e dados de solicitantes.
+  - [x] 3.4f Localizar a busca global e seus resultados/filtros; preservar sintaxe, operadores e destinos.
 - [ ] 3.5 Migrar organizações, projetos, metas e workspaces em lotes por jornada. Verificar criação/configuração, troca de organização, labels de estado e permissões nas duas línguas sem alterar valores ou contratos. Spec: `localized-web-interface`.
+  - [x] 3.5a Localizar o portfólio de organizações, incluindo estado, seleção, renomeação, restauração, métricas e confirmações; preservar dados e ações.
+  - [x] 3.5b Localizar a coleção e criação de projetos, incluindo estados vazios, filtros e permissões.
+  - [ ] 3.5c Localizar detalhes e configuração de projetos, orçamento, acesso e workspaces vinculados; preservar valores e gates.
+    - [x] 3.5c1 Localizar a moldura do detalhe do projeto, cabeçalho, abas, estados, avisos e nomes acessíveis; preservar rotas, dados dinâmicos e permissões.
+    - [ ] 3.5c2 Localizar a configuração básica do projeto, campos, datas, arquivamento e repositórios; preservar valores, payloads, feedback de salvamento e controles de acesso.
+      - [x] 3.5c2a Localizar nome/descrição, datas, feedback de salvamento e arquivamento do projeto, preservando nomes, conteúdo, valores, callbacks e confirmação.
+      - [x] 3.5c2b Localizar repositórios e configuração do codebase, preservando URLs, referências, caminhos e gates de exposição de caminhos locais.
+    - [ ] 3.5c3 Localizar orçamento do projeto e gestão de acesso/privacidade; preservar moeda, limites, usuários, decisões e gates de autorização.
+    - [ ] 3.5c4 Localizar política/configuração de workspaces e a visualização de workspaces vinculados; preservar caminhos, comandos, IDs, estados técnicos, ações e feature flags.
+  - [ ] 3.5d Localizar coleção, criação, hierarquia e detalhes de metas, preservando vínculos e estados.
+  - [ ] 3.5e Localizar a lista geral e a visualização de workspaces de projeto, preservando flags, rotas e operações.
 - [ ] 3.6 Migrar cadastro/configuração de agentes e visualizações de execução, incluindo descrições próprias e estados de ferramentas. Verificar fluxo de configuração e execução nas duas línguas, mantendo prompts técnicos e logs brutos originais. Spec: `localized-web-interface`.
-- [ ] 3.7 Migrar dashboard, custos, orçamento, timeline, atividade e auditoria em lotes por jornada. Verificar amostras com datas, timezone, percentuais e moeda original, pluralização e erros nos dois idiomas. Spec: `localized-web-interface`.
+- [ ] 3.7 Migrar dashboard, custos, orçamento, timeline, atividade, auditoria e cartões de resumo em lotes por jornada. Verificar amostras com datas, timezone, percentuais e moeda original, pluralização e erros nos dois idiomas. Spec: `localized-web-interface`.
 - [ ] 3.8 Migrar aprovações, acesso, segredos e configurações pessoais/de instância além do seletor. Verificar os controles e estados de negação nos dois idiomas e confirmar que nenhuma tradução amplia permissões ou revela valores secretos. Spec: `localized-web-interface`.
 - [ ] 3.9 Migrar skills, ferramentas, apps e catálogos, incluindo descrições embutidas controladas pela aplicação. Verificar navegação/configuração nos dois idiomas e distinguir metadados próprios de conteúdo arbitrário vindo de fontes externas. Spec: `localized-web-interface`.
 - [ ] 3.10 Migrar rotinas, pipelines, casos, status cards e demais fluxos experimentais registrados, em lotes por rota. Verificar os estados alcançáveis de cada flag relevante em ambos os idiomas; registrar superfícies restantes sem exclusões silenciosas. Spec: `localized-web-interface`.

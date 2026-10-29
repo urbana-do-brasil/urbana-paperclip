@@ -22,6 +22,8 @@ import { useCompany } from "../context/CompanyContext";
 import { useManagedSandboxOnly } from "../hooks/useManagedSandboxOnly";
 import { queryKeys } from "../lib/queryKeys";
 import { projectRouteRef, projectWorkspaceUrl } from "../lib/utils";
+import { formatUiError } from "../api/error-presentation";
+import { useTranslation } from "@/i18n";
 
 type WorkspaceFormState = {
   name: string;
@@ -246,6 +248,7 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 }
 
 export function ProjectWorkspaceDetail() {
+  const { t } = useTranslation();
   const { companyPrefix, projectId, workspaceId } = useParams<{
     companyPrefix?: string;
     projectId: string;
@@ -377,17 +380,19 @@ export function ProjectWorkspaceDetail() {
       setErrorMessage(null);
       setRuntimeActionMessage(
         request.action === "run"
-          ? "Workspace job completed."
+          ? t("taskDetail.workspace.runtime.jobCompleted")
           : request.action === "stop"
-            ? "Workspace service stopped. Task execution is not paused."
+            ? t("taskDetail.workspace.runtime.serviceStoppedTaskActive")
             : request.action === "restart"
-              ? "Workspace service restarted. Task execution is not paused."
-              : "Workspace service started.",
+              ? t("taskDetail.workspace.runtime.serviceRestartedTaskActive")
+              : t("taskDetail.workspace.runtime.serviceStarted"),
       );
     },
     onError: (error) => {
       setRuntimeActionMessage(null);
-      setErrorMessage(error instanceof Error ? error.message : "Failed to control workspace commands.");
+      setErrorMessage(error instanceof Error
+        ? formatUiError(error)
+        : t("taskDetail.workspace.runtime.controlFailed"));
     },
   });
 
@@ -722,11 +727,11 @@ export function ProjectWorkspaceDetail() {
               pendingRequest={pendingRuntimeAction}
               serviceEmptyMessage={
                 workspace.runtimeConfig?.workspaceRuntime
-                  ? "No services have been started for this workspace yet."
-                  : "No workspace command config is defined for this workspace yet."
+                  ? t("taskDetail.workspace.runtime.noProjectServicesStarted")
+                  : t("taskDetail.workspace.runtime.noProjectCommandConfig")
               }
-              jobEmptyMessage="No one-shot jobs are configured for this workspace yet."
-              disabledHint="Project workspaces need a working directory before local commands can run, and services also need runtime config."
+              jobEmptyMessage={t("taskDetail.workspace.runtime.noProjectJobs")}
+              disabledHint={t("taskDetail.workspace.runtime.projectNeedsWorkingDirectory")}
               onAction={(request) => controlRuntimeServices.mutate(request)}
             />
           </Card>

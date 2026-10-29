@@ -18,6 +18,7 @@ import {
   saveDraftSubmission,
 } from "../../lib/composer-draft";
 import { CommentSubmissionUnknownError } from "../../lib/comment-submit-result";
+import { i18n } from "@/i18n";
 
 /**
  * MDXEditor-in-jsdom weight (mirrors MarkdownEditor.test.tsx): the real editor
@@ -175,7 +176,8 @@ let container: HTMLDivElement;
 let root: Root | null = null;
 let originalRangeRect: typeof Range.prototype.getBoundingClientRect;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   localStorage.clear();
   container = document.createElement("div");
   document.body.appendChild(container);
@@ -196,12 +198,13 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => {
+afterEach(async () => {
   flushSync(() => root?.unmount());
   root = null;
   container.remove();
   Range.prototype.getBoundingClientRect = originalRangeRect;
   window.getSelection()?.removeAllRanges();
+  await i18n.changeLanguage("pt-BR");
 });
 
 function render(ui: ReactElement) {
@@ -3026,6 +3029,17 @@ describe("composer Stop", () => {
     render(<TaskChatComposer workMode="standard" onAdd={vi.fn()} onStop={vi.fn()} queuedEdit={{ commentId: "queued", body: "" }} onSaveQueuedEdit={vi.fn()} />);
     expect(stopButton()).toBeNull();
     expect(sendButton().getAttribute("aria-label")).toBe("Save queued message");
+  });
+
+  it("localizes stop and queued-edit execution controls in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    render(<TaskChatComposer workMode="standard" onAdd={vi.fn()} onStop={vi.fn()} />);
+    expect(stopButton()?.title).toBe("Interromper resposta");
+    expect(stopButton()?.getAttribute("aria-label")).toBe("Parar");
+
+    render(<TaskChatComposer workMode="standard" onAdd={vi.fn()} queuedEdit={{ commentId: "queued", body: "Draft" }} onSaveQueuedEdit={vi.fn()} />);
+    expect(sendButton().title).toBe("Salvar mensagem na fila");
+    expect(sendButton().getAttribute("aria-label")).toBe("Salvar mensagem na fila");
   });
 
   it.each([false, true])("keeps attachments in send mode after upload (failed=%s)", async (failed) => {

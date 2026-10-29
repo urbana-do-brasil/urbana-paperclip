@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { useTranslation } from "@/i18n";
 
 export type WorkspaceServiceControlState =
   | "stopped"
@@ -35,9 +36,10 @@ export type WorkspaceServiceControlEntry = {
   port?: number | null;
   /** Short human-readable failure summary, e.g. "dev exited with code 1, 12s ago". */
   failureDetail?: string | null;
+  failureTimeAgo?: string | null;
   /** HTTPS exposure lifecycle, intentionally separate from process health. */
   exposureState?: "pending" | "ready" | "failed" | "cleanup_pending" | "removed" | null;
-  exposureDetail?: string | null;
+  exposureError?: string | null;
   canStart?: boolean;
 };
 
@@ -64,24 +66,34 @@ function formatServiceUrl(url: string | null | undefined) {
   return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 }
 
-function statusMeta(entry: WorkspaceServiceControlEntry): { label: string; unhealthy: boolean } {
+function statusMeta(entry: WorkspaceServiceControlEntry): { labelKey: string; unhealthy: boolean } {
   switch (entry.state) {
     case "provisioning":
-      return { label: "Provisioning…", unhealthy: false };
+      return { labelKey: "provisioning", unhealthy: false };
     case "starting":
-      return { label: "Starting…", unhealthy: false };
+      return { labelKey: "starting", unhealthy: false };
     case "stopping":
-      return { label: "Stopping…", unhealthy: false };
+      return { labelKey: "stopping", unhealthy: false };
     case "restarting":
-      return { label: "Restarting…", unhealthy: false };
+      return { labelKey: "restarting", unhealthy: false };
     case "failed":
-      return { label: "Failed", unhealthy: false };
+      return { labelKey: "failed", unhealthy: false };
     case "running":
       return entry.healthStatus === "unhealthy"
-        ? { label: "Unhealthy", unhealthy: true }
-        : { label: "Running", unhealthy: false };
+        ? { labelKey: "unhealthy", unhealthy: true }
+        : { labelKey: "running", unhealthy: false };
     default:
-      return { label: "Stopped", unhealthy: false };
+      return { labelKey: "stopped", unhealthy: false };
+  }
+}
+
+function exposureSummary(entry: WorkspaceServiceControlEntry, t: (key: string) => string) {
+  switch (entry.exposureState) {
+    case "pending": return t("taskDetail.workspace.runtime.exposure.pending");
+    case "ready": return t("taskDetail.workspace.runtime.exposure.ready");
+    case "failed": return `${t("taskDetail.workspace.runtime.exposure.httpsUnavailable")} · ${t("taskDetail.workspace.runtime.exposure.checkHttpsConfiguration")}`;
+    case "cleanup_pending": return `${t("taskDetail.workspace.runtime.exposure.httpsCleanupPending")} · ${t("taskDetail.workspace.runtime.exposure.restartBrokerBeforeReuse")}`;
+    default: return null;
   }
 }
 
@@ -109,12 +121,17 @@ function StatusIndicator({ entry, className }: { entry: WorkspaceServiceControlE
 }
 
 function CopyUrlButton({ url, disabled }: { url: string; disabled?: boolean }) {
+  const { t } = useTranslation();
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   }, []);
-  const copyLabel = copyState === "copied" ? "URL copied" : copyState === "failed" ? "Copy failed" : "Copy URL";
+  const copyLabel = copyState === "copied"
+    ? t("taskDetail.workspace.runtime.urlCopied")
+    : copyState === "failed"
+      ? t("taskDetail.workspace.runtime.copyFailed")
+      : t("taskDetail.workspace.runtime.copyUrl");
   return (
     <Button
       variant="ghost"
@@ -147,11 +164,12 @@ function CopyUrlButton({ url, disabled }: { url: string; disabled?: boolean }) {
 }
 
 function UrlSegment({ entry, compact }: { entry: WorkspaceServiceControlEntry; compact?: boolean }) {
+  const { t } = useTranslation();
   const displayUrl = formatServiceUrl(entry.url) ?? (entry.port ? `:${entry.port}` : null);
   const live = entry.state === "running" && Boolean(entry.url);
 
   if (!displayUrl) {
-    return <span className="font-mono text-xs text-muted-foreground/70">no url</span>;
+    return <span className="font-mono text-xs text-muted-foreground/70">{t("taskDetail.workspace.runtime.noUrl")}</span>;
   }
   return (
     <>
@@ -181,10 +199,10 @@ function UrlSegment({ entry, compact }: { entry: WorkspaceServiceControlEntry; c
           size="icon-xs"
           disabled={!live}
           className="text-muted-foreground hover:text-foreground"
-          title="Open in new tab"
+          title={t("taskDetail.workspace.runtime.openInNewTab")}
         >
           {live ? (
-            <a href={entry.url ?? undefined} target="_blank" rel="noreferrer" aria-label="Open in new tab">
+            <a href={entry.url ?? undefined} target="_blank" rel="noreferrer" aria-label={t("taskDetail.workspace.runtime.openInNewTab")}>
               <ExternalLink className="size-3" />
             </a>
           ) : (
@@ -203,6 +221,7 @@ function ActionSlots({
   entry: Pick<WorkspaceServiceControlEntry, "state" | "canStart">;
   onAction: (action: WorkspaceServiceControlAction) => void;
 }) {
+  const { t } = useTranslation();
   const transitional = isTransitional(entry.state);
   const canStart = entry.canStart ?? true;
 
@@ -214,11 +233,11 @@ function ActionSlots({
         className="w-13 justify-center"
         disabled={!canStart}
         onClick={() => onAction("start")}
-        aria-label="Start"
-        title="Start"
+        aria-label={t("taskDetail.workspace.runtime.start")}
+        title={t("taskDetail.workspace.runtime.start")}
       >
         <Play className="size-3" />
-        Start
+        {t("taskDetail.workspace.runtime.start")}
       </Button>
     );
   }
@@ -231,8 +250,8 @@ function ActionSlots({
           size="icon-xs"
           disabled={!canStart}
           onClick={() => onAction("start")}
-          aria-label="Start"
-          title="Start"
+          aria-label={t("taskDetail.workspace.runtime.start")}
+          title={t("taskDetail.workspace.runtime.start")}
         >
           <Play className="size-3" />
         </Button>
@@ -241,8 +260,8 @@ function ActionSlots({
           size="icon-xs"
           disabled={!canStart}
           onClick={() => onAction("restart")}
-          aria-label="Restart"
-          title="Restart"
+          aria-label={t("taskDetail.workspace.runtime.restart")}
+          title={t("taskDetail.workspace.runtime.restart")}
           className="border border-border text-foreground"
         >
           <RotateCcw className="size-3" />
@@ -258,8 +277,8 @@ function ActionSlots({
         size="icon-xs"
         disabled={transitional}
         onClick={() => onAction("stop")}
-        aria-label="Stop"
-        title="Stop"
+        aria-label={t("taskDetail.workspace.runtime.stop")}
+        title={t("taskDetail.workspace.runtime.stop")}
         className="border border-border text-foreground"
       >
         <Square className="size-3" />
@@ -269,8 +288,8 @@ function ActionSlots({
         size="icon-xs"
         disabled={transitional || !canStart}
         onClick={() => onAction("restart")}
-        aria-label="Restart"
-        title="Restart"
+        aria-label={t("taskDetail.workspace.runtime.restart")}
+        title={t("taskDetail.workspace.runtime.restart")}
         className="border border-border text-foreground"
       >
         <RotateCcw className="size-3" />
@@ -286,7 +305,11 @@ function ServiceDetail({
   entry: WorkspaceServiceControlEntry;
   onViewLogs?: () => void;
 }) {
-  const detail = entry.exposureDetail ?? (entry.state === "failed" ? entry.failureDetail : null);
+  const { t } = useTranslation();
+  const detail = exposureSummary(entry, t)
+    ?? (entry.state === "failed"
+      ? `${t("taskDetail.workspace.runtime.failed")}${entry.failureTimeAgo ? ` · ${entry.failureTimeAgo}` : entry.failureDetail ? ` · ${entry.failureDetail}` : ""}`
+      : null);
   if (!detail) return null;
   const exposureFailed = entry.exposureState === "failed" || entry.exposureState === "cleanup_pending";
   return (
@@ -300,7 +323,7 @@ function ServiceDetail({
             onClick={onViewLogs}
             className="font-medium text-foreground underline underline-offset-2 hover:text-foreground/80"
           >
-            View logs
+            {t("taskDetail.workspace.runtime.viewLogs")}
           </button>
         </>
       ) : null}
@@ -319,6 +342,7 @@ function SingleServiceBar({
   onViewLogs?: () => void;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const meta = statusMeta(entry);
   return (
     <div className={cn("flex w-full flex-col items-stretch gap-1 sm:w-auto sm:items-end", className)}>
@@ -326,7 +350,7 @@ function SingleServiceBar({
         <div className="flex h-9 items-center pl-3 pr-1.5">
           <div className="flex items-center gap-2 sm:min-w-24">
             <StatusIndicator entry={entry} />
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">{meta.label}</span>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">{t(`taskDetail.workspace.runtime.${meta.labelKey}`)}</span>
           </div>
           <div className="mx-3 hidden h-5 w-px bg-border sm:block" />
           <div className="hidden w-56 min-w-0 shrink-0 items-center gap-0.5 sm:flex">
@@ -356,19 +380,23 @@ function ServicePopoverRow({
   entry: WorkspaceServiceControlEntry;
   onAction: (action: WorkspaceServiceControlAction, serviceKey: string | null) => void;
 }) {
+  const { t } = useTranslation();
   const meta = statusMeta(entry);
   const displayUrl = formatServiceUrl(entry.url);
   const live = entry.state === "running" && Boolean(entry.url);
   const exposureFailed = entry.exposureState === "failed" || entry.exposureState === "cleanup_pending";
-  const secondary = entry.exposureDetail
-    ? entry.exposureDetail
+  const secondary = exposureSummary(entry, t)
+    ? exposureSummary(entry, t)
     : live
       ? displayUrl
     : entry.state === "starting" && entry.port
-      ? `starting on :${entry.port}…`
-      : entry.state === "failed" && entry.failureDetail
-        ? entry.failureDetail
-        : `${meta.label.toLowerCase().replace(/…$/, "")}${entry.port ? ` · :${entry.port}` : ""}`;
+      ? t("taskDetail.workspace.runtime.startingOnPort", { port: entry.port })
+      : entry.state === "failed" && (entry.failureTimeAgo || entry.failureDetail)
+        ? `${t("taskDetail.workspace.runtime.failed")}${entry.failureTimeAgo ? ` · ${entry.failureTimeAgo}` : ` · ${entry.failureDetail}`}`
+        : t("taskDetail.workspace.runtime.statusWithPort", {
+          status: t(`taskDetail.workspace.runtime.${meta.labelKey}`),
+          port: entry.port ? ` · :${entry.port}` : "",
+        });
 
   return (
     <div className="flex items-center gap-3 py-2.5">
@@ -423,6 +451,7 @@ function MultiServiceBar({
   defaultServicesOpen?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(defaultServicesOpen ?? false);
   const runningCount = services.filter((entry) => entry.state === "running").length;
   const anyTransitional = services.some((entry) => isTransitional(entry.state));
@@ -432,7 +461,7 @@ function MultiServiceBar({
 
   const aggregateEntry: WorkspaceServiceControlEntry = {
     key: "__all__",
-    name: "All services",
+    name: t("taskDetail.workspace.runtime.allServices"),
     state: anyTransitional
       ? "starting"
       : anyFailed
@@ -454,16 +483,16 @@ function MultiServiceBar({
               <button
                 type="button"
                 className="flex h-full items-center gap-2 rounded-l-lg pr-1 text-xs font-medium text-foreground hover:bg-accent"
-                aria-label={`${runningCount} of ${services.length} services running — show services`}
+                aria-label={t("taskDetail.workspace.runtime.showServices", { running: runningCount, total: services.length })}
               >
                 <StatusIndicator entry={aggregateEntry} />
-                <span className="whitespace-nowrap">{runningCount}/{services.length} running</span>
+                <span className="whitespace-nowrap">{t("taskDetail.workspace.runtime.runningOfTotal", { running: runningCount, total: services.length })}</span>
                 <ChevronDown className="size-3 text-muted-foreground" />
               </button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-96 p-0" onOpenAutoFocus={(event) => event.preventDefault()}>
               <div className="px-4 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Services · {services.length}
+                {t("taskDetail.workspace.runtime.servicesCount", { count: services.length })}
               </div>
               <div className="divide-y divide-border px-4">
                 {services.map((entry) => (
@@ -471,9 +500,9 @@ function MultiServiceBar({
                 ))}
               </div>
               <div className="flex items-center gap-1 border-t border-border px-4 py-2">
-                <Button variant="ghost" size="xs" onClick={() => onAction("start", null)}>Start all</Button>
-                <Button variant="ghost" size="xs" onClick={() => onAction("stop", null)}>Stop all</Button>
-                <Button variant="ghost" size="xs" onClick={() => onAction("restart", null)}>Restart all</Button>
+                <Button variant="ghost" size="xs" onClick={() => onAction("start", null)}>{t("taskDetail.workspace.runtime.startAll")}</Button>
+                <Button variant="ghost" size="xs" onClick={() => onAction("stop", null)}>{t("taskDetail.workspace.runtime.stopAll")}</Button>
+                <Button variant="ghost" size="xs" onClick={() => onAction("restart", null)}>{t("taskDetail.workspace.runtime.restartAll")}</Button>
                 {onManageServices ? (
                   <Button
                     variant="link"
@@ -481,7 +510,7 @@ function MultiServiceBar({
                     className="ml-auto text-muted-foreground"
                     onClick={onManageServices}
                   >
-                    Manage in Services tab →
+                    {t("taskDetail.workspace.runtime.manageServices")}
                   </Button>
                 ) : null}
               </div>

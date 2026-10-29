@@ -2,8 +2,10 @@
 
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
+import { act as reactAct } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
 import { queryKeys } from "@/lib/queryKeys";
 import { Companies } from "./Companies";
 
@@ -26,8 +28,10 @@ vi.mock("../context/CompanyContext", () => ({
         issuePrefix: "PAP",
         name: "Acme Labs",
         status: "active",
+        description: "Original organization description",
         budgetMonthlyCents: 0,
         spentMonthlyCents: 0,
+        createdAt: "2026-10-29T00:00:00.000Z",
       },
     ],
     selectedCompanyId: "company-1",
@@ -70,16 +74,24 @@ const CLOUD_HEALTH = {
 describe("Companies page", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await reactAct(async () => {
+      await i18n.changeLanguage("en");
+    });
     container = document.createElement("div");
     document.body.appendChild(container);
-    mockCompaniesApi.stats.mockResolvedValue({});
+    mockCompaniesApi.stats.mockResolvedValue({
+      "company-1": { agentCount: 1, issueCount: 1 },
+    });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await reactAct(async () => {
+      await i18n.changeLanguage("en");
+    });
   });
 
   async function renderPage({ cloud }: { cloud?: boolean } = {}) {
@@ -118,6 +130,27 @@ describe("Companies page", () => {
     expect(container.textContent).not.toContain("New Organization");
     expect(container.textContent).toContain("Acme Labs");
     expect(mockOpenOnboarding).not.toHaveBeenCalled();
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("localizes organization labels and counts to PT-BR while preserving organization data", async () => {
+    await reactAct(async () => {
+      await i18n.changeLanguage("pt-BR");
+    });
+    const root = await renderPage();
+
+    expect(container.textContent).toContain("Nova organização");
+    expect(container.textContent).toContain("Acme Labs");
+    expect(container.textContent).toContain("Original organization description");
+    expect(container.textContent).toContain("Ativa");
+    expect(container.textContent).toContain("1 agente");
+    expect(container.textContent).toContain("1 tarefa");
+    expect(container.textContent).toContain("Orçamento ilimitado");
+    expect(container.textContent).toContain("Criada");
+    expect(container.querySelector('button[aria-label="Renomear Acme Labs"]')).not.toBeNull();
 
     act(() => {
       root.unmount();

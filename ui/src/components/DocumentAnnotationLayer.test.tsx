@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 
+import { act as reactAct, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DocumentAnnotationLayer } from "./DocumentAnnotationLayer";
+import { i18n } from "@/i18n";
+import { DocumentAnnotationLayer, type PendingAnchor } from "./DocumentAnnotationLayer";
 
 const mockBuildAnchorFromContainerSelection = vi.hoisted(() => vi.fn());
 const mockGetContainerTextOffset = vi.hoisted(() => vi.fn());
@@ -49,7 +51,8 @@ describe("DocumentAnnotationLayer", () => {
   let rectSpy: ReturnType<typeof vi.spyOn>;
   let root: Root | null = null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockRangesForNormalizedSpan.mockReturnValue([makeRange([makeRect(8, 12, 80, 18)])]);
@@ -64,6 +67,7 @@ describe("DocumentAnnotationLayer", () => {
     rectSpy.mockRestore();
     container.remove();
     vi.clearAllMocks();
+    await i18n.changeLanguage("pt-BR");
   });
 
   it("uses borderless token-driven overlay boxes for annotation highlight states", async () => {
@@ -165,7 +169,7 @@ describe("DocumentAnnotationLayer", () => {
     root = createRoot(container);
 
     try {
-      await act(async () => {
+      await reactAct(async () => {
         root?.render(
           <DocumentAnnotationLayer
             containerRef={{ current: body }}
@@ -191,6 +195,88 @@ describe("DocumentAnnotationLayer", () => {
       expect(container.querySelector('[data-testid="document-annotation-selection-toolbar"]')).toBeNull();
     } finally {
       getSelectionSpy.mockRestore();
+    }
+  });
+
+  it("localizes the selection toolbar while passing the original anchor to the callback", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const body = document.createElement("div");
+    const text = document.createTextNode("Source text for the selected phrase.");
+    body.appendChild(text);
+    const range = document.createRange();
+    range.setStart(text, 13);
+    range.setEnd(text, 28);
+    Object.defineProperty(range, "getBoundingClientRect", {
+      value: () => makeRect(20, 30, 100, 18),
+      configurable: true,
+    });
+    const getSelectionSpy = vi.spyOn(window, "getSelection").mockReturnValue({
+      rangeCount: 1,
+      isCollapsed: false,
+      getRangeAt: () => range,
+    } as unknown as Selection);
+    mockGetContainerTextOffset.mockReturnValue({ selectedText: "selected phrase" });
+    mockBuildAnchorFromContainerSelection.mockReturnValue({
+      selector: {
+        quote: { exact: "selected phrase", prefix: "", suffix: "" },
+        position: { normalizedStart: 13, normalizedEnd: 28, markdownStart: 13, markdownEnd: 28 },
+      },
+    });
+    const onRequestComment = vi.fn();
+    const onPendingAnchorChange = vi.fn();
+    root = createRoot(container);
+    function LayerHarness() {
+      const [pendingAnchor, setPendingAnchor] = useState<PendingAnchor | null>(null);
+      return (
+        <DocumentAnnotationLayer
+          containerRef={{ current: body }}
+          markdown="Source text for the selected phrase."
+          threads={[]}
+          focusedThreadId={null}
+          onThreadFocus={vi.fn()}
+          pendingAnchor={pendingAnchor}
+          onPendingAnchorChange={(anchor) => {
+            onPendingAnchorChange(anchor);
+            setPendingAnchor(anchor);
+          }}
+          onRequestComment={onRequestComment}
+        />
+      );
+    }
+
+    try {
+      await reactAct(async () => {
+        root?.render(<LayerHarness />);
+        await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      });
+      await reactAct(async () => {
+        document.dispatchEvent(new Event("selectionchange"));
+      });
+
+      expect(mockGetContainerTextOffset).toHaveBeenCalled();
+      expect(onPendingAnchorChange).toHaveBeenCalledWith(
+        expect.objectContaining({ selectedText: "selected phrase" }),
+      );
+      const toolbar = container.querySelector('[role="toolbar"]');
+      expect(toolbar).not.toBeNull();
+      expect(toolbar?.getAttribute("aria-label")).toBe("Ações da seleção");
+      const commentButton = Array.from(container.querySelectorAll("button")).find(
+        (button) => button.textContent?.trim() === "Comentar",
+      );
+      expect(commentButton?.title).toBe("Comentar o trecho selecionado (⌘⇧M)");
+      await reactAct(async () => {
+        commentButton?.click();
+      });
+      expect(onRequestComment).toHaveBeenCalledWith(
+        expect.objectContaining({ selectedText: "selected phrase" }),
+        expect.objectContaining({ width: 100, height: 18 }),
+      );
+    } finally {
+      getSelectionSpy.mockRestore();
+      if (root) {
+        await reactAct(() => root?.unmount());
+        root = null;
+      }
     }
   });
 

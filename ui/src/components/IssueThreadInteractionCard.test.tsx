@@ -3,10 +3,11 @@
 import { act as reactAct, type ComponentProps, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Agent } from "@paperclipai/shared";
 import { ApiError } from "../api/client";
+import { i18n } from "../i18n";
 import { IssueThreadInteractionCard } from "./IssueThreadInteractionCard";
 import { ThemeProvider } from "../context/ThemeContext";
 import { TooltipProvider } from "./ui/tooltip";
@@ -23,6 +24,9 @@ import {
   failedToolActionInteraction,
   pendingRequestConfirmationInteraction,
   pendingRequestCheckboxConfirmationInteraction,
+  boundedRequestCheckboxConfirmationInteraction,
+  acceptedRequestCheckboxConfirmationInteraction,
+  acceptedManyRequestCheckboxConfirmationInteraction,
   pendingToolActionDestructiveInteraction,
   pendingToolActionWriteInteraction,
   issueThreadInteractionFixtureMeta,
@@ -32,6 +36,7 @@ import {
   executedSecretProposalInteraction,
   failedSecretProposalInteraction,
   rejectedSecretProposalInteraction,
+  acceptedSuggestedTasksInteraction,
   expiredSecretProposalInteraction,
   planApprovalResumeFailedRequestConfirmationInteraction,
   pendingRequestItemVerdictsInteraction,
@@ -149,7 +154,11 @@ function renderCard(
   return container;
 }
 
-afterEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
   if (root) {
     act(() => root?.unmount());
   }
@@ -158,6 +167,7 @@ afterEach(() => {
   container = null;
   localStorage.clear();
   routerMocks.readSearchParams.mockClear();
+  await i18n.changeLanguage("pt-BR");
 });
 
 describe("IssueThreadInteractionCard", () => {
@@ -172,6 +182,31 @@ describe("IssueThreadInteractionCard", () => {
       },
     },
   };
+
+  it("localizes question controls without translating provider-authored content", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const host = renderCard();
+
+    expect(host.textContent).toContain("Perguntas para responder");
+    expect(host.textContent).toContain("Pendente");
+    expect(host.textContent).not.toContain("Ask user questions");
+    expect(host.textContent).toContain("2 perguntas");
+    expect(host.textContent).toContain("Selecione");
+    expect(host.textContent).toContain("Obrigatória");
+    expect(host.textContent).toContain("How aggressive should the suggested-task preview collapse descendant work?");
+    expect(host.textContent).toContain("Only collapse hidden descendants");
+    expect(host.textContent).toContain("Send answers");
+  });
+
+  it("localizes question expiration copy and preserves the comment target", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const host = renderCard({ interaction: commentExpiredAskUserQuestionsInteraction });
+
+    expect(host.textContent).toContain("Perguntas expiradas após um comentário");
+    expect(host.textContent).toContain("Um comentário posterior do painel ou de um usuário substituiu esta solicitação de perguntas.");
+    expect(host.textContent).toContain("Ir para o comentário");
+    expect(host.querySelector("a")?.getAttribute("href")).toBe("#comment-22222222-2222-4222-8222-222222222222");
+  });
 
   async function editCanonical(host: HTMLDivElement, value: string) {
     const textarea = host.querySelector<HTMLTextAreaElement>("textarea")!;
@@ -602,6 +637,67 @@ describe("IssueThreadInteractionCard", () => {
     expect(host.textContent).toContain("Child task");
   });
 
+  it("localizes the suggested task tree while preserving task data and selected client keys", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const interaction = {
+      ...pendingSuggestedTasksInteraction,
+      payload: {
+        ...pendingSuggestedTasksInteraction.payload,
+        tasks: pendingSuggestedTasksInteraction.payload.tasks.map((task) =>
+          task.clientKey === "root-design"
+            ? { ...task, projectId: "project-id-keep-original" }
+            : task,
+        ),
+      },
+    };
+    const onAcceptInteraction = vi.fn(async () => undefined);
+    const host = renderCard({ interaction, onAcceptInteraction });
+
+    expect(host.textContent).toContain("4 tarefas sugeridas");
+    expect(host.textContent).toContain("Tarefa pai padrão: PAP-1709");
+    expect(host.textContent).toContain("Responsável:");
+    expect(host.textContent).toContain("Cobrança: ui-research");
+    expect(host.textContent).toContain("Projeto: project-id-keep-original");
+    expect(host.textContent).toContain("Etiqueta: UI");
+    expect(host.textContent).toContain("Subtarefa");
+    expect(host.textContent).toContain("1 tarefa subsequente oculta na prévia");
+    expect(host.textContent).toContain("Prototype issue-thread interaction cards");
+    expect(host.textContent).toContain("Build render-only cards that sit in the issue feed");
+
+    const childCheckbox = host.querySelector<HTMLButtonElement>(
+      '[role="checkbox"][aria-label="Incluir Add Storybook coverage for acceptance and rejection states"]',
+    );
+    expect(childCheckbox).toBeTruthy();
+    await act(() => childCheckbox?.click());
+
+    expect(host.textContent).toContain("3 de 4 tarefas em rascunho selecionadas");
+    expect(host.textContent).toContain("1 tarefa será ignorada se você aceitar esta solicitação.");
+    const createSelected = [...host.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent?.trim() === "Criar tarefas selecionadas");
+    expect(createSelected?.disabled).toBe(false);
+    await act(async () => createSelected?.click());
+    expect(onAcceptInteraction).toHaveBeenCalledWith(interaction, [
+      "root-design",
+      "child-mixed-thread",
+      "hidden-follow-up",
+    ]);
+  });
+
+  it("localizes suggested task resolution summaries but keeps the supplied rejection reason", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const accepted = renderCard({ interaction: acceptedSuggestedTasksInteraction });
+    expect(accepted.textContent).toContain("Resumo da resolução");
+    expect(accepted.textContent).toContain("Todas as 4 tarefas sugeridas foram criadas.");
+
+    act(() => root?.unmount());
+    accepted.remove();
+    root = null;
+
+    const rejected = renderCard({ interaction: rejectedSuggestedTasksInteraction });
+    expect(rejected.textContent).toContain("Motivo da recusa");
+    expect(rejected.textContent).toContain("Keep the first pass tighter.");
+  });
+
   it("shows an explicit placeholder when a rejected interaction has no reason", () => {
     const host = renderCard({
       interaction: {
@@ -779,7 +875,7 @@ describe("IssueThreadInteractionCard", () => {
 
     await act(async () => {
       Array.from(host.querySelectorAll("button"))
-        .find((button) => button.textContent?.includes("Accept"))
+        .find((button) => button.textContent?.includes("Create suggested tasks"))
         ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
@@ -922,6 +1018,141 @@ describe("IssueThreadInteractionCard", () => {
     expect(host.textContent).toContain(
       "This request could not be resolved. Try again or create a new request.",
     );
+  });
+
+  it("localizes generic and plan confirmation chrome while preserving supplied copy and callback payloads", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const genericInteraction = {
+      ...pendingRequestConfirmationInteraction,
+      title: null,
+      payload: {
+        ...pendingRequestConfirmationInteraction.payload,
+        acceptLabel: undefined,
+        rejectRequiresReason: false,
+        target: {
+          ...pendingRequestConfirmationInteraction.payload.target!,
+          key: "overview",
+          label: undefined,
+        },
+      },
+    };
+    const onAcceptInteraction = vi.fn(async () => undefined);
+    const generic = renderCard({
+      interaction: genericInteraction,
+      onAcceptInteraction,
+    });
+
+    expect(generic.textContent).toContain("Confirmação solicitada");
+    expect(generic.querySelector('[data-testid="interaction-status-badge"]')?.textContent)
+      .toContain("Confirmação/Pendente");
+    expect(generic.textContent).toContain("Approve the plan and let the responsible start implementation?");
+    expect(generic.textContent).toContain("overview v3");
+    const approve = Array.from(generic.querySelectorAll("button")).find((button) =>
+      button.textContent?.trim() === "Aprovar",
+    );
+    expect(approve).toBeTruthy();
+    expect(generic.textContent).toContain("Solicitar revisão…");
+    expect(generic.textContent).toContain("Recusar");
+    await act(async () => {
+      approve?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(onAcceptInteraction).toHaveBeenCalledWith(genericInteraction);
+
+    act(() => root?.unmount());
+    generic.remove();
+    root = null;
+
+    const planInteraction = {
+      ...pendingRequestConfirmationInteraction,
+      title: null,
+      payload: {
+        ...pendingRequestConfirmationInteraction.payload,
+        target: {
+          ...pendingRequestConfirmationInteraction.payload.target!,
+          label: undefined,
+        },
+      },
+    };
+    const plan = renderCard({ interaction: planInteraction });
+    expect(plan.textContent).toContain("Revisão do plano");
+    expect(plan.querySelector('[data-testid="interaction-status-badge"]')?.textContent)
+      .toContain("Plano/Em revisão");
+    expect(plan.textContent).toContain("Plano v3");
+    expect(plan.textContent).toContain("Approve the plan and let the responsible start implementation?");
+    expect(Array.from(plan.querySelectorAll("button")).some((button) =>
+      button.textContent?.trim() === "Approve plan",
+    )).toBe(true);
+  });
+
+  it("localizes checkbox selection controls and bounds without changing submitted option IDs", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onAcceptInteraction = vi.fn(async () => undefined);
+    const host = renderCard({
+      interaction: boundedRequestCheckboxConfirmationInteraction,
+      onAcceptInteraction,
+    });
+
+    expect(host.textContent).toContain("2 de 4 opções selecionadas");
+    expect(host.textContent).toContain("Selecione entre 2 e 3 opções.");
+    expect(host.textContent).toContain("Which regions should we deploy to initially?");
+    expect(host.textContent).toContain("US West (Oregon)");
+    expect(host.querySelector('[role="group"]')?.getAttribute("aria-label"))
+      .toBe("Opções selecionáveis");
+
+    const checkboxes = Array.from(host.querySelectorAll<HTMLButtonElement>('[role="checkbox"]'));
+    await act(async () => checkboxes[0]?.click());
+    expect(host.textContent).toContain("1 de 4 opções selecionadas");
+
+    const confirm = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.trim() === "Confirm regions",
+    );
+    await act(async () => confirm?.click());
+    expect(host.textContent).toContain("Selecione pelo menos 2 opções.");
+    expect(onAcceptInteraction).not.toHaveBeenCalled();
+
+    const selectAll = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.trim() === "Selecionar todas",
+    );
+    await act(async () => selectAll?.click());
+    expect(host.textContent).toContain("3 de 4 opções selecionadas");
+    await act(async () => confirm?.click());
+    expect(onAcceptInteraction).toHaveBeenCalledWith(
+      boundedRequestCheckboxConfirmationInteraction,
+      undefined,
+      ["us-west", "us-east", "eu-west"],
+    );
+  });
+
+  it("localizes the selected-option receipt and expand/collapse labels while preserving option names", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const host = renderCard({
+      interaction: acceptedManyRequestCheckboxConfirmationInteraction,
+    });
+
+    expect(host.textContent).toContain("42 de 100 opções confirmadas");
+    expect(host.textContent).toContain("+34 mais");
+    expect(host.textContent).toContain("Customer record #1");
+    const expand = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.trim() === "+34 mais",
+    );
+    await act(async () => expand?.click());
+    expect(host.textContent).toContain("Mostrar menos");
+    expect(host.textContent).toContain("Customer record #42");
+  });
+
+  it("renders the localized empty selection receipt for an accepted checkbox interaction", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const interaction = {
+      ...acceptedRequestCheckboxConfirmationInteraction,
+      result: {
+        ...acceptedRequestCheckboxConfirmationInteraction.result!,
+        selectedOptionIds: [],
+      },
+    };
+    const host = renderCard({ interaction });
+
+    expect(host.textContent).toContain("Confirmação registrada sem opções selecionadas");
+    expect(host.textContent).not.toContain("Old draft report");
   });
 
   it("renders a plan confirmation as a distinct state-coloured plan card", () => {
@@ -1108,6 +1339,65 @@ describe("IssueThreadInteractionCard", () => {
     expect(host.querySelector("button[data-verdict]")).toBeNull();
   });
 
+  it("keeps an unknown resolved verdict visible verbatim", () => {
+    const interaction = structuredClone(completeRequestItemVerdictsInteraction);
+    const item = interaction.result!.items[0] as unknown as { verdict: string };
+    item.verdict = "custom_review_state";
+
+    const host = renderCard({ interaction });
+    expect(host.textContent).toContain("custom_review_state");
+  });
+
+  it("localizes item-verdict controls while preserving item data and submitted enums", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const submit = vi.fn(async () => undefined);
+    const host = renderCard({
+      interaction: pendingRequestItemVerdictsInteraction,
+      onSubmitInteractionVerdicts: submit,
+    });
+    const item = pendingRequestItemVerdictsInteraction.payload.items[0]!;
+
+    expect(host.querySelector("ul")?.getAttribute("aria-label")).toBe("Itens para revisar");
+    expect(host.querySelector('[role="group"]')?.getAttribute("aria-label")).toBe("Escolha uma decisão");
+    expect(host.querySelector('[role="progressbar"]')?.getAttribute("aria-label")).toBe("0 de 5 decididos");
+    expect(host.textContent).toContain("Spring launch recap");
+    expect(host.textContent).toContain("820 words · product marketing");
+
+    const reject = host.querySelector<HTMLButtonElement>(
+      `[data-item-id="${item.id}"] button[data-verdict="reject"]`,
+    );
+    expect(reject?.textContent?.trim()).toBe("Rejeitar");
+    expect(reject?.getAttribute("aria-label")).toBe("rejeitar este item");
+    await act(() => reject?.click());
+
+    const reason = host.querySelector<HTMLTextAreaElement>(
+      `textarea[id="${pendingRequestItemVerdictsInteraction.id}-${item.id}-reason"]`,
+    );
+    expect(reason?.placeholder).toBe("Explique ao agente o que ele deve fazer com este item.");
+    expect(host.textContent).toContain("Why reject?"); // Custom provider-supplied label remains intact.
+
+    const applyButton = () => Array.from(host.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Aplicar 1 decisão",
+    );
+    await act(() => applyButton()?.click());
+    expect(host.textContent).toContain("É necessário rejeitar este item com uma justificativa.");
+    expect(submit).not.toHaveBeenCalled();
+
+    await act(() => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(
+        reason!,
+        "  Ajustar o tom da publicação.  ",
+      );
+      reason!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(() => applyButton()?.click());
+
+    expect(submit).toHaveBeenCalledExactlyOnceWith(
+      pendingRequestItemVerdictsInteraction,
+      [{ id: item.id, verdict: "reject", reason: "Ajustar o tom da publicação." }],
+    );
+  });
+
   it("shows an already-applied, cannot-revert notice when superseded", () => {
     const host = renderCard({ interaction: supersededRequestItemVerdictsInteraction });
     expect(host.textContent).toContain("expired after a later comment");
@@ -1117,6 +1407,51 @@ describe("IssueThreadInteractionCard", () => {
 });
 
 describe("IssueThreadInteractionCard tool-action card", () => {
+  it("localizes tool-approval controls while preserving the provider preview and callback contract", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onAcceptInteraction = vi.fn(async () => undefined);
+    const host = renderCard({
+      interaction: pendingToolActionWriteInteraction,
+      onAcceptInteraction,
+    });
+
+    expect(host.textContent).toContain("Add 1 row");
+    expect(host.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe("Google Sheets");
+    expect(host.querySelector('[role="group"]')?.getAttribute("aria-label"))
+      .toBe("Aprovar solicitação");
+    const approve = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.trim() === "Aprovar e executar",
+    );
+    expect(approve).toBeTruthy();
+    expect(host.textContent).toContain("Recusar");
+
+    await act(async () => approve?.click());
+    expect(onAcceptInteraction).toHaveBeenCalledWith(
+      pendingToolActionWriteInteraction,
+      undefined,
+      undefined,
+      false,
+    );
+  });
+
+  it("localizes tool execution status and result controls while retaining the stored result", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const host = renderCard({ interaction: executedToolActionInteraction });
+
+    expect(host.textContent).toContain("Concluída");
+    expect(host.textContent).not.toContain("Row 42 added");
+    const toggle = host.querySelector<HTMLButtonElement>(
+      'button[aria-label="Mostrar detalhes do resultado"]',
+    );
+    expect(toggle).toBeTruthy();
+    const resultLink = Array.from(host.querySelectorAll("a")).find((link) =>
+      link.textContent?.includes("Ver resultado"),
+    );
+    expect(resultLink?.getAttribute("href")).toContain("docs.google.com");
+    await act(async () => toggle?.click());
+    expect(host.querySelector("pre")?.textContent).toContain("Row 42 added");
+  });
+
   it("shows only the request description, app icon, and decision controls", () => {
     const host = renderCard({ interaction: pendingToolActionWriteInteraction, onAcceptInteraction: vi.fn(), onRejectInteraction: vi.fn() });
     expect(host.textContent).toContain("Add 1 row");
@@ -1303,6 +1638,63 @@ describe("IssueThreadInteractionCard tool-action card", () => {
 });
 
 describe("IssueThreadInteractionCard secret-proposal card", () => {
+  it("localizes secret-proposal controls and fields while preserving names, justification, and callback payload", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const interaction = {
+      ...pendingSecretProposalInteraction,
+      payload: {
+        ...pendingSecretProposalInteraction.payload,
+        acceptLabel: undefined,
+        rejectLabel: undefined,
+        declineReasonPlaceholder: undefined,
+      },
+    };
+    const onAcceptInteraction = vi.fn(async () => undefined);
+    const host = renderCard({
+      interaction,
+      onAcceptInteraction,
+      onRejectInteraction: vi.fn(async () => undefined),
+    });
+
+    expect(host.textContent).toContain("Vínculo de segredo solicitado");
+    expect(host.textContent).toContain("Vincular um segredo existente");
+    expect(host.textContent).toContain("Segredo de origem");
+    expect(host.textContent).toContain("OpenAI API key");
+    expect(host.textContent).toContain("Agente de destino");
+    expect(host.textContent).toContain("EvalsEngineer");
+    expect(host.textContent).toContain("Novo caminho de configuração");
+    expect(host.textContent).toContain("access.evals_openai_api_key");
+    expect(host.textContent).toContain("Motivo informado pelo agente");
+    expect(host.textContent).toContain("The evaluation runner needs the existing credential under its canonical config name.");
+    expect(host.textContent).toContain("Expira em");
+    expect(host.textContent).toContain("Aprovar e vincular");
+    expect(host.textContent).toContain("Adicionar motivo…");
+    expect(host.textContent).toContain("Recusar");
+
+    const revise = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.trim() === "Adicionar motivo…",
+    );
+    await act(async () => revise?.click());
+    expect(host.querySelector("textarea")?.getAttribute("placeholder"))
+      .toBe("Opcional: explique por que este vínculo não deve ser criado.");
+    const approve = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.trim() === "Aprovar e vincular",
+    );
+    await act(async () => approve?.click());
+    expect(onAcceptInteraction).toHaveBeenCalledWith(interaction);
+  });
+
+  it("localizes a failed secret binding without translating its technical error code", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const host = renderCard({ interaction: failedSecretProposalInteraction });
+
+    expect(host.querySelector('[data-testid="interaction-status-badge"]')?.textContent)
+      .toContain("FALHA");
+    expect(host.textContent).toContain("FALHA · vínculo não criado");
+    expect(host.textContent).toContain("A solicitação foi aceita, mas a execução falhou de forma segura.");
+    expect(host.textContent).toContain("binding_snapshot_stale");
+  });
+
   it("renders only safe proposal metadata and exposes accept/reject actions", async () => {
     const onAcceptInteraction = vi.fn(async () => undefined);
     const onRejectInteraction = vi.fn(async () => undefined);
@@ -1456,6 +1848,57 @@ describe("IssueThreadInteractionCard connection-authorization card", () => {
     // teammate can give it for them.
     expect(host.textContent?.toLowerCase()).not.toContain("on behalf of");
     expect(host.textContent?.toLowerCase()).not.toContain("anyone can");
+  });
+
+  it("localizes authorization instructions while preserving provider names, the minted URL, and addressee policy", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const interaction = {
+      ...pendingConnectionAuthorizationInteraction,
+      title: null,
+      summary: null,
+    };
+    const onRejectInteraction = vi.fn(async () => undefined);
+    const addressed = renderCard({
+      interaction,
+      currentUserId: issueThreadInteractionFixtureMeta.currentUserId,
+      onRejectInteraction,
+    });
+
+    expect(addressed.textContent).toContain("Conecte sua conta Gmail para continuar");
+    expect(addressed.querySelector('[data-testid="interaction-status-badge"]')?.textContent)
+      .toContain("Ação necessária");
+    expect(addressed.querySelector('[data-testid="connection-authorization-body"]')?.textContent)
+      .toContain("Outreach Agent precisa da sua identidade Gmail para executar o trabalho como você.");
+    expect(addressed.textContent).toContain("Somente você pode concluir esta etapa.");
+    const connect = Array.from(addressed.querySelectorAll("a")).find((anchor) =>
+      anchor.textContent?.includes("Conectar Gmail"),
+    );
+    expect(connect?.getAttribute("href"))
+      .toBe("https://accounts.google.com/o/oauth2/v2/auth?client_id=paperclip");
+    const notNow = Array.from(addressed.querySelectorAll("button")).find((button) =>
+      button.textContent?.trim() === "Agora não",
+    );
+    await act(async () => notNow?.click());
+    expect(onRejectInteraction).toHaveBeenCalledWith(interaction);
+
+    act(() => root?.unmount());
+    addressed.remove();
+    root = null;
+
+    const otherReader = renderCard({
+      interaction,
+      currentUserId: "user-someone-else",
+      userLabelMap: CAROL_LABELS,
+      onRejectInteraction,
+    });
+    expect(otherReader.querySelector('[data-testid="interaction-status-badge"]')?.textContent)
+      .toContain("Aguardando Carol");
+    expect(otherReader.querySelector('[data-testid="connection-authorization-body"]')?.textContent)
+      .toBe("Outreach Agent precisa da identidade Gmail de Carol para executar o trabalho como essa pessoa.");
+    expect(otherReader.querySelector('[data-testid="connection-authorization-waiting"]')?.textContent)
+      .toContain("Somente Carol pode conectar a própria conta Gmail.");
+    expect(otherReader.innerHTML).not.toContain("accounts.google.com");
+    expect(otherReader.querySelectorAll("button")).toHaveLength(0);
   });
 
   it("gives another reader Waiting for Carol and no action controls at all", () => {

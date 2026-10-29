@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { MarkdownBody } from "@/components/MarkdownBody";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useTaskChatExpansion } from "./expansion-state";
 import type { TaskChatActivityPhaseItem } from "./task-chat-model";
@@ -16,6 +17,7 @@ import {
   protocolActivityIsRunning,
   protocolActivityLabel,
   protocolActivityPresentation,
+  type TaskChatActivityTranslator,
 } from "./task-chat-activity-presentation";
 import {
   TaskChatProtocolActivityDetails,
@@ -26,7 +28,11 @@ import { toolActivityPresentation } from "./tool-taxonomy";
 
 type Activity = TaskChatActivityPhaseItem["items"][number];
 
-function presentation(item: Activity, active: boolean) {
+function presentation(
+  item: Activity,
+  active: boolean,
+  translate?: TaskChatActivityTranslator,
+) {
   if (item.kind === "tool") {
     const tool = toolActivityPresentation({
       name: item.rawName ?? item.name,
@@ -63,11 +69,11 @@ function presentation(item: Activity, active: boolean) {
     };
   }
   if (item.kind === "protocol") {
-    const protocol = protocolActivityPresentation(item);
+    const protocol = protocolActivityPresentation(item, translate);
     if (!protocol) return null;
     return {
       icon: protocol.icon,
-      label: protocolActivityLabel(item, protocol),
+      label: protocolActivityLabel(item, protocol, translate),
       target: protocol.detail,
       mono: true,
       running: active && protocolActivityIsRunning(item),
@@ -105,11 +111,13 @@ function presentation(item: Activity, active: boolean) {
 function ActivityContent({
   item,
   active,
+  translate,
 }: {
   item: Activity;
   active: boolean;
+  translate?: TaskChatActivityTranslator;
 }) {
-  const row = presentation(item, active);
+  const row = presentation(item, active, translate);
   if (!row) return null;
   const Icon = row.icon;
   return (
@@ -159,9 +167,11 @@ function ActivityContent({
 function RollingActivity({
   item,
   active,
+  translate,
 }: {
   item: Activity;
   active: boolean;
+  translate?: TaskChatActivityTranslator;
 }) {
   const reducedMotion = useReducedMotion();
   const [frame, setFrame] = useState({
@@ -191,7 +201,7 @@ function RollingActivity({
             )
           }
         >
-          <ActivityContent item={frame.previous} active={false} />
+          <ActivityContent item={frame.previous} active={false} translate={translate} />
         </span>
       ) : null}
       <span
@@ -201,7 +211,7 @@ function RollingActivity({
           frame.previous && !reducedMotion && "runner-activity-roll-in",
         )}
       >
-        <ActivityContent item={item} active={active} />
+        <ActivityContent item={item} active={active} translate={translate} />
       </span>
     </span>
   );
@@ -259,9 +269,11 @@ function hasActivityDetails(item: Activity): boolean {
 function ExpandedActivity({
   item,
   active,
+  translate,
 }: {
   item: Activity;
   active: boolean;
+  translate?: TaskChatActivityTranslator;
 }) {
   const [open, setOpen] = useTaskChatExpansion(
     `runner-detail:${item.id}`,
@@ -269,7 +281,7 @@ function ExpandedActivity({
   );
   const detailId = useId();
   const expandable = hasActivityDetails(item);
-  const content = <ActivityContent item={item} active={active} />;
+  const content = <ActivityContent item={item} active={active} translate={translate} />;
   return (
     <li className="min-w-0" data-activity-item-id={item.id}>
       {expandable ? (
@@ -312,18 +324,38 @@ export function TaskChatRunnerActivityGroup({
   item: TaskChatActivityPhaseItem;
   defaultExpanded?: boolean;
 }) {
+  const { t, i18n } = useTranslation();
   const [expanded, setExpanded] = useTaskChatExpansion(
     item.id,
     defaultExpanded,
   );
   const historyId = useId();
+  const hasProviderActivity = item.items.some(
+    (activity) => activity.kind === "protocol" && activity.surface === "provider_activity",
+  );
+  const translate: TaskChatActivityTranslator | undefined = hasProviderActivity
+    && i18n.resolvedLanguage === "pt-BR"
+    ? (key, options) => t(key, options)
+    : undefined;
   const activities = item.items.filter(
-    (activity) => presentation(activity, false) !== null,
+    (activity) => presentation(activity, false, translate) !== null,
   );
   const latest = activities.at(-1);
-  const summary = completedActivitySummary(activities);
+  const summary = completedActivitySummary(activities, translate);
   const SummaryIcon = summary.icon;
-  const countLabel = `${activities.length} ${activities.length === 1 ? "activity" : "activities"}`;
+  const countLabel = translate
+    ? translate("taskDetail.chatTranscript.providerActivity.experimental.activityCount", { count: activities.length })
+    : `${activities.length} ${activities.length === 1 ? "activity" : "activities"}`;
+  const ariaLabel = translate
+    ? translate(
+        `taskDetail.chatTranscript.providerActivity.experimental.activityGroup.${expanded ? "collapse" : "expand"}`,
+        {
+          label: item.active
+            ? countLabel
+            : `${summary.fullLabel.charAt(0).toLowerCase()}${summary.fullLabel.slice(1)} (${countLabel})`,
+        },
+      )
+    : `${expanded ? "Collapse" : "Expand"} ${item.active ? countLabel : `${summary.fullLabel.toLowerCase()} (${countLabel})`}`;
   return (
     <section
       className="flex min-w-0 flex-col gap-2"
@@ -350,7 +382,7 @@ export function TaskChatRunnerActivityGroup({
             onClick={() => setExpanded(!expanded)}
             aria-expanded={expanded}
             aria-controls={expanded ? historyId : undefined}
-            aria-label={`${expanded ? "Collapse" : "Expand"} ${item.active ? countLabel : `${summary.fullLabel.toLowerCase()} (${countLabel})`}`}
+            aria-label={ariaLabel}
           >
             {!item.active ? (
               <span
@@ -372,7 +404,7 @@ export function TaskChatRunnerActivityGroup({
                 <span>{countLabel}</span>
               </span>
             ) : (
-              <RollingActivity item={latest} active={item.active} />
+              <RollingActivity item={latest} active={item.active} translate={translate} />
             )}
             <span className="flex shrink-0 items-center gap-1 text-xs">
               {expanded ? countLabel : item.active ? activities.length : null}
@@ -386,7 +418,9 @@ export function TaskChatRunnerActivityGroup({
             <ol
               id={historyId}
               className="flex min-w-0 flex-col gap-1"
-              aria-label="Activity history"
+              aria-label={translate
+                ? translate("taskDetail.chatTranscript.providerActivity.experimental.cards.activityHistory")
+                : "Activity history"}
               data-testid="task-chat-runner-activity-list"
             >
               {activities.map((activity, index) => (
@@ -394,6 +428,7 @@ export function TaskChatRunnerActivityGroup({
                   key={activity.id}
                   item={activity}
                   active={item.active && index === activities.length - 1}
+                  translate={translate}
                 />
               ))}
             </ol>

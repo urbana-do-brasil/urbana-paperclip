@@ -3,7 +3,8 @@ import { Loader2 } from "lucide-react";
 import type { TranscriptEntry } from "../../adapters";
 import { cn } from "@/lib/utils";
 import { useSecondTick } from "@/hooks/useSecondTick";
-import { formatDurationWords } from "@/lib/issue-chat-messages";
+import { useTranslation } from "@/i18n";
+import { formatDurationWords, type IssueChatTranslator } from "@/lib/issue-chat-messages";
 import { isCommandTool } from "@/lib/transcriptPresentation";
 import { isTerminalRunStatus } from "@/components/task-chat/transcript-adapter";
 
@@ -15,7 +16,10 @@ import { isTerminalRunStatus } from "@/components/task-chat/transcript-adapter";
  * tool_call as its status progresses, so calls carrying a `toolUseId` are
  * counted once.
  */
-export function toolCountSummaryFromEntries(entries: readonly TranscriptEntry[]): string | null {
+export function toolCountSummaryFromEntries(
+  entries: readonly TranscriptEntry[],
+  translate?: IssueChatTranslator,
+): string | null {
   const seen = new Set<string>();
   let commands = 0;
   let other = 0;
@@ -29,8 +33,16 @@ export function toolCountSummaryFromEntries(entries: readonly TranscriptEntry[])
     else other += 1;
   }
   const parts: string[] = [];
-  if (commands > 0) parts.push(`ran ${commands} command${commands === 1 ? "" : "s"}`);
-  if (other > 0) parts.push(`called ${other} tool${other === 1 ? "" : "s"}`);
+  if (commands > 0) {
+    parts.push(translate
+      ? translate("taskDetail.chatTranscript.run.commands", { count: commands })
+      : `ran ${commands} command${commands === 1 ? "" : "s"}`);
+  }
+  if (other > 0) {
+    parts.push(translate
+      ? translate("taskDetail.chatTranscript.run.tools", { count: other })
+      : `called ${other} tool${other === 1 ? "" : "s"}`);
+  }
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
@@ -57,6 +69,8 @@ export function TaskChatLiveRunPill({
   finishedAtMs?: number | null;
   toolSummary: string | null;
 }) {
+  const { t } = useTranslation();
+  const translate: IssueChatTranslator = (key, options) => t(key, options);
   const active = !isTerminalRunStatus(status);
   // One shared page-wide ticker drives the live elapsed readout, matching the
   // default view's `useLiveElapsed`.
@@ -65,11 +79,17 @@ export function TaskChatLiveRunPill({
   const elapsedMs =
     startedAtMs == null ? null : (active ? Date.now() : finishedAtMs ?? Date.now()) - startedAtMs;
   const elapsed = elapsedMs != null
-    ? formatDurationWords(elapsedMs)
+    ? formatDurationWords(elapsedMs, translate)
     : null;
   const failed = ["failed", "timed_out", "cancelled", "interrupted"].includes(status);
-  const verb = active ? "Working" : failed ? "Stopped" : "Worked";
-  const suffix = elapsed ? `for ${elapsed}` : null;
+  const verb = active
+    ? t("taskDetail.chatTranscript.run.summary.workingVerb")
+    : failed
+      ? t("taskDetail.chatTranscript.run.summary.stoppedVerb")
+      : t("taskDetail.chatTranscript.run.summary.workedVerb");
+  const suffix = elapsed
+    ? t("taskDetail.chatTranscript.run.summary.forDuration", { duration: elapsed })
+    : null;
 
   return (
     <div

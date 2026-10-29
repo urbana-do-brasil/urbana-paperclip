@@ -6,7 +6,8 @@ import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useCloudInstance } from "../hooks/useCloudInstance";
 import { companiesApi } from "../api/companies";
 import { queryKeys } from "../lib/queryKeys";
-import { formatCents, relativeTime } from "../lib/utils";
+import { formatCents, formatNumber, relativeTime } from "../lib/utils";
+import { useTranslation } from "../i18n";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,6 +34,7 @@ import {
 } from "lucide-react";
 
 export function Companies() {
+  const { t } = useTranslation();
   const {
     companies,
     selectedCompanyId,
@@ -89,8 +91,8 @@ export function Companies() {
   });
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Organizations" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("organizationPortfolio.breadcrumb") }]);
+  }, [setBreadcrumbs, t]);
 
   function startEdit(companyId: string, currentName: string) {
     setEditingId(companyId);
@@ -113,14 +115,18 @@ export function Companies() {
         {isCloud ? null : (
           <Button size="sm" onClick={() => openOnboarding()}>
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            New Organization
+            {t("organizationPortfolio.newOrganization")}
           </Button>
         )}
       </div>
 
       <div className="h-6">
-        {loading && <p className="text-sm text-muted-foreground">Loading organizations...</p>}
-        {error && <p className="text-sm text-destructive">{error.message}</p>}
+        {loading && <p className="text-sm text-muted-foreground">{t("organizationPortfolio.loading")}</p>}
+        {error && (
+          <p className="text-sm text-destructive">
+            {t("organizationPortfolio.loadError")} {error.message}
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4">
@@ -137,6 +143,7 @@ export function Companies() {
                   (company.spentMonthlyCents / company.budgetMonthlyCents) * 100,
                 )
               : 0;
+          const statusLabel = t(`organizationPortfolio.status.${company.status}`, { defaultValue: company.status });
 
           return (
             <Card
@@ -165,6 +172,7 @@ export function Companies() {
                     >
                       <Input
                         value={editName}
+                        aria-label={t("organizationPortfolio.renameOrganization", { name: company.name })}
                         onChange={(e) => setEditName(e.target.value)}
                         className="h-7 text-sm"
                         autoFocus
@@ -176,12 +184,18 @@ export function Companies() {
                       <Button
                         variant="ghost"
                         size="icon-xs"
+                        aria-label={t("organizationPortfolio.saveName")}
                         onClick={saveEdit}
                         disabled={editMutation.isPending}
                       >
                         <Check className="h-3.5 w-3.5 text-green-500" />
                       </Button>
-                      <Button variant="ghost" size="icon-xs" onClick={cancelEdit}>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={t("organizationPortfolio.cancelRename")}
+                        onClick={cancelEdit}
+                      >
                         <X className="h-3.5 w-3.5 text-muted-foreground" />
                       </Button>
                     </div>
@@ -197,12 +211,13 @@ export function Companies() {
                               : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {company.status}
+                        {statusLabel}
                       </Badge>
                       <Button
                         variant="ghost"
                         size="icon-xs"
                         className="text-muted-foreground opacity-0 group-hover:opacity-100"
+                        aria-label={t("organizationPortfolio.renameOrganization", { name: company.name })}
                         onClick={(e) => {
                           e.stopPropagation();
                           startEdit(company.id, company.name);
@@ -227,6 +242,7 @@ export function Companies() {
                         variant="ghost"
                         size="icon-xs"
                         className="text-muted-foreground opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+                        aria-label={t("organizationPortfolio.actionsFor", { name: company.name })}
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
@@ -236,7 +252,7 @@ export function Companies() {
                         onClick={() => startEdit(company.id, company.name)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                        Rename
+                        {t("organizationPortfolio.rename")}
                       </DropdownMenuItem>
                       {company.status === "archived" && (
                         <DropdownMenuItem
@@ -244,7 +260,7 @@ export function Companies() {
                           onClick={() => unarchiveMutation.mutate(company.id)}
                         >
                           <ArchiveRestore className="h-3.5 w-3.5" />
-                          Unarchive
+                          {t("organizationPortfolio.unarchive")}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />
@@ -253,7 +269,7 @@ export function Companies() {
                         onClick={() => setConfirmDeleteId(company.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Delete Organization
+                        {t("organizationPortfolio.deleteOrganization")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -265,13 +281,13 @@ export function Companies() {
                 <div className="flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5" />
                   <span>
-                    {agentCount} {agentCount === 1 ? "agent" : "agents"}
+                    {t("organizationPortfolio.agentCount", { count: agentCount })}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CircleDot className="h-3.5 w-3.5" />
                   <span>
-                    {issueCount} {issueCount === 1 ? "task" : "tasks"}
+                    {t("organizationPortfolio.taskCount", { count: issueCount })}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 tabular-nums">
@@ -279,13 +295,13 @@ export function Companies() {
                   <span>
                     {formatCents(company.spentMonthlyCents)}
                     {company.budgetMonthlyCents > 0
-                      ? <> / {formatCents(company.budgetMonthlyCents)} <span className="text-xs">({budgetPct}%)</span></>
-                      : <span className="text-xs ml-1">Unlimited budget</span>}
+                      ? <> / {formatCents(company.budgetMonthlyCents)} <span className="text-xs">({formatNumber(budgetPct)}%)</span></>
+                      : <span className="text-xs ml-1">{t("organizationPortfolio.unlimitedBudget")}</span>}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 ml-auto">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span>Created {relativeTime(company.createdAt)}</span>
+                    <span>{t("organizationPortfolio.createdAt", { relative: relativeTime(company.createdAt) })}</span>
                 </div>
               </div>
 
@@ -296,7 +312,7 @@ export function Companies() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <p className="text-sm text-destructive font-medium">
-                    Delete this organization and all its data? This cannot be undone.
+                    {t("organizationPortfolio.deleteConfirmation")}
                   </p>
                   <div className="flex items-center gap-2 ml-4 shrink-0">
                     <Button
@@ -305,7 +321,7 @@ export function Companies() {
                       onClick={() => setConfirmDeleteId(null)}
                       disabled={deleteMutation.isPending}
                     >
-                      Cancel
+                      {t("organizationPortfolio.cancel")}
                     </Button>
                     <Button
                       variant="destructive"
@@ -313,7 +329,9 @@ export function Companies() {
                       onClick={() => deleteMutation.mutate(company.id)}
                       disabled={deleteMutation.isPending}
                     >
-                      {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                      {deleteMutation.isPending
+                        ? t("organizationPortfolio.deleting")
+                        : t("organizationPortfolio.delete")}
                     </Button>
                   </div>
                 </div>

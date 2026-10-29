@@ -43,6 +43,8 @@ import { useToastActions } from "../context/ToastContext";
 import { collectLiveIssueIds } from "../lib/liveIssueIds";
 import { queryKeys } from "../lib/queryKeys";
 import { cn, formatDateTime, issueUrl, projectRouteRef, projectWorkspaceUrl } from "../lib/utils";
+import { formatUiError } from "../api/error-presentation";
+import { useTranslation } from "@/i18n";
 import {
   getWorkspaceSpecificRoutineVariableNames,
   routineHasWorkspaceSpecificVariables,
@@ -442,17 +444,18 @@ export function RuntimeProvisionStatusValue({
   status: RuntimeProvisionStatus;
   onViewLogs: () => void;
 }) {
+  const { t } = useTranslation();
   if (status.kind === "eager") {
     return (
-      <span className="text-sm text-muted-foreground">Eager · provisioned during workspace setup</span>
+      <span className="text-sm text-muted-foreground">{t("taskDetail.workspace.runtime.provision.eager")}</span>
     );
   }
   if (status.kind === "deferred") {
     return (
       <div className="flex flex-col gap-1">
-        <StatusPill className="border-amber-500/40 text-amber-600 dark:text-amber-400">Deferred</StatusPill>
+        <StatusPill className="border-amber-500/40 text-amber-600 dark:text-amber-400">{t("taskDetail.workspace.runtime.provision.deferred")}</StatusPill>
         <span className="text-xs text-muted-foreground">
-          Runs once before the first runtime-service start.
+          {t("taskDetail.workspace.runtime.provision.deferredDescription")}
         </span>
       </div>
     );
@@ -461,24 +464,24 @@ export function RuntimeProvisionStatusValue({
     return (
       <StatusPill className="border-border text-muted-foreground">
         <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-        Provisioning…
+        {t("taskDetail.workspace.runtime.provision.provisioning")}
       </StatusPill>
     );
   }
   if (status.kind === "provisioned") {
     return (
       <StatusPill className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400">
-        Provisioned{status.at ? ` · ${formatDateTime(status.at)}` : ""}
+        {t("taskDetail.workspace.runtime.provision.provisioned")}{status.at ? ` · ${formatDateTime(status.at)}` : ""}
       </StatusPill>
     );
   }
   return (
     <div className="flex flex-col gap-1">
       <StatusPill className="border-destructive/50 text-destructive">
-        Provisioning failed{status.at ? ` · ${formatDateTime(status.at)}` : ""}
+        {t("taskDetail.workspace.runtime.provision.failed")}{status.at ? ` · ${formatDateTime(status.at)}` : ""}
       </StatusPill>
       <button type="button" onClick={onViewLogs} className="self-start text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
-        View runtime logs
+        {t("taskDetail.workspace.runtime.provision.viewLogs")}
       </button>
     </div>
   );
@@ -774,6 +777,7 @@ function ExecutionWorkspaceRoutinesList({
 }
 
 export function ExecutionWorkspaceDetail() {
+  const { t } = useTranslation();
   const { visible: workspaceIsolationControlsVisible, loaded: workspaceVisibilityLoaded } = useWorkspaceIsolationControls();
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const location = useLocation();
@@ -962,17 +966,19 @@ export function ExecutionWorkspaceDetail() {
       setRuntimeActionErrorMessage(null);
       setRuntimeActionMessage(
         request.action === "run"
-          ? "Workspace job completed."
+          ? t("taskDetail.workspace.runtime.jobCompleted")
           : request.action === "stop"
-            ? "Workspace service stopped."
+            ? t("taskDetail.workspace.runtime.serviceStopped")
             : request.action === "restart"
-              ? "Workspace service restarted."
-              : "Workspace service started.",
+              ? t("taskDetail.workspace.runtime.serviceRestarted")
+              : t("taskDetail.workspace.runtime.serviceStarted"),
       );
     },
     onError: (error) => {
       setRuntimeActionMessage(null);
-      setRuntimeActionErrorMessage(error instanceof Error ? error.message : "Failed to control workspace commands.");
+      setRuntimeActionErrorMessage(error instanceof Error
+        ? formatUiError(error)
+        : t("taskDetail.workspace.runtime.controlFailed"));
     },
     onSettled: (_result, _error, request) => {
       setPendingRuntimeActions((current) => current.filter((pendingRequest) => pendingRequest !== request));
@@ -1102,14 +1108,14 @@ export function ExecutionWorkspaceDetail() {
             pendingRequest={pendingRuntimeAction}
             serviceEmptyMessage={
               effectiveRuntimeConfig
-                ? "No services have been started for this execution workspace yet."
-                : "No workspace command config is defined for this execution workspace yet."
+                ? t("taskDetail.workspace.runtime.noExecutionServicesStarted")
+                : t("taskDetail.workspace.runtime.noExecutionCommandConfig")
             }
-            jobEmptyMessage="No one-shot jobs are configured for this execution workspace yet."
+            jobEmptyMessage={t("taskDetail.workspace.runtime.noExecutionJobs")}
             disabledHint={
               canStartRuntimeServices
                 ? null
-                : "Execution workspaces need a working directory before local commands can run, and services also need runtime config."
+                : t("taskDetail.workspace.runtime.executionNeedsWorkingDirectory")
             }
             onAction={(request) => runRuntimeControlRequests([request])}
           />
@@ -1129,7 +1135,9 @@ export function ExecutionWorkspaceDetail() {
                     onClick={() => setCloseDialogOpen(true)}
                     disabled={workspace.status === "archived"}
                   >
-                    {workspace.status === "cleanup_failed" ? "Retry close" : "Close workspace"}
+                    {workspace.status === "cleanup_failed"
+                      ? t("taskDetail.workspace.close.retryTitle")
+                      : t("taskDetail.workspace.close.closeTitle")}
                   </Button>
                 </CardAction>
               </CardHeader>
@@ -1459,7 +1467,7 @@ export function ExecutionWorkspaceDetail() {
                   "None"
                 )}
               </DetailRow>
-              <DetailRow label="Runtime provisioning">
+              <DetailRow label={t("taskDetail.workspace.runtime.provision.label")}>
                 <RuntimeProvisionStatusValue
                   status={runtimeProvisionStatus}
                   onViewLogs={() => handleTabChange("runtime_logs")}

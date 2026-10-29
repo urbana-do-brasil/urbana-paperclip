@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IssueQueuedCommentQueue } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import {
   reorderQueuedMessageEntries,
   TaskChatQueuedMessages,
@@ -54,15 +55,17 @@ describe("TaskChatQueuedMessages", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root.unmount());
     container.remove();
+    await i18n.changeLanguage("en");
   });
 
   function render(
@@ -87,6 +90,25 @@ describe("TaskChatQueuedMessages", () => {
     expect(container.textContent).toContain("First queued message");
     render();
     expect(container.textContent).not.toContain(message);
+  });
+
+  it("localizes queue controls and retryable errors without changing the queued message operation", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onSteer = vi.fn().mockRejectedValue(new Error("steering_timeout"));
+    const props = render({ onSteer });
+    const pane = container.querySelector('[data-testid="task-chat-queued-messages"]');
+    expect(pane?.getAttribute("aria-label")).toBe("Mensagens na fila");
+    expect(container.querySelector<HTMLButtonElement>('[data-testid="task-chat-queued-steer-comment-1"]')?.textContent)
+      .toBe("Direcionar");
+    expect(container.querySelector<HTMLButtonElement>('[data-testid="task-chat-queued-discard-comment-1"]')?.getAttribute("aria-label"))
+      .toBe("Descartar mensagem na fila: First queued message");
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-testid="task-chat-queued-steer-comment-1"]')!.click();
+    });
+    expect(onSteer).toHaveBeenCalledExactlyOnceWith("comment-1", "rev-1");
+    expect(container.textContent).toContain("Não foi possível direcionar. A mensagem continua na fila.");
+    expect(props.onDiscard).not.toHaveBeenCalled();
   });
 
   it("renders each queued message once as a compact one-line row", () => {

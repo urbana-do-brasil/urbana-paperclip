@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
 import type { IssueDocument } from "@paperclipai/shared";
 import type { MentionOption } from "@/components/MarkdownEditor";
 import { IssueThreadInteractionCard } from "@/components/IssueThreadInteractionCard";
@@ -44,21 +45,22 @@ export function TaskChatInteractionCard({
   draftKey,
   ...cardProps
 }: TaskChatInteractionCardProps) {
+  const { t } = useTranslation();
   const interaction = item.interaction;
   if (presentation === "timeline" && showUnansweredQuestion && !shouldHideInteractionCard(interaction) && interaction.kind === "ask_user_questions" && interaction.status === "pending") {
-    const prompt = interaction.payload.questionSet?.questions[0]?.prompt ?? interaction.payload.questions[0]?.prompt ?? interaction.title ?? "Question";
+    const prompt = interaction.payload.questionSet?.questions[0]?.prompt ?? interaction.payload.questions[0]?.prompt ?? interaction.title ?? t("taskDetail.interactionQuestions.questionFallback");
     return (
       <button
         type="button"
         id={`interaction-${interaction.id}`}
         data-testid="task-chat-unanswered-question"
-        aria-label={`Answer question: ${prompt}`}
+        aria-label={t("taskDetail.interactionQuestions.answerQuestion", { prompt })}
         disabled={!onReviewRequest}
         onClick={() => onReviewRequest?.(interaction.id)}
         className="group flex w-full items-center gap-2 rounded-sm px-1 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <CircleHelp aria-hidden className="h-3.5 w-3.5 shrink-0" />
-        <span className="min-w-0 flex-1"><span className="block text-xs">Unanswered question</span><span className="block truncate">{prompt}</span></span>
+        <span className="min-w-0 flex-1"><span className="block text-xs">{t("taskDetail.interactionQuestions.unansweredQuestion")}</span><span className="block truncate">{prompt}</span></span>
         <ChevronRight aria-hidden className="h-3 w-3 shrink-0" />
       </button>
     );

@@ -24,6 +24,7 @@ import { cn, relativeTime } from "../lib/utils";
 import { queryKeys } from "../lib/queryKeys";
 import { keepPreviousDataForSameQueryTail } from "../lib/query-placeholder-data";
 import { describeRunRetryState } from "../lib/runRetryState";
+import { useTranslation } from "react-i18next";
 import { readSourceResolvedWatchdogFold } from "../lib/source-resolved-watchdog-fold";
 import { SourceResolvedFoldBadge } from "./SourceResolvedFoldBadge";
 import { ResponsibleUserDenialNotice } from "./ResponsibleUserDenialNotice";
@@ -606,6 +607,7 @@ export function IssueRunLedgerContent({
   onRerunWithTrace,
   providerTraceMetadata = new Map(),
 }: IssueRunLedgerContentProps) {
+  const { t } = useTranslation();
   const [inspectedRun, setInspectedRun] = useState<LedgerRun | null>(null);
   const ledgerRuns = useMemo(
     () => mergeRuns(runs, liveRuns, activeRun),
@@ -847,7 +849,7 @@ export function IssueRunLedgerContent({
             const duration = formatDuration(run.startedAt, run.finishedAt);
             const exhausted = hasExhaustedContinuation(run);
             const continuation = continuationLabel(run);
-            const retryState = describeRunRetryState(run);
+            const retryState = describeRunRetryState(run, (key, options) => t(key, options));
             const agentName = compactAgentName(run, agentMap);
             const onBehalfOfLabel = run.responsibleUserId
               ? responsibleUserLabel(resolveUserLabel?.(run.responsibleUserId))

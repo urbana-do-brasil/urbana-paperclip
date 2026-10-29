@@ -16,6 +16,7 @@ import { DocumentAnnotationLayer, type AnnotationAnchorRect, type PendingAnchor 
 import { DocumentAnnotationPanel } from "./DocumentAnnotationPanel";
 import { DocumentAnnotationPopover } from "./DocumentAnnotationPopover";
 import type { CompanyUserProfile } from "@/lib/company-members";
+import { useTranslation } from "react-i18next";
 
 // Width of the right-hand comment gutter on desktop (lg+). The gutter is an
 // in-flow flex column beside the document, so it scrolls with the doc instead
@@ -76,6 +77,7 @@ export function IssueDocumentAnnotations({
   initialComposerAnchor,
   onInitialComposerAnchorConsumed,
 }: IssueDocumentAnnotationsProps) {
+  const { t } = useTranslation();
   const selectionDebugEnabled = isSelectionDebugEnabled();
   if (selectionDebugEnabled) initializeSelectionDebug();
   const containerRef = useRef<HTMLElement | null>(null);
@@ -130,13 +132,13 @@ export function IssueDocumentAnnotations({
 
   const newCommentDisabled = draftDirty || draftConflicted || historicalPreview || !doc.latestRevisionId;
   const newCommentDisabledReason = historicalPreview
-    ? "New comments are disabled while previewing a historical revision."
+    ? t("documentAnnotations.newCommentsDisabled.historical")
     : draftConflicted
-      ? "Resolve the document conflict before adding new comments."
+      ? t("documentAnnotations.newCommentsDisabled.conflict")
       : draftDirty
-        ? "Save the draft to anchor new comments."
+        ? t("documentAnnotations.newCommentsDisabled.dirty")
         : !doc.latestRevisionId
-          ? "Document has no saved revision yet."
+          ? t("documentAnnotations.newCommentsDisabled.noRevision")
           : null;
 
   const handleSelectionAnchorChange = useCallback((anchor: PendingAnchor | null) => {
@@ -396,6 +398,7 @@ export function DocumentAnnotationsCountChip({
   panelOpen,
   onToggle,
 }: DocumentAnnotationsCountChipProps) {
+  const { t } = useTranslation();
   const annotationsQuery = useQuery({
     queryKey: target?.kind === "routine"
       ? queryKeys.routines.documentAnnotations(target.routineId, target.documentKey, "all")
@@ -426,15 +429,16 @@ export function DocumentAnnotationsCountChip({
       )}
       onClick={onToggle}
       data-testid={`document-annotation-count-${docKey}`}
-      aria-label={openCount === 0
-        ? `Open comments on ${docKey}`
-        : `Open ${openCount} unresolved comments on ${docKey}`}
+      aria-label={t("documentAnnotations.openComments", {
+        count: openCount,
+        document: docKey,
+      })}
       aria-expanded={panelOpen}
     >
       <MessageSquare className="h-3 w-3" aria-hidden="true" />
       <span className="tabular-nums">{openCount}</span>
       <span className="hidden sm:inline">
-        {openCount === 1 ? "comment" : "comments"}
+        {t("documentAnnotations.commentLabel", { count: openCount })}
       </span>
     </Button>
   );

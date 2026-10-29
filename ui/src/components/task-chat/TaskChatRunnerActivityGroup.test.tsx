@@ -3,6 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TaskChatThreadView } from "./TaskChatThreadView";
+import { i18n } from "@/i18n";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { MemoryRouter } from "@/lib/router";
 import { TaskChatRunnerActivityGroup } from "./TaskChatRunnerActivityGroup";
@@ -35,16 +36,18 @@ describe("TaskChatRunnerActivityGroup", () => {
   let container: HTMLDivElement;
   let root: Root;
   let memory: Map<string, boolean>;
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
     memory = new Map();
     motion.reduced = false;
   });
-  afterEach(() => {
+  afterEach(async () => {
     act(() => root.unmount());
     container.remove();
+    await i18n.changeLanguage("en");
   });
   const render = (
     items: TaskChatActivityPhaseItem["items"],
@@ -144,6 +147,39 @@ describe("TaskChatRunnerActivityGroup", () => {
     expect(viewport().textContent).toContain("Checking the file");
     expect(viewport().textContent).not.toContain("First");
     expect(container.querySelector(".runner-activity-roll-in")).toBeNull();
+  });
+
+  it("localizes the grouped provider activity summary and expansion label", async () => {
+    await i18n.changeLanguage("pt-BR");
+    render(
+      [
+        {
+          id: "provider-plan",
+          kind: "protocol",
+          surface: "provider_activity",
+          family: "plan",
+          eventType: "plan.updated",
+          status: "completed",
+          title: "Plan",
+          summary: "Provider plan summary",
+          details: [],
+          steps: [],
+          links: [],
+          children: [],
+        },
+      ],
+      "provider-plan-history",
+      false,
+    );
+
+    expect(toggle().textContent).toContain("Trabalhou no plano");
+    expect(toggle().getAttribute("aria-label")).toBe(
+      "Expandir trabalhou no plano (1 atividade)",
+    );
+    act(() => toggle().click());
+    expect(toggle().textContent).toContain("1 atividade");
+    expect(container.textContent).toContain("Atualizou o plano");
+    expect(container.textContent).toContain("Provider plan summary");
   });
 
   it("preserves expanded history and item detail across appends and live-to-history remount", () => {

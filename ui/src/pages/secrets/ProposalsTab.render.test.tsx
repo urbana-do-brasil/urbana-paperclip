@@ -190,7 +190,7 @@ describe("ProposalsTab", () => {
     expect(text).toContain("ClaudeCoder"); // proposer
     expect(text).toContain("PAP-14743"); // origin issue
     // Justification is framed as an untrusted, agent-authored claim (Q0 concern).
-    expect(text).toContain("Reason given by the agent");
+    expect(text).toContain("Motivo informado pelo agente");
     // Never renders a raw secret value.
     expect(text).not.toContain("ghp_");
   });

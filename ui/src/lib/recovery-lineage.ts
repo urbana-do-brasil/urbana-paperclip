@@ -205,9 +205,15 @@ export function readRecoveryRetryLineage(
 }
 
 /** "Attempt 2 of 5", or null when the server did not record a bounded budget. */
-export function formatRecoveryAttemptLabel(lineage: RecoveryRetryLineage): string | null {
+export function formatRecoveryAttemptLabel(
+  lineage: RecoveryRetryLineage,
+  translate?: RecoveryTranslator,
+): string | null {
   if (lineage.maxAttempts === null) return null;
-  return `Attempt ${Math.min(lineage.attempt, lineage.maxAttempts)} of ${lineage.maxAttempts}`;
+  const attempt = Math.min(lineage.attempt, lineage.maxAttempts);
+  return translate
+    ? translate("taskCollection.rows.recovery.attempt", { attempt, maxAttempts: lineage.maxAttempts })
+    : `Attempt ${attempt} of ${lineage.maxAttempts}`;
 }
 
 /** "in 3m" / "now" / "3m ago" for the stored next attempt, or null when none is stored. */
@@ -218,6 +224,38 @@ export function formatRecoveryRetryOffset(lineage: RecoveryRetryLineage): string
   } catch {
     return null;
   }
+}
+
+/** Localizable next-step copy for the lane, separated from its attempt budget label. */
+export function formatRecoveryLineageStatus(
+  lineage: RecoveryRetryLineage,
+  translate?: RecoveryTranslator,
+): string | null {
+  if (lineage.liveRunId) {
+    return translate?.("taskCollection.rows.recovery.attemptRunning") ?? "attempt running now";
+  }
+  const rawOffset = formatRecoveryRetryOffset(lineage);
+  if (lineage.retryExpired) {
+    if (rawOffset && translate) {
+      const duration = localizedRetryDuration(rawOffset.replace(/^(?:in )|(?: ago)$/g, ""), translate);
+      return translate("taskCollection.rows.recovery.retryMissedIn", { duration });
+    }
+    return rawOffset ? `retry missed ${rawOffset}` : "retry missed";
+  }
+  if (rawOffset) {
+    if (translate) {
+      return rawOffset === "now"
+        ? translate("taskCollection.rows.recovery.nextTryNow")
+        : translate("taskCollection.rows.recovery.nextTryIn", {
+          duration: localizedRetryDuration(rawOffset.replace(/^in /, ""), translate),
+        });
+    }
+    return rawOffset === "now" ? "next try now" : `next try ${rawOffset}`;
+  }
+  if (lineage.exhausted) {
+    return translate?.("taskCollection.rows.recovery.retriesUsed") ?? "retries used up";
+  }
+  return null;
 }
 
 /**
@@ -241,60 +279,16 @@ function localizedRetryDuration(value: string, translate: RecoveryTranslator): s
   }).join(" ");
 }
 
-function localizedRetryOffset(value: string, translate: RecoveryTranslator): string {
-  if (value === "now") return translate("taskCollection.rows.recovery.retryOffsetNow");
-  const inMatch = value.match(/^in (.+)$/);
-  if (inMatch) {
-    return translate("taskCollection.rows.recovery.retryOffsetIn", {
-      duration: localizedRetryDuration(inMatch[1], translate),
-    });
-  }
-  const agoMatch = value.match(/^(.+) ago$/);
-  if (agoMatch) {
-    return translate("taskCollection.rows.recovery.retryOffsetAgo", {
-      duration: localizedRetryDuration(agoMatch[1], translate),
-    });
-  }
-  return value;
-}
-
 export function formatRecoveryLineageSummary(
   lineage: RecoveryRetryLineage,
   translate?: RecoveryTranslator,
 ): string | null {
   const parts: string[] = [];
-  const attempt = lineage.maxAttempts === null
-    ? null
-    : translate?.("taskCollection.rows.recovery.attempt", {
-      attempt: Math.min(lineage.attempt, lineage.maxAttempts),
-      maxAttempts: lineage.maxAttempts,
-    }) ?? formatRecoveryAttemptLabel(lineage);
+  const attempt = formatRecoveryAttemptLabel(lineage, translate);
   if (attempt) parts.push(attempt);
-  const rawOffset = formatRecoveryRetryOffset(lineage);
-  const offset = rawOffset && translate ? localizedRetryOffset(rawOffset, translate) : rawOffset;
-  if (lineage.liveRunId) {
-    parts.push(translate?.("taskCollection.rows.recovery.attemptRunning") ?? "attempt running now");
-  } else if (lineage.retryExpired) {
-    // Never "next try 5m ago": a due time in the past is a missed attempt, and phrasing it as
-    // an upcoming one is exactly the false healthy state this helper exists to prevent.
-    if (rawOffset && translate) {
-      const duration = localizedRetryDuration(rawOffset.replace(/^(?:in )|(?: ago)$/g, ""), translate);
-      parts.push(translate("taskCollection.rows.recovery.retryMissedIn", { duration }));
-    } else {
-      parts.push(offset ? `retry missed ${offset}` : "retry missed");
-    }
-  } else if (offset) {
-    if (translate) {
-      parts.push(rawOffset === "now"
-        ? translate("taskCollection.rows.recovery.nextTryNow")
-        : translate("taskCollection.rows.recovery.nextTryIn", {
-          duration: localizedRetryDuration((rawOffset ?? "").replace(/^in /, ""), translate),
-        }));
-    } else {
-      parts.push(offset === "now" ? "next try now" : `next try ${offset}`);
-    }
-  } else if (lineage.exhausted) {
-    parts.push(translate?.("taskCollection.rows.recovery.retriesUsed") ?? "retries used up");
-  }
+  // Never "next try 5m ago": a due time in the past is a missed attempt, and phrasing it as
+  // an upcoming one is exactly the false healthy state this helper exists to prevent.
+  const status = formatRecoveryLineageStatus(lineage, translate);
+  if (status) parts.push(status);
   return parts.length > 0 ? parts.join(" · ") : null;
 }

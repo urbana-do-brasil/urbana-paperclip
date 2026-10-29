@@ -4,10 +4,11 @@ import { act as reactAct, type ComponentProps, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DecisionCard, type DecisionIssueRef } from "./DecisionCard";
 import type { Decision, DecisionEffectExecution } from "../api/decisions";
 import { ThemeProvider } from "../context/ThemeContext";
+import { i18n } from "../i18n";
 import { TooltipProvider } from "./ui/tooltip";
 
 let container: HTMLDivElement | null = null;
@@ -120,14 +121,34 @@ function clickButtonWithText(el: HTMLElement, text: string) {
   return button;
 }
 
-afterEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
   if (root) act(() => root?.unmount());
   container?.remove();
   root = null;
   container = null;
+  await i18n.changeLanguage("en");
 });
 
 describe("DecisionCard", () => {
+  it("localizes decision state and expiry details in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const el = render({
+      decision: mkDecision({
+        status: "expired",
+        metadata: { expiredReason: "target_gone" },
+      }),
+    });
+
+    expect(el.querySelector('[data-decision-state="expired"]')).toBeTruthy();
+    expect(el.textContent).toContain("Expirada");
+    expect(el.textContent).toContain("O prazo para decidir terminou");
+    expect(el.textContent).toContain("Uma tarefa alvo foi cancelada");
+  });
+
   it("renders a pending decision with provenance, effect summary and dismiss", () => {
     const el = render({});
     expect(el.textContent).toContain("Pending");
@@ -272,7 +293,7 @@ describe("DecisionCard", () => {
     });
     expect(el.textContent).toContain("Decided");
     expect(el.textContent).toContain("Created PAP-999");
-    expect(el.textContent).toContain("Set PAP-456 to done");
+    expect(el.textContent).toContain("Set PAP-456 to Done");
     expect([...el.querySelectorAll("a")].some((a) => a.getAttribute("href") === "/PAP/issues/PAP-999")).toBe(true);
     // No option buttons on a terminal decision.
     expect([...el.querySelectorAll("button")].length).toBe(0);

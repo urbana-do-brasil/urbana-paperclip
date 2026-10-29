@@ -6,6 +6,7 @@ import {
   type ToolIcon,
 } from "./tool-taxonomy";
 import { protocolActivityPresentation, providerNoticeSeverity } from "./task-chat-activity-presentation";
+import type { TaskChatActivityTranslator } from "./task-chat-activity-presentation";
 
 type Activity = TaskChatActivityPhaseItem["items"][number];
 const labels: Record<ToolFamily, string> = {
@@ -26,7 +27,14 @@ const labels: Record<ToolFamily, string> = {
 };
 
 /** Describe observed activities, never infer success from a finished group. */
-export function completedActivitySummary(items: Activity[]) {
+export function completedActivitySummary(
+  items: Activity[],
+  translate?: TaskChatActivityTranslator,
+) {
+  const text = (key: string, fallback: string) =>
+    translate
+      ? translate(`taskDetail.chatTranscript.providerActivity.experimental.activityGroups.${key}`)
+      : fallback;
   const categories = new Map<
     string,
     { label: string; icon: ToolIcon; order: number }
@@ -71,7 +79,7 @@ export function completedActivitySummary(items: Activity[]) {
         });
         tools.push({ ...p, order, completed: item.status === "completed" });
       } else {
-        const p = protocolActivityPresentation(item);
+        const p = protocolActivityPresentation(item, translate);
         if (!p) continue;
         if (item.surface === "provider_activity" && item.family === "provider_notice") {
           // Reuse only the normalized notice text already available in the row.
@@ -82,7 +90,7 @@ export function completedActivitySummary(items: Activity[]) {
         }
         const family =
           item.surface === "provider_activity" ? item.family : item.surface;
-        const label =
+        const fallbackLabel =
           (
             {
               research: "Searched the web",
@@ -102,6 +110,10 @@ export function completedActivitySummary(items: Activity[]) {
               resource: "Added resources",
             } as Record<string, string>
           )[family] ?? "Used tools";
+        const label =
+          translate && item.surface === "provider_activity"
+            ? translate(`taskDetail.chatTranscript.providerActivity.experimental.activityGroups.providerFamily.${family}`)
+            : fallbackLabel;
         add(label, p.icon, order);
       }
     }
@@ -111,15 +123,15 @@ export function completedActivitySummary(items: Activity[]) {
       ?? notices.find((notice) => notice.severity === "warning")
       ?? notices[0]!;
     const label = notices.length === 1
-      ? strongest.summary || "Received a provider update"
+          ? strongest.summary || text("receivedUpdate", "Received a provider update")
       : strongest.severity === "error"
-        ? "Provider error reported"
+        ? text("providerError", "Provider error reported")
         : strongest.severity === "warning"
-          ? "Provider warning reported"
-          : "Received provider updates";
+          ? text("providerWarning", "Provider warning reported")
+          : text("receivedUpdates", "Received provider updates");
     // One notice category leaves room for actual work. Keep warnings and errors
     // visible when the compact label truncates other activity categories.
-    add(label, strongest.icon, strongest.severity === "info" ? notices[0]!.order : -1);
+      add(label, strongest.icon, strongest.severity === "info" ? notices[0]!.order : -1);
   }
   const completedFamilies = new Set(
     tools.filter((tool) => tool.completed).map((tool) => tool.family),
@@ -127,32 +139,45 @@ export function completedActivitySummary(items: Activity[]) {
   // Merge repeated families and retries. Terminal is an action, not an exit-status claim.
   for (const tool of tools) {
     const succeeded = completedFamilies.has(tool.family);
-    const label =
-      tool.family === "read" && !succeeded
-        ? "Checked files"
-        : tool.family === "edit" && !succeeded
-          ? "Worked on files"
+    const label = tool.family === "read" && !succeeded
+      ? text("checkedFiles", "Checked files")
+      : tool.family === "edit" && !succeeded
+        ? text("workedOnFiles", "Worked on files")
+        : translate
+          ? translate(`taskDetail.chatTranscript.providerActivity.experimental.activityGroups.toolFamily.${tool.family}`)
           : labels[tool.family];
     add(label, tool.icon, tool.order);
   }
   if (!categories.size) {
     if (items.some((item) => item.kind === "thinking"))
-      add("Thought through the task", Brain);
+      add(text("thoughtThroughTask", "Thought through the task"), Brain);
     else if (items.some((item) => item.kind === "marker"))
-      add("Activity stopped", CirclePause);
-    else add("Recorded usage", Gauge);
+      add(text("activityStopped", "Activity stopped"), CirclePause);
+    else add(text("recordedUsage", "Recorded usage"), Gauge);
   }
   const values = [...categories.values()].sort((a, b) => a.order - b.order);
   const join = (parts: string[]) =>
     parts
       .map((p, i) => (i ? p.charAt(0).toLowerCase() + p.slice(1) : p))
       .join(", ");
-  const fullLabel = join(values.map((v) => v.label));
+  const fullLabel = values.length > 3 && translate
+    ? translate("taskDetail.chatTranscript.providerActivity.experimental.activityGroups.andMore", {
+        first: values[0]!.label,
+        second: values[1]!.label,
+      })
+    : values.length > 3
+      ? `${join(values.slice(0, 2).map((v) => v.label))}, and more`
+      : join(values.map((v) => v.label));
+  const label = values.length > 3 && translate
+    ? translate("taskDetail.chatTranscript.providerActivity.experimental.activityGroups.andMore", {
+        first: values[0]!.label,
+        second: values[1]!.label,
+      })
+    : values.length > 3
+      ? `${join(values.slice(0, 2).map((v) => v.label))}, and more`
+      : fullLabel;
   return {
-    label:
-      values.length > 3
-        ? `${join(values.slice(0, 2).map((v) => v.label))}, and more`
-        : fullLabel,
+    label,
     fullLabel,
     icon: values.length === 1 ? values[0].icon : Layers3,
   };

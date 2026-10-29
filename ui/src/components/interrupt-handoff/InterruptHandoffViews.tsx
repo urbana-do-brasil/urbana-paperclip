@@ -1,5 +1,6 @@
 import { AlertTriangle, Info, PauseCircle, User, X } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { useTranslation } from "@/i18n";
 import { AgentAvatar, type AvatarAgent } from "../AgentAvatar";
 import {
   classifyAssigneeHandoff,
@@ -56,10 +57,11 @@ export function AssigneeChip({
   resolvers: HandoffChipResolvers;
   className?: string;
 }) {
+  const { t } = useTranslation();
   if (assignee.agentId) {
     return (
       <span className={cn(CHIP_CLASS, className)} data-testid="handoff-assignee-chip" data-kind="agent">
-        <span className="sr-only">Agent </span>
+        <span className="sr-only">{t("taskDetail.chatTranscript.timeline.agent")} </span>
         <AgentAvatar agent={{ ...resolvers.agentMap?.get(assignee.agentId), id: assignee.agentId }} size={16} />
         <span className="max-w-(--sz-12rem) truncate">{agentName(assignee.agentId, resolvers)}</span>
       </span>
@@ -68,7 +70,7 @@ export function AssigneeChip({
   if (assignee.userId) {
     return (
       <span className={cn(CHIP_CLASS, className)} data-testid="handoff-assignee-chip" data-kind="user">
-        <span className="sr-only">User </span>
+        <span className="sr-only">{t("taskDetail.chatTranscript.timeline.user")} </span>
         <User className="h-3 w-3 shrink-0 text-muted-foreground" />
         <span className="max-w-(--sz-12rem) truncate">{userLabel(assignee.userId, resolvers)}</span>
       </span>
@@ -80,8 +82,8 @@ export function AssigneeChip({
       data-testid="handoff-assignee-chip"
       data-kind="unassigned"
     >
-      <span className="sr-only">No responsible — </span>
-      Unassigned
+      <span className="sr-only">{t("taskDetail.chatTranscript.timeline.noResponsible")} </span>
+      {t("taskDetail.chatTranscript.timeline.unassigned")}
     </span>
   );
 }
@@ -97,19 +99,29 @@ export function HandoffWakeRow({
   resolvers: HandoffChipResolvers;
   interruptedRunAttached?: boolean;
 }) {
+  const { t } = useTranslation();
   const info = classifyAssigneeHandoff(to, {
     agentName: to.agentId ? agentName(to.agentId, resolvers) : null,
     interruptedRunAttached,
   });
+  const wakeText = info.kind === "agent_wake"
+    ? t(interruptedRunAttached
+        ? "taskDetail.chatTranscript.timeline.queuedForAgentWithInterrupt"
+        : "taskDetail.chatTranscript.timeline.queuedForAgent", {
+        agent: to.agentId ? agentName(to.agentId, resolvers) : t("taskDetail.chatTranscript.fallbackAgent"),
+      })
+    : info.kind === "user_handoff"
+      ? t("taskDetail.chatTranscript.timeline.handedToUser")
+      : t("taskDetail.chatTranscript.timeline.unassignedWake");
   return (
     <div
       className="flex flex-wrap items-center gap-1.5 text-xs"
       data-testid="handoff-wake-row"
       data-kind={info.kind}
     >
-      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Wake</span>
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("taskDetail.chatTranscript.timeline.wake")}</span>
       <span className={cn(info.kind === "agent_wake" ? "text-foreground" : "text-muted-foreground")}>
-        {info.wakeText}
+        {wakeText}
       </span>
     </div>
   );
@@ -126,15 +138,33 @@ export function RunStatusBadge({
   operatorInterrupted?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const p = resolveRunStatusPresentation(status, { operatorInterrupted });
+  const statusKey = status === "cancelled" && operatorInterrupted
+    ? "interrupted"
+    : ({
+        queued: "queued",
+        running: "running",
+        succeeded: "succeeded",
+        failed: "failed",
+        error: "error",
+        timed_out: "timedOut",
+        cancelled: "cancelled",
+      } as Record<string, string>)[status];
+  const label = statusKey
+    ? t(`taskDetail.chatTranscript.run.status.${statusKey}`)
+    : status;
+  const srHint = status === "cancelled" && operatorInterrupted
+    ? t("taskDetail.chatTranscript.run.status.interruptedByBoardHint")
+    : p.srHint;
   return (
     <span
       className={cn("font-medium", p.className, className)}
       data-testid="run-status-badge"
       data-interrupted={operatorInterrupted ? "true" : "false"}
     >
-      {p.label}
-      {p.srHint ? <span className="sr-only"> — {p.srHint}</span> : null}
+      {label}
+      {srHint ? <span className="sr-only"> — {srHint}</span> : null}
     </span>
   );
 }

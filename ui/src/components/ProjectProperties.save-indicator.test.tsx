@@ -3,9 +3,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Project } from "@paperclipai/shared";
 import type { ReactNode } from "react";
+import { act as reactAct } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { ProjectProperties, type ProjectFieldSaveState } from "./ProjectProperties";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryKeys } from "../lib/queryKeys";
@@ -42,6 +45,9 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     name: "Test project",
     description: "A long description that fills the value column",
     status: "in_progress",
+    targetDate: new Date("2026-06-01T00:00:00Z"),
+    createdAt: new Date("2026-01-01T00:00:00Z"),
+    updatedAt: new Date("2026-05-01T00:00:00Z"),
     goalIds: [],
     goals: [],
     env: null,
@@ -63,19 +69,21 @@ function primedClient() {
 let container: HTMLDivElement;
 let root: Root;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await reactAct(async () => { await i18n.changeLanguage("en"); });
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
   container.remove();
   vi.clearAllMocks();
+  await reactAct(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 });
 
-function render(getFieldSaveState: (field: string) => ProjectFieldSaveState) {
+function render(getFieldSaveState: (field: string) => ProjectFieldSaveState, onArchive: (archived: boolean) => void = noop) {
   act(() => {
     root.render(
       <QueryClientProvider client={primedClient()}>
@@ -84,7 +92,7 @@ function render(getFieldSaveState: (field: string) => ProjectFieldSaveState) {
             project={makeProject()}
             onFieldUpdate={noop}
             getFieldSaveState={getFieldSaveState}
-            onArchive={noop}
+            onArchive={onArchive}
           />
         </TooltipProvider>
       </QueryClientProvider>,
@@ -129,5 +137,27 @@ describe("ProjectProperties save indicator placement", () => {
 
     const label = labelSpan("Description");
     expect(label.nextElementSibling).toBeNull();
+  });
+
+  it("localizes core project fields and archive confirmation while preserving the callback", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    const onArchive = vi.fn();
+    render((field) => (field === "description" ? "saving" : "idle"), onArchive);
+
+    expect(labelSpan("Nome")).not.toBeNull();
+    const description = labelSpan("Descrição");
+    expect(description.nextElementSibling?.textContent).toContain("Salvando");
+    expect(container.textContent).toContain("Zona de perigo");
+
+    const archiveButton = Array.from(container.querySelectorAll("button"))
+      .find((button) => button.textContent?.includes("Arquivar projeto"));
+    expect(archiveButton).toBeTruthy();
+    act(() => archiveButton?.click());
+    expect(container.textContent).toContain("Arquivar “Test project”?");
+    const confirmButton = Array.from(container.querySelectorAll("button"))
+      .find((button) => button.textContent?.trim() === "Confirmar");
+    expect(confirmButton).toBeTruthy();
+    act(() => confirmButton?.click());
+    expect(onArchive).toHaveBeenCalledWith(true);
   });
 });

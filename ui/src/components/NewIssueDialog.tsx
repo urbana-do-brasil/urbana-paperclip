@@ -472,18 +472,18 @@ export function NewIssueDialog() {
       const prefix = (companies.find((company) => company.id === companyId)?.issuePrefix ?? "").trim();
       const issueRef = issue.identifier ?? issue.id;
       const openIssueAction = prefix
-        ? { label: `Open ${issueRef}`, href: `/${prefix}/issues/${issueRef}` }
+        ? { label: t("taskCreation.toast.openIssue", { identifier: issueRef }), href: `/${prefix}/issues/${issueRef}` }
         : undefined;
       if (failures.length > 0) {
         pushToast({
-          title: `Created ${issueRef} with upload warnings`,
-          body: `${failures.length} staged ${failures.length === 1 ? "file" : "files"} could not be added.`,
+          title: t("taskCreation.toast.createdWithUploadWarnings", { identifier: issueRef }),
+          body: t("taskCreation.toast.stagedFilesFailed", { count: failures.length }),
           tone: "warn",
           action: openIssueAction,
         });
       } else {
         pushToast({
-          title: `Created ${issueRef}`,
+          title: t("taskCreation.toast.created", { identifier: issueRef }),
           tone: "success",
           action: openIssueAction,
         });

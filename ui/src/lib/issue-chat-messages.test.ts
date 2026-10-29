@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Agent } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import {
   buildAssistantPartsFromTranscript,
   buildIssueChatMessages,
@@ -9,6 +10,7 @@ import {
   stabilizeThreadMessages,
   type IssueChatComment,
   type IssueChatLinkedRun,
+  type IssueChatTranslator,
 } from "./issue-chat-messages";
 import type {
   AskUserQuestionsInteraction,
@@ -75,6 +77,26 @@ describe("connection intents in the task feed", () => {
     };
     expect(custom.interaction?.status).toBe("accepted");
     expect(custom.interaction?.result?.outcome).toBe("connected");
+  });
+});
+
+describe("suggested-task interaction summaries", () => {
+  it("uses the active locale for system messages while preserving the interaction object", () => {
+    const interaction = createInteraction({ title: null });
+    const messages = buildIssueChatMessages({
+      comments: [],
+      interactions: [interaction],
+      timelineEvents: [],
+      linkedRuns: [],
+      liveRuns: [],
+      translate: (key, options) => String(i18n.t(key, { ...options, lng: "pt-BR" })),
+    });
+    const textPart = messages[0]?.content[0] as
+      | { type?: string; text?: string }
+      | undefined;
+
+    expect(textPart?.text).toBe("1 tarefa sugerida");
+    expect(messages[0]?.metadata?.custom).toMatchObject({ interaction });
   });
 });
 
@@ -513,6 +535,48 @@ describe("buildAssistantPartsFromTranscript", () => {
 });
 
 describe("buildIssueChatMessages", () => {
+  it("localizes generated run status and duration labels while preserving unknown statuses", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const translate: IssueChatTranslator = (key, options) => i18n.t(key, options);
+    const messages = buildIssueChatMessages({
+      comments: [],
+      timelineEvents: [],
+      linkedRuns: [
+        {
+          runId: "run-failed-1",
+          status: "failed",
+          agentId: "agent-1",
+          createdAt: new Date("2026-04-06T12:01:00.000Z"),
+          startedAt: new Date("2026-04-06T12:01:00.000Z"),
+          finishedAt: new Date("2026-04-06T12:01:02.000Z"),
+          resultJson: null,
+        },
+        {
+          runId: "run-unknown-1",
+          status: "future_retry_state",
+          agentId: "agent-1",
+          createdAt: new Date("2026-04-06T12:02:00.000Z"),
+          startedAt: null,
+          finishedAt: null,
+          resultJson: null,
+        },
+      ],
+      liveRuns: [],
+      translate,
+    });
+
+    const failed = messages.find((message) => message.id === "run-assistant:run-failed-1");
+    const unknown = messages.find((message) => message.id === "run-assistant:run-unknown-1");
+    expect(failed?.content).toMatchObject([{ type: "text", text: "A execução terminou" }]);
+    expect(failed?.metadata?.custom).toMatchObject({
+      chainOfThoughtLabel: "Falhou após 2 segundos",
+      waitingText: "A execução terminou",
+    });
+    expect(unknown?.metadata?.custom).toMatchObject({
+      chainOfThoughtLabel: "future_retry_state",
+    });
+  });
+
   it("uses the company user label for current-user comments instead of collapsing to You", () => {
     const messages = buildIssueChatMessages({
       comments: [createComment({ authorUserId: "user-1" })],

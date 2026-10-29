@@ -27,6 +27,7 @@ import { NavigationType } from "react-router-dom";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   canBoardManageRuntime,
@@ -1306,7 +1307,8 @@ describe("IssueDetail", () => {
   let queryClient: QueryClient;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     localStorage.clear();
     sessionStorage.clear();
     mockPanelState.panelVisible = true;
@@ -1484,6 +1486,7 @@ describe("IssueDetail", () => {
     localStorage.clear();
     sessionStorage.clear();
     vi.restoreAllMocks();
+    await i18n.changeLanguage("pt-BR");
   });
 
   it.each(["new-project", null])("remembers project %s only after its task update succeeds", async (projectId) => {
@@ -3268,6 +3271,24 @@ describe("IssueDetail", () => {
       );
       expect(tooltip?.textContent).toContain("Originating");
       expect(tooltip?.textContent).toContain("Dotta");
+    });
+
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+    });
+    await waitForAssertion(() => {
+      expect(assigneeAvatar?.getAttribute("aria-label")).toBe(
+        "Responsável: CodexCoder",
+      );
+      expect(originatingAvatar?.getAttribute("aria-label")).toBe(
+        "Origem: Dotta",
+      );
+      expect(
+        container.querySelector('[data-slot="task-title-actions"] button')?.getAttribute("aria-label"),
+      ).toBe("Mais ações da tarefa");
+      expect(
+        container.querySelector('[data-testid="issue-attribution-avatar-stack"]')?.getAttribute("aria-label"),
+      ).toBe("Pessoas da tarefa");
     });
   });
 

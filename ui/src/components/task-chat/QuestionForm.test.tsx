@@ -3,11 +3,12 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PaperclipQuestionResponse, PaperclipQuestionSet } from "@paperclipai/adapter-utils";
+import { i18n } from "@/i18n";
 import { QuestionForm } from "./QuestionForm";
 
 vi.mock("./TaskChatRichInput", () => ({
-  TaskChatRichInput: ({ value, onChange }: { value: string; onChange(value: string): void }) =>
-    <textarea aria-label="Answer" value={value} onChange={event => onChange(event.target.value)} />,
+  TaskChatRichInput: ({ value, onChange, placeholder, attachAriaLabel }: { value: string; onChange(value: string): void; placeholder?: string; attachAriaLabel?: string }) =>
+    <textarea aria-label={attachAriaLabel ?? "Answer"} placeholder={placeholder} value={value} onChange={event => onChange(event.target.value)} />,
 }));
 vi.mock("@/components/MarkdownBody", () => ({ MarkdownBody: ({ children }: { children: string }) => <div>{children}</div> }));
 
@@ -19,8 +20,8 @@ describe("QuestionForm initial text", () => {
   let container: HTMLDivElement;
   let root: Root;
   const submit = vi.fn();
-  beforeEach(() => { localStorage.clear(); submit.mockReset(); container = document.createElement("div"); document.body.append(container); root = createRoot(container); });
-  afterEach(async () => { await act(async () => root.unmount()); container.remove(); localStorage.clear(); });
+  beforeEach(async () => { await i18n.changeLanguage("en"); localStorage.clear(); submit.mockReset(); container = document.createElement("div"); document.body.append(container); root = createRoot(container); });
+  afterEach(async () => { await act(async () => root.unmount()); container.remove(); localStorage.clear(); await i18n.changeLanguage("pt-BR"); });
   const input = () => container.querySelector("textarea")!;
   async function render(set = questionSet, initialResponse?: PaperclipQuestionResponse) {
     await act(async () => root.render(<QuestionForm id="edit" questionSet={set} initialResponse={initialResponse} draftKey="question-initial-text" onSubmit={submit} />));
@@ -88,5 +89,27 @@ describe("QuestionForm initial text", () => {
     expect(input().value).toBe("bad");
     expect(Array.from(container.querySelectorAll("button")).find(button => button.textContent === "Submit answers")!.disabled).toBe(true);
     expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("localizes generated question copy while preserving provider-authored prompts", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const localizedSet: PaperclipQuestionSet = {
+      schema: "paperclip.question_set.v1",
+      questions: [{
+        id: "draft",
+        prompt: "Qual formato devemos manter?",
+        required: true,
+        answerMode: "text",
+        initialText: "abc",
+        textValidation: { minLength: 6 },
+      }],
+    };
+
+    await render(localizedSet);
+
+    expect(container.textContent).toContain("Qual formato devemos manter?");
+    expect(container.textContent).toContain("Digite pelo menos 6 caracteres.");
+    expect(input().placeholder).toBe("Escreva sua resposta");
+    expect(Array.from(container.querySelectorAll("button")).map((button) => button.textContent?.trim())).toContain("Enviar respostas");
   });
 });

@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RunForIssue } from "../api/activity";
 import type { ActiveRunForIssue } from "../api/heartbeats";
 import { IssueRunLedgerContent } from "./IssueRunLedger";
+import { i18n } from "../i18n";
 
 vi.mock("@/lib/router", () => ({
   Link: ({ children, to, ...props }: { children: ReactNode; to: string } & ComponentProps<"a">) => (
@@ -21,7 +22,8 @@ vi.mock("@/lib/router", () => ({
 let container: HTMLDivElement;
 let root: Root;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-04-18T20:00:00.000Z"));
   container = document.createElement("div");
@@ -29,10 +31,11 @@ beforeEach(() => {
   root = createRoot(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
   container.remove();
   vi.useRealTimers();
+  await i18n.changeLanguage("pt-BR");
 });
 
 function render(ui: ReactNode) {
@@ -627,5 +630,27 @@ describe("IssueRunLedger", () => {
     });
 
     expect(container.querySelector('[data-testid="responsible-user-denial-notice"]')).toBeNull();
+  });
+
+  it("localizes retry summaries in the task run ledger", async () => {
+    await i18n.changeLanguage("pt-BR");
+    renderLedger({
+      runs: [createRun({
+        runId: "run-localized-retry",
+        status: "scheduled_retry",
+        finishedAt: null,
+        livenessState: null,
+        livenessReason: null,
+        retryOfRunId: "run-root",
+        scheduledRetryAt: "2026-04-18T20:15:00.000Z",
+        scheduledRetryAttempt: 2,
+        scheduledRetryReason: "transient_failure",
+      })],
+    });
+
+    expect(container.textContent).toContain("Nova tentativa agendada");
+    expect(container.textContent).toContain("Tentativa 2 · Falha temporária");
+    expect(container.textContent).toContain("Próxima tentativa");
+    expect(container.querySelector('a[href="/agents/agent-1/runs/run-root"]')).not.toBeNull();
   });
 });

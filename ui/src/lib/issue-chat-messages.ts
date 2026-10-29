@@ -112,6 +112,12 @@ export interface IssueChatTranscriptEntry {
 }
 
 const ISSUE_CHAT_TRANSCRIPT_MAX_VISIBLE_ENTRIES = 30;
+type IssueChatAuthorFallbacks = { you: string; board: string; user: string };
+const DEFAULT_ISSUE_CHAT_AUTHOR_FALLBACKS: IssueChatAuthorFallbacks = {
+  you: "You",
+  board: "Board",
+  user: "User",
+};
 
 // Adapters whose backends stream verbosely can declare a wider window via
 // their UI adapter module (transcriptPresentation.maxVisibleEntries); every
@@ -540,20 +546,42 @@ function authorNameForComment(
   currentUserId?: string | null,
   userLabelMap?: ReadonlyMap<string, string> | null,
   options?: { isSystemNotice?: boolean },
+  fallbackLabels: IssueChatAuthorFallbacks = DEFAULT_ISSUE_CHAT_AUTHOR_FALLBACKS,
 ) {
   const authorAgentId = effectiveCommentAuthorAgentId(comment);
   if (authorAgentId) {
     return agentMap?.get(authorAgentId)?.name ?? (options?.isSystemNotice ? "Paperclip" : authorAgentId.slice(0, 8));
   }
   const authorUserId = comment.authorUserId ?? null;
-  if (!authorUserId) return options?.isSystemNotice ? "Paperclip" : "You";
+  if (!authorUserId) return options?.isSystemNotice ? "Paperclip" : fallbackLabels.you;
   const userLabel = userLabelMap?.get(authorUserId)?.trim();
   if (userLabel) return userLabel;
-  return formatAssigneeUserLabel(authorUserId, currentUserId, userLabelMap) ?? "You";
+  if (authorUserId === currentUserId) return fallbackLabels.you;
+  if (authorUserId === "local-board") return fallbackLabels.board;
+  return formatAssigneeUserLabel(authorUserId, currentUserId, userLabelMap) ?? fallbackLabels.user;
 }
 
-function formatStatusLabel(status: string) {
-  return status.replace(/_/g, " ");
+export type IssueChatTranslator = (
+  key: string,
+  options?: { count?: number; created?: number; total?: number; duration?: string; agent?: string; runId?: string; status?: string; tool?: string; actor?: string },
+) => string;
+
+function formatStatusLabel(status: string, translate?: IssueChatTranslator) {
+  const statusKeys: Record<string, string> = {
+    queued: "queued",
+    running: "running",
+    succeeded: "succeeded",
+    failed: "failed",
+    error: "error",
+    timed_out: "timedOut",
+    cancelled: "cancelled",
+    interrupted: "interrupted",
+  };
+  const statusKey = statusKeys[status];
+  if (translate && statusKey) {
+    return translate(`taskDetail.chatTranscript.run.status.${statusKey}`);
+  }
+  return status;
 }
 
 function createCommentMessage(args: {
@@ -561,10 +589,11 @@ function createCommentMessage(args: {
   agentMap?: Map<string, Agent>;
   currentUserId?: string | null;
   userLabelMap?: ReadonlyMap<string, string> | null;
+  fallbackLabels?: IssueChatAuthorFallbacks;
   companyId?: string | null;
   projectId?: string | null;
 }): ThreadMessage {
-  const { comment, agentMap, currentUserId, userLabelMap, companyId, projectId } = args;
+  const { comment, agentMap, currentUserId, userLabelMap, fallbackLabels, companyId, projectId } = args;
   const createdAt = toDate(comment.createdAt);
   const isSystemAuthor = comment.authorType === "system";
   // Presentation can route a comment to the system-notice renderer even when it
@@ -576,7 +605,7 @@ function createCommentMessage(args: {
   const authorAgentId = effectiveCommentAuthorAgentId(comment);
   const authorName = authorNameForComment(comment, agentMap, currentUserId, userLabelMap, {
     isSystemNotice: isSystemAuthor,
-  });
+  }, fallbackLabels);
   const custom = {
     kind: renderAsSystemNotice ? "system_notice" : "comment",
     commentId: comment.id,
@@ -642,39 +671,107 @@ function createCommentMessage(args: {
   return message;
 }
 
+function timelineUserLabel(
+  userId: string | null,
+  currentUserId: string | null | undefined,
+  userLabelMap: ReadonlyMap<string, string> | null | undefined,
+  translate?: IssueChatTranslator,
+) {
+  if (!userId) return translate
+    ? translate("taskDetail.chatTranscript.timeline.unassigned")
+    : "Unassigned";
+  const providedLabel = userLabelMap?.get(userId)?.trim();
+  if (providedLabel) return providedLabel;
+  if (userId === currentUserId) {
+    return translate
+      ? translate("taskDetail.chatTranscript.timeline.you")
+      : "You";
+  }
+  if (userId === "local-board") {
+    return translate
+      ? translate("taskDetail.chatTranscript.timeline.board")
+      : "Board";
+  }
+  return formatAssigneeUserLabel(userId, currentUserId, userLabelMap)
+    ?? (translate
+      ? translate("taskDetail.chatTranscript.timeline.board")
+      : "Board");
+}
+
+function timelineStatusLabel(value: string | null, translate?: IssueChatTranslator) {
+  if (value === null) {
+    return translate
+      ? translate("taskDetail.chatTranscript.timeline.none")
+      : "None";
+  }
+  const statusKeys: Record<string, string> = {
+    backlog: "backlog",
+    todo: "todo",
+    in_progress: "inProgress",
+    blocked: "blocked",
+    in_review: "inReview",
+    done: "done",
+    cancelled: "cancelled",
+  };
+  const statusKey = statusKeys[value];
+  if (translate && statusKey) {
+    return translate(`taskCollection.filters.status.${statusKey}`);
+  }
+  return value;
+}
+
 function createTimelineEventMessage(args: {
   event: IssueTimelineEvent;
   agentMap?: Map<string, Agent>;
   currentUserId?: string | null;
   userLabelMap?: ReadonlyMap<string, string> | null;
+  translate?: IssueChatTranslator;
 }) {
-  const { event, agentMap, currentUserId, userLabelMap } = args;
+  const { event, agentMap, currentUserId, userLabelMap, translate } = args;
+  const fallbackLabel = (key: string, fallback: string) => translate
+    ? translate(`taskDetail.chatTranscript.timeline.${key}`)
+    : fallback;
+  const resolveUser = (userId: string | null) => timelineUserLabel(
+    userId,
+    currentUserId,
+    userLabelMap,
+    translate,
+  );
   const actorName = event.actorType === "agent"
     ? (agentMap?.get(event.actorId)?.name ?? event.actorId.slice(0, 8))
     : event.actorType === "system"
-      ? "System"
-      : (formatAssigneeUserLabel(event.actorId, currentUserId, userLabelMap) ?? "Board");
+      ? fallbackLabel("system", "System")
+      : resolveUser(event.actorId);
 
   const lines: string[] = [
-    event.followUpRequested ? `${actorName} requested follow-up` : `${actorName} updated this issue`,
+    translate
+      ? translate(
+          event.followUpRequested
+            ? "taskDetail.chatTranscript.timeline.requestedFollowUp"
+            : "taskDetail.chatTranscript.timeline.updatedIssue",
+          { actor: actorName },
+        )
+      : event.followUpRequested
+        ? `${actorName} requested follow-up`
+        : `${actorName} updated this issue`,
   ];
   if (event.statusChange) {
     lines.push(
-      `Status: ${event.statusChange.from ?? "none"} -> ${event.statusChange.to ?? "none"}`,
+      `${fallbackLabel("status", "Status")}: ${timelineStatusLabel(event.statusChange.from, translate)} -> ${timelineStatusLabel(event.statusChange.to, translate)}`,
     );
   }
   if (event.assigneeChange) {
     const from = event.assigneeChange.from.agentId
       ? (agentMap?.get(event.assigneeChange.from.agentId)?.name ?? event.assigneeChange.from.agentId.slice(0, 8))
-      : (formatAssigneeUserLabel(event.assigneeChange.from.userId, currentUserId, userLabelMap) ?? "Unassigned");
+      : resolveUser(event.assigneeChange.from.userId);
     const to = event.assigneeChange.to.agentId
       ? (agentMap?.get(event.assigneeChange.to.agentId)?.name ?? event.assigneeChange.to.agentId.slice(0, 8))
-      : (formatAssigneeUserLabel(event.assigneeChange.to.userId, currentUserId, userLabelMap) ?? "Unassigned");
-    lines.push(`Assignee: ${from} -> ${to}`);
+      : resolveUser(event.assigneeChange.to.userId);
+    lines.push(`${fallbackLabel("assignee", "Assignee")}: ${from} -> ${to}`);
   }
   if (event.workspaceChange) {
     lines.push(
-      `Workspace: ${event.workspaceChange.from.label ?? "none"} -> ${event.workspaceChange.to.label ?? "none"}`,
+      `${fallbackLabel("workspace", "Workspace")}: ${event.workspaceChange.from.label ?? fallbackLabel("none", "none")} -> ${event.workspaceChange.to.label ?? fallbackLabel("none", "none")}`,
     );
   }
 
@@ -701,12 +798,15 @@ function createTimelineEventMessage(args: {
   return message;
 }
 
-function createInteractionMessage(interaction: IssueThreadInteraction) {
+function createInteractionMessage(
+  interaction: IssueThreadInteraction,
+  translate?: IssueChatTranslator,
+) {
   const message: ThreadSystemMessage = {
     id: `interaction:${interaction.id}`,
     role: "system",
     createdAt: toDate(interaction.createdAt),
-    content: [{ type: "text", text: buildIssueThreadInteractionSummary(interaction) }],
+    content: [{ type: "text", text: buildIssueThreadInteractionSummary(interaction, translate) }],
     metadata: {
       custom: {
         kind: "interaction",
@@ -775,22 +875,30 @@ function computeSegmentTimings(entries: readonly IssueChatTranscriptEntry[]): Se
   return timings;
 }
 
-export function formatDurationWords(ms: number | null) {
+export function formatDurationWords(ms: number | null, translate?: IssueChatTranslator) {
   if (ms === null || !Number.isFinite(ms) || ms <= 0) return null;
   const totalSeconds = Math.max(1, Math.round(ms / 1000));
+  const formatUnit = (
+    unit: "second" | "minute" | "hour",
+    count: number,
+    englishSingular: string,
+    englishPlural: string,
+  ) => translate
+    ? translate(`taskDetail.chatTranscript.run.duration.${unit}`, { count })
+    : `${count} ${count === 1 ? englishSingular : englishPlural}`;
   if (totalSeconds < 60) {
-    return `${totalSeconds} second${totalSeconds === 1 ? "" : "s"}`;
+    return formatUnit("second", totalSeconds, "second", "seconds");
   }
   const totalMinutes = Math.round(totalSeconds / 60);
   if (totalMinutes < 60) {
-    return `${totalMinutes} minute${totalMinutes === 1 ? "" : "s"}`;
+    return formatUnit("minute", totalMinutes, "minute", "minutes");
   }
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   if (minutes === 0) {
-    return `${hours} hour${hours === 1 ? "" : "s"}`;
+    return formatUnit("hour", hours, "hour", "hours");
   }
-  return `${hours} hour${hours === 1 ? "" : "s"} ${minutes} minute${minutes === 1 ? "" : "s"}`;
+  return `${formatUnit("hour", hours, "hour", "hours")} ${formatUnit("minute", minutes, "minute", "minutes")}`;
 }
 
 function runDurationLabel(run: {
@@ -800,44 +908,77 @@ function runDurationLabel(run: {
   finishedAt?: Date | string | null;
   errorCode?: string | null;
   resultJson?: Record<string, unknown> | null;
-}) {
+}, translate?: IssueChatTranslator) {
   const start = run.startedAt ?? run.createdAt;
   const end = run.finishedAt ?? null;
   const durationMs = end ? Math.max(0, toTimestamp(end) - toTimestamp(start)) : null;
-  const durationText = formatDurationWords(durationMs);
+  const durationText = formatDurationWords(durationMs, translate);
   const stopReason = typeof run.resultJson?.stopReason === "string" ? run.resultJson.stopReason : null;
+  const label = (key: string, fallback: string, duration?: string) =>
+    translate
+      ? translate(
+          `taskDetail.chatTranscript.run.summary.${key}`,
+          duration === undefined ? undefined : { duration },
+        )
+      : fallback;
   switch (run.status) {
     case "succeeded":
-      return durationText ? `Worked for ${durationText}` : "Finished work";
+      return durationText
+        ? label("workedFor", `Worked for ${durationText}`, durationText)
+        : label("finishedWork", "Finished work");
     case "failed":
     case "error":
-      return durationText ? `Failed after ${durationText}` : "Run failed";
+      return durationText
+        ? label("failedAfter", `Failed after ${durationText}`, durationText)
+        : label("runFailed", "Run failed");
     case "timed_out":
-      return durationText ? `Timed out after ${durationText}` : "Run timed out";
+      return durationText
+        ? label("timedOutAfter", `Timed out after ${durationText}`, durationText)
+        : label("runTimedOut", "Run timed out");
     case "cancelled":
       if (isOperatorInterruptedRun(run.resultJson, run.errorCode)) {
-        return durationText ? `Interrupted by board after ${durationText}` : "Interrupted by board";
+        return durationText
+          ? label("interruptedAfter", `Interrupted by board after ${durationText}`, durationText)
+          : label("interruptedByBoard", "Interrupted by board");
       }
       if (stopReason === "paused") {
-        return durationText ? `Paused by board after ${durationText}` : "Paused by board";
+        return durationText
+          ? label("pausedAfter", `Paused by board after ${durationText}`, durationText)
+          : label("pausedByBoard", "Paused by board");
       }
-      return durationText ? `Cancelled after ${durationText}` : "Run cancelled";
+      return durationText
+        ? label("cancelledAfter", `Cancelled after ${durationText}`, durationText)
+        : label("runCancelled", "Run cancelled");
     case "queued":
-      return "Queued";
+      return label("queued", "Queued");
     case "running":
-      return "Working...";
+      return label("working", "Working...");
     default:
-      return formatStatusLabel(run.status);
+      return formatStatusLabel(run.status, translate);
   }
 }
 
-function createHistoricalRunMessage(run: IssueChatLinkedRun, agentMap?: Map<string, Agent>) {
+function createHistoricalRunMessage(
+  run: IssueChatLinkedRun,
+  agentMap?: Map<string, Agent>,
+  translate?: IssueChatTranslator,
+) {
   const agentName = run.agentName ?? agentMap?.get(run.agentId)?.name ?? run.agentId.slice(0, 8);
+  const statusLabel = formatStatusLabel(run.status, translate);
   const message: ThreadSystemMessage = {
     id: `run:${run.runId}`,
     role: "system",
     createdAt: toDate(runTimestamp(run)),
-    content: [{ type: "text", text: `${agentName} run ${run.runId.slice(0, 8)} ${formatStatusLabel(run.status)}` }],
+    content: [{
+      type: "text",
+      text: translate
+        ? translate("taskDetail.chatTranscript.run.summary.historicalRun", {
+            agent: agentName,
+            runId: run.runId.slice(0, 8),
+            status: statusLabel,
+          })
+        : `${agentName} run ${run.runId.slice(0, 8)} ${statusLabel}`,
+    }],
     metadata: {
       custom: {
         kind: "run",
@@ -859,12 +1000,17 @@ function createHistoricalTranscriptMessage(args: {
   transcript: readonly IssueChatTranscriptEntry[];
   hasOutput: boolean;
   agentMap?: Map<string, Agent>;
+  translate?: IssueChatTranslator;
 }) {
-  const { run, transcript, hasOutput, agentMap } = args;
+  const { run, transcript, hasOutput, agentMap, translate } = args;
   const agentName = run.agentName ?? agentMap?.get(run.agentId)?.name ?? run.agentId.slice(0, 8);
   const compactedTranscript = compactIssueChatTranscript(transcript, issueChatTranscriptMaxVisibleEntries(run.adapterType));
   const { parts, notices, segments } = buildAssistantPartsFromTranscript(compactedTranscript);
-  const waitingText = hasOutput ? "" : "Run finished";
+  const waitingText = hasOutput
+    ? ""
+    : translate
+      ? translate("taskDetail.chatTranscript.run.summary.runFinished")
+      : "Run finished";
   const content = parts.length > 0
     ? parts
     : waitingText
@@ -888,7 +1034,7 @@ function createHistoricalTranscriptMessage(args: {
       runOperatorInterrupted: isOperatorInterruptedRun(run.resultJson, run.errorCode),
       notices,
       waitingText,
-      chainOfThoughtLabel: runDurationLabel(run),
+      chainOfThoughtLabel: runDurationLabel(run, translate),
       chainOfThoughtSegments: segments,
     }),
   };
@@ -937,7 +1083,7 @@ export function buildAssistantPartsFromTranscript(entries: readonly IssueChatTra
         family: entry.family ?? "provider_notice",
         eventType: entry.eventType ?? "provider.notice.recorded",
         status: entry.status ?? "informational",
-        title: entry.title ?? "Provider activity",
+        title: entry.title ?? "",
         summary: entry.summary ?? "",
         payload: entry.payload ?? {},
       });
@@ -1102,16 +1248,21 @@ function normalizeLiveRuns(
 function createLiveRunMessage(args: {
   run: LiveRunForIssue;
   transcript: readonly IssueChatTranscriptEntry[];
+  translate?: IssueChatTranslator;
 }) {
-  const { run, transcript } = args;
+  const { run, transcript, translate } = args;
   const compactedTranscript = compactIssueChatTranscript(transcript, issueChatTranscriptMaxVisibleEntries(run.adapterType));
   const { parts, notices, segments } = buildAssistantPartsFromTranscript(compactedTranscript);
   const waitingText =
     run.status === "queued"
-      ? "Queued..."
+      ? (translate
+          ? translate("taskDetail.chatTranscript.run.summary.queuedWithEllipsis")
+          : "Queued...")
       : parts.length > 0
         ? ""
-        : "Working...";
+        : (translate
+            ? translate("taskDetail.chatTranscript.run.summary.working")
+            : "Working...");
 
   const content = parts;
 
@@ -1131,7 +1282,7 @@ function createLiveRunMessage(args: {
       adapterType: run.adapterType,
       notices,
       waitingText,
-      chainOfThoughtLabel: runDurationLabel(run),
+      chainOfThoughtLabel: runDurationLabel(run, translate),
       chainOfThoughtSegments: segments,
       currentStatusMessage: run.currentStatusMessage ?? null,
       currentStatusUpdatedAt: run.currentStatusUpdatedAt ?? null,
@@ -1173,6 +1324,8 @@ export function buildIssueChatMessages(args: {
   agentMap?: Map<string, Agent>;
   currentUserId?: string | null;
   userLabelMap?: ReadonlyMap<string, string> | null;
+  authorFallbackLabels?: IssueChatAuthorFallbacks;
+  translate?: IssueChatTranslator;
   issueStatus?: string | null;
 }) {
   const {
@@ -1191,6 +1344,8 @@ export function buildIssueChatMessages(args: {
     agentMap,
     currentUserId,
     userLabelMap,
+    authorFallbackLabels = DEFAULT_ISSUE_CHAT_AUTHOR_FALLBACKS,
+    translate,
     issueStatus,
   } = args;
 
@@ -1201,7 +1356,7 @@ export function buildIssueChatMessages(args: {
     orderedMessages.push({
       createdAtMs: toTimestamp(comment.createdAt),
       order: 1,
-      message: createCommentMessage({ comment, agentMap, currentUserId, userLabelMap, companyId, projectId }),
+      message: createCommentMessage({ comment, agentMap, currentUserId, userLabelMap, fallbackLabels: authorFallbackLabels, companyId, projectId }),
     });
   }
 
@@ -1229,7 +1384,7 @@ export function buildIssueChatMessages(args: {
     orderedMessages.push({
       createdAtMs: handoffAtMs ?? createdAtMs,
       order: 2,
-      message: createInteractionMessage(interaction),
+      message: createInteractionMessage(interaction, translate),
     });
   }
 
@@ -1237,7 +1392,7 @@ export function buildIssueChatMessages(args: {
     orderedMessages.push({
       createdAtMs: toTimestamp(event.createdAt),
       order: 0,
-      message: createTimelineEventMessage({ event, agentMap, currentUserId, userLabelMap }),
+      message: createTimelineEventMessage({ event, agentMap, currentUserId, userLabelMap, translate }),
     });
   }
 
@@ -1256,6 +1411,7 @@ export function buildIssueChatMessages(args: {
           transcript,
           hasOutput: hasRunOutput,
           agentMap,
+          translate,
         }),
       });
       continue;
@@ -1264,7 +1420,7 @@ export function buildIssueChatMessages(args: {
     orderedMessages.push({
       createdAtMs: toTimestamp(runTimestamp(run)),
       order: 2,
-      message: createHistoricalRunMessage(run, agentMap),
+      message: createHistoricalRunMessage(run, agentMap, translate),
     });
   }
 
@@ -1275,6 +1431,7 @@ export function buildIssueChatMessages(args: {
       message: createLiveRunMessage({
         run,
         transcript: transcriptsByRunId?.get(run.id) ?? [],
+        translate,
       }),
     });
   }

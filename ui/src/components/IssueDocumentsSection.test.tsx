@@ -9,7 +9,9 @@ import type { DocumentRevision, Issue, IssueDocument } from "@paperclipai/shared
 import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IssueDocumentsSection } from "./IssueDocumentsSection";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryKeys } from "../lib/queryKeys";
+import { i18n } from "@/i18n";
 
 const mockIssuesApi = vi.hoisted(() => ({
   listDocuments: vi.fn(),
@@ -286,7 +288,8 @@ function createIssue(): Issue {
 describe("IssueDocumentsSection", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     ensureLocalStorageMock();
@@ -295,8 +298,9 @@ describe("IssueDocumentsSection", () => {
     markdownEditorMockState.emitMountEmptyChange = false;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
+    await i18n.changeLanguage("pt-BR");
   });
 
   it("keeps system handoff documents out of the normal document surface", async () => {
@@ -1047,6 +1051,48 @@ describe("IssueDocumentsSection", () => {
 
     expect(setDocumentLock).toHaveBeenCalledWith("body", true);
     expect(container.querySelector('button[title="Unlock document"]')).toBeTruthy();
+
+    await act(async () => {
+      root.unmount();
+    });
+    queryClient.clear();
+  });
+
+  it("localizes document section labels and accessible controls in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const document = createIssueDocument({
+      body: "Conteúdo do plano",
+      updatedByAgentId: "agent-1",
+      updatedByUserId: null,
+      sourceTrust: { preset: "low_trust_review", disposition: "quarantined", sourceAgentId: "agent-1" },
+    });
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    mockIssuesApi.listDocuments.mockResolvedValue([document]);
+
+    await act(async () => {
+      root.render(
+        <TooltipProvider>
+          <QueryClientProvider client={queryClient}>
+            <IssueDocumentsSection issue={createIssue()} canDeleteDocuments={false} onVote={vi.fn().mockResolvedValue(undefined)} />
+          </QueryClientProvider>
+        </TooltipProvider>,
+      );
+    });
+    await flush();
+    await flush();
+
+    expect(container.textContent).toContain("Documentos");
+    expect(container.textContent).toContain("Novo documento");
+    expect(container.textContent).toContain("Útil");
+    expect(container.textContent).toContain("Precisa de ajustes");
+    expect(container.textContent).toContain("Fonte de baixa confiabilidade");
+    expect(container.querySelector('button[aria-label="Recolher documento plan"]')).toBeTruthy();
 
     await act(async () => {
       root.unmount();

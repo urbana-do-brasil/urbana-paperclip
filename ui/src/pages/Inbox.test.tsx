@@ -12,6 +12,7 @@ import {
   getLocalInboxArchiveIssueIds,
 } from "../lib/inboxArchiveCache";
 import { taskCollectionPreferencesStorageKey } from "../lib/task-collection-preferences";
+import { i18n } from "../i18n";
 
 const routerMock = vi.hoisted(() => ({
   location: { pathname: "/", search: "", hash: "" },
@@ -372,7 +373,8 @@ function resetInboxApiMocks() {
 describe("Inbox toolbar", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     localStorage.clear();
     resetInboxApiMocks();
     container = document.createElement("div");
@@ -384,6 +386,139 @@ describe("Inbox toolbar", () => {
       clearLocalInboxArchive("company-1", issueId);
     }
     container.remove();
+  });
+
+  it.each([true, false])("localizes general controls in PT-BR (streamlined=%s)", async (streamlined) => {
+    const previousLanguage = i18n.language;
+    routerMock.location.pathname = "/inbox/mine";
+    apiMocks.experimentalSettings.mockResolvedValue({
+      enableIsolatedWorkspaces: false,
+      enableStreamlinedUi: streamlined,
+    });
+    await i18n.changeLanguage("pt-BR");
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity, gcTime: 0 } },
+    });
+    const root = createRoot(container);
+    try {
+      await act(async () => {
+        root.render(<QueryClientProvider client={queryClient}><Inbox /></QueryClientProvider>);
+      });
+      await vi.waitFor(() => {
+        expect(container.textContent).toContain("Minhas tarefas");
+        expect(container.textContent).toContain("Sua caixa de entrada está vazia.");
+        expect(container.querySelector<HTMLInputElement>('input[type="search"]')?.placeholder)
+          .toBe("Buscar em caixa de entrada…");
+        expect(container.querySelector('button[title="Agrupar"]')).not.toBeNull();
+      });
+      const groupButton = container.querySelector<HTMLButtonElement>('button[title="Agrupar"]');
+      await act(async () => groupButton?.click());
+      expect(document.body.textContent).toContain("Sem agrupamento");
+      expect(document.body.textContent).toContain("Responsável");
+      await act(async () => { await i18n.changeLanguage("en"); });
+      expect(container.textContent).toContain("Mine");
+      expect(container.textContent).toContain("Inbox zero.");
+      expect(container.querySelector<HTMLInputElement>('input[type="search"]')?.placeholder)
+        .toBe("Search inbox…");
+      expect(document.body.textContent).toContain("Responsible");
+    } finally {
+      act(() => root.unmount());
+      queryClient.clear();
+      await i18n.changeLanguage(previousLanguage);
+    }
+  });
+
+  it.each([true, false])("localizes attention rows and alerts in PT-BR (streamlined=%s)", async (streamlined) => {
+    const previousLanguage = i18n.language;
+    routerMock.location.pathname = "/inbox/all";
+    apiMocks.experimentalSettings.mockResolvedValue({
+      enableIsolatedWorkspaces: false,
+      enableStreamlinedUi: streamlined,
+    });
+    apiMocks.approvalsList.mockResolvedValue([
+      createApproval({
+        id: "approval-pt",
+        type: "hire_agent",
+        status: "pending",
+        payload: { name: "Pessoa com nome original" },
+      }),
+    ]);
+    apiMocks.heartbeatRunsList.mockResolvedValue([
+      createFailedRun({ id: "run-pt", error: "diagnóstico bruto do provider" }),
+    ]);
+    apiMocks.joinRequestsList.mockResolvedValue([
+      createJoinRequest({
+        id: "join-pt",
+        requestType: "agent",
+        agentName: "Robô de testes",
+        requestIp: "192.0.2.10",
+        adapterType: "codex-local",
+      }),
+    ]);
+    apiMocks.dashboardSummary.mockResolvedValue({
+      agents: { error: 2 },
+      costs: { monthBudgetCents: 1000, monthUtilizationPercent: 85 },
+    });
+    await i18n.changeLanguage("pt-BR");
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity, gcTime: 0 } },
+    });
+    const root = createRoot(container);
+    try {
+      await act(async () => {
+        root.render(<QueryClientProvider client={queryClient}><Inbox /></QueryClientProvider>);
+      });
+      await vi.waitFor(() => {
+        expect(container.textContent).toContain("Contratação de agente: Pessoa com nome original");
+        expect(container.textContent).toContain("diagnóstico bruto do provider");
+        expect(container.textContent).toContain("Solicitação de entrada do agente: Robô de testes");
+        expect(container.textContent).toContain("Orçamento com 85% de utilização neste mês");
+      });
+      expect(container.textContent).toContain("Pendente");
+      expect(container.textContent).toContain("Aprovar");
+      expect(container.textContent).toContain("Rejeitar");
+      expect(container.textContent).toContain("IP 192.0.2.10");
+      expect(container.textContent).toContain("Adaptador: codex-local");
+      expect(container.querySelector('a[to="/approvals/approval-pt"]')).not.toBeNull();
+      expect(container.querySelector('a[to$="/runs/run-pt"]')).not.toBeNull();
+      expect(container.querySelector('button[aria-label="Dispensar"]')).not.toBeNull();
+    } finally {
+      act(() => root.unmount());
+      queryClient.clear();
+      await i18n.changeLanguage(previousLanguage);
+    }
+  });
+
+  it.each([true, false])("localizes aggregate alert plurals in PT-BR (streamlined=%s)", async (streamlined) => {
+    const previousLanguage = i18n.language;
+    routerMock.location.pathname = "/inbox/all";
+    apiMocks.experimentalSettings.mockResolvedValue({
+      enableIsolatedWorkspaces: false,
+      enableStreamlinedUi: streamlined,
+    });
+    apiMocks.dashboardSummary.mockResolvedValue({
+      agents: { error: 2 },
+      costs: { monthBudgetCents: 1000, monthUtilizationPercent: 85 },
+    });
+    await i18n.changeLanguage("pt-BR");
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity, gcTime: 0 } },
+    });
+    const root = createRoot(container);
+    try {
+      await act(async () => {
+        root.render(<QueryClientProvider client={queryClient}><Inbox /></QueryClientProvider>);
+      });
+      await vi.waitFor(() => {
+        expect(container.textContent).toContain("2 agentes apresentam erros");
+        expect(container.textContent).toContain("Orçamento com 85% de utilização neste mês");
+      });
+      expect(container.querySelector('button[aria-label="Dispensar"]')).not.toBeNull();
+    } finally {
+      act(() => root.unmount());
+      queryClient.clear();
+      await i18n.changeLanguage(previousLanguage);
+    }
   });
 
   it.each([
@@ -665,9 +800,9 @@ describe("Inbox toolbar", () => {
 
     expect(container.querySelector('input[placeholder="Search inbox…"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="inbox-blocked-tab-badge"]')).toBeNull();
-    expect(container.querySelector('button[title="Filtro"]')).not.toBeNull();
+    expect(container.querySelector('button[title="Filter"]')).not.toBeNull();
     expect(container.querySelector('button[title="Group"]')).not.toBeNull();
-    expect(container.querySelector('button[aria-label="Colunas"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Columns"]')).not.toBeNull();
     expect(container.querySelector('button[title="Sort"]')).not.toBeNull();
     expect(container.querySelector('button[title="Enable parent-child nesting"]')).toBeNull();
     expect(container.textContent).not.toContain("Mark all as read");
@@ -675,6 +810,38 @@ describe("Inbox toolbar", () => {
     act(() => {
       root.unmount();
     });
+  });
+
+  it.each([true, false])("localizes blocked grouping and sorting controls in PT-BR (streamlined=%s)", async (streamlined) => {
+    const previousLanguage = i18n.language;
+    routerMock.location.pathname = "/inbox/blocked";
+    apiMocks.experimentalSettings.mockResolvedValue({
+      enableIsolatedWorkspaces: false,
+      enableStreamlinedUi: streamlined,
+    });
+    await i18n.changeLanguage("pt-BR");
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity, gcTime: 0 } },
+    });
+    const root = createRoot(container);
+    try {
+      await act(async () => {
+        root.render(<QueryClientProvider client={queryClient}><Inbox /></QueryClientProvider>);
+      });
+      await vi.waitFor(() => expect(container.querySelector('button[title="Agrupar"]')).not.toBeNull());
+      await act(async () => container.querySelector<HTMLButtonElement>('button[title="Agrupar"]')?.click());
+      expect(document.body.textContent).toContain("Tipo de bloqueio");
+      expect(document.body.textContent).toContain("Sem agrupamento");
+      await act(async () => container.querySelector<HTMLButtonElement>('button[title="Agrupar"]')?.click());
+      await act(async () => container.querySelector<HTMLButtonElement>('button[title="Ordenar"]')?.click());
+      expect(document.body.textContent).toContain("Mais urgentes");
+      expect(document.body.textContent).toContain("Mais recentes");
+      expect(document.body.textContent).toContain("Paradas há mais tempo");
+    } finally {
+      act(() => root.unmount());
+      queryClient.clear();
+      await i18n.changeLanguage(previousLanguage);
+    }
   });
 
   it("keeps Mine, Recent, Unread, Blocked, and All in the shared toolbar geometry", async () => {

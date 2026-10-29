@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useTranslation } from "@/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { HeartbeatRun } from "@paperclipai/shared";
 import { useNavigate } from "@/lib/router";
@@ -55,6 +56,7 @@ export function RunWorkspaceRecoverySurface({ run }: { run: HeartbeatRun }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { pushToast } = useToastActions();
+  const { t } = useTranslation();
 
   const isWorkspaceValidationFailure =
     run.status === "failed" && run.errorCode === WORKSPACE_VALIDATION_RUN_ERROR_CODE;
@@ -103,21 +105,21 @@ export function RunWorkspaceRecoverySurface({ run }: { run: HeartbeatRun }) {
       pushToast(
         variables.mode === "quarantine_restore"
           ? {
-              title: "Workspace repaired",
-              body: "Dirty changes were quarantined onto a rescue branch and the recorded branch restored; the task will resume.",
+              title: t("taskDetail.execution.recoveryCard.feedback.workspaceRepairedTitle"),
+              body: t("taskDetail.execution.recoveryCard.feedback.workspaceRepairedBody"),
               tone: "success",
             }
           : {
-              title: "Workspace branch reconciled",
-              body: "The recorded branch now matches the live branch; the task will resume.",
+              title: t("taskDetail.execution.recoveryCard.feedback.workspaceReconciledTitle"),
+              body: t("taskDetail.execution.recoveryCard.feedback.workspaceReconciledBody"),
               tone: "success",
             },
       );
     },
     onError: (err) => {
       pushToast({
-        title: "Reconcile failed",
-        body: err instanceof Error ? err.message : "Unable to reconcile the workspace branch.",
+        title: t("taskDetail.execution.recoveryCard.feedback.reconcileFailedTitle"),
+        body: err instanceof Error ? err.message : t("taskDetail.execution.recoveryCard.feedback.reconcileFailedBody"),
         tone: "error",
       });
     },
@@ -125,20 +127,24 @@ export function RunWorkspaceRecoverySurface({ run }: { run: HeartbeatRun }) {
 
   const reissue = useMutation({
     mutationFn: async (request: RecoveryReissueRequest) => {
-      if (!issue) throw new Error("Task is not loaded yet.");
-      const sourceLabel = issue.identifier ?? "the stalled task";
+      if (!issue) throw new Error(t("taskDetail.execution.recoveryCard.feedback.taskNotLoaded"));
+      const sourceLabel = issue.identifier ?? t("taskDetail.execution.recoveryCard.feedback.stalledTaskFallback");
       const descriptionLines = [
-        `Re-issued from ${sourceLabel} on an isolated git worktree after a workspace branch divergence.`,
+        t("taskDetail.execution.recoveryCard.feedback.generatedDescriptionIntro", { sourceLabel }),
         "",
-        `- Base ref (live branch): \`${request.baseRef}\``,
-        ...(request.expectedBranch ? [`- Recorded branch: \`${request.expectedBranch}\``] : []),
+        t("taskDetail.execution.recoveryCard.feedback.baseRefBullet", { baseRef: request.baseRef }),
+        ...(request.expectedBranch
+          ? [t("taskDetail.execution.recoveryCard.feedback.recordedBranchBullet", { branch: request.expectedBranch })]
+          : []),
         "",
         "---",
         "",
         issue.description ?? "",
       ];
       return issuesApi.create(issue.companyId, {
-        title: `Re-issue (isolated): ${issue.title ?? sourceLabel}`,
+        title: t("taskDetail.execution.recoveryCard.feedback.generatedTitle", {
+          title: issue.title ?? sourceLabel,
+        }),
         description: descriptionLines.join("\n"),
         priority: issue.priority,
         projectId: issue.projectId ?? null,
@@ -158,10 +164,10 @@ export function RunWorkspaceRecoverySurface({ run }: { run: HeartbeatRun }) {
     onSuccess: (created) => {
       invalidate();
       pushToast({
-        title: "Isolated re-issue created",
+        title: t("taskDetail.execution.recoveryCard.feedback.reissueCreatedTitle"),
         body: created.identifier
-          ? `${created.identifier} will run on a fresh isolated workspace.`
-          : "A fresh isolated re-issue was created.",
+          ? t("taskDetail.execution.recoveryCard.feedback.reissueCreatedWithIdentifier", { identifier: created.identifier })
+          : t("taskDetail.execution.recoveryCard.feedback.reissueCreatedBody"),
         tone: "success",
       });
       if (created.identifier) {
@@ -170,8 +176,8 @@ export function RunWorkspaceRecoverySurface({ run }: { run: HeartbeatRun }) {
     },
     onError: (err) => {
       pushToast({
-        title: "Re-issue failed",
-        body: err instanceof Error ? err.message : "Unable to create an isolated re-issue.",
+        title: t("taskDetail.execution.recoveryCard.feedback.reissueFailedTitle"),
+        body: err instanceof Error ? err.message : t("taskDetail.execution.recoveryCard.feedback.reissueFailedBody"),
         tone: "error",
       });
     },
@@ -182,7 +188,7 @@ export function RunWorkspaceRecoverySurface({ run }: { run: HeartbeatRun }) {
       outcome: "restored" | "false_positive";
       sourceIssueStatus: "todo" | "done" | "in_review";
     }) => {
-      if (!issueId || !recoveryAction) throw new Error("No recovery action to resolve.");
+      if (!issueId || !recoveryAction) throw new Error(t("taskDetail.execution.recoveryCard.feedback.noRecoveryToResolve"));
       return issuesApi.resolveRecoveryAction(issueId, {
         actionId: recoveryAction.id,
         outcome: data.outcome,
@@ -194,8 +200,8 @@ export function RunWorkspaceRecoverySurface({ run }: { run: HeartbeatRun }) {
     },
     onError: (err) => {
       pushToast({
-        title: "Recovery resolution failed",
-        body: err instanceof Error ? err.message : "Unable to resolve recovery action",
+        title: t("taskDetail.execution.recoveryCard.feedback.resolveFailedTitle"),
+        body: err instanceof Error ? err.message : t("taskDetail.execution.recoveryCard.feedback.resolveFailedBody"),
         tone: "error",
       });
     },

@@ -515,7 +515,7 @@ function renderRecoveryChip(
   action: IssueRecoveryAction,
   selected: boolean,
   liveness: RecoveryLivenessContext,
-  translate: (key: string, values?: { attempt?: number; count?: number; duration?: string; identifier?: string; maxAttempts?: number }) => string,
+  translate: (key: string, values?: { attempt?: number; count?: number; duration?: string; identifier?: string; interval?: string; maxAttempts?: number }) => string,
 ): ReactNode {
   const state = deriveActiveRecoveryDisplayState(action, liveness);
   if (!state) return null;

@@ -4,6 +4,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceServiceControlBar } from "./WorkspaceServiceControlBar";
+import { i18n } from "@/i18n";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -24,7 +25,8 @@ describe("WorkspaceServiceControlBar", () => {
   let root: Root;
   let writeText: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -38,6 +40,7 @@ describe("WorkspaceServiceControlBar", () => {
   afterEach(async () => {
     await act(() => root.unmount());
     document.body.innerHTML = "";
+    await i18n.changeLanguage("en");
   });
 
   async function renderRunningService() {
@@ -180,7 +183,6 @@ describe("WorkspaceServiceControlBar", () => {
             state: "running",
             healthStatus: "healthy",
             exposureState: "cleanup_pending",
-            exposureDetail: "HTTPS cleanup pending · Restart the host broker before reusing this port.",
           }]}
           onAction={() => {}}
         />,
@@ -195,7 +197,7 @@ describe("WorkspaceServiceControlBar", () => {
   it.each([
     ["failed", "HTTPS unavailable · Check the Tailscale broker and node HTTPS configuration."],
     ["cleanup_pending", "HTTPS cleanup pending · Restart the host broker before reusing this port."],
-  ] as const)("keeps the full %s remediation visible in the multi-service popover", async (exposureState, exposureDetail) => {
+  ] as const)("keeps the full %s remediation visible in the multi-service popover", async (exposureState, expectedDetail) => {
     await act(() => {
       root.render(
         <WorkspaceServiceControlBar
@@ -206,7 +208,6 @@ describe("WorkspaceServiceControlBar", () => {
               state: "running",
               healthStatus: "healthy",
               exposureState,
-              exposureDetail,
             },
             {
               key: "api",
@@ -222,10 +223,36 @@ describe("WorkspaceServiceControlBar", () => {
     });
 
     const detail = Array.from(document.body.querySelectorAll("span"))
-      .find((element) => element.textContent === exposureDetail);
+      .find((element) => element.textContent === expectedDetail);
     expect(detail).toBeDefined();
     expect(detail?.classList.contains("text-destructive")).toBe(true);
     expect(detail?.classList.contains("truncate")).toBe(false);
     expect(detail?.classList.contains("whitespace-normal")).toBe(true);
+  });
+
+  it("localizes service status, actions, and URL controls in Brazilian Portuguese", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+    });
+    await act(() => {
+      root.render(
+        <WorkspaceServiceControlBar
+          services={[{
+            key: "web",
+            name: "Web",
+            state: "running",
+            healthStatus: "healthy",
+            url: "https://example.test",
+          }]}
+          onAction={() => {}}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain("Em execução");
+    expect(container.querySelector('button[aria-label="Copiar URL"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Parar"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Reiniciar"]')).not.toBeNull();
+    expect(container.querySelector('a[aria-label="Abrir em uma nova aba"]')).not.toBeNull();
   });
 });

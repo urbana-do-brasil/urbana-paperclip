@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { i18n } from "@/i18n";
 import { MemoryRouter } from "@/lib/router";
 import { TaskChatProtocolCard } from "./TaskChatProtocolCard";
 import type {
@@ -108,15 +109,17 @@ describe("TaskChatProtocolCard", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root.unmount());
     container.remove();
+    await i18n.changeLanguage("en");
   });
 
   it("renders a rich deliverable card without a completed chip", () => {
@@ -447,6 +450,57 @@ describe("TaskChatProtocolCard", () => {
     ).not.toBeNull();
     expect(container.textContent).toContain("Inventory events");
     expect(container.textContent).toContain("Render widgets");
+  });
+
+  it("localizes provider card labels while preserving raw metadata and unknown child status", async () => {
+    await i18n.changeLanguage("pt-BR");
+    renderCard(root, {
+      id: "provider-card-pt-br",
+      kind: "protocol",
+      surface: "provider_activity",
+      family: "research",
+      eventType: "research.completed",
+      status: "completed",
+      title: "Research",
+      summary: "provider-authored summary",
+      details: [
+        { label: "Query", value: "original provider query", mono: true },
+        { label: "Provider Extension", value: "raw provider metadata" },
+      ],
+      links: [],
+      steps: [],
+      children: [
+        {
+          id: "child-1",
+          title: "provider child role",
+          status: "vendor_specific_state",
+          metadata: "gpt-6.1-sol",
+          summary: "provider child summary",
+        },
+      ],
+      output: "original provider output",
+      outputTruncated: true,
+    });
+
+    expect(container.textContent).toContain("Concluída");
+    expect(container.textContent).toContain("Research");
+    expect(container.textContent).toContain("provider-authored summary");
+    expect(container.querySelector('ul[aria-label="Agentes delegados"]')).not.toBeNull();
+    expect(container.textContent).toContain("provider child role");
+    expect(container.textContent).toContain("vendor_specific_state");
+    expect(container.textContent).toContain("gpt-6.1-sol");
+    expect(container.textContent).toContain("provider child summary");
+
+    const details = container.querySelector("details");
+    expect(details).not.toBeNull();
+    act(() => details?.querySelector("summary")?.click());
+    expect(container.textContent).toContain("Detalhes");
+    expect(container.textContent).toContain("Consulta");
+    expect(container.textContent).toContain("original provider query");
+    expect(container.textContent).toContain("Provider Extension");
+    expect(container.textContent).toContain("raw provider metadata");
+    expect(container.textContent).toContain("original provider output");
+    expect(container.textContent).toContain("Saída limitada a 8 KiB.");
   });
 
   it("renders a structured history card for every provider family", () => {

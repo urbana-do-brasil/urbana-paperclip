@@ -8,6 +8,7 @@ import {
   countSuggestedTaskNodes,
   getCheckboxConfirmationSelectedLabels,
   getItemVerdictProgress,
+  getItemVerdictLabelKey,
   getRequestConfirmationTargetHref,
   getQuestionAnswerLabels,
   interactionReplacesComposerSkip,
@@ -477,6 +478,17 @@ describe("per-item verdict helpers", () => {
     });
     expect(progress).toMatchObject({ total: 3, decided: 2, approved: 1, rejected: 1, deferred: 0 });
     expect(progress.pendingItemIds).toEqual(["b"]);
+  });
+
+  it("maps only known verdicts to labels and leaves unknown values untouched", () => {
+    expect(getItemVerdictLabelKey("approve")).toBe(
+      "taskDetail.interactionConfirmations.itemVerdicts.verdict.approve",
+    );
+    expect(getItemVerdictLabelKey("reject", true)).toBe(
+      "taskDetail.interactionConfirmations.itemVerdicts.resolved.reject",
+    );
+    expect(getItemVerdictLabelKey("future_verdict")).toBeNull();
+    expect(getItemVerdictLabelKey("constructor")).toBeNull();
   });
 
   it("summarizes pending, complete, and superseded verdict cards", () => {

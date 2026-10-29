@@ -1,4 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   AlertTriangle,
   ArrowRight,
@@ -63,19 +65,27 @@ export interface DecisionCardProps {
 
 // --- small helpers ----------------------------------------------------------
 
-function humanStatus(status: string | null | undefined): string {
-  if (!status) return "unknown";
-  return status.replaceAll("_", " ");
+function humanStatus(status: string | null | undefined, t: TFunction): string {
+  if (!status) return t("taskCollection.rows.unknown");
+  const statusKeys: Record<string, string> = {
+    in_progress: "inProgress",
+    in_review: "inReview",
+    todo: "todo",
+    backlog: "backlog",
+    blocked: "blocked",
+    done: "done",
+    cancelled: "cancelled",
+  };
+  const statusKey = statusKeys[status];
+  return statusKey
+    ? t(`taskCollection.filters.status.${statusKey}`, { defaultValue: status.replaceAll("_", " ") })
+    : status.replaceAll("_", " ");
 }
 
 function issueLabel(ref: DecisionIssueRef | null, fallbackId: string): string {
   if (ref?.identifier) return ref.identifier;
   if (ref?.title) return ref.title;
   return `issue ${fallbackId.slice(0, 8)}`;
-}
-
-function pluralize(count: number, singular: string): string {
-  return `${count} ${count === 1 ? singular : `${singular}s`}`;
 }
 
 function isDestructiveOption(option: DecisionOption): boolean {
@@ -93,38 +103,45 @@ function effectSummary(
   effect: DecisionEffect,
   resolve: (id: string) => DecisionIssueRef | null,
   snapshots: Record<string, DecisionTargetSnapshot>,
+  t: TFunction,
 ): string {
   const target = issueLabel(resolve(effect.targetIssueId), effect.targetIssueId);
   switch (effect.type) {
     case "comment_on_issue":
-      return `Comment on ${target}`;
+      return t("attentionQueue.decisionCard.effects.commentOnIssue", { target });
     case "create_issue": {
       const parent = effect.draft.parentId
         ? issueLabel(resolve(effect.draft.parentId), effect.draft.parentId)
         : target;
-      return `Create issue “${effect.draft.title}” under ${parent}`;
+      return t("attentionQueue.decisionCard.effects.createIssue", { title: effect.draft.title, parent });
     }
     case "update_issue_status":
-      return `Set ${target} to ${humanStatus(effect.status)}`;
+      return t("attentionQueue.decisionCard.effects.setStatus", { target, status: humanStatus(effect.status, t) });
     case "assign_issue":
-      return `Reassign ${target}`;
+      return t("attentionQueue.decisionCard.effects.reassign", { target });
     case "resolve_blocker":
-      return `Unblock ${target} — remove ${pluralize(effect.removeBlockedByIssueIds.length, "blocker")}`;
+      return t("attentionQueue.decisionCard.effects.unblock", {
+        target,
+        blockers: t("attentionQueue.decisionCard.blockerCount", { count: effect.removeBlockedByIssueIds.length }),
+      });
     case "cancel_issue_tree": {
       const snapshot = snapshots[effect.targetIssueId];
       const descendantCount = snapshot?.descendantCount ?? snapshot?.descendantIds?.length ?? snapshot?.childCount ?? 0;
-      return `Cancel ${target} and its sub-tree (${pluralize(descendantCount + 1, "issue")})`;
+      return t("attentionQueue.decisionCard.effects.cancelTree", {
+        target,
+        issues: t("attentionQueue.decisionCard.issueCount", { count: descendantCount + 1 }),
+      });
     }
     default:
-      return "Apply effect";
+      return t("attentionQueue.decisionCard.effects.apply");
   }
 }
 
-const FAILURE_CAUSE: Record<string, string> = {
-  deny_decision_intersection: "blocked by the permission boundary (fail-closed)",
-  invalid_effect_reference: "a referenced issue no longer exists",
-  target_changed: "the target changed since this was proposed",
-  effect_execution_failed: "the effect errored while running",
+const FAILURE_CAUSE_KEY: Record<string, string> = {
+  deny_decision_intersection: "permissionBoundary",
+  invalid_effect_reference: "issueMissing",
+  target_changed: "targetChanged",
+  effect_execution_failed: "effectFailed",
 };
 
 interface ResultRow {
@@ -137,48 +154,88 @@ interface ResultRow {
 function executionRow(
   execution: DecisionEffectExecution,
   resolve: (id: string) => DecisionIssueRef | null,
+  t: TFunction,
 ): ResultRow {
   const targetRef = resolve(execution.targetIssueId);
   const target = issueLabel(targetRef, execution.targetIssueId);
   const result = execution.result ?? {};
   if (execution.status === "skipped") {
-    return { key: execution.id, status: "skipped", summary: `Skipped ${target} — target changed since proposal`, link: targetRef };
+    return {
+      key: execution.id,
+      status: "skipped",
+      summary: t("attentionQueue.decisionCard.results.skipped", { target }),
+      link: targetRef,
+    };
   }
   if (execution.status === "failed") {
-    const cause = FAILURE_CAUSE[execution.error ?? ""] ?? execution.error ?? "the effect could not run";
-    return { key: execution.id, status: "failed", summary: `Failed on ${target} — ${cause}`, link: targetRef };
+    const causeKey = FAILURE_CAUSE_KEY[execution.error ?? ""];
+    const cause = causeKey
+      ? t(`attentionQueue.decisionCard.failureCauses.${causeKey}`)
+      : execution.error ?? t("attentionQueue.decisionCard.failureCauses.unknown");
+    return {
+      key: execution.id,
+      status: "failed",
+      summary: t("attentionQueue.decisionCard.results.failed", { target, cause }),
+      link: targetRef,
+    };
   }
   if (execution.status === "claimed") {
-    return { key: execution.id, status: "claimed", summary: `Running on ${target}…`, link: targetRef };
+    return { key: execution.id, status: "claimed", summary: t("attentionQueue.decisionCard.results.running", { target }), link: targetRef };
   }
   // executed
   switch (execution.effectType) {
     case "comment_on_issue":
-      return { key: execution.id, status: "executed", summary: `Commented on ${target}`, link: targetRef };
+      return { key: execution.id, status: "executed", summary: t("attentionQueue.decisionCard.results.commented", { target }), link: targetRef };
     case "create_issue": {
       const createdId = typeof result.issueId === "string" ? result.issueId : null;
       const created = createdId ? resolve(createdId) : null;
       return {
         key: execution.id,
         status: "executed",
-        summary: `Created ${created ? issueLabel(created, createdId!) : "a new issue"}`,
+        summary: t("attentionQueue.decisionCard.results.created", {
+          issue: created ? issueLabel(created, createdId!) : t("attentionQueue.decisionCard.newIssue"),
+        }),
         link: created ?? targetRef,
       };
     }
     case "update_issue_status":
-      return { key: execution.id, status: "executed", summary: `Set ${target} to ${humanStatus(typeof result.status === "string" ? result.status : null)}`, link: targetRef };
+      return {
+        key: execution.id,
+        status: "executed",
+        summary: t("attentionQueue.decisionCard.results.setStatus", {
+          target,
+          status: humanStatus(typeof result.status === "string" ? result.status : null, t),
+        }),
+        link: targetRef,
+      };
     case "assign_issue":
-      return { key: execution.id, status: "executed", summary: `Reassigned ${target}`, link: targetRef };
+      return { key: execution.id, status: "executed", summary: t("attentionQueue.decisionCard.results.reassigned", { target }), link: targetRef };
     case "resolve_blocker": {
       const removed = Array.isArray(result.removedBlockedByIssueIds) ? result.removedBlockedByIssueIds.length : 0;
-      return { key: execution.id, status: "executed", summary: `Removed ${pluralize(removed, "blocker")} from ${target}`, link: targetRef };
+      return {
+        key: execution.id,
+        status: "executed",
+        summary: t("attentionQueue.decisionCard.results.removedBlockers", {
+          target,
+          blockers: t("attentionQueue.decisionCard.blockerCount", { count: removed }),
+        }),
+        link: targetRef,
+      };
     }
     case "cancel_issue_tree": {
       const cancelled = Array.isArray(result.cancelledIssueIds) ? result.cancelledIssueIds.length : 0;
-      return { key: execution.id, status: "executed", summary: `Cancelled ${pluralize(cancelled, "issue")} under ${target}`, link: targetRef };
+      return {
+        key: execution.id,
+        status: "executed",
+        summary: t("attentionQueue.decisionCard.results.cancelledIssues", {
+          target,
+          issues: t("attentionQueue.decisionCard.issueCount", { count: cancelled }),
+        }),
+        link: targetRef,
+      };
     }
     default:
-      return { key: execution.id, status: "executed", summary: `Applied effect on ${target}`, link: targetRef };
+      return { key: execution.id, status: "executed", summary: t("attentionQueue.decisionCard.results.applied", { target }), link: targetRef };
   }
 }
 
@@ -239,6 +296,7 @@ export function DecisionCard({
   onDismiss,
   className,
 }: DecisionCardProps) {
+  const { t } = useTranslation();
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [confirmOptionId, setConfirmOptionId] = useState<string | null>(null);
   const [confirmText, setConfirmText] = useState("");
@@ -270,19 +328,20 @@ export function DecisionCard({
             ? "partial"
             : "failed";
 
-  const badgeLabel = open
-    ? "Pending"
+  const badgeKey = open
+    ? "pending"
     : decision.status === "expired"
-      ? "Expired"
+      ? "expired"
       : decision.status === "cancelled"
-        ? "Cancelled"
+        ? "cancelled"
         : dismissed
-          ? "Dismissed"
+          ? "dismissed"
           : decision.executionStatus === "succeeded"
-            ? "Decided"
+            ? "decided"
             : decision.executionStatus === "partial"
-              ? "Partial"
-              : "Failed";
+              ? "partial"
+              : "failed";
+  const badgeLabel = t(`attentionQueue.decisionCard.status.${badgeKey}`);
 
   const requiredUnmet = (decision.inputs ?? []).some(
     (field) => field.required && !(inputValues[field.id] ?? "").trim(),
@@ -325,7 +384,7 @@ export function DecisionCard({
         dimmed && "opacity-80",
         className,
       )}
-      data-decision-state={badgeLabel.toLowerCase()}
+      data-decision-state={badgeKey}
     >
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -333,7 +392,7 @@ export function DecisionCard({
         <div className="flex shrink-0 items-center gap-1.5">
           {open && hasCancelTree && (
             <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-(length:--text-micro) font-semibold uppercase tracking-wide", BADGE.destructive)}>
-              <ShieldAlert className="h-3 w-3" aria-hidden /> Destructive
+              <ShieldAlert className="h-3 w-3" aria-hidden /> {t("attentionQueue.decisionCard.destructive")}
             </span>
           )}
           <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-(length:--text-micro) font-semibold uppercase tracking-wide", BADGE[tone])}>
@@ -344,10 +403,10 @@ export function DecisionCard({
 
       {/* Provenance */}
       <p className="mt-1 text-xs text-muted-foreground">
-        Proposed by <span className="font-medium text-foreground">{originAgentName ?? "an agent"}</span>
+        {t("attentionQueue.decisionCard.proposedBy")} <span className="font-medium text-foreground">{originAgentName ?? t("attentionQueue.decisionCard.agent")}</span>
         {originIssue && (
           <>
-            {" "}while running{" "}
+            {" "}{t("attentionQueue.decisionCard.whileRunning")}{" "}
             <a href={originIssue.href} className="font-medium text-primary underline-offset-2 hover:underline">
               {issueLabel(originIssue, originIssue.id)}
             </a>
@@ -355,7 +414,7 @@ export function DecisionCard({
         )}
         {targetRefs.length > 0 && (
           <>
-            {" · applies to "}
+            {" · "}{t("attentionQueue.decisionCard.appliesTo")}{" "}
             {targetRefs.map(({ id, ref }, index) => (
               <span key={id}>
                 {index > 0 && ", "}
@@ -373,7 +432,7 @@ export function DecisionCard({
         {runHref && (
           <>
             {" · "}
-            <a href={runHref} className="hover:underline">view run</a>
+            <a href={runHref} className="hover:underline">{t("attentionQueue.decisionCard.viewRun")}</a>
           </>
         )}
       </p>
@@ -390,7 +449,7 @@ export function DecisionCard({
         <div className="mt-3 rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-2">
           <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-            {pluralize(staleTargetIds.length, "target")} changed since this was proposed
+            {t("attentionQueue.decisionCard.targetsChanged", { count: staleTargetIds.length })}
           </div>
           <ul className="mt-1.5 space-y-1 text-xs text-amber-900/90 dark:text-amber-100/90">
             {staleTargetIds.map((id) => {
@@ -399,15 +458,15 @@ export function DecisionCard({
               return (
                 <li key={id} className="flex flex-wrap items-center gap-1">
                   <span className="font-medium">{issueLabel(ref, id)}:</span>
-                  <span className="tabular-nums">{humanStatus(from?.status)}</span>
+                  <span className="tabular-nums">{humanStatus(from?.status, t)}</span>
                   <ArrowRight className="h-3 w-3" aria-hidden />
-                  <span className="tabular-nums">{humanStatus(ref?.status) || "changed"}</span>
+                  <span className="tabular-nums">{ref?.status ? humanStatus(ref.status, t) : t("attentionQueue.decisionCard.changed")}</span>
                 </li>
               );
             })}
           </ul>
           <p className="mt-1.5 text-xs text-amber-800/80 dark:text-amber-200/80">
-            Options that require an unchanged target are disabled below.
+            {t("attentionQueue.decisionCard.staleOptionsDisabled")}
           </p>
         </div>
       )}
@@ -467,7 +526,7 @@ export function DecisionCard({
                     </span>
                     {blockedStale && (
                       <span className="shrink-0 rounded-full border border-amber-500/60 bg-amber-500/10 px-2 py-0.5 text-(length:--text-micro) font-medium text-amber-800 dark:text-amber-200">
-                        Blocked · stale
+                        {t("attentionQueue.decisionCard.blockedStale")}
                       </span>
                     )}
                   </div>
@@ -485,7 +544,7 @@ export function DecisionCard({
                           )}
                         >
                           <ArrowRight className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
-                          {effectSummary(effect, resolveIssue, snapshots)}
+                          {effectSummary(effect, resolveIssue, snapshots, t)}
                         </li>
                       ))}
                     </ul>
@@ -496,12 +555,14 @@ export function DecisionCard({
                 {confirming && cancelTree && (
                   <div className="rounded-lg border border-rose-500/50 bg-rose-500/5 p-3">
                     <div className="flex items-center gap-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
-                      <Ban className="h-4 w-4" aria-hidden /> This cancels an entire issue tree
+                      <Ban className="h-4 w-4" aria-hidden /> {t("attentionQueue.decisionCard.cancelTreeTitle")}
                     </div>
                     {previewRows && previewRows.length > 0 ? (
                       <>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {pluralize(previewRows.length, "issue")} will be cancelled:
+                          {t("attentionQueue.decisionCard.issuesWillBeCancelled", {
+                            issues: t("attentionQueue.decisionCard.issueCount", { count: previewRows.length }),
+                          })}
                         </p>
                         <ul className="mt-1 max-h-40 space-y-0.5 overflow-auto text-xs">
                           {previewRows.map((row) => (
@@ -517,17 +578,19 @@ export function DecisionCard({
                       </>
                     ) : (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        This issue and every sub-issue beneath it will be cancelled.
+                        {t("attentionQueue.decisionCard.cancelTreeDescription")}
                       </p>
                     )}
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Type <span className="font-mono font-medium text-foreground">{confirmToken}</span> to confirm.
+                      {t("attentionQueue.decisionCard.typeIdentifierPrompt")} {" "}
+                      <span className="font-mono font-medium text-foreground">{confirmToken}</span> {" "}
+                      {t("attentionQueue.decisionCard.toConfirm")}
                     </p>
                     <Input
                       value={confirmText}
                       onChange={(event) => setConfirmText(event.target.value)}
                       placeholder={confirmToken}
-                      aria-label="Type the issue identifier to confirm"
+                      aria-label={t("attentionQueue.decisionCard.typeIdentifier")}
                       autoFocus
                       className="mt-1"
                     />
@@ -540,7 +603,7 @@ export function DecisionCard({
                           setConfirmText("");
                         }}
                       >
-                        Cancel
+                        {t("attentionQueue.decisionCard.cancel")}
                       </Button>
                       <Button
                         variant="destructive"
@@ -549,7 +612,11 @@ export function DecisionCard({
                         onClick={() => onDecide?.(option.id, inputValues)}
                       >
                         {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                        {previewRows ? `Cancel ${pluralize(previewRows.length, "issue")}` : "Cancel tree"}
+                        {previewRows
+                          ? t("attentionQueue.decisionCard.cancelIssues", {
+                              issues: t("attentionQueue.decisionCard.issueCount", { count: previewRows.length }),
+                            })
+                          : t("attentionQueue.decisionCard.cancelTree")}
                       </Button>
                     </div>
                   </div>
@@ -561,9 +628,9 @@ export function DecisionCard({
           {/* Always-present zero-effect Dismiss (telemetered "no", distinct from expiry) */}
           {!decision.options.some((option) => option.effects.length === 0) && (
             <div className="flex items-center justify-between gap-2 pt-1">
-              <span className="text-xs text-muted-foreground">Not now?</span>
+              <span className="text-xs text-muted-foreground">{t("attentionQueue.decisionCard.notNow")}</span>
               <Button variant="ghost" size="sm" disabled={busy} onClick={() => onDismiss?.()}>
-                Dismiss — no effects
+                {t("attentionQueue.decisionCard.dismissNoEffects")}
               </Button>
             </div>
           )}
@@ -577,33 +644,33 @@ export function DecisionCard({
           {decision.status === "expired" && (
             <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-2 font-medium text-foreground">
-                <Clock className="h-4 w-4" aria-hidden /> The decision window closed
+                <Clock className="h-4 w-4" aria-hidden /> {t("attentionQueue.decisionCard.windowClosed")}
               </div>
               <p className="mt-1">
                 {expiredReason === "target_gone"
-                  ? "A target issue was cancelled before this was decided."
+                  ? t("attentionQueue.decisionCard.expiry.targetCancelled")
                   : expiredReason === "target_completed"
-                    ? "All target issues were completed before this was decided."
-                    : "No response before the expiry deadline."}
-                {decision.continuationPolicy === "wake_origin_agent" && " The proposer was re-woken."}
+                    ? t("attentionQueue.decisionCard.expiry.targetsCompleted")
+                    : t("attentionQueue.decisionCard.expiry.noResponse")}
+                {decision.continuationPolicy === "wake_origin_agent" && ` ${t("attentionQueue.decisionCard.expiry.proposerRewoken")}`}
               </p>
             </div>
           )}
           {decision.status === "cancelled" && (
             <p className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              This decision was withdrawn by the proposer before a response.
+              {t("attentionQueue.decisionCard.withdrawn")}
             </p>
           )}
           {decision.status === "decided" && dismissed && (
             <p className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              Dismissed — no effects were run.
+              {t("attentionQueue.decisionCard.dismissedNoEffects")}
             </p>
           )}
           {decision.status === "decided" && !dismissed && (executions ?? []).length > 0 && (
             <>
               <ul className="space-y-1.5">
                 {(executions ?? []).map((execution) => {
-                  const row = executionRow(execution, resolveIssue);
+                  const row = executionRow(execution, resolveIssue, t);
                   return (
                     <li key={row.key} className="flex items-start gap-2">
                       {RESULT_ICON[row.status]}
@@ -615,7 +682,7 @@ export function DecisionCard({
               </ul>
               {decision.executionStatus !== "succeeded" && (
                 <p className="text-xs text-muted-foreground">
-                  Some effects may already have been applied. Review the results before asking the proposer to re-propose.
+                  {t("attentionQueue.decisionCard.partialWarning")}
                 </p>
               )}
             </>

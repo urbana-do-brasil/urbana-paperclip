@@ -117,6 +117,27 @@ export interface ItemVerdictProgress {
   pendingItemIds: string[];
 }
 
+/** Translation key for known decision values; unknown server values stay visible verbatim. */
+export function getItemVerdictLabelKey(
+  verdict: string,
+  resolved = false,
+): string | null {
+  const labels: Record<string, string> = resolved
+    ? {
+        approve: "taskDetail.interactionConfirmations.itemVerdicts.resolved.approve",
+        reject: "taskDetail.interactionConfirmations.itemVerdicts.resolved.reject",
+        defer: "taskDetail.interactionConfirmations.itemVerdicts.resolved.defer",
+      }
+    : {
+        approve: "taskDetail.interactionConfirmations.itemVerdicts.verdict.approve",
+        reject: "taskDetail.interactionConfirmations.itemVerdicts.verdict.reject",
+        defer: "taskDetail.interactionConfirmations.itemVerdicts.verdict.defer",
+      };
+  return Object.prototype.hasOwnProperty.call(labels, verdict)
+    ? labels[verdict]!
+    : null;
+}
+
 /**
  * Derive the `M of N decided` progress for a per-item verdict interaction from
  * its payload (the full item roster) and result (verdicts accumulated so far).
@@ -148,12 +169,24 @@ export function getItemVerdictProgress(args: {
 
 export function buildItemVerdictsSummary(
   interaction: RequestItemVerdictsInteraction,
+  translate?: (
+    key: string,
+    options?: { count?: number; created?: number; total?: number },
+  ) => string,
 ): string {
   const progress = getItemVerdictProgress({
     payload: interaction.payload,
     result: interaction.result,
   });
   if (interaction.status === "answered") {
+    if (translate) {
+      const key = "taskDetail.interactionConfirmations.itemVerdicts.summary";
+      const parts = [translate(`${key}.decided`, { count: progress.decided })];
+      if (progress.approved > 0) parts.push(translate(`${key}.approved`, { count: progress.approved }));
+      if (progress.rejected > 0) parts.push(translate(`${key}.rejected`, { count: progress.rejected }));
+      if (progress.deferred > 0) parts.push(translate(`${key}.deferred`, { count: progress.deferred }));
+      return parts.join(" · ");
+    }
     const parts = [`${progress.decided} decided`];
     if (progress.approved > 0) parts.push(`${progress.approved} approved`);
     if (progress.rejected > 0) parts.push(`${progress.rejected} rejected`);
@@ -162,9 +195,24 @@ export function buildItemVerdictsSummary(
   }
   if (interaction.status === "expired") {
     const outcome = interaction.result?.outcome;
+    if (translate) {
+      if (outcome === "superseded_by_comment") {
+        return translate("taskDetail.interactionConfirmations.itemVerdicts.summary.expiredAfterComment");
+      }
+      if (outcome === "stale_target") {
+        return translate("taskDetail.interactionConfirmations.itemVerdicts.summary.expiredAfterTargetChange");
+      }
+      return translate("taskDetail.interactionConfirmations.itemVerdicts.summary.expired");
+    }
     if (outcome === "superseded_by_comment") return "Verdicts expired after comment";
     if (outcome === "stale_target") return "Verdicts expired after target changed";
     return "Verdicts expired";
+  }
+  if (translate) {
+    return translate("taskDetail.interactionConfirmations.itemVerdicts.summary.progress", {
+      count: progress.decided,
+      total: progress.total,
+    });
   }
   return `${progress.decided} of ${progress.total} decided`;
 }
@@ -210,6 +258,10 @@ export function getRequestConfirmationTargetHref({
 
 export function buildIssueThreadInteractionSummary(
   interaction: IssueThreadInteraction,
+  translate?: (
+    key: string,
+    options?: { count?: number; created?: number; total?: number },
+  ) => string,
 ) {
   const administrativeOutcome = interaction.result && "outcome" in interaction.result
     ? interaction.result.outcome
@@ -220,6 +272,28 @@ export function buildIssueThreadInteractionSummary(
   if (administrativeOutcome === "addressee_deleted") return "Cancelled when addressee was deleted";
   if (interaction.kind === "suggest_tasks") {
     const count = interaction.payload.tasks.length;
+    if (translate) {
+      if (interaction.status === "accepted") {
+        const createdCount = interaction.result?.createdTasks?.length ?? 0;
+        const skippedCount = interaction.result?.skippedClientKeys?.length ?? 0;
+        return skippedCount > 0
+          ? translate("taskDetail.interactionSuggestedTasks.summary.acceptedPartial", {
+              created: createdCount,
+              count,
+            })
+          : translate("taskDetail.interactionSuggestedTasks.summary.accepted", {
+              count: createdCount,
+            });
+      }
+      if (interaction.status === "rejected") {
+        return translate("taskDetail.interactionSuggestedTasks.summary.rejected", {
+          count,
+        });
+      }
+      return translate("taskDetail.interactionSuggestedTasks.summary.suggested", {
+        count,
+      });
+    }
     if (interaction.status === "accepted") {
       const createdCount = interaction.result?.createdTasks?.length ?? 0;
       const skippedCount = interaction.result?.skippedClientKeys?.length ?? 0;
@@ -271,7 +345,7 @@ export function buildIssueThreadInteractionSummary(
   }
 
   if (interaction.kind === "request_item_verdicts") {
-    return buildItemVerdictsSummary(interaction);
+    return buildItemVerdictsSummary(interaction, translate);
   }
 
   if (interaction.kind === "connection_intent") {

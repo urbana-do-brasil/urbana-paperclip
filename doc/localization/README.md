@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **33 de 61 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **85 de 114 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -16,25 +16,214 @@ A entrega ainda não foi implantada.
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), controles da coleção (3.4b1–3.4b2), linhas (3.4b3a), hierarquia/checklists/resumos/grupos por data (3.4b3b), estados da coleção (3.4b3c), quadro kanban (3.4b4) e conteúdo/estados do diálogo (3.4b5a) verificados; controles/envio da criação, detalhe, conversas, Inbox e busca seguem pendentes. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), além do portfólio de organizações, coleção/criação de projetos, moldura e configuração básica do detalhe (3.5a–b, 3.5c1–c2) verificados. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |
 | 7. Integração, regressão e revisão final | Pendente; inclui os checks globais e a revisão independente. |
 
+## Continuação — interações de conexão (3.4d3c2)
+
+Os cartões de autorização e solicitação de conexão/access request agora localizam
+estados, instruções e controles nos dois idiomas. Nomes de provedores e agentes,
+URLs OAuth, permissões e ferramentas, mensagens de erro fornecidas pelo servidor,
+regras de destinatário e callbacks permanecem preservados. O wizard interno de
+configuração de provedores continua no escopo da tarefa 3.8.
+
+`IssueThreadInteractionCard.test.tsx` passou em **83/83**; `ConnectionIntentInteractionBody.test.tsx`,
+em **50/50**; e `locale-validation.test.ts`, em **12/12**. Typecheck da UI,
+gates de tokens e `git diff --check` também passaram.
+
+### Continuação — árvore de tarefas sugeridas (3.4d3d1)
+
+A árvore completa e o cartão compacto da conversa agora localizam seleção,
+metadados, estados, resumos, filtro, botões e recibos. Títulos, descrições,
+nomes, códigos de cobrança, project IDs, labels, seleção por `clientKey` e dados
+enviados ao callback continuam iguais aos fornecidos pela interação.
+
+Passaram `IssueThreadInteractionCard.test.tsx` (**85/85**),
+`TaskChatInteractionCard.test.tsx` (**25/25**), `IssueChatThread.test.tsx`
+(**110/110**), `issue-chat-messages.test.ts` (**42/42**), `IssueDetail.test.tsx`
+(**141/141**) e `locale-validation.test.ts` (**12/12**). Typecheck da UI e gates
+de tokens também passaram. Progresso atualizado para **68/98**; próxima tarefa:
+3.4d3d2, decisões por item.
+
+### Continuação — decisões por item (3.4d3d2)
+
+As apresentações completa e compacta agora localizam controles de veredicto,
+progresso, paginação, justificativas, estados expirados, resumos, recibos e
+notificações de aplicação. IDs, valores enviados (`approve`, `reject`, `defer`),
+motivos, labels personalizados e textos recebidos da interação permanecem
+intactos; veredictos desconhecidos continuam visíveis sem serem convertidos.
+
+A bateria focada de `IssueThreadInteractionCard`, `TaskChatInteractionCard`,
+`issue-thread-interactions`, `issue-chat-messages` e `locale-validation` passou
+em **196/196 testes**. `IssueDetail.test.tsx` passou em **141/141**. Typecheck da
+UI, gates de tokens, `git diff --check` e validação OpenSpec também passaram.
+O grupo 3.4d3 está concluído; o progresso atual é **71/98**. Próxima tarefa:
+3.4d4, anotações e comentários vinculados a documentos.
+
+### Continuação — anotações vinculadas a documentos (3.4d4)
+
+Painel, popover e barra de seleção localizam controles, estados, contagens,
+explicações para revisão histórica/conflitos, ações de resposta/resolução,
+mensagens próprias de erro e nomes acessíveis. O texto selecionado, comentários,
+nomes de autores, IDs, revisão, seletor original e URLs/hash de destino permanecem
+intactos; erros livres do servidor não são traduzidos.
+
+Passaram `IssueDocumentAnnotations.test.tsx` (**19/19**),
+`DocumentAnnotationLayer.test.tsx` (**6/6**),
+`DocumentAnnotationPopover.test.tsx` (**4/4**), `IssueDocumentsSection.test.tsx`
+(**13/13**), `IssuePropertiesDocumentAnnotations.test.tsx` (**4/4**) e
+`locale-validation.test.ts` (**12/12**). Typecheck da UI, gates de tokens,
+`git diff --check` e validação OpenSpec também passaram. O progresso atual é
+**72/98**; próxima tarefa: 3.4d5, controles de execução na conversa.
+
+### Continuação — controles de execução na conversa (3.4d5)
+
+O chat experimental agora localiza estados de falha, espera e conclusão, detalhes
+de recuperação, ações para tentar novamente, interromper resposta e operar a fila
+de mensagens pendentes. Nomes, conteúdo enfileirado, IDs de execução, códigos
+técnicos, callbacks, caminhos seguros e mensagens livres do provedor/servidor
+permanecem intactos. A variante inglesa mantém os textos e as operações anteriores.
+
+Passaram `TaskChatThread.test.tsx` (**225/225**), `TaskChatMarker.test.tsx`
+(**5/5**), `TaskChatQueuedMessages.test.tsx` (**21/21**),
+`TaskChatComposer.test.tsx` (**101/101**), `locale-validation.test.ts` (**12/12**)
+e `workspace-restore-marker.test.ts` (**7/7**). Typecheck da UI,
+`pnpm check:tokens`, `pnpm check:token-gates`, `git diff --check` e validação
+OpenSpec também passaram. O grupo 3.4d está concluído; o progresso é **74/98**.
+O grupo 3.4d foi concluído quando o plano estava em 74/98. Em seguida,
+3.4e foi dividido em cinco subtarefas verificáveis. As tarefas 3.4e1–3.4e5
+e a busca global (3.4f) foram concluídas. Depois, 3.5 foi dividido nos lotes
+3.5a–3.5e. O portfólio de organizações e a coleção/criação de projetos
+(3.5a–b) também foram concluídos; o total naquele marco era **82/108**.
+
+### Continuação — busca global e filtros (3.4f)
+
+A página de busca, sugestões de operadores, resultados, filtros desktop/mobile,
+ordenação e recuperação de zero resultados agora acompanham o idioma selecionado.
+Sintaxe (`status:todo`, `assignee:me`, `updated:>7d`), valores e parâmetros de
+URL, ordenação, destinos, conteúdo de resultados, nomes e mensagens do servidor
+permanecem intactos.
+
+`Search.test.tsx`, `search-query-parser.test.ts` e `locale-validation.test.ts`
+passaram em **50/50 testes**, incluindo renderização PT-BR e os valores originais
+enviados à busca. Typecheck da UI, `check:tokens`, `check:token-gates`,
+`git diff --check` e validação OpenSpec passaram.
+
+### Continuação — portfólio de organizações (3.5a)
+
+A lista de organizações localiza status conhecidos, renomeação, restauração,
+exclusão, métricas, orçamento, datas e confirmações. Nomes, descrições, status
+desconhecidos, valores, seleção e operações permanecem intactos; os botões de
+ícone agora também têm nomes acessíveis localizados. A seleção/troca global da
+organização já foi verificada em 3.3.
+
+`Companies.test.tsx` e `locale-validation.test.ts` passaram em **15/15 testes**,
+incluindo inglês e PT-BR. Typecheck da UI, gates de tokens, `git diff --check` e
+validação OpenSpec passaram. Próxima tarefa: 3.5b, coleção e criação de
+projetos. A aplicação ainda não foi implantada.
+
+### Continuação — coleção e criação de projetos (3.5b)
+
+A coleção de projetos localiza ordenação, grupos de participação, contagens,
+status conhecidos, estado vazio, falha de carregamento, favoritos e ações para
+entrar/sair. O diálogo de criação e o seletor de repositórios do GitHub também
+localizam controles, estados de conexão/carregamento/erro/vazio/busca e nomes
+acessíveis. Nomes, descrições, status/enums, filtros/ordenação e payloads,
+repositórios e conexões, permissões, callbacks e mensagens brutas do servidor
+permanecem intactos.
+
+`Projects.test.tsx`, `NewProjectDialog.test.tsx`, `MembershipAction.test.tsx`,
+`StarToggle.test.tsx`, `SearchableSelect.test.tsx` e
+`locale-validation.test.ts` passaram em **38/38 testes**, incluindo os dois
+idiomas e a preservação do payload de criação. Typecheck da UI, `check:tokens`,
+`check:token-gates`, `git diff --check` e validação OpenSpec passaram. O
+progresso atual é **82/108**; próxima tarefa: 3.5c, detalhes e configuração de
+projetos. A aplicação ainda não foi implantada.
+
+### Refinamento do próximo lote — detalhe do projeto (3.5c)
+
+Para manter a verificação revisável, 3.5c foi dividido em quatro jornadas:
+3.5c1 moldura e cabeçalho; 3.5c2 configuração básica; 3.5c3 orçamento e
+acesso/privacidade; 3.5c4 configuração e visualização de workspaces. 3.5c1 foi
+concluída; o apply estava em **83/112 tarefas** naquele marco. Próxima: 3.5c2.
+
+### Continuação — moldura do detalhe de projetos (3.5c1)
+
+O detalhe localiza breadcrumbs, seletor de ícone/cor, abas, aviso de
+participação, estado de pausa orçamentária, atribuição do plugin, resumo,
+feedback de arquivamento e carregamento das workspaces. Os nomes do projeto e
+do plugin, cores/ícones como valores, rotas, callbacks, operações e conteúdo
+dinâmico continuam preservados; erros brutos do servidor não são traduzidos.
+
+`ProjectDetail.test.tsx` passou em **11/11** e, junto com
+`locale-validation.test.ts`, em **23/23 testes**. O teste em PT-BR cobre abas,
+aviso de participação, nomes acessíveis e seletor de ícone/cor, preservando o
+nome do projeto/plugin e os filtros enviados à API. Typecheck da UI,
+`check:tokens`, `check:token-gates`, `git diff --check` e validação OpenSpec
+passaram. O progresso é **83/112**; próxima: 3.5c2, configuração básica.
+
+Antes de iniciar a configuração, 3.5c2 foi dividida em dois lotes revisáveis:
+3.5c2a para campos, datas e arquivamento; 3.5c2b para repositórios e codebase.
+3.5c2a foi concluída e o plano estava em **84/114**; próxima: 3.5c2b.
+
+### Continuação — campos e arquivamento do projeto (3.5c2a)
+
+Nome, descrição, datas, feedback de salvamento e zona de arquivamento agora
+acompanham o idioma. A confirmação mantém o nome original do projeto e os
+callbacks de arquivar/restaurar; descrições e demais valores inseridos pelo
+usuário continuam intactos.
+
+`ProjectProperties.save-indicator.test.tsx` e `locale-validation.test.ts`
+passaram em **16/16 testes**, incluindo rótulos de campos e indicadores de
+salvamento em PT-BR e a confirmação de arquivamento com o nome e callback
+originais. Typecheck da UI, `check:tokens` e `git diff --check` passaram. O
+progresso era **84/114**; próxima: 3.5c2b, repositórios e codebase.
+
+### Repositórios e codebase do projeto (3.5c2b)
+
+As configurações de repositórios GitHub, codebase e pastas locais agora acompanham
+o idioma efetivo. A modal de instruções mantém exemplos válidos de comandos e
+caminhos para cada sistema operacional. URLs, IDs, caminhos e comandos continuam
+inalterados; mensagens livres do servidor são preservadas, e a confirmação de
+exposição de caminhos locais continua obrigatória.
+
+`ProjectProperties.managed-sandbox.test.tsx`, `ProjectRepositories.test.tsx`,
+`PathInstructionsModal.test.tsx` e `locale-validation.test.ts` passaram em
+**23/23 testes**. `check:tokens`, `check:token-gates`, `git diff --check`,
+`openspec validate localize-paperclip-pt-br --strict` e o typecheck direcionado
+dos módulos alterados passaram. O typecheck completo da UI foi encerrado pelo
+limite de memória do ambiente. A subtarefa está concluída e o progresso atual é
+**85/114**; próxima: 3.5c3, orçamento e acesso/privacidade. A aplicação ainda
+não foi implantada.
+
 ## Checkpoint da retomada — 2026-10-28
 
-O trabalho foi retomado após o checkpoint anterior. As tarefas 3.2, 3.3, 3.4a,
-3.4b1, 3.4b2a, 3.4b2b, 3.4b2c, 3.4b3a, 3.4b3b, 3.4b3c, 3.4b4, 3.4b5a, 5.1, 6.1 e 4.2 foram verificadas. A barra,
+O checkpoint anterior foi versionado e enviado em `ef53c7987`. Nesta retomada,
+3.4b5b–3.4b5c, 3.4c1–3.4c3c5 e 3.4d4–3.4d5 passaram nos testes focados e no typecheck. As tarefas
+3.2, 3.3, 3.4a, 3.4b1, 3.4b2a, 3.4b2b, 3.4b2c, 3.4b3a, 3.4b3b, 3.4b3c,
+3.4b4, 3.4b5a, 3.4b5b, 3.4b5c, 3.4c1, 3.4c2, 3.4c3a, 3.4c3b1, 3.4c3b2, 3.4c3b3, 3.4c3c1, 3.4c3c2, 3.4c3c3, 3.4c3c4, 3.4c3c5, 3.4c3c, 3.4c3, 3.4c, 3.4d1, 3.4d2a, 3.4d2b, 3.4d2c1, 3.4d2c2a–3.4d2c2c, 3.4d2c2, 3.4d2c, 3.4d2, 3.4d3a, 3.4d3b1–3.4d3b2, 3.4d3b, 3.4d3c1, 5.1, 6.1 e 4.2 estão verificadas. A barra,
 busca, criação principal, alternância de lista/kanban, filtros,
 ordenação/agrupamento, colunas, preferências, linhas, hierarquia/resumos e
-estados da coleção, quadro kanban e conteúdo/estados básicos do diálogo de criação estão localizados. Os controles compartilhados e o envio continuam em progresso. As alterações seguem no working tree, sem novo commit ou implantação. O swap
-temporário usado no typecheck anterior foi desativado e removido.
+estados da coleção, quadro kanban, conteúdo/estados básicos do diálogo de
+criação, cabeçalho/propriedades editáveis, hierarquia, origem e relações da
+tarefa, documentos, anexos, produtos de trabalho, seleção de workspace e
+controles de serviços/jobs, prontidão, bloqueios, avisos e encerramento/limpeza
+de workspaces, políticas de execução, monitoramento e controles de retry nas
+propriedades da tarefa, configuração, status e vínculo com a tarefa gerada pelo
+watchdog, banners de monitoramento, retry agendado, detalhes de retry e estados,
+resumos, responsáveis, linhagem, decisões, confirmações, reparo e reemissão dos
+cartões de recovery, eventos da timeline e atividade de provider nos transcripts
+padrão e experimental, anotações documentais e controles de execução na conversa
+estão localizados. Os últimos ajustes permanecem no working tree; a aplicação
+não foi implantada.
 
 Próximos passos:
 
-1. Completar 3.4b5b–3.4f, depois seguir por 3.5–3.11; repetir UI build, gates de
-   tokens e browser sobre a consolidação das jornadas antes da aceitação global.
+1. Seguir por 3.5–3.11. Repetir UI build, gates de
+   tokens e browser na consolidação das jornadas antes da aceitação global.
 2. Migrar os comandos operacionais (4.3) e verificar os contratos de saída estruturada,
    stdout/stderr e subprocessos (4.4).
 3. Manter 5.2/5.3 abertas até revisão humana e validação operacional dos guias;
@@ -44,7 +233,7 @@ Próximos passos:
 5. Integrar checks, reconciliar cobertura e executar aceitação/revisão final
    nas tarefas 7.1–7.4. A mudança ainda não está pronta para arquivamento.
 
-Não interprete a contagem de 33/61 como percentual da tradução: os itens têm
+Não interprete a contagem de 81/108 como percentual da tradução: os itens têm
 tamanhos muito diferentes e a contagem inclui subtarefas e seus grupos pais.
 O arquivo de tarefas mantém a lista detalhada e suas dependências.
 

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link } from "@/lib/router";
 import { decisionQueuesApi } from "../api/decisionQueues";
 import { queryKeys } from "../lib/queryKeys";
@@ -25,6 +26,7 @@ interface DecisionQueueRailProps {
  * the queue's pending items.
  */
 export function DecisionQueueRail({ companyId, activeQueueKey = null }: DecisionQueueRailProps) {
+  const { t } = useTranslation();
   const { data: queues } = useQuery({
     queryKey: queryKeys.decisionQueues.list(companyId),
     queryFn: () => decisionQueuesApi.list(companyId),
@@ -40,8 +42,8 @@ export function DecisionQueueRail({ companyId, activeQueueKey = null }: Decision
   const now = Date.now();
 
   return (
-    <nav className="flex flex-wrap items-center gap-1.5" aria-label="Decision queues" data-decision-queue-rail>
-      <Chip href={decisionsHref(null)} active={activeQueueKey == null} label="All" />
+    <nav className="flex flex-wrap items-center gap-1.5" aria-label={t("attentionQueue.rail.label")} data-decision-queue-rail>
+      <Chip href={decisionsHref(null)} active={activeQueueKey == null} label={t("attentionQueue.rail.all")} recentLabel={t("attentionQueue.rail.recentActivity")} />
       {queues.map((queue) => {
         const recent = now - new Date(queue.updatedAt).getTime() < RECENT_ACTIVITY_MS;
         return (
@@ -52,6 +54,7 @@ export function DecisionQueueRail({ companyId, activeQueueKey = null }: Decision
             label={queue.title}
             count={queue.itemCount}
             recent={recent}
+            recentLabel={t("attentionQueue.rail.recentActivity")}
           />
         );
       })}
@@ -65,12 +68,14 @@ function Chip({
   label,
   count,
   recent,
+  recentLabel,
 }: {
   href: string;
   active: boolean;
   label: string;
   count?: number;
   recent?: boolean;
+  recentLabel: string;
 }) {
   return (
     <Link
@@ -84,7 +89,7 @@ function Chip({
       aria-current={active ? "page" : undefined}
     >
       {recent && (
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-label="Recent activity" />
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-label={recentLabel} />
       )}
       <span className="truncate">{label}</span>
       {count != null && count > 0 && (

@@ -6,6 +6,7 @@ import type { AnchorHTMLAttributes, ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Agent, IssueRecoveryAction } from "@paperclipai/shared";
 import { IssueRecoveryActionCard, deriveRecoveryCardState } from "./IssueRecoveryActionCard";
+import { i18n } from "../i18n";
 
 vi.mock("@/lib/router", () => ({
   Link: ({ children, to, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }) => (
@@ -15,7 +16,11 @@ vi.mock("@/lib/router", () => ({
 
 const visibility = vi.hoisted(() => ({ visible: true, loaded: true }));
 vi.mock("@/hooks/useWorkspaceIsolationControls", () => ({ useWorkspaceIsolationControls: () => visibility }));
-beforeEach(() => { visibility.visible = true; visibility.loaded = true; });
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+  visibility.visible = true;
+  visibility.loaded = true;
+});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -33,21 +38,25 @@ function act<T>(callback: () => T): T {
 }
 
 let root: ReturnType<typeof createRoot> | null = null;
+const mountedRoots = new Set<ReturnType<typeof createRoot>>();
 let container: HTMLDivElement | null = null;
 
-afterEach(() => {
-  if (root) {
-    act(() => root?.unmount());
+afterEach(async () => {
+  for (const mountedRoot of mountedRoots) {
+    act(() => mountedRoot.unmount());
   }
+  mountedRoots.clear();
   root = null;
   container?.remove();
   container = null;
+  await i18n.changeLanguage("pt-BR");
 });
 
 function render(element: ReactElement) {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
+  mountedRoots.add(root);
   act(() => root?.render(element));
   return container;
 }
@@ -372,6 +381,20 @@ describe("IssueRecoveryActionCard", () => {
     expect(onResolve).toHaveBeenCalledWith("todo");
   });
 
+  it("localizes recovery decisions in PT-BR without changing the selected outcome", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onResolve = vi.fn();
+    const node = render(<IssueRecoveryActionCard action={buildAction()} onResolve={onResolve} />);
+    const trigger = node.querySelector<HTMLButtonElement>("[data-testid='recovery-action-resolve-trigger']");
+    expect(trigger?.getAttribute("aria-label")).toBe("Resolver recuperação");
+    click(trigger ?? null);
+    expect(document.body.textContent).toContain("Tentar novamente");
+    expect(document.body.textContent).toContain("Marcar tarefa como concluída");
+    expect(document.body.textContent).toContain("Enviar para revisão");
+    click([...document.body.querySelectorAll("button")].find((button) => button.textContent?.includes("Tentar novamente")) ?? null);
+    expect(onResolve).toHaveBeenCalledExactlyOnceWith("todo");
+  });
+
   it("does not offer blocked recovery resolution without a blocker selection flow", () => {
     const node = render(
       <IssueRecoveryActionCard action={buildAction()} onResolve={() => {}} canFalsePositive />,
@@ -393,7 +416,10 @@ describe("IssueRecoveryActionCard", () => {
     click(first.querySelector("[data-testid='recovery-action-resolve-trigger']"));
     expect(document.body.textContent).not.toContain("False positive");
 
-    act(() => root?.unmount());
+    if (root) {
+      act(() => root?.unmount());
+      mountedRoots.delete(root);
+    }
     root = null;
     container?.remove();
     container = null;
@@ -510,6 +536,30 @@ describe("IssueRecoveryActionCard workspace_validation divergence", () => {
     click(node.querySelector("[data-testid='recovery-action-reissue-trigger']"));
     click(document.body.querySelector("[data-testid='recovery-action-reissue-confirm']"));
     expect(onReissueIsolated).toHaveBeenCalledWith({
+      baseRef: "nleach/PAP-1405-live",
+      liveBranch: "nleach/PAP-1405-live",
+      liveHeadSha: "bbbbbbbbbbbb33334444",
+      expectedBranch: "PAP-522-recorded",
+    });
+  });
+
+  it("localizes re-issue confirmation in PT-BR and preserves the branch payload", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onReissueIsolated = vi.fn();
+    const node = render(
+      <IssueRecoveryActionCard
+        action={buildWorkspaceValidationAction()}
+        onReissueIsolated={onReissueIsolated}
+      />,
+    );
+    expect(node.textContent).toContain("Criar nova tarefa em workspace isolado");
+    expect(node.textContent).toContain("PAP-522-recorded");
+    expect(node.textContent).toContain("nleach/PAP-1405-live");
+    click(node.querySelector("[data-testid='recovery-action-reissue-trigger']"));
+    expect(document.body.textContent).toContain("Referência base");
+    expect(document.body.textContent).toContain("Criar nova tarefa isolada");
+    click(document.body.querySelector("[data-testid='recovery-action-reissue-confirm']"));
+    expect(onReissueIsolated).toHaveBeenCalledExactlyOnceWith({
       baseRef: "nleach/PAP-1405-live",
       liveBranch: "nleach/PAP-1405-live",
       liveHeadSha: "bbbbbbbbbbbb33334444",
@@ -661,6 +711,27 @@ describe("IssueRecoveryActionCard W7 reconcile actions", () => {
     expect(onBreakGlassOverride).toHaveBeenCalledWith("Verified live branch is safe to adopt.");
   });
 
+  it("localizes break-glass confirmation in PT-BR and passes the operator reason unchanged", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onBreakGlassOverride = vi.fn();
+    const node = render(
+      <IssueRecoveryActionCard
+        action={buildWorkspaceValidationAction()}
+        onBreakGlassOverride={onBreakGlassOverride}
+        canBreakGlass
+      />,
+    );
+    click(node.querySelector("[data-testid='recovery-action-breakglass-trigger']"));
+    expect(document.body.textContent).toContain("Reconciliação excepcional");
+    expect(document.body.textContent).toContain("sem comprovar a ancestralidade");
+    expect(document.body.textContent).toContain("PAP-522-recorded");
+    const confirm = document.body.querySelector<HTMLButtonElement>("[data-testid='recovery-action-breakglass-confirm']");
+    expect(confirm?.disabled).toBe(true);
+    setTextareaValue(document.body.querySelector<HTMLTextAreaElement>("[data-testid='recovery-breakglass-reason']"), "  Motivo operacional aprovado.  ");
+    click(document.body.querySelector("[data-testid='recovery-action-breakglass-confirm']"));
+    expect(onBreakGlassOverride).toHaveBeenCalledExactlyOnceWith("Motivo operacional aprovado.");
+  });
+
   it("does not offer reconcile actions for non-workspace recovery kinds", () => {
     const node = render(
       <IssueRecoveryActionCard
@@ -749,6 +820,29 @@ describe("IssueRecoveryActionCard repair workspace (quarantine_restore)", () => 
 
     click(document.body.querySelector("[data-testid='recovery-action-repair-confirm']"));
     expect(onQuarantineRestore).toHaveBeenCalledTimes(1);
+  });
+
+  it("localizes lossless repair confirmation in PT-BR while preserving the rescue branch and operation", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onQuarantineRestore = vi.fn();
+    const node = render(
+      <IssueRecoveryActionCard
+        action={buildDirtyDivergenceAction()}
+        onQuarantineRestore={onQuarantineRestore}
+      />,
+    );
+    expect(node.textContent).toContain("Reparar workspace");
+    click(node.querySelector("[data-testid='recovery-action-repair-trigger']"));
+    const text = document.body.querySelector("[data-testid='recovery-repair-restated']")?.textContent ?? "";
+    expect(document.body.querySelector("[data-testid='recovery-repair-dirty-count']")?.textContent)
+      .toBe("3 alterações não confirmadas");
+    expect(text).toContain("nleach/PAP-1405-live");
+    expect(text).toContain("mantida intacta");
+    expect(document.body.querySelector("[data-testid='recovery-repair-rescue-branch']")?.textContent)
+      .toContain("paperclip/rescue/PAP-1405/");
+    expect(text).toContain("PAP-522-recorded");
+    click(document.body.querySelector("[data-testid='recovery-action-repair-confirm']"));
+    expect(onQuarantineRestore).toHaveBeenCalledExactlyOnceWith();
   });
 
   it("singularizes a one-file dirty count", () => {
@@ -941,7 +1035,7 @@ describe("IssueRecoveryActionCard owner-sticky retry lineage", () => {
     expect(progress?.getAttribute("data-recovery-max-attempts")).toBe("5");
     expect(progress?.textContent).toContain("Attempt 2 of 5");
     expect(node.querySelector("[data-testid='recovery-next-retry']")?.textContent).toBe(
-      "Next try in 3m",
+      "Next try in 3 min.",
     );
   });
 
@@ -1042,7 +1136,7 @@ describe("IssueRecoveryActionCard owner-sticky retry lineage", () => {
     expect(node.textContent).toContain("RECOVERY NEEDED");
     expect(node.textContent).not.toContain("RECOVERY IN PROGRESS");
     const retry = node.querySelector("[data-testid='recovery-next-retry']");
-    expect(retry?.textContent).toBe("Retry missed 5m ago");
+    expect(retry?.textContent).toBe("Retry missed 5 min. ago");
     expect(retry?.getAttribute("data-recovery-retry-expired")).toBe("true");
     // Nothing may still read as an upcoming attempt or as needing no action.
     expect(node.textContent).not.toContain("Next try");
@@ -1143,6 +1237,38 @@ describe("IssueRecoveryActionCard owner-sticky retry lineage", () => {
     expect(node.querySelector("[data-testid='recovery-retry-progress']")).toBeNull();
     expect(node.querySelector("[data-testid='recovery-source-owner']")).toBeNull();
     expect(node.textContent).toContain("→ Returns to:");
+  });
+
+  it("localizes recovery state, owners, and attempt lineage while preserving recorded content", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const sourceRunId = "run-source-1234567";
+    const originalNextAction = "Repair the source issue disposition without taking source ownership.";
+    const node = render(
+      <IssueRecoveryActionCard
+        action={buildRecoveryLaneAction({
+          evidence: {
+            summary: "Run finished but no disposition was chosen.",
+            sourceAttemptCount: 5,
+            sourceMaxAttempts: 5,
+            sourceRunId,
+          },
+          nextAction: originalNextAction,
+        })}
+        agentMap={bothAgents}
+      />,
+    );
+
+    expect(node.querySelector("section")?.getAttribute("aria-label")).toBe("Ação de recuperação: RECUPERAÇÃO EM ANDAMENTO");
+    expect(node.textContent).toContain("Espera sem destino");
+    expect(node.textContent).toContain("O responsável original não conseguiu registrar um próximo passo");
+    expect(node.querySelector("[data-testid='recovery-source-owner']")?.textContent).toContain("CodexCoder continua responsável por esta tarefa");
+    expect(node.querySelector("[data-testid='recovery-recovery-owner']")?.textContent).toContain("ClaudeCoder corrige apenas o próximo passo");
+    expect(node.querySelector("[data-testid='recovery-retry-progress']")?.textContent).toContain("Tentativa 1 de 3");
+    expect(node.querySelector("[data-testid='recovery-next-retry']")?.textContent).toBe("Próxima tentativa em 1 min");
+    expect(node.textContent).toContain("O responsável original usou 5 de 5 tentativas automáticas.");
+    expect(node.textContent).toContain("Run finished but no disposition was chosen.");
+    expect(node.textContent).toContain(originalNextAction);
+    expect(node.querySelector(`a[href="/agents/${returnAgent.id}/runs/${sourceRunId}"]`)).not.toBeNull();
   });
 });
 

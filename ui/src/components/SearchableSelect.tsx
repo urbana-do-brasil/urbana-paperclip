@@ -62,6 +62,8 @@ export interface SearchableSelectProps<
   disablePortal?: boolean;
   /** Heading for the large mobile selector modal. Defaults to the placeholder. */
   mobileTitle?: string;
+  /** Accessible label for the mobile modal's close control. */
+  closeLabel?: string;
   triggerAriaLabel?: string;
   modal?: boolean;
   contentStyle?: CSSProperties;
@@ -115,6 +117,7 @@ export function SearchableSelect<
   scoreOption,
   disablePortal,
   mobileTitle,
+  closeLabel = "Close selector",
   triggerAriaLabel,
   modal,
   contentStyle,
@@ -272,7 +275,7 @@ export function SearchableSelect<
           <button
             type="button"
             className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label="Close selector"
+            aria-label={closeLabel}
             onClick={() => closePopover({ suppressTriggerFocus: true })}
           >
             <X className="size-5" />

@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import type { Agent } from "@paperclipai/shared";
 import { CommentSubmissionUnknownError } from "../lib/comment-submit-result";
 import { loadDraft, preserveDraftInTab, settleDraftSubmission } from "../lib/composer-draft";
@@ -375,7 +376,8 @@ function createFileDragEvent(type: string, files: File[]) {
 describe("IssueChatThread", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     window.scrollTo = vi.fn();
@@ -383,7 +385,7 @@ describe("IssueChatThread", () => {
     sessionStorage.clear();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     vi.useRealTimers();
     appendMock.mockReset();
@@ -392,6 +394,205 @@ describe("IssueChatThread", () => {
     restoreComposerViewportSnapshotMock.mockClear();
     shouldPreserveComposerViewportMock.mockClear();
     markdownBodyRenderMock.mockClear();
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("localizes empty conversation states and the jump-to-latest control", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const renderThread = (variant: "full" | "embedded") => (
+      <MemoryRouter>
+        <IssueChatThread
+          comments={[]}
+          linkedRuns={[]}
+          timelineEvents={[]}
+          liveRuns={[]}
+          onAdd={async () => {}}
+          showComposer={false}
+          variant={variant}
+          enableLiveTranscriptPolling={false}
+        />
+      </MemoryRouter>
+    );
+
+    act(() => root.render(renderThread("full")));
+    expect(container.textContent).toContain(
+      "Esta conversa da tarefa está vazia. Comece com uma mensagem abaixo.",
+    );
+    expect(container.textContent).toContain("Ir para a mensagem mais recente");
+
+    act(() => root.render(renderThread("embedded")));
+    expect(container.textContent).toContain("Esta execução ainda não produziu saída.");
+    expect(container.textContent).not.toContain("Ir para a mensagem mais recente");
+
+    act(() => root.unmount());
+  });
+
+  it("localizes human comment authors and deletion controls without changing the comment", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onDeleteComment = vi.fn();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <IssueChatThread
+            comments={[{
+              id: "comment-delete-pt-br",
+              companyId: "company-1",
+              issueId: "issue-1",
+              authorAgentId: null,
+              authorUserId: "user-1",
+              authorType: "user",
+              body: "Texto original do comentário",
+              presentation: null,
+              metadata: null,
+              createdAt: new Date("2026-10-28T12:00:00.000Z"),
+              updatedAt: new Date("2026-10-28T12:00:00.000Z"),
+            }]}
+            linkedRuns={[]}
+            timelineEvents={[]}
+            liveRuns={[]}
+            currentUserId="user-1"
+            onAdd={async () => {}}
+            onDeleteComment={onDeleteComment}
+            showComposer={false}
+            enableLiveTranscriptPolling={false}
+          />
+        </MemoryRouter>,
+      );
+    });
+
+    expect(container.textContent).toContain("Você");
+    expect(container.textContent).toContain("Texto original do comentário");
+    const deleteButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Excluir comentário"]',
+    );
+    expect(deleteButton).not.toBeNull();
+    await act(async () => deleteButton?.click());
+    expect(document.body.textContent).toContain("Excluir comentário?");
+    expect(document.body.textContent).toContain("O comentário será substituído por um marcador");
+    const confirmButton = Array.from(document.querySelectorAll("button")).find(
+      (button) => button.textContent === "Excluir comentário",
+    );
+    await act(async () => confirmButton?.click());
+    expect(onDeleteComment).toHaveBeenCalledWith("comment-delete-pt-br");
+    expect(container.textContent).toContain("Texto original do comentário");
+
+    act(() => root.unmount());
+  });
+
+  it("localizes agent attribution and feedback while keeping comment and vote payloads intact", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onVote = vi.fn().mockResolvedValue(undefined);
+    const root = createRoot(container);
+    const agentMap = new Map<string, Agent>([
+      ["agent-1", { id: "agent-1", name: "Agente Teste" } as Agent],
+    ]);
+
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <IssueChatThread
+            comments={[{
+              id: "comment-attributed-pt-br",
+              companyId: "company-1",
+              issueId: "issue-1",
+              authorAgentId: "agent-1",
+              authorUserId: null,
+              authorType: "agent",
+              onBehalfOfUserId: "user-2",
+              body: "Resposta original do agente",
+              presentation: null,
+              metadata: null,
+              createdAt: new Date("2026-10-28T12:00:00.000Z"),
+              updatedAt: new Date("2026-10-28T12:00:00.000Z"),
+            }]}
+            linkedRuns={[]}
+            timelineEvents={[]}
+            liveRuns={[]}
+            agentMap={agentMap}
+            currentUserId="user-1"
+            userLabelMap={new Map([["user-2", "Ana"]])}
+            issueAssigneeAgentId="agent-2"
+            onAdd={async () => {}}
+            onVote={onVote}
+            showComposer={false}
+            enableLiveTranscriptPolling={false}
+          />
+        </MemoryRouter>,
+      );
+    });
+
+    expect(container.textContent).toContain("Resposta original do agente");
+    expect(container.textContent).toContain("por Ana");
+    expect(container.textContent).toContain("Agente Teste publicou isto em nome de Ana");
+    const helpfulButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Útil"]',
+    );
+    expect(helpfulButton).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Precisa melhorar"]')).not.toBeNull();
+    await act(async () => helpfulButton?.click());
+
+    expect(document.body.textContent).toContain("Salvar preferência de compartilhamento do feedback");
+    expect(document.body.textContent).toContain("Este voto sempre é salvo localmente.");
+    const denyButton = Array.from(document.querySelectorAll("button")).find(
+      (button) => button.textContent === "Não permitir",
+    );
+    await act(async () => denyButton?.click());
+    expect(onVote).toHaveBeenCalledWith("comment-attributed-pt-br", "up", undefined);
+    expect(container.textContent).toContain("Resposta original do agente");
+
+    act(() => root.unmount());
+  });
+
+  it("shows a localized safe transcript fallback without translating its content", async () => {
+    await i18n.changeLanguage("pt-BR");
+    markdownBodyRenderMock.mockImplementation(({ className }: { className?: string }) => {
+      if (className === "text-sm leading-6") {
+        throw new Error("test-only renderer failure");
+      }
+    });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const root = createRoot(container);
+
+    try {
+      act(() => {
+        root.render(
+          <MemoryRouter>
+            <IssueChatThread
+              comments={[{
+                id: "system-comment-fallback",
+                companyId: "company-1",
+                issueId: "issue-1",
+                authorAgentId: null,
+                authorUserId: null,
+                authorType: "system",
+                body: "Diagnóstico original do sistema",
+                presentation: null,
+                metadata: null,
+                createdAt: new Date("2026-10-28T12:00:00.000Z"),
+                updatedAt: new Date("2026-10-28T12:00:00.000Z"),
+              }]}
+              linkedRuns={[]}
+              timelineEvents={[]}
+              liveRuns={[]}
+              onAdd={async () => {}}
+              showComposer={false}
+              enableLiveTranscriptPolling={false}
+            />
+          </MemoryRouter>,
+        );
+      });
+
+      expect(container.textContent).toContain("Ocorreu um erro interno ao exibir a conversa.");
+      expect(container.textContent).toContain("Diagnóstico original do sistema");
+      expect(container.textContent).not.toContain("Chat renderer hit an internal state error");
+    } finally {
+      act(() => root.unmount());
+      markdownBodyRenderMock.mockReset();
+      consoleError.mockRestore();
+    }
   });
 
   it("drops the count heading and does not use an internal scrollbox", () => {
@@ -2276,6 +2477,59 @@ describe("IssueChatThread", () => {
     });
   });
 
+  it("localizes timeline activity labels while preserving workspace and agent names", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <IssueChatThread
+            comments={[]}
+            linkedRuns={[]}
+            timelineEvents={[{
+              id: "event-pt-br",
+              actorType: "system",
+              actorId: "system",
+              createdAt: new Date("2026-10-28T12:00:00.000Z"),
+              followUpRequested: true,
+              statusChange: { from: "todo", to: "in_progress" },
+              assigneeChange: {
+                from: { agentId: null, userId: null },
+                to: { agentId: "agent-1", userId: null },
+              },
+              workspaceChange: {
+                from: { label: null, projectWorkspaceId: null, executionWorkspaceId: null, mode: null },
+                to: { label: "worktree-prod", projectWorkspaceId: "project-1", executionWorkspaceId: null, mode: "shared" },
+              },
+            }]}
+            liveRuns={[]}
+            onAdd={async () => {}}
+            showComposer={false}
+            enableLiveTranscriptPolling={false}
+          />
+        </MemoryRouter>,
+      );
+    });
+
+    expect(container.textContent).toContain("Sistema");
+    expect(container.textContent).toContain("solicitou acompanhamento");
+    expect(container.textContent).toContain("há ");
+    expect(container.textContent).toContain("A fazer");
+    expect(container.textContent).toContain("Em andamento");
+    expect(container.textContent).toContain("Responsável");
+    expect(container.textContent).toContain("Sem responsável");
+    expect(container.textContent).toContain("Acionamento");
+    expect(container.textContent).toContain("agent-1");
+    expect(container.textContent).toContain("Espaço de trabalho");
+    expect(container.textContent).toContain("Nenhum");
+    expect(container.textContent).toContain("worktree-prod");
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
   it("shows unresolved blocker context above the composer", () => {
     const root = createRoot(container);
 
@@ -2755,7 +3009,7 @@ describe("IssueChatThread", () => {
     });
 
     const acceptButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("Accept drafts"),
+      (button) => button.textContent?.includes("Create suggested tasks"),
     );
     expect(acceptButton).toBeTruthy();
 
@@ -2824,7 +3078,7 @@ describe("IssueChatThread", () => {
       childCheckbox?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     const acceptButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("Accept selected drafts"),
+      (button) => button.textContent?.includes("Create selected tasks"),
     );
     expect(acceptButton).toBeTruthy();
     await act(async () => {
@@ -3678,6 +3932,47 @@ describe("IssueChatThread", () => {
     });
   });
 
+  it("localizes the reply composer and file drop guidance in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <IssueChatThread
+            comments={[]}
+            linkedRuns={[]}
+            timelineEvents={[]}
+            liveRuns={[]}
+            onAdd={async () => {}}
+            onAttachImage={async () => undefined}
+            enableLiveTranscriptPolling={false}
+          />
+        </MemoryRouter>,
+      );
+    });
+
+    const editor = container.querySelector<HTMLTextAreaElement>(
+      'textarea[aria-label="Issue chat editor"]',
+    );
+    expect(editor?.placeholder).toBe("Responder");
+
+    const composer = container.querySelector(
+      '[data-testid="issue-chat-composer"]',
+    );
+    act(() => {
+      composer?.dispatchEvent(createFileDragEvent("dragenter", [
+        new File(["conteúdo"], "notas.txt", { type: "text/plain" }),
+      ]));
+    });
+
+    expect(container.textContent).toContain("Solte os arquivos para enviar");
+    expect(container.textContent).toContain("As imagens serão inseridas na resposta");
+    expect(container.textContent).toContain("Os demais arquivos serão anexados à tarefa.");
+
+    act(() => root.unmount());
+  });
+
   it("keeps mode controls available while a dropped file uploads", async () => {
     const root = createRoot(container);
     let finishUpload: () => void = () => {};
@@ -4349,6 +4644,122 @@ describe("IssueChatThread", () => {
     });
   });
 
+  it("localizes the uncertain-submission review and discard flow in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const key = "uncertain-submission-pt-br";
+    const attemptId = "aaf8228f-0be7-45ae-a104-6fbe0af6f1d3";
+    localStorage.setItem(key, "Comentário que pode já ter sido salvo");
+    localStorage.setItem(`${key}:submission:v1`, JSON.stringify({
+      version: 1,
+      draftKey: key,
+      attemptId,
+      reviewed: false,
+    }));
+    const onReviewConversation = vi.fn().mockResolvedValue(undefined);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <IssueChatThread
+            comments={[]}
+            linkedRuns={[]}
+            timelineEvents={[]}
+            liveRuns={[]}
+            onAdd={async () => {}}
+            onReviewConversation={onReviewConversation}
+            draftKey={key}
+            enableLiveTranscriptPolling={false}
+          />
+        </MemoryRouter>,
+      );
+    });
+
+    expect(container.textContent).toContain("Não foi possível confirmar se este comentário foi salvo");
+    const reviewButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Revisar conversa",
+    );
+    expect(reviewButton).toBeDefined();
+    await act(async () => reviewButton?.click());
+
+    expect(onReviewConversation).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain("Descartar este rascunho não remove comentários salvos");
+    const discardButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Descartar rascunho e começar outro",
+    );
+    expect(discardButton).toBeDefined();
+    await act(async () => discardButton?.click());
+
+    expect(localStorage.getItem(key)).toBeNull();
+    expect(container.textContent).not.toContain("Não foi possível confirmar");
+    await act(async () => root.unmount());
+  });
+
+  it("localizes the no-responsible confirmation while preserving the submitted comment", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <IssueChatThread
+            comments={[]}
+            linkedRuns={[]}
+            timelineEvents={[]}
+            liveRuns={[]}
+            onAdd={onAdd}
+            enableReassign
+            reassignOptions={[
+              { id: "", label: "Sem responsável" },
+              { id: "agent:agent-1", label: "Agente 1" },
+            ]}
+            currentAssigneeValue=""
+            suggestedAssigneeValue=""
+            enableLiveTranscriptPolling={false}
+          />
+        </MemoryRouter>,
+      );
+    });
+
+    const editor = container.querySelector<HTMLTextAreaElement>(
+      'textarea[aria-label="Issue chat editor"]',
+    );
+    const sendButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Enviar",
+    ) as HTMLButtonElement | undefined;
+    expect(editor).not.toBeNull();
+    expect(sendButton).toBeDefined();
+
+    act(() => {
+      const valueSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLTextAreaElement.prototype,
+        "value",
+      )?.set;
+      valueSetter?.call(editor, "Comentário original em português");
+      editor?.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => sendButton?.click());
+
+    const dialog = document.querySelector('[data-testid="issue-chat-no-assignee-dialog"]');
+    expect(dialog?.textContent).toContain("Nenhum responsável selecionado");
+    expect(dialog?.textContent).toContain("nenhum agente será acionado");
+    const sendAnyway = document.querySelector(
+      '[data-testid="issue-chat-no-assignee-send-anyway"]',
+    ) as HTMLButtonElement | null;
+    expect(sendAnyway?.textContent).toBe("Enviar mesmo assim");
+    await act(async () => sendAnyway?.click());
+
+    expect(onAdd).toHaveBeenCalledWith(
+      "Comentário original em português",
+      undefined,
+      undefined,
+      undefined,
+      expect.any(String),
+    );
+    await act(async () => root.unmount());
+  });
+
   it("does not post when choosing Go back in the no-assignee warning dialog", async () => {
     const root = createRoot(container);
     const onAdd = vi.fn().mockResolvedValue(undefined);
@@ -4813,6 +5224,142 @@ describe("IssueChatThread", () => {
     });
   });
 
+  it("localizes live-run activity while preserving the runtime tool name", async () => {
+    await i18n.changeLanguage("pt-BR");
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-28T12:00:00.000Z"));
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <IssueChatThread
+            comments={[]}
+            linkedRuns={[]}
+            timelineEvents={[]}
+            liveRuns={[]}
+            activeRun={{
+              id: "run-live-pt-br",
+              issueId: "issue-1",
+              status: "running",
+              invocationSource: "comment",
+              triggerDetail: null,
+              startedAt: "2026-10-28T11:59:00.000Z",
+              finishedAt: null,
+              createdAt: "2026-10-28T11:59:00.000Z",
+              agentId: "agent-1",
+              agentName: "Agente 1",
+              adapterType: "codex_local",
+              currentStatusMessage: "Syncing git worktree to environment",
+              currentStatusUpdatedAt: "2026-10-28T11:59:55.000Z",
+              currentToolName: "bash",
+              lastEventAt: "2026-10-28T11:59:40.000Z",
+            }}
+            onAdd={async () => {}}
+            enableLiveTranscriptPolling={false}
+          />
+        </MemoryRouter>,
+      );
+    });
+
+    expect(container.textContent).toContain("Em execução...");
+    expect(container.textContent).toContain("Usando bash");
+    expect(container.textContent).toContain("sem saída há 20 segundos — ainda em execução");
+    expect(container.textContent).not.toContain("Using bash");
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("localizes provider activity controls while preserving provider output", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <IssueChatThread
+            comments={[]}
+            linkedRuns={[]}
+            timelineEvents={[]}
+            liveRuns={[]}
+            activeRun={{
+              id: "run-provider-pt-br",
+              issueId: "issue-1",
+              status: "running",
+              invocationSource: "comment",
+              triggerDetail: null,
+              startedAt: "2026-10-28T11:59:00.000Z",
+              finishedAt: null,
+              createdAt: "2026-10-28T11:59:00.000Z",
+              agentId: "agent-1",
+              agentName: "Agente 1",
+              adapterType: "kimi_local",
+            }}
+            transcriptsByRunId={
+              new Map([
+                [
+                  "run-provider-pt-br",
+                  [
+                    {
+                      kind: "provider_activity",
+                      ts: "2026-10-28T11:59:10.000Z",
+                      family: "plan",
+                      eventType: "plan.updated",
+                      status: "completed",
+                      summary: "Plan synchronized",
+                      payload: {
+                        steps: [
+                          {
+                            stepId: "step-1",
+                            body: "Validate raw schemas",
+                            status: "completed",
+                          },
+                        ],
+                        children: [{}],
+                        sources: [{ sourceId: "source-1", url: "not-a-url" }],
+                        effectiveModel: "gpt-6.1-sol",
+                        requestedModel: "gpt-6.1-luna",
+                        output: "original provider output",
+                      },
+                    },
+                  ],
+                ],
+              ])
+            }
+            onAdd={async () => {}}
+            enableLiveTranscriptPolling={false}
+          />
+        </MemoryRouter>,
+      );
+    });
+
+    const activityButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Plan synchronized"),
+    );
+    expect(activityButton).toBeDefined();
+    act(() => activityButton?.click());
+
+    expect(container.textContent).toContain("Atividade do provedor");
+    expect(container.textContent).toContain("Agente filho");
+    expect(container.textContent).toContain("desconhecido");
+    expect(container.textContent).toContain("Fonte indisponível");
+    expect(container.textContent).toContain("informado pelo provedor");
+    expect(container.textContent).toContain("Modelo");
+    expect(container.textContent).toContain("Plan synchronized");
+    expect(container.textContent).toContain("Validate raw schemas");
+    expect(container.textContent).toContain("gpt-6.1-sol");
+    expect(container.textContent).toContain("gpt-6.1-luna");
+    expect(container.textContent).toContain("original provider output");
+    expect(container.querySelector('button[aria-label="Copiar"]')).not.toBeNull();
+    expect(container.querySelector('button[title="Copiar"]')).not.toBeNull();
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
   it("keeps the completed chain-of-thought caret beside its label and reveals it on hover or focus", () => {
     const root = createRoot(container);
     const run = issueChatLongThreadLinkedRuns[2];
@@ -4941,13 +5488,15 @@ describe("IssueChatThread", () => {
 describe("IssueAssigneePausedNotice", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("pt-BR");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
+    await i18n.changeLanguage("pt-BR");
   });
 
   function pausedAgent(pauseReason: string): Agent {
@@ -4974,12 +5523,13 @@ describe("IssueAssigneePausedNotice", () => {
     });
 
     expect(container.textContent).toContain(
-      "arrived paused from an organization import",
+      "Foi importado de uma organização já pausado",
     );
     const resumeButton = container.querySelector(
       '[data-testid="issue-assignee-paused-resume"]',
     ) as HTMLButtonElement | null;
     expect(resumeButton).not.toBeNull();
+    expect(resumeButton?.textContent).toBe("Retomar agente");
 
     act(() => {
       resumeButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -5002,7 +5552,7 @@ describe("IssueAssigneePausedNotice", () => {
       );
     });
 
-    expect(container.textContent).toContain("budget hard stop");
+    expect(container.textContent).toContain("limite rígido de orçamento");
     expect(
       container.querySelector('[data-testid="issue-assignee-paused-resume"]'),
     ).toBeNull();

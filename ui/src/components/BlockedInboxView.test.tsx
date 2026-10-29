@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Issue, IssueBlockedInboxAttention } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
 
 const mockIssuesApi = vi.hoisted(() => ({
   list: vi.fn(),
@@ -149,7 +150,8 @@ async function waitFor(predicate: () => boolean, attempts = 30): Promise<void> {
 describe("BlockedInboxView", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockIssuesApi.list.mockReset();
@@ -170,6 +172,16 @@ describe("BlockedInboxView", () => {
     );
     await waitFor(() => container.querySelector('[data-testid="blocked-inbox-empty"]') !== null);
     expect(container.querySelector('[data-testid="blocked-inbox-empty"]')).not.toBeNull();
+    act(() => root.unmount());
+  });
+
+  it("announces the loading state", async () => {
+    mockIssuesApi.list.mockReturnValue(new Promise(() => undefined));
+    const { root } = renderWithClient(<BlockedInboxView {...blockedViewProps} />, container);
+    const loading = container.querySelector('[data-testid="blocked-inbox-loading"]');
+    expect(loading?.getAttribute("role")).toBe("status");
+    expect(loading?.getAttribute("aria-label")).toBe("Loading blocked tasks…");
+    expect(loading?.getAttribute("aria-busy")).toBe("true");
     act(() => root.unmount());
   });
 
@@ -282,6 +294,77 @@ describe("BlockedInboxView", () => {
     expect(identifier.compareDocumentPosition(timestamp) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
 
     act(() => root.unmount());
+  });
+
+  it.each(["legacy", "task"] as const)("localizes blocked reasons, grouping, age, and search in PT-BR (%s)", async (presentation) => {
+    const previousLanguage = i18n.language;
+    const stoppedSinceAt = new Date(Date.now() - 30 * 60_000).toISOString();
+    mockIssuesApi.list.mockResolvedValue([
+      makeIssue(
+        "issue-decision-pt",
+        "PAP-PT",
+        "Tarefa de teste",
+        attention({
+          reason: "pending_board_decision",
+          severity: "high",
+          stoppedSinceAt,
+          owner: { type: "board", agentId: null, userId: null, label: "Time de produto" },
+          action: { label: "Aprovar PAP-PT", detail: null },
+        }),
+      ),
+    ]);
+    await i18n.changeLanguage("pt-BR");
+    const { root } = renderWithClient(
+      <BlockedInboxView
+        {...blockedViewProps}
+        searchQuery="decisão do conselho"
+        groupBy="blocker_type"
+        presentation={presentation}
+      />,
+      container,
+    );
+    try {
+      await waitFor(() => container.querySelector("a") !== null);
+      const text = container.textContent ?? "";
+      expect(text).toContain("Precisa de decisão · 1");
+      expect(container.querySelector('[data-testid="blocked-reason-chip"]')?.getAttribute("aria-label"))
+        .toContain("Motivo: Aguardando decisão do conselho");
+      expect(text).toContain("parado há 30 min");
+      expect(text).toContain("Time de produto");
+      expect(text).toContain("Tarefa de teste");
+      expect(text).not.toContain("Aprovar PAP-PT");
+      expect(container.querySelector('a[to="/issues/PAP-PT"]')).not.toBeNull();
+    } finally {
+      act(() => root.unmount());
+      await i18n.changeLanguage(previousLanguage);
+    }
+  });
+
+  it("localizes the empty and no-search-results states in PT-BR", async () => {
+    const previousLanguage = i18n.language;
+    await i18n.changeLanguage("pt-BR");
+    mockIssuesApi.list.mockResolvedValue([]);
+    const empty = renderWithClient(<BlockedInboxView {...blockedViewProps} />, container);
+    try {
+      await waitFor(() => container.querySelector('[data-testid="blocked-inbox-empty"]') !== null);
+      expect(container.textContent).toContain("Nenhum trabalho está parado.");
+      expect(container.textContent).toContain("Tarefas que precisam de decisão, recuperação ou ação externa aparecerão aqui.");
+      act(() => empty.root.unmount());
+
+      container.replaceChildren();
+      mockIssuesApi.list.mockResolvedValue([
+        makeIssue("issue-no-match", "PAP-NO", "Tarefa parada", attention()),
+      ]);
+      const noResults = renderWithClient(
+        <BlockedInboxView {...blockedViewProps} searchQuery="sem correspondência" />,
+        container,
+      );
+      await waitFor(() => container.querySelector('[data-testid="blocked-inbox-no-search-results"]') !== null);
+      expect(container.textContent).toContain("Nenhum item parado corresponde à busca.");
+      act(() => noResults.root.unmount());
+    } finally {
+      await i18n.changeLanguage(previousLanguage);
+    }
   });
 
   it("restores the legacy status/id prefix, timestamp column, and row divider", async () => {
@@ -399,5 +482,22 @@ describe("BlockedInboxView", () => {
     expect(banner?.textContent).toContain("Couldn't load the Blocked tab");
 
     act(() => root.unmount());
+  });
+
+  it("localizes the blocked-view error and retry while preserving server diagnostics", async () => {
+    const previousLanguage = i18n.language;
+    await i18n.changeLanguage("pt-BR");
+    mockIssuesApi.list.mockRejectedValue(new Error("network down"));
+    const { root } = renderWithClient(<BlockedInboxView {...blockedViewProps} />, container);
+    try {
+      await waitFor(() => container.querySelector('[data-testid="blocked-inbox-error"]') !== null);
+      expect(container.textContent).toContain("Não foi possível carregar a aba Bloqueadas.");
+      expect(container.textContent).toContain("As outras abas da caixa de entrada continuam disponíveis.");
+      expect(container.textContent).toContain("network down");
+      expect(container.querySelector('[data-testid="blocked-inbox-error"]')?.textContent).toContain("Tentar novamente");
+    } finally {
+      act(() => root.unmount());
+      await i18n.changeLanguage(previousLanguage);
+    }
   });
 });

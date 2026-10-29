@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Check, Loader2, Settings2, X } from "lucide-react";
-import type { Agent, AttentionItem } from "@paperclipai/shared";
+import type { Agent, AttentionItem, DecisionQueueSeedRule } from "@paperclipai/shared";
 import { useParams } from "@/lib/router";
 import { attentionApi } from "../api/attention";
 import { agentsApi } from "../api/agents";
@@ -46,6 +47,7 @@ import { DecisionDateChips, type AttentionCustomRange } from "../components/Deci
 import { IssueGroupHeader } from "../components/IssueGroupHeader";
 import { Button } from "../components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { localizeAttentionGroupLabel } from "../lib/attention-localization";
 
 /**
  * Queue page. A single queue's pending
@@ -59,6 +61,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popove
  * is surfaced.
  */
 export function DecisionQueuePage() {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const { pushToast } = useToastActions();
@@ -126,8 +129,8 @@ export function DecisionQueuePage() {
   }, [agents]);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Decisions", href: "/decisions" }, { label: queue?.title ?? queueKey }]);
-  }, [setBreadcrumbs, queue?.title, queueKey]);
+    setBreadcrumbs([{ label: t("attentionQueue.pageTitle"), href: "/decisions" }, { label: queue?.title ?? queueKey }]);
+  }, [setBreadcrumbs, queue?.title, queueKey, t]);
 
   // Re-hydrate per-company preferences when the company changes.
   useEffect(() => {
@@ -205,14 +208,14 @@ export function DecisionQueuePage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.decisionQueues.list(selectedCompanyId!) }),
     onError: (err) =>
       pushToast({
-        title: "Could not update seeding",
-        body: err instanceof Error ? err.message : "Please try again.",
+        title: t("attentionQueue.toasts.couldNotUpdateSeeding"),
+        body: err instanceof Error ? err.message : t("attentionQueue.toasts.pleaseTryAgain"),
         tone: "error",
       }),
   });
 
   if (!selectedCompanyId) {
-    return <p className="text-sm text-muted-foreground">Select an organization first.</p>;
+    return <p className="text-sm text-muted-foreground">{t("attentionQueue.selectOrganization")}</p>;
   }
   if (isLoading) {
     return <PageSkeleton variant="approvals" />;
@@ -254,7 +257,7 @@ export function DecisionQueuePage() {
       {queue && queue.seedRules.length > 0 && (
         <SeedRulesCard
           enabled={queue.seedRulesEnabled}
-          rules={queue.seedRules.map((rule) => rule.description)}
+          rules={queue.seedRules}
           pending={toggleSeedRules.isPending}
           onToggle={() => toggleSeedRules.mutate(!queue.seedRulesEnabled)}
         />
@@ -264,21 +267,21 @@ export function DecisionQueuePage() {
 
       {isEmpty ? (
         <div className="rounded-xl border border-dashed border-border py-14 text-center">
-          <p className="text-sm font-medium text-foreground">This queue is empty.</p>
+          <p className="text-sm font-medium text-foreground">{t("attentionQueue.empty.queueTitle")}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Decisions land here when they match the queue's rules or an agent adds them.
+            {t("attentionQueue.empty.queueDescription")}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
           {visibleCount === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-10 text-center">
-              <p className="text-sm font-medium text-foreground">No decisions match your filters.</p>
-              <p className="mt-1 text-xs text-muted-foreground">Adjust or clear the filters to see the rest.</p>
+              <p className="text-sm font-medium text-foreground">{t("attentionQueue.empty.noMatchTitle")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("attentionQueue.empty.adjustFilters")}</p>
             </div>
           ) : (
             groups.map((group) => {
-              const groupLabel = group.label;
+              const groupLabel = localizeAttentionGroupLabel(group, t);
               const collapsed = groupLabel !== null && collapsedGroupKeys.has(group.key);
               return (
                 <section key={group.key} className="space-y-2">
@@ -326,7 +329,7 @@ export function DecisionQueuePage() {
               onToggle={() => setAgingOpen((prev) => !prev)}
             >
               <p className="text-xs text-muted-foreground">
-                Idle past {ATTENTION_AGING_DAYS} days — kept off the queue. Keep any you still want surfaced.
+                {t("attentionQueue.aging.idlePast", { days: ATTENTION_AGING_DAYS })}
               </p>
               {agingItems.map((item) => (
                 <AgingItemRow
@@ -364,40 +367,39 @@ function SeedRulesCard({
   onToggle,
 }: {
   enabled: boolean;
-  rules: string[];
+  rules: DecisionQueueSeedRule[];
   pending: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-xl border border-border bg-muted/20 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2">
           <Settings2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0 space-y-1">
-            <p className="text-sm font-medium text-foreground">Auto-seeding is {enabled ? "on" : "off"}</p>
+            <p className="text-sm font-medium text-foreground">
+              {enabled ? t("attentionQueue.seedRules.enabledTitle") : t("attentionQueue.seedRules.disabledTitle")}
+            </p>
             <p className="text-xs text-muted-foreground">
-              {enabled
-                ? "This queue fills itself automatically. Decisions are added the moment they match any of its rules:"
-                : "Automatic adds are paused. These rules would add decisions to the queue when on:"}
+              {enabled ? t("attentionQueue.seedRules.enabledDescription") : t("attentionQueue.seedRules.disabledDescription")}
             </p>
             <ul className="mt-0.5 space-y-0.5">
               {rules.map((rule) => (
-                <li key={rule} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                <li key={rule.key} className="flex items-start gap-1.5 text-xs text-muted-foreground">
                   <Check className="mt-0.5 h-3 w-3 shrink-0" />
-                  {rule}
+                  {t(`attentionQueue.seedRules.rules.${rule.key}`, { defaultValue: rule.description })}
                 </li>
               ))}
             </ul>
             <p className="text-(length:--text-nano) text-muted-foreground">
-              {enabled
-                ? "Turning it off stops new automatic adds only — decisions already here stay, and you can still add or remove decisions by hand."
-                : "Adding or removing decisions by hand still works while automatic seeding is off."}
+              {enabled ? t("attentionQueue.seedRules.enabledFooter") : t("attentionQueue.seedRules.disabledFooter")}
             </p>
           </div>
         </div>
         <Button type="button" variant="outline" size="xs" className="h-7 shrink-0" disabled={pending} onClick={onToggle}>
           {pending && <Loader2 className="h-3 w-3 animate-spin" />}
-          {enabled ? "Disable" : "Enable"}
+          {enabled ? t("attentionQueue.seedRules.disable") : t("attentionQueue.seedRules.enable")}
         </Button>
       </div>
     </div>
@@ -429,6 +431,7 @@ function QueueItemRow({
   onSnooze: (item: AttentionItem, snoozedUntil: string) => void;
   onExcluded: () => void;
 }) {
+  const { t } = useTranslation();
   const { pushToast } = useToastActions();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -445,13 +448,13 @@ function QueueItemRow({
     onSuccess: () => {
       setOpen(false);
       setReason("");
-      pushToast({ title: "Removed from queue", body: item.subject.title ?? undefined, tone: "info" });
+      pushToast({ title: t("attentionQueue.toasts.removedFromQueue"), body: item.subject.title ?? undefined, tone: "info" });
       onExcluded();
     },
     onError: (err) =>
       pushToast({
-        title: "Could not exclude",
-        body: err instanceof Error ? err.message : "Please try again.",
+        title: t("attentionQueue.toasts.couldNotExclude"),
+        body: err instanceof Error ? err.message : t("attentionQueue.toasts.pleaseTryAgain"),
         tone: "error",
       }),
   });
@@ -463,20 +466,20 @@ function QueueItemRow({
           <PopoverTrigger asChild>
             <Button type="button" variant="ghost" size="xs" className="h-7 gap-1 text-muted-foreground">
               <X className="h-3.5 w-3.5" />
-              Exclude
+              {t("attentionQueue.queueItem.exclude")}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-64 space-y-2 p-3">
-            <p className="text-xs font-medium text-foreground">Remove from this queue</p>
+            <p className="text-xs font-medium text-foreground">{t("attentionQueue.queueItem.removeTitle")}</p>
             <textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              placeholder="Reason (optional)…"
+              placeholder={t("attentionQueue.queueItem.reasonPlaceholder")}
               className="min-h-16 w-full rounded-sm border border-border bg-background px-2 py-1 text-xs"
             />
             <div className="flex justify-end gap-1">
               <Button type="button" variant="ghost" size="xs" onClick={() => setOpen(false)}>
-                Cancel
+                {t("attentionQueue.queueItem.cancel")}
               </Button>
               <Button
                 type="button"
@@ -486,7 +489,7 @@ function QueueItemRow({
                 onClick={() => exclude.mutate()}
               >
                 {exclude.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
-                Exclude
+                {t("attentionQueue.queueItem.confirmExclude")}
               </Button>
             </div>
           </PopoverContent>

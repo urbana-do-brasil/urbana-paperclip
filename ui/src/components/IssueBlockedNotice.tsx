@@ -33,6 +33,7 @@ import {
   readRecoveryRetryLineage,
 } from "../lib/recovery-lineage";
 import { StatusGlyph } from "./StatusGlyph";
+import { useTranslation } from "@/i18n";
 
 function BlockerRecoveryIndicator({
   action,
@@ -42,6 +43,8 @@ function BlockerRecoveryIndicator({
   /** The blocker's own scheduled retry, used to verify that the stored attempt is in flight. */
   scheduledRetry?: IssueScheduledRetry | null;
 }) {
+  const { t } = useTranslation();
+  const translateRecovery = (key: string, values?: { attempt?: number; count?: number; duration?: string; identifier?: string; interval?: string; maxAttempts?: number }) => t(key, values);
   const liveness = { scheduledRetry: scheduledRetry ?? null };
   const state = deriveActiveRecoveryDisplayState(action, liveness);
   if (!state) return null;
@@ -50,8 +53,8 @@ function BlockerRecoveryIndicator({
   // The blocker chip reads the same stored lineage as the source task's recovery card, so
   // a parent view never contradicts the task it is waiting on.
   const lineage = readRecoveryRetryLineage(action, liveness);
-  const label = recoveryChipLabel(state, action.kind, lineage);
-  const detail = lineage ? formatRecoveryLineageSummary(lineage) : null;
+  const label = recoveryChipLabel(state, action.kind, lineage, translateRecovery);
+  const detail = lineage ? formatRecoveryLineageSummary(lineage, translateRecovery) : null;
   return (
     <Badge variant="outline"
       data-testid="issue-blocked-notice-recovery-indicator"
@@ -61,8 +64,8 @@ function BlockerRecoveryIndicator({
       role="status"
       aria-label={detail ? `${label} — ${detail}` : label}
       title={detail
-        ? `${label} — ${detail}. Open the source task to act.`
-        : `${label} — open the source task to act.`}
+        ? `${label} — ${detail}. ${t("taskCollection.rows.recovery.openSourceTaskSentence")}`
+        : `${label} — ${t("taskCollection.rows.recovery.openSourceTaskSentence")}`}
       className={`[&>svg]:size-2.5 gap-0.5 px-1.5 text-(length:--text-nano) ${tone.className}`}
     >
       <Icon className="h-2.5 w-2.5" aria-hidden />

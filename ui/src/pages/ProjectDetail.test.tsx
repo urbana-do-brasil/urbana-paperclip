@@ -3,10 +3,12 @@
 import { queryKeys } from "../lib/queryKeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Project } from "@paperclipai/shared";
-import type { ReactNode } from "react";
+import { act as reactAct, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { ProjectDetail } from "./ProjectDetail";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -182,7 +184,8 @@ describe("ProjectDetail", () => {
   let root: Root | null = null;
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await reactAct(async () => { await i18n.changeLanguage("en"); });
     container = document.createElement("div");
     document.body.appendChild(container);
     mockLocation.pathname = "/projects/project-1/plugin-operations";
@@ -217,6 +220,7 @@ describe("ProjectDetail", () => {
     root = null;
     container.remove();
     vi.clearAllMocks();
+    await reactAct(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
   });
 
   it.each(["alias", "other project", "other company"])("preserves a draft only for a same-project route alias (%s)", async target => {
@@ -294,6 +298,64 @@ describe("ProjectDetail", () => {
       projectId: "project-1",
       originKindPrefix: "plugin:paperclip.missions",
     });
+  });
+
+  it("localizes project detail navigation and notices while preserving project and plugin names", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    mockResourceMembershipsApi.listMine.mockResolvedValue({
+      projectMemberships: { "project-1": "left" },
+      agentMemberships: {},
+      updatedAt: null,
+    });
+    mockProjectsApi.get.mockResolvedValue(project({ pauseReason: "budget", pausedAt: new Date("2026-05-01T00:00:00Z") }));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root = createRoot(container);
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <ProjectDetail />
+        </QueryClientProvider>,
+      );
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const content = container.textContent ?? "";
+    expect(content).toContain("Você saiu deste projeto");
+    expect(content).toContain("Pausado pelo limite rígido do orçamento");
+    expect(content).toContain("Gerenciado pelo plugin Missions");
+    expect(content).toContain("Operações do plugin");
+    expect(content).toContain("Configuração");
+    expect(content).toContain("Orçamento");
+    const iconTrigger = container.querySelector<HTMLButtonElement>('button[aria-label="Alterar ícone e cor do projeto"]');
+    expect(iconTrigger).not.toBeNull();
+    await reactAct(async () => {
+      iconTrigger?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(document.body.textContent).toContain("Ícone");
+    expect(document.body.querySelector('input[placeholder="Buscar ícones..."]')).not.toBeNull();
+    expect(document.body.textContent).toContain("Cor");
+    expect(document.body.querySelector('button[aria-label="Selecionar ícone folder"]')).not.toBeNull();
+    expect(document.body.querySelector('button[aria-label="Restaurar cor cinza neutra"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Participar de Managed Project"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Dispensar aviso de participação no projeto"]')).not.toBeNull();
+    expect(mockSetBreadcrumbs).toHaveBeenCalledWith([
+      { label: "Projetos", href: "/projects" },
+      { label: "Managed Project" },
+    ]);
+    expect(mockSummarySlotCard).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Resumo do projeto",
+      description: expect.stringContaining("status mais recente do projeto"),
+    }));
+    expect(mockIssuesApi.list).toHaveBeenCalledWith("company-1", {
+      projectId: "project-1",
+      originKindPrefix: "plugin:paperclip.missions",
+    });
+    queryClient.clear();
   });
 
   it("keeps Timeline out of the project task-list controls", async () => {

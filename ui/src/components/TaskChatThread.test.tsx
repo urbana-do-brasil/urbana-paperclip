@@ -15,6 +15,7 @@ import type {
   TaskBrowser,
 } from "@paperclipai/shared";
 import { heartbeatsApi } from "@/api/heartbeats";
+import { i18n } from "@/i18n";
 import { nativeRunEventsToTranscript } from "./transcript/native-run-events";
 import { pendingConnectionIntentInteraction } from "@/fixtures/issueThreadInteractionFixtures";
 import type { HeartbeatRunEvent } from "@paperclipai/shared";
@@ -110,7 +111,8 @@ let container: HTMLDivElement;
 let root: Root | null = null;
 let queryClient: QueryClient;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   localStorage.clear();
   transcriptState.transcriptByRun.clear();
   transcriptState.isInitialHydrating = false;
@@ -134,13 +136,14 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => {
+afterEach(async () => {
   flushSync(() => root?.unmount());
   queryClient.clear();
   root = null;
   container.remove();
   localStorage.clear();
   vi.restoreAllMocks();
+  await i18n.changeLanguage("en");
 });
 
 function render(ui: ReactElement) {
@@ -273,6 +276,53 @@ describe.each(["legacy", "native"] as const)("historical %s system status", (run
     expect(container.textContent).not.toContain("Stopped");
     expect(container.textContent).not.toContain("Run failed");
   });
+});
+
+it("localizes execution failure details and retry controls while preserving provider text and run identity", async () => {
+  await i18n.changeLanguage("pt-BR");
+  render(
+    <TaskChatThread
+      comments={[]}
+      onAdd={async () => {}}
+      linkedRuns={[
+        {
+          runId: "pt-failed-run",
+          runtimeMode: "native",
+          status: "failed",
+          errorCode: "native_provider_model_rejected",
+          error: "The provider returned original diagnostic text.",
+          agentId: "agent-pt",
+          agentName: "Assistente",
+          adapterType: "paperclip_runner",
+          createdAt: "2026-09-01T12:00:00.000Z",
+          startedAt: "2026-09-01T12:00:01.000Z",
+          finishedAt: "2026-09-01T12:00:02.000Z",
+        },
+        {
+          runId: "pt-waiting-run",
+          runtimeMode: "legacy",
+          status: "cancelled",
+          errorCode: "execution_reconciliation_required",
+          agentId: "agent-pt",
+          agentName: "Assistente",
+          adapterType: "claude_local",
+          createdAt: "2026-09-01T12:01:00.000Z",
+          startedAt: null,
+          finishedAt: "2026-09-01T12:01:01.000Z",
+        },
+      ]}
+    />,
+  );
+
+  const marker = container.querySelector('[data-testid="task-chat-collapsible-marker"]');
+  expect(marker?.textContent).toContain("Modelo indisponível");
+  expect(container.textContent).toContain("Aguardando para retomar");
+  expect(container.textContent).toContain("A execução anterior precisa ser verificada");
+  const disclosure = marker?.querySelector<HTMLButtonElement>('button[aria-expanded="false"]');
+  expect(disclosure).not.toBeNull();
+  flushSync(() => disclosure!.click());
+  expect(container.textContent).toContain("The provider returned original diagnostic text.");
+  expect(container.textContent).toContain("Escolha um modelo compatível");
 });
 
 it.each([true, false])("interleaves browser sessions with their requests and preserves position on status updates (streamlined=%s)", (streamlined) => {

@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Sun } from "lucide-react";
 import type { Agent, AttentionItem } from "@paperclipai/shared";
@@ -28,10 +29,12 @@ export function Curtain({
   onToggle: () => void;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
+  const localizedLabel = t(`attentionQueue.curtains.${label.toLowerCase()}`, { defaultValue: label });
   return (
     <section className="space-y-2">
       <IssueGroupHeader
-        label={count == null ? label : `${label} (${count})`}
+        label={count == null ? localizedLabel : `${localizedLabel} (${count})`}
         collapsible
         collapsed={!open}
         onToggle={onToggle}
@@ -70,6 +73,7 @@ export function AgingItemRow({
   onDismiss: (item: AttentionItem) => void;
   onSnooze: (item: AttentionItem, snoozedUntil: string) => void;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { pushToast } = useToastActions();
   const idleDays = attentionIdleDays(item, now);
@@ -77,12 +81,12 @@ export function AgingItemRow({
     mutationFn: () => decisionQueuesApi.setKeep(companyId, item.sourceKind, item.subject.id, true),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.attention(companyId) });
-      pushToast({ title: "Kept on desk", body: item.subject.title ?? undefined, tone: "success" });
+      pushToast({ title: t("attentionQueue.toasts.keptOnDesk"), body: item.subject.title ?? undefined, tone: "success" });
     },
     onError: (error) =>
       pushToast({
-        title: "Could not keep this decision",
-        body: error instanceof Error ? error.message : "Please try again.",
+        title: t("attentionQueue.toasts.couldNotKeep"),
+        body: error instanceof Error ? error.message : t("attentionQueue.toasts.pleaseTryAgain"),
         tone: "error",
       }),
   });
@@ -91,19 +95,20 @@ export function AgingItemRow({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2 px-1">
         <span className="text-(length:--text-nano) text-muted-foreground">
-          Idle {idleDays} {idleDays === 1 ? "day" : "days"}
+          {t("attentionQueue.aging.idleDays", { count: idleDays })}
         </span>
         <Button
           type="button"
           variant="outline"
           size="xs"
           className="h-7 gap-1"
+          title={t("attentionQueue.aging.keepDescription")}
           disabled={keep.isPending || item.keep}
           onClick={() => keep.mutate()}
         >
           {keep.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
           <Sun className="h-3.5 w-3.5" />
-          {item.keep ? "Kept" : "Keep on desk"}
+          {item.keep ? t("attentionQueue.aging.kept") : t("attentionQueue.aging.keep")}
         </Button>
       </div>
       <AttentionQueueRow
