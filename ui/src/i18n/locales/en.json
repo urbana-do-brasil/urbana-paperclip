@@ -215,6 +215,40 @@
       "accessGrantedBody": "{{name}} now receives {{key}}",
       "accessRemoved": "Access removed"
     },
+    "personal": {
+      "notice": "These are credentials only you provide. Each value is yours alone — used when you are the user responsible for a run — and is never shown back to anyone, including admins.",
+      "missingCount_one": "{{count}} required secret still needs your value.",
+      "missingCount_other": "{{count}} required secrets still need your value.",
+      "loading": "Loading your secrets…",
+      "loadFailed": "Failed to load your secrets:",
+      "empty": "No user secrets are defined for this organization yet. An admin defines which credentials each member supplies.",
+      "valueStates": {
+        "set": "Value set",
+        "not_set": "Not set",
+        "inactive": "Disabled"
+      },
+      "update": "Update",
+      "setValue": "Set value",
+      "clearMyValue": "Clear my value",
+      "valueCleared": "Value cleared",
+      "clearFailed": "Could not clear value",
+      "dialog": {
+        "titleUpdate": "Update your value",
+        "titleSet": "Set your value",
+        "description": "This value belongs only to you. It is used when you are responsible for a run that needs <code>{{key}}</code>.",
+        "externalReferencePlaceholder": "Provider reference or ARN",
+        "externalReferenceHelp": "Points to your own credential in the configured provider. Paperclip stores the reference, not the value.",
+        "yourValue": "Your value",
+        "valuePlaceholder": "Paste your token or credential",
+        "encryptedValueHelp": "Stored encrypted. Never shown back to anyone, including admins.",
+        "saveFailed": "Failed to save value",
+        "saving": "Saving…",
+        "saveValue": "Save value",
+        "updateValue": "Update value",
+        "valueSaved": "Value saved",
+        "valueUpdated": "Value updated"
+      }
+    },
     "inventory": {
       "searchPlaceholder": "Search by name, key, ref",
       "searchLabel": "Search secrets",

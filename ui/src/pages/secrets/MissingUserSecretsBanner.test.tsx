@@ -8,6 +8,7 @@ import type { CompanySecret, UserSecretDefinition } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MissingUserSecretsBanner } from "./MissingUserSecretsBanner";
 import type { MyUserSecretEntry } from "../../api/secrets";
+import { i18n } from "../../i18n";
 
 const mockSecretsApi = vi.hoisted(() => ({
   listMyUserSecrets: vi.fn(),
@@ -90,18 +91,33 @@ async function flushReact() {
   });
 }
 
+function setTextareaValue(textarea: HTMLTextAreaElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+  setter?.call(textarea, value);
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function setInputValue(input: HTMLInputElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+  setter?.call(input, value);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 let container: HTMLDivElement;
 let root: Root;
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  await i18n.changeLanguage("en");
   container = document.createElement("div");
   document.body.appendChild(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
   container.remove();
+  document.body.innerHTML = "";
+  await i18n.changeLanguage("en");
 });
 
 function render() {
@@ -172,5 +188,79 @@ describe("MissingUserSecretsBanner", () => {
 
     // Dialog content renders in a portal on document.body.
     expect(document.body.textContent).toContain("Set your value");
+  });
+
+  it("saves a personal value in PT-BR without displaying it after submission", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockSecretsApi.listMyUserSecrets.mockResolvedValue([
+      { definition: definition(), secret: null },
+    ]);
+    mockSecretsApi.createMyUserSecret.mockResolvedValue(secret());
+
+    await render();
+    await flushReact();
+    const setButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Set value",
+    );
+    expect(setButton).toBeTruthy();
+    await act(() => setButton!.click());
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Definir seu valor");
+    expect(document.body.textContent).toContain("Este valor pertence somente a você.");
+    const valueInput = document.getElementById("my-secret-value") as HTMLTextAreaElement | null;
+    expect(valueInput).not.toBeNull();
+    await act(() => setTextareaValue(valueInput!, "my-private-token-value"));
+    const saveButton = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Salvar valor",
+    );
+    expect(saveButton).toBeTruthy();
+    await act(() => saveButton!.click());
+    await flushReact();
+
+    expect(mockSecretsApi.createMyUserSecret).toHaveBeenCalledWith("c1", {
+      definitionId: "def-1",
+      definitionKey: "PERSONAL_GH_TOKEN",
+      value: "my-private-token-value",
+    });
+    expect(mockPushToast).toHaveBeenCalledWith({
+      title: "Valor salvo",
+      body: "Personal GitHub token",
+      tone: "success",
+    });
+    expect(document.body.textContent).not.toContain("my-private-token-value");
+  });
+
+  it("saves a personal external reference in PT-BR without altering its value", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockSecretsApi.listMyUserSecrets.mockResolvedValue([
+      { definition: definition({ managedMode: "external_reference" }), secret: null },
+    ]);
+    mockSecretsApi.createMyUserSecret.mockResolvedValue(secret());
+
+    await render();
+    await flushReact();
+    const setButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Set value",
+    );
+    await act(() => setButton!.click());
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Referência externa");
+    expect(document.body.textContent).toContain("O Paperclip armazena a referência, não o valor.");
+    const referenceInput = document.getElementById("my-secret-external-ref") as HTMLInputElement | null;
+    expect(referenceInput).not.toBeNull();
+    await act(() => setInputValue(referenceInput!, "vault://users/u1/github-token-v4"));
+    const saveButton = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Salvar valor",
+    );
+    await act(() => saveButton!.click());
+    await flushReact();
+
+    expect(mockSecretsApi.createMyUserSecret).toHaveBeenCalledWith("c1", {
+      definitionId: "def-1",
+      definitionKey: "PERSONAL_GH_TOKEN",
+      externalRef: "vault://users/u1/github-token-v4",
+    });
   });
 });

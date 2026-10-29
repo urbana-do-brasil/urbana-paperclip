@@ -2037,3 +2037,23 @@ estrita passaram. O typecheck completo da UI segue bloqueado pelo erro não
 relacionado em `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS`
 não é exportado por `@/lib/agent-setup-fields`. O progresso é **178/201
 tarefas**; próxima: 3.8e2, segredos pessoais e definições por usuário.
+
+### Continuação — valores pessoais de segredos (3.8e2a)
+
+A aba Meus segredos, seus estados, aviso de privacidade, contagem de pendências,
+formulário pessoal e feedback agora estão localizados em PT-BR/en. Os fluxos de
+criação de valor, criação por referência externa, atualização via endpoint de
+rotação e remoção foram cobertos; titular, escopo, payloads e contrato da API
+permanecem inalterados. Valores digitados seguem ocultos após salvar/atualizar;
+erros do servidor, nomes/chaves dinâmicos e referências técnicas mantêm seu
+conteúdo.
+
+`MissingUserSecretsBanner.test.tsx`, `MyUserSecretsTab.test.tsx` e
+`locale-validation.test.ts` passaram em **21/21 testes**, incluindo gravação de
+valor/referência em PT-BR, rotação de valores e referências pessoais, remoção e
+ausência de vazamento do valor na interface. `check:tokens`, `check:token-gates`, parse dos catálogos,
+`git diff --check` e validação OpenSpec estrita passaram. O typecheck completo
+da UI permanece bloqueado pelo erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
+por `@/lib/agent-setup-fields`. O progresso é **179/204 tarefas**; próxima:
+3.8e2b, administração das definições fornecidas por usuário.

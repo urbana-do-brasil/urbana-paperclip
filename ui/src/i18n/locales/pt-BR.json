@@ -216,6 +216,41 @@
       "accessGrantedBody": "{{name}} agora recebe {{key}}",
       "accessRemoved": "Acesso removido"
     },
+    "personal": {
+      "notice": "Estas são credenciais fornecidas somente por você. Cada valor pertence apenas a você — é usado quando você é a pessoa responsável por uma execução — e nunca é exibido a ninguém, nem mesmo a administradores.",
+      "missingCount_one": "{{count}} segredo obrigatório ainda precisa do seu valor.",
+      "missingCount_many": "{{count}} segredos obrigatórios ainda precisam dos seus valores.",
+      "missingCount_other": "{{count}} segredos obrigatórios ainda precisam dos seus valores.",
+      "loading": "Carregando seus segredos…",
+      "loadFailed": "Não foi possível carregar seus segredos:",
+      "empty": "Ainda não há segredos de usuário definidos para esta organização. Uma pessoa administradora define quais credenciais cada membro deve fornecer.",
+      "valueStates": {
+        "set": "Valor configurado",
+        "not_set": "Não configurado",
+        "inactive": "Desativado"
+      },
+      "update": "Atualizar",
+      "setValue": "Definir valor",
+      "clearMyValue": "Limpar meu valor",
+      "valueCleared": "Valor removido",
+      "clearFailed": "Não foi possível remover o valor",
+      "dialog": {
+        "titleUpdate": "Atualizar seu valor",
+        "titleSet": "Definir seu valor",
+        "description": "Este valor pertence somente a você. Ele é usado quando você é responsável por uma execução que precisa de <code>{{key}}</code>.",
+        "externalReferencePlaceholder": "Referência no provedor ou ARN",
+        "externalReferenceHelp": "Aponta para sua credencial no provedor configurado. O Paperclip armazena a referência, não o valor.",
+        "yourValue": "Seu valor",
+        "valuePlaceholder": "Cole seu token ou credencial",
+        "encryptedValueHelp": "Armazenado de forma criptografada. Nunca é exibido a ninguém, nem mesmo a administradores.",
+        "saveFailed": "Não foi possível salvar o valor",
+        "saving": "Salvando…",
+        "saveValue": "Salvar valor",
+        "updateValue": "Atualizar valor",
+        "valueSaved": "Valor salvo",
+        "valueUpdated": "Valor atualizado"
+      }
+    },
     "inventory": {
       "searchPlaceholder": "Buscar por nome, chave ou referência",
       "searchLabel": "Buscar segredos",
