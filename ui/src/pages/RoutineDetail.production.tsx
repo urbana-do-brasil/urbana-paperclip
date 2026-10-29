@@ -427,7 +427,7 @@ export function RoutineDetail() {
           : {}),
       }),
     onSuccess: async () => {
-      pushToast({ title: "Routine run started", tone: "success" });
+      pushToast({ title: t("routines.feedback.runStarted"), tone: "success" });
       setRunVariablesOpen(false);
       navigateToSection("runs");
       await Promise.all([
@@ -439,8 +439,8 @@ export function RoutineDetail() {
     },
     onError: (runError) => {
       pushToast({
-        title: "Routine run failed",
-        body: runError instanceof Error ? runError.message : "Paperclip could not start the routine run.",
+        title: t("routines.feedback.runFailed"),
+        body: runError instanceof Error ? runError.message : t("routines.feedback.runFailedBody"),
         tone: "error",
       });
     },
@@ -830,7 +830,7 @@ export function RoutineDetail() {
             ) : null}
           </div>
           <div className="ml-auto flex shrink-0 items-center gap-3">
-            <RunButton onClick={() => setRunVariablesOpen(true)} disabled={runRoutine.isPending} />
+            <RunButton label={t("routines.row.runNow")} onClick={() => setRunVariablesOpen(true)} disabled={runRoutine.isPending} />
             <div className="flex items-center gap-2">
               <ToggleSwitch
                 size="default"

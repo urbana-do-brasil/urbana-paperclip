@@ -1518,6 +1518,8 @@
       "updateRoutineFailedBody": "Paperclip could not update the routine.",
       "runFailed": "Routine run failed",
       "runFailedBody": "Paperclip could not start the routine run.",
+      "runStarted": "Routine run started",
+      "updateTaskFailed": "Could not update task",
       "routinesMovedTitle": "Routines moved",
       "routinesFiled_one": "{{count}} routine filed.",
       "routinesFiled_other": "{{count}} routines filed.",

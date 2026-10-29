@@ -2830,3 +2830,17 @@ verificação focadas: b4a (lista de execuções e tarefas geradas), b4b (feed d
 atividade) e b4c (histórico de revisões, comparação e restauração). O contador
 OpenSpec passou a **263 tarefas**; o progresso permaneceu em **235/263**.
 Próxima: 3.10b4a.
+
+## Rotinas — execuções e tarefas criadas (3.10b4a)
+
+A lista de execuções reutiliza a coleção de tarefas já localizada, incluindo os
+estados de carregamento, falha e ausência de resultados. O breadcrumb de retorno
+à lista, o botão de execução manual e os avisos de sucesso/falha agora usam os
+catálogos PT-BR/en nas variantes streamlined e production. A falha ao atualizar
+uma tarefa também tem título localizado; seu detalhe dinâmico do servidor,
+filtros, IDs, rotas e estados permanecem intactos.
+
+`operate-sections.test.tsx` e `locale-validation.test.ts` passaram em **14/14
+testes**. O typecheck direcionado, `check:tokens`, `check:token-gates`, validação
+JSON, `git diff --check` e OpenSpec estrito passaram. Progresso: **236/263
+tarefas**. Próxima: 3.10b4b, feed de atividade.

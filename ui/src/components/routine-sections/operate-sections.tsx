@@ -11,9 +11,11 @@ import { EmptyState } from "../EmptyState";
 import { RoutineHistoryTab } from "../RoutineHistoryTab";
 import { RoutineActivityRow } from "../RoutineActivityRow";
 import { useRoutineDetail } from "./context";
+import { useTranslation } from "@/i18n";
 
 export function RunsSection() {
   const { routine, companyId, agents, projects, hasLiveRun, activeIssueId } = useRoutineDetail();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { pushToast } = useToastActions();
   const filters = { originKind: "routine_execution", originId: routine.id };
@@ -29,7 +31,7 @@ export function RunsSection() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.routines.detail(routine.id) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.routines.runs(routine.id) });
     },
-    onError: (updateError) => pushToast({ title: "Failed to update task", body: updateError.message, tone: "error" }),
+    onError: (updateError) => pushToast({ title: t("routines.feedback.updateTaskFailed"), body: updateError.message, tone: "error" }),
   });
 
   return (
@@ -42,7 +44,7 @@ export function RunsSection() {
       liveIssueIds={new Set(hasLiveRun && activeIssueId ? [activeIssueId] : [])}
       viewStateKey={`paperclip:routine-runs:${companyId}:${routine.id}`}
       searchFilters={filters}
-      issueLinkState={createIssueDetailLocationState("Runs", routineDetailHref(routine.id, "runs"))}
+      issueLinkState={createIssueDetailLocationState(t("routines.detail.sections.runs"), routineDetailHref(routine.id, "runs"))}
       rowPresentation="task"
       toolbarPresentation="collection"
       onUpdateIssue={(id, data) => updateIssue.mutate({ id, data })}

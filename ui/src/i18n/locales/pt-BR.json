@@ -1561,6 +1561,8 @@
       "updateRoutineFailedBody": "O Paperclip não conseguiu atualizar a rotina.",
       "runFailed": "Falha ao executar a rotina",
       "runFailedBody": "O Paperclip não conseguiu iniciar a execução da rotina.",
+      "runStarted": "Execução da rotina iniciada",
+      "updateTaskFailed": "Não foi possível atualizar a tarefa",
       "routinesMovedTitle": "Rotinas movidas",
       "routinesFiled_one": "{{count}} rotina movida.",
       "routinesFiled_other": "{{count}} rotinas movidas.",

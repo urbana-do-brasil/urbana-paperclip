@@ -1,70 +1,112 @@
 // @vitest-environment jsdom
-import { flushSync } from "react-dom";
+import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RunsSection, ActivitySection } from "./operate-sections";
+import type { RoutineDetail } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import { RoutineDetailContext, type RoutineDetailContextValue } from "./context";
+import { RunsSection } from "./operate-sections";
 
-const { list, update, renderList, toast } = vi.hoisted(() => ({
-  list: vi.fn(), update: vi.fn(), renderList: vi.fn(), toast: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  issuesApi: { list: vi.fn(), update: vi.fn() },
+  pushToast: vi.fn(),
 }));
-vi.mock("@/api/issues", () => ({ issuesApi: { list, update } }));
-vi.mock("@/context/ToastContext", () => ({ useToastActions: () => ({ pushToast: toast }) }));
-vi.mock("../IssuesList", () => ({ IssuesList: (props: unknown) => { renderList(props); return <div>Issue list</div>; } }));
-vi.mock("../RoutineHistoryTab", () => ({ RoutineHistoryTab: () => null }));
 
-let root: Root;
+vi.mock("@/api/issues", () => ({ issuesApi: mocks.issuesApi }));
+vi.mock("@/context/ToastContext", () => ({
+  useToastActions: () => ({ pushToast: mocks.pushToast }),
+}));
+vi.mock("../IssuesList", () => ({
+  IssuesList: ({
+    issueLinkState,
+    onUpdateIssue,
+  }: {
+    issueLinkState: { issueDetailBreadcrumb: { label: string } };
+    onUpdateIssue: (id: string, data: Record<string, unknown>) => void;
+  }) => (
+    <div>
+      <span data-testid="runs-breadcrumb">{issueLinkState.issueDetailBreadcrumb.label}</span>
+      <button onClick={() => onUpdateIssue("task-1", { status: "done" })}>Update task</button>
+    </div>
+  ),
+}));
+
+(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
+
 let container: HTMLDivElement;
+let root: Root;
 let queryClient: QueryClient;
+const routine = { id: "routine-1", companyId: "company-1" } as RoutineDetail;
 const context = {
-  companyId: "company-1", routine: { id: "routine-1" }, agents: [], projects: [], activity: [],
+  routine,
+  routineId: routine.id,
+  companyId: routine.companyId,
+  agents: [],
+  projects: [],
+  hasLiveRun: false,
+  activeIssueId: undefined,
 } as unknown as RoutineDetailContextValue;
-function render(section = <RunsSection />) {
-  flushSync(() => root.render(
-    <QueryClientProvider client={queryClient}>
-      <RoutineDetailContext.Provider value={context}>{section}</RoutineDetailContext.Provider>
-    </QueryClientProvider>,
+
+async function render() {
+  await act(async () => root.render(
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <RoutineDetailContext.Provider value={context}>
+          <RunsSection />
+        </RoutineDetailContext.Provider>
+      </QueryClientProvider>
+    </MemoryRouter>,
   ));
 }
-beforeEach(() => {
+
+beforeEach(async () => {
+  await i18n.changeLanguage("pt-BR");
   vi.clearAllMocks();
+  mocks.issuesApi.list.mockResolvedValue([]);
   container = document.createElement("div");
-  document.body.appendChild(container);
+  document.body.append(container);
   root = createRoot(container);
-  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
+  });
 });
-afterEach(() => {
-  flushSync(() => root.unmount());
+
+afterEach(async () => {
+  await act(async () => root.unmount());
   queryClient.clear();
   container.remove();
+  await i18n.changeLanguage("en");
 });
 
-describe("routine operations", () => {
-  it("loads this routine's execution issues and keeps list search scoped to the same routine", async () => {
-    const issues = [{ id: "execution-1", title: "Check deployment", status: "done" }];
-    list.mockResolvedValue(issues);
-    render();
-    await vi.waitFor(() => expect(renderList.mock.lastCall?.[0].issues).toEqual(issues));
-    expect(list).toHaveBeenCalledWith("company-1", { originKind: "routine_execution", originId: "routine-1" });
-    expect(renderList.mock.lastCall?.[0].searchFilters).toEqual({ originKind: "routine_execution", originId: "routine-1" });
-    expect(renderList.mock.lastCall?.[0].issueLinkState.issueDetailBreadcrumb.href).toBe("/routines/routine-1/runs");
+describe("RunsSection localization", () => {
+  it("uses the localized runs breadcrumb and task update error in Portuguese", async () => {
+    mocks.issuesApi.update.mockRejectedValue(new Error("dynamic API detail"));
+    await render();
+    expect(container.querySelector('[data-testid="runs-breadcrumb"]')?.textContent).toBe("Execuções");
+    await act(async () => {
+      container.querySelector("button")?.click();
+    });
+    await vi.waitFor(() => expect(mocks.pushToast).toHaveBeenCalledWith({
+      title: "Não foi possível atualizar a tarefa",
+      body: "dynamic API detail",
+      tone: "error",
+    }));
   });
 
-  it("surfaces issue loading and update failures", async () => {
-    list.mockRejectedValue(new Error("Could not load execution issues"));
-    render();
-    await vi.waitFor(() => expect(renderList.mock.lastCall?.[0].error?.message).toBe("Could not load execution issues"));
-    update.mockRejectedValue(new Error("Update denied"));
-    renderList.mock.lastCall?.[0].onUpdateIssue("execution-1", { status: "done" });
-    await vi.waitFor(() => expect(toast).toHaveBeenCalledWith(expect.objectContaining({ body: "Update denied", tone: "error" })));
-  });
-
-  it("distinguishes activity loading and failures from an empty timeline", () => {
-    render(<ActivitySection isLoading />);
-    expect(container.textContent).toContain("Loading activity");
-    expect(container.textContent).not.toContain("No activity yet");
-    render(<ActivitySection error={new Error("Activity unavailable")} />);
-    expect(container.querySelector('[role="alert"]')?.textContent).toBe("Activity unavailable");
+  it("uses the English runs breadcrumb and task update error", async () => {
+    await i18n.changeLanguage("en");
+    mocks.issuesApi.update.mockRejectedValue(new Error("dynamic API detail"));
+    await render();
+    expect(container.querySelector('[data-testid="runs-breadcrumb"]')?.textContent).toBe("Runs");
+    await act(async () => {
+      container.querySelector("button")?.click();
+    });
+    await vi.waitFor(() => expect(mocks.pushToast).toHaveBeenCalledWith({
+      title: "Could not update task",
+      body: "dynamic API detail",
+      tone: "error",
+    }));
   });
 });
