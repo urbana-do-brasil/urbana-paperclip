@@ -413,6 +413,64 @@
       "updateInstanceRoleFailed": "Não foi possível atualizar a função na instância"
     }
   },
+  "userProfile": {
+    "breadcrumbUsers": "Usuários",
+    "userFallback": "Usuário",
+    "memberFallback": "Membro",
+    "joined": "Entrou em {{date}}",
+    "selectOrganization": "Selecione uma organização para ver os perfis de usuário.",
+    "notFound": "Perfil de usuário não encontrado nesta organização.",
+    "editProfile": "Editar perfil",
+    "taskLinkedUsage": "Uso associado a tarefas",
+    "billedThrough": "Cobrado por {{biller}}",
+    "windows": {
+      "last7": "Últimos 7 dias",
+      "last30": "Últimos 30 dias",
+      "all": "Todo o período"
+    },
+    "completionRate": "{{rate}} concluídas",
+    "metrics": {
+      "touched": "Acessadas",
+      "completed": "Concluídas",
+      "comments": "Comentários",
+      "actions": "Ações",
+      "tokens": "Tokens",
+      "spend": "Gasto",
+      "created": "Criadas",
+      "open": "Abertas"
+    },
+    "chart": {
+      "last14Days": "Últimos 14 dias",
+      "tokensTotal": "tokens no total",
+      "pointLabel_one": "{{date}}: {{tokens}} tokens, {{count}} concluída",
+      "pointLabel_many": "{{date}}: {{tokens}} tokens, {{count}} concluídas",
+      "pointLabel_other": "{{date}}: {{tokens}} tokens, {{count}} concluídas",
+      "tokensPerDay": "tokens por dia",
+      "completions": "conclusões"
+    },
+    "hero": {
+      "allTimeTokens": "Tokens no total",
+      "spent": "{{value}} gastos",
+      "completed": "Concluídas",
+      "rate": "{{rate}} de conclusão",
+      "openAssigned": "Tarefas abertas atribuídas",
+      "created_one": "{{count}} criada",
+      "created_many": "{{count}} criadas",
+      "created_other": "{{count}} criadas",
+      "sevenDayActions": "Ações nos últimos 7 dias",
+      "comments_one": "{{count}} comentário",
+      "comments_many": "{{count}} comentários",
+      "comments_other": "{{count}} comentários"
+    },
+    "recentTasks": "Tarefas recentes",
+    "noTouchedTasks": "Nenhuma tarefa acessada até agora.",
+    "recentActivity": "Atividade recente",
+    "noActivity": "Nenhuma ação direta do usuário foi registrada até agora.",
+    "agentAttribution": "Uso por agente",
+    "noIssueLinkedUsage": "Ainda não há uso de tokens associado a tarefas.",
+    "providerMix": "Uso por provedor",
+    "noProviderUsage": "Ainda não há uso atribuído a provedores."
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Adicionar outro agente a {{company}}",

@@ -1833,7 +1833,7 @@ testes**. O typecheck direcionado dos componentes e testes alterados,
 validação OpenSpec estrita passaram. A jornada 3.8b está concluída; o progresso
 é **164/183 tarefas**. Próxima tarefa: 3.8c, concessões de acesso da instância.
 
-### Continuação — concessões de acesso da instância (3.8c)
+### Continuação — concessões de acesso da instância (3.8c1)
 
 A tela de acesso da instância agora localiza navegação, busca de usuários,
 contagens, estados de carregamento/vazio/falha, papéis/status e concessões por
@@ -1845,5 +1845,23 @@ estão incompletos.
 `InstanceAccess.test.tsx` e `locale-validation.test.ts` passaram em **17/17
 testes**. O typecheck direcionado da página/teste, `check:tokens`,
 `check:token-gates`, `git diff --check`, parse dos catálogos e validação OpenSpec
-estrita passaram. O progresso é **165/183 tarefas**; próxima tarefa: 3.8d,
-configurações pessoais, da empresa e da instância.
+estrita passaram. Após a decomposição do escopo de perfis de usuário, o
+progresso é **165/185 tarefas**; próxima tarefa: 3.8c2, perfil público e
+apresentação de usuários.
+
+### Continuação — perfil público de usuário (3.8c2)
+
+A página de perfil público agora localiza breadcrumb, papel/status de associação,
+métricas e períodos, gráfico de uso, verbos conhecidos da atividade, tarefas
+recentes, atribuição por agente/provedor e estados vazios/falha em PT-BR/en.
+Nomes, slugs, e-mails, títulos e conteúdo dinâmico, IDs, tokens, valores em USD,
+datas, rotas e a condição de edição restrita ao próprio usuário foram mantidos.
+
+`UserProfile.test.tsx` e `locale-validation.test.ts` passaram em **17/17
+testes**, cobrindo PT-BR, nomes/conteúdo preservados, verbos conhecidos,
+estados vazios/falha e link de edição somente para o próprio usuário quando as
+configurações não estão ocultas. O typecheck direcionado da página e do teste,
+`check:tokens`, `check:token-gates`, parse dos catálogos e OpenSpec estrito
+passaram. A tarefa 3.8c e seus lotes c1/c2 estão concluídos; progresso:
+**167/185 tarefas**. Próxima tarefa: 3.8d, configurações pessoais, da empresa e
+da instância.

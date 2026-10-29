@@ -408,6 +408,61 @@
       "updateInstanceRoleFailed": "Failed to update instance role"
     }
   },
+  "userProfile": {
+    "breadcrumbUsers": "Users",
+    "userFallback": "User",
+    "memberFallback": "Member",
+    "joined": "Joined {{date}}",
+    "selectOrganization": "Select an organization to view user profiles.",
+    "notFound": "User profile not found for this organization.",
+    "editProfile": "Edit profile",
+    "taskLinkedUsage": "Task-linked usage",
+    "billedThrough": "Billed through {{biller}}",
+    "windows": {
+      "last7": "Last 7 days",
+      "last30": "Last 30 days",
+      "all": "All time"
+    },
+    "completionRate": "{{rate}} done",
+    "metrics": {
+      "touched": "Touched",
+      "completed": "Completed",
+      "comments": "Comments",
+      "actions": "Actions",
+      "tokens": "Tokens",
+      "spend": "Spend",
+      "created": "Created",
+      "open": "Open"
+    },
+    "chart": {
+      "last14Days": "Last 14 days",
+      "tokensTotal": "tokens total",
+      "pointLabel_one": "{{date}}: {{tokens}} tokens, {{count}} completed",
+      "pointLabel_other": "{{date}}: {{tokens}} tokens, {{count}} completed",
+      "tokensPerDay": "tokens / day",
+      "completions": "completions"
+    },
+    "hero": {
+      "allTimeTokens": "All-time tokens",
+      "spent": "{{value}} spent",
+      "completed": "Completed",
+      "rate": "{{rate}} rate",
+      "openAssigned": "Open assigned",
+      "created_one": "{{count}} created",
+      "created_other": "{{count}} created",
+      "sevenDayActions": "7-day actions",
+      "comments_one": "{{count}} comment",
+      "comments_other": "{{count}} comments"
+    },
+    "recentTasks": "Recent tasks",
+    "noTouchedTasks": "No touched tasks yet.",
+    "recentActivity": "Recent activity",
+    "noActivity": "No direct user actions recorded yet.",
+    "agentAttribution": "Agent attribution",
+    "noIssueLinkedUsage": "No issue-linked token usage yet.",
+    "providerMix": "Provider mix",
+    "noProviderUsage": "No provider usage attributed yet."
+  },
   "onboarding": {
     "route": {
       "addAgentTitle": "Add another agent to {{company}}",
