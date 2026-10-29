@@ -2537,3 +2537,22 @@ typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 O progresso atual é **215/243 tarefas**. Próxima: 3.9f3b2c3, conclusão e resumo
 da conexão.
+
+### Conclusão e resumo da conexão (3.9f3b2c3)
+
+A tela de confirmação final agora localiza o título, o resumo de identidade e
+acesso, a contagem de ações e o botão para abrir a conexão. O nome do app,
+identidade selecionada, escopo, contagens e callback que determina o destino
+permanecem preservados. A frase de acesso compartilhada entre a configuração e
+a confirmação também acompanha o idioma, para manter as duas mensagens iguais.
+
+`AppsConnect.test.tsx`, `locale-validation.test.ts` e
+`ConnectionSetupFlow.oauth.test.ts` passaram em **240/240 testes**. A cobertura
+confirma o nome `GitHub`, a identidade organizacional, duas atribuições de
+agente, três ações ativadas e a execução do callback de saída. `pnpm
+check:tokens`, `pnpm check:token-gates`, parse dos catálogos, `git diff --check`
+e `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O progresso atual é **216/243 tarefas**. Próxima: 3.9f3c, permissões e acesso
+dos agentes.

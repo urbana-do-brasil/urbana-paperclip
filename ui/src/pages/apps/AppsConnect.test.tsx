@@ -9,7 +9,12 @@ import { ApiError } from "@/api/client";
 import { i18n } from "@/i18n";
 import { aiConnectionsApi } from "@/api/ai-connections";
 import { queryKeys } from "@/lib/queryKeys";
-import { ConnectionSetupFlow } from "@/features/connections/ConnectionSetupFlow";
+import {
+  accessSummaryLines,
+  ConnectionSetupCompletionScreen,
+  ConnectionSetupFlow,
+  connectionDefaultSummarySentence,
+} from "@/features/connections/ConnectionSetupFlow";
 import { rememberSkillSourceReturn, skillSourceReturnPath } from "@/lib/skill-source-connect-return";
 import { AppsConnect } from "./AppsConnect";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -393,6 +398,39 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(container.textContent).toContain("Conectar →");
     expect(container.textContent).toContain("Conectar com um link");
     expect(container.textContent).toContain("Escolha o app que você quer disponibilizar para seus agentes.");
+  });
+
+  it("localizes the completed connection summary while preserving identity, counts, and the done action", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const summaryInput = {
+      grantKind: "organization" as const,
+      authKind: "oauth" as const,
+      installChoice: "specific" as const,
+      installCount: 2,
+      enabledCount: 3,
+    };
+    const onDone = vi.fn();
+    await render(undefined, false, (
+      <ConnectionSetupCompletionScreen
+        appName="GitHub"
+        summary={accessSummaryLines(summaryInput)}
+        statedDefault={connectionDefaultSummarySentence(summaryInput)}
+        onDone={onDone}
+      />
+    ));
+
+    expect(container.querySelector("h2")?.textContent).toBe("GitHub está pronto.");
+    expect(container.textContent).toContain("Conecta para toda a organização, disponível para 2 agentes selecionados.");
+    expect(Array.from(container.querySelectorAll("dt")).map((node) => node.textContent)).toEqual([
+      "Identidade", "Disponível para", "Ações",
+    ]);
+    expect(Array.from(container.querySelectorAll("dd")).map((node) => node.textContent)).toEqual([
+      "Identidade da organização", "2 agentes selecionados", "3 ações ativadas",
+    ]);
+    expect(buttonByText("Ver conexão")).toBeTruthy();
+
+    await act(async () => buttonByText("Ver conexão")?.click());
+    expect(onDone).toHaveBeenCalledOnce();
   });
 
   it("localizes custom MCP authentication choices and validation while preserving header names", async () => {

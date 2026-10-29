@@ -58,7 +58,7 @@ import { useNavigate, useParams, useSearchParams } from "@/lib/router";
 import { useCompany } from "@/context/CompanyContext";
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";
 import { useToast } from "@/context/ToastContext";
-import { useTranslation } from "@/i18n";
+import { t, useTranslation } from "@/i18n";
 import { useChatConnectorsEnabled, chatProviderVisible } from "@/hooks/useChatConnectorsEnabled";
 import { queryKeys } from "@/lib/queryKeys";
 import { RadioCardGroup } from "@/components/ui/radio-card";
@@ -4501,21 +4501,21 @@ export function connectionDefaultSummarySentence(input: {
   preserveAgentAccess?: boolean;
 }): string {
   const identity = input.authKind === "none"
-    ? "No sign-in needed"
+    ? t("apps.connectionSetup.completion.defaultNoSignIn")
     : input.grantKind === "user"
-      ? "Connects as you"
+      ? t("apps.connectionSetup.completion.defaultAsYou")
       : input.grantKind === "agent"
-        ? "Connects as a dedicated agent account"
-        : "Connects for everyone in your organization";
+        ? t("apps.connectionSetup.completion.defaultAsAgent")
+        : t("apps.connectionSetup.completion.defaultForOrganization");
   const reach = input.preserveAgentAccess
-    ? "agent access stays as it is"
+    ? t("apps.connectionSetup.completion.agentAccessUnchanged")
     : input.lockedAgentId
-      ? "available to the agent that asked for it"
+      ? t("apps.connectionSetup.completion.availableToRequestingAgent")
       : input.installChoice === "all"
-        ? "available to all agents"
+        ? t("apps.connectionSetup.completion.availableToAllAgents")
         : input.installCount === 0
-          ? "no agents selected yet"
-          : `available to ${input.installCount} selected ${input.installCount === 1 ? "agent" : "agents"}`;
+          ? t("apps.connectionSetup.completion.noAgentsSelected")
+          : t("apps.connectionSetup.completion.availableToSelectedAgents", { count: input.installCount });
   return `${identity}, ${reach}.`;
 }
 
@@ -4606,21 +4606,21 @@ export function accessSummaryLines(input: {
   enabledCount: number;
 }): Array<{ label: string; value: string }> {
   const identity = input.authKind === "none"
-    ? "No identity required"
+    ? t("apps.connectionSetup.completion.noIdentityRequired")
     : input.grantKind === "user"
-      ? "Your identity"
+      ? t("apps.connectionSetup.completion.yourIdentity")
       : input.grantKind === "agent"
-        ? "Dedicated agent identity"
-      : "Organization identity";
+        ? t("apps.connectionSetup.completion.dedicatedAgentIdentity")
+        : t("apps.connectionSetup.completion.organizationIdentity");
   const availableTo = input.installChoice === "all"
-    ? "Any agent"
-    : `${input.installCount} selected ${input.installCount === 1 ? "agent" : "agents"}`;
+    ? t("apps.connectionSetup.completion.anyAgent")
+    : t("apps.connectionSetup.completion.selectedAgents", { count: input.installCount });
   return [
-    { label: "Identity", value: identity },
-    { label: "Available to", value: availableTo },
+    { label: t("apps.connectionSetup.completion.identityLabel"), value: identity },
+    { label: t("apps.connectionSetup.completion.availableToLabel"), value: availableTo },
     {
-      label: "Actions",
-      value: `${input.enabledCount} ${input.enabledCount === 1 ? "action" : "actions"} on`,
+      label: t("apps.connectionSetup.completion.actionsLabel"),
+      value: t("apps.connectionSetup.completion.enabledActions", { count: input.enabledCount }),
     },
   ];
 }
@@ -4658,6 +4658,7 @@ export function ConnectionSetupCompletionScreen({
   statedDefault?: string;
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="mx-auto max-w-md py-10 text-center">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 border-emerald-500 bg-emerald-500/10">
@@ -4665,7 +4666,7 @@ export function ConnectionSetupCompletionScreen({
       </div>
       <div className="mt-6 flex items-center justify-center gap-2">
         <AppLogo name={appName} logoUrl={logoUrl} darkLogoUrl={darkLogoUrl} size={28} />
-        <h2 className="text-2xl font-bold tracking-tight">{appName} is ready.</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t("apps.connectionSetup.completion.readyTitle", { name: appName })}</h2>
       </div>
       {statedDefault ? <p className="mt-3 text-sm text-muted-foreground">{statedDefault}</p> : null}
       <dl className="mx-auto mt-6 max-w-xs space-y-1 text-left">
@@ -4678,7 +4679,7 @@ export function ConnectionSetupCompletionScreen({
       </dl>
       <div className="mt-8">
         <Button size="lg" className="px-10" onClick={onDone}>
-          View connection
+          {t("apps.connectionSetup.completion.viewConnection")}
         </Button>
       </div>
     </div>
