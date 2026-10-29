@@ -210,6 +210,8 @@ Estas variáveis são definidas automaticamente pelo servidor ao invocar agentes
 | `PAPERCLIP_APPROVAL_ID` | ID da aprovação resolvida |
 | `PAPERCLIP_APPROVAL_STATUS` | Decisão da aprovação |
 | `PAPERCLIP_LINKED_ISSUE_IDS` | IDs de issues vinculadas separados por vírgulas |
+| `PAPERCLIP_COMMUNICATION_LOCALE` | Idioma validado da comunicação humana (`pt-BR` ou `en`); injetado pelo adapter `process` |
+| `PAPERCLIP_COMMUNICATION_GUIDANCE` | Orientação curta de idioma, escrita pelo servidor; injetada pelo adapter `process` sem conteúdo do wake |
 
 ## Chaves de provedores de LLM (para adapters)
 

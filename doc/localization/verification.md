@@ -3317,3 +3317,15 @@ lacunas de paridade dos gates de pipelines, rotas reais no shell production e
 apresentação de 403. A atividade de rotina no AuditHub production mantém o feed
 geral, ao contrário da visão escopada streamlined. 3.10g foi dividida em quatro
 partes; progresso OpenSpec: **284/306**. A auditoria não substitui testes.
+
+
+## Idioma para adapter process (6.2c)
+
+O adapter process disponibiliza `PAPERCLIP_COMMUNICATION_LOCALE` e
+`PAPERCLIP_COMMUNICATION_GUIDANCE` reservados, com locale validado e orientação
+fixa, sem incluir conteúdo privado do wake ou modificar args/stdin. Valores
+configurados não substituem os do servidor. Um subprocesso Node real passou
+**4/4 testes**, incluindo idiomas, flag, fallback, env forjado e preservação de
+argumentos. As referências EN/PT-BR registram que o framework precisa consumir
+as variáveis para incluí-las no próprio prompt; isso não comprova resposta real.
+Progresso: **285/307**.
