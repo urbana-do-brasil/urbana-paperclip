@@ -248,6 +248,9 @@ export type FileTreeProps = {
   /** Rich labels reuse the tree's icons, spacing, focus, and selection controls. */
   renderLabel?: (node: FileTreeNode) => ReactNode;
   checkboxLabel?: (node: FileTreeNode) => string;
+  /** Localized accessible labels for folder disclosure controls. */
+  expandFolderLabel?: (node: FileTreeNode) => string;
+  collapseFolderLabel?: (node: FileTreeNode) => string;
   /** Override selection for package nodes; null leaves an aligned, non-selectable row. */
   getCheckboxState?: (node: FileTreeNode) => 'checked' | 'mixed' | 'unchecked' | null;
   renderNodeExtra?: (node: FileTreeNode) => ReactNode;
@@ -280,6 +283,8 @@ export function FileTree({
   renderFileExtra,
   renderLabel,
   checkboxLabel,
+  expandFolderLabel,
+  collapseFolderLabel,
   getCheckboxState,
   renderNodeExtra,
   visiblePaths,
@@ -465,7 +470,7 @@ export function FileTree({
             {layout === "explorer" && (node.kind === "dir" ? (
               <button type="button" disabled={disabled} className="flex size-4 shrink-0 items-center justify-center rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
                 onClick={event => { event.stopPropagation(); onToggleDir(node.path); }}
-                aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}>
+                aria-label={expanded ? collapseFolderLabel?.(node) ?? `Collapse ${node.name}` : expandFolderLabel?.(node) ?? `Expand ${node.name}`}>
                 {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
               </button>
             ) : <span className="size-4 shrink-0" aria-hidden="true" />)}
@@ -522,7 +527,7 @@ export function FileTree({
                   event.stopPropagation();
                   onToggleDir(node.path);
                 }}
-                aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
+                aria-label={expanded ? collapseFolderLabel?.(node) ?? `Collapse ${node.name}` : expandFolderLabel?.(node) ?? `Expand ${node.name}`}
               >
                 {expanded ? (
                   <ChevronDown className="h-3.5 w-3.5" />

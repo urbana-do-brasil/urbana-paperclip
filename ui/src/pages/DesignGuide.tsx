@@ -2529,7 +2529,7 @@ function SkillSourceTreeShowcase() {
       { path: "SKILL.md", kind: "skill", sizeBytes: 120, encoding: "utf8" as const, executable: false },
       { path: "scripts/check.sh", kind: "script", sizeBytes: 45, encoding: "utf8" as const, executable: true },
     ] } },
-    { path: ".agents/review/nested/SKILL.md", name: "Nested skill", description: "An independently selected package.", error: null, note: "New skill" },
+    { path: ".agents/review/nested/SKILL.md", name: "Nested skill", description: "An independently selected package.", error: null, note: "new" as const },
     { path: "broken/SKILL.md", name: "Needs attention", description: null, error: "Missing required description." },
   ];
   const [selected, setSelected] = useState(new Set(candidates.map(skill => skill.path)));

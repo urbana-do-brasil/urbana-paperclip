@@ -2215,3 +2215,22 @@ da UI aponta somente o erro preexistente em
 O typecheck completo do servidor foi encerrado pelo sistema com SIGKILL (137)
 durante a preparação do runner, por limite de memória. O progresso é
 **194/209 tarefas**; próxima: 3.9, skills, ferramentas, apps e catálogos.
+
+
+### Fontes e descoberta de skills (3.9a)
+
+A gestão de fontes GitHub, a descoberta/importação, o progresso do scan, a árvore
+de seleção e a prévia do pacote agora localizam seus rótulos, estados, controles
+acessíveis e mensagens em PT-BR/en. Nomes, descrições, requisitos e avisos
+fornecidos por autores, arquivos/conteúdo do pacote, caminhos, URLs, nomes de
+repositórios, branches e SHA foram mantidos como recebidos; apenas enums próprios
+da aplicação são apresentados por rótulos localizados.
+
+`SkillSources.test.tsx`, `SkillSourceTree.test.tsx`,
+`SkillPackagePreview.test.tsx` e `locale-validation.test.ts` passaram em
+**27/27 testes**. `pnpm check:tokens`, `pnpm check:token-gates`, parse dos
+catálogos, `git diff --check` e validação OpenSpec estrita passaram. O typecheck
+da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O progresso é **195/215 tarefas**; próxima: 3.9b, biblioteca de skills da
+organização.

@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **181 de 204 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **195 de 215 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -45,13 +45,16 @@ valor e referência (3.8e1b2) e ciclo de vida (3.8e1b3) estão concluídos.
 Detalhes, uso, acesso e auditoria dos segredos compartilhados (3.8e1c) também
 estão concluídos. 3.8e2 foi dividida em três lotes: aba/valores pessoais (e2a),
 administração das definições (e2b) e cobertura/estados ausentes (e2c). 3.8e2a,
-3.8e2b e 3.8e2c estão concluídas. Próxima: 3.8e3, cofres e provedores.
+3.8e2b e 3.8e2c estão concluídas. As jornadas 3.8e3–e5 (cofres, bindings e
+propostas) e 3.8f (OAuth/MCP e conexões de assistentes) também foram verificadas.
+3.9 foi dividida em seis jornadas; 3.9a, fontes e descoberta de skills, está
+concluída. Próxima: 3.9b, biblioteca de skills da organização.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), moldura/seletor Tasks (3.4a), coleção (3.4b1–3.4b4), criação (3.4b5a–c), detalhe/recovery (3.4c1–3.4c3c5), compositor (3.4d1), transcript (3.4d2), interações estruturadas (3.4d3a–3.4d3d2), anotações documentais (3.4d4), controles de execução na conversa (3.4d5), controles gerais, linhas de atenção, visualização de trabalho bloqueado da Inbox, filas de decisões, fila standalone de acesso e busca global (3.4e1–3.4f), portfólio de organizações, projetos e metas (3.5a–3.5e), agentes e execuções (3.6a–3.6f), dashboard, execuções ao vivo, custos/finanças, orçamento, timeline, atividade, auditoria e hub (3.7a–f), aprovações e acesso da empresa (3.8a–b), acesso administrativo da instância e perfil público de usuário (3.8c1–c2), perfil pessoal e navegação compartilhada das configurações (3.8d1), configurações da organização e instância (3.8d2a–d3), inventário/listagem de segredos (3.8e1a), criação (3.8e1b1), rotação/atualização (3.8e1b2), ciclo de vida (3.8e1b3), detalhes/uso/acesso/auditoria (3.8e1c), valores pessoais, administração das definições e cobertura/avisos (3.8e2a–c) verificados. Cofres, bindings e propostas (3.8e3–3.8e5) e consentimento OAuth/MCP (3.8f) permanecem pendentes. |
+| 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Fontes de skills e importação (3.9a) verificadas; biblioteca de skills, Skill Studio, catálogo de equipes, ferramentas e apps (3.9b–f) pendentes. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; comandos operacionais e regressão estruturada (4.3/4.4) pendentes. |
 | 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; revisão humana e validação operacional dos guias (5.2/5.3) pendentes. |
 | 6. Comunicação dos agentes | 6.1 concluída com testes de recibos, entrega de interação, fila e typecheck; 6.2–6.4 pendentes. |
