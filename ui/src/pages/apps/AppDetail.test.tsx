@@ -491,6 +491,29 @@ describe("AppDetail", () => {
     listApplicationsMock.mockResolvedValue({ applications: [{ id: "app-1", applicationKey: "composio", name: "Composio", metadata: { sourceTemplateKey: "composio" } }] });
   }
 
+  it("localizes connected-account inventory while preserving provider and app names", async () => {
+    useComposioConnection();
+    const observed = aggregatorApps([observedApp("notion", "Notion", {
+      accounts: [
+        { id: "account-1", alias: null, status: "ACTIVE", isDefault: true },
+        { id: "account-2", alias: null, status: "ACTIVE", isDefault: false },
+      ],
+    })]);
+    listAggregatorAppsMock.mockResolvedValue(observed);
+    syncAggregatorAppsMock.mockResolvedValue(observed);
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    await vi.waitFor(() => expect(container.textContent).toContain("Apps atualizados."));
+    expect(container.querySelector('h2#connected-aggregator-apps-heading')?.textContent).toBe("Apps conectados");
+    expect(container.querySelector<HTMLButtonElement>('button[aria-label="Atualizar Composio"]')).toBeTruthy();
+    const list = container.querySelector('ul[aria-label="Apps conectados do Composio"]')!;
+    expect(list.textContent).toContain("Notion");
+    expect(list.textContent).toContain("2 contas");
+    expect(list.textContent).toContain("Conectado");
+  });
+
   it("refreshes connected apps on first load, shows progress, and exposes the completed inventory", async () => {
     useComposioConnection();
     const prior = aggregatorApps([observedApp("airtable", "Airtable")]);
@@ -1672,6 +1695,61 @@ describe("AppDetail", () => {
     return Array.from(container.querySelectorAll("button"))
       .find((button) => button.textContent?.trim() === label);
   }
+
+  it("localizes identity audience controls while preserving member IDs", async () => {
+    listConnectionGrantsMock.mockResolvedValue({
+      connection: { id: "conn-1", uid: "conn-1" },
+      grants: [organizationGrant({
+        providerTenant: { name: "Acme workspace" },
+        members: [{ id: "member-1", companyId: "company-1", grantId: "grant-org", subjectType: "user", subjectId: "user-1", createdAt: new Date() }],
+      })],
+      capabilities: fullCapabilities(),
+      currentUserId: "user-1",
+      members: [{ userId: "user-1", name: "Dotta", email: "dotta@example.com" }],
+    });
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    expect(container.textContent).toContain("Quais pessoas podem usar esta credencial?");
+    expect(container.textContent).toContain("Qualquer pessoa da organização");
+    await act(async () => findButton("Gerenciar acesso")?.click());
+    await flushReact();
+
+    const dialog = document.body.querySelector<HTMLElement>('[role="dialog"]')!;
+    expect(dialog.textContent).toContain("Quem pode usar esta identidade");
+    expect(dialog.textContent).toContain("Acme workspace");
+    expect(dialog.textContent).toContain("Todas as pessoas da organização");
+    expect(dialog.textContent).toContain("1 pessoa selecionada");
+    await act(async () => {
+      Array.from(dialog.querySelectorAll("button"))
+        .find((button) => button.textContent?.trim() === "Salvar seleção")?.click();
+    });
+    await flushReact();
+
+    expect(replaceConnectionGrantMembersMock).toHaveBeenCalledWith("conn-1", "grant-org", ["user-1"]);
+  });
+
+  it("localizes the GitHub identity permission warning in Brazilian Portuguese", async () => {
+    getConnectionMock.mockResolvedValue(connection({ credentialPolicy: "per_agent" }));
+    listConnectionGrantsMock.mockResolvedValue({
+      connection: { id: "conn-1", uid: "conn-1" },
+      grants: [dedicatedGitHubGrant()],
+      capabilities: fullCapabilities(),
+      currentUserId: "user-1",
+      members: [],
+    });
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('button[aria-label="Read repo: Permitida"]')
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(container.textContent).toContain("O shell, o Git e o gh usam esta conta durante a execução");
+  });
 
   it("does not label a revoked AI credential as Connected", async () => {
     getConnectionMock.mockResolvedValue(connection({ connectionPurpose: "ai", transport: "runtime_auth", healthStatus: "ok", config: { provider: "openai", method: "api_key" } }));

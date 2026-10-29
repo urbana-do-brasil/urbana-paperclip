@@ -2574,3 +2574,22 @@ passaram. O typecheck da UI aponta somente o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
 O progresso atual é **217/243 tarefas**. Próxima: 3.9f3d, identidades e contas
 associadas.
+
+### Identidades e contas associadas à conexão (3.9f3d)
+
+Os controles de identidade pessoal, organizacional e por agente agora estão em
+PT-BR/en, incluindo público da concessão, estados, ações e resumo do acesso a
+repositórios GitHub. O inventário dos apps conectados também foi localizado.
+Nomes de pessoas, contas, apps e provedores, URLs, enums de estado, IDs e
+payloads das concessões foram preservados. Erros e mensagens de descoberta
+retornados pelo provedor continuam sendo exibidos sem tradução.
+
+`AppDetail.test.tsx` e `locale-validation.test.ts` passaram em **97/97 testes**.
+Os casos PT-BR cobrem a lista de apps Composio e o salvamento da audiência com o
+mesmo ID de membro. O aviso estático de comandos Git/gh vinculados à identidade
+GitHub, que pertence ao lote de permissões 3.9f3c, também foi localizado. `pnpm
+check:tokens`, `pnpm check:token-gates`, parse dos catálogos, `git diff --check`
+e `pnpm exec openspec validate --all --strict --no-interactive` passaram. O
+typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O progresso atual é **218/243 tarefas**. Próxima: 3.9f3e, teste manual de ações.

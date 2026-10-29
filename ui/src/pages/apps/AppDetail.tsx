@@ -685,9 +685,9 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
                   replaceAudience.mutate({ grantId: grant.id, memberUserIds })}
               />
               {connection.config?.sourceTemplateKey === "composio" ? <p className="text-sm text-muted-foreground">
-                These permissions apply to all apps available through this Composio connection. Manage app accounts and sign-in in Composio.
+                {t("apps.appDetail.connectedApps.composioPermissionsHint")}
               </p> : null}
-              {connection.config?.sourceTemplateKey !== "composio" && isRemoteMcpConnectorMethod(connection.config?.sourceTemplateKey, connection.config?.connectionMethodKey) && <p className="text-sm text-muted-foreground">Paperclip controls access to the tools listed here. App and action permissions inside these tools are managed in {baseAppName}.</p>}
+              {connection.config?.sourceTemplateKey !== "composio" && isRemoteMcpConnectorMethod(connection.config?.sourceTemplateKey, connection.config?.connectionMethodKey) && <p className="text-sm text-muted-foreground">{t("apps.appDetail.connectedApps.remoteMcpPermissionsHint", { appName: baseAppName })}</p>}
               <PermissionsPanel
                 afterAgentAccess={<>{logoEntry?.agentInstructions && <ConnectionInstructionsSettings key={connection.id} connection={connection} provider={logoEntry.name} template={logoEntry.agentInstructions} canConfigure={grantsQuery.data?.capabilities?.canConfigure ?? false} />}{renderAgentSettings?.(connection)}</>}
                 actions={actionsContent}
@@ -706,7 +706,7 @@ function StandardAppDetail({ renderActions, renderAgentSettings, renderConnectio
                 refreshPending={refreshTools.isPending}
                 permissionChangeWarning={
                   connection.credentialPolicy === "per_agent" && managedIdentityGrant?.providerTenant?.github
-                    ? "Shell Git and gh use this account for the run and are not constrained by per-tool Ask-first controls."
+                    ? t("apps.appDetail.permissions.actions.gitShellWarning")
                     : undefined
                 }
                 onSaveAccess={(next) => apply({ access: connection.connectionPurpose === "ai" || managesRemoteMcpAccess ? next : accessIncludingInstalls(next, install) })}
