@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ToolMcpGatewayWithTokens } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { GatewayActivityPanel } from "./GatewayActivityPanel";
 
 const listActivityMock = vi.hoisted(() => vi.fn());
@@ -77,16 +78,18 @@ describe("GatewayActivityPanel", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     listActivityMock.mockResolvedValue({ events: [event()], nextCursor: null });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root?.unmount());
     container.remove();
     vi.clearAllMocks();
+    await i18n.changeLanguage("en");
   });
 
   async function render() {
@@ -129,6 +132,19 @@ describe("GatewayActivityPanel", () => {
     expect(container.textContent).toContain("Arguments (redacted)");
     expect(container.textContent).toContain("***REDACTED***");
     expect(container.textContent).toContain("Result (redacted)");
+    expect(container.textContent).toContain("125 ms");
+  });
+
+  it("localizes activity labels and leaves event values intact", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render();
+
+    expect(container.textContent).toContain("Cliente usou Send Email em Gmail");
+    expect(container.textContent).toContain("Permitida");
+    await clickButton("usou Send Email");
+    expect(container.textContent).toContain("gmail:send_email");
+    expect(container.textContent).toContain("Argumentos (ocultados)");
+    expect(container.textContent).toContain("Resultado (ocultado)");
     expect(container.textContent).toContain("125 ms");
   });
 

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import type { ToolMcpGatewayToken, ToolMcpGatewayWithTokens } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { TokensPanel } from "./TokensPanel";
 
 const createGatewayTokenMock = vi.hoisted(() => vi.fn());
@@ -109,17 +110,19 @@ describe("TokensPanel", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.spyOn(Date, "now").mockReturnValue(new Date("2026-06-16T12:00:00.000Z").getTime());
     vi.clearAllMocks();
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root?.unmount());
     container.remove();
     vi.restoreAllMocks();
+    await i18n.changeLanguage("en");
   });
 
   async function render(node: ReactNode) {
@@ -170,6 +173,32 @@ describe("TokensPanel", () => {
     await clickButtonContaining("Token history");
     expect(container.textContent).toContain("pcgw_live_8x4Pa•••");
     expect(container.textContent).toContain("Active");
+  });
+
+  it("localizes token controls and preserves the issued token payload", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const created = { ...token({ id: "new-token" }), token: "pcgw_live_FULLSECRETVALUE" };
+    createGatewayTokenMock.mockResolvedValue(created);
+    await render(<TokensPanel companyId="company-1" gateway={gateway()} />);
+
+    expect(container.textContent).toContain("Emita um token reutilizável para um cliente externo.");
+    await clickButton("Emitir token");
+    const form = container.querySelector("form");
+    if (!form) throw new Error("token form not found");
+    const nameInput = form.querySelector<HTMLInputElement>('input:not([type="date"])');
+    if (!nameInput) throw new Error("token name input not found");
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await flushReact();
+
+    expect(createGatewayTokenMock).toHaveBeenCalledWith(
+      "company-1",
+      "gateway-1",
+      expect.objectContaining({ name: nameInput.value, clientLabel: nameInput.value, allowedActions: ["tools/list", "tools/call"] }),
+    );
+    expect(container.textContent).toContain("Novo token — copie agora");
+    expect(container.textContent).toContain("pcgw_live_FULLSECRETVALUE");
   });
 
   it("autofills a token name, reuses it as the client label, and reveals the token once", async () => {

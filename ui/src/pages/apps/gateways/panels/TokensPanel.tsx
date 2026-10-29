@@ -20,10 +20,10 @@ import { copyTextToClipboard } from "@/lib/clipboard";
 import { cn } from "@/lib/utils";
 import { RelativeTime } from "@/pages/tools/shared";
 import { gatewaysQueryKey } from "../NewGatewayDialog";
+import { useTranslation } from "@/i18n";
 import {
   defaultGatewayTokenName,
   maskedTokenLabel,
-  TOKEN_STATUS_LABEL,
   toDate,
   tokenStatus,
   type TokenStatus,
@@ -43,7 +43,15 @@ const STATUS_CLASS: Record<TokenStatus, string> = {
   revoked: "border-foreground bg-foreground text-background",
 };
 
+const STATUS_KEY: Record<TokenStatus, string> = {
+  active: "apps.gateways.tokens.statusActive",
+  expiring: "apps.gateways.tokens.statusExpiring",
+  expired: "apps.gateways.tokens.statusExpired",
+  revoked: "apps.gateways.tokens.statusRevoked",
+};
+
 function StatusBadge({ status }: { status: TokenStatus }) {
+  const { t } = useTranslation();
   return (
     <span
       className={cn(
@@ -51,7 +59,7 @@ function StatusBadge({ status }: { status: TokenStatus }) {
         STATUS_CLASS[status],
       )}
     >
-      {TOKEN_STATUS_LABEL[status]}
+      {t(STATUS_KEY[status])}
     </span>
   );
 }
@@ -66,12 +74,13 @@ function TokenField({ label, value }: { label: string; value: ReactNode }) {
 }
 
 function ExpiryValue({ token }: { token: ToolMcpGatewayToken }) {
+  const { t } = useTranslation();
   const expiresAt = toDate(token.expiresAt);
-  if (!expiresAt) return <>No expiry</>;
+  if (!expiresAt) return <>{t("apps.gateways.tokens.noExpiry")}</>;
   if (expiresAt.getTime() <= Date.now()) {
-    return <><span className="font-medium text-foreground">Expired</span> <RelativeTime value={token.expiresAt} /></>;
+    return <><span className="font-medium text-foreground">{t("apps.gateways.tokens.expired")}</span> <RelativeTime value={token.expiresAt} /></>;
   }
-  return <>Expires <RelativeTime value={token.expiresAt} /></>;
+  return <>{t("apps.gateways.tokens.expiresAt")} <RelativeTime value={token.expiresAt} /></>;
 }
 
 export function TokensPanel({
@@ -85,6 +94,7 @@ export function TokensPanel({
 }) {
   const queryClient = useQueryClient();
   const { pushToast } = useToast();
+  const { t } = useTranslation();
   const [minting, setMinting] = useState(false);
   const [name, setName] = useState("");
   const [ownerNote, setOwnerNote] = useState("");
@@ -125,8 +135,8 @@ export function TokensPanel({
       setOwnerNote("");
       setExpiresAt(defaultExpiry());
       pushToast({
-        title: "Token issued",
-        body: "Copy it now — you won’t see the full value again after leaving this page.",
+        title: t("apps.gateways.tokens.issued"),
+        body: t("apps.gateways.tokens.issuedBody"),
         tone: "success",
       });
       onTokenCreated?.(token);
@@ -134,7 +144,7 @@ export function TokensPanel({
     },
     onError: (error) =>
       pushToast({
-        title: "Token was not issued",
+        title: t("apps.gateways.tokens.issueFailed"),
         body: error instanceof Error ? error.message : String(error),
         tone: "error",
       }),
@@ -145,12 +155,12 @@ export function TokensPanel({
     onSuccess: async (token) => {
       setConfirmToken(null);
       setRevokeName("");
-      pushToast({ title: "Token revoked", body: `${token.name} can no longer connect.`, tone: "success" });
+      pushToast({ title: t("apps.gateways.tokens.revoked"), body: t("apps.gateways.tokens.revokedBody", { name: token.name }), tone: "success" });
       await invalidate();
     },
     onError: (error) =>
       pushToast({
-        title: "Token was not revoked",
+        title: t("apps.gateways.tokens.revokeFailed"),
         body: error instanceof Error ? error.message : String(error),
         tone: "error",
       }),
@@ -159,11 +169,11 @@ export function TokensPanel({
   async function copyToken(value: string) {
     try {
       await copyTextToClipboard(value);
-      pushToast({ title: "Copied", body: "Access token", tone: "success" });
+      pushToast({ title: t("apps.gateways.tokens.copied"), body: t("apps.gateways.tokens.accessToken"), tone: "success" });
     } catch (error) {
       pushToast({
-        title: "Copy failed",
-        body: error instanceof Error ? error.message : "Clipboard access is unavailable.",
+        title: t("apps.gateways.tokens.copyFailed"),
+        body: error instanceof Error ? error.message : t("apps.gateways.tokens.clipboardUnavailable"),
         tone: "error",
       });
     }
@@ -190,17 +200,15 @@ export function TokensPanel({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-2xl space-y-1">
           <p className="text-sm text-muted-foreground">
-            Issue a reusable token for an external client. Its name is also used as the client label.
+            {t("apps.gateways.tokens.description")}
           </p>
           <p className="text-xs text-muted-foreground">
-            Paperclip creates a fresh one-hour runtime token when an agent run starts, then revokes it when the
-            run ends. Codex can receive the same gateway through both an app connection and the managed-gateway
-            path, so one run may leave two revoked rows. These are audit history, not repeated manual tokens.
+            {t("apps.gateways.tokens.runtimeNote")}
           </p>
         </div>
         <Button size="sm" onClick={startIssuing}>
           <Plus className="mr-1.5 h-3.5 w-3.5" />
-          Issue token
+          {t("apps.gateways.tokens.issue")}
         </Button>
       </div>
 
@@ -208,29 +216,29 @@ export function TokensPanel({
         <form className="space-y-3" onSubmit={submit}>
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
             <label className="space-y-1.5 text-sm">
-              <span className="text-xs font-medium text-muted-foreground">Token name</span>
+              <span className="text-xs font-medium text-muted-foreground">{t("apps.gateways.tokens.name")}</span>
               <Input value={name} onChange={(event) => setName(event.target.value)} required autoFocus />
-              <span className="text-xs text-muted-foreground">Also used as the client label.</span>
+              <span className="text-xs text-muted-foreground">{t("apps.gateways.tokens.alsoClientLabel")}</span>
             </label>
             <label className="space-y-1.5 text-sm">
-              <span className="text-xs font-medium text-muted-foreground">Expires</span>
+              <span className="text-xs font-medium text-muted-foreground">{t("apps.gateways.tokens.expires")}</span>
               <Input type="date" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} required />
             </label>
           </div>
           <label className="block space-y-1.5 text-sm">
-            <span className="text-xs font-medium text-muted-foreground">Owner note (optional)</span>
+            <span className="text-xs font-medium text-muted-foreground">{t("apps.gateways.tokens.ownerNote")}</span>
             <Input
               value={ownerNote}
               onChange={(event) => setOwnerNote(event.target.value)}
-              placeholder="Who uses this token or why it exists"
+              placeholder={t("apps.gateways.tokens.ownerNotePlaceholder")}
             />
           </label>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setMinting(false)}>
-              Cancel
+              {t("apps.gateways.tokens.cancel")}
             </Button>
             <Button type="submit" size="sm" disabled={createMutation.isPending || !name.trim()}>
-              {createMutation.isPending ? "Issuing…" : "Issue token"}
+              {createMutation.isPending ? t("apps.gateways.tokens.issuing") : t("apps.gateways.tokens.issue")}
             </Button>
           </div>
         </form>
@@ -240,13 +248,13 @@ export function TokensPanel({
         <div className="space-y-2 border-y border-border py-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <div className="text-sm font-semibold text-foreground">New token — copy now</div>
+              <div className="text-sm font-semibold text-foreground">{t("apps.gateways.tokens.newTokenTitle")}</div>
               <div className="text-xs text-muted-foreground">
-                It is now available in Client snippets for a copy-ready configuration.
+                {t("apps.gateways.tokens.newTokenBody")}
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setCreated(null)} aria-label="Dismiss new token">
-              Dismiss
+            <Button variant="ghost" size="sm" onClick={() => setCreated(null)} aria-label={t("apps.gateways.tokens.dismissNewToken")}>
+              {t("apps.gateways.tokens.dismiss")}
             </Button>
           </div>
           <div className="flex items-center gap-2">
@@ -256,10 +264,10 @@ export function TokensPanel({
             {revealed ? (
               <Button variant="outline" size="sm" onClick={() => void copyToken(created.token)}>
                 <Copy className="mr-1 h-3.5 w-3.5" />
-                Copy
+                {t("apps.gateways.tokens.copy")}
               </Button>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => setRevealed(true)}>Show</Button>
+              <Button variant="outline" size="sm" onClick={() => setRevealed(true)}>{t("apps.gateways.tokens.show")}</Button>
             )}
           </div>
         </div>
@@ -270,7 +278,7 @@ export function TokensPanel({
           <Button variant="ghost" className="h-auto w-full justify-between px-0 py-1 hover:bg-transparent">
             <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <KeyRound className="h-4 w-4 text-muted-foreground" />
-              Token history
+              {t("apps.gateways.tokens.history")}
               <span className="font-normal text-muted-foreground">{tokens.length}</span>
             </span>
             {historyOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -278,19 +286,19 @@ export function TokensPanel({
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-3 pt-3">
           {tokens.length === 0 ? (
-            <p className="py-4 text-sm text-muted-foreground">No tokens have been issued for this gateway.</p>
+            <p className="py-4 text-sm text-muted-foreground">{t("apps.gateways.tokens.noTokens")}</p>
           ) : (
             <>
               <div className="hidden overflow-x-auto rounded-lg border border-border sm:block">
                 <table className="w-full min-w-(--sz-44rem) text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/40 text-left text-(length:--text-micro) font-semibold uppercase tracking-wide text-muted-foreground">
-                      <th className="px-4 py-2.5">Token</th>
-                      <th className="px-4 py-2.5">Owner</th>
-                      <th className="px-4 py-2.5">Created</th>
-                      <th className="px-4 py-2.5">Last used</th>
-                      <th className="px-4 py-2.5">Expiry</th>
-                      <th className="px-4 py-2.5">Status</th>
+                      <th className="px-4 py-2.5">{t("apps.gateways.tokens.token")}</th>
+                      <th className="px-4 py-2.5">{t("apps.gateways.tokens.owner")}</th>
+                      <th className="px-4 py-2.5">{t("apps.gateways.tokens.created")}</th>
+                      <th className="px-4 py-2.5">{t("apps.gateways.tokens.lastUsed")}</th>
+                      <th className="px-4 py-2.5">{t("apps.gateways.tokens.expiry")}</th>
+                      <th className="px-4 py-2.5">{t("apps.gateways.tokens.status")}</th>
                       <th className="px-4 py-2.5 text-right" />
                     </tr>
                   </thead>
@@ -318,7 +326,7 @@ export function TokensPanel({
                                 className="h-7 px-2 text-xs text-destructive hover:text-destructive"
                                 onClick={() => startRevoke(token)}
                               >
-                                Revoke
+                                {t("apps.gateways.tokens.revokeAction")}
                               </Button>
                             ) : null}
                           </td>
@@ -342,10 +350,10 @@ export function TokensPanel({
                         <StatusBadge status={status} />
                       </div>
                       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <TokenField label="Owner" value={token.clientLabel || token.ownerNote || "—"} />
-                        <TokenField label="Created" value={<RelativeTime value={token.createdAt} />} />
-                        <TokenField label="Last used" value={token.lastUsedAt ? <RelativeTime value={token.lastUsedAt} /> : "—"} />
-                        <TokenField label="Expiry" value={<ExpiryValue token={token} />} />
+                        <TokenField label={t("apps.gateways.tokens.owner")} value={token.clientLabel || token.ownerNote || "—"} />
+                        <TokenField label={t("apps.gateways.tokens.created")} value={<RelativeTime value={token.createdAt} />} />
+                        <TokenField label={t("apps.gateways.tokens.lastUsed")} value={token.lastUsedAt ? <RelativeTime value={token.lastUsedAt} /> : "—"} />
+                        <TokenField label={t("apps.gateways.tokens.expiry")} value={<ExpiryValue token={token} />} />
                       </dl>
                       {status !== "revoked" ? (
                         <Button
@@ -354,7 +362,7 @@ export function TokensPanel({
                           className="mt-3 w-full text-xs text-destructive hover:text-destructive"
                           onClick={() => startRevoke(token)}
                         >
-                          Revoke
+                          {t("apps.gateways.tokens.revokeAction")}
                         </Button>
                       ) : null}
                     </div>
@@ -365,7 +373,7 @@ export function TokensPanel({
               {pageCount > 1 ? (
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs text-muted-foreground">
-                    Page {historyPage} of {pageCount} · {tokens.length} tokens
+                    {t("apps.gateways.tokens.page", { page: historyPage, pageCount, count: tokens.length })}
                   </p>
                   <div className="flex items-center gap-1">
                     <Button
@@ -373,7 +381,7 @@ export function TokensPanel({
                       size="sm"
                       disabled={historyPage === 1}
                       onClick={() => setHistoryPage((page) => Math.max(1, page - 1))}
-                      aria-label="Previous token page"
+                      aria-label={t("apps.gateways.tokens.previousPage")}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -382,7 +390,7 @@ export function TokensPanel({
                       size="sm"
                       disabled={historyPage === pageCount}
                       onClick={() => setHistoryPage((page) => Math.min(pageCount, page + 1))}
-                      aria-label="Next token page"
+                      aria-label={t("apps.gateways.tokens.nextPage")}
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -398,17 +406,16 @@ export function TokensPanel({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-md space-y-3 rounded-lg border border-border bg-card p-5 shadow-lg">
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Revoke this token?</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t("apps.gateways.tokens.confirmTitle")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Any client using <span className="font-medium text-foreground">{confirmToken.name}</span> goes
-                silent immediately. This can’t be undone. Type the token name to confirm.
+                {t("apps.gateways.tokens.confirmBody", { name: confirmToken.name })}
               </p>
             </div>
             <Input
               value={revokeName}
               onChange={(event) => setRevokeName(event.target.value)}
               placeholder={confirmToken.name}
-              aria-label="Type the token name to confirm"
+              aria-label={t("apps.gateways.tokens.confirmInput")}
               autoFocus
             />
             <div className="flex justify-end gap-2">
@@ -420,7 +427,7 @@ export function TokensPanel({
                   setRevokeName("");
                 }}
               >
-                Cancel
+                {t("apps.gateways.tokens.cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -428,7 +435,7 @@ export function TokensPanel({
                 disabled={revokeName.trim() !== confirmToken.name || revokeMutation.isPending}
                 onClick={() => revokeMutation.mutate(confirmToken.id)}
               >
-                {revokeMutation.isPending ? "Revoking…" : "Revoke token"}
+                {revokeMutation.isPending ? t("apps.gateways.tokens.revoking") : t("apps.gateways.tokens.revokeToken")}
               </Button>
             </div>
           </div>

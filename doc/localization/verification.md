@@ -2716,3 +2716,22 @@ da atualização de contas. O typecheck da UI aponta somente o erro preexistente
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado;
 nenhum diagnóstico foi reportado nos arquivos alterados. Progresso real conforme
 as caixas do OpenSpec: **228/246 tarefas**. Próxima: 3.9f5, gateways MCP de apps.
+
+### Gateways MCP de apps (3.9f5)
+
+A criação e gestão de gateways MCP de apps agora acompanham PT-BR/en: lista,
+criação, detalhe, resumo, apps e ferramentas, tokens, configuração para clientes,
+atividade e configuração avançada. URLs e caminhos, nomes fornecidos, IDs,
+transportes e versão do protocolo, ações MCP, tokens mascarados, JSON de
+configuração, erros dinâmicos e payloads foram preservados. Os rótulos das abas
+vêm do idioma ativo; o fallback inglês antigo não utilizado foi removido.
+
+`GatewayDetail`, `GatewaysList`, `NewGatewayDialog`, `EditGatewayDialog`,
+`ConnectClientDialog`, `CopyableGatewayUrl`, `gateway-helpers`, os painéis
+`Overview`, `AppsTools`, `Tokens`, `GatewayActivity` e `GatewayAdvanced`, junto
+de `locale-validation.test.ts`, passaram em **43/43 testes focados**. O typecheck
+da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado;
+nenhum diagnóstico foi reportado nos arquivos alterados. Gates de tokens, diff e
+OpenSpec estrito passaram. Progresso real conforme as caixas do OpenSpec:
+**229/246 tarefas**. Próxima: 3.10, rotinas, pipelines, casos e status cards.

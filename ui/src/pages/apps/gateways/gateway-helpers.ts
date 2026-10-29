@@ -6,6 +6,7 @@ import type {
   ToolMcpGatewayWithTokens,
   ToolProfileWithDetails,
 } from "@paperclipai/shared";
+import type { TFunction } from "i18next";
 import { humanizeConnectionDisplayName, isToolConnectionAttentionHealth } from "@paperclipai/shared";
 
 /** Days before expiry at which we surface a token as "Expiring". */
@@ -37,13 +38,6 @@ export function tokenStatus(
   return "active";
 }
 
-export const TOKEN_STATUS_LABEL: Record<TokenStatus, string> = {
-  active: "Active",
-  expiring: "Expiring",
-  expired: "Expired",
-  revoked: "Revoked",
-};
-
 /** Count of tokens that can currently authenticate (not revoked, not expired). */
 export function activeTokenCount(gateway: ToolMcpGatewayWithTokens, now: number = Date.now()): number {
   return gateway.tokens.filter((token) => {
@@ -74,19 +68,36 @@ export function formatScope(
   gateway: ToolMcpGatewayWithTokens,
   projectNames: Map<string, string>,
   agentNames: Map<string, string>,
+  t?: TFunction,
 ): string {
   if (gateway.contextScopeType !== "none" && gateway.contextScopeId) {
     if (gateway.contextScopeType === "project") {
-      return `Project · ${projectNames.get(gateway.contextScopeId) ?? shortId(gateway.contextScopeId)}`;
+      const name = projectNames.get(gateway.contextScopeId) ?? shortId(gateway.contextScopeId);
+      return t ? t("toolsAdmin.gateways.scopeProject", { name }) : `Project · ${name}`;
     }
     if (gateway.contextScopeType === "agent") {
-      return `Agent · ${agentNames.get(gateway.contextScopeId) ?? shortId(gateway.contextScopeId)}`;
+      const name = agentNames.get(gateway.contextScopeId) ?? shortId(gateway.contextScopeId);
+      return t ? t("toolsAdmin.gateways.scopeAgent", { name }) : `Agent · ${name}`;
+    }
+    if (gateway.contextScopeType === "issue") {
+      const id = shortId(gateway.contextScopeId);
+      return t ? t("toolsAdmin.gateways.scopeIssue", { id }) : `Issue · ${id}`;
+    }
+    if (gateway.contextScopeType === "company") {
+      const company = t ? t("toolsAdmin.gateways.scopeCompany") : "Company";
+      return `${company} · ${shortId(gateway.contextScopeId)}`;
     }
     return `${gateway.contextScopeType} · ${shortId(gateway.contextScopeId)}`;
   }
-  if (gateway.projectId) return `Project · ${projectNames.get(gateway.projectId) ?? shortId(gateway.projectId)}`;
-  if (gateway.agentId) return `Agent · ${agentNames.get(gateway.agentId) ?? shortId(gateway.agentId)}`;
-  return "Organization";
+  if (gateway.projectId) {
+    const name = projectNames.get(gateway.projectId) ?? shortId(gateway.projectId);
+    return t ? t("toolsAdmin.gateways.scopeProject", { name }) : `Project · ${name}`;
+  }
+  if (gateway.agentId) {
+    const name = agentNames.get(gateway.agentId) ?? shortId(gateway.agentId);
+    return t ? t("toolsAdmin.gateways.scopeAgent", { name }) : `Agent · ${name}`;
+  }
+  return t ? t("toolsAdmin.gateways.scopeCompany") : "Organization";
 }
 
 export function formatOwner(gateway: ToolMcpGatewayWithTokens, agentNames: Map<string, string>): string {
@@ -102,14 +113,15 @@ export function isGatewayOn(gateway: ToolMcpGatewayWithTokens): boolean {
 }
 
 /** Human summary of how many tools a profile allows. */
-export function allowedToolsLabel(profile: ToolProfileWithDetails | undefined): string {
-  if (!profile) return "Profile unavailable";
+export function allowedToolsLabel(profile: ToolProfileWithDetails | undefined, t?: TFunction): string {
+  if (!profile) return t ? t("toolsAdmin.gateways.profileUnavailable") : "Profile unavailable";
   const { accessMode, allowedToolCount, totalToolCount, excludedToolCount } = profile.summary;
   const count =
     accessMode === "all_except"
       ? Math.max(totalToolCount - excludedToolCount, 0)
       : allowedToolCount;
-  if (count === 0) return "No tools allowed";
+  if (count === 0) return t ? t("toolsAdmin.gateways.noToolsAllowed") : "No tools allowed";
+  if (t) return t("toolsAdmin.gateways.toolsAllowed", { count });
   return `${count} ${count === 1 ? "tool" : "tools"}`;
 }
 
