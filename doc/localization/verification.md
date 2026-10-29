@@ -2269,3 +2269,18 @@ validação OpenSpec estrita passaram. O typecheck da UI aponta somente o erro
 preexistente em `storybook/prototypes/NewAgentWizard.tsx`:
 `SETUP_LOGIN_HINTS` não é exportado. O progresso é **197/220 tarefas**; próxima:
 3.9b2b, detalhes e arquivos.
+
+### Detalhes e navegação de arquivos da biblioteca de skills (3.9b2b)
+
+As variantes streamlined e production agora localizam as telas de detalhe da
+biblioteca instalada e do catálogo: abas, metadados, procedência, confiança e
+compatibilidade, estados de instalação e a navegação/conteúdo de arquivos. Os
+nomes, descrições, chaves, hashes, caminhos, conteúdo Markdown e demais valores
+fornecidos pela skill ou por uma origem externa permanecem intactos.
+
+`CompanySkills.test.tsx` e `locale-validation.test.ts`, junto aos testes focados
+de pastas, passaram em **74/74 testes**. `pnpm check:tokens`,
+`pnpm check:token-gates`, parse de JSON, `git diff --check` e validação OpenSpec
+estrita passaram. O typecheck da UI aponta somente o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado.
+O progresso é **198/220 tarefas**; próxima: 3.9b2c, edição, versões e operações.

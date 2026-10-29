@@ -2,12 +2,13 @@
 
 import { act as reactAct, type ComponentProps, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { CatalogSkill, CompanySkillDetail, CompanySkillListItem, CompanySkillVersion, FolderListResult } from "@paperclipai/shared";
+import type { CatalogSkill, CompanySkillDetail, CompanySkillFileDetail, CompanySkillListItem, CompanySkillVersion, FolderListResult } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { i18n } from "@/i18n";
 import { DEFAULT_LOCALE } from "@/i18n/locales";
 import {
   DiscoveryGrid,
+  CatalogDetailPane,
   InstallPreviewDialog,
   SkillDetailPage,
   buildDiscoveryCards,
@@ -17,7 +18,11 @@ import {
   withDiscoveryTab,
   skillDetailBreadcrumbs,
 } from "./CompanySkills";
-import { DiscoveryGrid as ProductionDiscoveryGrid } from "./CompanySkills.production";
+import {
+  CatalogDetailPane as ProductionCatalogDetailPane,
+  DiscoveryGrid as ProductionDiscoveryGrid,
+  SkillDetailPage as ProductionSkillDetailPage,
+} from "./CompanySkills.production";
 import { skillStudioNewRoute } from "../lib/company-skill-routes";
 
 vi.mock("@/lib/router", () => ({
@@ -198,15 +203,17 @@ function makeDetail(currentVersion: CompanySkillVersion, overrides: Partial<Comp
 async function renderSkillDetail(
   versions: CompanySkillVersion[],
   props: Partial<ComponentProps<typeof SkillDetailPage>> = {},
+  Component: typeof SkillDetailPage = SkillDetailPage,
 ) {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
   const detail = props.detail ?? makeDetail(versions[0]!);
+  const DetailPage = Component;
 
   await act(async () => {
     root?.render(
-      <SkillDetailPage
+      <DetailPage
         detail={detail}
         loading={false}
         activeTab={props.activeTab ?? "versions"}
@@ -921,6 +928,163 @@ describe("skill detail breadcrumbs", () => {
 describe("skillStudioNewRoute", () => {
   it("builds a direct fork draft URL for a specific skill", () => {
     expect(skillStudioNewRoute("skill 1")).toBe("/skills/studio/new?forkFrom=skill%201");
+  });
+});
+
+async function verifyLocalizedSkillDetailVariant(Component: typeof SkillDetailPage) {
+  await act(async () => { await i18n.changeLanguage("pt-BR"); });
+  const version = makeVersion(1, "# Demo Skill");
+  const detail = makeDetail(version, {
+    description: "Review repository permissions.",
+    authorName: "Equipe Azul",
+    sourceBadge: "local",
+    sourceLabel: null,
+    sourceRef: "1234567890abcdef",
+    folderPath: "my/ada/code-review",
+    metadata: {
+      skillSourceId: "source-1",
+      skillSourceState: "removed",
+      skillSourcePath: "acme/security-skills",
+    },
+  });
+
+  let node = await renderSkillDetail([version], { activeTab: "overview", detail }, Component);
+
+  expect(node.textContent).toContain("Visão geral");
+  expect(node.textContent).toContain("Arquivos");
+  expect(node.textContent).toContain("Sobre");
+  expect(node.textContent).toContain("Chave");
+  expect(node.textContent).toContain("Origem");
+  expect(node.textContent).toContain("Versão");
+  expect(node.textContent).toContain("Modo");
+  expect(node.textContent).toContain("Minhas skills / Ada / Code Review");
+  expect(node.textContent).toContain("Removida da origem · última versão instalada mantida");
+  expect(node.textContent).toContain("acme/security-skills · 12345678");
+  expect(node.textContent).toContain("Demo Skill");
+  expect(node.textContent).toContain("Review repository permissions.");
+
+  await act(async () => { root?.unmount(); });
+  root = null;
+  container?.remove();
+  container = null;
+
+  const file: CompanySkillFileDetail = {
+    skillId: detail.id,
+    path: "docs/Review Guide.md",
+    kind: "skill",
+    content: "# Review checklist",
+    language: "markdown",
+    markdown: true,
+    editable: false,
+  };
+  node = await renderSkillDetail([version], {
+    activeTab: "files",
+    detail,
+    selectedPath: file.path,
+    file,
+  }, Component);
+
+  expect(node.textContent).toContain("Visualizar");
+  expect(node.textContent).toContain("Código");
+  expect(node.textContent).toContain("docs/Review Guide.md");
+  expect(node.textContent).toContain("Review checklist");
+}
+
+describe("Skill detail localization", () => {
+  it("localizes the streamlined detail and file browser while preserving skill metadata", async () => {
+    await verifyLocalizedSkillDetailVariant(SkillDetailPage);
+  });
+
+  it("localizes the production detail and file browser while preserving skill metadata", async () => {
+    await verifyLocalizedSkillDetailVariant(ProductionSkillDetailPage);
+  });
+});
+
+async function verifyLocalizedCatalogDetailVariant(Component: typeof CatalogDetailPane) {
+  await act(async () => { await i18n.changeLanguage("pt-BR"); });
+  const skill: CatalogSkill = {
+    id: "catalog-security-audit",
+    key: "paperclipai/optional/engineering/security-audit",
+    kind: "optional",
+    category: "engineering",
+    slug: "security-audit",
+    name: "Security audit",
+    description: "Review repository permissions.",
+    path: "catalog/optional/engineering/security-audit",
+    entrypoint: "SKILL.md",
+    trustLevel: "markdown_only",
+    compatibility: "compatible",
+    defaultInstall: false,
+    recommendedForRoles: ["Engineering"],
+    requires: ["git"],
+    tags: ["security-review"],
+    files: [{ path: "SKILL.md", kind: "skill", sizeBytes: 128, sha256: "abc123" }],
+    contentHash: "sha256:abc12345678901234567890123456789",
+  };
+  const node = await renderCatalogDetail(Component, {
+    skill,
+    packageName: "Paperclip",
+    packageVersion: "2.0.0",
+    installedSkill: null,
+    installedSkillId: null,
+    fileQuery: {
+      data: {
+        catalogSkillId: skill.id,
+        path: "guides/Checklist.md",
+        kind: "skill",
+        content: "# External guide\n\nPreserve this heading.",
+        language: "markdown",
+        markdown: true,
+      },
+      isLoading: false,
+      error: null,
+    },
+    selectedPath: "guides/Checklist.md",
+    onInstall: vi.fn(),
+    onUpdate: vi.fn(),
+    onOpenInstalled: vi.fn(),
+    loadingPrimaryAction: false,
+  });
+
+  expect(node.textContent).toContain("Security audit");
+  expect(node.textContent).toContain("Review repository permissions.");
+  expect(node.textContent).toContain("Instalar skill nesta organização");
+  expect(node.textContent).toContain("Opcional");
+  expect(node.textContent).toContain("Requisitos: git");
+  expect(node.textContent).toContain("Funções: Engineering");
+  expect(node.textContent).toContain("Tags: security-review");
+  expect(node.textContent).toContain("Chave");
+  expect(node.textContent).toContain(skill.key);
+  expect(node.textContent).toContain("Hash");
+  expect(node.textContent).toContain("Somente Markdown");
+  expect(node.textContent).toContain("Instalada do catálogo incluído no aplicativo.");
+  expect(node.textContent).toContain("guides/Checklist.md");
+  expect(node.textContent).toContain("External guide");
+  expect(node.textContent).toContain("Preserve this heading.");
+}
+
+async function renderCatalogDetail(
+  Component: typeof CatalogDetailPane,
+  props: ComponentProps<typeof CatalogDetailPane>,
+) {
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+
+  await act(async () => {
+    root?.render(<Component {...props} />);
+  });
+
+  return container as ParentNode;
+}
+
+describe("catalog skill detail localization", () => {
+  it("localizes catalog details and file navigation while preserving catalog content", async () => {
+    await verifyLocalizedCatalogDetailVariant(CatalogDetailPane);
+  });
+
+  it("localizes production catalog details and file navigation while preserving catalog content", async () => {
+    await verifyLocalizedCatalogDetailVariant(ProductionCatalogDetailPane);
   });
 });
 
