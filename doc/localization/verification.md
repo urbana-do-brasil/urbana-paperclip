@@ -2074,3 +2074,22 @@ completo da UI continua apontando apenas o erro preexistente em
 `storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
 por `@/lib/agent-setup-fields`. O progresso é **180/204 tarefas**; próxima:
 3.8e2c, cobertura por membro, estados ausentes e avisos de segredo obrigatório.
+
+### Continuação — cobertura e avisos de segredos pessoais (3.8e2c)
+
+A cobertura por definição agora localiza resumo, contagens de valores
+configurados/ausentes/inativos, estados de carregamento e falha, além da nota de
+privacidade em PT-BR/en. A mensagem de segredo pessoal obrigatório também
+localiza o título, singular/plural, botões e atalho de gestão; o filtro continua
+restrito às definições recebidas. Nomes, chaves, titular, escopos, quantidades,
+status/API, callbacks e valores ocultos foram preservados.
+
+`Secrets.render.test.tsx`, `MissingUserSecretsBanner.test.tsx`,
+`MyUserSecretsTab.test.tsx` e `locale-validation.test.ts` passaram em **61/61
+testes**, cobrindo contagens incluindo membros inativos, textos de privacidade e
+avisos singulares/plurais em PT-BR. `check:tokens`, `check:token-gates`, parse
+dos catálogos, `git diff --check` e validação OpenSpec estrita passaram. O
+typecheck completo da UI continua apontando apenas o erro preexistente em
+`storybook/prototypes/NewAgentWizard.tsx`: `SETUP_LOGIN_HINTS` não é exportado
+por `@/lib/agent-setup-fields`. O progresso é **181/204 tarefas**; próxima:
+3.8e3, configuração de cofres e provedores.

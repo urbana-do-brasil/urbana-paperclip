@@ -234,6 +234,11 @@
       "clearMyValue": "Limpar meu valor",
       "valueCleared": "Valor removido",
       "clearFailed": "Não foi possível remover o valor",
+      "requiredTitle": "Defina seus segredos pessoais",
+      "required_one": "{{count}} segredo pessoal pelo qual você é responsável ainda está sem valor. As execuções que precisam dele falharão até que você informe seu valor.",
+      "required_many": "{{count}} segredos pessoais pelos quais você é responsável ainda estão sem valor. As execuções que precisam deles falharão até que você informe seus valores.",
+      "required_other": "{{count}} segredos pessoais pelos quais você é responsável ainda estão sem valor. As execuções que precisam deles falharão até que você informe seus valores.",
+      "manageAll": "Gerenciar todos os meus segredos",
       "dialog": {
         "titleUpdate": "Atualizar seu valor",
         "titleSet": "Definir seu valor",
@@ -266,6 +271,21 @@
         "usageDescription": "Vincule variáveis de ambiente do runtime a este segredo selecionando <userSecret>Segredo do usuário</userSecret> e escolhendo <code>{{key}}</code>.",
         "memberGuidance": "Orientações para membros",
         "accessEventsNotice": "Os eventos de acesso são registrados no valor armazenado por cada membro quando ocorre uma resolução durante a execução."
+      },
+      "coverage": {
+        "tab": "Cobertura",
+        "loading": "Carregando cobertura…",
+        "unavailable": "Cobertura indisponível.",
+        "view": "Ver na aba Cobertura",
+        "inlineSet": "{{count}}/{{total}} com valor",
+        "inlineMissing": "{{count}} faltando",
+        "summary_one": "{{configured}} de {{count}} membro configurou um valor.",
+        "summary_many": "{{configured}} de {{count}} membros configuraram um valor.",
+        "summary_other": "{{configured}} de {{count}} membros configuraram um valor.",
+        "configured": "Configurados",
+        "missing": "Sem valor",
+        "inactive": "Inativos",
+        "privacyNote": "A cobertura mostra somente contagens. Os valores dos segredos nunca são exibidos."
       }
     },
     "inventory": {

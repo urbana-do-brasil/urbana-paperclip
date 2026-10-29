@@ -123,10 +123,7 @@ import {
   type SecretPathFolder,
 } from "./secrets/secret-path";
 import { SetMyUserSecretDialog } from "./secrets/SetMyUserSecretDialog";
-import {
-  coverageSummaryLabel,
-  UserSecretChip,
-} from "./secrets/user-secret-presentation";
+import { UserSecretChip } from "./secrets/user-secret-presentation";
 import type { MyUserSecretEntry } from "../api/secrets";
 import { i18n, useTranslation } from "@/i18n";
 
@@ -2561,7 +2558,7 @@ export function Secrets() {
                   <PageTabBar
                     items={[
                       { value: "details", label: t("secrets.details.tabs.details") },
-                      { value: "coverage", label: "Coverage" },
+                      { value: "coverage", label: t("secrets.userDefinition.coverage.tab") },
                       { value: "usage", label: t("secrets.details.tabs.usage") },
                       { value: "events", label: t("secrets.details.tabs.accessEvents") },
                     ]}
@@ -4345,27 +4342,30 @@ function CoverageInline({
   });
   const summary = coverageQuery.data;
   if (coverageQuery.isPending) {
-    return <span className="text-muted-foreground">{compact ? t("secrets.inventory.coverageLoading") : "Loading…"}</span>;
+    return <span className="text-muted-foreground">{t("secrets.userDefinition.coverage.loading")}</span>;
   }
   if (coverageQuery.isError) {
-    return <span className="text-destructive">{compact ? t("secrets.inventory.coverageUnavailable") : "Coverage unavailable"}</span>;
+    return <span className="text-destructive">{t("secrets.userDefinition.coverage.unavailable")}</span>;
   }
   return (
     <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
       <Users className="h-3 w-3" />
       <span className="truncate">
         {compact && summary
-          ? t("secrets.inventory.coverageSet", {
+          ? t("secrets.userDefinition.coverage.inlineSet", {
               count: summary.configuredCount,
               total: summary.configuredCount + summary.missingCount + summary.inactiveCount,
             })
-          : coverageSummaryLabel(summary)}
+          : summary
+            ? t("secrets.userDefinition.coverage.summary", {
+                count: summary.configuredCount + summary.missingCount + summary.inactiveCount,
+                configured: summary.configuredCount,
+              })
+            : "—"}
       </span>
       {summary && summary.missingCount > 0 ? (
         <span className="shrink-0 text-amber-600 dark:text-amber-400">
-          · {compact
-            ? t("secrets.inventory.coverageMissingShort", { count: summary.missingCount })
-            : `${summary.missingCount} missing`}
+          · {t("secrets.userDefinition.coverage.inlineMissing", { count: summary.missingCount })}
         </span>
       ) : null}
     </span>
@@ -4396,14 +4396,16 @@ function UserSecretDetailsTab({
       <DetailRow label={t("secrets.inventory.statusColumn")}>
         <StatusBadge status={definition.status} />
       </DetailRow>
-      <DetailRow label="Coverage">
+      <DetailRow label={t("secrets.userDefinition.coverage.tab")}>
         <button
           type="button"
           className="inline-flex min-w-0 items-center gap-1 text-left text-primary hover:underline"
           onClick={onViewCoverage}
         >
           <CoverageInline companyId={companyId} definitionId={definition.id} />
-          <span className="shrink-0 text-muted-foreground">· View in Coverage</span>
+          <span className="shrink-0 text-muted-foreground">
+            · {t("secrets.userDefinition.coverage.view")}
+          </span>
         </button>
       </DetailRow>
       <DetailRow label={t("secrets.details.created")}>{formatRelative(definition.createdAt)}</DetailRow>
@@ -4425,16 +4427,17 @@ function UserSecretCoverageTab({
   companyId: string;
   definitionId: string;
 }) {
+  const { t } = useTranslation();
   const coverageQuery = useQuery({
     queryKey: queryKeys.secrets.userDefinitionCoverage(companyId, definitionId),
     queryFn: () => secretsApi.userSecretDefinitionCoverage(companyId, definitionId),
     staleTime: 30_000,
   });
   if (coverageQuery.isPending) {
-    return <div className="py-6 text-center text-xs text-muted-foreground">Loading…</div>;
+    return <div className="py-6 text-center text-xs text-muted-foreground">{t("secrets.userDefinition.coverage.loading")}</div>;
   }
   if (coverageQuery.isError) {
-    return <div className="py-6 text-center text-xs text-destructive">Coverage unavailable.</div>;
+    return <div className="py-6 text-center text-xs text-destructive">{t("secrets.userDefinition.coverage.unavailable")}</div>;
   }
   const summary: UserSecretCoverageSummary = coverageQuery.data;
   const total = summary.configuredCount + summary.missingCount + summary.inactiveCount;
@@ -4442,30 +4445,35 @@ function UserSecretCoverageTab({
     <div className="space-y-3 text-sm">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Users className="h-3.5 w-3.5" />
-        <span>{coverageSummaryLabel(summary)}</span>
+        <span>
+          {t("secrets.userDefinition.coverage.summary", {
+            count: total,
+            configured: summary.configuredCount,
+          })}
+        </span>
       </div>
       <div className="grid grid-cols-3 gap-2 text-center text-xs">
         <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3">
           <div className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
             {summary.configuredCount}
           </div>
-          <div className="text-muted-foreground">Set</div>
+          <div className="text-muted-foreground">{t("secrets.userDefinition.coverage.configured")}</div>
         </div>
         <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
           <div className="text-lg font-semibold text-amber-700 dark:text-amber-300">
             {summary.missingCount}
           </div>
-          <div className="text-muted-foreground">Missing</div>
+          <div className="text-muted-foreground">{t("secrets.userDefinition.coverage.missing")}</div>
         </div>
         <div className="rounded-md border border-border bg-muted/30 p-3">
           <div className="text-lg font-semibold text-muted-foreground">
             {summary.inactiveCount}
           </div>
-          <div className="text-muted-foreground">Inactive</div>
+          <div className="text-muted-foreground">{t("secrets.userDefinition.coverage.inactive")}</div>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Coverage is counts only across {total} member{total === 1 ? "" : "s"}. Secret values are never shown here.
+        {t("secrets.userDefinition.coverage.privacyNote")}
       </p>
     </div>
   );

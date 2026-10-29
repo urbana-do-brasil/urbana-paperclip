@@ -199,8 +199,12 @@ describe("MissingUserSecretsBanner", () => {
 
     await render();
     await flushReact();
+    expect(container.textContent).toContain("Defina seus segredos pessoais");
+    expect(container.textContent).toContain(
+      "1 segredo pessoal pelo qual você é responsável ainda está sem valor.",
+    );
     const setButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Set value",
+      (button) => button.textContent?.trim() === "Definir valor",
     );
     expect(setButton).toBeTruthy();
     await act(() => setButton!.click());
@@ -241,7 +245,7 @@ describe("MissingUserSecretsBanner", () => {
     await render();
     await flushReact();
     const setButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Set value",
+      (button) => button.textContent?.trim() === "Definir valor",
     );
     await act(() => setButton!.click());
     await flushReact();
@@ -262,5 +266,37 @@ describe("MissingUserSecretsBanner", () => {
       definitionKey: "PERSONAL_GH_TOKEN",
       externalRef: "vault://users/u1/github-token-v4",
     });
+  });
+
+  it("localizes plural missing-secret warnings while preserving member names and keys", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockSecretsApi.listMyUserSecrets.mockResolvedValue([
+      { definition: definition(), secret: null },
+      {
+        definition: definition({
+          id: "def-2",
+          key: "PERSONAL_SLACK_TOKEN",
+          name: "Personal Slack token",
+        }),
+        secret: null,
+      },
+    ]);
+
+    await render();
+    await flushReact();
+
+    expect(container.textContent).toContain("Defina seus segredos pessoais");
+    expect(container.textContent).toContain(
+      "2 segredos pessoais pelos quais você é responsável ainda estão sem valor.",
+    );
+    expect(container.textContent).toContain("Personal GitHub token");
+    expect(container.textContent).toContain("PERSONAL_GH_TOKEN");
+    expect(container.textContent).toContain("Personal Slack token");
+    expect(container.textContent).toContain("PERSONAL_SLACK_TOKEN");
+    expect(
+      Array.from(container.querySelectorAll("button")).filter(
+        (button) => button.textContent?.trim() === "Definir valor",
+      ),
+    ).toHaveLength(2);
   });
 });

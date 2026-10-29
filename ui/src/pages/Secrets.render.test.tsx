@@ -1136,7 +1136,8 @@ describe("Secrets page layout", () => {
     expect(container.textContent).toContain("Personal GitHub token");
     expect(container.textContent).toContain("Organization");
     expect(container.textContent).toContain("Each user");
-    expect(container.textContent).toContain("3/5 set");
+    expect(container.textContent).toContain("3/5 with value");
+    expect(container.textContent).toContain("2 missing");
     expect(container.textContent).not.toContain("User secret definitions");
 
     const listContainer = container.querySelector('[data-testid="secrets-list-container"]');
@@ -1332,8 +1333,8 @@ describe("Secrets page layout", () => {
     });
     await flushReact();
 
-    expect(document.body.textContent).toContain("3 of 5 set");
-    expect(document.body.textContent).toContain("Secret values are never shown here");
+    expect(document.body.textContent).toContain("3 of 5 members have set a value.");
+    expect(document.body.textContent).toContain("Coverage shows counts only. Secret values are never shown.");
 
     const setValueButton = Array.from(document.body.querySelectorAll("button")).find(
       (button) => button.textContent?.includes("Set my value"),
@@ -1393,7 +1394,7 @@ describe("Secrets page layout", () => {
     );
 
     const detailSheet = document.body.querySelector('[role="dialog"]');
-    const usageTab = Array.from(detailSheet?.querySelectorAll('[role="tab"]') ?? []).find(
+    const usageTab = Array.from(detailSheet?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? []).find(
       (button) => button.textContent?.trim() === "Uso",
     );
     await act(async () => {
@@ -1408,7 +1409,7 @@ describe("Secrets page layout", () => {
     expect(document.body.textContent).toContain("Segredo do usuário");
     expect(document.body.textContent).toContain(definition.usageGuidance);
 
-    const eventsTab = Array.from(detailSheet?.querySelectorAll('[role="tab"]') ?? []).find(
+    const eventsTab = Array.from(detailSheet?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? []).find(
       (button) => button.textContent?.trim() === "Eventos de acesso",
     );
     await act(async () => {
@@ -1463,6 +1464,59 @@ describe("Secrets page layout", () => {
     expect(mockPushToast).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Segredo do usuário atualizado", tone: "success" }),
     );
+
+    await act(async () => root.unmount());
+  });
+
+  it("localizes user-secret coverage counts and never displays member values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const definition = makeUserSecretDefinition();
+    const coverageWithInactiveMembers = { ...userSecretCoverage, inactiveCount: 1 };
+    mockSecretsApi.listUserSecretDefinitions.mockResolvedValue([definition]);
+    mockSecretsApi.listMyUserSecrets.mockResolvedValue([{ definition, secret: null }]);
+    mockSecretsApi.userSecretDefinitionCoverage.mockResolvedValue(coverageWithInactiveMembers);
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+    expect(container.textContent).toContain("3/6 com valor");
+    expect(container.textContent).toContain("2 faltando");
+
+    const definitionRow = Array.from(container.querySelectorAll("[role='row']")).find(
+      (row) => row.textContent?.includes(definition.name),
+    ) as HTMLElement | undefined;
+    await act(async () => definitionRow?.click());
+    await waitForReact(() => document.body.querySelector('[role="dialog"] [role="tab"]') !== null);
+    const detailSheet = document.body.querySelector('[role="dialog"]');
+    const coverageTab = Array.from(detailSheet?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? []).find(
+      (tab) => tab.textContent?.trim() === "Cobertura",
+    );
+    expect(coverageTab).not.toBeUndefined();
+    await act(async () => {
+      coverageTab?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, pointerType: "mouse" }));
+      coverageTab?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      coverageTab?.click();
+    });
+    await flushReact();
+
+    expect(document.body.textContent).toContain("3 de 6 membros configuraram um valor.");
+    expect(document.body.textContent).toContain("Configurados");
+    expect(document.body.textContent).toContain("Sem valor");
+    expect(document.body.textContent).toContain("Inativos");
+    expect(document.body.textContent).toContain(
+      "A cobertura mostra somente contagens. Os valores dos segredos nunca são exibidos.",
+    );
+    expect(document.body.textContent).not.toContain("secret-value");
 
     await act(async () => root.unmount());
   });

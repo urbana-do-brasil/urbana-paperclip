@@ -232,6 +232,10 @@
       "clearMyValue": "Clear my value",
       "valueCleared": "Value cleared",
       "clearFailed": "Could not clear value",
+      "requiredTitle": "Set your user secrets",
+      "required_one": "{{count}} user secret you are responsible for has no value yet. Runs that need it will fail until you set your value.",
+      "required_other": "{{count}} user secrets you are responsible for have no value yet. Runs that need them will fail until you set your value.",
+      "manageAll": "Manage all my secrets",
       "dialog": {
         "titleUpdate": "Update your value",
         "titleSet": "Set your value",
@@ -264,6 +268,20 @@
         "usageDescription": "Bind runtime environment variables to this user-provided secret by choosing <userSecret>User secret</userSecret> and selecting <code>{{key}}</code>.",
         "memberGuidance": "Member guidance",
         "accessEventsNotice": "Access events are recorded on each member's stored value when runtime resolution occurs."
+      },
+      "coverage": {
+        "tab": "Coverage",
+        "loading": "Loading coverage…",
+        "unavailable": "Coverage unavailable.",
+        "view": "View in Coverage",
+        "inlineSet": "{{count}}/{{total}} with value",
+        "inlineMissing": "{{count}} missing",
+        "summary_one": "{{configured}} of {{count}} member has set a value.",
+        "summary_other": "{{configured}} of {{count}} members have set a value.",
+        "configured": "Configured",
+        "missing": "Missing",
+        "inactive": "Inactive",
+        "privacyNote": "Coverage shows counts only. Secret values are never shown."
       }
     },
     "inventory": {
