@@ -1564,3 +1564,16 @@ de invocação preservados nas duas variantes. `locale-validation.test.ts` passo
 (**12/12**). Typecheck direcionado, gates de tokens, `git diff --check` e
 validação OpenSpec estrita passaram. Progresso: **136/162**. Próxima tarefa:
 3.6f2, blocos de transcrição e estados de ferramentas.
+
+### Continuação — blocos de transcrição e estados de ferramentas (3.6f2)
+
+Papéis, estados de ferramentas, decisões de aprovação, resumos de comandos,
+entradas/resultados e fallbacks da transcrição agora respeitam PT-BR e inglês.
+Rótulos próprios de workspace e runtime também foram localizados. Nomes de
+ferramentas, IDs, argumentos, resultados, prompts, dados do provedor, protocolos,
+streams e conteúdo no modo bruto permanecem preservados.
+
+`RunTranscriptView.test.tsx`, `RunTranscriptView.i18n.test.tsx` e
+`locale-validation.test.ts` passaram (**28/28**). Typecheck direcionado dos
+componentes/testes alterados, gates de tokens e `git diff --check` passaram.
+Progresso: **137/162**. Próxima tarefa: 3.6f3, Runner Inspector.

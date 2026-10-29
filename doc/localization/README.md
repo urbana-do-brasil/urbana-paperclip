@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **136 de 162 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **137 de 162 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -20,7 +20,7 @@ os três lotes estão concluídos. A aba de ferramentas configuráveis do agente
 (3.6d4) também foi concluída. A etapa 3.6e foi dividida em cartões/lista (e1) e
 detalhes da execução (e2); os dois lotes estão concluídos. A etapa 3.6f foi
 dividida entre visualizadores de log (f1), blocos da transcrição (f2) e Runner
-Inspector (f3); f1 está concluído. Próximo lote: 3.6f2.
+Inspector (f3); f1 e f2 estão concluídos. Próximo lote: 3.6f3.
 
 | Etapa | Situação |
 | --- | --- |
