@@ -1313,6 +1313,13 @@ plano passou a **83/114**; próxima tarefa naquele marco: 3.5c2a.
   continuam preservados quando não há campos estruturados. AgentLifecycleStatus,
   helpers de hierarquia, AgentOverview e locale-validation passaram em 31/31
   testes; o cenário integrado de polling do AgentConfigForm também passou.
-  Typecheck direcionado, gates, diff check e OpenSpec estrito passaram. Próxima:
-  3.6d1c.
+  Typecheck direcionado, gates, diff check e OpenSpec estrito passaram. 3.6d1c
+  localizou ações e confirmações da ficha (atribuir, executar, duplicar, limpar
+  erro, pausar/retomar, encerrar, resetar sessão e rastreamento do provedor), a
+  seleção/indicador de agente principal e os respectivos nomes acessíveis.
+  Permissões, callbacks, rotas, IDs e erros retornados pela API permanecem
+  intactos. AgentActionButtons, PrimaryAgentPresentation, roster e
+  locale-validation passaram em 55/55 testes; typecheck direcionado, gates,
+  diff check e OpenSpec estrito passaram. O lote 3.6d1 está concluído. Próxima:
+  3.6d2.
   A aplicação ainda não foi implantada.

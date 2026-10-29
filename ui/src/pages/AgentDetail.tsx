@@ -1279,12 +1279,11 @@ export function AgentDetail() {
           <AgentActionButtons
             agent={currentAgent}
             companyId={resolvedCompanyId}
-            assignLabel="Assign Task"
             showStatus={false}
             canRunWithProviderTrace={canUseProviderTrace}
             actionsDisabled={agentAction.isPending}
             workActionsDisabled={hasInvalidOrgChain}
-            workActionsDisabledReason="Repair this agent's reporting chain before assigning tasks or starting runs"
+            workActionsDisabledReason={t("agentActions.repairReportingChain")}
             hasPendingNavigationChanges={configDirty}
             onBeforeNavigate={prepareAgentNavigation}
             onActionError={setActionError}
@@ -1293,14 +1292,11 @@ export function AgentDetail() {
             pauseConfirm={
               builtInState
                 ? {
-                    title: `Pause the ${builtInState.definition.displayName}?`,
-                    description: (
-                      <>
-                        {builtInFeatureLabel} depends on this agent. While paused,{" "}
-                        {builtInFeatureLabel.toLowerCase()} generation is skipped and the{" "}
-                        {builtInFeatureLabel} page shows a warning.
-                      </>
-                    ),
+                    title: t("agentActions.pauseBuiltInTitle", { agentName: builtInState.definition.displayName }),
+                    description: t("agentActions.pauseBuiltInDescription", {
+                      featureLabel: builtInFeatureLabel,
+                      lowercaseFeatureLabel: builtInFeatureLabel.toLowerCase(),
+                    }),
                   }
                 : undefined
             }

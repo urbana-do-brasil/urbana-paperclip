@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **108 de 138 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **110 de 138 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -242,8 +242,12 @@ estados sem alterar permissões, proteção de responsáveis ou payloads.
   gates passaram. 3.6d1b localizou estados do ciclo de vida, participação,
   hierarquia, aprovação e o banner de agente integrado. Os testes focados
   passaram em 31/31, além do cenário integrado do formulário de configuração;
-  typecheck e gates passaram. Próxima: 3.6d1c. A aplicação ainda não foi
-  implantada.
+  typecheck e gates passaram. 3.6d1c localizou atribuição, execução, duplicação,
+  controles de ciclo de vida, rastreamento do provedor e seleção do agente
+  principal, preservando callbacks, permissões, IDs e respostas técnicas. Testes
+  focados com a lista de agentes: 55/55; typecheck, gates e validação OpenSpec
+  passaram. O lote 3.6d1 está concluído; próxima: 3.6d2. A aplicação ainda não
+  foi implantada.
 
 ## Checkpoint da retomada — 2026-10-28
 

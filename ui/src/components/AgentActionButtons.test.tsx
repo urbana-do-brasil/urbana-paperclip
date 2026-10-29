@@ -6,6 +6,8 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Agent } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { AgentActionButtons } from "./AgentActionButtons";
 
 const mockNavigate = vi.hoisted(() => vi.fn());
@@ -96,7 +98,8 @@ describe("AgentActionButtons", () => {
   let queryClient: QueryClient;
   let invalidateQueries: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
@@ -123,6 +126,7 @@ describe("AgentActionButtons", () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   function render(agent: Agent, props: Partial<ComponentProps<typeof AgentActionButtons>> = {}) {
@@ -198,6 +202,28 @@ describe("AgentActionButtons", () => {
 
     expect(container.textContent).toContain("Pause");
     expect(container.textContent).not.toContain("Clear error");
+  });
+
+  it("localizes agent actions and their mobile accessible labels", async () => {
+    await i18n.changeLanguage("pt-BR");
+    render(makeAgent(), { runLabel: undefined, navigateToRunOnInvoke: false });
+    await flushReact();
+
+    expect(container.textContent).toContain("Atribuir tarefa");
+    expect(container.textContent).toContain("Executar agora");
+    expect(container.textContent).toContain("Pausar");
+    expect(container.querySelector('[aria-label="Abrir ações de Alpha Agent"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Atribuir tarefa"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Executar agora"]')).not.toBeNull();
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[aria-label="Abrir ações de Alpha Agent"]')?.click();
+    });
+    await flushReact();
+    expect(document.body.textContent).toContain("Duplicar agente");
+    expect(document.body.textContent).toContain("Copiar ID do agente");
+    expect(document.body.textContent).toContain("Redefinir sessões");
+    expect(document.body.textContent).toContain("Encerrar");
   });
 
   it("starts an administrator-selected run with raw provider tracing", async () => {
