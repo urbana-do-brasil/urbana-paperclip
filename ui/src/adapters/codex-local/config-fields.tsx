@@ -80,6 +80,8 @@ export function CodexLocalConfigFields({
     : "codex";
   const runnerPermissionCapability =
     PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES[runnerProvider];
+  const runnerPermissionModeOptionLabel = (mode: string) =>
+    t(`agentConfiguration.runner.permissionModes.${runnerProvider}.${mode}`);
   const configuredRunnerPermissionMode =
     runnerManaged && runnerPermissionCapability.configurable
       ? isCreate
@@ -457,8 +459,8 @@ export function CodexLocalConfigFields({
       )}
       {runnerManaged && runnerPermissionCapability.configurable && (runnerPermissionCapability.options.length > 1 || runnerPermissionModeUnsupported) && (
         <Field
-          label="Permission mode"
-          hint={`${runnerPermissionCapability.description} The selected mode does not widen Paperclip's workspace, network, credential, or planning boundaries.`}
+          label={t("agentConfiguration.runner.permissionMode")}
+          hint={t(`agentConfiguration.runner.permissionModeHints.${runnerProvider}`)}
         >
           <Select
             value={
@@ -487,38 +489,39 @@ export function CodexLocalConfigFields({
               }
             }}
           >
-            <SelectTrigger aria-label="Permission mode" className="w-full font-sans">
+            <SelectTrigger aria-label={t("agentConfiguration.runner.permissionMode")} className="w-full font-sans">
               <SelectValue>
                 {runnerPermissionModeUnsupported
-                  ? "Unsupported saved mode — select a qualified mode"
-                  : runnerPermissionCapability.options.find((option) => option.value === runnerPermissionMode)?.label}
+                  ? t("agentConfiguration.runner.unsupportedPermissionMode")
+                  : runnerPermissionModeOptionLabel(runnerPermissionMode)}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {runnerPermissionModeUnsupported && (
                 <SelectItem value="__unsupported__" disabled>
-                  Unsupported saved mode — select a qualified mode
+                  {t("agentConfiguration.runner.unsupportedPermissionMode")}
                 </SelectItem>
               )}
               {runnerPermissionCapability.options.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  {runnerPermissionModeOptionLabel(option.value)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {runnerPermissionModeUnsupported && runnerProvider === "codex" && (
             <p className="mt-1 text-xs text-destructive" role="alert">
-              This saved Codex mode cannot start or recover a Paperclip Runner
-              run. Select Automatic (isolated) to remediate it.
+              {t("agentConfiguration.runner.unsupportedCodexPermissionMode", {
+                mode: t("agentConfiguration.runner.permissionModes.codex.never"),
+              })}
             </p>
           )}
         </Field>
       )}
       {runnerManaged && runnerProvider !== "openai_dot" && (
         <Field configSection="runPolicy"
-          label="Runner lifecycle"
-          hint="Turn by turn suspends after each run. Warm keeps the same provider process available between governed runs."
+          label={t("agentConfiguration.runner.lifecycle")}
+          hint={t("agentConfiguration.runner.lifecycleHint")}
         >
           <select
             className={inputClass}
@@ -530,15 +533,15 @@ export function CodexLocalConfigFields({
                 : mark("adapterConfig", "lifecycleMode", value);
             }}
           >
-            <option value="per_turn">Turn by turn</option>
-            <option value="warm">Warm session</option>
+            <option value="per_turn">{t("agentConfiguration.runner.turnByTurn")}</option>
+            <option value="warm">{t("agentConfiguration.runner.warmSession")}</option>
           </select>
         </Field>
       )}
       {runnerManaged && runnerProvider !== "openai_dot" && runnerLifecycleMode === "warm" && (
         <Field configSection="runPolicy"
-          label="Warm idle timeout (ms)"
-          hint="After this much inactivity, runnerd checkpoints and suspends the provider session. The maximum is 24 hours."
+          label={t("agentConfiguration.runner.warmIdleTimeout")}
+          hint={t("agentConfiguration.runner.warmIdleTimeoutHint")}
         >
           {isCreate ? (
             <input

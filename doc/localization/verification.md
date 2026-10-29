@@ -1399,3 +1399,16 @@ e validação OpenSpec estrita passaram. A tarefa b3 está concluída. Os grupos
 3.6d2c2b e 3.6d2c2 seguem abertos enquanto b4 (permissões e ciclo de vida do
 Runner) está pendente; os pais foram reabertos para refletir esse estado. O
 progresso reconciliado é **120/156**. Próxima tarefa: 3.6d2c2b4.
+
+### Continuação — permissões e ciclo de vida do Runner (3.6d2c2b4)
+
+Os modos de permissão e suas orientações, o estado incompatível salvo, o ciclo
+de vida por turno/sessão warm e o timeout ocioso agora acompanham o idioma da
+interface. Os valores dos enums, o limite de 24 horas, os gates do Codex e a
+política de execução foram preservados.
+
+`config-fields.test.tsx` e `locale-validation.test.ts` passaram em **40/40**.
+Typecheck direcionado, `check:tokens`, `check:token-gates`, `git diff --check`
+e validação OpenSpec estrita passaram. Com b4 concluída, os grupos
+3.6d2c2b e 3.6d2c2 estão fechados; o progresso reconciliado é **123/156**.
+Próxima tarefa: 3.6d2c3, adaptadores locais.

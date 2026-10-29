@@ -1557,6 +1557,34 @@
       "thinkingLow": "Baixo",
       "thinkingHigh": "Alto",
       "thinkingMax": "Máximo",
+      "permissionMode": "Modo de permissão",
+      "permissionModeHints": {
+        "codex": "O Codex executa automaticamente em um ambiente do Paperclip com root negado, escopo restrito ao workspace e rede desativada. O modo selecionado não amplia os limites de workspace, rede, credenciais ou planejamento do Paperclip.",
+        "opencode": "Controla as permissões das ferramentas do OpenCode no ambiente atribuído do Paperclip. O modo selecionado não amplia os limites de workspace, rede, credenciais ou planejamento do Paperclip.",
+        "acpx": "Controla as operações do agente ACPX no ambiente atribuído do Paperclip. As permissões e aprovações da empresa e os limites de execução continuam valendo."
+      },
+      "permissionModes": {
+        "codex": { "never": "Automático (isolado)" },
+        "opencode": {
+          "allow": "Automático total (permitir)",
+          "ask": "Pedir permissão",
+          "deny": "Negar operações"
+        },
+        "acpx": {
+          "approve-all": "Automático total (aprovar tudo)",
+          "approve-paperclip": "Ações automáticas do Paperclip",
+          "approve-reads": "Permitir leituras do Paperclip",
+          "deny-all": "Negar tudo"
+        }
+      },
+      "unsupportedPermissionMode": "Modo salvo incompatível — selecione um modo qualificado",
+      "unsupportedCodexPermissionMode": "O modo salvo do Codex não pode iniciar nem recuperar uma execução do Paperclip Runner. Selecione {{mode}} para corrigir.",
+      "lifecycle": "Ciclo de vida do Runner",
+      "lifecycleHint": "A execução por turno suspende após cada execução. A sessão warm mantém o mesmo processo do provedor disponível entre execuções governadas.",
+      "turnByTurn": "Por turno",
+      "warmSession": "Sessão aquecida",
+      "warmIdleTimeout": "Tempo limite ocioso do Runner (ms)",
+      "warmIdleTimeoutHint": "Após esse período sem atividade, runnerd salva um checkpoint e suspende a sessão do provedor. O máximo é 24 horas.",
       "dot": {
         "connection": "Conexão do Dot",
         "connectionHint": "É necessário confirmar o recebimento de um evento antes de atribuir tarefas.",

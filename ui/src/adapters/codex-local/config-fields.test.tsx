@@ -157,14 +157,14 @@ describe("Paperclip Runner Codex configuration", () => {
       ]));
   });
   it.each([
-    [undefined, "Full auto (approve all)"],
-    ["approve-paperclip", "Automatic Paperclip actions"],
-    ["approve-reads", "Allow Paperclip reads"],
-    ["deny-all", "Deny all"],
+    [undefined, "Automático total (aprovar tudo)"],
+    ["approve-paperclip", "Ações automáticas do Paperclip"],
+    ["approve-reads", "Permitir leituras do Paperclip"],
+    ["deny-all", "Negar tudo"],
   ])("displays Grok's default or saved permission mode %s", async (acpxPermissionMode, label) => {
     const html = await renderRunner({ provider: "acpx", acpxAgent: "grok", acpxPermissionMode });
     expect(html).toContain('Grok Build');
-    expect(html).toContain('aria-label="Permission mode"');
+    expect(html).toContain('aria-label="Modo de permissão"');
     expect(html).toContain(label);
   });
 
@@ -236,6 +236,73 @@ describe("Paperclip Runner Codex configuration", () => {
     }
   });
 
+  it("localizes Runner permission and lifecycle controls while preserving mode enums and idle limits", async () => {
+    for (const locale of ["pt-BR", "en"] as const) {
+      await i18n.changeLanguage(locale);
+      const permissionLabel = i18n.t("agentConfiguration.runner.permissionMode");
+      const openCodeHtml = await renderRunner({ provider: "opencode", opencodePermissionMode: "ask" }, permissionLabel);
+      expect(openCodeHtml).toContain(permissionLabel);
+      const openCodeOptions = Array.from(
+        new DOMParser().parseFromString(openCodeHtml, "text/html").querySelectorAll('[role="option"]'),
+        option => option.textContent?.trim(),
+      );
+      expect(openCodeOptions).toEqual(expect.arrayContaining([
+        i18n.t("agentConfiguration.runner.permissionModes.opencode.allow"),
+        i18n.t("agentConfiguration.runner.permissionModes.opencode.ask"),
+        i18n.t("agentConfiguration.runner.permissionModes.opencode.deny"),
+      ]));
+      expect(openCodeHtml).toContain(i18n.t("agentConfiguration.runner.permissionModes.opencode.ask"));
+      await renderRunner({ provider: "opencode", opencodePermissionMode: "ask" }, undefined, async container => {
+        await focusFieldHint(container, permissionLabel);
+        expect(document.body.textContent).toContain(i18n.t("agentConfiguration.runner.permissionModeHints.opencode"));
+      });
+
+      const acpxHtml = await renderRunner(
+        { provider: "acpx", acpxAgent: "grok", acpxPermissionMode: "approve-reads" },
+        permissionLabel,
+      );
+      const acpxOptions = Array.from(
+        new DOMParser().parseFromString(acpxHtml, "text/html").querySelectorAll('[role="option"]'),
+        option => option.textContent?.trim(),
+      );
+      expect(acpxOptions).toEqual(expect.arrayContaining([
+        i18n.t("agentConfiguration.runner.permissionModes.acpx.approve-all"),
+        i18n.t("agentConfiguration.runner.permissionModes.acpx.approve-paperclip"),
+        i18n.t("agentConfiguration.runner.permissionModes.acpx.approve-reads"),
+        i18n.t("agentConfiguration.runner.permissionModes.acpx.deny-all"),
+      ]));
+      expect(acpxHtml).toContain(i18n.t("agentConfiguration.runner.permissionModes.acpx.approve-reads"));
+
+      const unsupportedHtml = await renderRunner({ provider: "codex", codexPermissionMode: "unrestricted" });
+      expect(unsupportedHtml).toContain(i18n.t("agentConfiguration.runner.unsupportedPermissionMode"));
+      expect(unsupportedHtml).toContain(i18n.t("agentConfiguration.runner.unsupportedCodexPermissionMode", {
+        mode: i18n.t("agentConfiguration.runner.permissionModes.codex.never"),
+      }));
+
+      const lifecycleLabel = i18n.t("agentConfiguration.runner.lifecycle");
+      const idleTimeoutLabel = i18n.t("agentConfiguration.runner.warmIdleTimeout");
+      const lifecycleHtml = await renderRunner({
+        provider: "codex",
+        lifecycleMode: "warm",
+        idleTimeoutMs: 45_000,
+      }, undefined, async container => {
+        await focusFieldHint(container, lifecycleLabel);
+        expect(document.body.textContent).toContain(i18n.t("agentConfiguration.runner.lifecycleHint"));
+        await focusFieldHint(container, idleTimeoutLabel);
+        expect(document.body.textContent).toContain(i18n.t("agentConfiguration.runner.warmIdleTimeoutHint"));
+        const lifecycleSelect = Array.from(container.querySelectorAll("select"))
+          .find(select => select.querySelector('option[value="warm"]'));
+        expect((lifecycleSelect as HTMLSelectElement | undefined)?.value).toBe("warm");
+      });
+      expect(lifecycleHtml).toContain(lifecycleLabel);
+      expect(lifecycleHtml).toContain(i18n.t("agentConfiguration.runner.turnByTurn"));
+      expect(lifecycleHtml).toContain(i18n.t("agentConfiguration.runner.warmSession"));
+      const lifecycleDocument = new DOMParser().parseFromString(lifecycleHtml, "text/html");
+      expect(Array.from(lifecycleDocument.querySelectorAll("input"), input => input.value)).toContain("45000");
+      expect(lifecycleHtml).toContain('max="86400000"');
+    }
+  });
+
   it("renders OpenCode's bounded permission modes", async () => {
     const html = await renderRunner({
       provider: "opencode",
@@ -245,8 +312,8 @@ describe("Paperclip Runner Codex configuration", () => {
     expect(html).toContain(
       'OpenCode 1.18.34',
     );
-    expect(html).toContain("Full auto (allow)");
-    expect(html).toContain('aria-label="Permission mode"');
+    expect(html).toContain("Automático total (permitir)");
+    expect(html).toContain('aria-label="Modo de permissão"');
     expect(html).toContain("font-sans");
     expect(html).not.toContain("Ask for untrusted operations");
   });
@@ -269,7 +336,7 @@ describe("Paperclip Runner Codex configuration", () => {
     expect(html).not.toContain("Codex via ACPX");
     expect(html).not.toContain("ACPX Codex");
     expect(html).not.toContain("Pi via ACPX");
-    expect(html).toContain("Allow Paperclip reads");
+    expect(html).toContain("Permitir leituras do Paperclip");
   });
 
   it.each([undefined, "agent", "plan", "ask"])("displays saved Cursor mode %s", async acpxSessionMode => {
@@ -318,9 +385,9 @@ describe("Paperclip Runner Codex configuration", () => {
   it("falls back to the fail-closed Codex permission mode", async () => {
     const html = await renderRunner({ codexPermissionMode: "unrestricted" });
 
-    expect(html).toContain("Unsupported saved mode — select a qualified mode");
-    expect(html).toContain("cannot start or recover a Paperclip Runner run");
-    expect(html).toContain("Select Automatic (isolated) to remediate it");
+    expect(html).toContain("Modo salvo incompatível — selecione um modo qualificado");
+    expect(html).toContain("não pode iniciar nem recuperar uma execução do Paperclip Runner");
+    expect(html).toContain("Selecione Automático (isolado) para corrigir");
     expect(html).not.toContain("Full auto (never ask)");
   });
 
@@ -334,9 +401,9 @@ describe("Paperclip Runner Codex configuration", () => {
       idleTimeoutMs: 45_000,
     });
 
-    expect(warmHtml).toContain("Warm idle timeout (ms)");
+    expect(warmHtml).toContain("Tempo limite ocioso do Runner (ms)");
     expect(warmHtml).toContain('value="45000"');
     expect(warmHtml).toContain('max="86400000"');
-    expect(turnHtml).not.toContain("Warm idle timeout (ms)");
+    expect(turnHtml).not.toContain("Tempo limite ocioso do Runner (ms)");
   });
 });

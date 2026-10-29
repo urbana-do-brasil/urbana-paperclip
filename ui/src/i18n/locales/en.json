@@ -1515,6 +1515,34 @@
       "thinkingLow": "Low",
       "thinkingHigh": "High",
       "thinkingMax": "Max",
+      "permissionMode": "Permission mode",
+      "permissionModeHints": {
+        "codex": "Codex runs automatically inside a root-denied, workspace-scoped, network-disabled Paperclip environment. The selected mode does not widen Paperclip's workspace, network, credential, or planning boundaries.",
+        "opencode": "Controls OpenCode tool permissions inside the assigned Paperclip environment. The selected mode does not widen Paperclip's workspace, network, credential, or planning boundaries.",
+        "acpx": "Controls ACPX agent operations inside the assigned Paperclip environment. Company permissions, approval requirements, and execution boundaries still apply."
+      },
+      "permissionModes": {
+        "codex": { "never": "Automatic (isolated)" },
+        "opencode": {
+          "allow": "Full auto (allow)",
+          "ask": "Ask for permission",
+          "deny": "Deny operations"
+        },
+        "acpx": {
+          "approve-all": "Full auto (approve all)",
+          "approve-paperclip": "Automatic Paperclip actions",
+          "approve-reads": "Allow Paperclip reads",
+          "deny-all": "Deny all"
+        }
+      },
+      "unsupportedPermissionMode": "Unsupported saved mode — select a qualified mode",
+      "unsupportedCodexPermissionMode": "This saved Codex mode cannot start or recover a Paperclip Runner run. Select {{mode}} to remediate it.",
+      "lifecycle": "Runner lifecycle",
+      "lifecycleHint": "Turn by turn suspends after each run. Warm keeps the same provider process available between governed runs.",
+      "turnByTurn": "Turn by turn",
+      "warmSession": "Warm session",
+      "warmIdleTimeout": "Warm idle timeout (ms)",
+      "warmIdleTimeoutHint": "After this much inactivity, runnerd checkpoints and suspends the provider session. The maximum is 24 hours.",
       "dot": {
         "connection": "Dot connection",
         "connectionHint": "A verified event round trip is required before assigning work.",
