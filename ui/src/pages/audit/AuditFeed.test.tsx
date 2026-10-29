@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
 import { AuditFeed } from "./AuditFeed";
+import { i18n } from "@/i18n";
 
 const listAgentActionsMock = vi.hoisted(() => vi.fn());
 const exportCsvMock = vi.hoisted(() => vi.fn());
@@ -88,7 +89,8 @@ describe("AuditFeed", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     listAgentActionsMock.mockResolvedValue({ items: [record()], nextCursor: null, accessTier: "full" });
@@ -204,6 +206,23 @@ describe("AuditFeed", () => {
     expect(container.textContent).toContain("on behalf of Dotta");
     expect(container.querySelector('a[href="/agents/agent-1/runs/run-1"]')).toBeTruthy();
     expect(container.textContent).toContain("Recorded by Paperclip");
+  });
+
+  it("localizes organization activity filters, actor verbs, and dates in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render({ mode: "all", onModeChange: vi.fn() });
+
+    expect(container.textContent).toContain("Atividade");
+    expect(container.textContent).toContain("Agente");
+    expect(container.textContent).toContain("Pessoa responsável");
+    expect(container.textContent).toContain("Todas as pessoas responsáveis");
+    expect(container.textContent).toContain("Ação");
+    expect(container.textContent).toContain("Entidade");
+    expect(container.textContent).toContain("Fable");
+    expect(container.textContent).toContain("comentou em");
+    expect(container.textContent).toContain("em nome de Dotta");
+    expect(container.querySelector('[aria-label="Data inicial"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Data final"]')).not.toBeNull();
   });
 
   it("filters and renders connection tests in the same audit row shape", async () => {

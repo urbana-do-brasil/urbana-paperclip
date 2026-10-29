@@ -1742,3 +1742,20 @@ typecheck direcionado dos módulos e testes alterados, `check:tokens`,
 passaram. O typecheck completo da UI continua com a falha preexistente de
 `SETUP_LOGIN_HINTS` no protótipo Storybook, documentada em 3.7c1. Progresso:
 **147/173**; próxima tarefa: 3.7e, timeline e atividade da organização.
+
+### Continuação — timeline e atividade da organização (3.7e)
+
+A timeline de trabalho e a atividade da organização agora acompanham PT-BR/en,
+incluindo controles de período/zoom, métricas, datas, legenda, status de runs,
+filtros, verbos conhecidos, atores e estados vazios/erro/carregamento. A cobertura
+inclui a atividade geral nos fluxos do hub e da superfície de produção. Nomes,
+IDs, conteúdo de eventos/comentários, valores e ações futuras desconhecidas foram
+preservados; datas e números usam o locale ativo.
+
+`Timeline.test.tsx`, `WorkTimelineChart.test.tsx`, `AuditFeed.test.tsx`,
+`activity-format.test.ts` e `locale-validation.test.ts` passaram em **76/76
+testes**. O typecheck direcionado dos módulos e testes alterados, `check:tokens`,
+`check:token-gates`, `git diff --check`, JSON e validação OpenSpec estrita
+passaram. O typecheck completo da UI continua com a falha preexistente de
+`SETUP_LOGIN_HINTS` no protótipo Storybook, documentada em 3.7c1. Progresso:
+**148/173**; próxima tarefa: 3.7f, auditoria, execuções e superfícies do hub.

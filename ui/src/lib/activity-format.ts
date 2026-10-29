@@ -1,4 +1,5 @@
 import type { Agent } from "@paperclipai/shared";
+import type { TFunction } from "i18next";
 import type { CompanyUserProfile } from "./company-members";
 import { formatReviewPolicyValue } from "./review-policy";
 
@@ -20,6 +21,20 @@ interface ActivityFormatOptions {
   agentMap?: Map<string, Agent>;
   userProfileMap?: Map<string, CompanyUserProfile>;
   currentUserId?: string | null;
+  translate?: TFunction;
+}
+
+function activityKey(value: string): string {
+  return value.replace(/[^a-zA-Z0-9]+/g, "_");
+}
+
+function translatedActivityText(
+  translate: TFunction | undefined,
+  key: string,
+  fallback: string,
+  values: Record<string, unknown> = {},
+): string {
+  return translate ? translate(key, { ...values, defaultValue: fallback }) : fallback;
 }
 
 const ACTIVITY_ROW_VERBS: Record<string, string> = {
@@ -221,7 +236,11 @@ const INTERACTION_REJECTED_LABELS: Record<string, string> = {
  * Kind-aware wording for an interaction outcome, or `null` when the tables
  * above already say it well enough.
  */
-function formatInteractionOutcomeLabel(action: string, details: ActivityDetails): string | null {
+function formatInteractionOutcomeLabel(
+  action: string,
+  details: ActivityDetails,
+  translate?: TFunction,
+): string | null {
   const table = action === "issue.thread_interaction_accepted"
     ? INTERACTION_ACCEPTED_LABELS
     : action === "issue.thread_interaction_rejected"
@@ -229,7 +248,13 @@ function formatInteractionOutcomeLabel(action: string, details: ActivityDetails)
       : null;
   if (!table) return null;
   const kind = typeof details?.interactionKind === "string" ? details.interactionKind : null;
-  return kind ? table[kind] ?? null : null;
+  if (!kind || !table[kind]) return null;
+  const fallback = table[kind];
+  return translatedActivityText(
+    translate,
+    `organizationActivity.verbs.interactions.${activityKey(action)}_${activityKey(kind)}`,
+    fallback,
+  );
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -265,17 +290,17 @@ function readIssueReferences(details: ActivityDetails, key: string): ActivityIss
 }
 
 function formatUserLabel(userId: string | null | undefined, options: ActivityFormatOptions = {}): string {
-  if (!userId || userId === "local-board") return "Board";
-  if (options.currentUserId && userId === options.currentUserId) return "You";
+  if (!userId || userId === "local-board") return translatedActivityText(options.translate, "organizationActivity.actors.board", "Board");
+  if (options.currentUserId && userId === options.currentUserId) return translatedActivityText(options.translate, "organizationActivity.actors.you", "You");
   const profile = options.userProfileMap?.get(userId);
   if (profile) return profile.label;
-  return `user ${userId.slice(0, 5)}`;
+  return translatedActivityText(options.translate, "organizationActivity.actors.unknownUser", `user ${userId.slice(0, 5)}`, { id: userId.slice(0, 5) });
 }
 
 function formatParticipantLabel(participant: ActivityParticipant, options: ActivityFormatOptions): string {
   if (participant.type === "agent") {
     const agentId = participant.agentId ?? "";
-    return options.agentMap?.get(agentId)?.name ?? "agent";
+    return options.agentMap?.get(agentId)?.name ?? translatedActivityText(options.translate, "organizationActivity.actors.agentFallback", "agent");
   }
   return formatUserLabel(participant.userId, options);
 }
@@ -325,21 +350,33 @@ function formatAcceptedPlanDecompositionDetail(details: ActivityDetails): string
   return summary;
 }
 
-function formatIssueUpdatedVerb(details: ActivityDetails): string | null {
+function formatIssueUpdatedVerb(details: ActivityDetails, translate?: TFunction): string | null {
   if (!details) return null;
   const previous = asRecord(details._previous) ?? {};
   if (details.status !== undefined) {
     const from = previous.status;
-    const to = humanizeValue(details.status === "in_review" && details.externalConversationState === "waiting" ? "idle" : details.status);
+    const rawTo = details.status === "in_review" && details.externalConversationState === "waiting" ? "idle" : details.status;
+    const to = typeof rawTo === "string"
+      ? translatedActivityText(translate, `organizationActivity.values.statuses.${activityKey(rawTo)}`, humanizeValue(rawTo))
+      : humanizeValue(rawTo);
+    const fromLabel = typeof from === "string"
+      ? translatedActivityText(translate, `organizationActivity.values.statuses.${activityKey(from)}`, humanizeValue(from))
+      : humanizeValue(from);
     return from
-      ? `changed status from ${humanizeValue(from)} to ${to} on`
-      : `changed status to ${to} on`;
+      ? translatedActivityText(translate, "organizationActivity.verbs.statusFromTo", `changed status from ${fromLabel} to ${to} on`, { from: fromLabel, to })
+      : translatedActivityText(translate, "organizationActivity.verbs.statusTo", `changed status to ${to} on`, { to });
   }
   if (details.priority !== undefined) {
     const from = previous.priority;
+    const to = typeof details.priority === "string"
+      ? translatedActivityText(translate, `organizationActivity.values.priorities.${activityKey(details.priority)}`, humanizeValue(details.priority))
+      : humanizeValue(details.priority);
+    const fromLabel = typeof from === "string"
+      ? translatedActivityText(translate, `organizationActivity.values.priorities.${activityKey(from)}`, humanizeValue(from))
+      : humanizeValue(from);
     return from
-      ? `changed priority from ${humanizeValue(from)} to ${humanizeValue(details.priority)} on`
-      : `changed priority to ${humanizeValue(details.priority)} on`;
+      ? translatedActivityText(translate, "organizationActivity.verbs.priorityFromTo", `changed priority from ${fromLabel} to ${to} on`, { from: fromLabel, to })
+      : translatedActivityText(translate, "organizationActivity.verbs.priorityTo", `changed priority to ${to} on`, { to });
   }
   return null;
 }
@@ -407,30 +444,41 @@ function formatStructuredIssueChange(input: {
     const added = readIssueReferences(details, "addedBlockedByIssues").map(formatIssueReferenceLabel);
     const removed = readIssueReferences(details, "removedBlockedByIssues").map(formatIssueReferenceLabel);
     if (added.length > 0 && removed.length === 0) {
-      const changed = formatChangedEntityLabel("blocker", "blockers", added);
-      return input.forIssueDetail ? `added ${changed}` : `added ${changed} to`;
+      const singular = translatedActivityText(input.options.translate, "organizationActivity.verbs.entityLabels.blocker", "blocker");
+      const plural = translatedActivityText(input.options.translate, "organizationActivity.verbs.entityLabels.blockers", "blockers");
+      const changed = formatChangedEntityLabel(singular, plural, added);
+      const fallback = input.forIssueDetail ? `added ${changed}` : `added ${changed} to`;
+      return input.forIssueDetail ? fallback : translatedActivityText(input.options.translate, "organizationActivity.verbs.blockersAdded", fallback, { changed });
     }
     if (removed.length > 0 && added.length === 0) {
-      const changed = formatChangedEntityLabel("blocker", "blockers", removed);
-      return input.forIssueDetail ? `removed ${changed}` : `removed ${changed} from`;
+      const singular = translatedActivityText(input.options.translate, "organizationActivity.verbs.entityLabels.blocker", "blocker");
+      const plural = translatedActivityText(input.options.translate, "organizationActivity.verbs.entityLabels.blockers", "blockers");
+      const changed = formatChangedEntityLabel(singular, plural, removed);
+      const fallback = input.forIssueDetail ? `removed ${changed}` : `removed ${changed} from`;
+      return input.forIssueDetail ? fallback : translatedActivityText(input.options.translate, "organizationActivity.verbs.blockersRemoved", fallback, { changed });
     }
-    return input.forIssueDetail ? "updated blockers" : "updated blockers on";
+    return input.forIssueDetail ? "updated blockers" : translatedActivityText(input.options.translate, "organizationActivity.verbs.blockersUpdated", "updated blockers on");
   }
 
   if (input.action === "issue.reviewers_updated" || input.action === "issue.approvers_updated") {
     const added = readParticipants(details, "addedParticipants").map((participant) => formatParticipantLabel(participant, input.options));
     const removed = readParticipants(details, "removedParticipants").map((participant) => formatParticipantLabel(participant, input.options));
-    const singular = input.action === "issue.reviewers_updated" ? "reviewer" : "approver";
-    const plural = input.action === "issue.reviewers_updated" ? "reviewers" : "approvers";
+    const singularKey = input.action === "issue.reviewers_updated" ? "reviewer" : "approver";
+    const pluralKey = input.action === "issue.reviewers_updated" ? "reviewers" : "approvers";
+    const singular = translatedActivityText(input.options.translate, `organizationActivity.verbs.entityLabels.${singularKey}`, singularKey);
+    const plural = translatedActivityText(input.options.translate, `organizationActivity.verbs.entityLabels.${pluralKey}`, pluralKey);
+    const role = input.action === "issue.reviewers_updated" ? "reviewers" : "approvers";
     if (added.length > 0 && removed.length === 0) {
       const changed = formatChangedEntityLabel(singular, plural, added);
-      return input.forIssueDetail ? `added ${changed}` : `added ${changed} to`;
+      const fallback = input.forIssueDetail ? `added ${changed}` : `added ${changed} to`;
+      return input.forIssueDetail ? fallback : translatedActivityText(input.options.translate, `organizationActivity.verbs.${role}Added`, fallback, { changed });
     }
     if (removed.length > 0 && added.length === 0) {
       const changed = formatChangedEntityLabel(singular, plural, removed);
-      return input.forIssueDetail ? `removed ${changed}` : `removed ${changed} from`;
+      const fallback = input.forIssueDetail ? `removed ${changed}` : `removed ${changed} from`;
+      return input.forIssueDetail ? fallback : translatedActivityText(input.options.translate, `organizationActivity.verbs.${role}Removed`, fallback, { changed });
     }
-    return input.forIssueDetail ? `updated ${plural}` : `updated ${plural} on`;
+    return input.forIssueDetail ? `updated ${plural}` : translatedActivityText(input.options.translate, `organizationActivity.verbs.${role}Updated`, `updated ${plural} on`);
   }
 
   return null;
@@ -449,28 +497,37 @@ export function formatActivityVerb(
         : "an app action";
     const tool = rawTool.replace(/[._-]+/g, " ");
     const isTest = details?.source === "test";
-    if (action === "tool_gateway.call_completed") return `${isTest ? "tested" : "used"} ${tool} on`;
-    if (action === "tool_gateway.call_allowed") return `${isTest ? "started a test of" : "was allowed to use"} ${tool} on`;
-    if (action === "tool_gateway.call_denied") return `was blocked from using ${tool} on`;
-    if (action === "tool_gateway.approval_requested") return `asked to use ${tool} on`;
-    if (action === "tool_gateway.session_created") return "opened an app session for";
-    if (action === "tool_gateway.session_rejected") return "was blocked from opening an app session for";
-    if (action === "tool_gateway.discovery") return "discovered app actions for";
+    if (action === "tool_gateway.call_completed") return translatedActivityText(options.translate, `organizationActivity.verbs.toolGateway.${isTest ? "tested" : "used"}`, `${isTest ? "tested" : "used"} {{tool}} on`, { tool });
+    if (action === "tool_gateway.call_allowed") return translatedActivityText(options.translate, `organizationActivity.verbs.toolGateway.${isTest ? "testAllowed" : "allowed"}`, `${isTest ? "started a test of" : "was allowed to use"} {{tool}} on`, { tool });
+    if (action === "tool_gateway.call_denied") return translatedActivityText(options.translate, "organizationActivity.verbs.toolGateway.blocked", "was blocked from using {{tool}} on", { tool });
+    if (action === "tool_gateway.approval_requested") return translatedActivityText(options.translate, "organizationActivity.verbs.toolGateway.requested", "asked to use {{tool}} on", { tool });
+    if (action === "tool_gateway.session_created") return translatedActivityText(options.translate, "organizationActivity.verbs.toolGateway.sessionOpened", "opened an app session for");
+    if (action === "tool_gateway.session_rejected") return translatedActivityText(options.translate, "organizationActivity.verbs.toolGateway.sessionBlocked", "was blocked from opening an app session for");
+    if (action === "tool_gateway.discovery") return translatedActivityText(options.translate, "organizationActivity.verbs.toolGateway.discovered", "discovered app actions for");
   }
 
   if (action === "issue.updated") {
-    const issueUpdatedVerb = formatIssueUpdatedVerb(details);
+    const issueUpdatedVerb = formatIssueUpdatedVerb(details, options.translate);
     if (issueUpdatedVerb) return issueUpdatedVerb;
   }
 
   if (action === "issue.stalled_review_decided") {
     const decision = typeof details?.action === "string" ? details.action : null;
     const label = decision ? STALLED_REVIEW_DECISION_LABELS[decision] : null;
-    if (label) return `${label} on`;
+    if (label) {
+      const translated = translatedActivityText(options.translate, `organizationActivity.verbs.stalledReview.${activityKey(decision!)}`, label);
+      return options.translate
+        ? translatedActivityText(options.translate, "organizationActivity.verbs.onEntity", "{{verb}} on", { verb: translated })
+        : `${translated} on`;
+    }
   }
 
-  const outcomeLabel = formatInteractionOutcomeLabel(action, details);
-  if (outcomeLabel) return `${outcomeLabel} on`;
+  const outcomeLabel = formatInteractionOutcomeLabel(action, details, options.translate);
+  if (outcomeLabel) {
+    return options.translate
+      ? translatedActivityText(options.translate, "organizationActivity.verbs.onEntity", "{{verb}} on", { verb: outcomeLabel })
+      : `${outcomeLabel} on`;
+  }
 
   const structuredChange = formatStructuredIssueChange({
     action,
@@ -480,7 +537,10 @@ export function formatActivityVerb(
   });
   if (structuredChange) return structuredChange;
 
-  return ACTIVITY_ROW_VERBS[action] ?? action.replace(/[._]/g, " ");
+  const fallback = ACTIVITY_ROW_VERBS[action];
+  return fallback
+    ? translatedActivityText(options.translate, `organizationActivity.verbs.actions.${activityKey(action)}`, fallback)
+    : action.replace(/[._]/g, " ");
 }
 
 export function formatIssueActivityAction(

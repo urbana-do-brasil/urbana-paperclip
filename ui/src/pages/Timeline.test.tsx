@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { WorkTimelineResult } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadTimelineWindow, Timeline, timelineSummary } from "./Timeline";
+import { i18n } from "@/i18n";
 
 const mockSetBreadcrumbs = vi.hoisted(() => vi.fn());
 const mockWorkTimelineApi = vi.hoisted(() => ({
@@ -123,7 +124,8 @@ describe("Timeline", () => {
   let root: ReturnType<typeof createRoot> | null;
   let queryClient: QueryClient;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
@@ -224,6 +226,32 @@ describe("Timeline", () => {
       element.textContent?.includes("2 runs") && element.textContent.includes("Range"),
     );
     expect(footer).not.toBeUndefined();
+  });
+
+  it("localizes the timeline controls, summary, legend, and run metadata in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockWorkTimelineApi.get.mockResolvedValue(populatedTimeline);
+    root = createRoot(container);
+
+    flushSync(() => {
+      root?.render(
+        <QueryClientProvider client={queryClient}>
+          <Timeline />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    expect(container.textContent).toContain("Linha do tempo de trabalho");
+    expect(container.textContent).toContain("Execuções");
+    expect(container.textContent).toContain("Agentes");
+    expect(container.textContent).toContain("Tempo de execução");
+    expect(container.textContent).toContain("Tokens usados");
+    expect(container.textContent).toContain("Delegada");
+    expect(container.textContent).toContain("Automação");
+    expect(container.textContent).toContain("2 execuções");
+    expect(container.querySelector('[aria-label="Data inicial da linha do tempo"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Aumentar zoom"]')).not.toBeNull();
   });
 
   it("loads every timeline page in the selected window", async () => {
