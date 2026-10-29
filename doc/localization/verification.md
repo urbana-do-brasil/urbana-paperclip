@@ -1412,3 +1412,17 @@ Typecheck direcionado, `check:tokens`, `check:token-gates`, `git diff --check`
 e validação OpenSpec estrita passaram. Com b4 concluída, os grupos
 3.6d2c2b e 3.6d2c2 estão fechados; o progresso reconciliado é **123/156**.
 Próxima tarefa: 3.6d2c3, adaptadores locais.
+
+### Continuação — configuração dos adaptadores locais (3.6d2c3)
+
+Os campos de instruções dos adaptadores Claude, Gemini, Kimi, OpenCode, Pi,
+Cursor e Grok agora usam os catálogos PT-BR/en, preservando os caminhos e os
+destinos próprios de cada runtime. Claude e Gemini também têm motor de
+execução, comandos e controles ACP localizados; controles de Chrome,
+permissões e turnos do Claude e permissões do OpenCode foram cobertos.
+
+`local-adapter-config-fields.test.tsx` e `locale-validation.test.ts` passaram
+em **15/15**. Typecheck direcionado, `check:tokens`, `check:token-gates`,
+`git diff --check` e validação OpenSpec estrita passaram. Progresso:
+**124/156**. Próxima tarefa: 3.6d2c2c4, gateways, HTTP/process e campos por
+schema.

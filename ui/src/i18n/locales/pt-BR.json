@@ -1649,6 +1649,45 @@
         "retentionHint": "O perfil qualificado do AgentCore mantém os eventos do Memory de curto prazo por exatamente 90 dias."
       }
     },
+    "localAdapters": {
+      "instructionsFile": "Arquivo de instruções do agente",
+      "instructionsFileHints": {
+        "claude": "Caminho absoluto para um arquivo Markdown (por exemplo, AGENTS.md) que define o comportamento deste agente. O conteúdo é inserido no prompt do sistema durante a execução.",
+        "gemini": "Caminho absoluto para um arquivo Markdown (por exemplo, AGENTS.md) que define o comportamento deste agente. O conteúdo é adicionado ao início do prompt do Gemini durante a execução.",
+        "kimi": "Caminho absoluto para um arquivo Markdown (por exemplo, AGENTS.md) que define o comportamento deste agente. O conteúdo é adicionado ao início do prompt do Kimi durante a execução.",
+        "systemPrompt": "Caminho absoluto para um arquivo Markdown (por exemplo, AGENTS.md) que define o comportamento deste agente. O conteúdo é inserido no prompt do sistema durante a execução.",
+        "cursor": "Caminho absoluto para um arquivo Markdown (por exemplo, AGENTS.md) que define o comportamento deste agente. O conteúdo é inserido no prompt durante a execução.",
+        "grok": "Caminho absoluto para um arquivo Markdown (por exemplo, AGENTS.md) que define o comportamento deste agente. Quando possível, o Paperclip o disponibiliza no workspace do Grok como Agents.md."
+      },
+      "executionEngine": "Mecanismo de execução",
+      "executionEngineHint": "Por padrão, usa ACP. Se ACP estiver indisponível, a execução falha com um erro de configuração. Selecione CLI explicitamente para usá-lo.",
+      "defaultAcp": "Padrão (ACP)",
+      "claudeCli": "CLI do Claude",
+      "geminiCli": "CLI do Gemini",
+      "acpServerCommand": "Comando do servidor ACP",
+      "acpServerCommandHints": {
+        "claude": "Substituição opcional do comando do servidor ACP do Claude. Por padrão, usa o binário claude-agent-acp do pacote local.",
+        "gemini": "Substituição opcional do comando do servidor ACP do Gemini. Por padrão, usa gemini --acp."
+      },
+      "acpSessionMode": "Modo de sessão ACP",
+      "acpSessionModeHint": "O modo persistente mantém o estado da sessão ACP entre execuções. A execução única inicia uma sessão nova a cada vez.",
+      "persistent": "Persistente",
+      "oneShot": "Execução única",
+      "acpNonInteractivePermissions": "Permissões ACP sem interação",
+      "acpNonInteractivePermissionsHint": "Alternativa caso o agente ACP solicite entrada fora de uma sessão interativa.",
+      "deny": "Negar",
+      "fail": "Falhar",
+      "acpStateDirectory": "Diretório do estado ACP",
+      "acpStateDirectoryHint": "Diretório opcional para o estado da sessão ACP. Por padrão, usa o armazenamento do Paperclip no escopo da organização e do agente.",
+      "acpWarmProcessIdle": "Inatividade do processo ACP warm (ms)",
+      "acpWarmProcessIdleHint": "O padrão é 0: encerra o processo ACP após cada execução e mantém o estado persistente da sessão.",
+      "enableChrome": "Ativar Chrome",
+      "enableChromeHint": "Ativa a integração do Claude com o Chrome usando a opção --chrome.",
+      "skipPermissions": "Ignorar permissões",
+      "skipPermissionsHint": "Executa sem supervisão, aprovando automaticamente as solicitações de permissão do adaptador quando houver suporte.",
+      "maxTurnsPerRun": "Máximo de turnos por execução",
+      "maxTurnsPerRunHint": "Número máximo de turnos do agente (chamadas de ferramentas) por execução de heartbeat."
+    },
     "identity": {
       "section": "Identidade do agente",
       "name": "Nome",

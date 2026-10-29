@@ -1607,6 +1607,45 @@
         "retentionHint": "The qualified AgentCore profile retains short-term Memory events for exactly 90 days."
       }
     },
+    "localAdapters": {
+      "instructionsFile": "Agent instructions file",
+      "instructionsFileHints": {
+        "claude": "Absolute path to a Markdown file (for example, AGENTS.md) that defines this agent's behavior. It is added to the system prompt at runtime.",
+        "gemini": "Absolute path to a Markdown file (for example, AGENTS.md) that defines this agent's behavior. It is prepended to Gemini's prompt at runtime.",
+        "kimi": "Absolute path to a Markdown file (for example, AGENTS.md) that defines this agent's behavior. It is prepended to Kimi's prompt at runtime.",
+        "systemPrompt": "Absolute path to a Markdown file (for example, AGENTS.md) that defines this agent's behavior. It is added to the system prompt at runtime.",
+        "cursor": "Absolute path to a Markdown file (for example, AGENTS.md) that defines this agent's behavior. It is added to the prompt at runtime.",
+        "grok": "Absolute path to a Markdown file (for example, AGENTS.md) that defines this agent's behavior. Paperclip stages it into the Grok workspace as Agents.md when possible."
+      },
+      "executionEngine": "Execution engine",
+      "executionEngineHint": "Default uses ACP. If ACP is unavailable, the run fails with a setup error. Choose CLI explicitly to use it.",
+      "defaultAcp": "Default (ACP)",
+      "claudeCli": "Claude CLI",
+      "geminiCli": "Gemini CLI",
+      "acpServerCommand": "ACP server command",
+      "acpServerCommandHints": {
+        "claude": "Optional override for the Claude ACP server command. Defaults to the package-local claude-agent-acp binary.",
+        "gemini": "Optional override for the Gemini ACP server command. Defaults to gemini --acp."
+      },
+      "acpSessionMode": "ACP session mode",
+      "acpSessionModeHint": "Persistent keeps ACP session state between runs. One-shot starts fresh each run.",
+      "persistent": "Persistent",
+      "oneShot": "One-shot",
+      "acpNonInteractivePermissions": "ACP non-interactive permissions",
+      "acpNonInteractivePermissionsHint": "Fallback if the ACP agent asks for input outside an interactive session.",
+      "deny": "Deny",
+      "fail": "Fail",
+      "acpStateDirectory": "ACP state directory",
+      "acpStateDirectoryHint": "Optional ACP session state directory. Defaults to Paperclip-managed organization/agent scoped storage.",
+      "acpWarmProcessIdle": "ACP warm process idle ms",
+      "acpWarmProcessIdleHint": "Defaults to 0, which closes the ACP process after each run while retaining persistent session state.",
+      "enableChrome": "Enable Chrome",
+      "enableChromeHint": "Enable Claude's Chrome integration by passing --chrome.",
+      "skipPermissions": "Skip permissions",
+      "skipPermissionsHint": "Run unattended by auto-approving adapter permission prompts when supported.",
+      "maxTurnsPerRun": "Max turns per run",
+      "maxTurnsPerRunHint": "Maximum number of agentic turns (tool calls) per heartbeat run."
+    },
     "identity": {
       "section": "Agent identity",
       "name": "Name",
