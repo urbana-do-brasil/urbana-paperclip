@@ -2181,3 +2181,16 @@ usam texto próprio traduzido.
 catálogos, `git diff --check` e validação OpenSpec estrita passaram. O progresso
 é **191/209 tarefas**; próxima: 3.8f2, consentimento MCP/Dot e revisão da
 autorização nos dois idiomas.
+
+
+### Consentimento MCP e pareamento Dot (3.8f2)
+
+A superfície de consentimento já usa catálogos bilíngues para organização,
+identidade/origem do cliente, escopos, restrições de função, acesso de leitura
+ou gravação, pareamento de agente e resultados. Acrescentei uma regressão em
+PT-BR que revoga a escolha de escrita e confirma o payload exato enviado à API;
+os cenários existentes também cobrem solicitação negada, device flow, pareamento
+Dot, identidade de organização fixa e origem/branding não confiáveis.
+
+`McpConnect.test.tsx`: **24/24 testes**. O progresso é **192/209 tarefas**;
+próxima: 3.8f3, instruções e gestão das conexões pessoais dos assistentes.

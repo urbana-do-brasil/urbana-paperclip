@@ -127,6 +127,32 @@ it("localizes Dot's one-use pairing review and preserves the previewed access da
   } finally { page.cleanup(); }
 });
 
+it("localizes MCP consent in PT-BR and sends the same explicit authorization decision", async () => {
+  await i18n.changeLanguage("pt-BR");
+  Object.assign(route, { companyId: "company-one", requestedConfigure: true });
+  const page = setup();
+  try {
+    await vi.waitFor(() => expect(page.container.textContent).toContain("Acme Research"));
+    expect(page.container.textContent).toContain("Ler todos os dados do Paperclip");
+    expect(page.container.textContent).toContain("Gravar em todos os dados do Paperclip");
+    const consent = Array.from(page.container.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Conectar organização",
+    );
+    expect(consent?.disabled).toBe(false);
+    flushSync(() => page.checkbox().click());
+    flushSync(() => consent?.click());
+    await vi.waitFor(() => expect(api.post).toHaveBeenCalledWith(
+      "/mcp/requests/request-one/consent",
+      {
+        decision: "approve",
+        companyId: "company-one",
+        allowWrites: false,
+        allowConfiguration: false,
+      },
+    ));
+  } finally { page.cleanup(); }
+});
+
 it("keeps approval disabled while replacing a code and ignores an older preview response", async () => {
   Object.assign(route, { agentConnection: true, requiresSignIn: true });
   let resolveOld!: (value: unknown) => void;
