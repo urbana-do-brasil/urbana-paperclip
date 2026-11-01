@@ -3429,3 +3429,11 @@ A fatia localiza ajuda, menu interativo, preview, confirmação, progresso, resu
 - Catálogos JSON, `git diff --check` e validação estrita do OpenSpec passaram.
 
 O `PluginManager` agora localiza mensagens próprias do host, status/tags conhecidos, ações, acessibilidade, diálogos e toasts; valores desconhecidos, metadata/descrições de plugins e erros dinâmicos permanecem originais. `agent list` localiza a ajuda, o marcador de lista vazia e os rótulos humanos, preservando nomes/papéis/status/IDs/dados e a saída JSON. Checkpoint: **300/326 tarefas**. Próxima fatia: 3.11d; demais comandos de 4.3 e regressão de 4.4 continuam pendentes.
+
+### Molduras, exemplos de plugins e `agent get` — 3.11d/g1 e 4.3i
+
+- Molduras e fallbacks: 5 arquivos de teste, 46/46; teste de PluginPage repetido após limpeza de idioma: 10/10.
+- Exemplos: 7/7 testes de renderização e 2/2 do worker de autoria; typechecks da UI, authoring e hello e token gates passaram. O fixture de orquestração está fora do workspace e seu typecheck completo depende de dependências locais; o typecheck isolado da UI passou com links temporários removidos depois.
+- `agent get`, `agent list` e ajuda: 33/33 testes; typecheck estrito do grafo CLI alterado passou. O typecheck completo da CLI não foi repetido neste lote.
+
+As alterações preservam nomes, rotas, IDs, conteúdo e erros externos, além da saída JSON da CLI. Checkpoint: **303/327 tarefas**; próximas superfícies incluem Workspace Changes e os demais comandos operacionais.

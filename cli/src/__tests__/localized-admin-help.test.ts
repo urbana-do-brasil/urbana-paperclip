@@ -38,6 +38,7 @@ describe("localized CLI help", () => {
     { command: ["company"], portuguese: "Operações de organizações", english: "Company operations" },
     { command: ["company", "list"], portuguese: "Listar organizações", english: "List companies" },
     { command: ["company", "get"], portuguese: "Consultar uma organização", english: "Get one company" },
+    { command: ["agent", "get"], portuguese: "Consultar um agente", english: "Get one agent" },
     {
       command: ["company", "current"],
       portuguese: "Consultar a organização atual do escopo",
@@ -105,13 +106,20 @@ describe("localized CLI help", () => {
     expect(output).toContain("Exibir JSON bruto");
   }, 35_000);
 
-  it("localizes company get arguments and current company options without changing identifiers", () => {
+  it("localizes company and agent get arguments without changing identifiers", () => {
     const get = help(["company", "get", "--help", "--lang", "pt-BR"]);
     const getOutput = get.stdout.replace(/\s+/g, " ");
     expect(get.status).toBe(0);
     expect(getOutput).toContain("paperclipai company get [options] <companyId>");
     expect(getOutput).toContain("companyId");
     expect(getOutput).toContain("ID da organização");
+
+    const agentGet = help(["agent", "get", "--help", "--lang", "pt-BR"]);
+    const agentGetOutput = agentGet.stdout.replace(/\s+/g, " ");
+    expect(agentGet.status).toBe(0);
+    expect(agentGetOutput).toContain("paperclipai agent get [options] <agentId>");
+    expect(agentGetOutput).toContain("agentId ID do agente");
+    expect(agentGetOutput).toContain("--json");
 
     const current = help(["company", "current", "--help", "--lang", "pt-BR"]);
     const currentOutput = current.stdout.replace(/\s+/g, " ");

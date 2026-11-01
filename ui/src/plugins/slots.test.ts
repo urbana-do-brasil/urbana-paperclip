@@ -4,7 +4,7 @@ import { createElement } from "react";
 import * as React from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useHostContext as useSdkHostContext } from "../../../packages/plugins/sdk/src/ui/hooks";
 import { i18n } from "@/i18n";
@@ -168,5 +168,51 @@ describe("plugin slot export registration", () => {
     expect(output()?.dataset.slotLocale).toBe("pt-BR");
     expect(output()?.dataset.hostLocale).toBe("pt-BR");
     expect(output()?.dataset.mountId).toBe("1");
+  });
+
+  it.each([
+    ["pt-BR", "Falha ao renderizar External Plugin."],
+    ["en", "External Plugin failed to render"],
+  ])("localizes a plugin render fallback in %s and updates it after a language change", async (locale, message) => {
+    await React.act(async () => { await i18n.changeLanguage(locale); });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const slot: ResolvedPluginSlot = {
+      type: "page",
+      id: "broken-page",
+      displayName: "External page title",
+      exportName: "BrokenPage",
+      routePath: "broken-page",
+      pluginId: "external-plugin-id",
+      pluginKey: "external.plugin",
+      pluginDisplayName: "External Plugin",
+      pluginVersion: "1.0.0",
+    };
+    registerPluginReactComponent("external.plugin", "BrokenPage", () => {
+      throw new Error("UPSTREAM PLUGIN FAILURE");
+    });
+    queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
+    queryClient.setQueryData(queryKeys.auth.session, { user: { id: "alice" } });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    roots.push(root);
+    await React.act(async () => root.render(createElement(
+      QueryClientProvider,
+      { client: queryClient! },
+      createElement(PluginSlotMount, { slot, context: { companyId: "company-1" } }),
+    )));
+
+    expect(container.textContent).toContain(message);
+    expect(container.textContent).not.toContain("UPSTREAM PLUGIN FAILURE");
+
+    const nextLocale = locale === "en" ? "pt-BR" : "en";
+    const nextMessage = nextLocale === "en"
+      ? "External Plugin failed to render"
+      : "Falha ao renderizar External Plugin.";
+    await React.act(async () => { await i18n.changeLanguage(nextLocale); });
+    expect(container.textContent).toContain(nextMessage);
+
+    consoleError.mockRestore();
   });
 });

@@ -70,10 +70,14 @@ afterEach(async () => {
   vi.unstubAllGlobals(); vi.restoreAllMocks();
 });
 
-it("shows inline errors by default when contributions fail to load", async () => {
+it.each([
+  ["en", "Plugin extensions unavailable: Failed to fetch"],
+  ["pt-BR", "Extensões de plugins indisponíveis: Failed to fetch"],
+])("localizes slot errors and preserves the external detail in %s", async (locale, slotError) => {
+  await act(async () => { await i18n.changeLanguage(locale); });
   await render();
   await vi.waitFor(() => expect(container.textContent).toContain("unavailable"));
-  expect(container.textContent).toContain("Plugin extensions unavailable: Failed to fetch");
+  expect(container.textContent).toContain(slotError);
   expect(container.textContent).toContain("Plugin launchers unavailable: Failed to fetch");
 });
 

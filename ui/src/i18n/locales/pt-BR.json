@@ -3800,6 +3800,18 @@
     "plugins": "Plugins",
     "adapters": "Adaptadores"
   },
+  "pluginHost": {
+    "selectOrganization": "Selecione uma organização para ver esta página.",
+    "back": "Voltar",
+    "pluginsBreadcrumb": "Plugins",
+    "extensionsUnavailable": "Extensões de plugins indisponíveis: {{message}}",
+    "unknownError": "Erro desconhecido",
+    "failedToRender": "Falha ao renderizar {{plugin}}.",
+    "multiplePageRoute": "Vários plugins declaram a rota",
+    "multiplePageRouteSuffix": "Use a rota com o ID do plugin até resolver o conflito.",
+    "multipleSettingsRoute": "Vários plugins declaram a rota de configurações da organização",
+    "multipleSettingsRouteSuffix": "Desative um plugin ou altere sua rota."
+  },
   "pluginManager": {
     "loading": "Carregando plugins...",
     "loadError": "Não foi possível carregar os plugins.",
@@ -4861,6 +4873,17 @@
     "retry": "Tentar novamente",
     "saveAndExit": "Salvar e sair",
     "closeSelector": "Fechar seletor"
+  },
+  "notFound": {
+    "breadcrumb": "Página não encontrada",
+    "pageTitle": "Página não encontrada",
+    "organizationTitle": "Organização não encontrada",
+    "pageDescription": "Esta rota não existe.",
+    "organizationDescription": "Nenhuma organização corresponde ao prefixo \"{{prefix}}\".",
+    "unknownPrefix": "desconhecido",
+    "requestedPath": "Caminho solicitado:",
+    "openDashboard": "Abrir painel",
+    "goHome": "Ir para o início"
   },
   "trustPolicy": {
     "lowTrustLabel": "Fonte de baixa confiabilidade",

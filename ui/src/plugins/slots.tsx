@@ -42,6 +42,7 @@ import { pluginsApi, type PluginUiContribution } from "@/api/plugins";
 import { authApi } from "@/api/auth";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 import {
   PluginBridgeContext,
   usePluginHostLocale,
@@ -156,9 +157,9 @@ function requiresEntityType(slotType: PluginUiSlotType): boolean {
   return slotType === "detailTab" || slotType === "taskDetailView" || slotType === "contextMenuItem" || slotType === "commentAnnotation" || slotType === "commentContextMenuItem" || slotType === "projectSidebarItem" || slotType === "toolbarButton";
 }
 
-function getErrorMessage(error: unknown): string {
+function getErrorMessage(error: unknown, unknownError: string): string {
   if (error instanceof Error && error.message) return error.message;
-  return "Unknown error";
+  return unknownError;
 }
 
 /**
@@ -651,6 +652,7 @@ function usePluginModuleLoader(contributions: PluginUiContribution[] | undefined
  * newly-discovered contributions. Components render once loading completes.
  */
 export function usePluginSlots(filters: SlotFilters): UsePluginSlotsResult {
+  const { t } = useTranslation();
   const queryEnabled = filters.enabled ?? true;
   const { data, isLoading: isQueryLoading, error } = useQuery({
     queryKey: queryKeys.plugins.uiContributions,
@@ -702,12 +704,13 @@ export function usePluginSlots(filters: SlotFilters): UsePluginSlotsResult {
   return {
     slots,
     isLoading,
-    errorMessage: error ? getErrorMessage(error) : null,
+    errorMessage: error ? getErrorMessage(error, t("pluginHost.unknownError")) : null,
   };
 }
 
 type PluginSlotErrorBoundaryProps = {
   slot: ResolvedPluginSlot;
+  failureMessage: string;
   fallback?: ReactNode;
   className?: string;
   children: ReactNode;
@@ -739,7 +742,7 @@ class PluginSlotErrorBoundary extends Component<PluginSlotErrorBoundaryProps, Pl
       if (this.props.fallback !== undefined) return this.props.fallback;
       return (
         <div className={cn("rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1 text-xs text-destructive", this.props.className)}>
-          {this.props.slot.pluginDisplayName}: failed to render
+          {this.props.failureMessage}
         </div>
       );
     }
@@ -850,8 +853,10 @@ export function PluginSlotMount({
   fallback,
 }: PluginSlotMountProps) {
   usePluginRegistrySubscription();
+  const { t } = useTranslation();
   const locale = usePluginHostLocale();
   const pluginContext = useMemo(() => ({ ...context, locale }), [context, locale]);
+  const failureMessage = t("pluginHost.failedToRender", { plugin: slot.pluginDisplayName });
   const [, forceRerender] = useState(0);
   const component = resolveRegisteredComponent(slot);
 
@@ -885,7 +890,7 @@ export function PluginSlotMount({
   if (component.kind === "react") {
     const node = createElement(component.component, { ...componentProps, slot, context: pluginContext });
     return (
-      <PluginSlotErrorBoundary key={`${slot.pluginId}:${slot.pluginVersion}:${slot.id}`} slot={slot} className={className} fallback={fallback}>
+      <PluginSlotErrorBoundary key={`${slot.pluginId}:${slot.pluginVersion}:${slot.id}`} slot={slot} failureMessage={failureMessage} className={className} fallback={fallback}>
         <PluginBridgeScope pluginId={slot.pluginId} context={context} locale={locale}>
           {className ? <div className={className}>{node}</div> : node}
         </PluginBridgeScope>
@@ -896,7 +901,7 @@ export function PluginSlotMount({
   if (componentProps && fallback !== undefined) return fallback;
 
   return (
-    <PluginSlotErrorBoundary slot={slot} className={className}>
+    <PluginSlotErrorBoundary slot={slot} failureMessage={failureMessage} className={className}>
       <PluginWebComponentMount
         tagName={component.tagName}
         slot={slot}
@@ -933,6 +938,7 @@ export function PluginSlotOutlet({
   missingBehavior = "hidden",
   errorBehavior = "inline",
 }: PluginSlotOutletProps) {
+  const { t } = useTranslation();
   const { slots, errorMessage } = usePluginSlots({
     slotTypes,
     entityType,
@@ -942,7 +948,7 @@ export function PluginSlotOutlet({
   if (errorMessage && errorBehavior === "inline") {
     return (
       <div className={cn("rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1 text-xs text-destructive", errorClassName)}>
-        Plugin extensions unavailable: {errorMessage}
+        {t("pluginHost.extensionsUnavailable", { message: errorMessage })}
       </div>
     );
   }

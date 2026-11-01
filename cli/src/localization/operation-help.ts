@@ -194,6 +194,11 @@ const operationHelp: Record<string, CommandHelp> = {
       "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
     },
   },
+  "agent get": {
+    description: { en: "Get one agent", "pt-BR": "Consultar um agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {

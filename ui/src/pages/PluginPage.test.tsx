@@ -2,7 +2,8 @@
 
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { PluginPage } from "./PluginPage";
 
 const mockPluginsApi = vi.hoisted(() => ({
@@ -10,6 +11,7 @@ const mockPluginsApi = vi.hoisted(() => ({
 }));
 
 const mockSetBreadcrumbs = vi.hoisted(() => vi.fn());
+const mockSelectedCompanyId = vi.hoisted(() => ({ value: "company-1" as string | null }));
 const mockParams = vi.hoisted(() => ({
   companyPrefix: "PAP" as string | undefined,
   pluginId: undefined as string | undefined,
@@ -30,7 +32,7 @@ vi.mock("@/context/BreadcrumbContext", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     companies: [{ id: "company-1", name: "Paperclip", issuePrefix: "PAP" }],
-    selectedCompanyId: "company-1",
+    selectedCompanyId: mockSelectedCompanyId.value,
   }),
 }));
 
@@ -107,14 +109,17 @@ async function renderPage(container: HTMLDivElement) {
 
 describe("PluginPage", () => {
   let container: HTMLDivElement;
+  const previousLanguage = i18n.resolvedLanguage ?? i18n.language;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockParams.companyPrefix = "PAP";
     mockParams.pluginId = undefined;
     mockParams.pluginRoutePath = undefined;
     mockParams["*"] = undefined;
+    mockSelectedCompanyId.value = "company-1";
   });
 
   afterEach(() => {
@@ -123,18 +128,86 @@ describe("PluginPage", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the breadcrumb and Back button on a legacy plugin route (no routeSidebar)", async () => {
+  afterAll(async () => {
+    await i18n.changeLanguage(previousLanguage);
+  });
+
+  it.each([
+    ["en", "Plugins", "Back"],
+    ["pt-BR", "Plugins", "Voltar"],
+  ])("localizes the host breadcrumb and back button on a legacy plugin route in %s", async (locale, breadcrumb, backLabel) => {
+    await i18n.changeLanguage(locale);
     mockParams.pluginRoutePath = "wiki";
     mockPluginsApi.listUiContributions.mockResolvedValue([pageContribution()]);
 
     const root = await renderPage(container);
 
     expect(mockSetBreadcrumbs).toHaveBeenCalledWith([
-      { label: "Plugins", href: "/company/settings/instance/plugins" },
+      { label: breadcrumb, href: "/company/settings/instance/plugins" },
       { label: "LLM Wiki" },
     ]);
-    expect(container.textContent).toContain("Back");
+    expect(container.textContent).toContain(backLabel);
     expect(container.querySelector('a[href="/PAP/dashboard"]')).not.toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["en", "Select an organization to view this page."],
+    ["pt-BR", "Selecione uma organização para ver esta página."],
+  ])("localizes the missing-organization fallback in %s", async (locale, message) => {
+    await i18n.changeLanguage(locale);
+    mockParams.companyPrefix = undefined;
+    mockSelectedCompanyId.value = null;
+
+    const root = await renderPage(container);
+
+    expect(container.textContent).toContain(message);
+    expect(mockPluginsApi.listUiContributions).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["en", "Loading…"],
+    ["pt-BR", "Carregando…"],
+  ])("localizes the loading fallback in %s", async (locale, message) => {
+    await i18n.changeLanguage(locale);
+    mockParams.pluginRoutePath = "wiki";
+    mockPluginsApi.listUiContributions.mockImplementation(() => new Promise(() => {}));
+
+    const root = await renderPage(container);
+
+    expect(container.textContent).toContain(message);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["en", "Multiple plugins declare the route", "Use the plugin-id route until the conflict is resolved."],
+    ["pt-BR", "Vários plugins declaram a rota", "Use a rota com o ID do plugin até resolver o conflito."],
+  ])("localizes a duplicate plugin-route fallback in %s and preserves the route", async (locale, prefix, suffix) => {
+    await i18n.changeLanguage(locale);
+    mockParams.pluginRoutePath = "wiki";
+    mockPluginsApi.listUiContributions.mockResolvedValue([
+      pageContribution(),
+      {
+        ...pageContribution(),
+        pluginId: "plugin-second",
+        pluginKey: "second-plugin",
+        displayName: "Second plugin",
+      },
+    ]);
+
+    const root = await renderPage(container);
+
+    expect(container.textContent).toContain(`${prefix} wiki. ${suffix}`);
 
     await act(async () => {
       root.unmount();

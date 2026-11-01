@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import pc from "picocolors";
 import {
   agentSkillSyncSchema,
   createAgentSchema,
@@ -336,7 +337,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const row = await ctx.api.get<Agent>(apiPath`/api/agents/${agentId}`);
-          printOutput(row, { json: ctx.json });
+          printAgentResult(row, ctx.json);
         } catch (err) {
           handleCommandError(err);
         }
@@ -865,6 +866,14 @@ export function registerAgentCommands(program: Command): void {
       }),
     { includeCompany: false },
   );
+}
+
+function printAgentResult(row: Agent | null, json: boolean): void {
+  if (row === null && !json) {
+    console.log(pc.dim(cliMessage("emptyValue")));
+    return;
+  }
+  printOutput(row, { json });
 }
 
 function parseJsonObject(value: string | undefined): Record<string, unknown> | undefined {

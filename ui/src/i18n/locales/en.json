@@ -3705,6 +3705,18 @@
     "plugins": "Plugins",
     "adapters": "Adapters"
   },
+  "pluginHost": {
+    "selectOrganization": "Select an organization to view this page.",
+    "back": "Back",
+    "pluginsBreadcrumb": "Plugins",
+    "extensionsUnavailable": "Plugin extensions unavailable: {{message}}",
+    "unknownError": "Unknown error",
+    "failedToRender": "{{plugin}} failed to render",
+    "multiplePageRoute": "Multiple plugins declare the route",
+    "multiplePageRouteSuffix": "Use the plugin-id route until the conflict is resolved.",
+    "multipleSettingsRoute": "Multiple plugins declare the company settings route",
+    "multipleSettingsRouteSuffix": "Disable one plugin or change its route."
+  },
   "pluginManager": {
     "loading": "Loading plugins...",
     "loadError": "Failed to load plugins.",
@@ -4730,6 +4742,17 @@
     "retry": "Retry",
     "saveAndExit": "Save & exit",
     "closeSelector": "Close selector"
+  },
+  "notFound": {
+    "breadcrumb": "Not Found",
+    "pageTitle": "Page not found",
+    "organizationTitle": "Organization not found",
+    "pageDescription": "This route does not exist.",
+    "organizationDescription": "No organization matches prefix \"{{prefix}}\".",
+    "unknownPrefix": "unknown",
+    "requestedPath": "Requested path:",
+    "openDashboard": "Open dashboard",
+    "goHome": "Go home"
   },
   "trustPolicy": {
     "lowTrustLabel": "Low-trust source",

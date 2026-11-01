@@ -46,50 +46,109 @@ const buttonStyle = {
   cursor: "pointer",
 } satisfies React.CSSProperties;
 
-function SurfaceRows({ data }: { data: SurfaceStatus }) {
+function messagesFor(locale: PluginWidgetProps["context"]["locale"]) {
+  if (locale === "pt-BR") {
+    return {
+      status: "Status",
+      namespace: "Namespace",
+      routes: "Rotas",
+      capabilities: "Capacidades",
+      checked: "Verificado em",
+      dashboardLoading: "Carregando o status do teste de orquestração...",
+      dashboardError: "Erro no teste de orquestração:",
+      loading: "Carregando o teste de orquestração...",
+      error: "Erro no teste de orquestração:",
+      settingsLoading: "Carregando as configurações do teste de orquestração...",
+      settingsError: "Erro nas configurações do teste de orquestração:",
+      title: "Teste de orquestração",
+      runSmoke: "Executar teste",
+      child: "Subtarefa",
+      blocker: "Bloqueio",
+      billing: "Código de cobrança",
+      subtree: "Árvore de tarefas",
+      wakeup: "Despertar",
+      none: "nenhum",
+      queued: "enfileirado",
+      notQueued: "não enfileirado",
+      noRun: "Nenhuma execução de teste registrada para esta tarefa.",
+      settingsTitle: "Superfície do teste de orquestração",
+    };
+  }
+
+  return {
+    status: "Status",
+    namespace: "Namespace",
+    routes: "Routes",
+    capabilities: "Capabilities",
+    checked: "Checked",
+    dashboardLoading: "Loading orchestration smoke status...",
+    dashboardError: "Orchestration smoke error:",
+    loading: "Loading orchestration smoke...",
+    error: "Orchestration smoke error:",
+    settingsLoading: "Loading orchestration smoke settings...",
+    settingsError: "Orchestration smoke settings error:",
+    title: "Orchestration Smoke",
+    runSmoke: "Run Smoke",
+    child: "Child",
+    blocker: "Blocker",
+    billing: "Billing",
+    subtree: "Subtree",
+    wakeup: "Wakeup",
+    none: "none",
+    queued: "queued",
+    notQueued: "not queued",
+    noRun: "No smoke run recorded for this issue.",
+    settingsTitle: "Orchestration Smoke Surface",
+  };
+}
+
+function SurfaceRows({ data, locale }: { data: SurfaceStatus; locale: PluginWidgetProps["context"]["locale"] }) {
+  const messages = messagesFor(locale);
   return (
     <div style={{ display: "grid", gap: 6 }}>
-      <div style={rowStyle}><span>Status</span><strong>{data.status}</strong></div>
-      <div style={rowStyle}><span>Namespace</span><code>{data.databaseNamespace}</code></div>
-      <div style={rowStyle}><span>Routes</span><code>{data.routeKeys.join(", ")}</code></div>
-      <div style={rowStyle}><span>Capabilities</span><strong>{data.capabilities.length}</strong></div>
+      <div style={rowStyle}><span>{messages.status}</span><strong>{data.status}</strong></div>
+      <div style={rowStyle}><span>{messages.namespace}</span><code>{data.databaseNamespace}</code></div>
+      <div style={rowStyle}><span>{messages.routes}</span><code>{data.routeKeys.join(", ")}</code></div>
+      <div style={rowStyle}><span>{messages.capabilities}</span><strong>{data.capabilities.length}</strong></div>
     </div>
   );
 }
 
 export function DashboardWidget({ context }: PluginWidgetProps) {
+  const messages = messagesFor(context.locale);
   const { data, loading, error } = usePluginData<SurfaceStatus>("surface-status", {
     companyId: context.companyId,
   });
 
-  if (loading) return <div>Loading orchestration smoke status...</div>;
-  if (error) return <div>Orchestration smoke error: {error.message}</div>;
+  if (loading) return <div>{messages.dashboardLoading}</div>;
+  if (error) return <div>{messages.dashboardError} {error.message}</div>;
   if (!data) return null;
 
   return (
     <div style={panelStyle}>
-      <strong>Orchestration Smoke</strong>
-      <SurfaceRows data={data} />
-      <div>Checked {data.checkedAt}</div>
+      <strong>{messages.title}</strong>
+      <SurfaceRows data={data} locale={context.locale} />
+      <div>{messages.checked} {data.checkedAt}</div>
     </div>
   );
 }
 
 export function IssuePanel({ context }: PluginDetailTabProps) {
+  const messages = messagesFor(context.locale);
   const { data, loading, error, refresh } = usePluginData<SurfaceStatus>("surface-status", {
     companyId: context.companyId,
     issueId: context.entityId,
   });
   const initialize = usePluginAction("initialize-smoke");
 
-  if (loading) return <div>Loading orchestration smoke...</div>;
-  if (error) return <div>Orchestration smoke error: {error.message}</div>;
+  if (loading) return <div>{messages.loading}</div>;
+  if (error) return <div>{messages.error} {error.message}</div>;
   if (!data) return null;
 
   return (
     <div style={panelStyle}>
       <div style={rowStyle}>
-        <strong>Orchestration Smoke</strong>
+        <strong>{messages.title}</strong>
         <button
           style={buttonStyle}
           onClick={async () => {
@@ -97,38 +156,39 @@ export function IssuePanel({ context }: PluginDetailTabProps) {
             refresh();
           }}
         >
-          Run Smoke
+          {messages.runSmoke}
         </button>
       </div>
-      <SurfaceRows data={data} />
+      <SurfaceRows data={data} locale={context.locale} />
       {data.summary ? (
         <div style={{ display: "grid", gap: 4 }}>
-          <div style={rowStyle}><span>Child</span><code>{data.summary.childIssueId ?? "none"}</code></div>
-          <div style={rowStyle}><span>Blocker</span><code>{data.summary.blockerIssueId ?? "none"}</code></div>
-          <div style={rowStyle}><span>Billing</span><code>{data.summary.billingCode}</code></div>
-          <div style={rowStyle}><span>Subtree</span><strong>{data.summary.subtreeIssueIds.length}</strong></div>
-          <div style={rowStyle}><span>Wakeup</span><strong>{data.summary.wakeupQueued ? "queued" : "not queued"}</strong></div>
+          <div style={rowStyle}><span>{messages.child}</span><code>{data.summary.childIssueId ?? messages.none}</code></div>
+          <div style={rowStyle}><span>{messages.blocker}</span><code>{data.summary.blockerIssueId ?? messages.none}</code></div>
+          <div style={rowStyle}><span>{messages.billing}</span><code>{data.summary.billingCode}</code></div>
+          <div style={rowStyle}><span>{messages.subtree}</span><strong>{data.summary.subtreeIssueIds.length}</strong></div>
+          <div style={rowStyle}><span>{messages.wakeup}</span><strong>{data.summary.wakeupQueued ? messages.queued : messages.notQueued}</strong></div>
         </div>
       ) : (
-        <div>No smoke run recorded for this issue.</div>
+        <div>{messages.noRun}</div>
       )}
     </div>
   );
 }
 
 export function SettingsPage({ context }: PluginSettingsPageProps) {
+  const messages = messagesFor(context.locale);
   const { data, loading, error } = usePluginData<SurfaceStatus>("surface-status", {
     companyId: context.companyId,
   });
 
-  if (loading) return <div>Loading orchestration smoke settings...</div>;
-  if (error) return <div>Orchestration smoke settings error: {error.message}</div>;
+  if (loading) return <div>{messages.settingsLoading}</div>;
+  if (error) return <div>{messages.settingsError} {error.message}</div>;
   if (!data) return null;
 
   return (
     <div style={panelStyle}>
-      <strong>Orchestration Smoke Surface</strong>
-      <SurfaceRows data={data} />
+      <strong>{messages.settingsTitle}</strong>
+      <SurfaceRows data={data} locale={context.locale} />
     </div>
   );
 }
