@@ -24,6 +24,11 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { PageTabBar } from "@/components/PageTabBar";
 import { useTranslation } from "@/i18n";
 import {
+  isBundledPluginRecord,
+  localizePluginPresentation,
+  localizeSandboxProviderPresentation,
+} from "@/lib/plugin-presentation-localization";
+import {
   JsonSchemaForm,
   validateJsonSchemaForm,
   getDefaultValues,
@@ -75,6 +80,12 @@ export function PluginSettings() {
     enabled: !!pluginId,
   });
 
+  const { data: bundledPlugins } = useQuery({
+    queryKey: queryKeys.plugins.examples,
+    queryFn: () => pluginsApi.listBundled(),
+    enabled: !!plugin,
+  });
+
   const { data: healthData, isLoading: healthLoading } = useQuery({
     queryKey: queryKeys.plugins.health(pluginId!),
     queryFn: () => pluginsApi.health(pluginId!),
@@ -95,6 +106,23 @@ export function PluginSettings() {
     enabled: !!pluginId && plugin?.status === "ready",
     refetchInterval: 30000,
   });
+
+  const trustedBundle = !!plugin
+    && plugin.manifestJson.id === plugin.pluginKey
+    && isBundledPluginRecord(plugin, bundledPlugins);
+  const presentation = plugin
+    ? localizePluginPresentation(
+        plugin.manifestJson.id,
+        plugin.manifestJson.displayName ?? plugin.packageName,
+        plugin.manifestJson.description || t("pluginSettings.about.noDescription"),
+        t,
+        trustedBundle,
+      )
+    : null;
+  const pluginDisplayName = presentation?.displayName
+    ?? plugin?.manifestJson.displayName
+    ?? plugin?.packageName
+    ?? t("pluginSettings.breadcrumb.pluginDetails");
 
   // Fetch existing config for the plugin
   const configSchema = plugin?.manifestJson?.instanceConfigSchema as JsonSchemaNode | undefined;
@@ -127,9 +155,9 @@ export function PluginSettings() {
       { label: selectedCompany?.name ?? t("settingsNav.companyFallback"), href: "/dashboard" },
       { label: t("settingsNav.title"), href: "/company/settings" },
       { label: t("settingsNav.plugins"), href: "/company/settings/instance/plugins" },
-      { label: plugin?.manifestJson?.displayName ?? plugin?.packageName ?? t("pluginSettings.breadcrumb.pluginDetails") },
+      { label: pluginDisplayName },
     ]);
-  }, [selectedCompany?.name, setBreadcrumbs, companyPrefix, plugin, t]);
+  }, [selectedCompany?.name, setBreadcrumbs, companyPrefix, pluginDisplayName, t]);
 
   useEffect(() => {
     setActiveTab("configuration");
@@ -151,7 +179,9 @@ export function PluginSettings() {
       : plugin.status === "error"
         ? "destructive"
         : "secondary";
-  const pluginDescription = plugin.manifestJson.description || t("pluginSettings.about.noDescription");
+  const pluginDescription = presentation?.description
+    ?? plugin.manifestJson.description
+    ?? t("pluginSettings.about.noDescription");
   const pluginCapabilities = plugin.manifestJson.capabilities ?? [];
   const environmentDrivers = plugin.manifestJson.environmentDrivers ?? [];
   const localFolderDeclarations = plugin.manifestJson.localFolders ?? [];
@@ -162,7 +192,14 @@ export function PluginSettings() {
   // the policy is known.
   const hasLocalFolders = localFolderDeclarations.length > 0 && !hideHostPaths;
   const environmentDriverNames = environmentDrivers
-    .map((driver) => driver.displayName?.trim() || driver.driverKey)
+    .map((driver) => localizeSandboxProviderPresentation(
+      driver.driverKey,
+      plugin.manifestJson.id,
+      driver.displayName?.trim() || driver.driverKey,
+      undefined,
+      t,
+      trustedBundle,
+    ).displayName)
     .filter((name, index, values) => values.indexOf(name) === index);
   const driverLabel = environmentDriverNames.join(", ");
 
@@ -176,7 +213,7 @@ export function PluginSettings() {
         </Link>
         <div className="flex items-center gap-2">
           <Puzzle className="h-6 w-6 text-muted-foreground" />
-          <h1 className="text-xl font-semibold">{plugin.manifestJson.displayName ?? plugin.packageName}</h1>
+          <h1 className="text-xl font-semibold">{pluginDisplayName}</h1>
           <Badge variant={statusVariant} className="ml-2">
             {displayStatusLabel}
           </Badge>

@@ -159,6 +159,10 @@ const mockAgentsApi = vi.hoisted(() => ({
   list: vi.fn(),
   update: vi.fn(),
 }));
+const mockPluginsApi = vi.hoisted(() => ({
+  list: vi.fn(),
+  listBundled: vi.fn(),
+}));
 
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
@@ -191,6 +195,10 @@ vi.mock("@/api/secrets", () => ({
 
 vi.mock("@/api/agents", () => ({
   agentsApi: mockAgentsApi,
+}));
+
+vi.mock("@/api/plugins", () => ({
+  pluginsApi: mockPluginsApi,
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -467,6 +475,8 @@ describe("CompanyEnvironments — test provider button", () => {
     mockInstanceSettingsApi.get.mockResolvedValue({ defaultEnvironmentId: null });
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableEnvironments: true });
     mockEnvironmentsApi.capabilities.mockResolvedValue({ adapters: [], sandboxProviders: {} });
+    mockPluginsApi.list.mockResolvedValue([]);
+    mockPluginsApi.listBundled.mockResolvedValue([]);
     mockEnvironmentsApi.secretRefs.mockResolvedValue({ refs: [] });
     mockSecretsApi.list.mockResolvedValue([]);
     mockEnvironmentsApi.customImageTemplate.mockResolvedValue({

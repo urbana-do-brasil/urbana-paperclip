@@ -1716,21 +1716,22 @@ export function WikiPage({ context }: PluginPageProps) {
         ) : section === "browse" ? (
           <BrowseTab context={context} locale={locale} />
         ) : section === "ingest" ? (
-          <IngestTab context={context} refreshOverview={overview.refresh} />
+          <IngestTab context={context} locale={locale} refreshOverview={overview.refresh} />
         ) : section === "query" ? (
-          <QueryTab context={context} overview={overview.data} />
+          <QueryTab context={context} locale={locale} overview={overview.data} />
         ) : section === "lint" ? (
           <SettingsTab context={context} initialSection="lint" />
         ) : section === "history" ? (
-          <HistoryTab context={context} overview={overview.data} />
+          <HistoryTab context={context} locale={locale} overview={overview.data} />
         ) : (
           <SettingsTab context={context} initialSection={settingsSection} />
         )}
       </section>
-      {isDragActive ? <WikiPageDropOverlay onClose={resetDragState} /> : null}
+      {isDragActive ? <WikiPageDropOverlay locale={locale} onClose={resetDragState} /> : null}
       {isIngestModalOpen ? (
         <IngestFilesModal
           companyId={context.companyId}
+          locale={locale}
           files={stagedFiles}
           initialSpaceSlug={activeSpaceSlug}
           onAddFiles={stageFiles}
@@ -1760,7 +1761,7 @@ function isFileDrag(event: React.DragEvent<HTMLElement>): boolean {
   return Array.from(event.dataTransfer?.types ?? []).includes("Files");
 }
 
-function WikiPageDropOverlay({ onClose }: { onClose: () => void }) {
+function WikiPageDropOverlay({ locale, onClose }: { locale: WikiLocale; onClose: () => void }) {
   return (
     <div
       data-testid="llm-wiki-page-drop-overlay"
@@ -1778,8 +1779,8 @@ function WikiPageDropOverlay({ onClose }: { onClose: () => void }) {
     >
       <button
         type="button"
-        aria-label="Close ingest drop overlay"
-        title="Close"
+        aria-label={wikiMessage(locale, "closeIngestDropOverlay")}
+        title={wikiMessage(locale, "close")}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -1816,8 +1817,8 @@ function WikiPageDropOverlay({ onClose }: { onClose: () => void }) {
         <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: 8, background: tokens.pluginBg, color: tokens.pluginFg, marginBottom: 12 }}>
           <DownloadCloudIcon size={24} />
         </div>
-        <div style={{ fontSize: 18, fontWeight: 650, marginBottom: 6 }}>Drop to ingest into LLM Wiki</div>
-        <Tiny>Files will be staged for review before the wiki maintainer queues ingest operations.</Tiny>
+        <div style={{ fontSize: 18, fontWeight: 650, marginBottom: 6 }}>{wikiMessage(locale, "dropToIngestTitle")}</div>
+        <Tiny>{wikiMessage(locale, "dropToIngestDescription")}</Tiny>
       </div>
     </div>
   );
@@ -1825,6 +1826,7 @@ function WikiPageDropOverlay({ onClose }: { onClose: () => void }) {
 
 function IngestFilesModal({
   companyId,
+  locale,
   files,
   onAddFiles,
   onRemoveFile,
@@ -1833,6 +1835,7 @@ function IngestFilesModal({
   initialSpaceSlug,
 }: {
   companyId: string;
+  locale: WikiLocale;
   files: StagedIngestFile[];
   onAddFiles: (files: File[]) => void;
   onRemoveFile: (id: string) => void;
@@ -1898,13 +1901,19 @@ function IngestFilesModal({
       }
       const count = files.length;
       const spaceLabel = targetSpace?.displayName ?? targetSpaceSlug;
-      toast({ tone: "success", title: `Files queued for ingest into ${spaceLabel}`, body: `${count} ${count === 1 ? "file" : "files"} captured into raw sources and attached to ingest tasks.` });
+      toast({
+        tone: "success",
+        title: wikiMessage(locale, count === 1 ? "oneFileQueuedForIngest" : "manyFilesQueuedForIngest", { space: spaceLabel }),
+        body: wikiMessage(locale, count === 1 ? "oneFileCaptured" : "manyFilesCaptured", {
+          count: new Intl.NumberFormat(locale).format(count),
+        }),
+      });
       onIngested();
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setErrorMsg(message);
-      toast({ tone: "error", title: "File ingest failed", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "fileIngestFailed"), body: message });
     } finally {
       setBusy(false);
     }
@@ -1944,18 +1953,15 @@ function IngestFilesModal({
             <DownloadCloudIcon size={18} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 id="llm-wiki-ingest-modal-title" style={{ margin: 0, fontSize: 16, fontWeight: 650 }}>Ingest files into {targetSpace?.displayName ?? targetSpaceSlug}</h2>
-            <Tiny style={{ marginTop: 4 }}>
-              Review the staged files, switch the destination space if needed, then queue them as LLM
-              Wiki ingest operations. This is manual file ingest - Paperclip-derived distillation always
-              routes to the default space regardless of the destination picked here.
-            </Tiny>
+            <h2 id="llm-wiki-ingest-modal-title" style={{ margin: 0, fontSize: 16, fontWeight: 650 }}>{wikiMessage(locale, "ingestFilesTitle", { space: targetSpace?.displayName ?? targetSpaceSlug })}</h2>
+            <Tiny style={{ marginTop: 4 }}>{wikiMessage(locale, "ingestFilesDescription")}</Tiny>
           </div>
-          <Button size="sm" variant="ghost" onClick={requestClose} disabled={busy} title="Close ingest modal">Close</Button>
+          <Button size="sm" variant="ghost" onClick={requestClose} disabled={busy} title={wikiMessage(locale, "closeIngestModal")}>{wikiMessage(locale, "close")}</Button>
         </div>
         <div style={{ padding: 18, display: "grid", gap: 14 }}>
           <SpacePicker
             spaces={spaces}
+            locale={locale}
             activeSpaceSlug={targetSpaceSlug}
             loading={spacesQuery.loading}
             error={spacesQuery.error?.message ?? null}
@@ -1972,8 +1978,10 @@ function IngestFilesModal({
             }}
           />
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <Badge tone="running">{files.length} staged</Badge>
-            <Button size="sm" onClick={() => inputRef.current?.click()} disabled={busy}>Add files</Button>
+            <Badge tone="running">{wikiMessage(locale, files.length === 1 ? "oneStagedFile" : "manyStagedFiles", {
+              count: new Intl.NumberFormat(locale).format(files.length),
+            })}</Badge>
+            <Button size="sm" onClick={() => inputRef.current?.click()} disabled={busy}>{wikiMessage(locale, "addFiles")}</Button>
             <input
               ref={inputRef}
               type="file"
@@ -1987,24 +1995,24 @@ function IngestFilesModal({
           </div>
           <div style={{ border: `1px solid ${tokens.border}`, borderRadius: 8, overflow: "hidden" }}>
             {files.length === 0 ? (
-              <div style={{ padding: 16 }}><Tiny>No files staged.</Tiny></div>
+              <div style={{ padding: 16 }}><Tiny>{wikiMessage(locale, "noFilesStaged")}</Tiny></div>
             ) : files.map((item) => (
               <div key={item.id} style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 12px", borderBottom: `1px solid ${tokens.border}`, minWidth: 0 }}>
                 <div style={{ flex: "1 1 auto", minWidth: 0 }}>
                   <strong style={{ display: "block", fontSize: 13, overflowWrap: "anywhere" }}>{item.file.name}</strong>
-                  <Tiny>{formatFileSize(item.file.size)}{item.file.type ? ` · ${item.file.type}` : ""}</Tiny>
+                  <Tiny>{formatFileSize(item.file.size, locale)}{item.file.type ? ` · ${item.file.type}` : ""}</Tiny>
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => onRemoveFile(item.id)} disabled={busy}>Remove</Button>
+                <Button size="sm" variant="ghost" onClick={() => onRemoveFile(item.id)} disabled={busy}>{wikiMessage(locale, "removeFile")}</Button>
               </div>
             ))}
           </div>
           {errorMsg ? <Callout tone="danger">{errorMsg}</Callout> : null}
           <Callout>
-            Confirming captures each file into <Mono>{targetSpaceSlug}/raw/</Mono>, attaches the original file to the ingest task, and initiates a task for the Wiki Maintainer to process.
+            {wikiMessage(locale, "confirmFilesDescription", { path: `${targetSpaceSlug}/raw/` })}
           </Callout>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-            <Button variant="ghost" onClick={requestClose} disabled={busy}>Cancel</Button>
-            <Button variant="primary" onClick={confirm} disabled={files.length === 0} loading={busy}>Capture & ingest into {targetSpace?.displayName ?? targetSpaceSlug}</Button>
+            <Button variant="ghost" onClick={requestClose} disabled={busy}>{wikiMessage(locale, "cancel")}</Button>
+            <Button variant="primary" onClick={confirm} disabled={files.length === 0} loading={busy}>{wikiMessage(locale, "captureIngestInto", { space: targetSpace?.displayName ?? targetSpaceSlug })}</Button>
           </div>
         </div>
       </div>
@@ -2024,13 +2032,14 @@ function IngestFilesModal({
   );
 }
 
-function formatFileSize(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes < 0) return "Unknown size";
-  if (bytes < 1024) return `${bytes} B`;
+function formatFileSize(bytes: number, locale: WikiLocale): string {
+  const number = (value: number, maximumFractionDigits: number) => new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
+  if (!Number.isFinite(bytes) || bytes < 0) return wikiMessage(locale, "unknownFileSize");
+  if (bytes < 1024) return `${number(bytes, 0)} B`;
   const kib = bytes / 1024;
-  if (kib < 1024) return `${kib.toFixed(kib >= 10 ? 0 : 1)} KB`;
+  if (kib < 1024) return `${number(kib, kib >= 10 ? 0 : 1)} KB`;
   const mib = kib / 1024;
-  return `${mib.toFixed(mib >= 10 ? 0 : 1)} MB`;
+  return `${number(mib, mib >= 10 ? 0 : 1)} MB`;
 }
 
 // ---------------------------------------------------------------------------
@@ -4009,7 +4018,7 @@ function formatTime(iso: string | null | undefined): string {
 // Ingest tab.
 // ---------------------------------------------------------------------------
 
-function IngestTab({ context, refreshOverview }: { context: { companyId: string | null }; refreshOverview: () => void }) {
+function IngestTab({ context, locale, refreshOverview }: { context: { companyId: string | null }; locale: WikiLocale; refreshOverview: () => void }) {
   const { pathname } = useHostLocation();
   const activeSpaceSlug = useMemo(() => readActiveSpaceSlugFromLocation(pathname), [pathname]);
   const spacesQuery = useSpaces(context.companyId);
@@ -4067,7 +4076,11 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
         contents,
       });
       const spaceLabel = activeSpace?.displayName ?? activeSpaceSlug;
-      toast({ tone: "success", title: `Source captured into ${spaceLabel}`, body: `Operation issue created. Check History to inspect.` });
+      toast({
+        tone: "success",
+        title: wikiMessage(locale, "sourceCapturedInto", { space: spaceLabel }),
+        body: wikiMessage(locale, "operationCreatedHistory"),
+      });
       setUrl("");
       setPasted("");
       setTitle("");
@@ -4075,7 +4088,7 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setErrorMsg(message);
-      toast({ tone: "error", title: "Ingest failed", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "ingestFailed"), body: message });
     } finally {
       setBusy(false);
     }
@@ -4090,14 +4103,15 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
         maxWidth: 920,
         minWidth: 0,
       }}>
-        <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: tokens.muted }}>Add Content</div>
-        <h2 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 650 }}>Capture into <span style={{ color: tokens.fg }}>{spaceLabel}</span></h2>
+        <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: tokens.muted }}>{wikiMessage(locale, "ingestTitle")}</div>
+        <h2 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 650 }}>{wikiMessage(locale, "captureInto", { space: spaceLabel })}</h2>
         <Tiny style={{ marginBottom: 18 }}>
-          Each capture queues an ingest operation scoped to <Mono>{activeSpaceSlug}</Mono>. Files land in that space's <Mono>raw/</Mono> folder and the Wiki Maintainer proposes a patch.
+          {wikiMessage(locale, "ingestDescription", { spaceSlug: activeSpaceSlug, rawPath: "raw/" })}
         </Tiny>
         <div style={{ display: "grid", gap: 14, marginBottom: 18 }}>
           <SpacePicker
             spaces={spaces}
+            locale={locale}
             activeSpaceSlug={activeSpaceSlug}
             loading={spacesQuery.loading}
             error={spacesQuery.error?.message ?? null}
@@ -4114,7 +4128,7 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
             }}
           />
           <div>
-            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 6 }}>Drop files anywhere on this page</label>
+            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 6 }}>{wikiMessage(locale, "dropFilesLabel")}</label>
             <div style={{
               minHeight: isMobile ? 180 : 230,
               border: `1.5px dashed ${tokens.pluginBorder}`,
@@ -4132,30 +4146,30 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
               <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, borderRadius: 8, background: tokens.card, color: tokens.pluginFg, border: `1px solid ${tokens.pluginBorder}` }}>
                 <DownloadCloudIcon size={24} />
               </div>
-              <div style={{ fontSize: 16, fontWeight: 650, color: tokens.fg }}>Drop source files here</div>
-              <Tiny>Review staged files before queueing maintainer tasks.</Tiny>
+              <div style={{ fontSize: 16, fontWeight: 650, color: tokens.fg }}>{wikiMessage(locale, "dropFilesLabel")}</div>
+              <Tiny>{wikiMessage(locale, "reviewStagedFiles")}</Tiny>
             </div>
           </div>
           <div data-testid="llm-wiki-ingest-manual-separator" aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: 12, color: tokens.muted, fontSize: 11, fontWeight: 650, textTransform: "uppercase", letterSpacing: "0.04em" }}>
             <span style={{ height: 1, flex: 1, background: tokens.border }} />
-            <span>or</span>
+            <span>{wikiMessage(locale, "or")}</span>
             <span style={{ height: 1, flex: 1, background: tokens.border }} />
           </div>
           <div>
-            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>Source title (optional)</label>
-            <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Karpathy LLM Wiki gist" />
+            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>{wikiMessage(locale, "sourceTitle")}</label>
+            <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder={wikiMessage(locale, "sourceTitlePlaceholder")} />
           </div>
           <div>
-            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>URL</label>
+            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>{wikiMessage(locale, "sourceUrl")}</label>
             <TextInput value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/article" />
           </div>
           <div>
-            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>Paste markdown / text</label>
-            <TextArea value={pasted} onChange={(e) => setPasted(e.target.value)} placeholder="Paste source content…" rows={8} />
+            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>{wikiMessage(locale, "sourceContent")}</label>
+            <TextArea value={pasted} onChange={(e) => setPasted(e.target.value)} placeholder={wikiMessage(locale, "sourceContentPlaceholder")} rows={8} />
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <Button variant="primary" onClick={submit} disabled={!canSubmit} loading={busy}>+ Capture & ingest</Button>
+          <Button variant="primary" onClick={submit} disabled={!canSubmit} loading={busy}>{wikiMessage(locale, "captureAndIngest")}</Button>
         </div>
         {errorMsg ? <div style={{ marginTop: 14 }}><Callout tone="danger">{errorMsg}</Callout></div> : null}
       </div>
@@ -4177,6 +4191,7 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
 
 function SpacePicker({
   spaces,
+  locale,
   activeSpaceSlug,
   loading,
   error,
@@ -4187,6 +4202,7 @@ function SpacePicker({
   onCreate,
 }: {
   spaces: WikiSpace[];
+  locale: WikiLocale;
   activeSpaceSlug: string;
   loading: boolean;
   error: string | null;
@@ -4210,7 +4226,7 @@ function SpacePicker({
   }, [isOpen, onClose]);
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>Space</label>
+      <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>{wikiMessage(locale, "spaceLabel")}</label>
       <button
         type="button"
         onClick={onToggle}
@@ -4240,7 +4256,7 @@ function SpacePicker({
         <ChevronDownIcon size={14} />
       </button>
       <div style={{ marginTop: 6, fontSize: 11, color: tokens.muted, lineHeight: 1.4 }}>
-        Defaults to the space you opened. Switching now re-routes the page so deep links carry the destination.
+        {wikiMessage(locale, "spacePickerHelp")}
       </div>
       {isOpen ? (
         <div
@@ -4261,7 +4277,7 @@ function SpacePicker({
           }}
         >
           {error ? <div style={{ padding: 10, fontSize: 12, color: tokens.statusBlocked }}>{error}</div> : null}
-          {loading ? <div style={{ padding: 10 }}><Tiny>Loading spaces…</Tiny></div> : null}
+          {loading ? <div style={{ padding: 10 }}><Tiny>{wikiMessage(locale, "loadingSpaces")}</Tiny></div> : null}
           {spaces.map((space) => (
             <button
               key={space.slug}
@@ -4312,7 +4328,7 @@ function SpacePicker({
             }}
           >
             <PlusIcon size={14} />
-            <span>New shared space…</span>
+            <span>{wikiMessage(locale, "newSharedSpace")}</span>
           </button>
         </div>
       ) : null}
@@ -4380,7 +4396,16 @@ type QueryStreamEvent = {
   answer?: string;
 };
 
-function QueryTab({ context, overview }: { context: { companyId: string | null }; overview: OverviewData }) {
+function queryStatusLabel(locale: WikiLocale, status: QueryThreadEntry["status"]): string {
+  switch (status) {
+    case "queued": return wikiMessage(locale, "queryQueued");
+    case "running": return wikiMessage(locale, "queryRunning");
+    case "done": return wikiMessage(locale, "queryDone");
+    case "error": return wikiMessage(locale, "queryError");
+  }
+}
+
+function QueryTab({ context, locale, overview }: { context: { companyId: string | null }; locale: WikiLocale; overview: OverviewData }) {
   const startQuery = usePluginAction("start-query");
   const fileAsPage = usePluginAction("file-as-page");
   const toast = usePluginToast();
@@ -4425,7 +4450,7 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
         return { ...entry, status: "done", answer: event.answer ?? entry.answer };
       }
       if (event.type === "query.error") {
-        return { ...entry, status: "error", errorMessage: event.message ?? "agent session error" };
+        return { ...entry, status: "error", errorMessage: event.message ?? wikiMessage(locale, "querySessionError") };
       }
       return entry;
     }));
@@ -4473,7 +4498,7 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
       setThread((prev) => prev.map((entry) =>
         entry.id === entryId ? { ...entry, status: "error", errorMessage: message } : entry,
       ));
-      toast({ tone: "error", title: "Ask failed", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "askFailed"), body: message });
     } finally {
       setBusy(false);
     }
@@ -4494,11 +4519,15 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
         answer,
         querySessionId: source?.querySessionId,
       });
-      toast({ tone: "success", title: "Answer filed", body: `Wrote ${filePath.trim()} and recorded a file-as-page task.` });
+      toast({
+        tone: "success",
+        title: wikiMessage(locale, "answerFiled"),
+        body: wikiMessage(locale, "answerFiledBody", { path: filePath.trim() }),
+      });
       setFileBody("");
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      toast({ tone: "error", title: "Could not file answer", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "couldNotFileAnswer"), body: message });
     } finally {
       setFiling(null);
     }
@@ -4508,17 +4537,15 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
     <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", flex: 1, minHeight: isMobile ? "auto" : 0, minWidth: 0 }}>
       <div style={{ flex: 1, padding: isMobile ? "16px" : "24px 28px", overflow: isMobile ? "visible" : "auto", minWidth: 0 }}>
         {thread.length === 0 ? (
-          <Callout>
-            Ask the wiki anything. Each question initiates a task assigned to the Wiki Maintainer. The answer streams below; you can promote useful answers into a wiki page.
-          </Callout>
+          <Callout>{wikiMessage(locale, "queryEmpty")}</Callout>
         ) : null}
         <div style={{ display: "grid", gap: 22, marginTop: 18 }}>
           {thread.map((entry) => (
             <div key={entry.id}>
-              <Tiny style={{ marginBottom: 4 }}>You · {formatTime(entry.createdAt)}</Tiny>
+              <Tiny style={{ marginBottom: 4 }}>{wikiMessage(locale, "queryUserTime", { time: formatWikiRelativeTime(entry.createdAt, locale) })}</Tiny>
               <div style={{ background: tokens.card, border: `1px solid ${tokens.border}`, padding: "10px 12px", borderRadius: 8, fontSize: 13 }}>{entry.prompt}</div>
               <Tiny style={{ marginTop: 8 }}>
-                Wiki Maintainer · {entry.status}
+                {wikiMessage(locale, "queryMaintainerStatus", { status: queryStatusLabel(locale, entry.status) })}
                 {entry.hiddenIssueIdentifier ? <> · <Mono>{entry.hiddenIssueIdentifier}</Mono></> : null}
               </Tiny>
               {entry.status === "error" ? (
@@ -4532,17 +4559,17 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
                   fontSize: 13,
                   lineHeight: 1.65,
                   color: tokens.fg,
-                }}>{entry.answer || (entry.status === "running" ? "Streaming…" : "")}</pre>
+                }}>{entry.answer || (entry.status === "running" ? wikiMessage(locale, "queryStreaming") : "")}</pre>
               )}
               {entry.answer.trim() && entry.status === "done" ? (
                 <div style={{ marginTop: 10, border: `1px dashed ${tokens.border}`, borderRadius: 8, padding: "10px 12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <strong style={{ fontSize: 13 }}>📑 File this answer as a wiki page?</strong>
-                    <Tiny style={{ marginLeft: isMobile ? 0 : "auto", width: isMobile ? "100%" : undefined }}>Path: <Mono>{filePath}</Mono></Tiny>
+                    <strong style={{ fontSize: 13 }}>📑 {wikiMessage(locale, "fileAnswerPrompt")}</strong>
+                    <Tiny style={{ marginLeft: isMobile ? 0 : "auto", width: isMobile ? "100%" : undefined }}>{wikiMessage(locale, "queryFilePath", { path: filePath })}</Tiny>
                   </div>
                   <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
                     <TextInput value={filePath} onChange={(e) => setFilePath(e.target.value)} style={{ maxWidth: isMobile ? "none" : 360 }} />
-                    <Button size="sm" variant="primary" onClick={() => fileAnswer(entry)} disabled={!filePath.trim()} loading={filing === entry.id}>Accept &amp; file</Button>
+                    <Button size="sm" variant="primary" onClick={() => fileAnswer(entry)} disabled={!filePath.trim()} loading={filing === entry.id}>{wikiMessage(locale, "acceptAndFile")}</Button>
                   </div>
                 </div>
               ) : null}
@@ -4550,12 +4577,12 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
           ))}
         </div>
         <div style={{ borderTop: `1px solid ${tokens.border}`, paddingTop: 14, marginTop: 22 }}>
-          <TextArea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ask the wiki…" rows={3} />
+          <TextArea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={wikiMessage(locale, "askWikiPlaceholder")} rows={3} />
           <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <Button variant="primary" size="sm" onClick={send} disabled={!prompt.trim()} loading={busy}>Send (⌘↵)</Button>
-            <Badge>Cite: wiki + raw</Badge>
-            <Badge>Max steps: 6</Badge>
-            <Tiny style={{ marginLeft: "auto" }}>Streamed via agent session · maintainer task</Tiny>
+            <Button variant="primary" size="sm" onClick={send} disabled={!prompt.trim()} loading={busy}>{wikiMessage(locale, "sendShortcut")}</Button>
+            <Badge>{wikiMessage(locale, "citeWikiAndRaw")}</Badge>
+            <Badge>{wikiMessage(locale, "maxSteps", { count: 6 })}</Badge>
+            <Tiny style={{ marginLeft: "auto" }}>{wikiMessage(locale, "streamedViaMaintainer")}</Tiny>
           </div>
         </div>
       </div>
@@ -4567,14 +4594,14 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
         overflow: isMobile ? "visible" : "auto",
         minWidth: 0,
       }}>
-        <Tiny style={{ marginBottom: 8 }}>SESSION</Tiny>
-        <PropRow label="Wiki" value={overview.wikiId} />
-        <PropRow label="Project" value={overview.managedProject.details?.name ?? overview.managedProject.status} />
-        <PropRow label="Agent" value={overview.managedAgent.details?.name ?? overview.managedAgent.status} />
-        <PropRow label="Operations" value={overview.operationCount} />
-        <PropRow label="Stream" value={stream.connected ? "live" : stream.connecting ? "connecting…" : "idle"} />
+        <Tiny style={{ marginBottom: 8 }}>{wikiMessage(locale, "session").toLocaleUpperCase(locale)}</Tiny>
+        <PropRow label={wikiMessage(locale, "navWiki")} value={overview.wikiId} />
+        <PropRow label={wikiMessage(locale, "projectLabel")} value={overview.managedProject.details?.name ?? overview.managedProject.status} />
+        <PropRow label={wikiMessage(locale, "agentLabel")} value={overview.managedAgent.details?.name ?? overview.managedAgent.status} />
+        <PropRow label={wikiMessage(locale, "operationsLabel")} value={overview.operationCount} />
+        <PropRow label={wikiMessage(locale, "streamLabel")} value={stream.connected ? wikiMessage(locale, "streamLive") : stream.connecting ? wikiMessage(locale, "streamConnecting") : wikiMessage(locale, "streamIdle")} />
         <Divider />
-        <Tiny style={{ marginBottom: 8 }}>ASK PROMPT</Tiny>
+        <Tiny style={{ marginBottom: 8 }}>{wikiMessage(locale, "askPrompt").toLocaleUpperCase(locale)}</Tiny>
         <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, monospace", fontSize: 12, color: tokens.muted }}>{overview.prompts.query}</pre>
       </aside>
     </div>
@@ -4793,19 +4820,19 @@ function wikiRunStatusLabel(locale: WikiLocale, status: string): string {
   return runStatusLabel(status);
 }
 
-function HistoryTab({ context, overview }: { context: { companyId: string | null; companyPrefix?: string | null }; overview: OverviewData }) {
+function HistoryTab({ context, locale, overview }: { context: { companyId: string | null; companyPrefix?: string | null }; locale: WikiLocale; overview: OverviewData }) {
   const isMobile = useIsMobileLayout();
   const projectId = overview.managedProject.projectId;
   const originKindPrefix = `plugin:${PLUGIN_ID}:operation`;
 
   if (!context.companyId) {
-    return <div style={{ padding: isMobile ? 16 : 24, flex: 1 }}><Callout>Choose a company to view LLM Wiki history.</Callout></div>;
+    return <div style={{ padding: isMobile ? 16 : 24, flex: 1 }}><Callout>{wikiMessage(locale, "chooseCompanyForHistory")}</Callout></div>;
   }
 
   if (!projectId) {
     return (
       <div style={{ padding: isMobile ? 16 : 24, flex: 1 }}>
-        <Callout tone="warn">The LLM Wiki operations project is not resolved yet. Reconcile the managed project in Settings, then history will show its issues here.</Callout>
+        <Callout tone="warn">{wikiMessage(locale, "historyProjectUnresolved")}</Callout>
       </div>
     );
   }

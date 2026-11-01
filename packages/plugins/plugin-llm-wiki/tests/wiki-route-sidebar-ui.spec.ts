@@ -114,6 +114,40 @@ describe("WikiRouteSidebar", () => {
       sdkUi: {
         usePluginData: (key: string, params?: Record<string, unknown>) => {
           pluginDataCalls.push({ key, params });
+          if (key === "overview") {
+            return {
+              data: {
+                status: "ok",
+                checkedAt: new Date().toISOString(),
+                wikiId: "default",
+                folder: {
+                  configured: true,
+                  path: "/tmp/company-wiki",
+                  realPath: "/tmp/company-wiki",
+                  access: "readWrite",
+                  readable: true,
+                  writable: true,
+                  requiredDirectories: [],
+                  requiredFiles: [],
+                  missingDirectories: [],
+                  missingFiles: [],
+                  healthy: true,
+                  problems: [],
+                  checkedAt: new Date().toISOString(),
+                },
+                managedAgent: { status: "resolved", source: "managed", agentId: "agent-1", details: { name: "Wiki Maintainer" } },
+                managedProject: { status: "resolved", projectId: "project-1", details: { name: "LLM Wiki", status: "active" } },
+                managedSkills: [],
+                operationCount: 0,
+                eventIngestion: { enabled: false, sources: { issues: false, comments: false, documents: false }, wikiId: "default", maxCharacters: 12000 },
+                capabilities: [],
+                prompts: { query: "Original wiki query prompt", lint: "Original wiki lint prompt" },
+              },
+              loading: false,
+              error: null,
+              refresh: () => undefined,
+            };
+          }
           if (key === "spaces") {
             return {
               data: {
@@ -212,6 +246,7 @@ describe("WikiRouteSidebar", () => {
           pluginActionCalls.push({ key, params });
           return {};
         },
+        usePluginStream: () => ({ connected: false, connecting: false, lastEvent: null }),
         usePluginToast: () => () => undefined,
         useHostLocation: () => hostLocation,
         useHostNavigation: () => ({
@@ -327,6 +362,47 @@ describe("WikiRouteSidebar", () => {
     expect(container.querySelector("nav[aria-label='Wiki primary']")?.textContent).toContain("Add Content");
     expect(container.textContent).toContain("Sidebar navigation");
     expect((container.querySelector("[role='tree']") as HTMLElement).dataset.selectedFile).toBe("wiki/concepts/sidebar-navigation.md");
+  });
+
+  it("localizes drag-and-drop file review while preserving the staged filename and destination path", () => {
+    hostLocation = {
+      pathname: "/PAP/wiki/ingest",
+      search: "",
+      hash: "",
+    };
+    const file = new File(["original source"], "Architecture Notes.md", { type: "text/markdown" });
+
+    act(() => {
+      root.render(createElement(WikiPage, {
+        context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+      } as never));
+    });
+
+    const page = container.querySelector("main") as HTMLElement;
+    act(() => page.dispatchEvent(createFileDragEvent("dragenter")));
+    expect(container.textContent).toContain("Solte para ingerir no LLM Wiki");
+    expect(container.querySelector("[aria-label='Fechar sobreposição de ingestão']")).not.toBeNull();
+
+    act(() => page.dispatchEvent(createFileDragEvent("drop", { files: [file] })));
+    expect(container.querySelector("[role='dialog']")).not.toBeNull();
+    expect(container.textContent).toContain("Ingerir arquivos em default");
+    expect(container.textContent).toContain("1 arquivo preparado");
+    expect(container.textContent).toContain("Architecture Notes.md");
+    expect(container.textContent).toContain("default/raw/");
+    expect(container.textContent).toContain("Capturar e ingerir em default");
+    expect(pluginActionCalls).toEqual([]);
+
+    act(() => {
+      root.render(createElement(WikiPage, {
+        context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "en" },
+      } as never));
+    });
+    expect(container.textContent).toContain("Ingest files into default");
+    expect(container.textContent).toContain("1 file staged");
+    expect(container.textContent).toContain("Architecture Notes.md");
+    expect(container.textContent).toContain("default/raw/");
+    expect(container.textContent).toContain("Capture & ingest into default");
+    expect(container.textContent).not.toContain("Ingerir arquivos em default");
   });
 
   it("collapses and expands the active space tree from the space row", () => {

@@ -199,6 +199,16 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
     options: commonClientOptions,
   },
+  "agent pause": {
+    description: { en: "Pause an agent", "pt-BR": "Pausar um agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
+  "agent resume": {
+    description: { en: "Resume an agent", "pt-BR": "Retomar um agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
   "agent me": {
     description: {
       en: "Show the current agent identity",

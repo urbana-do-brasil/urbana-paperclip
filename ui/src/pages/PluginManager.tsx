@@ -29,6 +29,10 @@ import {
 } from "@/components/ui/dialog";
 import { useToastActions } from "@/context/ToastContext";
 import { cn } from "@/lib/utils";
+import {
+  isBundledPluginRecord,
+  localizePluginPresentation,
+} from "@/lib/plugin-presentation-localization";
 import { useTranslation } from "@/i18n";
 
 function firstNonEmptyLine(value: string | null | undefined): string | null {
@@ -294,6 +298,13 @@ export function PluginManager() {
           <Card className="block py-0">
           <ul className="divide-y">
             {bundledPlugins.map((bundledPlugin) => {
+              const presentation = localizePluginPresentation(
+                bundledPlugin.pluginKey,
+                bundledPlugin.displayName,
+                bundledPlugin.description,
+                t,
+                true,
+              );
               const installedPlugin = installedByPackageName.get(bundledPlugin.packageName);
               const installPending =
                 installMutation.isPending &&
@@ -305,7 +316,7 @@ export function PluginManager() {
                   <div className="flex items-center gap-4 px-4 py-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{bundledPlugin.displayName}</span>
+                        <span className="font-medium">{presentation.displayName}</span>
                         <Badge variant="outline">
                           {localizeBundledTag(bundledPlugin.tag, t)}
                         </Badge>
@@ -325,7 +336,7 @@ export function PluginManager() {
                           <Badge variant="secondary">{t("pluginManager.available.notInstalled")}</Badge>
                         )}
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">{bundledPlugin.description}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{presentation.description}</p>
                       <p className="mt-1 text-xs text-muted-foreground">{bundledPlugin.packageName}</p>
                       {installPending && !bundledPlugin.hasBuiltEntrypoints && (
                         <p className="mt-2 text-xs text-muted-foreground">{t("pluginManager.available.building")}</p>
@@ -397,7 +408,16 @@ export function PluginManager() {
         ) : (
           <Card className="block py-0">
           <ul className="divide-y">
-            {installedPlugins.map((plugin) => (
+            {installedPlugins.map((plugin) => {
+              const presentation = localizePluginPresentation(
+                plugin.manifestJson.id,
+                plugin.manifestJson.displayName ?? plugin.packageName,
+                plugin.manifestJson.description || t("pluginManager.installed.noDescription"),
+                t,
+                plugin.manifestJson.id === plugin.pluginKey
+                  && isBundledPluginRecord(plugin, bundledPlugins),
+              );
+              return (
               <li key={plugin.id}>
                 <div className="flex items-start gap-4 px-4 py-3">
                   <div className="min-w-0 flex-1">
@@ -405,9 +425,9 @@ export function PluginManager() {
                       <Link
                         to={`/company/settings/instance/plugins/${plugin.id}`}
                         className="font-medium hover:underline truncate block"
-                        title={plugin.manifestJson.displayName ?? plugin.packageName}
+                        title={presentation.displayName}
                       >
-                        {plugin.manifestJson.displayName ?? plugin.packageName}
+                        {presentation.displayName}
                       </Link>
                       {bundledByPackageName.has(plugin.packageName) && (
                         <Badge variant="outline">
@@ -429,8 +449,8 @@ export function PluginManager() {
                         })}
                       </p>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate mt-0.5" title={plugin.manifestJson.description}>
-                      {plugin.manifestJson.description || t("pluginManager.installed.noDescription")}
+                    <p className="text-sm text-muted-foreground truncate mt-0.5" title={presentation.description}>
+                      {presentation.description}
                     </p>
                     {plugin.status === "error" && (
                       <div className="mt-3 rounded-md border border-red-500/25 bg-red-500/[0.06] px-3 py-2">
@@ -506,7 +526,7 @@ export function PluginManager() {
                           aria-label={t("pluginManager.actions.uninstallPlugin")}
                           onClick={() => {
                             setUninstallPluginId(plugin.id);
-                            setUninstallPluginName(plugin.manifestJson.displayName ?? plugin.packageName);
+                            setUninstallPluginName(presentation.displayName);
                           }}
                           disabled={uninstallMutation.isPending}
                         >
@@ -523,7 +543,8 @@ export function PluginManager() {
                   </div>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
           </Card>
         )}
@@ -570,7 +591,16 @@ export function PluginManager() {
             <DialogTitle>{t("pluginManager.installed.errorDetails")}</DialogTitle>
             <DialogDescription>
               {t("pluginManager.installed.errorDescription", {
-                name: errorDetailsPlugin?.manifestJson.displayName ?? errorDetailsPlugin?.packageName ?? t("pluginManager.installed.pluginFallback"),
+                name: errorDetailsPlugin
+                  ? localizePluginPresentation(
+                      errorDetailsPlugin.manifestJson.id,
+                      errorDetailsPlugin.manifestJson.displayName ?? errorDetailsPlugin.packageName,
+                      errorDetailsPlugin.manifestJson.description ?? "",
+                      t,
+                      errorDetailsPlugin.manifestJson.id === errorDetailsPlugin.pluginKey
+                        && isBundledPluginRecord(errorDetailsPlugin, bundledPlugins),
+                    ).displayName
+                  : t("pluginManager.installed.pluginFallback"),
               })}
             </DialogDescription>
           </DialogHeader>

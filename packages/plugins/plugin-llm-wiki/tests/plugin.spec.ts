@@ -88,6 +88,7 @@ let mockSearch = "";
 let mockAutoSelectFile: string | null = null;
 let mockNavigatedTo: string | null = null;
 let mockOverviewFolder: Record<string, unknown> | null = null;
+let mockManagedProjectId: string | null = "project-1";
 let mockSettingsFolder: Record<string, unknown> | null = null;
 let mockSettingsManagedAgent: Record<string, unknown> | null = null;
 let mockSettingsManagedRoutines: Array<Record<string, unknown>> = [];
@@ -115,6 +116,7 @@ beforeEach(() => {
   mockAutoSelectFile = null;
   mockNavigatedTo = null;
   mockOverviewFolder = null;
+  mockManagedProjectId = "project-1";
   mockSettingsFolder = null;
   mockSettingsManagedAgent = null;
   mockSettingsManagedRoutines = [];
@@ -147,7 +149,7 @@ beforeEach(() => {
                 checkedAt: new Date().toISOString(),
               },
               managedAgent: { status: "resolved", source: "managed", agentId: "agent-1", resourceKey: "wiki-maintainer", details: { name: "Wiki Maintainer", status: "idle", adapterType: "claude_local", icon: "book-open", urlKey: "wiki-maintainer" } },
-              managedProject: { status: "resolved", projectId: "project-1", details: { name: "LLM Wiki", status: "in_progress" } },
+              managedProject: { status: "resolved", projectId: mockManagedProjectId, details: { name: "LLM Wiki", status: "in_progress" } },
               managedSkills: DEFAULT_MANAGED_SKILLS,
               operationCount: 0,
               eventIngestion: {
@@ -344,6 +346,7 @@ beforeEach(() => {
         return { data: null, loading: false, error: null, refresh: () => undefined };
       },
       usePluginAction: () => async () => ({}),
+      usePluginStream: () => ({ connected: false, connecting: false, lastEvent: null }),
       usePluginToast: () => () => null,
       useHostNavigation: () => ({
         resolveHref: (to: string) => `/PAP${to.startsWith("/") ? to : `/${to}`}`,
@@ -821,6 +824,54 @@ describe("LLM Wiki plugin scaffold", () => {
     expect(markup).toContain("Issues table · project-1 · plugin:paperclipai.plugin-llm-wiki:operation");
     expect(markup).not.toContain("Recent runs");
     expect(markup).not.toContain(">Operations</h2>");
+  });
+
+  it("localizes manual ingestion controls while preserving source destinations and original values", () => {
+    mockPathname = "/PAP/wiki/ingest";
+    const portugueseMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+
+    expect(portugueseMarkup).toContain("Adicionar conteúdo");
+    expect(portugueseMarkup).toContain("Capturar em default");
+    expect(portugueseMarkup).toContain("raw/");
+    expect(portugueseMarkup).toContain("Cole o conteúdo da fonte…");
+    expect(portugueseMarkup).toContain("https://example.com/article");
+    expect(portugueseMarkup).not.toContain("Capture into default");
+    expect(portugueseMarkup).not.toContain("Paste source content…");
+
+    const englishMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "en" },
+    } as never));
+    expect(englishMarkup).toContain("Add Content");
+    expect(englishMarkup).toContain("Capture into default");
+    expect(englishMarkup).toContain("Paste source content…");
+    expect(englishMarkup).not.toContain("Cole o conteúdo da fonte…");
+  });
+
+  it("localizes wiki query controls while leaving the agent prompt and operation history contract intact", () => {
+    mockPathname = "/PAP/wiki/query";
+    const portugueseQuery = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+    expect(portugueseQuery).toContain("Pergunte qualquer coisa ao Wiki");
+    expect(portugueseQuery).toContain('placeholder="Pergunte ao Wiki…"');
+    expect(portugueseQuery).toContain("INSTRUÇÃO DA CONSULTA");
+    expect(portugueseQuery).toContain("wiki-query skill");
+    expect(portugueseQuery).not.toContain('placeholder="Ask the wiki…"');
+
+    mockPathname = "/PAP/wiki/history";
+    const portugueseHistory = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+    expect(portugueseHistory).toContain("Issues table · project-1 · plugin:paperclipai.plugin-llm-wiki:operation");
+
+    mockManagedProjectId = null;
+    const missingProjectHistory = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+    expect(missingProjectHistory).toContain("O projeto de operações do LLM Wiki ainda não foi resolvido.");
+    expect(missingProjectHistory).not.toContain("Issues table");
   });
 
   it("loads AGENTS.md from the Wiki page and exposes an edit affordance", () => {

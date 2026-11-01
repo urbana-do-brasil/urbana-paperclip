@@ -92,7 +92,7 @@ describe("company export localization", () => {
     const out = path.join(tempRoot, "package");
     await runCommand(exportArgs(out));
 
-    const output = logSpy.mock.calls.map(([line]) => String(line)).join("\n");
+    const output = logSpy.mock.calls.map((call: readonly unknown[]) => String(call[0])).join("\n");
     expect(output).toContain(`${success} ${out} (${count}).`);
     expect(output).toContain(warning);
     expect(await readFile(path.join(out, "COMPANY.md"), "utf8")).toBe("# Acme\n");
@@ -169,7 +169,7 @@ describe("company export localization", () => {
 
     expect(portugueseStructuredError).toBe(englishStructuredError);
     expect(portugueseStructuredError).toContain(`Export output directory ${out} already contains files.`);
-    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1, 1, 1]);
+    expect(exitSpy.mock.calls.map((call: readonly unknown[]) => call[0])).toEqual([1, 1, 1, 1]);
     expect(await readFile(path.join(out, "KEEP.md"), "utf8")).toBe("keep this file\n");
     expect(logSpy).not.toHaveBeenCalled();
   });

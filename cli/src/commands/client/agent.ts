@@ -31,6 +31,7 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { adminOperationMessage } from "../../localization/admin-operations.js";
 import { cliMessage } from "../../localization/index.js";
 
 interface AgentListOptions extends BaseClientOptions {
@@ -440,6 +441,16 @@ export function registerAgentCommands(program: Command): void {
           try {
             const ctx = resolveCommandContext(opts);
             const result = await ctx.api.post(`${apiPath`/api/agents/${agentId}`}/${path}`, {});
+            if (name === "pause" || name === "resume") {
+              if (ctx.json) {
+                printOutput(result, { json: true });
+              } else {
+                const message = name === "pause" ? "agentPauseDone" : "agentResumeDone";
+                console.log(adminOperationMessage(message, { agentId }));
+                printOutput(result, { json: false });
+              }
+              return;
+            }
             printOutput(result, { json: ctx.json });
           } catch (err) {
             handleCommandError(err);

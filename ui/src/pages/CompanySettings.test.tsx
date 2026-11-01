@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AGENT_ADAPTER_TYPES, getEnvironmentCapabilities } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { CompanyEnvironments } from "./CompanyEnvironments";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -41,6 +43,11 @@ const mockSecretsApi = vi.hoisted(() => ({
   list: vi.fn(),
 }));
 
+const mockPluginsApi = vi.hoisted(() => ({
+  list: vi.fn(),
+  listBundled: vi.fn(),
+}));
+
 const mockPushToast = vi.hoisted(() => vi.fn());
 const mockSetBreadcrumbs = vi.hoisted(() => vi.fn());
 const mockSetSelectedCompanyId = vi.hoisted(() => vi.fn());
@@ -67,6 +74,10 @@ vi.mock("../api/instanceSettings", () => ({
 
 vi.mock("../api/secrets", () => ({
   secretsApi: mockSecretsApi,
+}));
+
+vi.mock("../api/plugins", () => ({
+  pluginsApi: mockPluginsApi,
 }));
 
 vi.mock("../context/BreadcrumbContext", () => ({
@@ -164,7 +175,8 @@ function renderCompanyEnvironments(queryClient: QueryClient, initialPath = ENVIR
 describe("CompanyEnvironments", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
 
@@ -177,6 +189,8 @@ describe("CompanyEnvironments", () => {
       getEnvironmentCapabilities(AGENT_ADAPTER_TYPES),
     );
     mockSecretsApi.list.mockResolvedValue([]);
+    mockPluginsApi.list.mockResolvedValue([]);
+    mockPluginsApi.listBundled.mockResolvedValue([]);
     mockCompaniesApi.update.mockResolvedValue({
       id: "company-1",
       name: "Paperclip",
@@ -186,7 +200,8 @@ describe("CompanyEnvironments", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await i18n.changeLanguage(DEFAULT_LOCALE);
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
@@ -397,5 +412,77 @@ describe("CompanyEnvironments", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("localizes a verified bundled sandbox provider without rewriting its config schema", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const bundlePath = "/app/packages/plugins/sandbox-providers/daytona";
+    mockPluginsApi.list.mockResolvedValue([
+      {
+        id: "daytona-plugin-id",
+        pluginKey: "paperclip.daytona-sandbox-provider",
+        packageName: "@paperclipai/plugin-daytona",
+        packagePath: bundlePath,
+        manifestJson: { id: "paperclip.daytona-sandbox-provider" },
+      },
+    ]);
+    mockPluginsApi.listBundled.mockResolvedValue([
+      {
+        pluginKey: "paperclip.daytona-sandbox-provider",
+        packageName: "@paperclipai/plugin-daytona",
+        localPath: bundlePath,
+        tag: "first-party",
+      },
+    ]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue(
+      getEnvironmentCapabilities(AGENT_ADAPTER_TYPES, {
+        sandboxProviders: {
+          daytona: {
+            status: "supported",
+            supportsRunExecution: true,
+            displayName: "Daytona Sandbox",
+            description: "Provisions Daytona sandboxes with configurable image or snapshot selection, startup timeouts, and lease reuse.",
+            pluginId: "daytona-plugin-id",
+            pluginKey: "paperclip.daytona-sandbox-provider",
+            configSchema: {
+              type: "object",
+              properties: {
+                providerField: { type: "string", title: "Provider-owned field" },
+              },
+            },
+          },
+        },
+      }),
+    );
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/new`));
+    });
+    await waitForAssertion(() => expect(getEnvironmentFormPage()).toBeTruthy());
+
+    const dialog = getEnvironmentFormPage()!;
+    await waitForAssertion(() => {
+      expect(dialog.querySelector('option[value="sandbox"]')).toBeTruthy();
+    });
+    const driverSelect = Array.from(dialog.querySelectorAll("select")).find((select) =>
+      Array.from(select.options).some((option) => option.value === "sandbox"),
+    ) as HTMLSelectElement | undefined;
+    expect(driverSelect).toBeTruthy();
+    await act(async () => {
+      driverSelect!.value = "sandbox";
+      driverSelect!.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await waitForAssertion(() => expect(dialog.textContent).toContain("Sandbox Daytona"));
+
+    expect(dialog.textContent).toContain("Provisiona sandboxes do Daytona com seleção de imagem ou snapshot");
+    expect(dialog.textContent).toContain("Provider-owned field");
+    expect(dialog.textContent).not.toContain("Provisions Daytona sandboxes");
+
+    await act(async () => {
+      root.unmount();
+    });
+    queryClient.clear();
   });
 });

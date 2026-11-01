@@ -3812,6 +3812,112 @@
     "multipleSettingsRoute": "Vários plugins declaram a rota de configurações da organização",
     "multipleSettingsRouteSuffix": "Desative um plugin ou altere sua rota."
   },
+  "pluginPresentation": {
+    "plugins": {
+      "llmWiki": {
+        "name": "LLM Wiki",
+        "description": "Plugin LLM Wiki baseado em arquivos locais para ingestão de fontes, navegação pela wiki, consultas, lint e fluxos de manutenção."
+      },
+      "workspaceChanges": {
+        "name": "Alterações no workspace",
+        "description": "Adiciona uma aba de alterações aos workspaces de execução e de projetos usando o cálculo de diff do Git do próprio plugin e @pierre/diffs."
+      },
+      "fakeSandboxProvider": {
+        "name": "Provedor de sandbox simulado",
+        "description": "Plugin próprio e determinístico de provedor de sandbox para exercitar a integração de plugins provedores do Paperclip sem infraestrutura externa."
+      },
+      "cloudflareSandboxProvider": {
+        "name": "Provedor de sandbox do Cloudflare",
+        "description": "Plugin próprio de provedor de sandbox que provisiona sandboxes do Cloudflare por meio de uma ponte Worker implantada pelo operador."
+      },
+      "modalSandboxProvider": {
+        "name": "Provedor de sandbox Modal",
+        "description": "Plugin próprio de provedor de sandbox que provisiona sandboxes do Modal como ambientes de execução do Paperclip."
+      },
+      "daytonaSandboxProvider": {
+        "name": "Provedor de sandbox Daytona",
+        "description": "Plugin próprio de provedor de sandbox que provisiona sandboxes do Daytona como ambientes de execução do Paperclip."
+      },
+      "novitaSandboxProvider": {
+        "name": "Provedor de sandbox Novita",
+        "description": "Plugin de provedor de sandbox que provisiona ambientes Novita Agent Sandbox para execuções de agentes do Paperclip."
+      },
+      "kubernetesSandboxProvider": {
+        "name": "Sandbox Kubernetes (alfa)",
+        "description": "Construído sobre kubernetes-sigs/agent-sandbox (v1alpha1). ALFA — podem ocorrer mudanças incompatíveis conforme a evolução do CRD upstream. Usa o modo estável de Job batch/v1 como alternativa em clusters sem agent-sandbox instalado. Plugin próprio do Paperclip para provedores de sandbox Kubernetes."
+      },
+      "e2bSandboxProvider": {
+        "name": "Provedor de sandbox E2B",
+        "description": "Plugin próprio de provedor de sandbox que provisiona sandboxes em nuvem do E2B como ambientes de execução do Paperclip."
+      },
+      "exeDevSandboxProvider": {
+        "name": "Provedor de sandbox exe.dev",
+        "description": "Plugin de provedor de sandbox que provisiona VMs do exe.dev como ambientes de execução do Paperclip."
+      },
+      "createosSandboxProvider": {
+        "name": "Provedor de sandbox CreateOS",
+        "description": "Executa agentes do Paperclip em sandboxes do CreateOS."
+      },
+      "kitchenSinkExample": {
+        "name": "Kitchen Sink (exemplo)",
+        "description": "Plugin de referência que demonstra a API atual de plugins do Paperclip, superfícies de UI, ações da ponte, eventos, tarefas agendadas, webhooks, ferramentas, acesso ao workspace local e diagnósticos de runtime em um único lugar."
+      },
+      "helloWorldExample": {
+        "name": "Widget Hello World (exemplo)",
+        "description": "Plugin de UI de referência que adiciona um widget Hello World simples ao painel do Paperclip."
+      },
+      "fileBrowserExample": {
+        "name": "Navegador de arquivos (exemplo)",
+        "description": "Plugin de exemplo que adiciona um link Files na barra lateral de cada projeto, uma aba de navegação e edição de arquivos nos detalhes do projeto e anotações de links de arquivos por comentário, com uma ação de menu de contexto para abrir os arquivos referenciados."
+      },
+      "pluginAuthoringSmokeExample": {
+        "name": "Teste de autoria de plugin",
+        "description": "Um plugin do Paperclip"
+      },
+      "pluginOrchestrationSmokeExample": {
+        "name": "Teste de orquestração de plugin",
+        "description": "Plugin próprio de teste que exercita as APIs de orquestração do Paperclip."
+      }
+    },
+    "sandboxProviders": {
+      "fake": {
+        "name": "Provedor de sandbox simulado",
+        "description": "Executa comandos em um diretório temporário local isolado enquanto exercita o ciclo de vida do plugin provedor de sandbox."
+      },
+      "cloudflare": {
+        "name": "Sandbox do Cloudflare",
+        "description": "Executa ambientes sandbox do Paperclip por meio de uma ponte Cloudflare Worker baseada no Sandbox SDK e em Durable Objects."
+      },
+      "modal": {
+        "name": "Sandbox Modal",
+        "description": "Provisiona sandboxes do Modal com configurações de imagem, app, autenticação, timeouts e controles de rede."
+      },
+      "daytona": {
+        "name": "Sandbox Daytona",
+        "description": "Provisiona sandboxes do Daytona com seleção de imagem ou snapshot, timeouts de inicialização e reutilização de leases configuráveis."
+      },
+      "novita": {
+        "name": "Novita Agent Sandbox",
+        "description": "Provisiona instâncias Novita Agent Sandbox com templates, timeout de inatividade, caminho do workspace e reutilização de leases configuráveis."
+      },
+      "kubernetes": {
+        "name": "Kubernetes",
+        "description": "Direciona execuções de agentes a namespaces Kubernetes separados por tenant. O backend padrão (sandbox-cr, alfa) usa kubernetes-sigs/agent-sandbox para execução de vários comandos; o backend alternativo (job) usa o Job estável batch/v1 em clusters sem agent-sandbox instalado."
+      },
+      "e2b": {
+        "name": "Sandbox em nuvem E2B",
+        "description": "Provisiona sandboxes em nuvem do E2B com templates, timeouts e reutilização de leases configuráveis."
+      },
+      "exeDev": {
+        "name": "VM do exe.dev",
+        "description": "Provisiona VMs do exe.dev pela API HTTPS e executa comandos por SSH direto para cargas de trabalho duradouras do Paperclip."
+      },
+      "createos": {
+        "name": "Sandbox CreateOS",
+        "description": "Sandboxes do CreateOS com saída de comandos ao vivo e reutilização opcional com pausa e retomada."
+      }
+    }
+  },
   "pluginManager": {
     "loading": "Carregando plugins...",
     "loadError": "Não foi possível carregar os plugins.",

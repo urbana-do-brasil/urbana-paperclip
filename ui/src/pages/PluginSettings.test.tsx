@@ -14,6 +14,7 @@ const mockPluginsApi = vi.hoisted(() => ({
   health: vi.fn(),
   dashboard: vi.fn(),
   logs: vi.fn(),
+  listBundled: vi.fn(),
   getConfig: vi.fn(),
   listLocalFolders: vi.fn(),
   configureLocalFolder: vi.fn(),
@@ -173,6 +174,7 @@ describe("PluginSettings", () => {
     document.body.appendChild(container);
 
     mockPluginsApi.get.mockResolvedValue(basePlugin());
+    mockPluginsApi.listBundled.mockResolvedValue([]);
     mockPluginsApi.dashboard.mockResolvedValue(null);
     mockPluginsApi.health.mockResolvedValue({ pluginId: "plugin-1", status: "ready", healthy: true, checks: [] });
     mockPluginsApi.logs.mockResolvedValue([]);

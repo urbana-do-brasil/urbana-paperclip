@@ -3717,6 +3717,112 @@
     "multipleSettingsRoute": "Multiple plugins declare the company settings route",
     "multipleSettingsRouteSuffix": "Disable one plugin or change its route."
   },
+  "pluginPresentation": {
+    "plugins": {
+      "llmWiki": {
+        "name": "LLM Wiki",
+        "description": "Local-file LLM Wiki plugin for source ingestion, wiki browsing, query, lint, and maintenance workflows."
+      },
+      "workspaceChanges": {
+        "name": "Workspace Changes",
+        "description": "Adds a Changes tab to execution and project workspaces using plugin-local Git diff computation and @pierre/diffs."
+      },
+      "fakeSandboxProvider": {
+        "name": "Fake Sandbox Provider",
+        "description": "First-party deterministic sandbox provider plugin for exercising Paperclip provider-plugin integration without external infrastructure."
+      },
+      "cloudflareSandboxProvider": {
+        "name": "Cloudflare Sandbox Provider",
+        "description": "First-party sandbox provider plugin that provisions Cloudflare sandboxes through an operator-deployed Worker bridge."
+      },
+      "modalSandboxProvider": {
+        "name": "Modal Sandbox Provider",
+        "description": "First-party sandbox provider plugin that provisions Modal sandboxes as Paperclip execution environments."
+      },
+      "daytonaSandboxProvider": {
+        "name": "Daytona Sandbox Provider",
+        "description": "First-party sandbox provider plugin that provisions Daytona sandboxes as Paperclip execution environments."
+      },
+      "novitaSandboxProvider": {
+        "name": "Novita Sandbox Provider",
+        "description": "Sandbox provider plugin that provisions Novita Agent Sandbox environments for Paperclip agent runs."
+      },
+      "kubernetesSandboxProvider": {
+        "name": "Kubernetes Sandbox (alpha)",
+        "description": "Built on kubernetes-sigs/agent-sandbox (v1alpha1). ALPHA — expect breaking changes as the upstream CRD evolves. Falls back to stable batch/v1 Job mode for clusters without agent-sandbox installed. First-party Paperclip sandbox-provider plugin for Kubernetes."
+      },
+      "e2bSandboxProvider": {
+        "name": "E2B Sandbox Provider",
+        "description": "First-party sandbox provider plugin that provisions E2B cloud sandboxes as Paperclip execution environments."
+      },
+      "exeDevSandboxProvider": {
+        "name": "exe.dev Sandbox Provider",
+        "description": "Sandbox provider plugin that provisions exe.dev VMs as Paperclip execution environments."
+      },
+      "createosSandboxProvider": {
+        "name": "CreateOS Sandbox Provider",
+        "description": "Runs Paperclip agents in CreateOS sandboxes."
+      },
+      "kitchenSinkExample": {
+        "name": "Kitchen Sink (Example)",
+        "description": "Reference plugin that demonstrates the current Paperclip plugin API surface, UI surfaces, bridge actions, events, jobs, webhooks, tools, local workspace access, and runtime diagnostics in one place."
+      },
+      "helloWorldExample": {
+        "name": "Hello World Widget (Example)",
+        "description": "Reference UI plugin that adds a simple Hello World widget to the Paperclip dashboard."
+      },
+      "fileBrowserExample": {
+        "name": "File Browser (Example)",
+        "description": "Example plugin that adds a Files link under each project in the sidebar, a file browser + editor tab on the project detail page, and per-comment file link annotations with a context menu action to open referenced files."
+      },
+      "pluginAuthoringSmokeExample": {
+        "name": "Plugin Authoring Smoke Example",
+        "description": "A Paperclip plugin"
+      },
+      "pluginOrchestrationSmokeExample": {
+        "name": "Plugin Orchestration Smoke Example",
+        "description": "First-party smoke plugin that exercises Paperclip orchestration-grade plugin APIs."
+      }
+    },
+    "sandboxProviders": {
+      "fake": {
+        "name": "Fake Sandbox Provider",
+        "description": "Runs commands in an isolated local temporary directory while exercising the sandbox provider plugin lifecycle."
+      },
+      "cloudflare": {
+        "name": "Cloudflare Sandbox",
+        "description": "Runs Paperclip sandbox environments through a Cloudflare Worker bridge backed by the Sandbox SDK and Durable Objects."
+      },
+      "modal": {
+        "name": "Modal Sandbox",
+        "description": "Provisions Modal sandboxes with configurable image, app, auth, timeouts, and network controls."
+      },
+      "daytona": {
+        "name": "Daytona Sandbox",
+        "description": "Provisions Daytona sandboxes with configurable image or snapshot selection, startup timeouts, and lease reuse."
+      },
+      "novita": {
+        "name": "Novita Agent Sandbox",
+        "description": "Provisions Novita Agent Sandbox instances with configurable templates, idle timeout, workspace path, and lease reuse."
+      },
+      "kubernetes": {
+        "name": "Kubernetes",
+        "description": "Dispatches agent runs in per-tenant Kubernetes namespaces. Default backend (sandbox-cr, alpha) uses kubernetes-sigs/agent-sandbox for multi-command exec; fallback backend (job) uses stable batch/v1 Job for clusters without agent-sandbox installed."
+      },
+      "e2b": {
+        "name": "E2B Cloud Sandbox",
+        "description": "Provisions E2B cloud sandboxes with configurable templates, timeouts, and lease reuse."
+      },
+      "exeDev": {
+        "name": "exe.dev VM",
+        "description": "Provisions exe.dev VMs through the HTTPS API, then runs commands over direct SSH for long-lived Paperclip workloads."
+      },
+      "createos": {
+        "name": "CreateOS Sandbox",
+        "description": "CreateOS sandboxes with live command output and optional pause/resume reuse."
+      }
+    }
+  },
   "pluginManager": {
     "loading": "Loading plugins...",
     "loadError": "Failed to load plugins.",

@@ -309,12 +309,13 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 3.11d Localizar molduras e fallbacks de `PluginPage`, `CompanySettingsPluginPage`, `slots.tsx` e `NotFound`, mantendo rotas, IDs, nomes de slot/plugin e erros externos originais. Testes focados: 46/46; typecheck UI e token gates passaram após conclusão das alterações paralelas.
   - [x] 3.11e Localizar a UI do plugin próprio Workspace Changes, incluindo estados, acessibilidade e plurais; preservar caminhos, patches, refs, contagens e diagnósticos. Testes do plugin: 35/35; typecheck e build passaram. Acessibilidade verificada por markup renderizado.
   - [x] 3.11f1 Localizar navegação e leitura do plugin próprio LLM Wiki; preservar conteúdo Markdown, slugs, nomes de arquivo e dados escritos por pessoas. Testes do plugin: 103/103; FileTree/catálogos: 20/20; typechecks e builds do plugin/UI e token gates passaram.
-  - [ ] 3.11f2 Localizar ingestão, consulta e histórico do LLM Wiki; preservar consultas, conteúdo-fonte, caminhos, payloads e mensagens externas.
+  - [x] 3.11f2 Localizar ingestão, consulta e histórico do LLM Wiki; preservar consultas, conteúdo-fonte, caminhos, payloads e mensagens externas. Testes do plugin: 106/106; typecheck e build passaram.
   - [ ] 3.11f3 Localizar espaços e configurações do LLM Wiki; preservar nomes e conteúdo de organizações, diretórios, arquivos, instruções e valores de configuração.
   - [x] 3.11g1 Localizar as UIs próprias dos exemplos de autoria, Hello World e orquestração, preservando IDs, rotas, estados técnicos e conteúdo demonstrativo variável. Renderização: 7/7; worker authoring: 2/2; typechecks UI, authoring e hello passaram. Fixture de orquestração exige dependências locais; typecheck isolado da UI passou com links temporários removidos em seguida.
   - [x] 3.11g2 Localizar a UI própria do exemplo File Browser, preservando caminhos, nomes e conteúdo dos arquivos e respostas externas. Testes: 9/9; build/typecheck passaram.
   - [x] 3.11g3 Localizar a UI própria do exemplo Kitchen Sink, preservando contratos, IDs, valores e conteúdo dinâmico demonstrado. Testes de markup: 5/5; typecheck e build passaram; interação em navegador não foi executada.
   - [ ] 3.11h Localizar metadata de apresentação mantida pelos pacotes próprios, incluindo nomes/descrições de plugins e sandbox providers exibidos no host; preservar schemas e valores de configuração arbitrários de plugins externos.
+    - [x] 3.11h1 Localizar nome/descrição top-level de bundles comprovados no gerenciador, settings, sidebars e providers em Environments; verificar colisões e fallback externo, sem alterar schemas. UI: 105/105 testes; typecheck e token gates passaram. Contributions, recursos gerenciados e superfícies sem prova de origem permanecem pendentes.
 
 ## 4. CLI bilíngue
 
@@ -332,6 +333,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3i Localizar help e marcador humano de resultado nulo de `agent get`, preservando dados, erros externos e JSON. Testes focados: 33/33; typecheck estrito do grafo CLI alterado passou.
   - [x] 4.3j Localizar help e resultado humano nulo de `agent me`, preservando dados, erros e JSON. Testes focados: 10/10; typecheck estrito direcionado passou; typecheck completo da CLI terminou com exit 137 por memória.
   - [x] 4.3k Localizar help e saída humana de `agent inbox` e `agent inbox-mine`, preservando seleção, ordem, valores, erros e JSON. Inbox e formatador comum: 16/16 testes; typecheck estrito direcionado passou. Typecheck completo da CLI apresentou erros em arquivos fora deste lote.
+  - [x] 4.3l Localizar help e confirmação de `agent pause`/`resume`, preservando resposta humana completa, payloads, erros e JSON. Testes: 6/6; typecheck estrito direcionado passou.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação

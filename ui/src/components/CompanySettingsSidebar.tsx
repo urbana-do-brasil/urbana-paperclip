@@ -23,6 +23,10 @@ import { SIDEBAR_SCROLL_RESET_STATE } from "@/lib/navigation-scroll";
 import { queryKeys } from "@/lib/queryKeys";
 import { useCompany } from "@/context/CompanyContext";
 import { useTranslation } from "@/i18n";
+import {
+  isBundledPluginRecord,
+  localizePluginPresentation,
+} from "@/lib/plugin-presentation-localization";
 import { useCloudInstance } from "@/hooks/useCloudInstance";
 import { useHiddenSettings } from "@/hooks/useHiddenSettings";
 import { usePluginSlots } from "@/plugins/slots";
@@ -79,6 +83,11 @@ export function CompanySettingsSidebar() {
     queryFn: () => pluginsApi.list(),
     // The listing only feeds the per-plugin subtree below; skip it when the
     // operator hides the Plugins surface.
+    enabled: showPlugins,
+  });
+  const { data: bundledPlugins } = useQuery({
+    queryKey: queryKeys.plugins.examples,
+    queryFn: () => pluginsApi.listBundled(),
     enabled: showPlugins,
   });
   const sidebarPlugins = (plugins ?? []).filter((plugin) => !isSandboxProviderOnly(plugin));
@@ -174,23 +183,33 @@ export function CompanySettingsSidebar() {
           )}
           {showPlugins && sidebarPlugins.length > 0 ? (
             <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border/70 pl-3">
-              {sidebarPlugins.map((plugin) => (
-                <NavLink
-                  key={plugin.id}
-                  to={`${INSTANCE_SETTINGS_PATH_PREFIX}/plugins/${plugin.id}`}
-                  state={SIDEBAR_SCROLL_RESET_STATE}
-                  className={({ isActive }) =>
-                    [
-                      "rounded-md px-2 py-1.5 text-xs transition-colors",
-                      isActive
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-                    ].join(" ")
-                  }
-                >
-                  {plugin.manifestJson.displayName ?? plugin.packageName}
-                </NavLink>
-              ))}
+              {sidebarPlugins.map((plugin) => {
+                const presentation = localizePluginPresentation(
+                  plugin.manifestJson.id,
+                  plugin.manifestJson.displayName ?? plugin.packageName,
+                  plugin.manifestJson.description ?? "",
+                  t,
+                  plugin.manifestJson.id === plugin.pluginKey
+                    && isBundledPluginRecord(plugin, bundledPlugins),
+                );
+                return (
+                  <NavLink
+                    key={plugin.id}
+                    to={`${INSTANCE_SETTINGS_PATH_PREFIX}/plugins/${plugin.id}`}
+                    state={SIDEBAR_SCROLL_RESET_STATE}
+                    className={({ isActive }) =>
+                      [
+                        "rounded-md px-2 py-1.5 text-xs transition-colors",
+                        isActive
+                          ? "bg-accent text-foreground"
+                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                      ].join(" ")
+                    }
+                  >
+                    {presentation.displayName}
+                  </NavLink>
+                );
+              })}
             </div>
           ) : null}
           {showPage("instance.adapters") && (

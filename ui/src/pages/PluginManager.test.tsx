@@ -292,4 +292,52 @@ describe("PluginManager localization", () => {
     expect(document.body.textContent).toContain("Tem certeza de que deseja desinstalar 外部 Search Provider?");
     expect(document.body.textContent).toContain("Esta ação não pode ser desfeita.");
   });
+
+  it("localizes first-party metadata in the bundled catalog and installed list", async () => {
+    mockPluginsApi.list.mockResolvedValue([
+      plugin({
+        id: "workspace-changes-plugin",
+        pluginKey: "paperclip.workspace-diff",
+        packageName: "@paperclipai/plugin-workspace-diff",
+        packagePath: "packages/plugins/plugin-workspace-diff",
+        manifestJson: {
+          id: "paperclip.workspace-diff",
+          displayName: "Workspace Changes",
+          version: "0.1.0",
+          description: "Adds a Changes tab to execution and project workspaces using plugin-local Git diff computation and @pierre/diffs.",
+          author: "Paperclip",
+        },
+      }),
+    ]);
+    mockPluginsApi.listBundled.mockResolvedValue([
+      {
+        packageName: "@paperclipai/plugin-llm-wiki",
+        pluginKey: "paperclipai.plugin-llm-wiki",
+        displayName: "LLM Wiki",
+        description: "Local-file LLM Wiki plugin for source ingestion, wiki browsing, query, lint, and maintenance workflows.",
+        localPath: "packages/plugins/plugin-llm-wiki",
+        tag: "first-party",
+        experimental: false,
+        hasBuiltEntrypoints: true,
+      },
+      {
+        packageName: "@paperclipai/plugin-workspace-diff",
+        pluginKey: "paperclip.workspace-diff",
+        displayName: "Workspace Changes",
+        description: "Adds a Changes tab to execution and project workspaces using plugin-local Git diff computation and @pierre/diffs.",
+        localPath: "packages/plugins/plugin-workspace-diff",
+        tag: "first-party",
+        experimental: false,
+        hasBuiltEntrypoints: true,
+      },
+    ]);
+    await i18n.changeLanguage("pt-BR");
+
+    mounted = await renderManager(container);
+
+    expect(container.textContent).toContain("Alterações no workspace");
+    expect(container.textContent).toContain("Adiciona uma aba de alterações aos workspaces de execução e de projetos");
+    expect(container.textContent).toContain("Plugin LLM Wiki baseado em arquivos locais");
+    expect(container.textContent).not.toContain("Local-file LLM Wiki plugin");
+  });
 });

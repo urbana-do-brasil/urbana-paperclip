@@ -1,5 +1,4 @@
 import {
-  DEFAULT_USER_LOCALE,
   assistantClientNames,
   mcpAuthorizationHandoffInstructionsFor,
   mcpSetupMarkdown,
@@ -7,7 +6,7 @@ import {
   mcpSetupSteps,
   type AssistantClient,
 } from "@paperclipai/shared";
-import type { SupportedLocale } from "@paperclipai/shared/localization";
+import { DEFAULT_USER_LOCALE, type SupportedLocale } from "@paperclipai/shared/localization";
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 

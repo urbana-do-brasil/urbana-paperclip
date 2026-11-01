@@ -19,6 +19,7 @@ import {
   type EnvironmentCustomImageSetupSession,
   type JsonSchema,
 } from "@paperclipai/shared";
+import { pluginsApi } from "@/api/plugins";
 import {
   environmentsApi,
   type EnvironmentCustomImageActiveTemplateDrift,
@@ -55,7 +56,12 @@ import {
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";
 import { useCompany } from "@/context/CompanyContext";
 import { useToast } from "@/context/ToastContext";
+import { useTranslation } from "@/i18n";
 import { environmentDisplayLabel, isPlatformManagedEnvironment } from "@/lib/managed-sandbox-environment";
+import {
+  isBundledPluginRecord,
+  localizeSandboxProviderPresentation,
+} from "@/lib/plugin-presentation-localization";
 import { queryKeys } from "@/lib/queryKeys";
 import { Link, useNavigate, useParams } from "@/lib/router";
 import { buildSameOriginWebSocketUrl } from "@/lib/websocket-url";
@@ -1292,6 +1298,7 @@ function EnvironmentImageTemplatePanel({
 }
 
 export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps) {
+  const { t } = useTranslation();
   const { environmentId: routeEnvironmentId } = useParams<{ environmentId?: string }>();
   const navigate = useNavigate();
   const { selectedCompanyId } = useCompany();
@@ -1401,6 +1408,23 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
     queryFn: () => environmentsApi.capabilities(selectedCompanyId!),
     enabled: Boolean(selectedCompanyId) && environmentsEnabled,
   });
+
+  const { data: installedPlugins } = useQuery({
+    queryKey: queryKeys.plugins.all,
+    queryFn: () => pluginsApi.list(),
+    enabled: Boolean(selectedCompanyId) && environmentsEnabled,
+  });
+  const { data: bundledPlugins } = useQuery({
+    queryKey: queryKeys.plugins.examples,
+    queryFn: () => pluginsApi.listBundled(),
+    enabled: Boolean(selectedCompanyId) && environmentsEnabled,
+  });
+  const bundledPluginIds = useMemo(() => new Set(
+    (installedPlugins ?? [])
+      .filter((plugin) => plugin.manifestJson.id === plugin.pluginKey
+        && isBundledPluginRecord(plugin, bundledPlugins))
+      .map((plugin) => plugin.id),
+  ), [bundledPlugins, installedPlugins]);
 
   const { data: secrets } = useQuery({
     queryKey: selectedCompanyId ? ["company-secrets", selectedCompanyId] : ["company-secrets", "none"],
@@ -1788,12 +1812,22 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
 
   const discoveredPluginSandboxProviders = Object.entries(environmentCapabilities?.sandboxProviders ?? {})
     .filter(([provider, capability]) => provider !== "fake" && capability.supportsRunExecution)
-    .map(([provider, capability]) => ({
-      provider,
-      displayName: capability.displayName || provider,
-      description: capability.description,
-      configSchema: normalizeJsonSchema(capability.configSchema),
-    }))
+    .map(([provider, capability]) => {
+      const presentation = localizeSandboxProviderPresentation(
+        provider,
+        capability.pluginKey,
+        capability.displayName || provider,
+        capability.description,
+        t,
+        capability.pluginId !== undefined && bundledPluginIds.has(capability.pluginId),
+      );
+      return {
+        provider,
+        displayName: presentation.displayName,
+        description: presentation.description,
+        configSchema: normalizeJsonSchema(capability.configSchema),
+      };
+    })
     .sort((left, right) => left.displayName.localeCompare(right.displayName));
   const sandboxCreationEnabled = discoveredPluginSandboxProviders.length > 0;
   const pluginSandboxProviders =
@@ -1852,7 +1886,17 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
   const editingSandboxCapability = editingSandboxProvider
     ? environmentCapabilities?.sandboxProviders?.[editingSandboxProvider]
     : null;
-  const editingSandboxDisplayName = editingSandboxCapability?.displayName ?? editingSandboxProvider ?? "sandbox";
+  const editingSandboxDisplayName = editingSandboxProvider
+    ? localizeSandboxProviderPresentation(
+        editingSandboxProvider,
+        editingSandboxCapability?.pluginKey,
+        editingSandboxCapability?.displayName ?? editingSandboxProvider,
+        editingSandboxCapability?.description,
+        t,
+        editingSandboxCapability?.pluginId !== undefined
+          && bundledPluginIds.has(editingSandboxCapability.pluginId),
+      ).displayName
+    : "sandbox";
   const nonLocalEnvironments = savedEnvironments.filter((environment) => !isLocalEnvironment(environment));
   const instanceDefaultEnvironmentId = normalizeNonLocalEnvironmentId(
     instanceSettings?.defaultEnvironmentId ?? null,
@@ -2004,7 +2048,17 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
               ? environmentCapabilities?.sandboxProviders?.[sandboxProvider]
               : null;
             const sandboxProviderDisplayName =
-              sandboxProviderCapability?.displayName ?? sandboxProvider ?? "sandbox";
+              sandboxProvider
+                ? localizeSandboxProviderPresentation(
+                    sandboxProvider,
+                    sandboxProviderCapability?.pluginKey,
+                    sandboxProviderCapability?.displayName ?? sandboxProvider,
+                    sandboxProviderCapability?.description,
+                    t,
+                    sandboxProviderCapability?.pluginId !== undefined
+                      && bundledPluginIds.has(sandboxProviderCapability.pluginId),
+                  ).displayName
+                : "sandbox";
             return (
               <div
                 key={environment.id}

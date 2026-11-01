@@ -3453,3 +3453,12 @@ Caminhos, patches, refs, dados e diagnósticos externos foram preservados. Check
 - `agent inbox`/`inbox-mine` e formatador: 16/16 testes e typecheck estrito direcionado passaram. Após revisão, ordem e campos nulos/objetos preferidos foram preservados. Typecheck completo da CLI apontou TS7031 em `company-export-localization.test.ts:95` e TS2305 para `DEFAULT_USER_LOCALE` em `server/src/services/public-mcp/setup.ts:2`, fora dos arquivos deste lote.
 
 A navegação da Wiki preserva conteúdo, nomes, slugs, caminhos e erros externos; os dois comandos preservam JSON e dados. Checkpoint: **309/329 tarefas**.
+
+### Wiki, metadata de plugins e ciclo de vida CLI — 3.11f2/h1 e 4.3l
+
+- Ingestão manual/arquivos, consulta e histórico da Wiki: suíte do plugin 106/106; typecheck e build passaram. React peer foi ligado temporariamente para os testes e o link foi removido.
+- Metadata de bundles: 105/105 testes em oito arquivos, typecheck UI e token gates passaram. Origem exige correspondência de pluginKey, packageName e caminho com o catálogo bundled; providers também exigem pluginId validado. Sem prova, mantém-se metadata original. Contributions, recursos gerenciados e superfícies sem prova de origem continuam pendentes.
+- `agent pause`/`resume`: 6/6 testes e typecheck estrito direcionado passaram; resposta humana completa e JSON preservados.
+- Corrigidos dois erros reais de tipo: callbacks em `company-export-localization.test.ts` e import de `DEFAULT_USER_LOCALE` em `public-mcp/setup.ts`. Testes e compilações estritas focais passaram; typecheck completo da CLI terminou com exit 137 por memória.
+
+Checkpoint: **312/331 tarefas**.

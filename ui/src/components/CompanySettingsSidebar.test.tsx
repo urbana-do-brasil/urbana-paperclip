@@ -17,6 +17,7 @@ const mockSidebarBadgesApi = vi.hoisted(() => ({
 }));
 const mockPluginsApi = vi.hoisted(() => ({
   list: vi.fn(),
+  listBundled: vi.fn(),
 }));
 const mockUsePluginSlots = vi.hoisted(() => vi.fn());
 
@@ -124,6 +125,7 @@ describe("CompanySettingsSidebar", () => {
       joinRequests: 2,
     });
     mockPluginsApi.list.mockResolvedValue([]);
+    mockPluginsApi.listBundled.mockResolvedValue([]);
     mockUsePluginSlots.mockReturnValue({
       slots: [],
       isLoading: false,
