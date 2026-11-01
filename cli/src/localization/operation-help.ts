@@ -206,6 +206,27 @@ const operationHelp: Record<string, CommandHelp> = {
     },
     options: commonClientOptions,
   },
+  "agent inbox": {
+    description: {
+      en: "List current agent assigned inbox items",
+      "pt-BR": "Listar tarefas atribuídas ao agente atual",
+    },
+    options: commonClientOptions,
+  },
+  "agent inbox-mine": {
+    description: {
+      en: "List the current agent's inbox items touched or archived by a board user",
+      "pt-BR": "Listar tarefas do agente atual com atividade ou arquivadas por um usuário do board",
+    },
+    options: {
+      ...commonClientOptions,
+      "--user-id": { en: "Board user ID", "pt-BR": "ID do usuário do board" },
+      "--status": {
+        en: "Comma-separated issue statuses",
+        "pt-BR": "Status das tarefas separados por vírgulas",
+      },
+    },
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {

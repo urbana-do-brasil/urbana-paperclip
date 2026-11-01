@@ -4735,6 +4735,12 @@
       "maxItems_other": "Must have at most {{count}} items"
     }
   },
+  "fileTree": {
+    "ariaLabel": "Files",
+    "error": "Error",
+    "emptyTitle": "No files",
+    "emptyDescription": "Files will appear here when they are available."
+  },
   "common": {
     "loading": "Loading…",
     "companyLogo": "{{company}} logo",

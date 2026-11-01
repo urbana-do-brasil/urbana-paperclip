@@ -21,6 +21,14 @@ import {
 } from "@paperclipai/plugin-sdk/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type AnchorHTMLAttributes, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { readIngestOperationIssueId, uploadIssueAttachmentFile } from "./issue-attachments.js";
+import {
+  formatWikiRelativeTime,
+  formatWikiTimestamp,
+  resolveWikiLocale,
+  wikiMessage,
+  type WikiLocale,
+  type WikiMessageKey,
+} from "./messages.js";
 
 // ---------------------------------------------------------------------------
 // Shared design tokens — copied from the UX wireframe shared.css so the plugin
@@ -1304,6 +1312,7 @@ const PencilIcon = makeLucideIcon(
 
 export function SidebarLink({ context }: PluginSidebarProps) {
   const hostNavigation = useHostNavigation();
+  const locale = resolveWikiLocale(context.locale);
   return (
     <a
       {...hostNavigation.linkProps("/wiki")}
@@ -1313,7 +1322,7 @@ export function SidebarLink({ context }: PluginSidebarProps) {
       <span aria-hidden="true" className="shrink-0">
         <BookOpenIcon />
       </span>
-      <span className="flex-1 truncate">Wiki</span>
+      <span className="flex-1 truncate">{wikiMessage(locale, "navWiki")}</span>
     </a>
   );
 }
@@ -1338,17 +1347,24 @@ type SectionKey = "browse" | "ingest" | "query" | "lint" | "history" | "settings
 
 const SECTIONS: ReadonlyArray<{
   key: SectionKey;
-  label: string;
   Icon: (props: LucideIconProps) => ReactElement;
-  description: string;
 }> = [
-  { key: "browse", label: "Wiki", Icon: BookOpenIcon, description: "Open wiki pages and raw sources from the sidebar." },
-  { key: "query", label: "Ask", Icon: MessageSquareTextIcon, description: "Ask the Wiki Maintainer agent a cited question against the local wiki." },
-  { key: "ingest", label: "Add Content", Icon: PlusCircleIcon, description: "Capture a new source into the active space and queue an ingest operation." },
-  { key: "lint", label: "Lint", Icon: ListChecksIcon, description: "Run structural checks for orphan pages, missing backlinks, and stale provenance." },
-  { key: "history", label: "History", Icon: HistoryIcon, description: "Inspect recent LLM Wiki operation issues." },
-  { key: "settings", label: "Settings", Icon: SlidersHorizontalIcon, description: "Folder, agent, project, and routine configuration scoped to this company." },
+  { key: "browse", Icon: BookOpenIcon },
+  { key: "query", Icon: MessageSquareTextIcon },
+  { key: "ingest", Icon: PlusCircleIcon },
+  { key: "lint", Icon: ListChecksIcon },
+  { key: "history", Icon: HistoryIcon },
+  { key: "settings", Icon: SlidersHorizontalIcon },
 ];
+
+const SECTION_MESSAGE_KEYS: Readonly<Record<SectionKey, WikiMessageKey>> = {
+  browse: "navWiki",
+  query: "navAsk",
+  ingest: "navAddContent",
+  lint: "navLint",
+  history: "navHistory",
+  settings: "navSettings",
+};
 
 const TOP_TOOL_KEYS: ReadonlySet<SectionKey> = new Set<SectionKey>(["query", "ingest"]);
 const BOTTOM_TOOL_KEYS: ReadonlySet<SectionKey> = new Set<SectionKey>(["history", "settings"]);
@@ -1587,6 +1603,7 @@ function isEditableWikiPagePath(path: string): boolean {
 }
 
 export function WikiPage({ context }: PluginPageProps) {
+  const locale = resolveWikiLocale(context.locale);
   const { pathname, search } = useHostLocation();
   const isMobile = useIsMobileLayout();
   const section = useMemo(() => readSectionFromLocation(pathname, search), [pathname, search]);
@@ -1675,7 +1692,7 @@ export function WikiPage({ context }: PluginPageProps) {
   }, [isDragActive, resetDragState]);
 
   if (!context.companyId) {
-    return <main style={{ ...shellStyle, height: isMobile ? "auto" : "100%", minHeight: isMobile ? "auto" : 600 }}>Choose a company to open the LLM Wiki.</main>;
+    return <main style={{ ...shellStyle, height: isMobile ? "auto" : "100%", minHeight: isMobile ? "auto" : 600 }}>{wikiMessage(locale, "chooseCompany")}</main>;
   }
 
   return (
@@ -1690,14 +1707,14 @@ export function WikiPage({ context }: PluginPageProps) {
       <section style={{ flex: 1, minHeight: isMobile ? "auto" : 0, overflow: isMobile ? "visible" : "hidden", display: "flex" }}>
         {overview.error ? (
           <div style={{ padding: 24, flex: 1 }}>
-            <Callout tone="danger">LLM Wiki bridge error: {overview.error.message}</Callout>
+            <Callout tone="danger">{wikiMessage(locale, "bridgeError", { message: overview.error.message })}</Callout>
           </div>
         ) : !overview.data ? (
-          <div style={{ padding: 24, flex: 1, color: tokens.muted, fontSize: 13 }}>Loading wiki…</div>
+          <div style={{ padding: 24, flex: 1, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "loadingWiki")}</div>
         ) : !overview.data.folder.healthy ? (
           <UnconfiguredFolder context={context} folder={overview.data.folder} refresh={overview.refresh} />
         ) : section === "browse" ? (
-          <BrowseTab context={context} />
+          <BrowseTab context={context} locale={locale} />
         ) : section === "ingest" ? (
           <IngestTab context={context} refreshOverview={overview.refresh} />
         ) : section === "query" ? (
@@ -2403,11 +2420,12 @@ function SpacePagesWarmup({ companyId, spaceSlug }: { companyId: string | null; 
 }
 
 export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
+  const locale = resolveWikiLocale(context.locale);
   const hostNavigation = useHostNavigation();
   const { pathname, search, state } = useHostLocation();
   const activeSection = useMemo(() => readSectionFromLocation(pathname, search), [pathname, search]);
   const activeSpaceSlug = useMemo(() => readActiveSpaceSlugFromLocation(pathname), [pathname]);
-  const companyName = context.companyPrefix ?? "Company";
+  const companyName = context.companyPrefix ?? wikiMessage(locale, "companyFallback");
   const spacesQuery = useSpaces(context.companyId);
   const spaces = useMemo(() => {
     const list = spacesQuery.data?.spaces ?? [];
@@ -2508,7 +2526,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
     });
   };
 
-  const renderToolLink = ({ key, label, Icon }: (typeof SECTIONS)[number]) => {
+  const renderToolLink = ({ key, Icon }: (typeof SECTIONS)[number]) => {
     const isLegacyLintSettingsActive = key === "settings" && activeSection === "lint";
     const isActive = key === activeSection || isLegacyLintSettingsActive;
     return (
@@ -2529,7 +2547,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         <span aria-hidden="true" className="shrink-0">
           <Icon />
         </span>
-        <span className="flex-1 truncate">{label}</span>
+        <span className="flex-1 truncate">{wikiMessage(locale, SECTION_MESSAGE_KEYS[key])}</span>
       </a>
     );
   };
@@ -2552,7 +2570,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         </a>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto border-t border-border px-3 py-3">
-        <nav aria-label="Wiki primary" className="mb-3">
+        <nav aria-label={wikiMessage(locale, "navPrimary")} className="mb-3">
           <div className="flex flex-col gap-0.5">
             {TOP_TOOL_SECTIONS.map(renderToolLink)}
           </div>
@@ -2560,14 +2578,14 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         <div className="mb-1 flex items-center gap-1 px-2 text-[11px] font-semibold uppercase tracking-normal text-muted-foreground" style={{ height: 24 }}>
           <span
             className="flex-1 truncate"
-            title="Destination spaces. Browsing and manual ingest happen in the active space; Paperclip distillation always writes into the default space in Phase 1."
+            title={wikiMessage(locale, "sharedSpacesDescription")}
           >
-            Shared Spaces
+            {wikiMessage(locale, "sharedSpaces")}
           </span>
           <button
             type="button"
-            aria-label="Create space"
-            title="Create space"
+            aria-label={wikiMessage(locale, "createSpace")}
+            title={wikiMessage(locale, "createSpace")}
             onClick={() => setCreateOpen(true)}
             style={{
               width: 22,
@@ -2587,11 +2605,11 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         </div>
         {spacesQuery.error ? (
           <div style={{ padding: "6px 8px", fontSize: 11, color: tokens.statusBlocked }}>
-            Failed to load spaces: {spacesQuery.error.message}
+            {wikiMessage(locale, "failedToLoadSpaces", { message: spacesQuery.error.message })}
           </div>
         ) : null}
         {spaces.length === 0 && spacesQuery.loading ? (
-          <Tiny style={{ padding: "6px 8px" }}>Loading spaces…</Tiny>
+          <Tiny style={{ padding: "6px 8px" }}>{wikiMessage(locale, "loadingSpaces")}</Tiny>
         ) : null}
         <div style={{ display: "flex", flexDirection: "column" }}>
           {spaces.map((space) => {
@@ -2636,6 +2654,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
                   }}
                   activeSpaceSlug={activeSpaceSlug}
                   companyId={context.companyId}
+                  locale={locale}
                 />
                 {showTree ? (
                   <div style={{ paddingLeft: 18, marginTop: 2, marginBottom: 6 }}>
@@ -2651,8 +2670,11 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
                       wrapLabels={false}
                       loading={pages.loading}
                       error={pages.error ? { message: pages.error.message } : null}
-                      empty={{ title: "No pages yet", description: "Add content to populate this space." }}
-                      ariaLabel={`Wiki pages in ${space.displayName}`}
+                      empty={{
+                        title: wikiMessage(locale, "noPages"),
+                        description: wikiMessage(locale, "addPagesToSpace"),
+                      }}
+                      ariaLabel={wikiMessage(locale, "pagesInSpace", { space: space.displayName })}
                     />
                   </div>
                 ) : null}
@@ -2662,7 +2684,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         </div>
       </div>
       <nav
-        aria-label="Wiki secondary"
+        aria-label={wikiMessage(locale, "navSecondary")}
         className="shrink-0 border-t border-border px-3 py-3"
       >
         <div className="flex flex-col gap-0.5">
@@ -2697,6 +2719,7 @@ function SpaceRow({
   onArchived,
   activeSpaceSlug,
   companyId,
+  locale,
 }: {
   space: WikiSpace;
   active: boolean;
@@ -2709,6 +2732,7 @@ function SpaceRow({
   onArchived: (slug: string) => void;
   activeSpaceSlug: string;
   companyId: string | null;
+  locale: WikiLocale;
 }) {
   const [hover, setHover] = useState(false);
   const isDefault = space.slug === DEFAULT_SPACE_SLUG;
@@ -2717,7 +2741,7 @@ function SpaceRow({
       role="button"
       tabIndex={0}
       aria-expanded={expanded}
-      aria-label={`${expanded ? "Collapse" : active ? "Expand" : "Open"} ${space.displayName} space`}
+      aria-label={wikiMessage(locale, expanded ? "collapseSpace" : active ? "expandSpace" : "openSpace", { space: space.displayName })}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -2748,14 +2772,14 @@ function SpaceRow({
         {space.displayName}
       </span>
       {space.accessScope === "personal" ? (
-        <Badge tone="default" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>personal</Badge>
+        <Badge tone="default" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>{wikiMessage(locale, "personal")}</Badge>
       ) : space.accessScope === "team" ? (
-        <Badge tone="default" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>team</Badge>
+        <Badge tone="default" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>{wikiMessage(locale, "team")}</Badge>
       ) : null}
       <button
         type="button"
-        aria-label={`${space.displayName} space menu`}
-        title="Space menu"
+        aria-label={wikiMessage(locale, "spaceMenu", { space: space.displayName })}
+        title={wikiMessage(locale, "spaceMenuTitle")}
         onClick={(event) => {
           event.stopPropagation();
           onMenuToggle();
@@ -2786,6 +2810,7 @@ function SpaceRow({
           companyId={companyId}
           onClose={onMenuClose}
           onArchived={onArchived}
+          locale={locale}
         />
       ) : null}
     </div>
@@ -2800,6 +2825,7 @@ function SpaceRowMenu({
   companyId,
   onClose,
   onArchived,
+  locale,
 }: {
   space: WikiSpace;
   isDefault: boolean;
@@ -2808,6 +2834,7 @@ function SpaceRowMenu({
   companyId: string | null;
   onClose: () => void;
   onArchived: (slug: string) => void;
+  locale: WikiLocale;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const archive = usePluginAction("archive-space");
@@ -2834,16 +2861,16 @@ function SpaceRowMenu({
 
   const handleArchive = async () => {
     if (!companyId || isDefault || busy) return;
-    if (typeof window !== "undefined" && !window.confirm(`Archive ${space.displayName}? Pages remain on disk; you can restore later through the plugin API or by un-archiving from the database.`)) {
+    if (typeof window !== "undefined" && !window.confirm(wikiMessage(locale, "confirmArchiveSpace", { space: space.displayName }))) {
       return;
     }
     setBusy(true);
     try {
       await archive({ companyId, spaceSlug: space.slug });
-      toast({ tone: "success", title: "Space archived", body: `${space.displayName} hidden from sidebar.` });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceArchived"), body: wikiMessage(locale, "spaceHiddenFromSidebar", { space: space.displayName }) });
       onArchived(space.slug);
     } catch (err) {
-      toast({ tone: "error", title: "Archive failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "archiveFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -2854,10 +2881,10 @@ function SpaceRowMenu({
     setBusy(true);
     try {
       await bootstrap({ companyId, spaceSlug: space.slug });
-      toast({ tone: "success", title: "Space refreshed", body: `${space.displayName} index re-bootstrapped.` });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceRefreshed"), body: wikiMessage(locale, "spaceIndexRebuilt", { space: space.displayName }) });
       onClose();
     } catch (err) {
-      toast({ tone: "error", title: "Refresh failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "refreshFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -2882,7 +2909,7 @@ function SpaceRowMenu({
       }}
     >
       <SpaceMenuItem
-        label="Edit space"
+        label={wikiMessage(locale, "editSpace")}
         Icon={PencilIcon}
         onClick={() => {
           onClose();
@@ -2890,13 +2917,13 @@ function SpaceRowMenu({
         }}
       />
       <SpaceMenuItem
-        label="Refresh index"
+        label={wikiMessage(locale, "refreshIndex")}
         Icon={RefreshIcon}
         onClick={handleRefresh}
         disabled={busy}
       />
       <SpaceMenuItem
-        label="Open ingest"
+        label={wikiMessage(locale, "openIngest")}
         Icon={PlusCircleIcon}
         onClick={() => {
           onClose();
@@ -2905,7 +2932,7 @@ function SpaceRowMenu({
       />
       <SpaceMenuDivider />
       <SpaceMenuItem
-        label={isDefault ? "Archive space (default cannot be archived)" : "Archive space…"}
+        label={wikiMessage(locale, isDefault ? "archiveDefaultSpace" : "archiveSpace")}
         Icon={ArchiveIcon}
         onClick={handleArchive}
         disabled={isDefault || busy}
@@ -3212,7 +3239,7 @@ function expandedAncestors(path: string | null): string[] {
   return out;
 }
 
-function BrowseTab({ context }: { context: { companyId: string | null } }) {
+function BrowseTab({ context, locale }: { context: { companyId: string | null }; locale: WikiLocale }) {
   const { pathname, search } = useHostLocation();
   const activeSpaceSlug = useMemo(() => readActiveSpaceSlugFromLocation(pathname), [pathname]);
   const pages = usePages(context.companyId, { includeRaw: true, spaceSlug: activeSpaceSlug });
@@ -3223,17 +3250,17 @@ function BrowseTab({ context }: { context: { companyId: string | null } }) {
   return (
     <div style={{ flex: 1, minWidth: 0, overflow: isMobile ? "visible" : "auto" }}>
       {pages.loading && !selected ? (
-        <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>Loading pages…</div>
+        <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "loadingPages")}</div>
       ) : pages.error && !selected ? (
-        <div style={{ padding: isMobile ? 16 : 28 }}><Callout tone="danger">Failed to load pages: {pages.error.message}</Callout></div>
+        <div style={{ padding: isMobile ? 16 : 28 }}><Callout tone="danger">{wikiMessage(locale, "failedToLoadPages", { message: pages.error.message })}</Callout></div>
       ) : (
-        <PageDetail context={context} path={selected} spaceSlug={activeSpaceSlug} />
+        <PageDetail context={context} path={selected} spaceSlug={activeSpaceSlug} locale={locale} />
       )}
     </div>
   );
 }
 
-function PageDetail({ context, path, spaceSlug }: { context: { companyId: string | null }; path: string | null; spaceSlug?: string }) {
+function PageDetail({ context, path, spaceSlug, locale }: { context: { companyId: string | null }; path: string | null; spaceSlug?: string; locale: WikiLocale }) {
   const content = usePageContent(context.companyId, path, spaceSlug ?? null);
   const writePage = usePluginAction("write-page");
   const toast = usePluginToast();
@@ -3333,20 +3360,20 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
     if (typeof result.hash === "string") setSavedHash(result.hash);
   }, [context.companyId, content.data, editable, path, savedHash, writePage, spaceSlug]);
 
-  if (!path) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>Pick a page from the tree.</div>;
-  if (content.loading) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>Loading {path}…</div>;
+  if (!path) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "pickPage")}</div>;
+  if (content.loading) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "loadingPage", { path })}</div>;
   if (content.error && path.startsWith("raw/")) {
     return (
       <div style={{ padding: isMobile ? 16 : 28, display: "grid", gap: 12 }}>
         <Callout tone="warn">
-          The captured source <Mono>{path}</Mono> is indexed but no longer exists in the configured wiki folder. Refresh the wiki or re-ingest the source to restore it.
+          {wikiMessage(locale, "capturedSourcePrefix")} <Mono>{path}</Mono> {wikiMessage(locale, "capturedSourceSuffix")}
         </Callout>
         <Tiny>{content.error.message}</Tiny>
       </div>
     );
   }
-  if (content.error) return <div style={{ padding: isMobile ? 16 : 28 }}><Callout tone="danger">Failed to read {path}: {content.error.message}</Callout></div>;
-  if (!content.data) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>No content for {path}.</div>;
+  if (content.error) return <div style={{ padding: isMobile ? 16 : 28 }}><Callout tone="danger">{wikiMessage(locale, "failedToReadPage", { path, message: content.error.message })}</Callout></div>;
+  if (!content.data) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "noContentForPage", { path })}</div>;
   const { contents, title, sourceRefs, updatedAt, hash } = content.data;
   const visibleFrontmatter = parsedMarkdown.frontmatter.filter((property) => property.key.toLowerCase() !== "title");
   const displayTitle = (BASELINE_FILES as readonly string[]).includes(path) ? basename(path) : title ?? basename(path);
@@ -3372,23 +3399,23 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             {isDistilledProjectPage ? (
-              <Button size="sm" variant="ghost" onClick={() => setProvenanceOpen(true)} title="Show source provenance and freshness">
-                <InfoIcon size={12} /> Provenance
+              <Button size="sm" variant="ghost" onClick={() => setProvenanceOpen(true)} title={wikiMessage(locale, "showProvenance")}>
+                <InfoIcon size={12} /> {wikiMessage(locale, "provenance")}
               </Button>
             ) : null}
             {editable && !editing ? (
-              <Button size="sm" onClick={() => { setSavedHash(hash); setEditing(true); }}>Edit page</Button>
+              <Button size="sm" onClick={() => { setSavedHash(hash); setEditing(true); }}>{wikiMessage(locale, "editPage")}</Button>
             ) : editable ? (
-              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); content.refresh(); }}>Done</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); content.refresh(); }}>{wikiMessage(locale, "done")}</Button>
             ) : (
-              <Badge>read-only source</Badge>
+              <Badge>{wikiMessage(locale, "readOnlySource")}</Badge>
             )}
           </div>
         </div>
-        <Tiny>Updated {updatedAt ? formatTime(updatedAt) : "—"}</Tiny>
+        <Tiny>{wikiMessage(locale, "updated", { time: formatWikiRelativeTime(updatedAt, locale) })}</Tiny>
       </header>
       {isDistilledProjectPage && path ? (
-        <FreshnessChip companyId={context.companyId} pagePath={path} companyPrefix={(context as { companyPrefix?: string | null }).companyPrefix ?? null} />
+        <FreshnessChip companyId={context.companyId} pagePath={path} companyPrefix={(context as { companyPrefix?: string | null }).companyPrefix ?? null} locale={locale} />
       ) : null}
       {editing ? (
         <>
@@ -3396,11 +3423,11 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
             key={`${path}:${hash}`}
             resetKey={`${path}:${hash}`}
             value={contents}
-            placeholder={`Edit ${path}`}
+            placeholder={wikiMessage(locale, "editPagePlaceholder", { path })}
             minHeight={isMobile ? 260 : 420}
             onSave={async (nextContents) => {
               await savePageContents(nextContents);
-              toast({ tone: "success", title: `${path} saved` });
+              toast({ tone: "success", title: wikiMessage(locale, "savedPage", { path }) });
             }}
           />
         </>
@@ -3417,15 +3444,15 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
         >
           <div style={{ display: "grid", gap: isMobile ? 12 : 14, minWidth: 0 }}>
             <div ref={markdownBodyRef} style={{ minWidth: 0, fontSize: 13, lineHeight: 1.65 }}>
-              <FrontmatterProperties properties={visibleFrontmatter} />
+              <FrontmatterProperties properties={visibleFrontmatter} locale={locale} />
               <MarkdownBlock
                 content={parsedMarkdown.body}
                 enableWikiLinks
                 resolveWikiLinkHref={resolveWikiLinkHref}
               />
               {displaySourceRefs.length > 0 ? (
-                <section aria-label="Paperclip source refs" style={{ marginTop: 16, display: "grid", gap: 6 }}>
-                  <Tiny style={{ fontWeight: 650 }}>Paperclip source refs</Tiny>
+                <section aria-label={wikiMessage(locale, "paperclipSourceRefs")} style={{ marginTop: 16, display: "grid", gap: 6 }}>
+                  <Tiny style={{ fontWeight: 650 }}>{wikiMessage(locale, "paperclipSourceRefs")}</Tiny>
                   <ul style={{ margin: 0, paddingLeft: 18, color: tokens.muted, fontSize: 12, lineHeight: 1.5 }}>
                     {displaySourceRefs.map((ref) => (
                       <li key={ref.id}>{ref.label}</li>
@@ -3443,6 +3470,7 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
               onToggle={() => setTocOpen((current) => !current)}
               onHeadingClick={handleTocClick}
               mobile={isMobile}
+              locale={locale}
             />
           ) : null}
         </div>
@@ -3452,6 +3480,7 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
           companyId={context.companyId}
           pagePath={path}
           onClose={() => setProvenanceOpen(false)}
+          locale={locale}
         />
       ) : null}
     </article>
@@ -3478,6 +3507,7 @@ function OnThisPagePane({
   onToggle,
   onHeadingClick,
   mobile,
+  locale,
 }: {
   headings: WikiTocHeading[];
   activeHeadingId: string | null;
@@ -3485,6 +3515,7 @@ function OnThisPagePane({
   onToggle: () => void;
   onHeadingClick: (event: React.MouseEvent<HTMLAnchorElement>, id: string) => void;
   mobile: boolean;
+  locale: WikiLocale;
 }) {
   const contentId = "llm-wiki-on-this-page";
   const currentHeadingId = activeHeadingId ?? headings[0]?.id ?? null;
@@ -3548,7 +3579,7 @@ function OnThisPagePane({
   return (
     <aside
       ref={shellRef}
-      aria-label="On this page"
+      aria-label={wikiMessage(locale, "onThisPage")}
       style={{
         order: mobile ? -1 : 0,
         minWidth: 0,
@@ -3563,7 +3594,7 @@ function OnThisPagePane({
       }}>
         <button
           type="button"
-          aria-label={open ? "Collapse on this page" : "Expand on this page"}
+          aria-label={wikiMessage(locale, open ? "collapseOnThisPage" : "expandOnThisPage")}
           aria-expanded={open}
           aria-controls={contentId}
           onClick={onToggle}
@@ -3584,7 +3615,7 @@ function OnThisPagePane({
             textAlign: "left",
           }}
         >
-          {open ? <span>On this page</span> : null}
+          {open ? <span>{wikiMessage(locale, "onThisPage")}</span> : null}
           <span aria-hidden="true" style={{ color: tokens.muted, transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 120ms ease" }}>
             <ChevronLeftIcon size={13} />
           </span>
@@ -3621,13 +3652,13 @@ function OnThisPagePane({
   );
 }
 
-function FreshnessChip({ companyId, pagePath, companyPrefix }: { companyId: string | null; pagePath: string; companyPrefix: string | null }) {
+function FreshnessChip({ companyId, pagePath, companyPrefix, locale }: { companyId: string | null; pagePath: string; companyPrefix: string | null; locale: WikiLocale }) {
   const provenance = useDistillationProvenance(companyId, pagePath);
   const binding = provenance.data?.binding ?? null;
   const cursor = provenance.data?.cursor ?? null;
 
   if (provenance.loading && !provenance.data) {
-    return <FreshnessChipShell tone="info" icon={<ClockIcon size={14} />}>Checking distillation cursor…</FreshnessChipShell>;
+    return <FreshnessChipShell tone="info" icon={<ClockIcon size={14} />}>{wikiMessage(locale, "checkingDistillationCursor")}</FreshnessChipShell>;
   }
   if (!binding) return null;
 
@@ -3655,13 +3686,13 @@ function FreshnessChip({ companyId, pagePath, companyPrefix }: { companyId: stri
       tone={tone}
       icon={isFailed ? <AlertTriangleIcon size={14} /> : isRunning ? <ActivityIcon size={14} /> : <ClockIcon size={14} />}
     >
-      <span><strong>Current as of {lastEnd ? formatTimestamp(lastEnd) : "—"}.</strong>
-        {sourceCount ? ` ${sourceCount} sources in this window. ` : " "}
-        Cursor at <Mono>{lastEnd ?? "—"}</Mono>.
+      <span><strong>{wikiMessage(locale, "currentAsOf", { time: formatWikiTimestamp(lastEnd, locale) })}</strong>
+        {sourceCount ? ` ${wikiMessage(locale, sourceCount === 1 ? "oneSourceInWindow" : "manySourcesInWindow", { count: new Intl.NumberFormat(locale).format(sourceCount) })} ` : " "}
+        {wikiMessage(locale, "cursorAt")} <Mono>{lastEnd ?? "—"}</Mono>.
       </span>
       {projectLink ? (
         <a href={projectLink} style={{ marginLeft: 8, color: "inherit", textDecoration: "underline" }}>
-          Open Paperclip for live state →
+          {wikiMessage(locale, "openPaperclipLiveState")}
         </a>
       ) : null}
     </FreshnessChipShell>
@@ -3734,7 +3765,7 @@ function formatSourceRef(ref: Record<string, unknown> | string, fallbackIndex: n
   return title ? `${primary}${suffix} - ${title}` : `${primary}${suffix}`;
 }
 
-function ProvenanceDrawer({ companyId, pagePath, onClose }: { companyId: string | null; pagePath: string; onClose: () => void }) {
+function ProvenanceDrawer({ companyId, pagePath, onClose, locale }: { companyId: string | null; pagePath: string; onClose: () => void; locale: WikiLocale }) {
   const isMobile = useIsMobileLayout();
   const provenance = useDistillationProvenance(companyId, pagePath);
   const data = provenance.data;
@@ -3771,42 +3802,45 @@ function ProvenanceDrawer({ companyId, pagePath, onClose }: { companyId: string 
       >
         <div style={{ padding: "14px 18px", borderBottom: `1px solid ${tokens.border}`, display: "flex", alignItems: "center", gap: 10 }}>
           <InfoIcon size={16} />
-          <strong style={{ fontSize: 14, flex: 1 }}>Provenance</strong>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <strong style={{ fontSize: 14, flex: 1 }}>{wikiMessage(locale, "provenance")}</strong>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={wikiMessage(locale, "close")}>
             <XIcon size={14} />
           </Button>
         </div>
         <div style={{ overflow: "auto", flex: 1, padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
-          {provenance.loading && !data ? <Tiny>Loading provenance…</Tiny> : null}
-          {!binding && !provenance.loading ? <Callout>This page is not currently bound to a distillation cursor. It may be hand-authored or pre-distillation.</Callout> : null}
+          {provenance.loading && !data ? <Tiny>{wikiMessage(locale, "loadingProvenance")}</Tiny> : null}
+          {!binding && !provenance.loading ? <Callout>{wikiMessage(locale, "notBoundToCursor")}</Callout> : null}
           {binding ? (
             <Card>
               <CardBody padding={14}>
-                <PropRow label="Page path" value={<Mono>{binding.pagePath}</Mono>} />
-                <PropRow label="Source hash" value={<Mono>{binding.lastRunSourceHash?.slice(0, 16) ?? "—"}…</Mono>} />
-                <PropRow label="Cursor end" value={<Mono>{binding.lastRunSourceWindowEnd ? formatTimestamp(binding.lastRunSourceWindowEnd) : "—"}</Mono>} />
-                <PropRow label="Last run status" value={<Badge tone={runStatusTone(binding.lastRunStatus ?? "")}>{binding.lastRunStatus ?? "—"}</Badge>} />
-                <PropRow label="Project" value={binding.projectName ?? "—"} />
-                <PropRow label="Updated" value={formatTimestamp(binding.updatedAt)} />
+                <PropRow label={wikiMessage(locale, "pagePath")} value={<Mono>{binding.pagePath}</Mono>} />
+                <PropRow label={wikiMessage(locale, "sourceHash")} value={<Mono>{binding.lastRunSourceHash?.slice(0, 16) ?? "—"}…</Mono>} />
+                <PropRow label={wikiMessage(locale, "cursorEnd")} value={<Mono>{binding.lastRunSourceWindowEnd ? formatWikiTimestamp(binding.lastRunSourceWindowEnd, locale) : "—"}</Mono>} />
+                <PropRow label={wikiMessage(locale, "lastRunStatus")} value={<Badge tone={runStatusTone(binding.lastRunStatus ?? "")}>{wikiRunStatusLabel(locale, binding.lastRunStatus ?? "—")}</Badge>} />
+                <PropRow label={wikiMessage(locale, "project")} value={binding.projectName ?? "—"} />
+                <PropRow label={wikiMessage(locale, "updatedLabel")} value={formatWikiTimestamp(binding.updatedAt, locale)} />
               </CardBody>
             </Card>
           ) : null}
           {cursor ? (
             <Card>
-              <CardHeader title="Cursor" />
+              <CardHeader title={wikiMessage(locale, "cursor")} />
               <CardBody padding={14}>
-                <PropRow label="Scope" value={cursor.sourceScope} />
-                <PropRow label="Pending events" value={String(cursor.pendingEventCount)} />
-                <PropRow label="Last observed" value={formatTimestamp(cursor.lastObservedAt)} />
-                <PropRow label="Last processed" value={formatTimestamp(cursor.lastProcessedAt)} />
+                <PropRow label={wikiMessage(locale, "scope")} value={cursor.sourceScope} />
+                <PropRow label={wikiMessage(locale, "pendingEvents")} value={String(cursor.pendingEventCount)} />
+                <PropRow label={wikiMessage(locale, "lastObserved")} value={formatWikiTimestamp(cursor.lastObservedAt, locale)} />
+                <PropRow label={wikiMessage(locale, "lastProcessed")} value={formatWikiTimestamp(cursor.lastProcessedAt, locale)} />
               </CardBody>
             </Card>
           ) : null}
           {snapshot ? (
             <Card>
-              <CardHeader title="Sources in this window" />
+              <CardHeader title={wikiMessage(locale, "sourcesInWindow")} />
               <CardBody padding={14}>
-                <Tiny style={{ marginBottom: 8 }}>{snapshot.sourceRefs.length} ref{snapshot.sourceRefs.length === 1 ? "" : "s"}{snapshot.clipped ? " · clipped" : ""}</Tiny>
+                <Tiny style={{ marginBottom: 8 }}>
+                  {wikiMessage(locale, snapshot.sourceRefs.length === 1 ? "oneSourceRef" : "manySourceRefs", { count: new Intl.NumberFormat(locale).format(snapshot.sourceRefs.length) })}
+                  {snapshot.clipped ? ` · ${wikiMessage(locale, "clipped")}` : ""}
+                </Tiny>
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: tokens.muted, lineHeight: 1.5 }}>
                   {snapshot.sourceRefs.slice(0, 8).map((ref, index) => {
                     const obj = typeof ref === "object" && ref ? ref as Record<string, unknown> : null;
@@ -3822,22 +3856,22 @@ function ProvenanceDrawer({ companyId, pagePath, onClose }: { companyId: string 
                     );
                   })}
                 </ul>
-                {snapshot.sourceRefs.length > 8 ? <Tiny style={{ marginTop: 6 }}>{`+${snapshot.sourceRefs.length - 8} more`}</Tiny> : null}
+                {snapshot.sourceRefs.length > 8 ? <Tiny style={{ marginTop: 6 }}>{wikiMessage(locale, "moreSources", { count: new Intl.NumberFormat(locale).format(snapshot.sourceRefs.length - 8) })}</Tiny> : null}
               </CardBody>
             </Card>
           ) : null}
           {runs.length > 0 ? (
             <Card>
-              <CardHeader title="Operations affecting this page" />
+              <CardHeader title={wikiMessage(locale, "operationsAffectingPage")} />
               <CardBody padding={0}>
                 <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
                   {runs.slice(0, 8).map((run) => (
                     <li key={run.id} style={{ padding: "10px 14px", borderBottom: `1px solid ${tokens.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <Mono style={{ fontSize: 12 }}>{run.operationIssueIdentifier ?? `op-${run.id.slice(0, 6)}`}</Mono>
                       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                        <Tiny>{formatTimestamp(run.updatedAt)}</Tiny>
+                        <Tiny>{formatWikiTimestamp(run.updatedAt, locale)}</Tiny>
                         <Mono style={{ fontSize: 11 }}>{formatCostCents(run.costCents)}</Mono>
-                        <Badge tone={runStatusTone(run.status)}>{runStatusLabel(run.status)}</Badge>
+                        <Badge tone={runStatusTone(run.status)}>{wikiRunStatusLabel(locale, run.status)}</Badge>
                       </div>
                     </li>
                   ))}
@@ -3851,7 +3885,7 @@ function ProvenanceDrawer({ companyId, pagePath, onClose }: { companyId: string 
   );
 }
 
-function FrontmatterProperties({ properties }: { properties: WikiFrontmatterProperty[] }) {
+function FrontmatterProperties({ properties, locale }: { properties: WikiFrontmatterProperty[]; locale: WikiLocale }) {
   if (properties.length === 0) return null;
 
   return (
@@ -3873,7 +3907,7 @@ function FrontmatterProperties({ properties }: { properties: WikiFrontmatterProp
           marginBottom: 10,
         }}
       >
-        Properties
+        {wikiMessage(locale, "properties")}
       </summary>
       <dl style={{ display: "grid", gap: 8, margin: 0, maxWidth: 720 }}>
         {properties.map((property) => (
@@ -4750,6 +4784,13 @@ function runStatusLabel(status: string): string {
     default:
       return status.replace(/_/g, " ");
   }
+}
+
+function wikiRunStatusLabel(locale: WikiLocale, status: string): string {
+  if (status === "review_required") return wikiMessage(locale, "reviewRequired");
+  if (status === "refused_cost_cap") return wikiMessage(locale, "costCapped");
+  if (status === "source_ready") return wikiMessage(locale, "sourceReady");
+  return runStatusLabel(status);
 }
 
 function HistoryTab({ context, overview }: { context: { companyId: string | null; companyPrefix?: string | null }; overview: OverviewData }) {

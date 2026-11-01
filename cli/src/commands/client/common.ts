@@ -229,21 +229,25 @@ export function printOutput(data: unknown, opts: { json?: boolean; label?: strin
   console.log(String(data));
 }
 
-export function formatInlineRecord(record: Record<string, unknown>): string {
+export function formatInlineRecord(
+  record: Record<string, unknown>,
+  options: { labels?: Readonly<Record<string, string>> } = {},
+): string {
   const keyOrder = ["identifier", "id", "name", "status", "priority", "title", "action"];
   const seen = new Set<string>();
   const parts: string[] = [];
+  const labelFor = (key: string) => options.labels?.[key] ?? key;
 
   for (const key of keyOrder) {
     if (!(key in record)) continue;
-    parts.push(`${key}=${renderValue(record[key])}`);
+    parts.push(`${labelFor(key)}=${renderValue(record[key])}`);
     seen.add(key);
   }
 
   for (const [key, value] of Object.entries(record)) {
     if (seen.has(key)) continue;
     if (typeof value === "object") continue;
-    parts.push(`${key}=${renderValue(value)}`);
+    parts.push(`${labelFor(key)}=${renderValue(value)}`);
   }
 
   return parts.join(" ");

@@ -4866,6 +4866,12 @@
       "maxItems_many": "Precisa ter no máximo {{count}} itens"
     }
   },
+  "fileTree": {
+    "ariaLabel": "Arquivos",
+    "error": "Erro",
+    "emptyTitle": "Ainda não há arquivos",
+    "emptyDescription": "Os arquivos aparecerão aqui quando estiverem disponíveis."
+  },
   "common": {
     "loading": "Carregando…",
     "companyLogo": "Logo de {{company}}",

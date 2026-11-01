@@ -3445,3 +3445,11 @@ As alterações preservam nomes, rotas, IDs, conteúdo e erros externos, além d
 - `agent me`: 10/10 testes, help real PT-BR/en e typecheck estrito direcionado passaram. O typecheck completo da CLI terminou com exit 137 por limite de memória.
 
 Caminhos, patches, refs, dados e diagnósticos externos foram preservados. Checkpoint: **306/328 tarefas**.
+
+### LLM Wiki, Kitchen Sink e inbox de agentes — 3.11f1/g3 e 4.3k
+
+- LLM Wiki navegação/leitura: suíte do plugin 103/103; FileTree e catálogos 20/20. Typechecks e builds do plugin/UI e token gates passaram. Os testes do plugin usaram link temporário para React peer, removido em seguida; build da UI teve avisos CSS/chunks sem falha.
+- Kitchen Sink: 5/5 testes de markup, typecheck e build passaram. Os valores de enum foram preservados; interação real em navegador não foi executada.
+- `agent inbox`/`inbox-mine` e formatador: 16/16 testes e typecheck estrito direcionado passaram. Após revisão, ordem e campos nulos/objetos preferidos foram preservados. Typecheck completo da CLI apontou TS7031 em `company-export-localization.test.ts:95` e TS2305 para `DEFAULT_USER_LOCALE` em `server/src/services/public-mcp/setup.ts:2`, fora dos arquivos deste lote.
+
+A navegação da Wiki preserva conteúdo, nomes, slugs, caminhos e erros externos; os dois comandos preservam JSON e dados. Checkpoint: **309/329 tarefas**.

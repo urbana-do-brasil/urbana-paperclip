@@ -26,6 +26,7 @@ type FileTreePropsLike = {
   nodes: FileTreeNodeLike[];
   selectedFile?: string | null;
   expandedPaths?: ReadonlySet<string> | readonly string[];
+  ariaLabel?: string;
   onToggleDir?: (path: string) => void;
   onSelectFile?: (path: string) => void;
 };
@@ -229,6 +230,7 @@ describe("WikiRouteSidebar", () => {
             role: "tree",
             "data-selected-file": props.selectedFile ?? "",
             "data-expanded-paths": toArray(props.expandedPaths).sort().join("|"),
+            "aria-label": props.ariaLabel,
           },
           renderTreeButtons(props.nodes, props),
         ),
@@ -272,6 +274,59 @@ describe("WikiRouteSidebar", () => {
 
     const primaryNavText = container.querySelector("nav[aria-label='Wiki primary']")?.textContent ?? "";
     expect(primaryNavText.indexOf("Ask")).toBeLessThan(primaryNavText.indexOf("Add Content"));
+  });
+
+  it("uses the host locale for navigation while preserving space names and file paths", () => {
+    const context = { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" };
+    act(() => {
+      root.render(createElement(WikiRouteSidebar, { context } as never));
+    });
+
+    const primaryNav = container.querySelector("nav[aria-label='Navegação principal do Wiki']");
+    expect(primaryNav?.textContent).toContain("Perguntar");
+    expect(primaryNav?.textContent).toContain("Adicionar conteúdo");
+    expect(container.textContent).toContain("Espaços compartilhados");
+    expect(container.querySelector("[aria-label='Criar espaço']")).not.toBeNull();
+
+    act(() => {
+      (container.querySelector("[aria-label='Menu do espaço Engineering']") as HTMLButtonElement).click();
+    });
+    expect(container.textContent).toContain("Editar espaço");
+    expect(container.textContent).toContain("Atualizar índice");
+    expect(container.textContent).toContain("Abrir ingestão");
+    expect(container.textContent).toContain("Arquivar espaço…");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    act(() => {
+      Array.from(container.querySelectorAll<HTMLButtonElement>("[role='menuitem']"))
+        .find((button) => button.textContent?.includes("Arquivar espaço…"))
+        ?.click();
+    });
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining("Arquivar o espaço Engineering?"));
+    confirm.mockRestore();
+
+    const tree = container.querySelector("[role='tree']") as HTMLElement;
+    expect(tree.getAttribute("aria-label")).toBe("Páginas do Wiki em default");
+    expect(tree.textContent).toContain("Sidebar navigation");
+
+    act(() => {
+      (container.querySelector("[data-select-file='wiki/concepts/sidebar-navigation.md']") as HTMLButtonElement).click();
+    });
+
+    expect(navigatedTo).toEqual({
+      to: "/wiki/page/wiki/concepts/sidebar-navigation.md",
+      options: { state: { paperclipWikiSidebarTreePath: "wiki/concepts/sidebar-navigation.md" } },
+    });
+
+    act(() => {
+      root.render(createElement(WikiRouteSidebar, {
+        context: { ...context, locale: "en" },
+      } as never));
+    });
+
+    expect(container.querySelector("nav[aria-label='Wiki primary']")?.textContent).toContain("Ask");
+    expect(container.querySelector("nav[aria-label='Wiki primary']")?.textContent).toContain("Add Content");
+    expect(container.textContent).toContain("Sidebar navigation");
+    expect((container.querySelector("[role='tree']") as HTMLElement).dataset.selectedFile).toBe("wiki/concepts/sidebar-navigation.md");
   });
 
   it("collapses and expands the active space tree from the space row", () => {
@@ -470,6 +525,7 @@ describe("WikiPage", () => {
   let consoleError: ReturnType<typeof vi.spyOn>;
   let hostLocation: { pathname: string; search: string; hash: string };
   let navigatedTo: string | null;
+  let pageContents: string;
 
   beforeEach(() => {
     container = document.createElement("div");
@@ -482,6 +538,7 @@ describe("WikiPage", () => {
       hash: "",
     };
     navigatedTo = null;
+    pageContents = "# Control plane\n\nCurrent project state.";
     (globalThis as BridgeGlobal).__paperclipPluginBridge__ = {
       sdkUi: {
         usePluginData: (key: string) => {
@@ -599,7 +656,7 @@ describe("WikiPage", () => {
               data: {
                 wikiId: "default",
                 path: "wiki/projects/control-plane/index.md",
-                contents: "# Control plane\n\nCurrent project state.",
+                contents: pageContents,
                 title: "Control plane",
                 pageType: "projects",
                 backlinks: [],
@@ -639,7 +696,7 @@ describe("WikiPage", () => {
             onClick: () => undefined,
           }),
         }),
-        MarkdownBlock: ({ content }: { content: string }) => createElement("div", {}, content),
+        MarkdownBlock: ({ content }: { content: string }) => createElement("div", { "data-testid": "markdown-body" }, content),
         MarkdownEditor: ({ value }: { value: string }) => createElement("textarea", { value, readOnly: true }),
         AssigneePicker: () => createElement("div", { "data-testid": "assignee-picker" }),
         ProjectPicker: () => createElement("div", { "data-testid": "project-picker" }),
@@ -667,6 +724,36 @@ describe("WikiPage", () => {
     const consoleOutput = consoleError.mock.calls.flat().join("\n");
     expect(consoleOutput).not.toContain("Objects are not valid as a React child");
     expect(consoleOutput).not.toContain("Each child in a list should have a unique \"key\" prop");
+  });
+
+  it("localizes page controls by host locale without translating Markdown, titles, or heading slugs", () => {
+    pageContents = "# Control plane\n\nHuman-authored prose stays exactly as written.\n\n## Keep Human Heading: A-B\n";
+    act(() => {
+      root.render(createElement(WikiPage, {
+        context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+      } as never));
+    });
+
+    expect(container.querySelector("h1")?.textContent).toBe("Control plane");
+    expect(container.querySelector("[data-testid='markdown-body']")?.textContent).toBe(pageContents);
+    expect(container.textContent).toContain("Editar página");
+    expect(container.textContent).toContain("Atualizado");
+    expect(container.textContent).toContain("Nesta página");
+    expect(container.textContent).toContain("Human-authored prose stays exactly as written.");
+    const portugueseHeading = container.querySelector("a[href='#keep-human-heading-a-b']");
+    expect(portugueseHeading?.textContent).toBe("Keep Human Heading: A-B");
+
+    act(() => {
+      root.render(createElement(WikiPage, {
+        context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "en" },
+      } as never));
+    });
+
+    expect(container.textContent).toContain("Edit page");
+    expect(container.textContent).toContain("On this page");
+    expect(container.querySelector("[data-testid='markdown-body']")?.textContent).toBe(pageContents);
+    const englishHeading = container.querySelector("a[href='#keep-human-heading-a-b']");
+    expect(englishHeading?.textContent).toBe("Keep Human Heading: A-B");
   });
 
   it("prioritizes file drop on the ingest page without recent ingest or cost copy", () => {

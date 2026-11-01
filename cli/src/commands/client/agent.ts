@@ -252,17 +252,13 @@ export function registerAgentCommands(program: Command): void {
             printOutput(rows, { json: true });
             return;
           }
-          for (const row of rows) {
-            console.log(formatInlineRecord({
-              identifier: row.identifier,
-              id: row.id,
-              status: row.status,
-              priority: row.priority,
-              title: row.title,
-              projectId: row.projectId,
-            }));
+          if (rows.length === 0) {
+            console.log(cliMessage("emptyList"));
+            return;
           }
-          if (rows.length === 0) printOutput([], { json: false });
+          for (const row of rows) {
+            console.log(formatAgentInboxRecord(row as unknown as Record<string, unknown>));
+          }
         } catch (err) {
           handleCommandError(err);
         }
@@ -281,7 +277,17 @@ export function registerAgentCommands(program: Command): void {
           const params = new URLSearchParams({ userId: opts.userId });
           if (opts.status) params.set("status", opts.status);
           const rows = (await ctx.api.get<Issue[]>(`/api/agents/me/inbox/mine?${params.toString()}`)) ?? [];
-          printOutput(rows, { json: ctx.json });
+          if (ctx.json) {
+            printOutput(rows, { json: true });
+            return;
+          }
+          if (rows.length === 0) {
+            console.log(cliMessage("emptyList"));
+            return;
+          }
+          for (const row of rows) {
+            console.log(formatAgentInboxRecord(row as unknown as Record<string, unknown>, { includeScalarFields: true }));
+          }
         } catch (err) {
           handleCommandError(err);
         }
@@ -866,6 +872,33 @@ export function registerAgentCommands(program: Command): void {
       }),
     { includeCompany: false },
   );
+}
+
+function formatAgentInboxRecord(
+  row: Record<string, unknown>,
+  options: { includeScalarFields?: boolean } = {},
+): string {
+  const record = options.includeScalarFields
+    ? row
+    : {
+        identifier: row.identifier,
+        id: row.id,
+        status: row.status,
+        priority: row.priority,
+        title: row.title,
+        projectId: row.projectId,
+      };
+  return formatInlineRecord(record, {
+    labels: {
+      identifier: cliMessage("agentInboxIdentifier"),
+      id: cliMessage("agentInboxId"),
+      name: cliMessage("agentInboxName"),
+      status: cliMessage("agentInboxStatus"),
+      priority: cliMessage("agentInboxPriority"),
+      title: cliMessage("agentInboxTitle"),
+      projectId: cliMessage("agentInboxProjectId"),
+    },
+  });
 }
 
 function printAgentResult(row: Agent | null, json: boolean): void {
