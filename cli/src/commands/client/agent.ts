@@ -233,7 +233,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const me = await ctx.api.get<Agent>("/api/agents/me");
-          printOutput(me, { json: ctx.json });
+          printAgentResult(me, ctx.json);
         } catch (err) {
           handleCommandError(err);
         }

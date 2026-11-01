@@ -3437,3 +3437,11 @@ O `PluginManager` agora localiza mensagens próprias do host, status/tags conhec
 - `agent get`, `agent list` e ajuda: 33/33 testes; typecheck estrito do grafo CLI alterado passou. O typecheck completo da CLI não foi repetido neste lote.
 
 As alterações preservam nomes, rotas, IDs, conteúdo e erros externos, além da saída JSON da CLI. Checkpoint: **303/327 tarefas**; próximas superfícies incluem Workspace Changes e os demais comandos operacionais.
+
+### Workspace Changes, File Browser e `agent me` — 3.11e/g2 e 4.3j
+
+- Workspace Changes: 35/35 testes, typecheck e build passaram. Acessibilidade foi conferida no markup renderizado; não houve auditoria em navegador.
+- File Browser: 9/9 testes e build/typecheck passaram. A instalação congelada offline aceitou o lockfile sincronizado antes de sua reversão, conforme a política de lockfile de `doc/DEVELOPING.md`; a CI deve regenerá-lo a partir do manifesto.
+- `agent me`: 10/10 testes, help real PT-BR/en e typecheck estrito direcionado passaram. O typecheck completo da CLI terminou com exit 137 por limite de memória.
+
+Caminhos, patches, refs, dados e diagnósticos externos foram preservados. Checkpoint: **306/328 tarefas**.

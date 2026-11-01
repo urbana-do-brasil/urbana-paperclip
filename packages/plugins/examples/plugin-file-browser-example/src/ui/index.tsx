@@ -12,6 +12,8 @@ import { basicSetup } from "codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
+import { entriesToFileTreeNodes, type FileEntry } from "./file-tree.js";
+import { messagesFor, workspaceLabel } from "./messages.js";
 
 const PLUGIN_KEY = "paperclip-file-browser-example";
 const FILES_TAB_SLOT_ID = "files-tab";
@@ -129,20 +131,6 @@ const editorLightHighlightStyle = HighlightStyle.define([
 ]);
 
 type Workspace = { id: string; projectId: string; name: string; path: string; isPrimary: boolean };
-type FileEntry = { name: string; path: string; isDirectory: boolean };
-
-function entryToFileTreeNode(entry: FileEntry): FileTreeNode {
-  return {
-    name: entry.name,
-    path: entry.path,
-    kind: entry.isDirectory ? "dir" : "file",
-    children: [],
-  };
-}
-
-function entriesToFileTreeNodes(entries: FileEntry[]): FileTreeNode[] {
-  return entries.map(entryToFileTreeNode);
-}
 
 function setChildrenAtPath(nodes: FileTreeNode[], path: string, children: FileTreeNode[]): FileTreeNode[] {
   return nodes.map((node) => {
@@ -154,28 +142,6 @@ function setChildrenAtPath(nodes: FileTreeNode[], path: string, children: FileTr
     }
     return node;
   });
-}
-
-const PathLikePattern = /[\\/]/;
-const WindowsDrivePathPattern = /^[A-Za-z]:[\\/]/;
-const UuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function isLikelyPath(pathValue: string): boolean {
-  const trimmed = pathValue.trim();
-  return PathLikePattern.test(trimmed) || WindowsDrivePathPattern.test(trimmed);
-}
-
-function workspaceLabel(workspace: Workspace): string {
-  const pathLabel = workspace.path.trim();
-  const nameLabel = workspace.name.trim();
-  const hasPathLabel = isLikelyPath(pathLabel) && !UuidPattern.test(pathLabel);
-  const hasNameLabel = nameLabel.length > 0 && !UuidPattern.test(nameLabel);
-  const baseLabel = hasPathLabel ? pathLabel : hasNameLabel ? nameLabel : "";
-  if (!baseLabel) {
-    return workspace.isPrimary ? "(no workspace path) (primary)" : "(no workspace path)";
-  }
-
-  return workspace.isPrimary ? `${baseLabel} (primary)` : baseLabel;
 }
 
 function useIsMobile(breakpointPx = 768): boolean {
@@ -256,6 +222,7 @@ function useAvailableHeight(
  * Project sidebar item: link "Files" that opens the project detail with the Files plugin tab.
  */
 export function FilesLink({ context }: PluginProjectSidebarItemProps) {
+  const messages = messagesFor(context.locale);
   const { data: config, loading: configLoading } = usePluginData<PluginConfig>("plugin-config", {});
   const showFilesInSidebar = config?.showFilesInSidebar ?? false;
 
@@ -309,7 +276,7 @@ export function FilesLink({ context }: PluginProjectSidebarItemProps) {
           : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
       }`}
     >
-      Files
+      {messages.files}
     </a>
   );
 }
@@ -318,6 +285,7 @@ export function FilesLink({ context }: PluginProjectSidebarItemProps) {
  * Project detail tab: workspace selector, file tree, and CodeMirror editor.
  */
 export function FilesTab({ context }: PluginDetailTabProps) {
+  const messages = messagesFor(context.locale);
   const companyId = context.companyId;
   const projectId = context.entityId;
   const isMobile = useIsMobile();
@@ -332,7 +300,7 @@ export function FilesTab({ context }: PluginDetailTabProps) {
     companyId,
   });
   const workspaces = workspacesData ?? [];
-  const workspaceSelectKey = workspaces.map((w) => `${w.id}:${workspaceLabel(w)}`).join("|");
+  const workspaceSelectKey = workspaces.map((w) => `${w.id}:${workspaceLabel(w, messages)}`).join("|");
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const resolvedWorkspaceId = workspaceId ?? workspaces[0]?.id ?? null;
   const selectedWorkspace = useMemo(
@@ -450,7 +418,7 @@ export function FilesTab({ context }: PluginDetailTabProps) {
   const loadedContentRef = useRef("");
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<"browser" | "editor">("browser");
 
@@ -459,7 +427,7 @@ export function FilesTab({ context }: PluginDetailTabProps) {
     const content = fileContentData?.content ?? "";
     loadedContentRef.current = content;
     setIsDirty(false);
-    setSaveMessage(null);
+    setIsSaved(false);
     setSaveError(null);
     if (viewRef.current) {
       viewRef.current.destroy();
@@ -476,7 +444,7 @@ export function FilesTab({ context }: PluginDetailTabProps) {
           if (!update.docChanged) return;
           const nextValue = update.state.doc.toString();
           setIsDirty(nextValue !== loadedContentRef.current);
-          setSaveMessage(null);
+          setIsSaved(false);
           setSaveError(null);
         }),
       ],
@@ -512,7 +480,7 @@ export function FilesTab({ context }: PluginDetailTabProps) {
     const content = viewRef.current.state.doc.toString();
     setIsSaving(true);
     setSaveError(null);
-    setSaveMessage(null);
+    setIsSaved(false);
     try {
       await writeFile({
         projectId,
@@ -523,7 +491,7 @@ export function FilesTab({ context }: PluginDetailTabProps) {
       });
       loadedContentRef.current = content;
       setIsDirty(false);
-      setSaveMessage("Saved");
+      setIsSaved(true);
       refreshFileContent();
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : String(error));
@@ -532,10 +500,17 @@ export function FilesTab({ context }: PluginDetailTabProps) {
     }
   }
 
+  const fileListDisplayError = fileListError
+    ? `${messages.loadFilesError} ${fileListError.message}`
+    : null;
+  const fileContentDisplayError = fileContentData?.error && fileContentData.error !== "Missing file context"
+    ? `${messages.loadFileError} ${fileContentData.error}`
+    : null;
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-card p-4">
-        <label className="text-sm font-medium text-muted-foreground">Workspace</label>
+        <label className="text-sm font-medium text-muted-foreground">{messages.workspace}</label>
         <select
           key={workspaceSelectKey}
           className="mt-2 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -543,7 +518,7 @@ export function FilesTab({ context }: PluginDetailTabProps) {
           onChange={(e) => setWorkspaceId(e.target.value || null)}
         >
           {workspaces.map((w) => {
-            const label = workspaceLabel(w);
+            const label = workspaceLabel(w, messages);
             return (
               <option key={`${w.id}:${label}`} value={w.id} label={label} title={label}>
                 {label}
@@ -569,10 +544,14 @@ export function FilesTab({ context }: PluginDetailTabProps) {
           style={{ display: isMobile && mobileView === "editor" ? "none" : "flex" }}
         >
           <div className="border-b border-border px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            File Tree
+            {messages.fileTree}
           </div>
           <div className="min-h-0 flex-1 overflow-auto p-2">
-            {selectedWorkspace ? (
+            {!selectedWorkspace ? (
+              <p className="px-2 py-3 text-sm text-muted-foreground">{messages.selectWorkspace}</p>
+            ) : fileListDisplayError ? (
+              <div role="alert" className="px-3 py-2 text-sm text-destructive">{fileListDisplayError}</div>
+            ) : (
               <FileTree
                 nodes={nodes}
                 selectedFile={selectedPath}
@@ -583,15 +562,12 @@ export function FilesTab({ context }: PluginDetailTabProps) {
                   setMobileView("editor");
                 }}
                 loading={fileListLoading}
-                error={fileListError ? { message: fileListError.message } : null}
                 empty={{
-                  title: "No files",
-                  description: "No files found in this workspace.",
+                  title: messages.noFiles,
+                  description: messages.noFilesDescription,
                 }}
-                ariaLabel="Workspace files"
+                ariaLabel={messages.workspaceFiles}
               />
-            ) : (
-              <p className="px-2 py-3 text-sm text-muted-foreground">Select a workspace to browse files.</p>
             )}
           </div>
         </div>
@@ -607,10 +583,10 @@ export function FilesTab({ context }: PluginDetailTabProps) {
                 style={{ display: isMobile ? "inline-flex" : "none" }}
                 onClick={() => setMobileView("browser")}
               >
-                Back to files
+                {messages.backToFiles}
               </button>
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Editor</div>
-              <div className="truncate text-sm text-foreground">{selectedPath ?? "No file selected"}</div>
+              <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{messages.editor}</div>
+              <div className="truncate text-sm text-foreground">{selectedPath ?? messages.noFileSelected}</div>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -619,23 +595,23 @@ export function FilesTab({ context }: PluginDetailTabProps) {
                 disabled={!selectedWorkspace || !selectedPath || !isDirty || isSaving}
                 onClick={() => void handleSave()}
               >
-                {isSaving ? "Saving..." : "Save"}
+                {isSaving ? messages.saving : messages.save}
               </button>
             </div>
           </div>
-          {isDirty || saveMessage || saveError ? (
+          {isDirty || isSaved || saveError ? (
             <div className="border-b border-border px-4 py-2 text-xs">
               {saveError ? (
-                <span className="text-destructive">{saveError}</span>
-              ) : saveMessage ? (
-                <span className="text-emerald-600">{saveMessage}</span>
+                <span className="text-destructive">{messages.saveFileError} {saveError}</span>
+              ) : isSaved ? (
+                <span className="text-emerald-600">{messages.saved}</span>
               ) : (
-                <span className="text-muted-foreground">Unsaved changes</span>
+                <span className="text-muted-foreground">{messages.unsavedChanges}</span>
               )}
             </div>
           ) : null}
-          {selectedPath && fileContentData?.error && fileContentData.error !== "Missing file context" ? (
-            <div className="border-b border-border px-4 py-2 text-xs text-destructive">{fileContentData.error}</div>
+          {selectedPath && fileContentDisplayError ? (
+            <div className="border-b border-border px-4 py-2 text-xs text-destructive">{fileContentDisplayError}</div>
           ) : null}
           <div ref={editorRef} className="min-h-0 flex-1 overflow-auto overscroll-contain" />
         </div>
@@ -684,6 +660,7 @@ function navigateToFileBrowser(href: string, event: MouseEvent<HTMLAnchorElement
 }
 
 export function CommentFileLinks({ context }: PluginCommentAnnotationProps) {
+  const messages = messagesFor(context.locale);
   const { data: config } = usePluginData<PluginConfig>("plugin-config", {});
   const mode = config?.commentAnnotationMode ?? "both";
 
@@ -701,7 +678,7 @@ export function CommentFileLinks({ context }: PluginCommentAnnotationProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Files:</span>
+      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{messages.files}:</span>
       {data.links.map((link) => {
         const href = buildFileBrowserHref(prefix, projectId, link);
         return (
@@ -710,7 +687,7 @@ export function CommentFileLinks({ context }: PluginCommentAnnotationProps) {
             href={href}
             onClick={(e) => navigateToFileBrowser(href, e)}
             className="inline-flex items-center rounded-md border border-border bg-accent/30 px-1.5 py-0.5 text-xs font-mono text-primary hover:bg-accent/60 hover:underline transition-colors"
-            title={`Open ${link} in file browser`}
+            title={messages.openPathInBrowser(link)}
           >
             {link}
           </a>
@@ -733,6 +710,7 @@ export function CommentFileLinks({ context }: PluginCommentAnnotationProps) {
  * is `"annotation"` or `"none"`.
  */
 export function CommentOpenFiles({ context }: PluginCommentContextMenuItemProps) {
+  const messages = messagesFor(context.locale);
   const { data: config } = usePluginData<PluginConfig>("plugin-config", {});
   const mode = config?.commentAnnotationMode ?? "both";
 
@@ -751,7 +729,7 @@ export function CommentOpenFiles({ context }: PluginCommentContextMenuItemProps)
   return (
     <div>
       <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        Files
+        {messages.files}
       </div>
       {data.links.map((link) => {
         const href = buildFileBrowserHref(prefix, projectId, link);
@@ -762,7 +740,7 @@ export function CommentOpenFiles({ context }: PluginCommentContextMenuItemProps)
             href={href}
             onClick={(e) => navigateToFileBrowser(href, e)}
             className="flex w-full items-center gap-2 rounded px-2 py-1 text-xs text-foreground hover:bg-accent transition-colors"
-            title={`Open ${link} in file browser`}
+            title={messages.openPathInBrowser(link)}
           >
             <span className="truncate font-mono">{fileName}</span>
           </a>

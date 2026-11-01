@@ -199,6 +199,13 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
     options: commonClientOptions,
   },
+  "agent me": {
+    description: {
+      en: "Show the current agent identity",
+      "pt-BR": "Mostrar a identidade do agente atual",
+    },
+    options: commonClientOptions,
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {

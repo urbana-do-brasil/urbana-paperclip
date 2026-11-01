@@ -307,12 +307,12 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 3.11b Localizar a página host `PluginSettings`, incluindo placeholder, controles e rótulos de status/gatilhos conhecidos; preservar nomes, descrições, conteúdo e mensagens livres do plugin. Testes focados + locale-validation: 25/25; typecheck UI e token gates passaram.
   - [x] 3.11c Localizar o host do `PluginManager`, incluindo instalação, estados, tags, ações, confirmações e toasts; preservar metadados externos e mapear enums somente na apresentação. Testes focados + locale-validation: 17/17; typecheck UI, token gates, parse JSON e diff check passaram.
   - [x] 3.11d Localizar molduras e fallbacks de `PluginPage`, `CompanySettingsPluginPage`, `slots.tsx` e `NotFound`, mantendo rotas, IDs, nomes de slot/plugin e erros externos originais. Testes focados: 46/46; typecheck UI e token gates passaram após conclusão das alterações paralelas.
-  - [ ] 3.11e Localizar a UI do plugin próprio Workspace Changes, incluindo estados, acessibilidade e plurais; preservar caminhos, patches, refs, contagens e diagnósticos.
+  - [x] 3.11e Localizar a UI do plugin próprio Workspace Changes, incluindo estados, acessibilidade e plurais; preservar caminhos, patches, refs, contagens e diagnósticos. Testes do plugin: 35/35; typecheck e build passaram. Acessibilidade verificada por markup renderizado.
   - [ ] 3.11f1 Localizar navegação e leitura do plugin próprio LLM Wiki; preservar conteúdo Markdown, slugs, nomes de arquivo e dados escritos por pessoas.
   - [ ] 3.11f2 Localizar ingestão, consulta e histórico do LLM Wiki; preservar consultas, conteúdo-fonte, caminhos, payloads e mensagens externas.
   - [ ] 3.11f3 Localizar espaços e configurações do LLM Wiki; preservar nomes e conteúdo de organizações, diretórios, arquivos, instruções e valores de configuração.
   - [x] 3.11g1 Localizar as UIs próprias dos exemplos de autoria, Hello World e orquestração, preservando IDs, rotas, estados técnicos e conteúdo demonstrativo variável. Renderização: 7/7; worker authoring: 2/2; typechecks UI, authoring e hello passaram. Fixture de orquestração exige dependências locais; typecheck isolado da UI passou com links temporários removidos em seguida.
-  - [ ] 3.11g2 Localizar a UI própria do exemplo File Browser, preservando caminhos, nomes e conteúdo dos arquivos e respostas externas.
+  - [x] 3.11g2 Localizar a UI própria do exemplo File Browser, preservando caminhos, nomes e conteúdo dos arquivos e respostas externas. Testes: 9/9; build/typecheck passaram.
   - [ ] 3.11g3 Localizar a UI própria do exemplo Kitchen Sink, preservando contratos, IDs, valores e conteúdo dinâmico demonstrado.
   - [ ] 3.11h Localizar metadata de apresentação mantida pelos pacotes próprios, incluindo nomes/descrições de plugins e sandbox providers exibidos no host; preservar schemas e valores de configuração arbitrários de plugins externos.
 
@@ -330,6 +330,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3g Localizar a operação company import, incluindo seleção, preview, confirmação, progresso, resultados e erros; preservar arquivos, payloads, IDs e JSON. Ajuda, mensagens e JSON PT-BR/en; 4 arquivos/77 testes passaram, typecheck estrito dos arquivos tocados passou; typecheck completo da CLI encerrou com exit 137 por memória.
   - [x] 4.3h Localizar help e saída humana de `agent list`; preservar nomes, papéis, status, IDs, dados numéricos, endpoint e bytes do JSON. Teste bilíngue focado: 3/3; typecheck estrito do grafo de arquivos tocados e diff check passaram. Typecheck completo da CLI segue limitado por memória (exit 137).
   - [x] 4.3i Localizar help e marcador humano de resultado nulo de `agent get`, preservando dados, erros externos e JSON. Testes focados: 33/33; typecheck estrito do grafo CLI alterado passou.
+  - [x] 4.3j Localizar help e resultado humano nulo de `agent me`, preservando dados, erros e JSON. Testes focados: 10/10; typecheck estrito direcionado passou; typecheck completo da CLI terminou com exit 137 por memória.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação

@@ -71,9 +71,12 @@ administrador da instância, pois configura a instância como um todo.
 ## Comandos de agentes
 
 ```sh
+npx paperclipai agent me
 npx paperclipai agent list
 npx paperclipai agent get <agent-id>
 ```
+
+`agent me` mostra a identidade associada às credenciais atuais da API.
 
 ## Comandos de skills
 
