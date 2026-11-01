@@ -194,6 +194,28 @@ const operationHelp: Record<string, CommandHelp> = {
       "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
     },
   },
+  "agent create": {
+    description: {
+      en: "Create an agent from a JSON payload",
+      "pt-BR": "Criar um agente a partir de um payload JSON",
+    },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "CreateAgent JSON payload", "pt-BR": "Payload JSON de CreateAgent" },
+    },
+  },
+  "agent hire": {
+    description: {
+      en: "Create an agent hire request",
+      "pt-BR": "Criar uma solicitação de contratação de agente",
+    },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "CreateAgentHire JSON payload", "pt-BR": "Payload JSON de CreateAgentHire" },
+    },
+  },
   "agent get": {
     description: { en: "Get one agent", "pt-BR": "Consultar um agente" },
     arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },

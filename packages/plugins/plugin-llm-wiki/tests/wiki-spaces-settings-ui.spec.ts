@@ -51,6 +51,7 @@ let actionErrors: Record<string, string>;
 let ingestionProfile: Record<string, unknown> | null;
 let overviewFolderOverride: Record<string, unknown> | null;
 let navigatedTo: string | null;
+let settingsOverrides: Record<string, unknown>;
 
 function wikiSpace(slug: string, displayName: string) {
   return {
@@ -160,8 +161,14 @@ function settingsData() {
       wikiId: "default",
       maxCharacters: 12000,
     },
-    agentOptions: [{ id: "agent-1", name: "Wiki Maintainer", status: "idle", adapterType: "claude_local", icon: "book-open" }],
-    projectOptions: [{ id: "project-1", name: "LLM Wiki", status: "active" }],
+    agentOptions: [
+      { id: "agent-1", name: "Wiki Maintainer", status: "idle", adapterType: "claude_local", icon: "book-open" },
+      { id: "agent-2", name: "Research Maintainer", status: "active", adapterType: "claude_local", icon: "book-open" },
+    ],
+    projectOptions: [
+      { id: "project-1", name: "LLM Wiki", status: "active" },
+      { id: "project-2", name: "Research Project", status: "active" },
+    ],
     capabilities: [],
   };
 }
@@ -210,9 +217,80 @@ beforeEach(() => {
   ingestionProfile = null;
   overviewFolderOverride = null;
   navigatedTo = null;
+  settingsOverrides = {};
 
   (globalThis as BridgeGlobal).__paperclipPluginBridge__ = {
     sdkUi: {
+      AssigneePicker: (props: {
+        value: string;
+        placeholder?: string;
+        onChange: (value: string, selection: { assigneeAgentId: string | null; assigneeUserId: string | null }) => void;
+      }) => createElement(
+        "button",
+        {
+          type: "button",
+          "data-testid": "assignee-picker",
+          onClick: () => props.onChange("agent:agent-2", { assigneeAgentId: "agent-2", assigneeUserId: null }),
+        },
+        props.value === "agent:agent-2" ? "Research Maintainer" : (props.placeholder ?? "Select assignee"),
+      ),
+      ProjectPicker: (props: {
+        value: string;
+        placeholder?: string;
+        onChange: (projectId: string) => void;
+      }) => createElement(
+        "button",
+        {
+          type: "button",
+          "data-testid": "project-picker",
+          onClick: () => props.onChange("project-2"),
+        },
+        props.value === "project-2" ? "Research Project" : (props.placeholder ?? "Project"),
+      ),
+      ManagedRoutinesList: (props: {
+        routines: Array<{
+          key: string;
+          title: string;
+          status: string;
+          resourceKey?: string | null;
+          href?: string | null;
+          projectId?: string | null;
+          assigneeAgentId?: string | null;
+          defaultDrift?: { changedFields: string[] } | null;
+        }>;
+        labels?: Record<string, string>;
+        pluginDisplayName?: string | null;
+        agents?: Array<{ id: string; name: string }>;
+        projects?: Array<{ id: string; name: string }>;
+        onRunNow?: (routine: { key: string; title: string; resourceKey?: string | null; assigneeAgentId?: string | null; projectId?: string | null }) => void;
+        onToggleEnabled?: (routine: { key: string; title: string; resourceKey?: string | null }, enabled: boolean) => void;
+        onReset?: (routine: { key: string; title: string; resourceKey?: string | null; assigneeAgentId?: string | null; projectId?: string | null; defaultDrift?: { changedFields: string[] } | null }) => void;
+      }) => createElement(
+        "div",
+        { "data-testid": "managed-routines-list" },
+        createElement("span", { "data-testid": "managed-routine-labels" }, [
+          props.labels?.configure,
+          props.labels?.managedBy,
+          props.labels?.schedule,
+          props.labels?.missingRefs,
+          props.labels?.defaultsCanBeRepaired,
+          props.labels?.reconcile,
+          props.labels?.reset,
+        ].join("|")),
+        props.routines.map((routine) => {
+          const agent = props.agents?.find((item) => item.id === routine.assigneeAgentId);
+          const project = props.projects?.find((item) => item.id === routine.projectId);
+          return createElement(
+            "div",
+            { key: routine.key },
+            createElement("span", null, routine.title),
+            createElement("button", { type: "button", onClick: () => props.onRunNow?.(routine) }, "Run now"),
+            createElement("button", { type: "button", onClick: () => props.onToggleEnabled?.(routine, routine.status === "active") }, "Pause routine"),
+            createElement("button", { type: "button", onClick: () => props.onReset?.(routine) }, "Reset routine"),
+            createElement("span", null, `${project?.name ?? "No project"} · ${agent?.name ?? "No default agent"}`),
+          );
+        }),
+      ),
       usePluginData: (key: string, params?: Record<string, unknown>) => {
         if (key === "overview") {
           return dataResult({
@@ -229,7 +307,7 @@ beforeEach(() => {
             prompts: { query: "Original query prompt", lint: "Original lint prompt" },
           });
         }
-        if (key === "settings") return dataResult(settingsData());
+        if (key === "settings") return dataResult({ ...settingsData(), ...settingsOverrides });
         if (key === "spaces") return dataResult({ spaces: [defaultSpace, engineeringSpace] });
         if (key === "space") {
           const spaceSlug = typeof params?.spaceSlug === "string" ? params.spaceSlug : "default";
@@ -428,5 +506,292 @@ describe("LLM Wiki spaces settings localization", () => {
       profile: { ...(profileData as { profile: Record<string, unknown> }).profile, enabled: true },
     });
     expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.toast });
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      agents: "Agentes gerenciados",
+      skills: "Skills gerenciadas",
+      projects: "Projetos gerenciados",
+      routines: "Rotinas gerenciadas",
+      pending: "O Wiki Maintainer está aguardando aprovação.",
+      skillMissing: "LLM Wiki Maintainer não está instalada na biblioteca de skills da empresa.",
+      routineMissingRef: "A rotina “Run LLM Wiki lint” não consegue resolver agent:wiki-maintainer.",
+      noEnglishUi: ["Managed Agents", "Managed Skills", "Managed Projects", "Managed Routines", "Re-sync skills"],
+    },
+    {
+      locale: "en" as const,
+      agents: "Managed Agents",
+      skills: "Managed Skills",
+      projects: "Managed Projects",
+      routines: "Managed Routines",
+      pending: "The Wiki Maintainer is pending approval.",
+      skillMissing: "LLM Wiki Maintainer is not installed in the company skill library.",
+      routineMissingRef: "Run LLM Wiki lint cannot resolve agent:wiki-maintainer.",
+      noEnglishUi: [],
+    },
+  ])("localizes managed setup health states while preserving resource names and identifiers in $locale", (copy) => {
+    pathname = "/PAP/wiki/settings";
+    settingsOverrides = {
+      managedAgent: {
+        status: "resolved",
+        source: "managed",
+        agentId: "agent-1",
+        defaultDrift: { entryFile: "AGENTS.md", changedFiles: ["AGENTS.md"] },
+        details: { name: "Wiki Maintainer", status: "pending_approval", adapterType: "claude_local", icon: "book-open" },
+      },
+      managedProject: {
+        status: "selected",
+        source: "selected",
+        projectId: "project-2",
+        details: { name: "Research Project", status: "active" },
+      },
+      managedSkills: [{
+        status: "missing",
+        skillId: null,
+        resourceKey: "wiki-maintainer",
+        details: { name: "LLM Wiki Maintainer", key: "wiki-maintainer", description: null },
+      }],
+      managedRoutines: [{
+        status: "missing_refs",
+        routineId: "routine-nightly",
+        resourceKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+        routine: {
+          id: "routine-nightly",
+          title: "Run LLM Wiki lint",
+          status: "active",
+          assigneeAgentId: "agent-1",
+          projectId: "project-1",
+          managedByPlugin: { pluginDisplayName: "LLM Wiki", resourceKey: "nightly-wiki-lint" },
+        },
+        details: { cronExpression: "0 3 * * *" },
+        missingRefs: [{ resourceKind: "agent", resourceKey: "wiki-maintainer" }],
+      }],
+    };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.agents);
+    expect(container.textContent).toContain(copy.skills);
+    expect(container.textContent).toContain(copy.projects);
+    expect(container.textContent).toContain(copy.routines);
+    expect(container.textContent).toContain(copy.pending);
+    expect(container.textContent).toContain(copy.skillMissing);
+    expect(container.textContent).toContain(copy.routineMissingRef);
+    expect(container.textContent).toContain("Research Project");
+    expect(container.textContent).toContain("Wiki Maintainer");
+    expect(container.textContent).toContain("LLM Wiki Maintainer");
+    expect(container.textContent).toContain("AGENTS.md");
+    expect(container.textContent).toContain("Run LLM Wiki lint");
+    for (const originalUiCopy of copy.noEnglishUi) expect(container.textContent).not.toContain(originalUiCopy);
+    expect(container.textContent).toContain("agent:wiki-maintainer");
+    expect(container.textContent).toContain("claude local");
+  });
+
+  it.each([
+    { locale: "pt-BR" as const, label: "Skill gerenciada", detail: "Nenhuma skill gerenciada pelo plugin está instalada na biblioteca de skills da empresa." },
+    { locale: "en" as const, label: "Managed skill", detail: "No plugin-managed skills are installed in the company skill library." },
+  ])("localizes the empty managed-skills health state in $locale", (copy) => {
+    pathname = "/PAP/wiki/settings";
+    settingsOverrides = { managedSkills: [] };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.label);
+    expect(container.textContent).toContain(copy.detail);
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      pickMaintainer: "Selecionar responsável",
+      saveMaintainer: "Salvar responsável",
+      repairAgent: "Reparar",
+      resetAgent: "Redefinir para os padrões",
+      pickProject: "Projeto",
+      saveProject: "Salvar projeto",
+      repairProject: "Reparar / reconciliar",
+      resetProject: "↺ Redefinir para os padrões do plugin",
+      resyncSkills: "Sincronizar skills novamente",
+      fixRoutines: "Corrigir rotinas",
+      agentToast: "Agente responsável selecionado",
+      agentRepairToast: "Agente reconciliado",
+      agentResetToast: "Agente redefinido para os padrões do plugin",
+      projectToast: "Projeto selecionado",
+      projectRepairToast: "Projeto reconciliado",
+      projectResetToast: "Projeto redefinido para os padrões do plugin",
+      skillsToast: "Skills sincronizadas",
+      routinesToast: "Rotinas corrigidas",
+    },
+    {
+      locale: "en" as const,
+      pickMaintainer: "Select maintainer",
+      saveMaintainer: "Save maintainer",
+      repairAgent: "Repair",
+      resetAgent: "Reset to defaults",
+      pickProject: "Project",
+      saveProject: "Save project",
+      repairProject: "Repair / reconcile",
+      resetProject: "↺ Reset to plugin defaults",
+      resyncSkills: "Re-sync skills",
+      fixRoutines: "Fix routines",
+      agentToast: "Maintainer agent selected",
+      agentRepairToast: "Agent reconciled",
+      agentResetToast: "Agent reset to plugin defaults",
+      projectToast: "Project selected",
+      projectRepairToast: "Project reconciled",
+      projectResetToast: "Project reset to plugin defaults",
+      skillsToast: "Skills synced",
+      routinesToast: "Routines fixed",
+    },
+  ])("keeps managed resource action payloads stable from localized setup controls in $locale", async (copy) => {
+    pathname = "/PAP/wiki/settings";
+    settingsOverrides = {
+      managedAgent: {
+        status: "resolved",
+        source: "managed",
+        agentId: "agent-1",
+        defaultDrift: { entryFile: "AGENTS.md", changedFiles: ["AGENTS.md"] },
+        details: { name: "Wiki Maintainer", status: "idle", adapterType: "claude_local", icon: "book-open" },
+      },
+      managedRoutines: [{
+        status: "resolved",
+        routineId: "routine-nightly",
+        resourceKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+        routine: {
+          id: "routine-nightly",
+          title: "Run LLM Wiki lint",
+          status: "active",
+          assigneeAgentId: "wrong-agent-id",
+          projectId: "project-1",
+        },
+        details: { cronExpression: "0 3 * * *" },
+      }],
+    };
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderWiki(copy.locale);
+
+    await act(async () => findButton(copy.pickMaintainer).click());
+    await act(async () => findButton(copy.saveMaintainer).click());
+    expect(callByKey("select-managed-agent").at(-1)?.params).toEqual({ companyId: COMPANY_ID, agentId: "agent-2" });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.agentToast });
+
+    await act(async () => findButton(copy.repairAgent).click());
+    expect(callByKey("reconcile-managed-agent").at(-1)?.params).toEqual({ companyId: COMPANY_ID });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.agentRepairToast });
+
+    await act(async () => findButton(copy.resetAgent).click());
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining("AGENTS.md"));
+    expect(callByKey("reset-managed-agent").at(-1)?.params).toEqual({ companyId: COMPANY_ID });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.agentResetToast });
+
+    await act(async () => findButton(copy.pickProject).click());
+    await act(async () => findButton(copy.saveProject).click());
+    expect(callByKey("select-managed-project").at(-1)?.params).toEqual({ companyId: COMPANY_ID, projectId: "project-2" });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.projectToast });
+
+    await act(async () => findButton(copy.repairProject).click());
+    expect(callByKey("reconcile-managed-project").at(-1)?.params).toEqual({ companyId: COMPANY_ID });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.projectRepairToast });
+
+    await act(async () => findButton(copy.resetProject).click());
+    expect(callByKey("reset-managed-project").at(-1)?.params).toEqual({ companyId: COMPANY_ID });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.projectResetToast });
+
+    await act(async () => findButton(copy.resyncSkills).click());
+    expect(callByKey("reset-managed-skills").at(-1)?.params).toEqual({ companyId: COMPANY_ID });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.skillsToast });
+
+    await act(async () => findButton(copy.fixRoutines).click());
+    expect(callByKey("reconcile-managed-routines").at(-1)?.params).toEqual({ companyId: COMPANY_ID });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.routinesToast });
+    confirm.mockRestore();
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      confirmPrefix: 'Atualizar "Run LLM Wiki lint" para os padrões atuais do plugin LLM Wiki?',
+      runNowToast: "Execução da rotina iniciada",
+      pauseToast: "Rotina pausada",
+      resetToast: "Padrões da rotina atualizados",
+      labels: "Configurar|Gerenciado por {name}|Agendamento|Referências ausentes:|É possível reparar os padrões das rotinas.|Reconciliar|Redefinir",
+    },
+    {
+      locale: "en" as const,
+      confirmPrefix: 'Update "Run LLM Wiki lint" to the current LLM Wiki plugin defaults?',
+      runNowToast: "Routine run started",
+      pauseToast: "Routine paused",
+      resetToast: "Routine defaults updated",
+      labels: "Configure|Managed by {name}|Schedule|Missing|Routine defaults can be repaired.|Reconcile|Reset",
+    },
+  ])("preserves managed routine action contracts and localizes routine controls in $locale", async (copy) => {
+    pathname = "/PAP/wiki/settings/routines";
+    settingsOverrides = {
+      managedRoutines: [{
+        status: "resolved",
+        routineId: "routine-nightly",
+        resourceKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+        defaultDrift: { changedFields: ["description"] },
+        routine: {
+          id: "routine-nightly",
+          title: "Run LLM Wiki lint",
+          status: "active",
+          assigneeAgentId: "agent-1",
+          projectId: "project-1",
+          managedByPlugin: { pluginDisplayName: "LLM Wiki", resourceKey: "nightly-wiki-lint" },
+        },
+        details: { cronExpression: "0 3 * * *" },
+      }],
+    };
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderWiki(copy.locale);
+
+    expect(container.querySelector('[data-testid="managed-routine-labels"]')?.textContent).toBe(copy.labels);
+    await act(async () => findButton("Run now").click());
+    expect(callByKey("run-managed-routine").at(-1)?.params).toEqual({
+      companyId: COMPANY_ID,
+      routineKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+      assigneeAgentId: "agent-1",
+      projectId: "project-1",
+    });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.runNowToast });
+
+    await act(async () => findButton("Pause routine").click());
+    expect(callByKey("update-managed-routine-status").at(-1)?.params).toEqual({
+      companyId: COMPANY_ID,
+      routineKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+      status: "paused",
+    });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.pauseToast });
+
+    await act(async () => findButton("Reset routine").click());
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining(copy.confirmPrefix));
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining("description"));
+    expect(callByKey("reset-managed-routine").at(-1)?.params).toEqual({
+      companyId: COMPANY_ID,
+      routineKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+      assigneeAgentId: "agent-1",
+      projectId: "project-1",
+    });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.resetToast });
+    confirm.mockRestore();
+  });
+
+  it("reacts to a host locale change without reloading managed setup data", () => {
+    pathname = "/PAP/wiki/settings";
+    renderWiki("en");
+    expect(container.textContent).toContain("Managed Agents");
+    expect(container.textContent).toContain("Re-sync skills");
+
+    renderWiki("pt-BR");
+    expect(container.textContent).toContain("Agentes gerenciados");
+    expect(container.textContent).toContain("Sincronizar skills novamente");
+    expect(container.textContent).not.toContain("Managed Agents");
+
+    pathname = "/PAP/wiki/settings/routines";
+    renderWiki("en");
+    expect(container.querySelector('[data-testid="managed-routine-labels"]')?.textContent).toContain("Configure|Managed by {name}|Schedule");
+    renderWiki("pt-BR");
+    expect(container.querySelector('[data-testid="managed-routine-labels"]')?.textContent).toContain("Configurar|Gerenciado por {name}|Agendamento");
   });
 });

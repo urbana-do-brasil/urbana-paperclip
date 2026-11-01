@@ -3827,6 +3827,9 @@
         "name": "Wiki root",
         "description": "Company-scoped local folder that stores raw sources, wiki pages, Paperclip project standups under wiki/projects/, AGENTS.md, IDEA.md, wiki/index.md, and wiki/log.md."
       }
+    },
+    "uiSlots": {
+      "workspaceChangesTab": "Changes"
     }
   },
   "pluginManager": {

@@ -362,7 +362,12 @@ export function registerAgentCommands(program: Command): void {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const payload = createAgentSchema.parse(parseJson(opts.payloadJson));
           const created = await ctx.api.post<Agent>(apiPath`/api/companies/${ctx.companyId}/agents`, payload);
-          printOutput(created, { json: ctx.json });
+          if (ctx.json) {
+            printOutput(created, { json: true });
+          } else {
+            console.log(adminOperationMessage("agentCreateDone"));
+            printOutput(created, { json: false });
+          }
         } catch (err) {
           handleCommandError(err);
         }
@@ -380,7 +385,12 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const result = await ctx.api.post(apiPath`/api/companies/${ctx.companyId}/agent-hires`, parseJson(opts.payloadJson));
-          printOutput(result, { json: ctx.json });
+          if (ctx.json) {
+            printOutput(result, { json: true });
+          } else {
+            console.log(adminOperationMessage("agentHireDone"));
+            printOutput(result, { json: false });
+          }
         } catch (err) {
           handleCommandError(err);
         }

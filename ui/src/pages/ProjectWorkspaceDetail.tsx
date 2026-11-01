@@ -306,7 +306,7 @@ export function ProjectWorkspaceDetail() {
   const pluginTabItems = useMemo(
     () => pluginDetailSlots.map((slot) => ({
       value: `plugin:${slot.pluginKey}:${slot.id}` as ProjectWorkspacePluginTab,
-      label: slot.displayName,
+      label: slot.hostDisplayName ?? slot.displayName,
       order: slot.order ?? DEFAULT_PLUGIN_DETAIL_TAB_ORDER,
       slot,
     })),

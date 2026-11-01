@@ -27,6 +27,21 @@ export interface AvailablePluginBundleIdentity {
   localPath: string;
 }
 
+export interface PluginUiContributionIdentity {
+  pluginId: string;
+  pluginKey: string;
+}
+
+export interface InstalledPluginBundleIdentity extends PluginBundleIdentity {
+  id: string;
+  manifestJson: { id: string };
+}
+
+export interface PluginUiContributionPresentation {
+  pluginDisplayName: string;
+  slotDisplayNames: Readonly<Record<string, string>>;
+}
+
 /** Return true only when the installed package points at the host's bundle catalog entry. */
 export function isBundledPluginRecord(
   plugin: PluginBundleIdentity,
@@ -37,6 +52,22 @@ export function isBundledPluginRecord(
     bundled.pluginKey === plugin.pluginKey
     && bundled.packageName === plugin.packageName
     && bundled.localPath === plugin.packagePath,
+  );
+}
+
+/** Require both the contribution-to-record link and the host's exact bundle identity. */
+export function isTrustedBundledPluginContribution(
+  contribution: PluginUiContributionIdentity,
+  installedPlugins: readonly InstalledPluginBundleIdentity[] | undefined,
+  bundledPlugins: readonly AvailablePluginBundleIdentity[] | undefined,
+): boolean {
+  if (!installedPlugins || !bundledPlugins) return false;
+  const installed = installedPlugins.find((plugin) => plugin.id === contribution.pluginId);
+  return Boolean(
+    installed
+    && installed.pluginKey === contribution.pluginKey
+    && installed.manifestJson.id === contribution.pluginKey
+    && isBundledPluginRecord(installed, bundledPlugins),
   );
 }
 
@@ -84,8 +115,53 @@ const OWN_LOCAL_FOLDER_PRESENTATION_KEYS: Record<string, { pluginKey: string; ke
   "wiki-root": { pluginKey: "paperclipai.plugin-llm-wiki", key: "llmWikiRoot" },
 };
 
+const OWN_PLUGIN_UI_SLOT_PRESENTATION_KEYS: Record<string, Record<string, { key: string; sourceDisplayName: string }>> = {
+  "paperclip.workspace-diff": {
+    "workspace-changes-tab": { key: "workspaceChangesTab", sourceDisplayName: "Changes" },
+  },
+};
+
 function translate(t: TFunction, key: string, defaultValue: string): string {
   return t(key as never, { defaultValue });
+}
+
+export function hasOwnedPluginPresentation(pluginKey: string): boolean {
+  return Object.prototype.hasOwnProperty.call(OWN_PLUGIN_PRESENTATION_KEYS, pluginKey)
+    || Object.prototype.hasOwnProperty.call(OWN_PLUGIN_UI_SLOT_PRESENTATION_KEYS, pluginKey);
+}
+
+export function localizePluginUiContributionPresentation<T extends {
+  pluginKey: string;
+  displayName: string;
+  slots: Array<{ id: string; displayName: string }>;
+}>(
+  contribution: T,
+  t: TFunction,
+  isTrustedBundle = false,
+): PluginUiContributionPresentation {
+  if (!isTrustedBundle) {
+    return { pluginDisplayName: contribution.displayName, slotDisplayNames: {} };
+  }
+
+  const localizedPlugin = localizePluginPresentation(
+    contribution.pluginKey,
+    contribution.displayName,
+    "",
+    t,
+    true,
+  );
+  const slotNames = Object.prototype.hasOwnProperty.call(OWN_PLUGIN_UI_SLOT_PRESENTATION_KEYS, contribution.pluginKey)
+    ? OWN_PLUGIN_UI_SLOT_PRESENTATION_KEYS[contribution.pluginKey]
+    : undefined;
+  const slotDisplayNames: Record<string, string> = Object.create(null) as Record<string, string>;
+  for (const slot of contribution.slots) {
+    if (!slotNames || !Object.prototype.hasOwnProperty.call(slotNames, slot.id)) continue;
+    const ownedSlot = slotNames[slot.id];
+    if (slot.displayName !== ownedSlot.sourceDisplayName) continue;
+    slotDisplayNames[slot.id] = translate(t, `pluginPresentation.uiSlots.${ownedSlot.key}`, slot.displayName);
+  }
+
+  return { pluginDisplayName: localizedPlugin.displayName, slotDisplayNames };
 }
 
 export function localizePluginPresentation(

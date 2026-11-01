@@ -5,7 +5,9 @@ import {
   isBundledPluginRecord,
   localizePluginLocalFolderPresentation,
   localizePluginPresentation,
+  localizePluginUiContributionPresentation,
   localizeSandboxProviderPresentation,
+  isTrustedBundledPluginContribution,
 } from "./plugin-presentation-localization";
 
 afterAll(async () => {
@@ -28,6 +30,32 @@ describe("owned plugin presentation localization", () => {
     expect(isBundledPluginRecord(installed, bundled)).toBe(true);
     expect(isBundledPluginRecord({ ...installed, packagePath: "/custom/vendor-copy" }, bundled)).toBe(false);
     expect(isBundledPluginRecord({ ...installed, packageName: "vendor/workspace-diff" }, bundled)).toBe(false);
+  });
+
+  it("requires a UI contribution to match its installed record and exact bundled package", () => {
+    const contribution = { pluginId: "plugin-workspace", pluginKey: "paperclip.workspace-diff" };
+    const installed = [{
+      id: "plugin-workspace",
+      pluginKey: "paperclip.workspace-diff",
+      packageName: "@paperclipai/plugin-workspace-diff",
+      packagePath: "/app/packages/plugins/plugin-workspace-diff",
+      manifestJson: { id: "paperclip.workspace-diff" },
+    }];
+    const bundled = [{
+      pluginKey: "paperclip.workspace-diff",
+      packageName: "@paperclipai/plugin-workspace-diff",
+      localPath: "/app/packages/plugins/plugin-workspace-diff",
+    }];
+
+    expect(isTrustedBundledPluginContribution(contribution, installed, bundled)).toBe(true);
+    expect(isTrustedBundledPluginContribution({ ...contribution, pluginId: "other-plugin" }, installed, bundled)).toBe(false);
+    expect(isTrustedBundledPluginContribution(contribution, [{
+      ...installed[0], packagePath: "/custom/copied-plugin",
+    }], bundled)).toBe(false);
+    expect(isTrustedBundledPluginContribution(contribution, [{
+      ...installed[0], manifestJson: { id: "vendor.workspace-diff" },
+    }], bundled)).toBe(false);
+    expect(isTrustedBundledPluginContribution(contribution, undefined, undefined)).toBe(false);
   });
 
   it("preserves external metadata when a package reuses a first-party manifest ID", async () => {
@@ -72,6 +100,70 @@ describe("owned plugin presentation localization", () => {
     await i18n.changeLanguage("en");
     expect(localizePluginPresentation("paperclip.workspace-diff", fallback.displayName, fallback.description, i18n.t, true))
       .toEqual(fallback);
+  });
+
+  it("localizes only allowlisted labels from verified own UI slot declarations", async () => {
+    const ownContribution = {
+      pluginId: "plugin-workspace",
+      pluginKey: "paperclip.workspace-diff",
+      displayName: "Workspace Changes",
+      version: "0.1.0",
+      uiEntryFile: "index.js",
+      slots: [{
+        type: "detailTab",
+        id: "workspace-changes-tab",
+        displayName: "Changes",
+        exportName: "ChangesTab",
+      }],
+      launchers: [],
+    };
+
+    await i18n.changeLanguage("pt-BR");
+    const portuguesePresentation = localizePluginUiContributionPresentation(ownContribution, i18n.t, true);
+    expect(portuguesePresentation).toEqual({
+      pluginDisplayName: "Alterações no workspace",
+      slotDisplayNames: { "workspace-changes-tab": "Alterações" },
+    });
+    expect(ownContribution.displayName).toBe("Workspace Changes");
+    expect(ownContribution.slots[0]?.displayName).toBe("Changes");
+
+    await i18n.changeLanguage("en");
+    expect(localizePluginUiContributionPresentation(ownContribution, i18n.t, true)).toEqual({
+      pluginDisplayName: "Workspace Changes",
+      slotDisplayNames: { "workspace-changes-tab": "Changes" },
+    });
+  });
+
+  it("preserves copied plugin contribution metadata and non-static slot text", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const copiedContribution = {
+      pluginId: "external-plugin",
+      pluginKey: "paperclip.workspace-diff",
+      displayName: "Vendor Changes",
+      version: "9.0.0",
+      uiEntryFile: "index.js",
+      slots: [{
+        type: "detailTab",
+        id: "workspace-changes-tab",
+        displayName: "Vendor supplied label",
+        exportName: "ChangesTab",
+      }],
+      launchers: [],
+    };
+
+    expect(localizePluginUiContributionPresentation(copiedContribution, i18n.t, false)).toEqual({
+      pluginDisplayName: "Vendor Changes",
+      slotDisplayNames: {},
+    });
+    expect(copiedContribution.displayName).toBe("Vendor Changes");
+    expect(copiedContribution.slots[0]?.displayName).toBe("Vendor supplied label");
+    const trustedPresentation = localizePluginUiContributionPresentation({
+      ...copiedContribution,
+      pluginId: "plugin-workspace",
+      displayName: "Workspace Changes",
+      slots: [{ ...copiedContribution.slots[0], displayName: "User supplied label" }],
+    }, i18n.t, true);
+    expect(trustedPresentation.slotDisplayNames["workspace-changes-tab"]).toBeUndefined();
   });
 
   it("localizes first-party sandbox metadata and preserves unknown provider text", async () => {

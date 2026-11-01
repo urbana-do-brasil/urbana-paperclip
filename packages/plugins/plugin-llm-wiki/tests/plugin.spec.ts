@@ -1188,7 +1188,7 @@ Duplicate headings receive stable suffixes.
     } as never));
 
     expect(markup).toContain("Managed Skills");
-    expect(markup).toContain("skill issue(s) need attention");
+    expect(markup).toContain("1 skill issue needs attention.");
     expect(markup).toContain("LLM Wiki Maintainer is not installed in the company skill library.");
     expect(markup).toContain("Re-sync skills");
   });
@@ -1211,7 +1211,7 @@ Duplicate headings receive stable suffixes.
       context: { companyId: COMPANY_ID, companyPrefix: "PAP" },
     } as never));
 
-    expect(markup).toContain("skill issue(s) need attention");
+    expect(markup).toContain("1 skill issue needs attention.");
     expect(markup).toContain("LLM Wiki Maintainer differs from the plugin default: SKILL.md.");
     expect(markup).toContain("Re-sync skills");
   });

@@ -4888,9 +4888,9 @@ const MANAGED_SKILL_LABELS: Record<string, string> = {
   "index-refresh": "Index Refresh",
 };
 
-function routineFallbackFor(routine: ManagedRoutine) {
+function routineFallbackFor(routine: ManagedRoutine, locale: WikiLocale) {
   const key = routine.resourceKey?.split(":").pop() ?? "";
-  return ROUTINE_FALLBACKS[key] ?? { title: routine.resourceKey ?? "Managed routine", cron: "—" };
+  return ROUTINE_FALLBACKS[key] ?? { title: routine.resourceKey ?? wikiMessage(locale, "setupManagedRoutineLabel"), cron: "—" };
 }
 
 function managedRoutineStatus(routine: ManagedRoutine) {
@@ -4923,51 +4923,51 @@ function managedResourceKey(resourceKey?: string | null) {
   return resourceKey?.split(":").pop() ?? "";
 }
 
-function skillLabel(resource: ManagedSkill) {
+function skillLabel(resource: ManagedSkill, locale: WikiLocale) {
   const declaredLabel = MANAGED_SKILL_LABELS[managedResourceKey(resource.resourceKey)];
-  return declaredLabel ?? resource.details?.name ?? resource.skill?.name ?? "Managed skill";
+  return declaredLabel ?? resource.details?.name ?? resource.skill?.name ?? wikiMessage(locale, "setupManagedSkillLabel");
 }
 
-function buildAgentHealthItems(managedAgent: ManagedAgent): RoutineHealthItem[] {
+function buildAgentHealthItems(managedAgent: ManagedAgent, locale: WikiLocale): RoutineHealthItem[] {
   const agentName = managedAgent.details?.name ?? "Wiki Maintainer";
   return [{
     label: agentName,
     ok: managedAgentIsReady(managedAgent) && !managedAgent.defaultDrift?.changedFiles.length,
     detail: managedAgent.source === "managed"
       ? managedAgent.defaultDrift?.changedFiles.length
-        ? `The Wiki Maintainer instructions differ from the plugin default: ${managedAgent.defaultDrift.changedFiles.join(", ")}.`
-        : "The plugin-managed Wiki Maintainer exists with current default instructions."
-      : "The settings page is using a selected maintainer instead of the plugin-managed Wiki Maintainer.",
+        ? wikiMessage(locale, "setupAgentManagedDrift", { files: managedAgent.defaultDrift.changedFiles.join(", ") })
+        : wikiMessage(locale, "setupAgentManagedCurrent")
+      : wikiMessage(locale, "setupAgentSelected"),
   }];
 }
 
-function buildProjectHealthItems(managedProject: ManagedProject): RoutineHealthItem[] {
+function buildProjectHealthItems(managedProject: ManagedProject, locale: WikiLocale): RoutineHealthItem[] {
   const projectName = managedProject.details?.name ?? "LLM Wiki";
   return [{
     label: projectName,
     ok: managedProjectIsReady(managedProject),
     detail: managedProject.source === "managed"
-      ? "The plugin-managed LLM Wiki project exists."
-      : "The settings page is using a selected project instead of the plugin-managed LLM Wiki project.",
+      ? wikiMessage(locale, "setupProjectManaged")
+      : wikiMessage(locale, "setupProjectSelected"),
   }];
 }
 
-function buildSkillHealthItems(skills: ManagedSkill[]): RoutineHealthItem[] {
+function buildSkillHealthItems(skills: ManagedSkill[], locale: WikiLocale): RoutineHealthItem[] {
   if (skills.length === 0) {
     return [{
-      label: "Managed skill",
+      label: wikiMessage(locale, "setupManagedSkillLabel"),
       ok: false,
-      detail: "No plugin-managed skills are installed in the company skill library.",
+      detail: wikiMessage(locale, "setupNoManagedSkills"),
     }];
   }
   return skills.map((skill) => ({
-    label: skillLabel(skill),
+    label: skillLabel(skill, locale),
     ok: managedSkillIsReady(skill) && !skill.defaultDrift?.changedFiles.length,
     detail: managedSkillIsReady(skill)
       ? skill.defaultDrift?.changedFiles.length
-        ? `${skillLabel(skill)} differs from the plugin default: ${skill.defaultDrift.changedFiles.join(", ")}.`
-        : `${skillLabel(skill)} is installed in the company skill library.`
-      : `${skillLabel(skill)} is not installed in the company skill library.`,
+        ? wikiMessage(locale, "setupSkillDrift", { name: skillLabel(skill, locale), files: skill.defaultDrift.changedFiles.join(", ") })
+        : wikiMessage(locale, "setupSkillInstalled", { name: skillLabel(skill, locale) })
+      : wikiMessage(locale, "setupSkillMissing", { name: skillLabel(skill, locale) }),
   }));
 }
 
@@ -4975,6 +4975,7 @@ function buildRoutineHealthItems(
   routines: ManagedRoutine[],
   managedAgent: ManagedAgent,
   managedProject: ManagedProject,
+  locale: WikiLocale,
 ): RoutineHealthItem[] {
   const routineByKey = new Map(routines.map((routine) => [routineResourceKey(routine), routine]));
   const expectedAgentId = managedAgent.source === "managed" ? managedAgent.agentId ?? null : null;
@@ -4993,17 +4994,20 @@ function buildRoutineHealthItems(
     const missingProject = Boolean(expectedProjectId && !routineProjectId);
     const blockedByManagedResources = !expectedAgentId || !expectedProjectId;
     const ok = Boolean(routine && !missing && missingRefs.length === 0 && !wrongAgent && !wrongProject && !missingAgent && !missingProject && !blockedByManagedResources);
-    let detail = `${fallback.title} is installed with the Wiki Maintainer and LLM Wiki project.`;
+    let detail = wikiMessage(locale, "setupRoutineHealthy", { routine: fallback.title });
     if (missing) {
-      detail = `${fallback.title} is not installed.`;
+      detail = wikiMessage(locale, "setupRoutineMissing", { routine: fallback.title });
     } else if (missingRefs.length > 0) {
-      detail = `${fallback.title} cannot resolve ${missingRefs.map((ref) => `${ref.resourceKind}:${ref.resourceKey}`).join(", ")}.`;
+      detail = wikiMessage(locale, "setupRoutineUnresolved", {
+        routine: fallback.title,
+        refs: missingRefs.map((ref) => `${ref.resourceKind}:${ref.resourceKey}`).join(", "),
+      });
     } else if (blockedByManagedResources) {
-      detail = `${fallback.title} cannot be validated until the managed agent and project are restored.`;
+      detail = wikiMessage(locale, "setupRoutineBlocked", { routine: fallback.title });
     } else if (wrongAgent || missingAgent) {
-      detail = `${fallback.title} is not assigned to the Wiki Maintainer.`;
+      detail = wikiMessage(locale, "setupRoutineWrongAgent", { routine: fallback.title });
     } else if (wrongProject || missingProject) {
-      detail = `${fallback.title} is not attached to the LLM Wiki project.`;
+      detail = wikiMessage(locale, "setupRoutineWrongProject", { routine: fallback.title });
     }
     items.push({ label: fallback.title, ok, detail });
   }
@@ -5011,12 +5015,12 @@ function buildRoutineHealthItems(
   return items;
 }
 
-function RoutineHealthChecklist({ items }: { items: RoutineHealthItem[] }) {
+function RoutineHealthChecklist({ items, locale }: { items: RoutineHealthItem[]; locale: WikiLocale }) {
   return (
     <ManagedResourceHealthChecklist
       items={items}
-      ariaLabel="Wiki routines health checklist"
-      heading="Routine health"
+      ariaLabel={wikiMessage(locale, "setupRoutineHealthChecklist")}
+      heading={wikiMessage(locale, "setupRoutineHealthHeading")}
     />
   );
 }
@@ -5074,12 +5078,12 @@ function ManagedResourceHealthChecklist({
   );
 }
 
-function SkillHealthChecklist({ items }: { items: RoutineHealthItem[] }) {
+function SkillHealthChecklist({ items, locale }: { items: RoutineHealthItem[]; locale: WikiLocale }) {
   return (
     <ManagedResourceHealthChecklist
       items={items}
-      ariaLabel="Wiki skills health checklist"
-      heading="Skill health"
+      ariaLabel={wikiMessage(locale, "setupSkillHealthChecklist")}
+      heading={wikiMessage(locale, "setupSkillHealthHeading")}
     />
   );
 }
@@ -5962,14 +5966,14 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
     ? `/projects/${data.managedProject.projectId}`
     : null;
   const managedRoutines = data.managedRoutines ?? (data.managedRoutine ? [data.managedRoutine] : []);
-  const agentHealthItems = buildAgentHealthItems(data.managedAgent);
+  const agentHealthItems = buildAgentHealthItems(data.managedAgent, locale);
   const agentHealthWarnings = agentHealthItems.filter((item) => !item.ok);
-  const routineHealthItems = buildRoutineHealthItems(managedRoutines, data.managedAgent, data.managedProject);
+  const routineHealthItems = buildRoutineHealthItems(managedRoutines, data.managedAgent, data.managedProject, locale);
   const routineHealthWarnings = routineHealthItems.filter((item) => !item.ok);
-  const projectHealthItems = buildProjectHealthItems(data.managedProject);
+  const projectHealthItems = buildProjectHealthItems(data.managedProject, locale);
   const projectHealthWarnings = projectHealthItems.filter((item) => !item.ok);
   const managedSkills = data.managedSkills ?? [];
-  const skillHealthItems = buildSkillHealthItems(managedSkills);
+  const skillHealthItems = buildSkillHealthItems(managedSkills, locale);
   const skillHealthWarnings = skillHealthItems.filter((item) => !item.ok);
   const configurationErrors = [
     ...(!data.folder.healthy ? ["settingsWikiRootFolder" as const] : []),
@@ -5994,7 +5998,7 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
   const currentProjectOption = projectOptions.find((project) => project.id === effectiveSelectedProjectId) ?? projectFallbackOption;
   const currentEventPolicy = eventPolicy ?? data.eventIngestion;
   const managedRoutineItems: ManagedRoutinesListItemWithDrift[] = managedRoutines.map((routine) => {
-    const fallback = routineFallbackFor(routine);
+    const fallback = routineFallbackFor(routine, locale);
     const key = routine.resourceKey ?? routine.routineId ?? fallback.title;
     const status = managedRoutineStatus(routine);
     const assigneeAgentId = routine.routine?.assigneeAgentId ?? routine.details?.assigneeAgentId ?? null;
@@ -6053,10 +6057,10 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
     setAgentBusy(true);
     try {
       await selectAgent({ companyId: context.companyId, agentId });
-      toast({ tone: "success", title: "Maintainer agent selected" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupAgentSelectedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Agent selection failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupAgentSelectFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setAgentBusy(false);
     }
@@ -6068,10 +6072,10 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
     setProjectBusy(true);
     try {
       await selectProject({ companyId: context.companyId, projectId });
-      toast({ tone: "success", title: "Project selected" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupProjectSelectedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Project selection failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupProjectSelectFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setProjectBusy(false);
     }
@@ -6097,10 +6101,10 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
     setRoutineRepairBusy(true);
     try {
       await reconcileRoutines({ companyId: context.companyId });
-      toast({ tone: "success", title: "Routines fixed" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupRoutinesFixedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Routine repair failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupRoutineRepairFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setRoutineRepairBusy(false);
     }
@@ -6111,10 +6115,10 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
     setSkillBusy(true);
     try {
       await resetSkills({ companyId: context.companyId });
-      toast({ tone: "success", title: "Skills synced" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupSkillsSyncedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Skill sync failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupSkillsSyncFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setSkillBusy(false);
     }
@@ -6177,16 +6181,20 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
   async function toggleManagedRoutine(routine: ManagedRoutinesListItem, enabled: boolean) {
     if (!context.companyId || !routine.resourceKey) return;
     if (!enabled && !routine.assigneeAgentId) {
-      toast({ tone: "warn", title: "Default agent required", body: "Set a default maintainer before enabling this routine." });
+      toast({
+        tone: "warn",
+        title: wikiMessage(locale, "setupRoutineDefaultAgentRequired"),
+        body: wikiMessage(locale, "setupRoutineAssignDefaultAgent"),
+      });
       return;
     }
     setRoutineBusyKey(`status:${routine.key}`);
     try {
       await updateRoutineStatus({ companyId: context.companyId, routineKey: routine.resourceKey, status: enabled ? "paused" : "active" });
-      toast({ tone: "success", title: enabled ? "Routine paused" : "Routine enabled" });
+      toast({ tone: "success", title: wikiMessage(locale, enabled ? "setupRoutinePausedToast" : "setupRoutineEnabledToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Routine update failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupRoutineUpdateFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setRoutineBusyKey(null);
     }
@@ -6197,7 +6205,11 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
     const assigneeAgentId = routine.assigneeAgentId ?? data.managedAgent.agentId ?? null;
     const projectId = routine.projectId ?? data.managedProject.projectId ?? null;
     if (!assigneeAgentId) {
-      toast({ tone: "warn", title: "Default agent required", body: "Set a default maintainer before running this routine." });
+      toast({
+        tone: "warn",
+        title: wikiMessage(locale, "setupRoutineDefaultAgentRequired"),
+        body: wikiMessage(locale, "setupRoutineRunDefaultAgent"),
+      });
       return;
     }
 
@@ -6209,10 +6221,10 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
         assigneeAgentId,
         projectId,
       });
-      toast({ tone: "success", title: "Routine run started" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupRoutineRunStartedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Routine run failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupRoutineRunFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setRoutineBusyKey(null);
     }
@@ -6221,9 +6233,9 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
   async function resetManagedRoutineToDefaults(routine: ManagedRoutinesListItem) {
     if (!context.companyId || !routine.resourceKey) return;
     const changedFields = (routine as ManagedRoutinesListItemWithDrift).defaultDrift?.changedFields ?? [];
-    const fieldList = changedFields.length > 0 ? changedFields.join(", ") : "managed defaults";
+    const fieldList = changedFields.length > 0 ? changedFields.join(", ") : wikiMessage(locale, "setupRoutineResetFallback");
     const confirmed = typeof window === "undefined" || window.confirm(
-      `Update "${routine.title}" to the current LLM Wiki plugin defaults? This replaces ${fieldList}. Cancel to keep the current custom routine text.`,
+      wikiMessage(locale, "setupConfirmRoutineReset", { title: routine.title, fields: fieldList }),
     );
     if (!confirmed) return;
 
@@ -6237,10 +6249,10 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
         assigneeAgentId,
         projectId,
       });
-      toast({ tone: "success", title: "Routine defaults updated" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupRoutineDefaultsUpdatedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Routine reset failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupRoutineResetFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setRoutineBusyKey(null);
     }
@@ -6249,19 +6261,19 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
   async function resetManagedAgentToDefaults() {
     if (!context.companyId) return;
     const changedFiles = agentDefaultDrift?.changedFiles ?? [];
-    const fileList = changedFiles.length > 0 ? changedFiles.join(", ") : "managed instructions and defaults";
+    const fileList = changedFiles.length > 0 ? changedFiles.join(", ") : wikiMessage(locale, "setupAgentResetFallback");
     const confirmed = typeof window === "undefined" || window.confirm(
-      `Update the Wiki Maintainer to the current LLM Wiki plugin defaults? This replaces ${fileList}. Cancel to keep the current custom instructions.`,
+      wikiMessage(locale, "setupConfirmAgentReset", { files: fileList }),
     );
     if (!confirmed) return;
 
     setAgentBusy(true);
     try {
       await resetAgent({ companyId: context.companyId });
-      toast({ tone: "success", title: "Agent reset to plugin defaults" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupAgentResetToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Reset failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupAgentResetFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setAgentBusy(false);
     }
@@ -6350,17 +6362,17 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                 ) : null}
               </div>
             </SetupSection>
-            <SetupSection title="Managed Agents" separated>
+            <SetupSection title={wikiMessage(locale, "setupManagedAgentsSection")} separated>
               <div style={{ display: "grid", gap: 14, maxWidth: isMobile ? "none" : 620, minWidth: 0 }}>
                 <ManagedResourceHealthChecklist
                   items={agentHealthItems}
-                  ariaLabel="Wiki agents health checklist"
-                  heading="Agent health"
+                  ariaLabel={wikiMessage(locale, "setupAgentHealthChecklist")}
+                  heading={wikiMessage(locale, "setupAgentHealthHeading")}
                 />
                 {agentHealthWarnings.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div>{agentHealthWarnings.length} agent issue(s) need attention.</div>
+                      <div>{wikiMessage(locale, agentHealthWarnings.length === 1 ? "setupAgentIssuesOne" : "setupAgentIssuesMany", { count: agentHealthWarnings.length })}</div>
                       <ul style={{ margin: 0, paddingLeft: 18 }}>
                         {agentHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                       </ul>
@@ -6368,7 +6380,7 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                   </Callout>
                 ) : null}
                 <div style={{ display: "grid", gap: 8 }}>
-                  <label style={{ fontSize: 12, color: tokens.muted }}>Maintainer</label>
+                  <label style={{ fontSize: 12, color: tokens.muted }}>{wikiMessage(locale, "setupMaintainerField")}</label>
                   <fieldset
                     disabled={agentBusy}
                     style={{ border: 0, margin: 0, minWidth: 0, padding: 0 }}
@@ -6377,31 +6389,31 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                       companyId={context.companyId}
                       value={effectiveSelectedAgentId ? `agent:${effectiveSelectedAgentId}` : ""}
                       includeUsers={false}
-                      placeholder="Select maintainer"
-                      noneLabel="No maintainer"
-                      searchPlaceholder="Search agents..."
-                      emptyMessage="No agents found."
+                      placeholder={wikiMessage(locale, "setupSelectMaintainer")}
+                      noneLabel={wikiMessage(locale, "setupNoMaintainer")}
+                      searchPlaceholder={wikiMessage(locale, "setupSearchAgents")}
+                      emptyMessage={wikiMessage(locale, "setupNoAgentsFound")}
                       onChange={(_value, selection) => {
                         setSelectedAgentId(selection.assigneeAgentId ?? "");
                       }}
                     />
                   </fieldset>
                   <Tiny>
-                    Adapter: {adapterTypeLabel(currentMaintainerAgent?.adapterType ?? data.managedAgent.details?.adapterType ?? null)}
+                    {wikiMessage(locale, "setupAdapterPrefix")} {adapterTypeLabel(currentMaintainerAgent?.adapterType ?? data.managedAgent.details?.adapterType ?? null)}
                   </Tiny>
                   {maintainerPendingApproval ? (
                     <Callout tone="warn">
-                      The Wiki Maintainer is pending approval. Approve the agent before relying on wiki ingest, query, lint, or scheduled maintenance tasks.
+                      {wikiMessage(locale, "setupPendingApproval")}
                     </Callout>
                   ) : null}
                   {showMaintainerWarning ? (
                     <Callout tone="warn">
-                      This is not the Paperclip-provided Wiki Maintainer. Plugin operations and routines may miss the recommended wiki role, tools, and default instructions.
+                      {wikiMessage(locale, "setupNonDefaultMaintainer")}
                     </Callout>
                   ) : null}
                   {agentDefaultDrift?.changedFiles.length ? (
                     <Callout tone="warn">
-                      Wiki Maintainer instruction defaults changed: {agentDefaultDrift.changedFiles.join(", ")}. Reset only if you want to replace current custom instructions with the plugin template.
+                      {wikiMessage(locale, "setupAgentInstructionDrift", { files: agentDefaultDrift.changedFiles.join(", ") })}
                     </Callout>
                   ) : null}
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -6412,63 +6424,63 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                       loading={agentBusy}
                       disabled={!effectiveSelectedAgentId || effectiveSelectedAgentId === data.managedAgent.agentId}
                     >
-                      Save maintainer
+                      {wikiMessage(locale, "setupSaveMaintainer")}
                     </Button>
-                    {agentLink ? <Button size="sm" onClick={() => hostNavigation.navigate(agentLink)}>Open agent ↗</Button> : null}
+                    {agentLink ? <Button size="sm" onClick={() => hostNavigation.navigate(agentLink)}>{wikiMessage(locale, "setupOpenAgent")}</Button> : null}
                     <Button size="sm" variant="ghost" onClick={async () => {
                       if (!context.companyId) return;
                       setAgentBusy(true);
                       try {
                         await reconcileAgent({ companyId: context.companyId });
-                        toast({ tone: "success", title: "Agent reconciled" });
+                        toast({ tone: "success", title: wikiMessage(locale, "setupAgentReconciledToast") });
                         settings.refresh();
                       } catch (err) {
-                        toast({ tone: "error", title: "Reconcile failed", body: err instanceof Error ? err.message : String(err) });
+                        toast({ tone: "error", title: wikiMessage(locale, "setupAgentRepairFailedToast"), body: err instanceof Error ? err.message : String(err) });
                       } finally {
                         setAgentBusy(false);
                       }
-                    }} loading={agentBusy}>Repair</Button>
-                    <Button size="sm" variant="ghost" onClick={resetManagedAgentToDefaults} loading={agentBusy}>Reset to defaults</Button>
+                    }} loading={agentBusy}>{wikiMessage(locale, "setupRepair")}</Button>
+                    <Button size="sm" variant="ghost" onClick={resetManagedAgentToDefaults} loading={agentBusy}>{wikiMessage(locale, "setupResetToDefaults")}</Button>
                   </div>
                 </div>
               </div>
             </SetupSection>
-            <SetupSection title="Managed Skills" separated>
+            <SetupSection title={wikiMessage(locale, "setupManagedSkillsSection")} separated>
               <div style={{ display: "grid", gap: 12, maxWidth: isMobile ? "none" : 620, minWidth: 0 }}>
-                <SkillHealthChecklist items={skillHealthItems} />
+                <SkillHealthChecklist items={skillHealthItems} locale={locale} />
                 {skillHealthWarnings.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div>{skillHealthWarnings.length} skill issue(s) need attention.</div>
+                      <div>{wikiMessage(locale, skillHealthWarnings.length === 1 ? "setupSkillIssuesOne" : "setupSkillIssuesMany", { count: skillHealthWarnings.length })}</div>
                       <ul style={{ margin: 0, paddingLeft: 18 }}>
                         {skillHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                       </ul>
                       <div>
-                        <Button size="sm" variant="primary" onClick={resyncManagedSkills} loading={skillBusy}>Re-sync skills</Button>
+                        <Button size="sm" variant="primary" onClick={resyncManagedSkills} loading={skillBusy}>{wikiMessage(locale, "setupResyncSkills")}</Button>
                       </div>
                     </div>
                   </Callout>
                 ) : (
                   <Callout>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                      <span>LLM Wiki skills are installed in the company skill library.</span>
-                      <Button size="sm" variant="ghost" onClick={resyncManagedSkills} loading={skillBusy}>Re-sync skills</Button>
+                      <span>{wikiMessage(locale, "setupSkillsInstalled")}</span>
+                      <Button size="sm" variant="ghost" onClick={resyncManagedSkills} loading={skillBusy}>{wikiMessage(locale, "setupResyncSkills")}</Button>
                     </div>
                   </Callout>
                 )}
               </div>
             </SetupSection>
-            <SetupSection title="Managed Projects" separated>
+            <SetupSection title={wikiMessage(locale, "setupManagedProjectsSection")} separated>
               <div style={{ display: "grid", gap: 10, maxWidth: isMobile ? "none" : 620, minWidth: 0 }}>
                 <ManagedResourceHealthChecklist
                   items={projectHealthItems}
-                  ariaLabel="Wiki projects health checklist"
-                  heading="Project health"
+                  ariaLabel={wikiMessage(locale, "setupProjectHealthChecklist")}
+                  heading={wikiMessage(locale, "setupProjectHealthHeading")}
                 />
                 {projectHealthWarnings.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div>{projectHealthWarnings.length} project issue(s) need attention.</div>
+                      <div>{wikiMessage(locale, projectHealthWarnings.length === 1 ? "setupProjectIssuesOne" : "setupProjectIssuesMany", { count: projectHealthWarnings.length })}</div>
                       <ul style={{ margin: 0, paddingLeft: 18 }}>
                         {projectHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                       </ul>
@@ -6476,7 +6488,7 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                   </Callout>
                 ) : null}
                 <div style={{ display: "grid", gap: 8 }}>
-                  <label style={{ fontSize: 12, color: tokens.muted }}>Use existing project</label>
+                  <label style={{ fontSize: 12, color: tokens.muted }}>{wikiMessage(locale, "setupUseExistingProject")}</label>
                   <fieldset
                     disabled={projectBusy}
                     style={{ border: 0, margin: 0, minWidth: 0, padding: 0 }}
@@ -6485,76 +6497,76 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                       companyId={context.companyId}
                       value={effectiveSelectedProjectId}
                       includeArchived
-                      placeholder="Project"
-                      noneLabel="No project"
-                      searchPlaceholder="Search projects..."
-                      emptyMessage="No projects found."
+                      placeholder={wikiMessage(locale, "setupProjectPlaceholder")}
+                      noneLabel={wikiMessage(locale, "setupNoProject")}
+                      searchPlaceholder={wikiMessage(locale, "setupSearchProjects")}
+                      emptyMessage={wikiMessage(locale, "setupNoProjectsFound")}
                       onChange={setSelectedProjectId}
                     />
                   </fieldset>
                   <Tiny>
-                    Status: {projectStatusLabel(currentProjectOption?.status ?? data.managedProject.details?.status ?? data.managedProject.status)}
+                    {wikiMessage(locale, "setupStatusPrefix")} {projectStatusLabel(currentProjectOption?.status ?? data.managedProject.details?.status ?? data.managedProject.status)}
                   </Tiny>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <Button size="sm" variant="primary" onClick={chooseProject} loading={projectBusy} disabled={!effectiveSelectedProjectId}>Save project</Button>
-                    {projectLink ? <Button size="sm" onClick={() => hostNavigation.navigate(projectLink)}>Open project ↗</Button> : null}
+                    <Button size="sm" variant="primary" onClick={chooseProject} loading={projectBusy} disabled={!effectiveSelectedProjectId}>{wikiMessage(locale, "setupSaveProject")}</Button>
+                    {projectLink ? <Button size="sm" onClick={() => hostNavigation.navigate(projectLink)}>{wikiMessage(locale, "setupOpenProject")}</Button> : null}
                     <Button size="sm" variant="ghost" onClick={async () => {
                       if (!context.companyId) return;
                       setProjectBusy(true);
                       try {
                         await reconcileProject({ companyId: context.companyId });
-                        toast({ tone: "success", title: "Project reconciled" });
+                        toast({ tone: "success", title: wikiMessage(locale, "setupProjectReconciledToast") });
                         settings.refresh();
                       } catch (err) {
-                        toast({ tone: "error", title: "Reconcile failed", body: err instanceof Error ? err.message : String(err) });
+                        toast({ tone: "error", title: wikiMessage(locale, "setupProjectRepairFailedToast"), body: err instanceof Error ? err.message : String(err) });
                       } finally {
                         setProjectBusy(false);
                       }
-                    }} loading={projectBusy}>Repair / reconcile</Button>
+                    }} loading={projectBusy}>{wikiMessage(locale, "setupRepairReconcileProject")}</Button>
                     <Button size="sm" variant="ghost" onClick={async () => {
                       if (!context.companyId) return;
                       setProjectBusy(true);
                       try {
                         await resetProject({ companyId: context.companyId });
-                        toast({ tone: "success", title: "Project reset to plugin defaults" });
+                        toast({ tone: "success", title: wikiMessage(locale, "setupProjectResetToast") });
                         settings.refresh();
                       } catch (err) {
-                        toast({ tone: "error", title: "Reset failed", body: err instanceof Error ? err.message : String(err) });
+                        toast({ tone: "error", title: wikiMessage(locale, "setupProjectResetFailedToast"), body: err instanceof Error ? err.message : String(err) });
                       } finally {
                         setProjectBusy(false);
                       }
-                    }} loading={projectBusy}>↺ Reset to plugin defaults</Button>
+                    }} loading={projectBusy}>{wikiMessage(locale, "setupResetProject")}</Button>
                   </div>
                 </div>
               </div>
             </SetupSection>
-            <SetupSection title="Managed Routines" separated>
+            <SetupSection title={wikiMessage(locale, "setupManagedRoutinesSection")} separated>
               <div style={{ display: "grid", gap: 12, maxWidth: isMobile ? "none" : 620, minWidth: 0 }}>
-                <RoutineHealthChecklist items={routineHealthItems} />
+                <RoutineHealthChecklist items={routineHealthItems} locale={locale} />
                 {routineHealthWarnings.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div>{routineHealthWarnings.length} routine issue(s) need attention.</div>
+                      <div>{wikiMessage(locale, routineHealthWarnings.length === 1 ? "setupRoutineIssuesOne" : "setupRoutineIssuesMany", { count: routineHealthWarnings.length })}</div>
                       <ul style={{ margin: 0, paddingLeft: 18 }}>
                         {routineHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                       </ul>
                       <div>
-                        <Button size="sm" variant="primary" onClick={repairManagedRoutines} loading={routineRepairBusy}>Fix routines</Button>
+                        <Button size="sm" variant="primary" onClick={repairManagedRoutines} loading={routineRepairBusy}>{wikiMessage(locale, "setupFixRoutines")}</Button>
                       </div>
                     </div>
                   </Callout>
                 ) : routineDefaultDriftItems.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                      <span>{routineDefaultDriftItems.length} routine default update{routineDefaultDriftItems.length === 1 ? "" : "s"} available.</span>
+                      <span>{wikiMessage(locale, routineDefaultDriftItems.length === 1 ? "setupRoutineDriftOne" : "setupRoutineDriftMany", { count: routineDefaultDriftItems.length })}</span>
                       <Button size="sm" variant="primary" onClick={() => {
                         setActiveSettingsSection("routines");
                         hostNavigation.navigate(buildSettingsSectionHref("routines", activeSpaceSlug));
-                      }}>Review defaults</Button>
+                      }}>{wikiMessage(locale, "setupReviewDefaults")}</Button>
                     </div>
                   </Callout>
                 ) : (
-                  <Tiny>Managed routines are installed with the Wiki Maintainer and LLM Wiki project.</Tiny>
+                  <Tiny>{wikiMessage(locale, "setupUseManagedRoutineInfo")}</Tiny>
                 )}
               </div>
             </SetupSection>
@@ -6568,15 +6580,13 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
             <DistillationSettingsPanel context={context} settings={data} />
           </SettingsPanel>
         ) : activeSettingsSection === "routines" ? (
-          <SettingsPanel title="Managed Routines" description={activeSettingsConfig.description}>
+          <SettingsPanel title={settingsSectionLabel(locale, "routines")} description={activeSettingsConfig.description}>
           <div style={{ display: "grid", gap: 12 }}>
             {routineDefaultDriftItems.length > 0 ? (
               <Callout tone="warn">
                 <div style={{ display: "grid", gap: 6 }}>
-                  <strong>Routine defaults changed.</strong>
-                  <span>
-                    Review rows marked with changed defaults. Reset a row to update it to the current LLM Wiki instructions, or leave it unchanged to keep custom routine text.
-                  </span>
+                  <strong>{wikiMessage(locale, "setupRoutineDefaultsChanged")}</strong>
+                  <span>{wikiMessage(locale, "setupReviewRoutineDefaultsHelp")}</span>
                 </div>
               </Callout>
             ) : null}
@@ -6584,19 +6594,19 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
               <Callout tone="warn">
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                   <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
-                    <strong>Routine setup needs repair.</strong>
+                    <strong>{wikiMessage(locale, "setupRoutineNeedsRepair")}</strong>
                     <ul style={{ margin: 0, paddingLeft: 18 }}>
                       {routineHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                     </ul>
                   </div>
-                  <Button size="sm" variant="primary" onClick={repairManagedRoutines} loading={routineRepairBusy}>Fix routines</Button>
+                  <Button size="sm" variant="primary" onClick={repairManagedRoutines} loading={routineRepairBusy}>{wikiMessage(locale, "setupFixRoutines")}</Button>
                 </div>
               </Callout>
             ) : (
               <Callout>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                  <span>Managed routines are installed with the Wiki Maintainer and LLM Wiki project.</span>
-                  <Button size="sm" disabled>Routines valid</Button>
+                  <span>{wikiMessage(locale, "setupRoutineHealthyCallout")}</span>
+                  <Button size="sm" disabled>{wikiMessage(locale, "setupRoutinesValid")}</Button>
                 </div>
               </Callout>
             )}
@@ -6605,6 +6615,18 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
               agents={maintainerAgentOptions}
               projects={projectOptions}
               pluginDisplayName="LLM Wiki"
+              emptyMessage={wikiMessage(locale, "setupRoutineListEmpty")}
+              labels={{
+                configure: wikiMessage(locale, "setupRoutineConfigure"),
+                managedBy: wikiMessage(locale, "setupRoutineManagedBy", { name: "{name}" }),
+                schedule: wikiMessage(locale, "setupRoutineSchedule"),
+                missingRefs: wikiMessage(locale, "setupRoutineMissingPrefix"),
+                defaultsCanBeRepaired: wikiMessage(locale, "setupRoutineDefaultsRepairable"),
+                reconciling: wikiMessage(locale, "setupRoutineReconciling"),
+                reconcile: wikiMessage(locale, "setupRoutineReconcile"),
+                resetting: wikiMessage(locale, "setupRoutineResetting"),
+                reset: wikiMessage(locale, "setupRoutineReset"),
+              }}
               runningRoutineKey={routineBusyKeyFor("run")}
               statusMutationRoutineKey={routineBusyKeyFor("status")}
               resettingRoutineKey={routineBusyKeyFor("reset")}

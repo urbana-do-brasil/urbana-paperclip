@@ -16,6 +16,7 @@ import {
   MarkdownEditor as SdkMarkdownEditor,
   type FileTreeNode as SdkFileTreeNode,
 } from "../../../packages/plugins/sdk/src/ui/components";
+import type { ManagedRoutinesListProps as SdkManagedRoutinesListProps } from "../../../packages/plugins/sdk/src/ui/index";
 import { SidebarProvider, useSidebar } from "@/context/SidebarContext";
 import {
   PluginBridgeContext,
@@ -361,6 +362,50 @@ describe("plugin SDK markdown component bridge", () => {
     expect(renderToStaticMarkup(React.createElement(SdkManagedRoutinesList, {
       routines: [{ key: "lint", title: "Run lint", status: "active" }],
     }))).toContain("Run lint");
+  });
+
+  it("forwards the optional managed-routine localization contract through the SDK bridge", () => {
+    const labels = {
+      configure: "Configurar",
+      managedBy: "Gerenciado por {name}",
+      schedule: "Agendamento",
+      missingRefs: "Ausente",
+      defaultsCanBeRepaired: "É possível reparar os padrões.",
+      reconcile: "Reconciliar",
+      reset: "Redefinir",
+    };
+    const props = {
+      routines: [{
+        key: "nightly-wiki-lint",
+        title: "Run LLM Wiki lint",
+        status: "active",
+        resourceKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+      }],
+      labels,
+    } satisfies Pick<SdkManagedRoutinesListProps, "routines" | "labels">;
+
+    globalThis.__paperclipPluginBridge__ = {
+      react: React,
+      reactJsxRuntime: ReactJsxRuntime,
+      reactDom: ReactDOM,
+      sdkUi: {
+        ManagedRoutinesList: (received: Pick<SdkManagedRoutinesListProps, "routines" | "labels">) =>
+          React.createElement("section", { "data-schedule-label": received.labels?.schedule }, [
+            ...received.routines.flatMap((routine) => [routine.title, routine.resourceKey ?? ""]),
+            received.labels?.configure,
+            received.labels?.managedBy,
+            received.labels?.defaultsCanBeRepaired,
+          ].join("|")),
+      },
+    };
+
+    const markup = renderToStaticMarkup(React.createElement(SdkManagedRoutinesList, props));
+    expect(markup).toContain("Run LLM Wiki lint");
+    expect(markup).toContain("Configurar");
+    expect(markup).toContain("Gerenciado por {name}");
+    expect(markup).toContain("É possível reparar os padrões.");
+    expect(markup).toContain('data-schedule-label="Agendamento"');
+    expect(markup).toContain("plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint");
   });
 });
 

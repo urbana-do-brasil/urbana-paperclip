@@ -106,6 +106,77 @@ describe("plugin slot export registration", () => {
     expect(container.querySelector("paperclip-test-sidebar")).not.toBeNull();
   });
 
+  it("keeps host-only labels out of the slot declaration passed to React plugins", async () => {
+    let receivedSlot: ResolvedPluginSlot | undefined;
+    function SlotProbe({ slot }: { slot: ResolvedPluginSlot }) {
+      receivedSlot = slot;
+      return null;
+    }
+    const slot: ResolvedPluginSlot = {
+      type: "detailTab",
+      id: "workspace-changes-tab",
+      displayName: "Changes",
+      exportName: "ChangesTab",
+      pluginId: "plugin-workspace",
+      pluginKey: "paperclip.workspace-diff",
+      pluginDisplayName: "Workspace Changes",
+      pluginVersion: "0.1.0",
+      hostDisplayName: "Alterações",
+      hostPluginDisplayName: "Alterações no workspace",
+    };
+    registerPluginReactComponent("paperclip.workspace-diff", "ChangesTab", SlotProbe);
+    queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
+    queryClient.setQueryData(queryKeys.auth.session, { user: { id: "alice" } });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    roots.push(root);
+    await React.act(async () => root.render(createElement(
+      QueryClientProvider,
+      { client: queryClient! },
+      createElement(PluginSlotMount, { slot, context: { companyId: "company-1" } }),
+    )));
+
+    expect(receivedSlot?.displayName).toBe("Changes");
+    expect(receivedSlot?.pluginDisplayName).toBe("Workspace Changes");
+    expect(receivedSlot).not.toHaveProperty("hostDisplayName");
+    expect(receivedSlot).not.toHaveProperty("hostPluginDisplayName");
+  });
+
+  it("keeps host-only labels out of custom-element slot metadata", async () => {
+    const slot: ResolvedPluginSlot = {
+      type: "detailTab",
+      id: "workspace-changes-tab",
+      displayName: "Changes",
+      exportName: "ChangesTab",
+      pluginId: "plugin-workspace",
+      pluginKey: "paperclip.workspace-diff",
+      pluginDisplayName: "Workspace Changes",
+      pluginVersion: "0.1.0",
+      hostDisplayName: "Alterações",
+      hostPluginDisplayName: "Alterações no workspace",
+    };
+    registerPluginWebComponent("paperclip.workspace-diff", "ChangesTab", "paperclip-test-workspace-changes");
+    queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
+    queryClient.setQueryData(queryKeys.auth.session, { user: { id: "alice" } });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    roots.push(root);
+    await React.act(async () => root.render(createElement(
+      QueryClientProvider,
+      { client: queryClient! },
+      createElement(PluginSlotMount, { slot, context: { companyId: "company-1" } }),
+    )));
+
+    const element = container.querySelector("paperclip-test-workspace-changes") as (HTMLElement & { pluginSlot?: ResolvedPluginSlot }) | null;
+    expect(element?.pluginSlot?.displayName).toBe("Changes");
+    expect(element?.pluginSlot).not.toHaveProperty("hostDisplayName");
+    expect(element?.pluginSlot).not.toHaveProperty("hostPluginDisplayName");
+  });
+
   it("passes the active locale through slot props and SDK context, updating without remounting", async () => {
     await React.act(async () => { await i18n.changeLanguage("pt-BR"); });
     initPluginBridge(React, await import("react-dom"));

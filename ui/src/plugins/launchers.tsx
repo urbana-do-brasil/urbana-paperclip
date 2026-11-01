@@ -41,8 +41,10 @@ import {
 import {
   ensurePluginContributionLoaded,
   resolveRegisteredPluginComponent,
+  usePluginUiContributionsWithPresentation,
   type RegisteredPluginComponent,
 } from "./slots";
+import type { PluginUiContributionPresentation } from "@/lib/plugin-presentation-localization";
 
 export type PluginLauncherContext = {
   companyId?: string | null;
@@ -59,6 +61,9 @@ export type ResolvedPluginLauncher = PluginLauncherDeclaration & {
   pluginDisplayName: string;
   pluginVersion: string;
   uiEntryFile: string;
+  /** Host-only labels; stripped before launcher declarations reach plugin code. */
+  hostDisplayName?: string;
+  hostPluginDisplayName?: string;
 };
 
 type UsePluginLaunchersFilters = {
@@ -71,6 +76,7 @@ type UsePluginLaunchersFilters = {
 type UsePluginLaunchersResult = {
   launchers: ResolvedPluginLauncher[];
   contributionsByPluginId: Map<string, PluginUiContribution>;
+  presentationsByPluginId: ReadonlyMap<string, PluginUiContributionPresentation>;
   isLoading: boolean;
   errorMessage: string | null;
 };
@@ -177,14 +183,20 @@ function launcherRoutePath(launcher: ResolvedPluginLauncher): string | null {
   return segment ? segment.toLowerCase() : null;
 }
 
-function launcherDisplayName(launcher: ResolvedPluginLauncher, contribution: PluginUiContribution | undefined): string {
+function launcherDisplayName(
+  launcher: ResolvedPluginLauncher,
+  contribution: PluginUiContribution | undefined,
+  presentation: PluginUiContributionPresentation | undefined,
+): string {
   if (launcher.placementZone !== "sidebar" || !contribution) return launcher.displayName;
   const routePath = launcherRoutePath(launcher);
   if (!routePath) return launcher.displayName;
   const routeSidebar = contribution.slots.find((slot) =>
     slot.type === "routeSidebar" && slot.routePath?.toLowerCase() === routePath
   );
-  return routeSidebar?.displayName ?? launcher.displayName;
+  return routeSidebar
+    ? presentation?.slotDisplayNames[routeSidebar.id] ?? routeSidebar.displayName
+    : launcher.displayName;
 }
 
 function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
@@ -293,11 +305,7 @@ export function usePluginLaunchers(
   filters: UsePluginLaunchersFilters,
 ): UsePluginLaunchersResult {
   const queryEnabled = filters.enabled ?? true;
-  const { data, isLoading, error } = useQuery({
-    queryKey: queryKeys.plugins.uiContributions,
-    queryFn: () => pluginsApi.listUiContributions(),
-    enabled: queryEnabled,
-  });
+  const { data, presentations, isLoading, error } = usePluginUiContributionsWithPresentation(queryEnabled);
 
   const placementZonesKey = useMemo(
     () => [...filters.placementZones].sort().join("|"),
@@ -311,6 +319,8 @@ export function usePluginLaunchers(
     }
     return byPluginId;
   }, [data]);
+
+  const presentationsByPluginId = presentations;
 
   const launchers = useMemo(() => {
     const placementZones = new Set(
@@ -331,6 +341,8 @@ export function usePluginLaunchers(
           pluginDisplayName: contribution.displayName,
           pluginVersion: contribution.version,
           uiEntryFile: contribution.uiEntryFile,
+          hostDisplayName: launcher.displayName,
+          hostPluginDisplayName: presentations.get(contribution.pluginId)?.pluginDisplayName ?? contribution.displayName,
         });
       }
     }
@@ -339,17 +351,19 @@ export function usePluginLaunchers(
       const ao = a.order ?? Number.MAX_SAFE_INTEGER;
       const bo = b.order ?? Number.MAX_SAFE_INTEGER;
       if (ao !== bo) return ao - bo;
-      const pluginCmp = a.pluginDisplayName.localeCompare(b.pluginDisplayName);
+      const pluginCmp = (a.hostPluginDisplayName ?? a.pluginDisplayName)
+        .localeCompare(b.hostPluginDisplayName ?? b.pluginDisplayName);
       if (pluginCmp !== 0) return pluginCmp;
-      return a.displayName.localeCompare(b.displayName);
+      return (a.hostDisplayName ?? a.displayName).localeCompare(b.hostDisplayName ?? b.displayName);
     });
 
     return rows;
-  }, [data, filters.entityType, placementZonesKey]);
+  }, [data, filters.entityType, placementZonesKey, presentations]);
 
   return {
     launchers,
     contributionsByPluginId,
+    presentationsByPluginId,
     isLoading: queryEnabled && isLoading,
     errorMessage: error ? getErrorMessage(error) : null,
   };
@@ -420,7 +434,7 @@ class LauncherErrorBoundary extends Component<LauncherErrorBoundaryProps, Launch
     if (this.state.hasError) {
       return (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-          {this.props.launcher.pluginDisplayName}: failed to render
+          {this.props.launcher.hostPluginDisplayName ?? this.props.launcher.pluginDisplayName}: failed to render
         </div>
       );
     }
@@ -436,6 +450,11 @@ function LauncherRenderContent({
   renderEnvironment: PluginRenderEnvironmentContext;
 }) {
   const component = instance.component;
+  const {
+    hostDisplayName: _hostDisplayName,
+    hostPluginDisplayName: _hostPluginDisplayName,
+    ...pluginFacingLauncher
+  } = instance.launcher;
   const { data: session } = useQuery({
     queryKey: queryKeys.auth.session,
     queryFn: () => authApi.getSession(),
@@ -452,7 +471,7 @@ function LauncherRenderContent({
       return (
         <iframe
           src={`/_plugins/${encodeURIComponent(instance.launcher.pluginId)}/ui/${instance.launcher.action.target}`}
-          title={`${instance.launcher.pluginDisplayName} ${instance.launcher.displayName}`}
+          title={`${instance.launcher.hostPluginDisplayName ?? instance.launcher.pluginDisplayName} ${instance.launcher.hostDisplayName ?? instance.launcher.displayName}`}
           className="h-full min-h-[24rem] w-full rounded-md border border-border bg-background"
         />
       );
@@ -460,7 +479,7 @@ function LauncherRenderContent({
 
     return (
       <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-        {instance.launcher.pluginDisplayName}: could not resolve launcher target "{instance.launcher.action.target}".
+        {instance.launcher.hostPluginDisplayName ?? instance.launcher.pluginDisplayName}: could not resolve launcher target "{instance.launcher.action.target}".
       </div>
     );
   }
@@ -468,13 +487,13 @@ function LauncherRenderContent({
   if (component.kind === "web-component") {
     return createElement(component.tagName, {
       className: "block w-full",
-      pluginLauncher: instance.launcher,
+      pluginLauncher: pluginFacingLauncher,
       pluginContext: hostContext,
     });
   }
 
   const node = createElement(component.component as never, {
-    launcher: instance.launcher,
+    launcher: pluginFacingLauncher,
     context: hostContext,
   } as never);
 
@@ -587,10 +606,10 @@ function LauncherModalShell({
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <div className="min-w-0">
             <h2 id={titleId} className="truncate text-sm font-semibold">
-              {instance.launcher.displayName}
+              {instance.launcher.hostDisplayName ?? instance.launcher.displayName}
             </h2>
             <p className="truncate text-xs text-muted-foreground">
-              {instance.launcher.pluginDisplayName}
+              {instance.launcher.hostPluginDisplayName ?? instance.launcher.pluginDisplayName}
             </p>
           </div>
           <Button
@@ -773,7 +792,7 @@ function DefaultLauncherTrigger({
       className={launcherTriggerClassName(placementZone)}
       onClick={onClick}
     >
-      {displayName ?? launcher.displayName}
+      {displayName ?? launcher.hostDisplayName ?? launcher.displayName}
     </Button>
   );
 }
@@ -803,7 +822,7 @@ export function PluginLauncherOutlet({
   errorBehavior = "inline",
 }: PluginLauncherOutletProps) {
   const { activateLauncher } = usePluginLauncherRuntime();
-  const { launchers, contributionsByPluginId, errorMessage } = usePluginLaunchers({
+  const { launchers, contributionsByPluginId, presentationsByPluginId, errorMessage } = usePluginLaunchers({
     placementZones,
     entityType,
     companyId: context.companyId,
@@ -825,7 +844,11 @@ export function PluginLauncherOutlet({
       {launchers.map((launcher) => (
         <div key={`${launcher.pluginKey}:${launcher.id}`} className={itemClassName}>
           <DefaultLauncherTrigger
-            displayName={launcherDisplayName(launcher, contributionsByPluginId.get(launcher.pluginId))}
+            displayName={launcherDisplayName(
+              launcher,
+              contributionsByPluginId.get(launcher.pluginId),
+              presentationsByPluginId.get(launcher.pluginId),
+            )}
             launcher={launcher}
             placementZone={launcher.placementZone}
             onClick={(event) => {

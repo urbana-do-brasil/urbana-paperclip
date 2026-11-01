@@ -312,12 +312,14 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 3.11f2 Localizar ingestão, consulta e histórico do LLM Wiki; preservar consultas, conteúdo-fonte, caminhos, payloads e mensagens externas. Testes do plugin: 106/106; typecheck e build passaram.
   - [ ] 3.11f3 Localizar espaços e configurações do LLM Wiki; preservar nomes e conteúdo de organizações, diretórios, arquivos, instruções e valores de configuração.
     - [x] 3.11f3a Localizar pasta raiz e Spaces, incluindo criação, edição, arquivamento, saúde e perfil de ingestão; preservar nomes, slugs, caminhos, payloads e diagnósticos. Suíte Wiki: 115/115, incluindo 8 testes interativos; typecheck e build passaram. Setup, destilação, rotinas, lint e políticas continuam pendentes.
+    - [x] 3.11f3b Localizar Setup do LLM Wiki para agentes, skills, projetos e rotinas gerenciadas, com labels opcionais compatíveis no SDK; preservar nomes, chaves, arquivos e payloads. Plugin: 124/124 testes; componente/bridge: 19/19; typechecks do plugin/SDK/UI, build do plugin e token gates passaram. Destilação, lint e políticas permanecem pendentes.
   - [x] 3.11g1 Localizar as UIs próprias dos exemplos de autoria, Hello World e orquestração, preservando IDs, rotas, estados técnicos e conteúdo demonstrativo variável. Renderização: 7/7; worker authoring: 2/2; typechecks UI, authoring e hello passaram. Fixture de orquestração exige dependências locais; typecheck isolado da UI passou com links temporários removidos em seguida.
   - [x] 3.11g2 Localizar a UI própria do exemplo File Browser, preservando caminhos, nomes e conteúdo dos arquivos e respostas externas. Testes: 9/9; build/typecheck passaram.
   - [x] 3.11g3 Localizar a UI própria do exemplo Kitchen Sink, preservando contratos, IDs, valores e conteúdo dinâmico demonstrado. Testes de markup: 5/5; typecheck e build passaram; interação em navegador não foi executada.
   - [ ] 3.11h Localizar metadata de apresentação mantida pelos pacotes próprios, incluindo nomes/descrições de plugins e sandbox providers exibidos no host; preservar schemas e valores de configuração arbitrários de plugins externos.
     - [x] 3.11h1 Localizar nome/descrição top-level de bundles comprovados no gerenciador, settings, sidebars e providers em Environments; verificar colisões e fallback externo, sem alterar schemas. UI: 105/105 testes; typecheck e token gates passaram. Contributions, recursos gerenciados e superfícies sem prova de origem permanecem pendentes.
     - [x] 3.11h2 Localizar nome e descrição da declaração de pasta gerenciada `wiki-root` em PluginSettings somente com origem bundled comprovada; preservar chaves, caminhos, schemas e metadata externa. Testes focados: 33/33; typecheck UI e token gates passaram.
+    - [x] 3.11h3 Localizar nomes de contributions próprias em páginas host e aba Changes do Workspace Changes com origem bundled comprovada; manter dados originais nas props de plugins e exibir fallback durante carregamento/falha da prova. Testes focados: 52/52; typecheck UI e token gates passaram. Outros slots e launchers seguem pendentes.
 
 ## 4. CLI bilíngue
 
@@ -337,6 +339,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3k Localizar help e saída humana de `agent inbox` e `agent inbox-mine`, preservando seleção, ordem, valores, erros e JSON. Inbox e formatador comum: 16/16 testes; typecheck estrito direcionado passou. Typecheck completo da CLI apresentou erros em arquivos fora deste lote.
   - [x] 4.3l Localizar help e confirmação de `agent pause`/`resume`, preservando resposta humana completa, payloads, erros e JSON. Testes: 6/6; typecheck estrito direcionado passou.
   - [x] 4.3m Localizar help e confirmações de `agent approve`/`terminate`, preservando resposta humana completa, payloads, erros e JSON. Testes focados: 10/10; typecheck estrito direcionado passou; typecheck completo da CLI terminou com exit 137 por memória.
+  - [x] 4.3n Localizar help e confirmações de `agent create`/`hire`, preservando resposta humana completa, payloads, erros e JSON. Testes focados: 14/14; typecheck estrito direcionado passou.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação

@@ -115,6 +115,7 @@ export type {
   ManagedRoutineMissingRef,
   ManagedRoutinesListAgent,
   ManagedRoutinesListItem,
+  ManagedRoutinesListLabels,
   ManagedRoutinesListProject,
   ManagedRoutinesListProps,
 } from "./components.js";

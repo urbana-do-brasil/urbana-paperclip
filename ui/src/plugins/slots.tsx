@@ -44,6 +44,12 @@ import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/i18n";
 import {
+  hasOwnedPluginPresentation,
+  isTrustedBundledPluginContribution,
+  localizePluginUiContributionPresentation,
+  type PluginUiContributionPresentation,
+} from "@/lib/plugin-presentation-localization";
+import {
   PluginBridgeContext,
   usePluginHostLocale,
   type PluginHostContext,
@@ -67,6 +73,9 @@ export type ResolvedPluginSlot = PluginUiSlotDeclaration & {
   pluginKey: string;
   pluginDisplayName: string;
   pluginVersion: string;
+  /** Host-only localized labels; stripped before the declaration reaches plugin code. */
+  hostDisplayName?: string;
+  hostPluginDisplayName?: string;
 };
 
 /**
@@ -123,6 +132,59 @@ type UsePluginSlotsResult = {
   isLoading: boolean;
   errorMessage: string | null;
 };
+
+type UsePluginUiContributionsResult = {
+  data: PluginUiContribution[] | undefined;
+  presentations: ReadonlyMap<string, PluginUiContributionPresentation>;
+  isLoading: boolean;
+  error: unknown;
+};
+
+/** Resolve host-only presentation after proving each contribution matches its shipped package. */
+export function usePluginUiContributionsWithPresentation(enabled = true): UsePluginUiContributionsResult {
+  const { t } = useTranslation();
+  const contributionsQuery = useQuery({
+    queryKey: queryKeys.plugins.uiContributions,
+    queryFn: () => pluginsApi.listUiContributions(),
+    enabled,
+  });
+  const needsBundleEvidence = contributionsQuery.data?.some((contribution) =>
+    hasOwnedPluginPresentation(contribution.pluginKey),
+  ) ?? false;
+  const installedPluginsQuery = useQuery({
+    queryKey: queryKeys.plugins.all,
+    queryFn: () => pluginsApi.list(),
+    enabled: enabled && needsBundleEvidence,
+  });
+  const bundledPluginsQuery = useQuery({
+    queryKey: queryKeys.plugins.examples,
+    queryFn: () => pluginsApi.listBundled(),
+    enabled: enabled && needsBundleEvidence,
+  });
+
+  const presentations = useMemo(() => {
+    const result = new Map<string, PluginUiContributionPresentation>();
+    for (const contribution of contributionsQuery.data ?? []) {
+      const isTrustedBundle = isTrustedBundledPluginContribution(
+        contribution,
+        installedPluginsQuery.data,
+        bundledPluginsQuery.data,
+      );
+      result.set(
+        contribution.pluginId,
+        localizePluginUiContributionPresentation(contribution, t, isTrustedBundle),
+      );
+    }
+    return result;
+  }, [contributionsQuery.data, installedPluginsQuery.data, bundledPluginsQuery.data, t]);
+
+  return {
+    data: contributionsQuery.data,
+    presentations,
+    isLoading: enabled && contributionsQuery.isLoading,
+    error: contributionsQuery.error,
+  };
+}
 
 /**
  * In-memory registry for plugin UI exports loaded by the host page.
@@ -654,11 +716,12 @@ function usePluginModuleLoader(contributions: PluginUiContribution[] | undefined
 export function usePluginSlots(filters: SlotFilters): UsePluginSlotsResult {
   const { t } = useTranslation();
   const queryEnabled = filters.enabled ?? true;
-  const { data, isLoading: isQueryLoading, error } = useQuery({
-    queryKey: queryKeys.plugins.uiContributions,
-    queryFn: () => pluginsApi.listUiContributions(),
-    enabled: queryEnabled,
-  });
+  const {
+    data,
+    presentations,
+    isLoading: isQueryLoading,
+    error,
+  } = usePluginUiContributionsWithPresentation(queryEnabled);
 
   const slotTypesKey = useMemo(() => [...filters.slotTypes].sort().join("|"), [filters.slotTypes]);
 
@@ -678,6 +741,8 @@ export function usePluginSlots(filters: SlotFilters): UsePluginSlotsResult {
           pluginKey: contribution.pluginKey,
           pluginDisplayName: contribution.displayName,
           pluginVersion: contribution.version,
+          hostDisplayName: presentations.get(contribution.pluginId)?.slotDisplayNames[slot.id] ?? slot.displayName,
+          hostPluginDisplayName: presentations.get(contribution.pluginId)?.pluginDisplayName ?? contribution.displayName,
         });
       }
     }
@@ -685,12 +750,13 @@ export function usePluginSlots(filters: SlotFilters): UsePluginSlotsResult {
       const ao = a.order ?? Number.MAX_SAFE_INTEGER;
       const bo = b.order ?? Number.MAX_SAFE_INTEGER;
       if (ao !== bo) return ao - bo;
-      const pluginCmp = a.pluginDisplayName.localeCompare(b.pluginDisplayName);
+      const pluginCmp = (a.hostPluginDisplayName ?? a.pluginDisplayName)
+        .localeCompare(b.hostPluginDisplayName ?? b.pluginDisplayName);
       if (pluginCmp !== 0) return pluginCmp;
-      return a.displayName.localeCompare(b.displayName);
+      return (a.hostDisplayName ?? a.displayName).localeCompare(b.hostDisplayName ?? b.displayName);
     });
     return rows;
-  }, [data, filters.entityType, slotTypesKey]);
+  }, [data, filters.entityType, presentations, slotTypesKey]);
 
   // A replacement surface must not disappear while an unrelated plugin loads.
   const contributions = useMemo(() => {
@@ -855,8 +921,15 @@ export function PluginSlotMount({
   usePluginRegistrySubscription();
   const { t } = useTranslation();
   const locale = usePluginHostLocale();
+  const {
+    hostDisplayName: _hostDisplayName,
+    hostPluginDisplayName: _hostPluginDisplayName,
+    ...pluginFacingSlot
+  } = slot;
   const pluginContext = useMemo(() => ({ ...context, locale }), [context, locale]);
-  const failureMessage = t("pluginHost.failedToRender", { plugin: slot.pluginDisplayName });
+  const failureMessage = t("pluginHost.failedToRender", {
+    plugin: slot.hostPluginDisplayName ?? slot.pluginDisplayName,
+  });
   const [, forceRerender] = useState(0);
   const component = resolveRegisteredComponent(slot);
 
@@ -882,13 +955,13 @@ export function PluginSlotMount({
     if (missingBehavior === "hidden") return null;
     return (
       <div className={cn("rounded-md border border-dashed border-border px-2 py-1 text-xs text-muted-foreground", className)}>
-        {slot.pluginDisplayName}: {slot.displayName}
+        {slot.hostPluginDisplayName ?? slot.pluginDisplayName}: {slot.hostDisplayName ?? slot.displayName}
       </div>
     );
   }
 
   if (component.kind === "react") {
-    const node = createElement(component.component, { ...componentProps, slot, context: pluginContext });
+    const node = createElement(component.component, { ...componentProps, slot: pluginFacingSlot, context: pluginContext });
     return (
       <PluginSlotErrorBoundary key={`${slot.pluginId}:${slot.pluginVersion}:${slot.id}`} slot={slot} failureMessage={failureMessage} className={className} fallback={fallback}>
         <PluginBridgeScope pluginId={slot.pluginId} context={context} locale={locale}>
@@ -904,7 +977,7 @@ export function PluginSlotMount({
     <PluginSlotErrorBoundary slot={slot} failureMessage={failureMessage} className={className}>
       <PluginWebComponentMount
         tagName={component.tagName}
-        slot={slot}
+        slot={pluginFacingSlot}
         context={pluginContext}
         className={className}
       />

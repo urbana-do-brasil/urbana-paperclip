@@ -1195,6 +1195,13 @@ The host SDK ships shared components that plugins can import to quickly build UI
 | `ProjectPicker` | Host project picker | Creating issues, scoping dashboards, filtering work |
 | `ManagedRoutinesList` | Host routine list | Plugin settings pages that manage routines |
 
+`ManagedRoutinesList` supports an optional `labels` object for plugin-localized
+copy: `configure`, `managedBy`, `schedule`, `missingRefs`,
+`defaultsCanBeRepaired`, `reconciling`, `reconcile`, `resetting`, and `reset`.
+The `managedBy` label may use `{name}` for the plugin display name. Omitting
+`labels` preserves the existing English defaults for compatibility. Labels do
+not alter routine titles, stable resource keys, schedule values, or callbacks.
+
 Plugins may also use entirely custom components. The shared components exist to reduce boilerplate and keep visual consistency, not to limit what plugins can render.
 
 ## 19.7 Error Propagation Through The Bridge

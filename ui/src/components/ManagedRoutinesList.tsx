@@ -25,6 +25,18 @@ export type ManagedRoutineDefaultDrift = {
   defaultDescription?: string | null;
 };
 
+export type ManagedRoutinesListLabels = {
+  configure?: string;
+  managedBy?: string;
+  schedule?: string;
+  missingRefs?: string;
+  defaultsCanBeRepaired?: string;
+  reconciling?: string;
+  reconcile?: string;
+  resetting?: string;
+  reset?: string;
+};
+
 export type ManagedRoutinesListItem = {
   key: string;
   title: string;
@@ -48,6 +60,7 @@ export type ManagedRoutinesListProps = {
   projects?: ManagedRoutinesListProject[];
   pluginDisplayName?: string | null;
   emptyMessage?: string;
+  labels?: ManagedRoutinesListLabels;
   runningRoutineKey?: string | null;
   statusMutationRoutineKey?: string | null;
   reconcilingRoutineKey?: string | null;
@@ -80,6 +93,7 @@ export function ManagedRoutinesList({
   projects = [],
   pluginDisplayName = null,
   emptyMessage = "No managed routines.",
+  labels = {},
   runningRoutineKey = null,
   statusMutationRoutineKey = null,
   reconcilingRoutineKey = null,
@@ -112,6 +126,9 @@ export function ManagedRoutinesList({
         const missingRefs = routine.missingRefs ?? [];
         const canUseRoutine = Boolean(routine.routineId && routine.resourceKey && missingRefs.length === 0);
         const managedBy = routine.managedByPluginDisplayName ?? pluginDisplayName;
+        const managedByLabel = managedBy
+          ? labels.managedBy?.replace("{name}", managedBy) ?? `Managed by ${managedBy}`
+          : null;
         const hasRepairActions = Boolean(onReconcile || onReset);
 
         return (
@@ -123,8 +140,8 @@ export function ManagedRoutinesList({
               runningRoutineId={runningRoutineKey}
               statusMutationRoutineId={statusMutationRoutineKey}
               href={href}
-              configureLabel="Configure"
-              managedByLabel={managedBy ? `Managed by ${managedBy}` : null}
+              configureLabel={labels.configure ?? "Configure"}
+              managedByLabel={managedByLabel}
               runNowButton
               hideArchiveAction
               disableRunNow={!canUseRoutine}
@@ -132,7 +149,7 @@ export function ManagedRoutinesList({
               secondaryDetails={
                 <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   {routine.resourceKey ? <span>{routine.resourceKey}</span> : null}
-                  {routine.cronExpression ? <span>Schedule {routine.cronExpression}</span> : null}
+                  {routine.cronExpression ? <span>{labels.schedule ?? "Schedule"} {routine.cronExpression}</span> : null}
                 </span>
               }
               onRunNow={() => onRunNow?.(routine)}
@@ -148,8 +165,8 @@ export function ManagedRoutinesList({
               >
                 <span>
                   {missingRefs.length
-                    ? `Missing ${missingRefs.map((ref) => `${ref.resourceKind}:${ref.resourceKey}`).join(", ")}`
-                    : "Routine defaults can be repaired."}
+                    ? `${labels.missingRefs ?? "Missing"} ${missingRefs.map((ref) => `${ref.resourceKind}:${ref.resourceKey}`).join(", ")}`
+                    : labels.defaultsCanBeRepaired ?? "Routine defaults can be repaired."}
                 </span>
                 <span className="flex items-center gap-2">
                   {onReconcile ? (
@@ -159,7 +176,7 @@ export function ManagedRoutinesList({
                       disabled={reconcilingRoutineKey === routine.key}
                       onClick={() => onReconcile(routine)}
                     >
-                      {reconcilingRoutineKey === routine.key ? "Reconciling..." : "Reconcile"}
+                      {reconcilingRoutineKey === routine.key ? labels.reconciling ?? "Reconciling..." : labels.reconcile ?? "Reconcile"}
                     </Button>
                   ) : null}
                   {onReset ? (
@@ -169,7 +186,7 @@ export function ManagedRoutinesList({
                       disabled={resettingRoutineKey === routine.key}
                       onClick={() => onReset(routine)}
                     >
-                      {resettingRoutineKey === routine.key ? "Resetting..." : "Reset"}
+                      {resettingRoutineKey === routine.key ? labels.resetting ?? "Resetting..." : labels.reset ?? "Reset"}
                     </Button>
                   ) : null}
                 </span>

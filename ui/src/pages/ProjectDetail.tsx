@@ -393,7 +393,7 @@ export function ProjectDetail() {
   const pluginTabItems = useMemo(
     () => pluginDetailSlots.map((slot) => ({
       value: `plugin:${slot.pluginKey}:${slot.id}` as ProjectPluginTab,
-      label: slot.displayName,
+      label: slot.hostDisplayName ?? slot.displayName,
       slot,
     })),
     [pluginDetailSlots],

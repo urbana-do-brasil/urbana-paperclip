@@ -855,7 +855,7 @@ export function ExecutionWorkspaceDetail() {
   const workspacePluginTabItems = useMemo(
     () => workspacePluginDetailSlots.map((slot) => ({
       value: `plugin:${slot.pluginKey}:${slot.id}` as ExecutionWorkspacePluginTab,
-      label: slot.displayName,
+      label: slot.hostDisplayName ?? slot.displayName,
       order: slot.order ?? DEFAULT_PLUGIN_DETAIL_TAB_ORDER,
       slot,
     })),

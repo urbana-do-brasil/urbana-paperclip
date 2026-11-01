@@ -796,6 +796,13 @@ Paperclip surface:
 | `ProjectPicker` | Selecting a project with the same picker as the new issue pane |
 | `ManagedRoutinesList` | Showing plugin-managed routines in settings UI |
 
+`ManagedRoutinesList` accepts an optional `labels` object for plugin-owned copy
+(`configure`, `managedBy`, `schedule`, `missingRefs`, `defaultsCanBeRepaired`,
+`reconciling`, `reconcile`, `resetting`, and `reset`). The `managedBy` label
+may include `{name}` for the routine's plugin display name. Existing callers can
+omit `labels` and keep the host's English defaults. This only changes display
+copy; routine titles, resource keys, schedules, and action payloads stay intact.
+
 #### Shared Markdown Components
 
 Plugin UI can render markdown and edit markdown using the same host components

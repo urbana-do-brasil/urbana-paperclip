@@ -427,6 +427,18 @@ export interface ManagedRoutineDefaultDrift {
   defaultDescription?: string | null;
 }
 
+export interface ManagedRoutinesListLabels {
+  configure?: string;
+  managedBy?: string;
+  schedule?: string;
+  missingRefs?: string;
+  defaultsCanBeRepaired?: string;
+  reconciling?: string;
+  reconcile?: string;
+  resetting?: string;
+  reset?: string;
+}
+
 export interface ManagedRoutinesListItem {
   key: string;
   title: string;
@@ -450,6 +462,7 @@ export interface ManagedRoutinesListProps {
   projects?: ManagedRoutinesListProject[];
   pluginDisplayName?: string | null;
   emptyMessage?: string;
+  labels?: ManagedRoutinesListLabels;
   runningRoutineKey?: string | null;
   statusMutationRoutineKey?: string | null;
   reconcilingRoutineKey?: string | null;

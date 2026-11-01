@@ -3530,7 +3530,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
     () =>
       issuePluginDetailSlots.map((slot) => ({
         value: `plugin:${slot.pluginKey}:${slot.id}`,
-        label: slot.displayName,
+        label: slot.hostDisplayName ?? slot.displayName,
         slot,
       })),
     [issuePluginDetailSlots],

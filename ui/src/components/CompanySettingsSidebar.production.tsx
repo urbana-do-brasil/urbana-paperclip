@@ -135,7 +135,7 @@ export function CompanySettingsSidebar() {
               <SidebarNavItem
                 key={`${slot.pluginKey}:${slot.id}`}
                 to={`/company/settings/${slot.routePath}`}
-                label={slot.displayName}
+                label={slot.hostDisplayName ?? slot.displayName}
                 icon={Puzzle}
                 end
               />

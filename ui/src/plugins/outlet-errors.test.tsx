@@ -124,3 +124,62 @@ it("updates launcher host locale while its plugin component stays mounted", asyn
   expect(container.querySelector("[data-testid=launcher-locale]")?.textContent).toBe("en");
   expect(container.querySelector("[data-testid=launcher-locale]")?.getAttribute("data-mount-id")).toBe("1");
 });
+
+it("localizes launcher chrome without changing the launcher declaration passed to plugin code", async () => {
+  await act(async () => { await i18n.changeLanguage("pt-BR"); });
+  const pluginKey = "paperclip-kitchen-sink-example";
+  const packageName = "@paperclipai/plugin-kitchen-sink-example";
+  const packagePath = "/app/packages/plugins/examples/plugin-kitchen-sink-example";
+  const contribution: PluginUiContribution = {
+    pluginId: "plugin-kitchen",
+    pluginKey,
+    displayName: "Kitchen Sink (Example)",
+    version: "0.1.0",
+    uiEntryFile: "index.js",
+    slots: [],
+    launchers: [{
+      id: "kitchen-sink-launcher",
+      displayName: "Kitchen Sink Modal",
+      placementZone: "sidebar",
+      action: { type: "openDrawer", target: "LauncherProbe" },
+      render: { environment: "hostOverlay", bounds: "wide" },
+    }],
+  };
+  type LauncherMetadata = { displayName: string; pluginDisplayName: string; hostPluginDisplayName?: string };
+  let receivedLauncher: LauncherMetadata | undefined;
+  function LauncherProbe({ launcher }: { launcher: LauncherMetadata }) {
+    receivedLauncher = launcher;
+    return <span data-testid="launcher-probe">{launcher.displayName}</span>;
+  }
+  registerPluginReactComponent(pluginKey, "LauncherProbe", LauncherProbe as never);
+  client.setQueryData(queryKeys.plugins.uiContributions, [contribution]);
+  client.setQueryData(queryKeys.plugins.all, [{
+    id: "plugin-kitchen",
+    pluginKey,
+    packageName,
+    packagePath,
+    manifestJson: { id: pluginKey },
+  }]);
+  client.setQueryData(queryKeys.plugins.examples, [{ pluginKey, packageName, localPath: packagePath }]);
+  client.setQueryData(queryKeys.auth.session, { user: { id: "alice" } });
+
+  await render("hidden");
+  const trigger = Array.from(container.querySelectorAll("button"))
+    .find((button) => button.textContent === "Kitchen Sink Modal");
+  expect(trigger).toBeDefined();
+
+  await act(async () => {
+    trigger!.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(receivedLauncher).toMatchObject({
+    displayName: "Kitchen Sink Modal",
+    pluginDisplayName: "Kitchen Sink (Example)",
+  });
+  expect(receivedLauncher).not.toHaveProperty("hostDisplayName");
+  expect(receivedLauncher).not.toHaveProperty("hostPluginDisplayName");
+  const dialog = container.querySelector('[role="dialog"]');
+  expect(dialog?.querySelector("h2")?.textContent).toBe("Kitchen Sink Modal");
+  expect(dialog?.querySelector("p")?.textContent).toBe("Kitchen Sink (exemplo)");
+});

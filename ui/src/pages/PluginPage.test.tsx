@@ -4,10 +4,13 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { i18n } from "@/i18n";
+import { queryKeys } from "@/lib/queryKeys";
 import { PluginPage } from "./PluginPage";
 
 const mockPluginsApi = vi.hoisted(() => ({
   listUiContributions: vi.fn(),
+  list: vi.fn(),
+  listBundled: vi.fn(),
 }));
 
 const mockSetBreadcrumbs = vi.hoisted(() => vi.fn());
@@ -46,6 +49,7 @@ vi.mock("@/plugins/slots", async () => {
   const actual = await vi.importActual<typeof import("@/plugins/slots")>("@/plugins/slots");
   return {
     resolveRouteSidebarSlot: actual.resolveRouteSidebarSlot,
+    usePluginUiContributionsWithPresentation: actual.usePluginUiContributionsWithPresentation,
     PluginSlotMount: ({ slot }: { slot: { displayName: string } }) => (
       <div data-testid="plugin-slot-mount">{slot.displayName}</div>
     ),
@@ -89,11 +93,12 @@ function pageContribution(overrides: Partial<{ slots: unknown[] }> = {}) {
   };
 }
 
-async function renderPage(container: HTMLDivElement) {
+async function renderPage(container: HTMLDivElement, seed?: (queryClient: QueryClient) => void) {
   const root = createRoot(container);
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
+  seed?.(queryClient);
 
   await act(async () => {
     root.render(
@@ -113,6 +118,8 @@ describe("PluginPage", () => {
 
   beforeEach(async () => {
     await i18n.changeLanguage("en");
+    mockPluginsApi.list.mockResolvedValue([]);
+    mockPluginsApi.listBundled.mockResolvedValue([]);
     container = document.createElement("div");
     document.body.appendChild(container);
     mockParams.companyPrefix = "PAP";
@@ -148,6 +155,57 @@ describe("PluginPage", () => {
     ]);
     expect(container.textContent).toContain(backLabel);
     expect(container.querySelector('a[href="/PAP/dashboard"]')).not.toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("uses the bundled plugin presentation in the host page breadcrumb", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const pluginKey = "paperclip-kitchen-sink-example";
+    const packageName = "@paperclipai/plugin-kitchen-sink-example";
+    const packagePath = "/app/packages/plugins/examples/plugin-kitchen-sink-example";
+    mockParams.pluginId = "plugin-kitchen";
+    const contribution = {
+      pluginId: "plugin-kitchen",
+      pluginKey,
+      displayName: "Kitchen Sink (Example)",
+      version: "0.1.0",
+      uiEntryFile: "ui.js",
+      slots: [{
+        type: "page",
+        id: "kitchen-sink-page",
+        displayName: "Kitchen Sink",
+        exportName: "KitchenSinkPage",
+        routePath: "kitchen-sink",
+      }],
+      launchers: [],
+    };
+    const installed = [{
+      id: "plugin-kitchen",
+      pluginKey,
+      packageName,
+      packagePath,
+      manifestJson: { id: pluginKey },
+    }];
+    const bundled = [{
+      pluginKey,
+      packageName,
+      localPath: packagePath,
+    }];
+
+    const root = await renderPage(container, (queryClient) => {
+      queryClient.setQueryData(queryKeys.plugins.uiContributions, [contribution]);
+      queryClient.setQueryData(queryKeys.plugins.all, installed);
+      queryClient.setQueryData(queryKeys.plugins.examples, bundled);
+    });
+
+    expect(mockSetBreadcrumbs).toHaveBeenCalledWith([
+      { label: "Plugins", href: "/company/settings/instance/plugins" },
+      { label: "Kitchen Sink (exemplo)" },
+    ]);
+    expect(container.querySelector('[data-testid="plugin-slot-mount"]')?.textContent).toBe("Kitchen Sink");
 
     await act(async () => {
       root.unmount();

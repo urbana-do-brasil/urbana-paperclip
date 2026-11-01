@@ -3470,3 +3470,11 @@ Checkpoint: **312/331 tarefas**.
 - `agent approve`/`terminate`: 10/10 testes e typecheck estrito direcionado passaram; saída humana completa, JSON, erros, rotas e payloads preservados. Typecheck completo da CLI terminou com exit 137 por memória.
 
 Checkpoint: **315/334 tarefas**.
+
+### Setup da Wiki, contributions e criação de agentes — 3.11f3b/h3 e 4.3n
+
+- Setup da Wiki (agentes, skills, projetos e rotinas): 124/124 testes do plugin e 19/19 de componente/bridge. Typechecks plugin, SDK e UI, build do plugin e token gates passaram. React peer foi ligado temporariamente para testes e o link removido em seguida. Destilação, lint e políticas permanecem em 3.11f3.
+- Contributions: 52/52 testes, typecheck UI e token gates passaram. O host exibe valores originais enquanto aguarda prova da origem; atualiza rótulos sem remontagem e preserva props originais de slots e launchers. Outros slots, launchers e recursos seguem pendentes em 3.11h.
+- `agent create`/`hire`: 14/14 testes e typecheck estrito direcionado passaram; respostas humanas completas, JSON, rotas, payloads e erros externos preservados.
+
+Checkpoint: **318/337 tarefas**.
