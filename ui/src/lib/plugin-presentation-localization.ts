@@ -10,6 +10,11 @@ export interface LocalizedSandboxProviderPresentation {
   description?: string;
 }
 
+export interface LocalizedPluginResourcePresentation {
+  displayName: string;
+  description?: string;
+}
+
 export interface PluginBundleIdentity {
   pluginKey: string;
   packageName: string;
@@ -75,6 +80,10 @@ const OWN_SANDBOX_PROVIDER_PRESENTATION_KEYS: Record<string, { pluginId: string;
   createos: { pluginId: "paperclip.createos-sandbox-provider", key: "createos" },
 };
 
+const OWN_LOCAL_FOLDER_PRESENTATION_KEYS: Record<string, { pluginKey: string; key: string }> = {
+  "wiki-root": { pluginKey: "paperclipai.plugin-llm-wiki", key: "llmWikiRoot" },
+};
+
 function translate(t: TFunction, key: string, defaultValue: string): string {
   return t(key as never, { defaultValue });
 }
@@ -124,5 +133,29 @@ export function localizeSandboxProviderPresentation(
             fallbackDescription,
           ),
         }),
+  };
+}
+
+export function localizePluginLocalFolderPresentation(
+  pluginKey: string,
+  folderKey: string,
+  fallbackDisplayName: string,
+  fallbackDescription: string | undefined,
+  t: TFunction,
+  isTrustedBundle = false,
+): LocalizedPluginResourcePresentation {
+  const ownedFolder = OWN_LOCAL_FOLDER_PRESENTATION_KEYS[folderKey];
+  if (!isTrustedBundle || !ownedFolder || ownedFolder.pluginKey !== pluginKey) {
+    return {
+      displayName: fallbackDisplayName,
+      ...(fallbackDescription === undefined ? {} : { description: fallbackDescription }),
+    };
+  }
+
+  return {
+    displayName: translate(t, `pluginPresentation.localFolders.${ownedFolder.key}.name`, fallbackDisplayName),
+    ...(fallbackDescription === undefined
+      ? {}
+      : { description: translate(t, `pluginPresentation.localFolders.${ownedFolder.key}.description`, fallbackDescription) }),
   };
 }

@@ -3462,3 +3462,11 @@ A navegação da Wiki preserva conteúdo, nomes, slugs, caminhos e erros externo
 - Corrigidos dois erros reais de tipo: callbacks em `company-export-localization.test.ts` e import de `DEFAULT_USER_LOCALE` em `public-mcp/setup.ts`. Testes e compilações estritas focais passaram; typecheck completo da CLI terminou com exit 137 por memória.
 
 Checkpoint: **312/331 tarefas**.
+
+### Pasta raiz, espaços e operações de agente — 3.11f3a/h2 e 4.3m
+
+- LLM Wiki: 115/115 testes, incluindo oito testes interativos de configuração da raiz, criação/validação, edição, arquivamento e perfil PT-BR/en; typecheck e build passaram. Os testes usaram symlink temporário de React peer, removido em seguida. Setup, destilação, rotinas, lint e políticas seguem pendentes em 3.11f3.
+- Metadata `wiki-root`: 33/33 testes focados, typecheck UI e token gates passaram; origem bundled e fallback externo foram verificados. Outras contribuições/recursos permanecem pendentes em 3.11h.
+- `agent approve`/`terminate`: 10/10 testes e typecheck estrito direcionado passaram; saída humana completa, JSON, erros, rotas e payloads preservados. Typecheck completo da CLI terminou com exit 137 por memória.
+
+Checkpoint: **315/334 tarefas**.

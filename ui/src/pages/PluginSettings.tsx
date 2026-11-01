@@ -26,6 +26,7 @@ import { useTranslation } from "@/i18n";
 import {
   isBundledPluginRecord,
   localizePluginPresentation,
+  localizePluginLocalFolderPresentation,
   localizeSandboxProviderPresentation,
 } from "@/lib/plugin-presentation-localization";
 import {
@@ -275,6 +276,8 @@ export function PluginSettings() {
               {hasLocalFolders ? (
                 <PluginLocalFoldersSettings
                   pluginId={pluginId!}
+                  pluginKey={plugin.pluginKey}
+                  isTrustedBundle={trustedBundle}
                   companyId={selectedCompanyId}
                   declarations={localFolderDeclarations}
                 />
@@ -631,11 +634,13 @@ export function PluginSettings() {
 
 interface PluginLocalFoldersSettingsProps {
   pluginId: string;
+  pluginKey: string;
+  isTrustedBundle: boolean;
   companyId: string | null;
   declarations: PluginLocalFolderDeclaration[];
 }
 
-function PluginLocalFoldersSettings({ pluginId, companyId, declarations }: PluginLocalFoldersSettingsProps) {
+function PluginLocalFoldersSettings({ pluginId, pluginKey, isTrustedBundle, companyId, declarations }: PluginLocalFoldersSettingsProps) {
   const { t } = useTranslation();
   const { data, isLoading, error } = useQuery({
     queryKey: companyId
@@ -677,6 +682,8 @@ function PluginLocalFoldersSettings({ pluginId, companyId, declarations }: Plugi
             <PluginLocalFolderRow
               key={declaration.folderKey}
               pluginId={pluginId}
+              pluginKey={pluginKey}
+              isTrustedBundle={isTrustedBundle}
               companyId={companyId}
               declaration={declaration}
               status={statusByKey.get(declaration.folderKey)}
@@ -690,14 +697,24 @@ function PluginLocalFoldersSettings({ pluginId, companyId, declarations }: Plugi
 
 interface PluginLocalFolderRowProps {
   pluginId: string;
+  pluginKey: string;
+  isTrustedBundle: boolean;
   companyId: string;
   declaration: PluginLocalFolderDeclaration;
   status?: PluginLocalFolderStatus;
 }
 
-function PluginLocalFolderRow({ pluginId, companyId, declaration, status }: PluginLocalFolderRowProps) {
+function PluginLocalFolderRow({ pluginId, pluginKey, isTrustedBundle, companyId, declaration, status }: PluginLocalFolderRowProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const presentation = localizePluginLocalFolderPresentation(
+    pluginKey,
+    declaration.folderKey,
+    declaration.displayName,
+    declaration.description,
+    t,
+    isTrustedBundle,
+  );
   const serverPath = status?.path ?? "";
   const [pathValue, setPathValue] = useState(serverPath);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -751,7 +768,7 @@ function PluginLocalFolderRow({ pluginId, companyId, declaration, status }: Plug
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-sm font-medium">{declaration.displayName}</h4>
+            <h4 className="text-sm font-medium">{presentation.displayName}</h4>
             <Badge variant="outline" className="font-mono text-(length:--text-nano)">
               {declaration.folderKey}
             </Badge>
@@ -759,9 +776,9 @@ function PluginLocalFolderRow({ pluginId, companyId, declaration, status }: Plug
               {status?.healthy ? t("pluginSettings.localFolders.healthy") : t("pluginSettings.localFolders.needsAttention")}
             </Badge>
           </div>
-          {declaration.description ? (
+          {presentation.description ? (
             <p className="max-w-3xl text-sm leading-5 text-muted-foreground">
-              {declaration.description}
+              {presentation.description}
             </p>
           ) : null}
         </div>

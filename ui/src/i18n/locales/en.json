@@ -3821,6 +3821,12 @@
         "name": "CreateOS Sandbox",
         "description": "CreateOS sandboxes with live command output and optional pause/resume reuse."
       }
+    },
+    "localFolders": {
+      "llmWikiRoot": {
+        "name": "Wiki root",
+        "description": "Company-scoped local folder that stores raw sources, wiki pages, Paperclip project standups under wiki/projects/, AGENTS.md, IDEA.md, wiki/index.md, and wiki/log.md."
+      }
     }
   },
   "pluginManager": {

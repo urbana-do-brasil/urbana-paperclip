@@ -209,6 +209,16 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
     options: commonClientOptions,
   },
+  "agent approve": {
+    description: { en: "Approve a pending agent", "pt-BR": "Aprovar um agente pendente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
+  "agent terminate": {
+    description: { en: "Terminate an agent", "pt-BR": "Encerrar um agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
   "agent me": {
     description: {
       en: "Show the current agent identity",

@@ -1162,12 +1162,12 @@ Duplicate headings receive stable suffixes.
       context: { companyId: COMPANY_ID, companyPrefix: "PAP" },
     } as never));
 
-    expect(markup).toContain("configuration errors detected, fix them all?");
+    expect(markup).toContain("Configuration errors detected. Fix them all?");
     expect(markup).toContain("Wiki root folder");
     expect(markup).toContain("Managed routines");
     expect(markup).toContain("need attention.");
     expect(markup).toContain("Fix them all");
-    expect(markup.indexOf("configuration errors detected")).toBeLessThan(markup.indexOf(">Base Folder</"));
+    expect(markup.indexOf("Configuration errors detected")).toBeLessThan(markup.indexOf(">Base Folder</"));
   });
 
   it("shows missing managed skills in setup health with a re-sync action", () => {
@@ -1250,20 +1250,78 @@ Duplicate headings receive stable suffixes.
   it("renders space settings with health line styling and disabled access controls", () => {
     mockPathname = "/PAP/wiki/settings/spaces/default";
 
+    const portugueseMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+
+    expect(portugueseMarkup).toContain("Espaços compartilhados");
+    expect(portugueseMarkup).toContain("Nome de exibição");
+    expect(portugueseMarkup).toContain("Origem e integridade da pasta");
+    expect(portugueseMarkup).toContain("Pasta legível");
+    expect(portugueseMarkup).toContain("raw/ presente");
+    expect(portugueseMarkup).toContain("AGENTS.md presente");
+    expect(portugueseMarkup).toContain("default");
+    expect(portugueseMarkup).toContain("/tmp/company-wiki");
+    expect(portugueseMarkup).toContain("compartilhado");
+    expect(portugueseMarkup).not.toContain("Folder readable");
+    expect(portugueseMarkup).not.toContain(">raw/ present</span>");
+
     const markup = renderToStaticMarkup(createElement(WikiPage, {
       context: { companyId: COMPANY_ID, companyPrefix: "PAP" },
     } as never));
 
+    expect(markup).toContain("Shared Spaces");
+    expect(markup).toContain("Display name");
     expect(markup).toContain("Space folder health checklist");
     expect(markup).toContain("left:8px");
     expect(markup).toContain("background:oklch(0.38 0.09 145)");
     expect(markup).toContain("Folder readable");
     expect(markup).toContain("raw/ present");
+    expect(markup).toContain("AGENTS.md present");
+    expect(markup).toContain("/tmp/company-wiki");
     expect(markup).toContain("Access");
     expect(markup).toContain("Coming soon");
     expect(markup).not.toContain("Future enforcement");
     expect(markup).not.toContain("stored only");
     expect(markup).not.toContain("Permissions are stored but not enforced");
+  });
+
+  it("localizes wiki root setup while preserving the configured path and baseline filenames", () => {
+    mockOverviewFolder = {
+      configured: false,
+      path: "/tmp/custom-wiki-root",
+      realPath: null,
+      access: "readWrite",
+      readable: false,
+      writable: false,
+      requiredDirectories: ["raw", "wiki"],
+      requiredFiles: ["AGENTS.md", "IDEA.md", "wiki/index.md", "wiki/log.md"],
+      missingDirectories: ["raw", "wiki"],
+      missingFiles: ["AGENTS.md", "IDEA.md", "wiki/index.md", "wiki/log.md"],
+      healthy: false,
+      problems: [{ code: "missing_root", message: "Original root diagnostic" }],
+      checkedAt: new Date().toISOString(),
+    };
+
+    const portugueseMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+    expect(portugueseMarkup).toContain("Escolha uma pasta raiz para o Wiki");
+    expect(portugueseMarkup).toContain("/tmp/custom-wiki-root");
+    expect(portugueseMarkup).toContain("AGENTS.md");
+    expect(portugueseMarkup).toContain("IDEA.md");
+    expect(portugueseMarkup).toContain("wiki/index.md");
+    expect(portugueseMarkup).toContain("wiki/log.md");
+    expect(portugueseMarkup).toContain("Original root diagnostic");
+    expect(portugueseMarkup).toContain("Configurar e inicializar");
+    expect(portugueseMarkup).not.toContain("Configure & bootstrap");
+
+    const englishMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "en" },
+    } as never));
+    expect(englishMarkup).toContain("Choose a wiki root folder");
+    expect(englishMarkup).toContain("/tmp/custom-wiki-root");
+    expect(englishMarkup).toContain("Configure &amp; bootstrap");
   });
 
   it("renders distillation settings with assigned-agent execution without budget controls", () => {

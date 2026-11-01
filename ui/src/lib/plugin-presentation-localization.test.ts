@@ -3,6 +3,7 @@ import { i18n } from "@/i18n";
 import { DEFAULT_LOCALE } from "@/i18n/locales";
 import {
   isBundledPluginRecord,
+  localizePluginLocalFolderPresentation,
   localizePluginPresentation,
   localizeSandboxProviderPresentation,
 } from "./plugin-presentation-localization";
@@ -109,6 +110,46 @@ describe("owned plugin presentation localization", () => {
     )).toEqual({
       displayName: "Vendor Daytona Compat",
       description: "A vendor-owned provider reusing a familiar key stays unchanged.",
+    });
+  });
+
+  it("localizes an owned managed-folder declaration only for its verified plugin", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const fallbackDescription = "Company-scoped local folder that stores raw sources, wiki pages, Paperclip project standups under wiki/projects/, AGENTS.md, IDEA.md, wiki/index.md, and wiki/log.md.";
+
+    expect(localizePluginLocalFolderPresentation(
+      "paperclipai.plugin-llm-wiki",
+      "wiki-root",
+      "Wiki root",
+      fallbackDescription,
+      i18n.t,
+      true,
+    )).toEqual({
+      displayName: "Pasta raiz da Wiki",
+      description: "Pasta local da organização que armazena fontes brutas, páginas da Wiki, sínteses dos projetos do Paperclip em wiki/projects/, AGENTS.md, IDEA.md, wiki/index.md e wiki/log.md.",
+    });
+
+    expect(localizePluginLocalFolderPresentation(
+      "paperclipai.plugin-llm-wiki",
+      "wiki-root",
+      "Vendor Wiki root",
+      "Vendor metadata remains unchanged.",
+      i18n.t,
+      false,
+    )).toEqual({
+      displayName: "Vendor Wiki root",
+      description: "Vendor metadata remains unchanged.",
+    });
+    expect(localizePluginLocalFolderPresentation(
+      "vendor.wiki-compatible",
+      "wiki-root",
+      "Compatible folder",
+      "A vendor reused the folder key.",
+      i18n.t,
+      true,
+    )).toEqual({
+      displayName: "Compatible folder",
+      description: "A vendor reused the folder key.",
     });
   });
 

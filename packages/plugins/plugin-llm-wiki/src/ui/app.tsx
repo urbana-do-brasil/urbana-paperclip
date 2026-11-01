@@ -1329,9 +1329,10 @@ export function SidebarLink({ context }: PluginSidebarProps) {
 
 export function SettingsPage({ context }: PluginSettingsPageProps) {
   const isMobile = useIsMobileLayout();
+  const locale = resolveWikiLocale(context.locale);
   return (
     <main style={{ padding: isMobile ? 16 : 24, maxWidth: isMobile ? "none" : 1040, minWidth: 0, fontFamily: fontStack, color: tokens.fg }}>
-      <SettingsBody context={context} />
+      <SettingsBody context={context} locale={locale} />
     </main>
   );
 }
@@ -1712,7 +1713,7 @@ export function WikiPage({ context }: PluginPageProps) {
         ) : !overview.data ? (
           <div style={{ padding: 24, flex: 1, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "loadingWiki")}</div>
         ) : !overview.data.folder.healthy ? (
-          <UnconfiguredFolder context={context} folder={overview.data.folder} refresh={overview.refresh} />
+          <UnconfiguredFolder context={context} folder={overview.data.folder} locale={locale} refresh={overview.refresh} />
         ) : section === "browse" ? (
           <BrowseTab context={context} locale={locale} />
         ) : section === "ingest" ? (
@@ -1720,11 +1721,11 @@ export function WikiPage({ context }: PluginPageProps) {
         ) : section === "query" ? (
           <QueryTab context={context} locale={locale} overview={overview.data} />
         ) : section === "lint" ? (
-          <SettingsTab context={context} initialSection="lint" />
+          <SettingsTab context={context} locale={locale} initialSection="lint" />
         ) : section === "history" ? (
           <HistoryTab context={context} locale={locale} overview={overview.data} />
         ) : (
-          <SettingsTab context={context} initialSection={settingsSection} />
+          <SettingsTab context={context} locale={locale} initialSection={settingsSection} />
         )}
       </section>
       {isDragActive ? <WikiPageDropOverlay locale={locale} onClose={resetDragState} /> : null}
@@ -2019,6 +2020,7 @@ function IngestFilesModal({
       {createOpen ? (
         <CreateSpaceModal
           companyId={companyId}
+          locale={locale}
           existingSlugs={new Set(spaces.map((s) => s.slug))}
           onClose={() => setCreateOpen(false)}
           onCreated={(space) => {
@@ -2068,11 +2070,13 @@ const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 
 function CreateSpaceModal({
   companyId,
+  locale,
   existingSlugs,
   onClose,
   onCreated,
 }: {
   companyId: string;
+  locale: WikiLocale;
   existingSlugs: ReadonlySet<string>;
   onClose: () => void;
   onCreated: (space: WikiSpace) => void;
@@ -2098,9 +2102,9 @@ function CreateSpaceModal({
 
   const slugError = (() => {
     if (!effectiveSlug) return null;
-    if (effectiveSlug === DEFAULT_SPACE_SLUG) return "Slug 'default' is reserved.";
-    if (!SLUG_PATTERN.test(effectiveSlug)) return "Use 2-40 chars: lowercase letters, numbers, hyphens.";
-    if (existingSlugs.has(effectiveSlug)) return "A space with this slug already exists.";
+    if (effectiveSlug === DEFAULT_SPACE_SLUG) return wikiMessage(locale, "slugDefaultReserved");
+    if (!SLUG_PATTERN.test(effectiveSlug)) return wikiMessage(locale, "slugValidationHelp");
+    if (existingSlugs.has(effectiveSlug)) return wikiMessage(locale, "slugAlreadyExists");
     return null;
   })();
 
@@ -2118,12 +2122,12 @@ function CreateSpaceModal({
         folderMode,
         accessScope,
       }) as { status: "created"; space: WikiSpace };
-      toast({ tone: "success", title: "Space created", body: `${result.space.displayName} is ready for ingest.` });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceCreated"), body: wikiMessage(locale, "spaceCreatedBody", { name: result.space.displayName }) });
       onCreated(result.space);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMsg(msg);
-      toast({ tone: "error", title: "Could not create space", body: msg });
+      toast({ tone: "error", title: wikiMessage(locale, "spaceCreateFailed"), body: msg });
     } finally {
       setBusy(false);
     }
@@ -2167,18 +2171,15 @@ function CreateSpaceModal({
             <FolderIcon size={18} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 id="create-space-modal-title" style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>Create a shared space</h2>
+            <h2 id="create-space-modal-title" style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>{wikiMessage(locale, "createSharedSpaceTitle")}</h2>
             <Tiny style={{ marginTop: 4 }}>
-              Spaces partition wiki pages, sources, and manual ingest into separate slug-prefixed folders
-              under the wiki root. Paperclip distillation and event capture always write into the
-              default space and skip new spaces created here - per-space Paperclip routing is a later
-              phase.
+              {wikiMessage(locale, "createSpaceDescription")}
             </Tiny>
           </div>
-          <Button size="sm" variant="ghost" onClick={onClose} disabled={busy} title="Close">Close</Button>
+          <Button size="sm" variant="ghost" onClick={onClose} disabled={busy} title={wikiMessage(locale, "closeDialog")}>{wikiMessage(locale, "closeDialog")}</Button>
         </div>
         <div style={{ padding: 20, display: "grid", gap: 16 }}>
-          <FormField label="Display name">
+          <FormField label={wikiMessage(locale, "displayNameLabel")}>
             <TextInput
               value={displayName}
               autoFocus
@@ -2186,13 +2187,13 @@ function CreateSpaceModal({
                 setDisplayName(event.target.value);
                 if (!slugDirty) setSlug("");
               }}
-              placeholder="Team research"
+              placeholder={wikiMessage(locale, "spaceNamePlaceholder")}
               maxLength={120}
             />
           </FormField>
           <FormField
-            label="Slug"
-            help={slugError ?? `Stored as the URL segment and the on-disk folder. Defaults to ${slugify(displayName) || "auto-derived from display name"}.`}
+            label={wikiMessage(locale, "slugLabel")}
+            help={slugError ?? wikiMessage(locale, "storedAsFolderSlugHelp", { slug: slugify(displayName) || wikiMessage(locale, "autoDerivedFromDisplayName") })}
             tone={slugError ? "danger" : "muted"}
           >
             <TextInput
@@ -2205,57 +2206,57 @@ function CreateSpaceModal({
               style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
             />
           </FormField>
-          <FormField label="Type">
+          <FormField label={wikiMessage(locale, "typeLabel")}>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <SegmentedOption selected label="Folder" onClick={() => undefined} />
-              <SegmentedOption disabled label="Cloud" suffix="Coming soon" onClick={() => undefined} />
+              <SegmentedOption selected label={wikiMessage(locale, "folderType")} onClick={() => undefined} />
+              <SegmentedOption disabled label={wikiMessage(locale, "cloudType")} suffix={wikiMessage(locale, "comingSoon")} onClick={() => undefined} />
             </div>
           </FormField>
-          <FormField label="Folder source" help="New managed folders create a slug-scoped subfolder under your wiki root. Existing folders must already live under the same wiki root.">
+          <FormField label={wikiMessage(locale, "folderSourceLabel")} help={wikiMessage(locale, "folderSourceHelp")}>
             <div style={{ display: "grid", gap: 8 }}>
               <FolderModeRow
                 checked={folderMode === "managed_subfolder"}
                 onSelect={() => setFolderMode("managed_subfolder")}
-                label="New managed folder"
-                help={`Creates spaces/${previewName.replace(/\s+/g, "-").toLowerCase()}/ under the configured wiki root with the standard skeleton.`}
+                label={wikiMessage(locale, "newManagedFolder")}
+                help={wikiMessage(locale, "newManagedFolderHelp", { folder: `spaces/${previewName.replace(/\s+/g, "-").toLowerCase()}/` })}
               />
               <FolderModeRow
                 checked={folderMode === "existing_local_folder"}
                 onSelect={() => setFolderMode("existing_local_folder")}
-                label="Existing folder under wiki root"
-                help="Re-use a sub-folder you've already created inside the wiki root. The folder path is stored in the space settings."
+                label={wikiMessage(locale, "existingFolderUnderWikiRoot")}
+                help={wikiMessage(locale, "existingFolderHelp")}
               />
               <FolderModeRow
                 disabled
                 checked={false}
                 onSelect={() => undefined}
-                label="Existing absolute path"
-                help="Pending host capability — security review (PAP-3640) gates this until host-managed dynamic local-folder bindings ship."
-                suffix="Disabled"
+                label={wikiMessage(locale, "existingAbsolutePath")}
+                help={wikiMessage(locale, "absolutePathPendingReview")}
+                suffix={wikiMessage(locale, "disabled")}
               />
             </div>
           </FormField>
-          <FormField label="Access scope" help="Access scope is metadata only. It does not currently enforce who can read or write the space, and it does not change which Paperclip sources reach the space.">
+          <FormField label={wikiMessage(locale, "accessScopeLabel")} help={wikiMessage(locale, "accessScopeDescription")}>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 8 }}>
               <ScopeTile
                 selected={accessScope === "shared"}
                 onSelect={() => setAccessScope("shared")}
-                label="Shared"
-                help="Visible to everyone in this company."
+                label={wikiMessage(locale, "sharedScope")}
+                help={wikiMessage(locale, "sharedScopeHelp")}
               />
               <ScopeTile
                 selected={accessScope === "personal"}
                 onSelect={() => setAccessScope("personal")}
-                label="Personal"
-                help="Future scope — stored only."
-                tag="Future"
+                label={wikiMessage(locale, "personalScope")}
+                help={wikiMessage(locale, "futureScopeStoredOnly")}
+                tag={wikiMessage(locale, "future")}
               />
               <ScopeTile
                 selected={accessScope === "team"}
                 onSelect={() => setAccessScope("team")}
-                label="Team"
-                help="Future scope — stored only."
-                tag="Future"
+                label={wikiMessage(locale, "teamScope")}
+                help={wikiMessage(locale, "futureScopeStoredOnly")}
+                tag={wikiMessage(locale, "future")}
               />
             </div>
           </FormField>
@@ -2272,8 +2273,8 @@ function CreateSpaceModal({
           bottom: 0,
           background: tokens.card,
         }}>
-          <Button variant="ghost" onClick={onClose} disabled={busy} style={{ flex: isMobile ? 1 : undefined }}>Cancel</Button>
-          <Button variant="primary" onClick={submit} disabled={!canSubmit} loading={busy} style={{ flex: isMobile ? 1 : undefined }}>Create space</Button>
+          <Button variant="ghost" onClick={onClose} disabled={busy} style={{ flex: isMobile ? 1 : undefined }}>{wikiMessage(locale, "cancel")}</Button>
+          <Button variant="primary" onClick={submit} disabled={!canSubmit} loading={busy} style={{ flex: isMobile ? 1 : undefined }}>{wikiMessage(locale, "createSpaceAction")}</Button>
         </div>
       </div>
     </div>
@@ -2703,6 +2704,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
       {createOpen && context.companyId ? (
         <CreateSpaceModal
           companyId={context.companyId}
+          locale={locale}
           existingSlugs={new Set(spaces.map((s) => s.slug))}
           onClose={() => setCreateOpen(false)}
           onCreated={(space) => {
@@ -3021,7 +3023,7 @@ const shellStyle: CSSProperties = {
 // Pre-flight: prompt for folder before any tab can be useful.
 // ---------------------------------------------------------------------------
 
-function UnconfiguredFolder({ context, folder, refresh }: { context: { companyId: string | null }; folder?: FolderStatus; refresh: () => void }) {
+function UnconfiguredFolder({ context, folder, locale, refresh }: { context: { companyId: string | null }; folder?: FolderStatus; locale: WikiLocale; refresh: () => void }) {
   const bootstrap = usePluginAction("bootstrap-root");
   const toast = usePluginToast();
   const isMobile = useIsMobileLayout();
@@ -3041,12 +3043,18 @@ function UnconfiguredFolder({ context, folder, refresh }: { context: { companyId
     try {
       const result = await bootstrap({ companyId: context.companyId, path: path.trim() });
       const written = (result as { writtenFiles?: string[] }).writtenFiles ?? [];
-      toast({ tone: "success", title: "Wiki root configured", body: written.length ? `Created ${written.length} bootstrap file(s).` : "Existing files preserved." });
+      toast({
+        tone: "success",
+        title: wikiMessage(locale, "wikiRootConfiguredTitle"),
+        body: written.length
+          ? wikiMessage(locale, "bootstrapCreatedFiles", { count: written.length })
+          : wikiMessage(locale, "existingFilesPreserved"),
+      });
       refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setErrorMsg(message);
-      toast({ tone: "error", title: "Could not configure wiki root", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "wikiRootConfigureFailedTitle"), body: message });
     } finally {
       setBusy(false);
     }
@@ -3055,13 +3063,13 @@ function UnconfiguredFolder({ context, folder, refresh }: { context: { companyId
   return (
     <div style={{ flex: 1, padding: isMobile ? 16 : 28, display: "grid", placeItems: "start", overflow: isMobile ? "visible" : "auto", minWidth: 0 }}>
       <Card style={{ maxWidth: 720, width: "100%" }}>
-        <CardHeader title={configuredButUnhealthy ? "Repair wiki root folder" : "Choose a wiki root folder"} />
+        <CardHeader title={wikiMessage(locale, configuredButUnhealthy ? "repairWikiRootFolder" : "chooseWikiRootFolder")} />
         <CardBody>
           <Tiny style={{ marginBottom: 12 }}>
             {configuredButUnhealthy
-              ? "The configured wiki root is not ready. Update the path or repair it to recreate required baseline files."
-              : "Pick an absolute path on this machine. The plugin creates "}
-            {!configuredButUnhealthy ? <><Mono>raw/</Mono>, <Mono>wiki/</Mono>, <Mono>AGENTS.md</Mono>, <Mono>IDEA.md</Mono>, <Mono>wiki/index.md</Mono>, and <Mono>wiki/log.md</Mono> if they don't already exist.</> : null}
+              ? wikiMessage(locale, "wikiRootNotReady")
+              : `${wikiMessage(locale, "wikiRootChoosePath")} `}
+            {!configuredButUnhealthy ? <><Mono>raw/</Mono>, <Mono>wiki/</Mono>, <Mono>AGENTS.md</Mono>, <Mono>IDEA.md</Mono>, <Mono>wiki/index.md</Mono>, <Mono>wiki/log.md</Mono> {wikiMessage(locale, "wikiRootFilesExist")}</> : null}
           </Tiny>
           {folder?.problems?.length ? (
             <Callout tone="danger">
@@ -3075,17 +3083,18 @@ function UnconfiguredFolder({ context, folder, refresh }: { context: { companyId
             </Callout>
           ) : null}
           <div style={{ display: "grid", gap: 12 }}>
-            {folder ? <FolderHealthChecklist folder={folder} /> : null}
+            {folder ? <FolderHealthChecklist folder={folder} locale={locale} /> : null}
             <FolderPathPicker
+              locale={locale}
               value={path}
               onChange={setPath}
               onApply={submit}
-              applyLabel={configuredButUnhealthy ? "Repair & bootstrap" : "Configure & bootstrap"}
+              applyLabel={wikiMessage(locale, configuredButUnhealthy ? "repairAndBootstrap" : "configureAndBootstrap")}
               busy={busy}
               disabled={!path.trim()}
             />
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <Button variant="ghost" onClick={() => refresh()}>I already configured it</Button>
+              <Button variant="ghost" onClick={() => refresh()}>{wikiMessage(locale, "alreadyConfigured")}</Button>
             </div>
             {errorMsg ? <Callout tone="danger">{errorMsg}</Callout> : null}
           </div>
@@ -4176,6 +4185,7 @@ function IngestTab({ context, locale, refreshOverview }: { context: { companyId:
       {createOpen && context.companyId ? (
         <CreateSpaceModal
           companyId={context.companyId}
+          locale={locale}
           existingSlugs={new Set(spaces.map((s) => s.slug))}
           onClose={() => setCreateOpen(false)}
           onCreated={(space) => {
@@ -4854,11 +4864,11 @@ function HistoryTab({ context, locale, overview }: { context: { companyId: strin
 // Settings (tab) and the standalone host SettingsPage share this body.
 // ---------------------------------------------------------------------------
 
-function SettingsTab({ context, initialSection = "root" }: { context: { companyId: string | null; companyPrefix?: string | null }; initialSection?: SettingsSectionKey }) {
+function SettingsTab({ context, locale, initialSection = "root" }: { context: { companyId: string | null; companyPrefix?: string | null }; locale: WikiLocale; initialSection?: SettingsSectionKey }) {
   const isMobile = useIsMobileLayout();
   return (
     <div style={{ flex: 1, minHeight: isMobile ? "auto" : 0, overflow: isMobile ? "visible" : "auto", padding: isMobile ? "16px" : "24px 28px", minWidth: 0 }}>
-      <SettingsBody context={context} initialSection={initialSection} />
+      <SettingsBody context={context} locale={locale} initialSection={initialSection} />
     </div>
   );
 }
@@ -5089,12 +5099,38 @@ const SETTINGS_SECTIONS: ReadonlyArray<{
   { key: "events", label: "Ingestion Settings", description: "Paperclip event capture into the default space (issues, comments, documents)." },
 ];
 
+function settingsSectionLabel(locale: WikiLocale, key: SettingsSectionKey): string {
+  const messageKey: Record<SettingsSectionKey, WikiMessageKey> = {
+    root: "settingsSetup",
+    spaces: "settingsSpaces",
+    distillation: "settingsDistillation",
+    routines: "settingsRoutines",
+    lint: "settingsLint",
+    events: "settingsEvents",
+  };
+  return wikiMessage(locale, messageKey[key]);
+}
+
+function settingsSectionDescription(locale: WikiLocale, key: SettingsSectionKey): string {
+  const messageKey: Partial<Record<SettingsSectionKey, WikiMessageKey>> = {
+    spaces: "settingsSpacesDescription",
+    distillation: "settingsDistillationDescription",
+    routines: "settingsRoutinesDescription",
+    lint: "settingsLintDescription",
+    events: "settingsEventsDescription",
+  };
+  const selectedKey = messageKey[key];
+  return selectedKey ? wikiMessage(locale, selectedKey) : "";
+}
+
 function SettingsSectionButton({
   section,
+  locale,
   active,
   onSelect,
 }: {
   section: (typeof SETTINGS_SECTIONS)[number];
+  locale: WikiLocale;
   active: boolean;
   onSelect: () => void;
 }) {
@@ -5117,9 +5153,9 @@ function SettingsSectionButton({
         fontFamily: fontStack,
       }}
     >
-      <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>{section.label}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>{settingsSectionLabel(locale, section.key)}</span>
       {section.description ? (
-        <span style={{ fontSize: 11, lineHeight: 1.35, overflowWrap: "anywhere" }}>{section.description}</span>
+        <span style={{ fontSize: 11, lineHeight: 1.35, overflowWrap: "anywhere" }}>{settingsSectionDescription(locale, section.key)}</span>
       ) : null}
     </button>
   );
@@ -5167,22 +5203,10 @@ const PATH_PLATFORM_LABELS: Record<PathPlatform, string> = {
   linux: "Linux",
 };
 
-const PATH_PLATFORM_STEPS: Record<PathPlatform, string[]> = {
-  mac: [
-    "Open Finder and navigate to the folder.",
-    "Control-click the folder.",
-    "Hold Option, choose Copy as Pathname, then paste it here.",
-  ],
-  windows: [
-    "Open File Explorer and navigate to the folder.",
-    "Click the address bar to reveal the full path.",
-    "Copy the path and paste it here.",
-  ],
-  linux: [
-    "Open a terminal in the directory.",
-    "Run pwd to print the full path.",
-    "Copy the output and paste it here.",
-  ],
+const PATH_PLATFORM_STEP_KEYS: Record<PathPlatform, readonly WikiMessageKey[]> = {
+  mac: ["pathStepMac1", "pathStepMac2", "pathStepMac3"],
+  windows: ["pathStepWindows1", "pathStepWindows2", "pathStepWindows3"],
+  linux: ["pathStepLinux1", "pathStepLinux2", "pathStepLinux3"],
 };
 
 function detectPathPlatform(): PathPlatform {
@@ -5193,7 +5217,7 @@ function detectPathPlatform(): PathPlatform {
   return "mac";
 }
 
-function PathInstructionsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function PathInstructionsDialog({ open, onClose, locale }: { open: boolean; onClose: () => void; locale: WikiLocale }) {
   const [platform, setPlatform] = useState<PathPlatform>(detectPathPlatform);
 
   useEffect(() => {
@@ -5240,10 +5264,10 @@ function PathInstructionsDialog({ open, onClose }: { open: boolean; onClose: () 
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
           <div style={{ display: "grid", gap: 4 }}>
-            <h3 id="wiki-path-help-title" style={{ margin: 0, fontSize: 15, fontWeight: 650 }}>Get a full folder path</h3>
-            <Tiny>Paste an absolute path such as <Mono>/Users/you/company-wiki</Mono>.</Tiny>
+            <h3 id="wiki-path-help-title" style={{ margin: 0, fontSize: 15, fontWeight: 650 }}>{wikiMessage(locale, "pathHelpTitle")}</h3>
+            <Tiny>{wikiMessage(locale, "pathHelpDescription", { path: "/Users/you/company-wiki" })}</Tiny>
           </div>
-          <Button size="sm" variant="ghost" onClick={onClose} title="Close path help">Close</Button>
+          <Button size="sm" variant="ghost" onClick={onClose} title={wikiMessage(locale, "pathHelpClose")}>{wikiMessage(locale, "closeDialog")}</Button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, border: `1px solid ${tokens.border}`, borderRadius: 7, padding: 3 }}>
           {(Object.keys(PATH_PLATFORM_LABELS) as PathPlatform[]).map((key) => (
@@ -5267,7 +5291,7 @@ function PathInstructionsDialog({ open, onClose }: { open: boolean; onClose: () 
           ))}
         </div>
         <ol style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 8, fontSize: 13, lineHeight: 1.45 }}>
-          {PATH_PLATFORM_STEPS[platform].map((step) => <li key={step}>{step}</li>)}
+          {PATH_PLATFORM_STEP_KEYS[platform].map((key) => <li key={key}>{wikiMessage(locale, key)}</li>)}
         </ol>
       </div>
     </div>
@@ -5275,6 +5299,7 @@ function PathInstructionsDialog({ open, onClose }: { open: boolean; onClose: () 
 }
 
 function FolderPathPicker({
+  locale,
   value,
   onChange,
   onApply,
@@ -5283,6 +5308,7 @@ function FolderPathPicker({
   disabled,
   onRefresh,
 }: {
+  locale: WikiLocale;
   value: string;
   onChange: (value: string) => void;
   onApply: () => void;
@@ -5316,8 +5342,8 @@ function FolderPathPicker({
           <FolderOpenIcon />
         </span>
         <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
-          <span style={{ fontSize: 13, fontWeight: 650 }}>Local wiki folder</span>
-          <Tiny>Absolute path on this machine</Tiny>
+          <span style={{ fontSize: 13, fontWeight: 650 }}>{wikiMessage(locale, "localWikiFolder")}</span>
+          <Tiny>{wikiMessage(locale, "absolutePathOnMachine")}</Tiny>
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, padding: 12, alignItems: "center", flexWrap: "wrap" }}>
@@ -5327,11 +5353,11 @@ function FolderPathPicker({
           placeholder="/absolute/path/to/wiki-root"
           style={{ flex: "1 1 320px", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}
         />
-        <Button size="sm" onClick={() => setHelpOpen(true)}><FolderOpenIcon size={13} /> Choose</Button>
+        <Button size="sm" onClick={() => setHelpOpen(true)}><FolderOpenIcon size={13} /> {wikiMessage(locale, "chooseFolder")}</Button>
         <Button variant="primary" size="sm" onClick={onApply} loading={busy} disabled={disabled || !value.trim()}>{applyLabel}</Button>
-        {onRefresh ? <Button size="sm" variant="ghost" onClick={onRefresh}>Run health check</Button> : null}
+        {onRefresh ? <Button size="sm" variant="ghost" onClick={onRefresh}>{wikiMessage(locale, "runHealthCheck")}</Button> : null}
       </div>
-      <PathInstructionsDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <PathInstructionsDialog open={helpOpen} onClose={() => setHelpOpen(false)} locale={locale} />
     </div>
   );
 }
@@ -5341,21 +5367,21 @@ type FolderHealthItem = {
   ok: boolean;
 };
 
-function folderHealthItems(folder: FolderStatus): FolderHealthItem[] {
+function folderHealthItems(folder: FolderStatus, locale: WikiLocale): FolderHealthItem[] {
   return [
-    { label: "Path configured", ok: folder.configured },
-    { label: "Readable", ok: folder.readable },
-    { label: folder.access === "readWrite" ? "Writable" : "Read-only access", ok: folder.access === "read" || folder.writable },
-    { label: "Baseline files", ok: folder.missingFiles.length === 0 },
-    { label: "Wiki folders", ok: folder.missingDirectories.length === 0 },
+    { label: wikiMessage(locale, "folderPathConfigured"), ok: folder.configured },
+    { label: wikiMessage(locale, "folderReadable"), ok: folder.readable },
+    { label: wikiMessage(locale, folder.access === "readWrite" ? "folderWritable" : "folderReadOnly"), ok: folder.access === "read" || folder.writable },
+    { label: wikiMessage(locale, "folderBaselineFiles"), ok: folder.missingFiles.length === 0 },
+    { label: wikiMessage(locale, "wikiFolders"), ok: folder.missingDirectories.length === 0 },
   ];
 }
 
-function FolderHealthChecklist({ folder }: { folder: FolderStatus }) {
-  const items = folderHealthItems(folder);
+function FolderHealthChecklist({ folder, locale }: { folder: FolderStatus; locale: WikiLocale }) {
+  const items = folderHealthItems(folder, locale);
   return (
-    <div style={{ display: "grid", gap: 8 }} aria-label="Wiki root health checklist">
-      <div style={{ fontSize: 12, fontWeight: 650, color: tokens.muted }}>Health check</div>
+    <div style={{ display: "grid", gap: 8 }} aria-label={wikiMessage(locale, "wikiRootHealthChecklist")}>
+      <div style={{ fontSize: 12, fontWeight: 650, color: tokens.muted }}>{wikiMessage(locale, "folderHealthCheck")}</div>
       <div role="list" style={{ position: "relative", display: "grid", gap: 0, padding: "2px 0" }}>
         {items.length > 1 ? (
           <span
@@ -5853,7 +5879,7 @@ function SelectInput({ defaultValue, options }: { defaultValue: string; options:
   );
 }
 
-function SettingsBody({ context, initialSection = "root" }: { context: { companyId: string | null; companyPrefix?: string | null }; initialSection?: SettingsSectionKey }) {
+function SettingsBody({ context, locale, initialSection = "root" }: { context: { companyId: string | null; companyPrefix?: string | null }; locale: WikiLocale; initialSection?: SettingsSectionKey }) {
   const settings = useSettings(context.companyId);
   const hostNavigation = useHostNavigation();
   const { pathname } = useHostLocation();
@@ -5899,10 +5925,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     setActiveSettingsSection(initialSection);
   }, [initialSection]);
 
-  if (!context.companyId) return <Callout>Choose a company to view LLM Wiki settings.</Callout>;
-  if (settings.loading) return <Tiny>Loading settings…</Tiny>;
+  if (!context.companyId) return <Callout>{wikiMessage(locale, "settingsChooseCompany")}</Callout>;
+  if (settings.loading) return <Tiny>{wikiMessage(locale, "settingsLoading")}</Tiny>;
   if (settings.error) return <Callout tone="danger">{settings.error.message}</Callout>;
-  if (!settings.data) return <Tiny>No settings available.</Tiny>;
+  if (!settings.data) return <Tiny>{wikiMessage(locale, "settingsUnavailable")}</Tiny>;
 
   const data = settings.data;
   const maintainerFallbackAgent: MaintainerAgentOption | null = data.managedAgent.agentId
@@ -5946,11 +5972,11 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
   const skillHealthItems = buildSkillHealthItems(managedSkills);
   const skillHealthWarnings = skillHealthItems.filter((item) => !item.ok);
   const configurationErrors = [
-    ...(!data.folder.healthy ? ["Wiki root folder"] : []),
-    ...(agentHealthWarnings.length > 0 ? ["Managed agents"] : []),
-    ...(skillHealthWarnings.length > 0 ? ["Managed skills"] : []),
-    ...(projectHealthWarnings.length > 0 ? ["Managed projects"] : []),
-    ...(routineHealthWarnings.length > 0 ? ["Managed routines"] : []),
+    ...(!data.folder.healthy ? ["settingsWikiRootFolder" as const] : []),
+    ...(agentHealthWarnings.length > 0 ? ["settingsManagedAgents" as const] : []),
+    ...(skillHealthWarnings.length > 0 ? ["settingsManagedSkills" as const] : []),
+    ...(projectHealthWarnings.length > 0 ? ["settingsManagedProjects" as const] : []),
+    ...(routineHealthWarnings.length > 0 ? ["settingsManagedRoutines" as const] : []),
   ];
   const hasConfigurationErrors = configurationErrors.length > 0;
   const projectFallbackOption: ProjectOption | null = data.managedProject.projectId
@@ -6012,10 +6038,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     setFolderBusy(true);
     try {
       await bootstrap({ companyId: context.companyId, path: folderPath.trim() });
-      toast({ tone: "success", title: "Folder updated" });
+      toast({ tone: "success", title: wikiMessage(locale, "folderUpdated") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Folder update failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "folderUpdateFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setFolderBusy(false);
     }
@@ -6097,7 +6123,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
   async function fixAllConfigurationErrors() {
     if (!context.companyId || !hasConfigurationErrors) return;
     const confirmed = typeof window === "undefined" || window.confirm(
-      "Fix all detected LLM Wiki configuration errors? This may recreate missing wiki baseline files and restore plugin-managed agents, projects, routines, and skills to their current defaults.",
+      wikiMessage(locale, "confirmFixAllConfigurationErrors"),
     );
     if (!confirmed) return;
 
@@ -6106,7 +6132,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
       if (!data.folder.healthy) {
         const path = folderPath.trim() || data.folder.path?.trim() || "";
         if (!path && !data.folder.configured) {
-          throw new Error("Choose a wiki root folder path before fixing all configuration errors.");
+          throw new Error(wikiMessage(locale, "chooseFolderBeforeFix"));
         }
         await bootstrap(path ? { companyId: context.companyId, path } : { companyId: context.companyId });
       }
@@ -6139,10 +6165,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
         await reconcileRoutines({ companyId: context.companyId });
       }
 
-      toast({ tone: "success", title: "Configuration errors fixed" });
+      toast({ tone: "success", title: wikiMessage(locale, "configurationErrorsFixed") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Fix all failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "fixAllFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setAllRepairBusy(false);
     }
@@ -6260,7 +6286,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
         paddingRight: isMobile ? 0 : 16,
         paddingBottom: isMobile ? 12 : 0,
       }}>
-        <nav aria-label="LLM Wiki settings sections" style={{
+        <nav aria-label={wikiMessage(locale, "settingsSectionsAria")} style={{
           display: "flex",
           flexDirection: isMobile ? "row" : "column",
           gap: 4,
@@ -6271,6 +6297,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
             <div key={section.key} style={{ minWidth: isMobile ? 190 : 0 }}>
               <SettingsSectionButton
                 section={section}
+                locale={locale}
                 active={activeSettingsSection === section.key}
                 onSelect={() => {
                   setActiveSettingsSection(section.key);
@@ -6288,13 +6315,15 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
             <Callout tone="warn">
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
-                  <strong>configuration errors detected, fix them all?</strong>
+                  <strong>{wikiMessage(locale, "configurationErrorsDetected")}</strong>
                   <Tiny>
-                    {configurationErrors.join(", ")} {configurationErrors.length === 1 ? "needs" : "need"} attention.
+                    {wikiMessage(locale, configurationErrors.length === 1 ? "configurationErrorsNeedAttentionOne" : "configurationErrorsNeedAttentionMany", {
+                      items: configurationErrors.map((key) => wikiMessage(locale, key)).join(", "),
+                    })}
                   </Tiny>
                 </div>
                 <Button size="sm" variant="primary" onClick={fixAllConfigurationErrors} loading={allRepairBusy}>
-                  Fix them all
+                  {wikiMessage(locale, "fixAllConfigurationErrors")}
                 </Button>
               </div>
             </Callout>
@@ -6302,21 +6331,22 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
         ) : null}
         {activeSettingsSection === "root" ? (
           <section style={{ display: "grid", gap: 22, minWidth: 0 }}>
-            <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 22, fontWeight: 700 }}>Setup</h1>
-            <SetupSection title="Base Folder">
+            <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 22, fontWeight: 700 }}>{settingsSectionLabel(locale, "root")}</h1>
+            <SetupSection title={wikiMessage(locale, "settingsBaseFolder")}>
               <div style={{ display: "grid", gap: 12 }}>
                 <FolderPathPicker
+                  locale={locale}
                   value={folderPath}
                   onChange={setFolderPath}
                   onApply={changeFolder}
-                  applyLabel="Apply path"
+                  applyLabel={wikiMessage(locale, "settingsApplyPath")}
                   busy={folderBusy}
                   disabled={!folderPath.trim()}
                   onRefresh={() => settings.refresh()}
                 />
-                <FolderHealthChecklist folder={data.folder} />
+                <FolderHealthChecklist folder={data.folder} locale={locale} />
                 {data.folder.problems.length > 0 ? (
-                  <Callout tone="warn">{data.folder.problems.length} folder issue(s): {data.folder.problems.map((p) => p.message).join("; ")}</Callout>
+                  <Callout tone="warn">{wikiMessage(locale, data.folder.problems.length === 1 ? "folderIssuesOne" : "folderIssuesMany", { count: data.folder.problems.length })} {data.folder.problems.map((p) => p.message).join("; ")}</Callout>
                 ) : null}
               </div>
             </SetupSection>
@@ -6587,7 +6617,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
         ) : activeSettingsSection === "lint" ? (
           <SettingsLintPanel context={context} />
         ) : activeSettingsSection === "spaces" ? (
-          <SpacesSettingsPanel context={context} description={activeSettingsConfig.description} />
+          <SpacesSettingsPanel context={context} locale={locale} description={settingsSectionDescription(locale, "spaces")} />
         ) : activeSettingsSection === "events" ? (
           <SettingsPanel
             title="Paperclip event ingestion"
@@ -6658,7 +6688,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
 // Reachable via /wiki/settings/spaces or /wiki/settings/spaces/<slug>.
 // ---------------------------------------------------------------------------
 
-function SpacesSettingsPanel({ context, description }: { context: { companyId: string | null; companyPrefix?: string | null }; description: string }) {
+function SpacesSettingsPanel({ context, locale, description }: { context: { companyId: string | null; companyPrefix?: string | null }; locale: WikiLocale; description: string }) {
   const { pathname } = useHostLocation();
   const hostNavigation = useHostNavigation();
   const activeSpaceSlug = useMemo(() => readActiveSpaceSlugFromLocation(pathname), [pathname]);
@@ -6677,7 +6707,7 @@ function SpacesSettingsPanel({ context, description }: { context: { companyId: s
   }, [editingSlug, spaces, activeSpaceSlug]);
 
   return (
-    <SettingsPanel title="Shared spaces" description={description}>
+    <SettingsPanel title={wikiMessage(locale, "sharedSpaces")} description={description}>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "220px 1fr", gap: 18, alignItems: "flex-start" }}>
         <aside style={{ display: "grid", gap: 4, minWidth: 0 }}>
           {spaces.map((space) => {
@@ -6726,15 +6756,16 @@ function SpacesSettingsPanel({ context, description }: { context: { companyId: s
             }}
           >
             <PlusIcon size={14} />
-            Add space…
+            {wikiMessage(locale, "addSpace")}
           </button>
         </aside>
         <div style={{ minWidth: 0, display: "grid", gap: 14 }}>
-          {spacesQuery.loading && spaces.length === 0 ? <Tiny>Loading spaces…</Tiny> : null}
-          {spacesQuery.error ? <Callout tone="danger">Failed to load spaces: {spacesQuery.error.message}</Callout> : null}
+          {spacesQuery.loading && spaces.length === 0 ? <Tiny>{wikiMessage(locale, "loadingSpaces")}</Tiny> : null}
+          {spacesQuery.error ? <Callout tone="danger">{wikiMessage(locale, "failedToLoadSpaces", { message: spacesQuery.error.message })}</Callout> : null}
           {focusedSpace ? (
             <SpaceEditCard
               space={focusedSpace}
+              locale={locale}
               companyId={context.companyId}
               isOnlySpace={spaces.length === 1}
               refresh={spacesQuery.refresh}
@@ -6743,12 +6774,13 @@ function SpacesSettingsPanel({ context, description }: { context: { companyId: s
               }}
             />
           ) : (
-            <Callout>Pick a space from the list, or create one with the “Add space…” button.</Callout>
+            <Callout>{wikiMessage(locale, "noSpaceSelected")}</Callout>
           )}
         </div>
       </div>
       {createOpen && context.companyId ? (
         <CreateSpaceModal
+          locale={locale}
           companyId={context.companyId}
           existingSlugs={new Set(spaces.map((s) => s.slug))}
           onClose={() => setCreateOpen(false)}
@@ -6763,14 +6795,34 @@ function SpacesSettingsPanel({ context, description }: { context: { companyId: s
   );
 }
 
+function spaceStatusLabel(locale: WikiLocale, status: string): string {
+  if (status === "active") return wikiMessage(locale, "activeSpaceStatus");
+  if (status === "archived") return wikiMessage(locale, "archivedSpaceStatus");
+  return status;
+}
+
+function spaceTypeLabel(locale: WikiLocale, spaceType: string): string {
+  if (spaceType === "managed") return wikiMessage(locale, "managedSpaceType");
+  return spaceType;
+}
+
+function spaceAccessScopeLabel(locale: WikiLocale, accessScope: string): string {
+  if (accessScope === "shared") return wikiMessage(locale, "sharedAccessScope");
+  if (accessScope === "team") return wikiMessage(locale, "teamAccessScope");
+  if (accessScope === "personal") return wikiMessage(locale, "personalAccessScope");
+  return accessScope;
+}
+
 function SpaceEditCard({
   space,
+  locale,
   companyId,
   isOnlySpace,
   refresh,
   onArchived,
 }: {
   space: WikiSpace;
+  locale: WikiLocale;
   companyId: string | null;
   isOnlySpace: boolean;
   refresh: () => void;
@@ -6795,9 +6847,9 @@ function SpaceEditCard({
   const relativeRoot = folderStatusQuery.data?.relativeRoot ?? "";
   const settingsRecord = (space.settings ?? {}) as Record<string, unknown>;
   const folderModeLabel = space.folderMode === "managed_subfolder"
-    ? "New managed folder (under wiki root)"
+    ? wikiMessage(locale, "newManagedFolder")
     : space.folderMode === "existing_local_folder"
-      ? "Existing folder under wiki root"
+      ? wikiMessage(locale, "existingFolderUnderWikiRoot")
       : space.folderMode;
 
   async function saveName() {
@@ -6805,10 +6857,10 @@ function SpaceEditCard({
     setBusy(true);
     try {
       await updateSpace({ companyId, spaceSlug: space.slug, displayName: displayName.trim() });
-      toast({ tone: "success", title: "Display name updated" });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceNameUpdated") });
       refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Update failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "spaceUpdateFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -6819,10 +6871,10 @@ function SpaceEditCard({
     setFolderBusy(true);
     try {
       await bootstrapSpace({ companyId, spaceSlug: space.slug });
-      toast({ tone: "success", title: "Baseline restored", body: `Re-created the standard skeleton for ${space.displayName}.` });
+      toast({ tone: "success", title: wikiMessage(locale, "baselineRestored"), body: wikiMessage(locale, "baselineRestoredBody", { name: space.displayName }) });
       folderStatusQuery.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Bootstrap failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "bootstrapFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setFolderBusy(false);
     }
@@ -6830,17 +6882,17 @@ function SpaceEditCard({
 
   async function archive() {
     if (!companyId || isDefault || isOnlySpace || archiveBusy) return;
-    if (typeof window !== "undefined" && !window.confirm(`Archive ${space.displayName}? Pages stay on disk; you can restore later through the plugin API or by un-archiving from the database.`)) {
+    if (typeof window !== "undefined" && !window.confirm(wikiMessage(locale, "archiveConfirmation", { space: space.displayName }))) {
       return;
     }
     setArchiveBusy(true);
     try {
       await archiveSpace({ companyId, spaceSlug: space.slug });
-      toast({ tone: "success", title: "Space archived", body: `${space.displayName} hidden from the sidebar.` });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceArchived"), body: wikiMessage(locale, "archiveSuccessBody", { space: space.displayName }) });
       refresh();
       onArchived();
     } catch (err) {
-      toast({ tone: "error", title: "Archive failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "archiveFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setArchiveBusy(false);
     }
@@ -6855,81 +6907,79 @@ function SpaceEditCard({
               <FolderIcon size={16} />
               <span>{space.displayName}</span>
               <Badge tone="default" style={{ fontSize: 10 }}>{space.slug}</Badge>
-              <Badge tone={space.status === "active" ? "running" : "default"} style={{ fontSize: 10 }}>{space.status}</Badge>
+              <Badge tone={space.status === "active" ? "running" : "default"} style={{ fontSize: 10 }}>{spaceStatusLabel(locale, space.status)}</Badge>
             </span>
           }
           right={
             <span style={{ fontSize: 11, color: tokens.muted }}>
-              {space.spaceType} · {space.accessScope}
+              {spaceTypeLabel(locale, space.spaceType)} · {spaceAccessScopeLabel(locale, space.accessScope)}
             </span>
           }
         />
         <CardBody>
           <Tiny>
-            Stored under <Mono>{relativeRoot || (isDefault ? "(wiki root)" : `spaces/${space.slug}/`)}</Mono> within the configured wiki root.
+            {wikiMessage(locale, "spaceStoredUnder", { path: relativeRoot || (isDefault ? wikiMessage(locale, "wikiRootPath") : `spaces/${space.slug}/`) })}
           </Tiny>
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Identity" />
+        <CardHeader title={wikiMessage(locale, "identity")} />
         <CardBody>
           <div style={{ display: "grid", gap: 12 }}>
-            <FormField label="Display name">
+            <FormField label={wikiMessage(locale, "displayNameLabel")}>
               <TextInput value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={120} />
             </FormField>
-            <FormField label="Slug" help="Slug is locked once a space has indexed pages. Contact platform team to migrate.">
+            <FormField label={wikiMessage(locale, "slugLabel")} help={wikiMessage(locale, "spaceSlugLockedHelp")}>
               <TextInput value={space.slug} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", opacity: 0.7 }} />
             </FormField>
-            <FormField label="Type" help="(Cloud connectors coming soon)">
-              <TextInput value={space.spaceType === "managed" ? "Folder" : space.spaceType} disabled style={{ opacity: 0.7 }} />
+            <FormField label={wikiMessage(locale, "typeLabel")} help={`(${wikiMessage(locale, "cloudConnectorsComingSoon")})`}>
+              <TextInput value={spaceTypeLabel(locale, space.spaceType)} disabled style={{ opacity: 0.7 }} />
             </FormField>
             <div>
-              <Button variant="primary" size="sm" onClick={saveName} disabled={busy || displayName.trim() === space.displayName} loading={busy}>Save name</Button>
+              <Button variant="primary" size="sm" onClick={saveName} disabled={busy || displayName.trim() === space.displayName} loading={busy}>{wikiMessage(locale, "saveName")}</Button>
             </div>
           </div>
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Folder source & health" />
+        <CardHeader title={wikiMessage(locale, "folderSourceHealth")} />
         <CardBody>
           <div style={{ display: "grid", gap: 12 }}>
-            <FormField label="Mode">
+            <FormField label={wikiMessage(locale, "modeLabel")}>
               <TextInput value={folderModeLabel} disabled style={{ opacity: 0.7 }} />
             </FormField>
-            <FormField label="Path">
-              <TextInput value={folder?.path ?? folder?.realPath ?? relativeRoot ?? "(unconfigured)"} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", opacity: 0.7 }} />
+            <FormField label={wikiMessage(locale, "pathLabel")}>
+              <TextInput value={folder?.path ?? folder?.realPath ?? relativeRoot ?? wikiMessage(locale, "unconfiguredPath")} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", opacity: 0.7 }} />
             </FormField>
-            {folderStatusQuery.loading ? <Tiny>Loading folder status…</Tiny> : null}
+            {folderStatusQuery.loading ? <Tiny>{wikiMessage(locale, "loadingFolderStatus")}</Tiny> : null}
             {folderStatusQuery.error ? <Callout tone="danger">{folderStatusQuery.error.message}</Callout> : null}
-            {folder ? <SpaceFolderHealthChecklist folder={folder} /> : null}
+            {folder ? <SpaceFolderHealthChecklist folder={folder} locale={locale} /> : null}
             <div>
-              <Button size="sm" onClick={recreateBaseline} loading={folderBusy}>Recreate baseline</Button>
+              <Button size="sm" onClick={recreateBaseline} loading={folderBusy}>{wikiMessage(locale, "recreateBaseline")}</Button>
             </div>
           </div>
         </CardBody>
       </Card>
 
-      <PaperclipIngestionSpaceCard companyId={companyId} space={space} refresh={refresh} />
+      <PaperclipIngestionSpaceCard companyId={companyId} space={space} locale={locale} refresh={refresh} />
 
       <Card style={{ opacity: 0.56 }}>
-        <CardHeader title="Access" />
+        <CardHeader title={wikiMessage(locale, "accessLabel")} />
         <CardBody>
           <div aria-disabled="true" style={{ display: "grid", gap: 10 }}>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <Badge tone="default" style={{ fontSize: 10 }}>{space.accessScope}</Badge>
-              <Badge tone="default" style={{ fontSize: 10 }}>Coming soon</Badge>
+              <Badge tone="default" style={{ fontSize: 10 }}>{spaceAccessScopeLabel(locale, space.accessScope)}</Badge>
+              <Badge tone="default" style={{ fontSize: 10 }}>{wikiMessage(locale, "comingSoon")}</Badge>
             </div>
             <Tiny>
-              Access scope is stored as metadata only. <Mono>shared</Mono>, <Mono>team</Mono>, and{" "}
-              <Mono>personal</Mono> are saved on the space record but do not currently enforce
-              read/write permissions, and they do not change which Paperclip sources reach this space.
+              {wikiMessage(locale, "accessScopeMetadataOnly")}
             </Tiny>
-            <FormField label="Owner user id">
+            <FormField label={wikiMessage(locale, "ownerUserId")}>
               <TextInput value={(settingsRecord.ownerUserHint as string | undefined) ?? space.ownerUserId ?? ""} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }} />
             </FormField>
-            <FormField label="Owner team key">
+            <FormField label={wikiMessage(locale, "ownerTeamKey")}>
               <TextInput value={space.teamKey ?? ""} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }} />
             </FormField>
           </div>
@@ -6938,16 +6988,16 @@ function SpaceEditCard({
 
       <Card style={{ borderColor: "oklch(0.5 0.18 25)" }}>
         <CardHeader
-          title={<span style={{ color: "oklch(0.78 0.18 25)" }}>Danger zone</span>}
+          title={<span style={{ color: "oklch(0.78 0.18 25)" }}>{wikiMessage(locale, "dangerZone")}</span>}
         />
         <CardBody>
           <div style={{ display: "grid", gap: 8 }}>
             <Tiny>
               {isDefault
-                ? "The default space cannot be archived because new operations and tools fall back to it."
+                ? wikiMessage(locale, "defaultSpaceArchiveReason")
                 : isOnlySpace
-                  ? "This is the only space in the company. Create another before archiving this one."
-                  : "Archiving hides the space from the sidebar and pauses scheduled lint/index. Pages remain on disk."}
+                  ? wikiMessage(locale, "onlySpaceArchiveReason")
+                  : wikiMessage(locale, "archiveSpaceReason")}
             </Tiny>
             <div>
               <Button
@@ -6956,9 +7006,9 @@ function SpaceEditCard({
                 onClick={archive}
                 disabled={isDefault || isOnlySpace || archiveBusy}
                 loading={archiveBusy}
-                title={isDefault ? "Default space cannot be archived" : isOnlySpace ? "At least one space must remain" : undefined}
+                title={isDefault ? wikiMessage(locale, "defaultSpaceCannotArchive") : isOnlySpace ? wikiMessage(locale, "oneSpaceMustRemain") : undefined}
               >
-                Archive this space
+                {wikiMessage(locale, "archiveThisSpace")}
               </Button>
             </div>
           </div>
@@ -6968,16 +7018,20 @@ function SpaceEditCard({
   );
 }
 
-function paperclipIngestionStateBadge(data: PaperclipIngestionProfileData | null): { tone: Tone; label: string } {
-  if (!data) return { tone: "default", label: "Loading" };
-  if (data.effectiveState === "policy_blocked") return { tone: "blocked", label: "Locked" };
-  if (data.effectiveState === "pending_approval") return { tone: "queued", label: "Pending approval" };
-  if (data.effectiveState === "enabled_no_scopes") return { tone: "failed", label: "Misconfigured" };
-  if (data.effectiveState === "enabled") return { tone: "running", label: `On · ${data.profile.sourceScopes.length} source${data.profile.sourceScopes.length === 1 ? "" : "s"}` };
-  return { tone: "default", label: data.historicalPageCount > 0 ? `Off · ${data.historicalPageCount} historical pages` : "Off" };
+function paperclipIngestionStateBadge(data: PaperclipIngestionProfileData | null, locale: WikiLocale): { tone: Tone; label: string } {
+  if (!data) return { tone: "default", label: wikiMessage(locale, "profileLoadingState") };
+  if (data.effectiveState === "policy_blocked") return { tone: "blocked", label: wikiMessage(locale, "profileLockedState") };
+  if (data.effectiveState === "pending_approval") return { tone: "queued", label: wikiMessage(locale, "profilePendingApproval") };
+  if (data.effectiveState === "enabled_no_scopes") return { tone: "failed", label: wikiMessage(locale, "profileMisconfigured") };
+  if (data.effectiveState === "enabled") {
+    const sourceCount = data.profile.sourceScopes.length;
+    const sourceLabel = wikiMessage(locale, sourceCount === 1 ? "sourcesOne" : "sourcesMany", { count: sourceCount });
+    return { tone: "running", label: wikiMessage(locale, "profileOn", { sources: sourceLabel }) };
+  }
+  return { tone: "default", label: wikiMessage(locale, "profileOff") };
 }
 
-function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId: string | null; space: WikiSpace; refresh: () => void }) {
+function PaperclipIngestionSpaceCard({ companyId, space, locale, refresh }: { companyId: string | null; space: WikiSpace; locale: WikiLocale; refresh: () => void }) {
   const profileQuery = usePaperclipIngestionProfile(companyId, space.slug);
   const updateProfile = usePluginAction("update-paperclip-ingestion-profile");
   const toast = usePluginToast();
@@ -6989,7 +7043,7 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
     setDraft(data?.profile ?? null);
   }, [data?.space.slug, data?.profile]);
 
-  const badge = paperclipIngestionStateBadge(data);
+  const badge = paperclipIngestionStateBadge(data, locale);
   const locked = data?.effectiveState === "policy_blocked";
   const sourceScope = draft?.sourceScopes[0];
   const activeProjectLimit = sourceScope?.kind === "active_projects" ? sourceScope.limit : 3;
@@ -7020,11 +7074,11 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
     setBusy(true);
     try {
       await updateProfile({ companyId, spaceSlug: space.slug, profile: draft });
-      toast({ tone: "success", title: "Paperclip ingestion profile saved", body: `${space.displayName} will use the selected Paperclip sources.` });
+      toast({ tone: "success", title: wikiMessage(locale, "profileSaved"), body: wikiMessage(locale, "profileSavedBody", { space: space.displayName }) });
       profileQuery.refresh();
       refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Profile save failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "profileSaveFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -7038,24 +7092,24 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
       />
       <CardBody>
         <div style={{ display: "grid", gap: 12 }}>
-          {profileQuery.loading && !data ? <Tiny>Loading Paperclip ingestion profile…</Tiny> : null}
+          {profileQuery.loading && !data ? <Tiny>{wikiMessage(locale, "profileLoading")}</Tiny> : null}
           {profileQuery.error ? <Callout tone="danger">{profileQuery.error.message}</Callout> : null}
           {locked ? (
             <Callout tone="warn">
-              Locked — host permissions pending. Paperclip ingestion stays disabled on team and personal spaces until LLM Wiki enforces read/write permissions for non-shared spaces.
+              {wikiMessage(locale, "profileLockedMessage")}
             </Callout>
           ) : null}
           {data && data.historicalPageCount > 0 && data.effectiveState === "disabled" ? (
-            <Callout>
-              Off · {data.historicalPageCount} historical Paperclip page{data.historicalPageCount === 1 ? "" : "s"} still in this space. Disabling stops new observations but does not delete prior wiki pages.
-            </Callout>
+            <Callout>{wikiMessage(locale, "profileOffHistoricalPages", {
+              pages: wikiMessage(locale, data.historicalPageCount === 1 ? "historicalPagesOne" : "historicalPagesMany", { count: data.historicalPageCount }),
+            })}</Callout>
           ) : null}
           {data && data.overlapCount > 0 ? (
-            <Callout>
-              {data.overlapCount} source overlap{data.overlapCount === 1 ? "" : "s"} with another enabled space. Duplicate destinations are allowed, but they are explicit.
-            </Callout>
+            <Callout>{wikiMessage(locale, "profileSourceOverlap", {
+              overlaps: wikiMessage(locale, data.overlapCount === 1 ? "overlapOne" : "overlapMany", { count: data.overlapCount }),
+            })}</Callout>
           ) : null}
-          {emptyScopes ? <Callout tone="warn">Pick at least one source scope before saving.</Callout> : null}
+          {emptyScopes ? <Callout tone="warn">{wikiMessage(locale, "pickSourceScope")}</Callout> : null}
           {draft ? (
             <>
               <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13 }}>
@@ -7071,28 +7125,28 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
                   })}
                 />
                 <span>
-                  Enable Paperclip ingestion for this destination space
-                  <Tiny style={{ display: "block" }}>Future Paperclip issue, comment, and document events can advance cursors in {space.displayName}. Existing pages are preserved when this is turned off.</Tiny>
+                  {wikiMessage(locale, "enablePaperclipIngestion")}
+                  <Tiny style={{ display: "block" }}>{wikiMessage(locale, "enablePaperclipIngestionHelp", { space: space.displayName })}</Tiny>
                 </span>
               </label>
               <div style={{ display: "grid", gap: 8 }}>
-                <strong style={{ fontSize: 13 }}>Source scope</strong>
+                <strong style={{ fontSize: 13 }}>{wikiMessage(locale, "sourceScope")}</strong>
                 <label style={{ display: "grid", gap: 6, maxWidth: 260 }}>
-                  <Tiny>Recently active projects (auto)</Tiny>
+                  <Tiny>{wikiMessage(locale, "recentlyActiveProjectsAuto")}</Tiny>
                   <TextInput
                     value={String(activeProjectLimit)}
                     disabled={locked || busy}
                     onChange={(event) => setActiveProjectsLimit(Number(event.currentTarget.value))}
                   />
                 </label>
-                <Tiny>Specific projects, issue trees, and company-wide ingestion use the same profile API; this first editor keeps the default auto-scope path visible and capped.</Tiny>
+                <Tiny>{wikiMessage(locale, "sourceScopeEditorHelp")}</Tiny>
               </div>
               <div style={{ display: "grid", gap: 8 }}>
-                <strong style={{ fontSize: 13 }}>Source kinds</strong>
+                <strong style={{ fontSize: 13 }}>{wikiMessage(locale, "sourceKinds")}</strong>
                 {([
-                  ["issues", "Issues"],
-                  ["comments", "Comments"],
-                  ["documents", "Documents"],
+                  ["issues", "issues"],
+                  ["comments", "comments"],
+                  ["documents", "documents"],
                 ] as const).map(([key, label]) => (
                   <label key={key} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
                     <input
@@ -7101,21 +7155,24 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
                       disabled={locked || busy}
                       onChange={(event) => setSourceKind(key, event.currentTarget.checked)}
                     />
-                    {label}
+                    {wikiMessage(locale, label)}
                   </label>
                 ))}
-                <Tiny>Attachments — locked, metadata only; no file contents. Future extraction needs separate review.</Tiny>
-                <Tiny>Work products — locked, metadata only; no artifact contents.</Tiny>
+                <Tiny>{wikiMessage(locale, "attachmentsLocked")}</Tiny>
+                <Tiny>{wikiMessage(locale, "workProductsLocked")}</Tiny>
               </div>
               <div style={{ display: "grid", gap: 8 }}>
-                <strong style={{ fontSize: 13 }}>Caps</strong>
+                <strong style={{ fontSize: 13 }}>{wikiMessage(locale, "caps")}</strong>
                 <Tiny>
-                  Defaults: {draft.cursor.maxWindowCharacters.toLocaleString()} chars/window · {draft.cursor.maxCharactersPerSource.toLocaleString()} chars/source.
+                  {wikiMessage(locale, "profileCapsDefault", {
+                    window: draft.cursor.maxWindowCharacters.toLocaleString(locale),
+                    source: draft.cursor.maxCharactersPerSource.toLocaleString(locale),
+                  })}
                 </Tiny>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <Button size="sm" variant="primary" onClick={save} loading={busy} disabled={!canSave || emptyScopes}>Save Paperclip profile</Button>
-                <Button size="sm" variant="ghost" onClick={() => setDraft(data?.profile ?? null)} disabled={busy}>Revert</Button>
+                <Button size="sm" variant="primary" onClick={save} loading={busy} disabled={!canSave || emptyScopes}>{wikiMessage(locale, "savePaperclipProfile")}</Button>
+                <Button size="sm" variant="ghost" onClick={() => setDraft(data?.profile ?? null)} disabled={busy}>{wikiMessage(locale, "revertChanges")}</Button>
               </div>
             </>
           ) : null}
@@ -7125,24 +7182,24 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
   );
 }
 
-function SpaceFolderHealthChecklist({ folder }: { folder: FolderStatus }) {
+function SpaceFolderHealthChecklist({ folder, locale }: { folder: FolderStatus; locale: WikiLocale }) {
   const items = [
-    { key: "readable", label: "Folder readable", ok: folder.readable },
-    { key: "writable", label: "Folder writable", ok: folder.writable },
+    { key: "readable", label: wikiMessage(locale, "spaceFolderReadable"), ok: folder.readable },
+    { key: "writable", label: wikiMessage(locale, "spaceFolderWritable"), ok: folder.writable },
     ...folder.requiredDirectories.map((dir) => ({
       key: `dir-${dir}`,
-      label: `${dir}/ present`,
+      label: wikiMessage(locale, "folderPresent", { name: `${dir}/` }),
       ok: !folder.missingDirectories.includes(dir),
     })),
     ...folder.requiredFiles.map((file) => ({
       key: `file-${file}`,
-      label: `${file} present`,
+      label: wikiMessage(locale, "folderPresent", { name: file }),
       ok: !folder.missingFiles.includes(file),
     })),
   ];
 
   return (
-    <div role="list" aria-label="Space folder health checklist" style={{ position: "relative", display: "grid", gap: 0, padding: "2px 0" }}>
+    <div role="list" aria-label={wikiMessage(locale, "spaceFolderHealthChecklist")} style={{ position: "relative", display: "grid", gap: 0, padding: "2px 0" }}>
       {items.length > 1 ? (
         <span
           aria-hidden

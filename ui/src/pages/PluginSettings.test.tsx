@@ -241,6 +241,123 @@ describe("PluginSettings", () => {
     });
   });
 
+  it("localizes the managed LLM Wiki folder metadata only for the matching bundled package", async () => {
+    const declaration = {
+      folderKey: "wiki-root",
+      displayName: "Wiki root",
+      description: "Company-scoped local folder that stores raw sources, wiki pages, Paperclip project standups under wiki/projects/, AGENTS.md, IDEA.md, wiki/index.md, and wiki/log.md.",
+      access: "readWrite" as const,
+      requiredDirectories: ["raw", "wiki", "wiki/sources"],
+      requiredFiles: ["AGENTS.md", "IDEA.md", "wiki/index.md", "wiki/log.md"],
+    };
+    const bundlePath = "/app/packages/plugins/plugin-llm-wiki";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      packageName: "@paperclipai/plugin-llm-wiki",
+      packagePath: bundlePath,
+      status: "ready",
+      manifestJson: {
+        id: "paperclipai.plugin-llm-wiki",
+        displayName: "LLM Wiki",
+        version: "0.1.0",
+        description: "Local-file LLM Wiki plugin.",
+        author: "Paperclip",
+        capabilities: ["local.folders"],
+        localFolders: [declaration],
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      packageName: "@paperclipai/plugin-llm-wiki",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      displayName: "LLM Wiki",
+      description: "Local-file LLM Wiki plugin.",
+      localPath: bundlePath,
+      tag: "first-party",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    mockPluginsApi.listLocalFolders.mockResolvedValue({
+      pluginId: "plugin-1",
+      companyId: "company-1",
+      declarations: [declaration],
+      folders: [folderStatus({
+        requiredDirectories: declaration.requiredDirectories,
+        requiredFiles: declaration.requiredFiles,
+        missingDirectories: declaration.requiredDirectories,
+        missingFiles: declaration.requiredFiles,
+      })],
+    });
+    await i18n.changeLanguage("pt-BR");
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain("Pasta raiz da Wiki");
+    expect(container.textContent).toContain("Pasta local da organização que armazena fontes brutas");
+    expect(container.textContent).toContain("wiki-root");
+    expect(container.textContent).toContain("wiki/index.md");
+    expect(container.textContent).toContain("AGENTS.md");
+    expect(mockPluginsApi.listBundled).toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("preserves managed-folder metadata when an external package reuses the LLM Wiki plugin key", async () => {
+    const declaration = {
+      folderKey: "wiki-root",
+      displayName: "Vendor Wiki root",
+      description: "Vendor-owned folder metadata stays in its source language.",
+      access: "readWrite" as const,
+      requiredDirectories: ["raw", "wiki"],
+      requiredFiles: ["WIKI.md", "index.md"],
+    };
+    const externalPath = "/custom/vendor/plugin-llm-wiki";
+    const bundledPath = "/app/packages/plugins/plugin-llm-wiki";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      packageName: "vendor/compatible-wiki",
+      packagePath: externalPath,
+      status: "ready",
+      manifestJson: {
+        id: "paperclipai.plugin-llm-wiki",
+        displayName: "Vendor Wiki",
+        version: "1.0.0",
+        description: "External plugin description.",
+        author: "Vendor",
+        capabilities: ["local.folders"],
+        localFolders: [declaration],
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      packageName: "@paperclipai/plugin-llm-wiki",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      displayName: "LLM Wiki",
+      description: "Local-file LLM Wiki plugin.",
+      localPath: bundledPath,
+      tag: "first-party",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    mockPluginsApi.listLocalFolders.mockResolvedValue({
+      pluginId: "plugin-1",
+      companyId: "company-1",
+      declarations: [declaration],
+      folders: [folderStatus()],
+    });
+    await i18n.changeLanguage("pt-BR");
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain("Vendor Wiki root");
+    expect(container.textContent).toContain("Vendor-owned folder metadata stays in its source language.");
+    expect(container.textContent).not.toContain("Pasta raiz da Wiki");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("hides local folders when the instance runs agents only in the platform-managed environment", async () => {
     const declaration = wikiFolderDeclaration();
     mockPluginsApi.get.mockResolvedValue(basePlugin({

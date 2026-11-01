@@ -3916,6 +3916,12 @@
         "name": "Sandbox CreateOS",
         "description": "Sandboxes do CreateOS com saída de comandos ao vivo e reutilização opcional com pausa e retomada."
       }
+    },
+    "localFolders": {
+      "llmWikiRoot": {
+        "name": "Pasta raiz da Wiki",
+        "description": "Pasta local da organização que armazena fontes brutas, páginas da Wiki, sínteses dos projetos do Paperclip em wiki/projects/, AGENTS.md, IDEA.md, wiki/index.md e wiki/log.md."
+      }
     }
   },
   "pluginManager": {

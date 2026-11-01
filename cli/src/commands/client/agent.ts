@@ -441,11 +441,17 @@ export function registerAgentCommands(program: Command): void {
           try {
             const ctx = resolveCommandContext(opts);
             const result = await ctx.api.post(`${apiPath`/api/agents/${agentId}`}/${path}`, {});
-            if (name === "pause" || name === "resume") {
+            if (name === "pause" || name === "resume" || name === "approve" || name === "terminate") {
               if (ctx.json) {
                 printOutput(result, { json: true });
               } else {
-                const message = name === "pause" ? "agentPauseDone" : "agentResumeDone";
+                const message = name === "pause"
+                  ? "agentPauseDone"
+                  : name === "resume"
+                    ? "agentResumeDone"
+                    : name === "approve"
+                      ? "agentApproveDone"
+                      : "agentTerminateDone";
                 console.log(adminOperationMessage(message, { agentId }));
                 printOutput(result, { json: false });
               }
