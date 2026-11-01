@@ -3395,3 +3395,29 @@ verificam fontes e estrutura, não a qualidade semântica: revisão humana e smo
 operacional do guia OpenClaw permanecem pendentes.
 
 Checkpoint OpenSpec reconciliado: **295/312 tarefas**.
+
+## Reabertura da execução — 2026-11-01
+
+A auditoria do item 3.11 ampliou o escopo de plugins próprios para incluir o locale no contexto do SDK, páginas/fallbacks hospedeiros, Workspace Changes, LLM Wiki, exemplos instaláveis e metadata dos sandbox providers. O item foi decomposto em 12 lotes testáveis em `tasks.md`; o ledger foi ampliado e mantém esse grupo parcial. A inspeção identificou que `PluginHostContext` não expõe o locale atual.
+
+No checkpoint inicial desta retomada, `company import` (4.3g) estava em andamento e ainda não entrava no total concluído. PluginSettings e a propagação reativa do locale do host foram concluídos em 3.11b/a; a verificação posterior de 4.3g está registrada abaixo. Checkpoint antes da inclusão de 4.3g: **295/324 tarefas**.
+
+### PluginHostContext e página de configurações — 3.11a/b
+
+- `pnpm exec vitest run --config vitest.config.ts ui/src/plugins/bridge.test.ts ui/src/plugins/slots.test.ts ui/src/plugins/outlet-errors.test.tsx ui/src/components/PluginAppShellOverlays.test.tsx packages/plugins/sdk/tests/ui-host-context.test.ts` — 5 arquivos, 29/29 testes.
+- `pnpm --filter @paperclipai/plugin-sdk typecheck` e `pnpm --filter @paperclipai/ui typecheck` — passaram.
+- `pnpm exec vitest run ui/src/pages/PluginSettings.test.tsx ui/src/i18n/locale-validation.test.ts` — 2 arquivos, 25/25 testes.
+- `pnpm check:token-gates` — passou; gates 1–4 limpos e sincronização do Cliplab confirmada.
+- `git diff --check` e parse dos catálogos `en.json`/`pt-BR.json` — passaram.
+
+O contexto do plugin agora recebe `locale` em slots React/Web Component, páginas, overlays e launchers; a mudança de idioma atualiza o contexto sem desmontar o plugin. O contrato ficou documentado em `doc/plugins/PLUGIN_SPEC.md` e `packages/plugins/sdk/README.md`. `PluginSettings` localiza cópia host-owned, placeholder, estados e gatilhos de execução conhecidos (`schedule`, `manual`, `retry`); desconhecidos, IDs/valores técnicos, metadata e diagnósticos de plugins permanecem originais. Uma revisão independente encontrou o gatilho cru, que foi corrigido e validado novamente em PT-BR/en. O item 3.11 continua parcial: manager, fallbacks, plugins distribuídos, exemplos e metadata ainda pendem.
+
+Checkpoint após essas duas fatias concluídas e com 4.3g registrada como pendente: **297/325 tarefas**.
+
+### Importação de empresas na CLI — 4.3g
+
+- `pnpm exec vitest run cli/src/__tests__/company.test.ts cli/src/__tests__/company-import-localization.test.ts cli/src/__tests__/company-import-transfer.test.ts cli/src/__tests__/localized-admin-help.test.ts` — 4 arquivos, 77/77 testes passaram.
+- Typecheck estrito dos sete arquivos CLI alterados — passou. O comando completo `pnpm --filter @paperclipai/cli typecheck` terminou com exit 137 por limite de memória.
+- `git diff --check` — passou.
+
+A fatia localiza ajuda, menu interativo, preview, confirmação, progresso, resultados e erros em PT-BR/en. O JSON do preview e do apply permaneceu idêntico entre idiomas, flags e valores permaneceram estáveis, erros sob `--json` mantêm stderr/código de saída neutros, e as mensagens de transferência já aplicada preservam a organização e o prefixo. Checkpoint: **298/325 tarefas**.

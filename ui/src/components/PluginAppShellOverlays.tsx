@@ -3,7 +3,7 @@ import { useCompany } from "@/context/CompanyContext";
 import { useDialogState } from "@/context/DialogContext";
 import { useLocation } from "@/lib/router";
 import { isOnboardingPath } from "@/lib/onboarding-route";
-import type { PluginHostContext } from "@/plugins/bridge";
+import { usePluginHostLocale, type PluginHostContext } from "@/plugins/bridge";
 import { PluginSlotMount, usePluginSlots, type PluginSlotContext } from "@/plugins/slots";
 
 function AppShellEntries({ context }: { context: PluginSlotContext }) {
@@ -38,6 +38,7 @@ export function PluginAppShellOverlays({ localTrusted = false }: { localTrusted?
   const { selectedCompanyId, selectedCompany, loading } = useCompany();
   const { onboardingOpen, onboardingRouteDismissed } = useDialogState();
   const { pathname } = useLocation();
+  const locale = usePluginHostLocale();
   // Local-trusted instances intentionally have no login requirement. Still
   // prefer any real account and wait for identity resolution so account changes
   // cannot reuse the prior account's in-memory plugin state.
@@ -45,6 +46,7 @@ export function PluginAppShellOverlays({ localTrusted = false }: { localTrusted?
   const onboardingVisible = onboardingOpen || (!onboardingRouteDismissed && isOnboardingPath(pathname));
   if (!identity || loading || onboardingVisible) return null;
   const context: PluginSlotContext & PluginHostContext = {
+    locale,
     companyId: selectedCompanyId,
     companyPrefix: selectedCompany?.issuePrefix ?? null,
     projectId: null, entityId: null, entityType: null, parentEntityId: null,

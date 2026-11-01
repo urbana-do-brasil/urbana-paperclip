@@ -3800,6 +3800,158 @@
     "plugins": "Plugins",
     "adapters": "Adaptadores"
   },
+  "pluginSettings": {
+    "loading": "Carregando detalhes do plugin...",
+    "back": "Voltar para plugins",
+    "breadcrumb": {
+      "pluginDetails": "Detalhes do plugin"
+    },
+    "tabs": {
+      "configuration": "Configuração",
+      "status": "Status"
+    },
+    "about": {
+      "title": "Sobre",
+      "description": "Descrição",
+      "noDescription": "Nenhuma descrição fornecida.",
+      "author": "Autor",
+      "categories": "Categorias",
+      "none": "Nenhuma"
+    },
+    "settings": {
+      "title": "Configurações",
+      "noSettings": "Este plugin não precisa de configurações."
+    },
+    "environment": {
+      "configureFromEnvironments": "Configure este plugin em Configurações → Ambientes.",
+      "driverSettingsDescription": "{{driver}} registra as configurações do ambiente de execução nessa página, mantendo o destino de execução no escopo da instância enquanto os vínculos de segredos continuam usando o contexto da organização selecionada.",
+      "thisPlugin": "Este plugin",
+      "openEnvironments": "Abrir ambientes"
+    },
+    "status": {
+      "runtimeDashboard": "Painel do runtime",
+      "runtimeDashboardDescription": "Processo de trabalho, tarefas agendadas e entregas de webhook",
+      "workerProcess": "Processo de trabalho",
+      "statusLabel": "Status",
+      "uptime": "Tempo ativo",
+      "pendingRpcs": "RPCs pendentes",
+      "crashes": "Falhas",
+      "crashCount": "{{consecutive}} consecutivas / {{total}} no total",
+      "lastCrash": "Última falha",
+      "noWorker": "Nenhum processo de trabalho registrado.",
+      "recentJobRuns": "Execuções recentes de tarefas",
+      "noJobRuns": "Ainda não há execuções de tarefas registradas.",
+      "recentWebhookDeliveries": "Entregas recentes de webhook",
+      "noWebhookDeliveries": "Ainda não há entregas de webhook registradas.",
+      "lastChecked": "Verificado por último:",
+      "runtimeUnavailable": "Os diagnósticos do runtime estão indisponíveis no momento.",
+      "recentLogs": "Logs recentes",
+      "logEntries_one": "Última entrada de log: {{count}}",
+      "logEntries_many": "Últimas entradas de log: {{count}}",
+      "logEntries_other": "Últimas entradas de log: {{count}}",
+      "healthStatus": "Status de integridade",
+      "checkingHealth": "Verificando integridade...",
+      "overall": "Geral",
+      "healthChecksWhenReady": "As verificações de integridade começam quando o plugin estiver pronto.",
+      "lifecycle": "Ciclo de vida",
+      "details": "Detalhes",
+      "pluginId": "ID do plugin",
+      "pluginKey": "Chave do plugin",
+      "npmPackage": "Pacote NPM",
+      "version": "Versão",
+      "permissions": "Permissões",
+      "noSpecialPermissions": "Nenhuma permissão especial solicitada.",
+      "lifecycleValues": {
+        "installed": "Instalado",
+        "ready": "Pronto",
+        "disabled": "Desativado",
+        "error": "Com erro",
+        "upgrade_pending": "Atualização pendente",
+        "uninstalled": "Desinstalado"
+      },
+      "workerValues": {
+        "stopped": "Parado",
+        "starting": "Iniciando",
+        "running": "Em execução",
+        "stopping": "Parando",
+        "crashed": "Interrompido por falha",
+        "backoff": "Aguardando nova tentativa"
+      },
+      "jobRunValues": {
+        "pending": "Pendente",
+        "queued": "Na fila",
+        "running": "Em execução",
+        "succeeded": "Concluída",
+        "failed": "Falhou",
+        "cancelled": "Cancelada"
+      },
+      "jobTriggerValues": {
+        "schedule": "Agendado",
+        "manual": "Manual",
+        "retry": "Nova tentativa"
+      },
+      "webhookDeliveryValues": {
+        "pending": "Pendente",
+        "success": "Concluída",
+        "failed": "Falhou"
+      }
+    },
+    "localFolders": {
+      "selectOrganization": "Selecione uma organização para configurar as pastas locais deste plugin.",
+      "title": "Pastas locais",
+      "loadFailed": "Não foi possível carregar as configurações da pasta local.",
+      "loading": "Carregando pastas locais...",
+      "saved": "Pasta local salva.",
+      "savedNeedsAttention": "Pasta local salva, mas a validação ainda requer atenção.",
+      "saveFailed": "Não foi possível salvar a pasta local.",
+      "pathRequired": "Informe o caminho da pasta local.",
+      "absolutePathRequired": "A pasta local precisa usar um caminho absoluto completo.",
+      "healthy": "Íntegra",
+      "needsAttention": "Requer atenção",
+      "readWrite": "Leitura e gravação",
+      "readOnly": "Somente leitura",
+      "configured": "Configurada",
+      "readable": "Legível",
+      "writable": "Gravável",
+      "yes": "Sim",
+      "no": "Não",
+      "notRequested": "Não solicitada",
+      "configuredPath": "Caminho configurado",
+      "pathLabel": "Caminho da pasta local",
+      "pathPlaceholder": "/caminho/absoluto/da/pasta",
+      "save": "Salvar",
+      "validationProblems": "Problemas de validação",
+      "requiredDirectories": "Pastas obrigatórias",
+      "requiredFiles": "Arquivos obrigatórios",
+      "missingDirectories": "Pastas ausentes",
+      "missingFiles": "Arquivos ausentes",
+      "missingCount": "{{count}} ausentes",
+      "notInspected": "Não inspecionada",
+      "present": "Presente",
+      "noneDeclared": "Nenhum item declarado.",
+      "rootNotInspected": "A pasta raiz configurada não foi inspecionada."
+    },
+    "configuration": {
+      "selectOrganizationBeforeSaving": "Selecione uma organização antes de salvar a configuração do plugin.",
+      "saved": "Configuração salva.",
+      "saveFailed": "Não foi possível salvar a configuração.",
+      "selectOrganizationBeforeTesting": "Selecione uma organização antes de testar a configuração do plugin.",
+      "testPassed": "O teste da configuração foi aprovado.",
+      "testFailed": "O teste da configuração falhou.",
+      "loading": "Carregando configuração...",
+      "save": "Salvar configuração",
+      "saving": "Salvando...",
+      "test": "Testar configuração",
+      "testing": "Testando..."
+    },
+    "relativeTime": {
+      "justNow": "agora mesmo",
+      "seconds": "há {{count}} s",
+      "minutes": "há {{count}} min",
+      "hours": "há {{count}} h",
+      "days": "há {{count}} d"
+    }
+  },
   "instanceGeneral": {
     "loading": "Carregando configurações gerais...",
     "title": "Geral",

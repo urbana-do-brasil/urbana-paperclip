@@ -37,16 +37,20 @@ import type {
   PluginUiSlotEntityType,
   PluginUiSlotType,
 } from "@paperclipai/shared";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
 import { pluginsApi, type PluginUiContribution } from "@/api/plugins";
 import { authApi } from "@/api/auth";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import {
   PluginBridgeContext,
+  usePluginHostLocale,
   type PluginHostContext,
 } from "./bridge";
 
 export type PluginSlotContext = {
+  /** Effective host language exposed to plugin slot props and web components. */
+  locale?: SupportedLocale;
   companyId?: string | null;
   companyPrefix?: string | null;
   projectId?: string | null;
@@ -790,8 +794,10 @@ type PluginSlotMountProps = {
 function slotContextToHostContext(
   pluginSlotContext: PluginSlotContext,
   userId: string | null,
+  locale: PluginHostContext["locale"],
 ): PluginHostContext {
   return {
+    locale,
     companyId: pluginSlotContext.companyId ?? null,
     companyPrefix: pluginSlotContext.companyPrefix ?? null,
     projectId: pluginSlotContext.projectId ?? (pluginSlotContext.entityType === "project" ? pluginSlotContext.entityId ?? null : null),
@@ -812,10 +818,12 @@ function slotContextToHostContext(
 function PluginBridgeScope({
   pluginId,
   context,
+  locale,
   children,
 }: {
   pluginId: string;
   context: PluginSlotContext;
+  locale: PluginHostContext["locale"];
   children: ReactNode;
 }) {
   const { data: session } = useQuery({
@@ -823,7 +831,7 @@ function PluginBridgeScope({
     queryFn: () => authApi.getSession(),
   });
   const userId = session?.user?.id ?? session?.session?.userId ?? null;
-  const hostContext = useMemo(() => slotContextToHostContext(context, userId), [context, userId]);
+  const hostContext = useMemo(() => slotContextToHostContext(context, userId, locale), [context, userId, locale]);
   const value = useMemo(() => ({ pluginId, hostContext }), [pluginId, hostContext]);
 
   return (
@@ -842,6 +850,8 @@ export function PluginSlotMount({
   fallback,
 }: PluginSlotMountProps) {
   usePluginRegistrySubscription();
+  const locale = usePluginHostLocale();
+  const pluginContext = useMemo(() => ({ ...context, locale }), [context, locale]);
   const [, forceRerender] = useState(0);
   const component = resolveRegisteredComponent(slot);
 
@@ -873,10 +883,10 @@ export function PluginSlotMount({
   }
 
   if (component.kind === "react") {
-    const node = createElement(component.component, { ...componentProps, slot, context });
+    const node = createElement(component.component, { ...componentProps, slot, context: pluginContext });
     return (
       <PluginSlotErrorBoundary key={`${slot.pluginId}:${slot.pluginVersion}:${slot.id}`} slot={slot} className={className} fallback={fallback}>
-        <PluginBridgeScope pluginId={slot.pluginId} context={context}>
+        <PluginBridgeScope pluginId={slot.pluginId} context={context} locale={locale}>
           {className ? <div className={className}>{node}</div> : node}
         </PluginBridgeScope>
       </PluginSlotErrorBoundary>
@@ -890,7 +900,7 @@ export function PluginSlotMount({
       <PluginWebComponentMount
         tagName={component.tagName}
         slot={slot}
-        context={context}
+        context={pluginContext}
         className={className}
       />
     </PluginSlotErrorBoundary>

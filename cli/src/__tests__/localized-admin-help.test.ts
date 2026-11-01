@@ -57,16 +57,23 @@ describe("localized CLI help", () => {
       portuguese: "Exportar uma organização como pacote Markdown portátil",
       english: "Export a company into a portable markdown package",
     },
+    {
+      command: ["company", "import"],
+      portuguese: "Importar um pacote Markdown de organização a partir de um caminho local, URL ou GitHub",
+      english: "Import a portable markdown company package from local path, URL, or GitHub",
+    },
   ])("localizes help for $command", ({ command, portuguese, english }) => {
     const pt = help([...command, "--help", "--lang", "pt-BR"]);
     expect(pt.status).toBe(0);
-    expect(pt.stdout).toContain(portuguese);
-    expect(pt.stdout).toContain("Opções:");
+    const ptOutput = pt.stdout.replace(/\s+/g, " ");
+    expect(ptOutput).toContain(portuguese);
+    expect(ptOutput).toContain("Opções:");
 
     const en = help([...command, "--help", "--lang", "en"]);
     expect(en.status).toBe(0);
-    expect(en.stdout).toContain(english);
-    expect(en.stdout).toContain("Options:");
+    const enOutput = en.stdout.replace(/\s+/g, " ");
+    expect(enOutput).toContain(english);
+    expect(enOutput).toContain("Options:");
   }, 65_000);
 
   it("preserves command and option names while localizing descriptions", () => {
@@ -160,5 +167,36 @@ describe("localized CLI help", () => {
     expect(output).toContain("company,agents,projects,issues,tasks,skills");
     expect(output).toContain("--force");
     expect(output).toContain("Sobrescrever diretório de saída não vazio");
+  }, 35_000);
+
+  it("localizes company import options while preserving paths, flags, modes, and include values", () => {
+    const result = help(["company", "import", "--help", "--lang", "pt-BR"]);
+    const output = result.stdout.replace(/\s+/g, " ");
+    expect(result.status).toBe(0);
+    expect(output).toContain("paperclipai company import [options] <fromPathOrUrl>");
+    expect(output).toContain("fromPathOrUrl Caminho de origem ou URL");
+    expect(output).toContain("--include <values>");
+    expect(output).toContain("company,agents,projects,issues,tasks,skills");
+    expect(output).toContain("--target <mode> Modo de destino: new | existing");
+    expect(output).toContain("--company-id <id> ID da organização de destino existente");
+    expect(output).toContain("--collision <mode> Estratégia para conflitos: rename | skip | replace");
+    expect(output).toContain("--ref <value>");
+    expect(output).toContain("--yes");
+    expect(output).toContain("--dry-run");
+    expect(output).toContain("--json");
+  }, 35_000);
+
+  it.each([
+    ["preview", "Pré-visualizar uma importação segura pelo endpoint bruto da API"],
+    ["apply", "Aplicar uma importação segura pelo endpoint bruto da API"],
+  ])("localizes the raw company import %s endpoint help without changing its contract", (operation, description) => {
+    const result = help(["company", `import:${operation}`, "--help", "--lang", "pt-BR"]);
+    const output = result.stdout.replace(/\s+/g, " ");
+    expect(result.status).toBe(0);
+    expect(output).toContain(`paperclipai company import:${operation} [options] <companyId>`);
+    expect(output).toContain(description);
+    expect(output).toContain("--payload-json <json> Payload JSON");
+    expect(output).toContain("ID da organização");
+    expect(output).toContain("--json");
   }, 35_000);
 });

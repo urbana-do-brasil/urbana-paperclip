@@ -14,7 +14,6 @@ import type {
   CompanyPortabilityImportResult,
 } from "@paperclipai/shared";
 import {
-  buildAlreadyImportedMessage,
   companyImportTransferApplyPath,
   companyImportTransferPartPath,
   companyImportTransferPreviewPath,
@@ -25,8 +24,13 @@ import {
 import { getTelemetryClient, trackCompanyImported } from "../../telemetry.js";
 import { ApiRequestError, type PaperclipApiClient } from "../../client/http.js";
 import { openUrl } from "../../client/board-auth.js";
-import { adminOperationMessage, type AdminOperationMessageId } from "../../localization/admin-operations.js";
-import { cliMessage, isCliJsonRequested } from "../../localization/index.js";
+import {
+  adminOperationMessage,
+  companyImportCatalogMessage,
+  type AdminOperationMessageId,
+  type CompanyImportMessageId,
+} from "../../localization/admin-operations.js";
+import { cliMessage, getCliLocale, isCliJsonRequested } from "../../localization/index.js";
 import {
   binaryContentTypeByExtension,
   bytesToPortableFileEntry,
@@ -125,6 +129,14 @@ function companyExportMessage(
   return adminOperationMessage(id, values, isCliJsonRequested() ? "en" : undefined);
 }
 
+function companyImportMessage(
+  id: CompanyImportMessageId,
+  values: Record<string, string | number> = {},
+): string {
+  // Structured-mode failures stay locale-neutral, matching company export.
+  return companyImportCatalogMessage(id, values, isCliJsonRequested() ? "en" : undefined);
+}
+
 const DEFAULT_IMPORT_INCLUDE: CompanyPortabilityInclude = {
   company: true,
   agents: true,
@@ -133,17 +145,19 @@ const DEFAULT_IMPORT_INCLUDE: CompanyPortabilityInclude = {
   skills: true,
 };
 
-const IMPORT_INCLUDE_OPTIONS: Array<{
+function importIncludeOptions(): Array<{
   value: keyof CompanyPortabilityInclude;
   label: string;
   hint: string;
-}> = [
-  { value: "company", label: "Company", hint: "name, branding, and company settings" },
-  { value: "projects", label: "Projects", hint: "projects and workspace metadata" },
-  { value: "issues", label: "Tasks", hint: "tasks and recurring routines" },
-  { value: "agents", label: "Agents", hint: "agent records and org structure" },
-  { value: "skills", label: "Skills", hint: "company skill packages and references" },
-];
+}> {
+  return [
+    { value: "company", label: companyImportCatalogMessage("includeCompany"), hint: companyImportCatalogMessage("includeCompanyHint") },
+    { value: "projects", label: companyImportCatalogMessage("includeProjects"), hint: companyImportCatalogMessage("includeProjectsHint") },
+    { value: "issues", label: companyImportCatalogMessage("includeTasks"), hint: companyImportCatalogMessage("includeTasksHint") },
+    { value: "agents", label: companyImportCatalogMessage("includeAgents"), hint: companyImportCatalogMessage("includeAgentsHint") },
+    { value: "skills", label: companyImportCatalogMessage("includeSkills"), hint: companyImportCatalogMessage("includeSkillsHint") },
+  ];
+}
 
 const IMPORT_PREVIEW_SAMPLE_LIMIT = 6;
 const CURRENT_COMPANY_UNAVAILABLE_FALLBACK =
@@ -189,6 +203,7 @@ function normalizeSelector(input: string): string {
 function parseInclude(
   input: string | undefined,
   fallback: CompanyPortabilityInclude = DEFAULT_EXPORT_INCLUDE,
+  invalidMessage = "Invalid --include value. Use one or more of: company,agents,projects,issues,tasks,skills",
 ): CompanyPortabilityInclude {
   if (!input || !input.trim()) return { ...fallback };
   const values = input.split(",").map((part) => part.trim().toLowerCase()).filter(Boolean);
@@ -200,7 +215,7 @@ function parseInclude(
     skills: values.includes("skills"),
   };
   if (!include.company && !include.agents && !include.projects && !include.issues && !include.skills) {
-    throw new Error("Invalid --include value. Use one or more of: company,agents,projects,issues,tasks,skills");
+    throw new Error(invalidMessage);
   }
   return include;
 }
@@ -224,7 +239,7 @@ function isInteractiveTerminal(): boolean {
 }
 
 function resolveImportInclude(input: string | undefined): CompanyPortabilityInclude {
-  return parseInclude(input, DEFAULT_IMPORT_INCLUDE);
+  return parseInclude(input, DEFAULT_IMPORT_INCLUDE, companyImportMessage("invalidInclude"));
 }
 
 function normalizePortablePath(filePath: string): string {
@@ -357,20 +372,52 @@ function countTotal(catalog: ImportSelectionCatalog, group: ImportSelectableGrou
 }
 
 function summarizeGroupSelection(catalog: ImportSelectionCatalog, state: ImportSelectionState, group: ImportSelectableGroup): string {
-  return `${countSelected(state, group)}/${countTotal(catalog, group)} selected`;
+  const noun = importNoun(group === "issues" ? "task" : group === "agents" ? "agent" : group === "projects" ? "project" : "skill", countTotal(catalog, group));
+  const selected = getCliLocale() === "pt-BR"
+    ? group === "issues" || group === "skills" ? "selecionadas" : "selecionados"
+    : "selected";
+  return companyImportCatalogMessage("groupSelectionCount", {
+    selected: countSelected(state, group),
+    total: countTotal(catalog, group),
+    noun,
+    selection: selected,
+  });
 }
 
 function getGroupLabel(group: ImportSelectableGroup): string {
   switch (group) {
     case "projects":
-      return "Projects";
+      return companyImportCatalogMessage("projects");
     case "issues":
-      return "Tasks";
+      return companyImportCatalogMessage("tasks");
     case "agents":
-      return "Agents";
+      return companyImportCatalogMessage("agents");
     case "skills":
-      return "Skills";
+      return companyImportCatalogMessage("skills");
   }
+}
+
+type ImportNoun = "agent" | "skill" | "project" | "task" | "input";
+
+function importNoun(noun: ImportNoun, count: number): string {
+  const isPlural = count !== 1;
+  const terms = {
+    en: {
+      agent: ["agent", "agents"],
+      skill: ["skill", "skills"],
+      project: ["project", "projects"],
+      task: ["task", "tasks"],
+      input: ["input", "inputs"],
+    },
+    "pt-BR": {
+      agent: ["agente", "agentes"],
+      skill: ["skill", "skills"],
+      project: ["projeto", "projetos"],
+      task: ["tarefa", "tarefas"],
+      input: ["variável de ambiente", "variáveis de ambiente"],
+    },
+  } as const;
+  return terms[getCliLocale()][noun][isPlural ? 1 : 0];
 }
 
 export function buildSelectedFilesFromImportSelection(
@@ -429,7 +476,12 @@ function buildDefaultImportAdapterMessages(
     .map((adapterType) => adapterType.replace(/_/g, "-"));
   const agentCount = Object.keys(overrides).length;
   return [
-    `Using ${adapterTypes.join(", ")} adapter${adapterTypes.length === 1 ? "" : "s"} for ${agentCount} imported ${pluralize(agentCount, "agent")} without an explicit adapter.`,
+    companyImportCatalogMessage("adapterFallback", {
+      adapters: adapterTypes.join(", "),
+      plural: adapterTypes.length === 1 ? "" : "s",
+      count: agentCount,
+      agents: importNoun("agent", agentCount),
+    }),
   ];
 }
 
@@ -439,51 +491,60 @@ async function promptForImportSelection(preview: CompanyPortabilityPreviewResult
 
   while (true) {
     const choice = await p.select<ImportSelectableGroup | "company" | "confirm">({
-      message: "Select what Paperclip should import",
+      message: companyImportCatalogMessage("selectWhat"),
       options: [
         {
           value: "company",
-          label: state.company ? "Company: included" : "Company: skipped",
-          hint: catalog.company.files.length > 0 ? "toggle company metadata" : "no company metadata in package",
+          label: state.company
+            ? companyImportCatalogMessage("companyIncluded")
+            : companyImportCatalogMessage("companySkipped"),
+          hint: catalog.company.files.length > 0
+            ? companyImportCatalogMessage("toggleCompany")
+            : companyImportCatalogMessage("noCompanyMetadataInPackage"),
         },
         {
           value: "projects",
-          label: "Select Projects",
+          label: companyImportCatalogMessage("selectProjects"),
           hint: summarizeGroupSelection(catalog, state, "projects"),
         },
         {
           value: "issues",
-          label: "Select Tasks",
+          label: companyImportCatalogMessage("selectTasks"),
           hint: summarizeGroupSelection(catalog, state, "issues"),
         },
         {
           value: "agents",
-          label: "Select Agents",
+          label: companyImportCatalogMessage("selectAgents"),
           hint: summarizeGroupSelection(catalog, state, "agents"),
         },
         {
           value: "skills",
-          label: "Select Skills",
+          label: companyImportCatalogMessage("selectSkills"),
           hint: summarizeGroupSelection(catalog, state, "skills"),
         },
         {
           value: "confirm",
-          label: "Confirm",
-          hint: `${buildSelectedFilesFromImportSelection(catalog, state).length} files selected`,
+          label: companyImportCatalogMessage("confirm"),
+          hint: companyImportCatalogMessage("filesSelected", {
+            count: buildSelectedFilesFromImportSelection(catalog, state).length,
+          }),
         },
       ],
       initialValue: "confirm",
     });
 
     if (p.isCancel(choice)) {
-      p.cancel("Import cancelled.");
+      p.cancel(companyImportCatalogMessage("cancelled"));
       process.exit(0);
     }
 
     if (choice === "confirm") {
       const selectedFiles = buildSelectedFilesFromImportSelection(catalog, state);
       if (selectedFiles.length === 0) {
-        p.note("Select at least one import target before confirming.", "Nothing selected");
+        p.note(
+          companyImportCatalogMessage("nothingSelected"),
+          companyImportCatalogMessage("nothingSelectedTitle"),
+        );
         continue;
       }
       return selectedFiles;
@@ -491,7 +552,10 @@ async function promptForImportSelection(preview: CompanyPortabilityPreviewResult
 
     if (choice === "company") {
       if (catalog.company.files.length === 0) {
-        p.note("This package does not include company metadata to toggle.", "No company metadata");
+        p.note(
+          companyImportCatalogMessage("noCompanyMetadata"),
+          companyImportCatalogMessage("noCompanyMetadataTitle"),
+        );
         continue;
       }
       state.company = !state.company;
@@ -501,12 +565,17 @@ async function promptForImportSelection(preview: CompanyPortabilityPreviewResult
     const group = choice;
     const groupItems = catalog[group];
     if (groupItems.length === 0) {
-      p.note(`This package does not include any ${getGroupLabel(group).toLowerCase()}.`, `No ${getGroupLabel(group)}`);
+      const groupLabel = getGroupLabel(group).toLocaleLowerCase(getCliLocale());
+      const groupTitle = getCliLocale() === "en" ? getGroupLabel(group) : groupLabel;
+      p.note(
+        companyImportCatalogMessage("noGroupItems", { group: groupLabel }),
+        companyImportCatalogMessage("noGroupItemsTitle", { group: groupTitle }),
+      );
       continue;
     }
 
     const selection = await p.multiselect<string>({
-      message: `${getGroupLabel(group)} to import. Space toggles, enter returns to the main menu.`,
+      message: companyImportCatalogMessage("groupToImport", { group: getGroupLabel(group) }),
       options: groupItems.map((item) => ({
         value: item.key,
         label: item.label,
@@ -516,7 +585,7 @@ async function promptForImportSelection(preview: CompanyPortabilityPreviewResult
     });
 
     if (p.isCancel(selection)) {
-      p.cancel("Import cancelled.");
+      p.cancel(companyImportCatalogMessage("cancelled"));
       process.exit(0);
     }
 
@@ -525,17 +594,19 @@ async function promptForImportSelection(preview: CompanyPortabilityPreviewResult
 }
 
 function summarizeInclude(include: CompanyPortabilityInclude): string {
-  const labels = IMPORT_INCLUDE_OPTIONS
+  const labels = importIncludeOptions()
     .filter((option) => include[option.value])
     .map((option) => option.label.toLowerCase());
-  return labels.length > 0 ? labels.join(", ") : "nothing selected";
+  return labels.length > 0 ? labels.join(", ") : companyImportCatalogMessage("nothingIncluded");
 }
 
 function formatSourceLabel(source: { type: "inline"; rootPath?: string | null } | { type: "github"; url: string }): string {
   if (source.type === "github") {
     return `GitHub: ${source.url}`;
   }
-  return `Local package: ${source.rootPath?.trim() || "(current folder)"}`;
+  return companyImportCatalogMessage("sourceLabelLocal", {
+    path: source.rootPath?.trim() || companyImportCatalogMessage("sourceCurrentFolder"),
+  });
 }
 
 function formatTargetLabel(
@@ -547,18 +618,21 @@ function formatTargetLabel(
     const targetId = preview?.targetCompanyId?.trim() || target.companyId?.trim() || "unknown-company";
     return targetName ? `${targetName} (${targetId})` : targetId;
   }
-  return target.newCompanyName?.trim() || preview?.manifest.company?.name || "new company";
-}
-
-function pluralize(count: number, singular: string, plural = `${singular}s`): string {
-  return count === 1 ? singular : plural;
+  return target.newCompanyName?.trim() || preview?.manifest.company?.name || companyImportCatalogMessage("targetNewCompany");
 }
 
 function summarizePlanCounts(
   plans: Array<{ action: "create" | "update" | "skip" }>,
-  noun: string,
+  noun: ImportNoun,
 ): string {
-  if (plans.length === 0) return `0 ${pluralize(0, noun)} selected`;
+  const nounLabel = importNoun(noun, plans.length);
+  if (plans.length === 0) {
+    return companyImportCatalogMessage("selectedCount", {
+      count: 0,
+      noun: nounLabel,
+      selection: noun === "task" ? "selecionadas" : noun === "skill" ? "selecionadas" : "selecionados",
+    });
+  }
   const createCount = plans.filter((plan) => plan.action === "create").length;
   const updateCount = plans.filter((plan) => plan.action === "update").length;
   const skipCount = plans.filter((plan) => plan.action === "skip").length;
@@ -566,11 +640,15 @@ function summarizePlanCounts(
   if (createCount > 0) parts.push(`${createCount} create`);
   if (updateCount > 0) parts.push(`${updateCount} update`);
   if (skipCount > 0) parts.push(`${skipCount} skip`);
-  return `${plans.length} ${pluralize(plans.length, noun)} total (${parts.join(", ")})`;
+  return companyImportCatalogMessage("totalWithActions", {
+    count: plans.length,
+    noun: nounLabel,
+    parts: parts.join(", "),
+  });
 }
 
 function summarizeImportAgentResults(agents: CompanyPortabilityImportResult["agents"]): string {
-  if (agents.length === 0) return "0 agents changed";
+  if (agents.length === 0) return companyImportCatalogMessage("zeroChanged", { count: 0, noun: importNoun("agent", agents.length) });
   const created = agents.filter((agent) => agent.action === "created").length;
   const updated = agents.filter((agent) => agent.action === "updated").length;
   const skipped = agents.filter((agent) => agent.action === "skipped").length;
@@ -578,21 +656,29 @@ function summarizeImportAgentResults(agents: CompanyPortabilityImportResult["age
   if (created > 0) parts.push(`${created} created`);
   if (updated > 0) parts.push(`${updated} updated`);
   if (skipped > 0) parts.push(`${skipped} skipped`);
-  return `${agents.length} ${pluralize(agents.length, "agent")} total (${parts.join(", ")})`;
+  return companyImportCatalogMessage("totalWithActions", {
+    count: agents.length,
+    noun: importNoun("agent", agents.length),
+    parts: parts.join(", "),
+  });
 }
 
 function summarizeImportSkillResults(skills: CompanyPortabilityImportResult["skills"]): string {
-  if (skills.length === 0) return "0 skills changed";
+  if (skills.length === 0) return companyImportCatalogMessage("zeroChanged", { count: 0, noun: importNoun("skill", skills.length) });
   const actions = ["created", "renamed", "replaced", "skipped"] as const;
   const parts = actions.flatMap((action) => {
     const count = skills.filter((skill) => skill.action === action).length;
     return count > 0 ? [`${count} ${action}`] : [];
   });
-  return `${skills.length} ${pluralize(skills.length, "skill")} total (${parts.join(", ")})`;
+  return companyImportCatalogMessage("totalWithActions", {
+    count: skills.length,
+    noun: importNoun("skill", skills.length),
+    parts: parts.join(", "),
+  });
 }
 
 function summarizeImportProjectResults(projects: CompanyPortabilityImportResult["projects"]): string {
-  if (projects.length === 0) return "0 projects changed";
+  if (projects.length === 0) return companyImportCatalogMessage("zeroChanged", { count: 0, noun: importNoun("project", projects.length) });
   const created = projects.filter((project) => project.action === "created").length;
   const updated = projects.filter((project) => project.action === "updated").length;
   const skipped = projects.filter((project) => project.action === "skipped").length;
@@ -600,7 +686,11 @@ function summarizeImportProjectResults(projects: CompanyPortabilityImportResult[
   if (created > 0) parts.push(`${created} created`);
   if (updated > 0) parts.push(`${updated} updated`);
   if (skipped > 0) parts.push(`${skipped} skipped`);
-  return `${projects.length} ${pluralize(projects.length, "project")} total (${parts.join(", ")})`;
+  return companyImportCatalogMessage("totalWithActions", {
+    count: projects.length,
+    noun: importNoun("project", projects.length),
+    parts: parts.join(", "),
+  });
 }
 
 function actionChip(action: string): string {
@@ -635,7 +725,7 @@ function appendPreviewExamples(
     lines.push(`- ${actionChip(entry.action)} ${entry.label}${reason}`);
   }
   if (entries.length > shown.length) {
-    lines.push(pc.dim(`- +${entries.length - shown.length} more`));
+    lines.push(pc.dim(`- ${companyImportCatalogMessage("moreExamples", { count: entries.length - shown.length })}`));
   }
 }
 
@@ -657,37 +747,46 @@ export function renderCompanyImportPreview(
   },
 ): string {
   const lines: string[] = [
-    `${pc.bold("Source")}  ${meta.sourceLabel}`,
-    `${pc.bold("Target")}  ${meta.targetLabel}`,
-    `${pc.bold("Include")} ${summarizeInclude(preview.include)}`,
-    `${pc.bold("Mode")}    ${preview.collisionStrategy} collisions`,
+    `${pc.bold(companyImportCatalogMessage("headerSource"))}  ${meta.sourceLabel}`,
+    `${pc.bold(companyImportCatalogMessage("headerTarget"))}  ${meta.targetLabel}`,
+    `${pc.bold(companyImportCatalogMessage("headerInclude"))} ${summarizeInclude(preview.include)}`,
+    `${pc.bold(companyImportCatalogMessage("headerMode"))}    ${preview.collisionStrategy} ${companyImportCatalogMessage("collisions")}`,
     "",
-    pc.bold("Package"),
-    `- company: ${preview.manifest.company?.name ?? preview.manifest.source?.companyName ?? "not included"}`,
-    `- agents: ${preview.manifest.agents.length}`,
-    `- projects: ${preview.manifest.projects.length}`,
-    `- tasks: ${preview.manifest.issues.length}`,
-    `- skills: ${preview.manifest.skills.length}`,
+    pc.bold(companyImportCatalogMessage("sectionPackage")),
+    `- ${companyImportCatalogMessage("company").toLocaleLowerCase(getCliLocale())}: ${preview.manifest.company?.name ?? preview.manifest.source?.companyName ?? companyImportCatalogMessage("notIncluded")}`,
+    `- ${companyImportCatalogMessage("agents").toLocaleLowerCase(getCliLocale())}: ${preview.manifest.agents.length}`,
+    `- ${companyImportCatalogMessage("projects").toLocaleLowerCase(getCliLocale())}: ${preview.manifest.projects.length}`,
+    `- ${companyImportCatalogMessage("tasks").toLocaleLowerCase(getCliLocale())}: ${preview.manifest.issues.length}`,
+    `- ${companyImportCatalogMessage("skills").toLocaleLowerCase(getCliLocale())}: ${preview.manifest.skills.length}`,
   ];
 
   if (preview.envInputs.length > 0) {
     const requiredCount = preview.envInputs.filter((item) => item.requirement === "required").length;
-    lines.push(`- env inputs: ${preview.envInputs.length} (${requiredCount} required)`);
+    lines.push(companyImportCatalogMessage("envInputCount", {
+      count: preview.envInputs.length,
+      noun: importNoun("input", preview.envInputs.length),
+      required: requiredCount,
+      requiredLabel: companyImportCatalogMessage(requiredCount === 1 ? "required" : "requiredPlural"),
+    }));
   }
 
   lines.push("");
-  lines.push(pc.bold("Plan"));
-  lines.push(`- company: ${actionChip(preview.plan.companyAction === "none" ? "unchanged" : preview.plan.companyAction)}`);
-  lines.push(`- agents: ${summarizePlanCounts(preview.plan.agentPlans, "agent")}`);
-  lines.push(`- projects: ${summarizePlanCounts(preview.plan.projectPlans, "project")}`);
-  lines.push(`- tasks: ${summarizePlanCounts(preview.plan.issuePlans, "task")}`);
+  lines.push(pc.bold(companyImportCatalogMessage("sectionPlan")));
+  lines.push(`- ${companyImportCatalogMessage("company").toLocaleLowerCase(getCliLocale())}: ${actionChip(preview.plan.companyAction === "none" ? "unchanged" : preview.plan.companyAction)}`);
+  lines.push(`- ${companyImportCatalogMessage("agents").toLocaleLowerCase(getCliLocale())}: ${summarizePlanCounts(preview.plan.agentPlans, "agent")}`);
+  lines.push(`- ${companyImportCatalogMessage("projects").toLocaleLowerCase(getCliLocale())}: ${summarizePlanCounts(preview.plan.projectPlans, "project")}`);
+  lines.push(`- ${companyImportCatalogMessage("tasks").toLocaleLowerCase(getCliLocale())}: ${summarizePlanCounts(preview.plan.issuePlans, "task")}`);
   if (preview.include.skills) {
-    lines.push(`- skills: ${preview.manifest.skills.length} ${pluralize(preview.manifest.skills.length, "skill")} packaged`);
+    lines.push(`- ${companyImportCatalogMessage("skills").toLocaleLowerCase(getCliLocale())}: ${companyImportCatalogMessage("packagedCount", {
+      count: preview.manifest.skills.length,
+      noun: importNoun("skill", preview.manifest.skills.length),
+      included: preview.manifest.skills.length === 1 ? "incluída" : "incluídas",
+    })}`);
   }
 
   appendPreviewExamples(
     lines,
-    "Agent examples",
+    companyImportCatalogMessage("examplesAgents"),
     preview.plan.agentPlans.map((plan) => ({
       action: plan.action,
       label: `${plan.slug} -> ${plan.plannedName}`,
@@ -696,7 +795,7 @@ export function renderCompanyImportPreview(
   );
   appendPreviewExamples(
     lines,
-    "Project examples",
+    companyImportCatalogMessage("examplesProjects"),
     preview.plan.projectPlans.map((plan) => ({
       action: plan.action,
       label: `${plan.slug} -> ${plan.plannedName}`,
@@ -705,7 +804,7 @@ export function renderCompanyImportPreview(
   );
   appendPreviewExamples(
     lines,
-    "Task examples",
+    companyImportCatalogMessage("examplesTasks"),
     preview.plan.issuePlans.map((plan) => ({
       action: plan.action,
       label: `${plan.slug} -> ${plan.plannedTitle}`,
@@ -713,9 +812,9 @@ export function renderCompanyImportPreview(
     })),
   );
 
-  appendMessageBlock(lines, pc.cyan("Info"), meta.infoMessages ?? []);
-  appendMessageBlock(lines, pc.yellow("Warnings"), preview.warnings);
-  appendMessageBlock(lines, pc.red("Errors"), preview.errors);
+  appendMessageBlock(lines, pc.cyan(companyImportCatalogMessage("info")), meta.infoMessages ?? []);
+  appendMessageBlock(lines, pc.yellow(companyImportCatalogMessage("warnings")), preview.warnings);
+  appendMessageBlock(lines, pc.red(companyImportCatalogMessage("errors")), preview.errors);
 
   return lines.join("\n");
 }
@@ -726,20 +825,20 @@ export function renderCompanyImportResult(
 ): string {
   const skills = result.skills ?? [];
   const lines: string[] = [
-    `${pc.bold("Target")}  ${meta.targetLabel}`,
-    `${pc.bold("Company")} ${result.company.name} (${actionChip(result.company.action)})`,
-    `${pc.bold("Agents")}  ${summarizeImportAgentResults(result.agents)}`,
-    `${pc.bold("Skills")}  ${summarizeImportSkillResults(skills)}`,
-    `${pc.bold("Projects")} ${summarizeImportProjectResults(result.projects)}`,
+    `${pc.bold(companyImportCatalogMessage("headerTarget"))}  ${meta.targetLabel}`,
+    `${pc.bold(companyImportCatalogMessage("resultsCompany"))} ${result.company.name} (${actionChip(result.company.action)})`,
+    `${pc.bold(companyImportCatalogMessage("resultsAgents"))}  ${summarizeImportAgentResults(result.agents)}`,
+    `${pc.bold(companyImportCatalogMessage("resultsSkills"))}  ${summarizeImportSkillResults(skills)}`,
+    `${pc.bold(companyImportCatalogMessage("resultsProjects"))} ${summarizeImportProjectResults(result.projects)}`,
   ];
 
   if (meta.companyUrl) {
-    lines.splice(1, 0, `${pc.bold("URL")}     ${meta.companyUrl}`);
+    lines.splice(1, 0, `${pc.bold(companyImportCatalogMessage("resultsUrl"))}     ${meta.companyUrl}`);
   }
 
   appendPreviewExamples(
     lines,
-    "Agent results",
+    companyImportCatalogMessage("examplesAgentResults"),
     result.agents.map((agent) => ({
       action: agent.action,
       label: `${agent.slug} -> ${agent.name}`,
@@ -748,7 +847,7 @@ export function renderCompanyImportResult(
   );
   appendPreviewExamples(
     lines,
-    "Skill results",
+    companyImportCatalogMessage("examplesSkillResults"),
     skills.map((skill) => ({
       action: skill.action,
       label: `${skill.originalSlug} -> ${skill.slug}`,
@@ -757,7 +856,7 @@ export function renderCompanyImportResult(
   );
   appendPreviewExamples(
     lines,
-    "Project results",
+    companyImportCatalogMessage("examplesProjectResults"),
     result.projects.map((project) => ({
       action: project.action,
       label: `${project.slug} -> ${project.name}`,
@@ -767,14 +866,15 @@ export function renderCompanyImportResult(
 
   if (result.envInputs.length > 0) {
     lines.push("");
-    lines.push(pc.bold("Env inputs"));
-    lines.push(
-      `- ${result.envInputs.length} ${pluralize(result.envInputs.length, "input")} may need values after import`,
-    );
+    lines.push(pc.bold(companyImportCatalogMessage("envInputsSection")));
+    lines.push(companyImportCatalogMessage("envInputsAfterImport", {
+      count: result.envInputs.length,
+      noun: importNoun("input", result.envInputs.length),
+    }));
   }
 
-  appendMessageBlock(lines, pc.cyan("Info"), meta.infoMessages ?? []);
-  appendMessageBlock(lines, pc.yellow("Warnings"), result.warnings);
+  appendMessageBlock(lines, pc.cyan(companyImportCatalogMessage("info")), meta.infoMessages ?? []);
+  appendMessageBlock(lines, pc.yellow(companyImportCatalogMessage("warnings")), result.warnings);
 
   return lines.join("\n");
 }
@@ -824,14 +924,10 @@ export function resolveCompanyImportApplyConfirmationMode(input: {
     return "skip";
   }
   if (input.json) {
-    throw new Error(
-      "Applying a company import with --json requires --yes. Use --dry-run first to inspect the preview.",
-    );
+    throw new Error(companyImportMessage("applyJsonNeedsYes"));
   }
   if (!input.interactive) {
-    throw new Error(
-      "Applying a company import from a non-interactive terminal requires --yes. Use --dry-run first to inspect the preview.",
-    );
+    throw new Error(companyImportMessage("applyNonInteractiveNeedsYes"));
   }
   return "prompt";
 }
@@ -919,7 +1015,7 @@ export function normalizeGithubImportSource(input: string, refOverride?: string)
   }
 
   if (!looksLikeRepoUrl(trimmed)) {
-    throw new Error("GitHub source must be a GitHub or GitHub Enterprise URL, or owner/repo[/path] shorthand.");
+    throw new Error(companyImportMessage("githubSourceInvalid"));
   }
   if (!ref) {
     return trimmed;
@@ -929,7 +1025,7 @@ export function normalizeGithubImportSource(input: string, refOverride?: string)
   const hostname = url.hostname;
   const parts = url.pathname.split("/").filter(Boolean);
   if (parts.length < 2) {
-    throw new Error("Invalid GitHub URL.");
+    throw new Error(companyImportMessage("githubUrlInvalid"));
   }
 
   const owner = parts[0]!;
@@ -1173,14 +1269,20 @@ export async function uploadCompanyImportTransfer(
     manifest,
   );
   if (!created) {
-    throw new Error("Import transfer declaration returned no data.");
+    throw new Error(companyImportMessage("transferDeclarationNoData"));
   }
   if (created.alreadyCompleted) {
     // The server keys transfers by content, and this exact zip already
     // finished an apply — its spooled parts are gone, so it cannot re-run.
     // Name the company that apply created so the rejection points at the
     // existing import instead of reading as data loss.
-    throw new Error(buildAlreadyImportedMessage(created.company));
+    if (created.company) {
+      throw new Error(companyImportMessage("transferAlreadyCompletedAt", {
+        name: created.company.name ?? created.company.id,
+        prefix: created.company.issuePrefix ? ` (${created.company.issuePrefix})` : "",
+      }));
+    }
+    throw new Error(companyImportMessage("transferAlreadyCompleted"));
   }
   const missing = new Set(created.missingParts);
   let uploadedParts = manifest.parts.length - missing.size;
@@ -1210,7 +1312,7 @@ export async function uploadCompanyImportTransfer(
       // import resumes from them instead of starting over.
       throw lastError instanceof Error
         ? lastError
-        : new Error(`Import transfer part ${part.index} failed to upload.`);
+        : new Error(companyImportMessage("transferPartFailed", { part: part.index }));
     }
     uploadedParts += 1;
     uploadedBytes += part.byteSize;
@@ -1685,20 +1787,20 @@ export function registerCompanyCommands(program: Command): void {
           const interactiveView = isInteractiveTerminal() && !ctx.json;
           const from = fromPathOrUrl.trim();
           if (!from) {
-            throw new Error("Source path or URL is required.");
+            throw new Error(companyImportMessage("sourceRequired"));
           }
 
           const include = resolveImportInclude(opts.include);
           const agents = parseAgents(opts.agents);
           const collision = (opts.collision ?? "rename").toLowerCase() as CompanyCollisionMode;
           if (!["rename", "skip", "replace"].includes(collision)) {
-            throw new Error("Invalid --collision value. Use: rename, skip, replace");
+            throw new Error(companyImportMessage("invalidCollision"));
           }
 
           const inferredTarget = opts.target ?? (opts.companyId || ctx.companyId ? "existing" : "new");
           const target = inferredTarget.toLowerCase() as CompanyImportTargetMode;
           if (!["new", "existing"].includes(target)) {
-            throw new Error("Invalid --target value. Use: new | existing");
+            throw new Error(companyImportMessage("invalidTarget"));
           }
 
           const existingTargetCompanyId = opts.companyId?.trim() || ctx.companyId;
@@ -1714,7 +1816,7 @@ export function registerCompanyCommands(program: Command): void {
                 };
 
           if (targetPayload.mode === "existing_company" && !targetPayload.companyId) {
-            throw new Error("Target existing company requires --company-id (or context default companyId).");
+            throw new Error(companyImportMessage("existingTargetRequired"));
           }
 
           let sourcePayload:
@@ -1727,15 +1829,12 @@ export function registerCompanyCommands(program: Command): void {
 
           if (isHttpUrl(from) || isGithubSource) {
             if (!looksLikeRepoUrl(from) && !isGithubShorthand(from)) {
-              throw new Error(
-                "Only GitHub URLs and local paths are supported for import. " +
-                "Generic HTTP URLs are not supported. Use a GitHub or GitHub Enterprise URL (https://github.com/... or https://ghe.example.com/...) or a local directory path.",
-              );
+              throw new Error(companyImportMessage("unsupportedSource"));
             }
             sourcePayload = { type: "github", url: normalizeGithubImportSource(from, opts.ref) };
           } else {
             if (opts.ref?.trim()) {
-              throw new Error("--ref is only supported for GitHub import sources.");
+              throw new Error(companyImportMessage("refGithubOnly"));
             }
             chunkedZip = await resolveChunkedImportZip(
               from,
@@ -1781,7 +1880,12 @@ export function registerCompanyCommands(program: Command): void {
                 : ({ uploadedParts, totalParts, uploadedBytes, totalBytes }) => {
                     console.log(
                       pc.dim(
-                        `Uploaded part ${uploadedParts}/${totalParts} (${Math.round(uploadedBytes / (1024 * 1024))} of ${Math.round(totalBytes / (1024 * 1024))} MB)`,
+                        companyImportCatalogMessage("uploadProgress", {
+                          uploaded: uploadedParts,
+                          total: totalParts,
+                          uploadedMb: Math.round(uploadedBytes / (1024 * 1024)),
+                          totalMb: Math.round(totalBytes / (1024 * 1024)),
+                        }),
                       ),
                     );
                   },
@@ -1800,7 +1904,7 @@ export function registerCompanyCommands(program: Command): void {
                   ...transferMeta,
                 });
             if (!initialPreview) {
-              throw new Error("Import preview returned no data.");
+              throw new Error(companyImportMessage("previewNoData"));
             }
             selectedFiles = await promptForImportSelection(initialPreview);
           }
@@ -1817,7 +1921,7 @@ export function registerCompanyCommands(program: Command): void {
               })
             : await ctx.api.post<CompanyPortabilityPreviewResult>(previewApiPath, previewPayload);
           if (!preview) {
-            throw new Error("Import preview returned no data.");
+            throw new Error(companyImportMessage("previewNoData"));
           }
           const adapterOverrides = buildDefaultImportAdapterOverrides(preview);
           const adapterMessages = buildDefaultImportAdapterMessages(adapterOverrides);
@@ -1827,7 +1931,7 @@ export function registerCompanyCommands(program: Command): void {
               printOutput(preview, { json: true });
             } else {
               printCompanyImportView(
-                "Import Preview",
+                companyImportCatalogMessage("previewTitle"),
                 renderCompanyImportPreview(preview, {
                   sourceLabel,
                   targetLabel: formatTargetLabel(targetPayload, preview),
@@ -1841,7 +1945,7 @@ export function registerCompanyCommands(program: Command): void {
 
           if (!ctx.json) {
             printCompanyImportView(
-              "Import Preview",
+              companyImportCatalogMessage("previewTitle"),
               renderCompanyImportPreview(preview, {
                 sourceLabel,
                 targetLabel: formatTargetLabel(targetPayload, preview),
@@ -1858,11 +1962,11 @@ export function registerCompanyCommands(program: Command): void {
           });
           if (confirmationMode === "prompt") {
             const confirmed = await p.confirm({
-              message: "Apply this import? (y/N)",
+              message: companyImportCatalogMessage("applyPrompt"),
               initialValue: false,
             });
             if (p.isCancel(confirmed) || !confirmed) {
-              p.log.warn("Import cancelled.");
+              p.log.warn(companyImportCatalogMessage("cancelled"));
               return;
             }
           }
@@ -1882,7 +1986,7 @@ export function registerCompanyCommands(program: Command): void {
                 adapterOverrides,
               });
           if (!imported) {
-            throw new Error("Import request returned no data.");
+            throw new Error(companyImportMessage("noData"));
           }
           const tc = getTelemetryClient();
           if (tc) {
@@ -1906,7 +2010,7 @@ export function registerCompanyCommands(program: Command): void {
             printOutput(imported, { json: true });
           } else {
             printCompanyImportView(
-              "Import Result",
+              companyImportCatalogMessage("resultTitle"),
               renderCompanyImportResult(imported, {
                 targetLabel,
                 companyUrl,
@@ -1916,14 +2020,14 @@ export function registerCompanyCommands(program: Command): void {
             );
             if (interactiveView && companyUrl) {
               const openImportedCompany = await p.confirm({
-                message: "Open the imported company in your browser?",
+                message: companyImportCatalogMessage("openCompanyPrompt"),
                 initialValue: true,
               });
               if (!p.isCancel(openImportedCompany) && openImportedCompany) {
                 if (await openUrl(companyUrl)) {
-                  p.log.info(`Opened ${companyUrl}`);
+                  p.log.info(companyImportCatalogMessage("browserOpened", { url: companyUrl }));
                 } else {
-                  p.log.warn(`Could not open your browser automatically. Open this URL manually:\n${companyUrl}`);
+                  p.log.warn(companyImportCatalogMessage("browserOpenFailed", { url: companyUrl }));
                 }
               }
             }

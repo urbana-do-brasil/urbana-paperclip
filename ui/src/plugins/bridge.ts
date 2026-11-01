@@ -33,10 +33,12 @@ import type {
   PluginLauncherRenderContextSnapshot,
   PluginLauncherRenderEnvironment,
 } from "@paperclipai/shared";
+import { resolveLocale, type SupportedLocale } from "@paperclipai/shared/localization";
 import { pluginsApi } from "@/api/plugins";
 import { ApiError } from "@/api/client";
 import { useToastActions, type ToastInput } from "@/context/ToastContext";
 import { useSidebar } from "@/context/SidebarContext";
+import { useTranslation } from "@/i18n";
 import { isGlobalPath, normalizeCompanyPrefix } from "@/lib/company-routes";
 import { normalizeRememberedInstanceSettingsPath } from "@/lib/instance-settings";
 
@@ -102,6 +104,8 @@ export interface HostLocation {
 // ---------------------------------------------------------------------------
 
 export interface PluginHostContext {
+  /** Effective user-facing language, populated by current hosts. */
+  locale?: SupportedLocale;
   companyId: string | null;
   companyPrefix: string | null;
   projectId: string | null;
@@ -110,6 +114,16 @@ export interface PluginHostContext {
   parentEntityId?: string | null;
   userId: string | null;
   renderEnvironment?: PluginRenderEnvironmentContext | null;
+}
+
+/**
+ * Reads the currently resolved Paperclip UI language for plugin host context.
+ * `useTranslation` subscribes to i18next's language-change event, so mounted
+ * plugin UI receives updates without being remounted or reloaded.
+ */
+export function usePluginHostLocale(): SupportedLocale {
+  const { i18n } = useTranslation();
+  return resolveLocale(i18n.resolvedLanguage ?? i18n.language);
 }
 
 export interface PluginModalBoundsRequest {

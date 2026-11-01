@@ -714,6 +714,14 @@ export function IssueLinearLink({ context }: PluginDetailTabProps) {
 }
 ```
 
+`PluginHostContext` also has an optional `locale?: "pt-BR" | "en"` field.
+Current Paperclip hosts provide the effective UI language through
+`useHostContext()` and the slot component's `context` prop. The host updates
+this value on mounted plugin components when the user changes language, without
+remounting or reloading them. Use it to choose plugin-owned content; the host
+does not translate plugin UI or content returned by a plugin. The field stays
+optional so plugins remain compatible with older hosts.
+
 #### `useHostNavigation()`
 
 Routes Paperclip-internal plugin links through the host router without a full document reload. Use `linkProps()` for anchors so the browser still gets a real `href` for copy-link, modifier-click, middle-click, and open-in-new-tab behavior.

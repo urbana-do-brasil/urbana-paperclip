@@ -1071,6 +1071,14 @@ The SDK includes a `ui` subpath export that plugin frontends import. This subpat
 
 Plugins are encouraged but not required to use the shared components. A plugin may render entirely custom UI as long as it communicates through the bridge.
 
+`PluginHostContext` optionally includes `locale?: "pt-BR" | "en"`, the host's
+effective UI language. Current Paperclip hosts provide one of these values to
+`useHostContext()` and the `context` prop passed to plugin slot components. The
+field is optional for compatibility with older hosts. When the user changes
+language, the host updates the context of mounted plugin components without
+remounting or reloading them. Plugins can use the value to select their own
+content; Paperclip does not translate plugin UI or plugin-provided content.
+
 `useHostNavigation()` is the supported way for plugin UI to navigate to
 Paperclip-internal pages. It exposes `resolveHref(to)`, `navigate(to,
 options?)`, and `linkProps(to, options?)`. Plugin links should prefer

@@ -303,6 +303,18 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
       - [x] 3.10g4a Verificar 403 em Cases, Status Cards e SummarySlotCard em PT-BR/en; Cases passou a preservar detalhes da API. Testes focados: 52/52; typecheck UI passou.
       - [x] 3.10g4b Verificar rotas e auditoria escopada de rotinas em production, preservando permissão e navegação. Rotas nos dois shells e feed escopado corrigido no production: 19/19 testes; typecheck UI passou. Outros tipos de escopo seguem o contrato anterior do feed geral.
 - [ ] 3.11 Migrar UI hospedeira de plugins e conteúdo humano de plugins distribuídos no produto, além das superfícies próprias adicionais encontradas no fechamento do mapa de rotas. Verificar cada superfície nos dois idiomas e documentar limites de plugins externos não controlados. Specs: `localized-web-interface`, `localization-quality`.
+  - [x] 3.11a Propagar e documentar locale reativo pelo `PluginHostContext`, slots, overlays e launcher; conteúdo de plugins externos permanece original. Testes de bridge/slots/overlays e SDK: 29/29; typechecks do SDK/UI passaram sem remount.
+  - [x] 3.11b Localizar a página host `PluginSettings`, incluindo placeholder, controles e rótulos de status/gatilhos conhecidos; preservar nomes, descrições, conteúdo e mensagens livres do plugin. Testes focados + locale-validation: 25/25; typecheck UI e token gates passaram.
+  - [ ] 3.11c Localizar o host do `PluginManager`, incluindo instalação, estados, tags, ações, confirmações e toasts; preservar metadados externos e mapear enums somente na apresentação.
+  - [ ] 3.11d Localizar molduras e fallbacks de `PluginPage`, `CompanySettingsPluginPage`, `slots.tsx` e `NotFound`, mantendo rotas, IDs, nomes de slot/plugin e erros externos originais.
+  - [ ] 3.11e Localizar a UI do plugin próprio Workspace Changes, incluindo estados, acessibilidade e plurais; preservar caminhos, patches, refs, contagens e diagnósticos.
+  - [ ] 3.11f1 Localizar navegação e leitura do plugin próprio LLM Wiki; preservar conteúdo Markdown, slugs, nomes de arquivo e dados escritos por pessoas.
+  - [ ] 3.11f2 Localizar ingestão, consulta e histórico do LLM Wiki; preservar consultas, conteúdo-fonte, caminhos, payloads e mensagens externas.
+  - [ ] 3.11f3 Localizar espaços e configurações do LLM Wiki; preservar nomes e conteúdo de organizações, diretórios, arquivos, instruções e valores de configuração.
+  - [ ] 3.11g1 Localizar as UIs próprias dos exemplos de autoria, Hello World e orquestração, preservando IDs, rotas, estados técnicos e conteúdo demonstrativo variável.
+  - [ ] 3.11g2 Localizar a UI própria do exemplo File Browser, preservando caminhos, nomes e conteúdo dos arquivos e respostas externas.
+  - [ ] 3.11g3 Localizar a UI própria do exemplo Kitchen Sink, preservando contratos, IDs, valores e conteúdo dinâmico demonstrado.
+  - [ ] 3.11h Localizar metadata de apresentação mantida pelos pacotes próprios, incluindo nomes/descrições de plugins e sandbox providers exibidos no host; preservar schemas e valores de configuração arbitrários de plugins externos.
 
 ## 4. CLI bilíngue
 
@@ -314,7 +326,8 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3c Localizar help e resultado vazio de company stats; preservar dados, JSON, falhas estruturadas e códigos. Company: 25/25; help direcionado: 1/1.
   - [x] 4.3d Localizar help e mensagens próprias de company create/update/archive; preservar rotas, payloads, JSON, erros estruturados e códigos. Company: 27/27; help focado: 4/4.
   - [x] 4.3e Localizar help de company branding:update e verificar payload, rota, falhas e JSON nos dois idiomas. Company: 29/29; help focado: 2/2.
-  - [x] 4.3f Localizar company export, preservando payload, arquivos e JSON; manter erros estruturados estáveis entre idiomas. Testes focados: 29/29 em três arquivos; typecheck da CLI terminou com exit 137 por limite de memória. company import e demais grupos permanecem pendentes.
+  - [x] 4.3f Localizar company export, preservando payload, arquivos e JSON; manter erros estruturados estáveis entre idiomas. Testes focados: 29/29 em três arquivos; typecheck da CLI terminou com exit 137 por limite de memória. Os demais grupos operacionais permanecem pendentes.
+  - [x] 4.3g Localizar a operação company import, incluindo seleção, preview, confirmação, progresso, resultados e erros; preservar arquivos, payloads, IDs e JSON. Ajuda, mensagens e JSON PT-BR/en; 4 arquivos/77 testes passaram, typecheck estrito dos arquivos tocados passou; typecheck completo da CLI encerrou com exit 137 por memória.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação

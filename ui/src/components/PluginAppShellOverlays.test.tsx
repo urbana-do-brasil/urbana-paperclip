@@ -33,7 +33,7 @@ afterEach(() => {
 describe("persistent app-shell plugin lifecycle", () => {
   it("passes the complete host context promised by PluginWidgetProps", () => {
     render();
-    expect(state.context).toEqual({ companyId: "first", companyPrefix: "ACME", projectId: null, entityId: null, entityType: null, parentEntityId: null, userId: "alice" });
+    expect(state.context).toEqual({ locale: "pt-BR", companyId: "first", companyPrefix: "ACME", projectId: null, entityId: null, entityType: null, parentEntityId: null, userId: "alice" });
   });
   it("disposes drafts on route-driven onboarding and remounts after dismissal", () => {
     render(); flushSync(() => container.querySelector("button")!.click());

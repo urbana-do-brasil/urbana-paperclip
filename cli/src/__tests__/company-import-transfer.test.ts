@@ -6,6 +6,7 @@ import path from "node:path";
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readZipArchive } from "@paperclipai/shared/portability-zip";
+import { getCliLocale, setCliLocale } from "../localization/index.js";
 import {
   CHUNKED_IMPORT_THRESHOLD_BYTES,
   IMPORT_TRANSFER_PART_SIZE_BYTES,
@@ -20,6 +21,7 @@ import { createStoredZipArchive } from "./helpers/zip.js";
 const ORIGINAL_ENV = { ...process.env };
 
 const tempDirs: string[] = [];
+let localeBeforeTest: ReturnType<typeof getCliLocale>;
 
 async function makeTempDir(): Promise<string> {
   const dir = await mkdtemp(path.join(os.tmpdir(), "paperclip-company-import-transfer-"));
@@ -38,10 +40,16 @@ function buildTwoPartZipBytes(): Uint8Array {
   return bytes;
 }
 
+beforeEach(() => {
+  localeBeforeTest = getCliLocale();
+  setCliLocale("en");
+});
+
 afterEach(async () => {
   for (const dir of tempDirs.splice(0)) {
     await rm(dir, { recursive: true, force: true });
   }
+  setCliLocale(localeBeforeTest);
 });
 
 describe("buildImportTransferManifest", () => {
@@ -321,7 +329,17 @@ describe("uploadCompanyImportTransfer", () => {
     expect(putRaw).not.toHaveBeenCalled();
   });
 
-  it("names the company the completed transfer created", async () => {
+  it.each([
+    {
+      locale: "en" as const,
+      message: "This exact package was already imported by a completed transfer. The earlier import landed in the company \"Paperclip\" (PAPA) — open it from the company switcher. Re-export the package to import it again.",
+    },
+    {
+      locale: "pt-BR" as const,
+      message: "Este pacote já foi importado por uma transferência concluída. A importação anterior foi aplicada à organização \"Paperclip\" (PAPA); abra-a pelo seletor de organizações. Exporte o pacote novamente para importá-lo outra vez.",
+    },
+  ])("localizes the completed-transfer message in $locale and keeps its company identity", async ({ locale, message }) => {
+    setCliLocale(locale);
     const { api, putRaw } = fakeApi({
       post: vi.fn().mockResolvedValue({
         transferId: "transfer-1",
@@ -333,9 +351,7 @@ describe("uploadCompanyImportTransfer", () => {
       }),
     });
 
-    await expect(uploadCompanyImportTransfer(api, zipBytes)).rejects.toThrow(
-      /landed in the company "Paperclip" \(PAPA\)/,
-    );
+    await expect(uploadCompanyImportTransfer(api, zipBytes)).rejects.toMatchObject({ message });
     expect(putRaw).not.toHaveBeenCalled();
   });
 });

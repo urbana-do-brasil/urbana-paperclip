@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
+import { useHostContext as useSdkHostContext } from "../../../packages/plugins/sdk/src/ui/hooks";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   FileTree as SdkFileTree,
@@ -84,6 +85,50 @@ describe("plugin host navigation", () => {
     expect(
       shouldHandleHostNavigationClick(clickEvent(), "https://example.com/wiki"),
     ).toBe(false);
+  });
+});
+
+describe("plugin SDK host context bridge", () => {
+  it("updates the locale exposed by useHostContext when the bridge scope changes", () => {
+    initPluginBridge(React, ReactDOM);
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    function Probe() {
+      return React.createElement("output", { "data-testid": "plugin-locale" }, useSdkHostContext().locale);
+    }
+    function bridgeValue(locale: "pt-BR" | "en"): PluginBridgeContextValue {
+      return {
+        pluginId: "test-plugin",
+        hostContext: {
+          companyId: "co",
+          companyPrefix: "PAP",
+          projectId: null,
+          entityId: null,
+          entityType: null,
+          userId: null,
+          locale,
+        },
+      };
+    }
+    function render(locale: "pt-BR" | "en") {
+      act(() => root.render(
+        React.createElement(
+          PluginBridgeContext.Provider,
+          { value: bridgeValue(locale) },
+          React.createElement(Probe),
+        ),
+      ));
+    }
+
+    render("pt-BR");
+    expect(container.querySelector("output")?.textContent).toBe("pt-BR");
+    render("en");
+    expect(container.querySelector("output")?.textContent).toBe("en");
+
+    act(() => root.unmount());
+    container.remove();
   });
 });
 

@@ -768,6 +768,7 @@ describe("resolveCompanyImportApplyConfirmationMode", () => {
   });
 
   it("requires --yes for non-interactive apply", () => {
+    setCliLocale("en");
     expect(() =>
       resolveCompanyImportApplyConfirmationMode({
         yes: false,
@@ -775,9 +776,18 @@ describe("resolveCompanyImportApplyConfirmationMode", () => {
         json: false,
       })
     ).toThrow(/non-interactive terminal requires --yes/i);
+    setCliLocale("pt-BR");
+    expect(() =>
+      resolveCompanyImportApplyConfirmationMode({
+        yes: false,
+        interactive: false,
+        json: false,
+      })
+    ).toThrow(/terminal não interativo, informe --yes/i);
   });
 
   it("requires --yes for json apply", () => {
+    setCliLocale("en");
     expect(() =>
       resolveCompanyImportApplyConfirmationMode({
         yes: false,
@@ -785,6 +795,14 @@ describe("resolveCompanyImportApplyConfirmationMode", () => {
         json: true,
       })
     ).toThrow(/with --json requires --yes/i);
+    setCliLocale("pt-BR");
+    expect(() =>
+      resolveCompanyImportApplyConfirmationMode({
+        yes: false,
+        interactive: false,
+        json: true,
+      })
+    ).toThrow(/com --json, informe --yes/i);
   });
 });
 
@@ -974,16 +992,16 @@ describe("renderCompanyImportPreview", () => {
       infoMessages: ["Using claude-local adapter"],
     });
 
-    expect(rendered).toContain("Include");
-    expect(rendered).toContain("company, projects, tasks, agents, skills");
-    expect(rendered).toContain("7 agents total");
-    expect(rendered).toContain("1 project total");
-    expect(rendered).toContain("1 task total");
-    expect(rendered).toContain("skills: 1 skill packaged");
-    expect(rendered).toContain("+1 more");
+    expect(rendered).toContain("Incluir");
+    expect(rendered).toContain("organização, projetos, tarefas, agentes, skills");
+    expect(rendered).toContain("7 agentes no total");
+    expect(rendered).toContain("1 projeto no total");
+    expect(rendered).toContain("1 tarefa no total");
+    expect(rendered).toContain("skills: 1 skill incluída no pacote");
+    expect(rendered).toContain("+1 mais");
     expect(rendered).toContain("Using claude-local adapter");
-    expect(rendered).toContain("Warnings");
-    expect(rendered).toContain("Errors");
+    expect(rendered).toContain("Avisos");
+    expect(rendered).toContain("Erros");
   });
 });
 
@@ -1030,14 +1048,14 @@ describe("renderCompanyImportResult", () => {
       },
     );
 
-    expect(rendered).toContain("Company");
+    expect(rendered).toContain("Organização");
     expect(rendered).toContain("https://paperclip.example/PAP/dashboard");
-    expect(rendered).toContain("3 agents total (1 created, 1 updated, 1 skipped)");
-    expect(rendered).toContain("1 skill total (1 renamed)");
-    expect(rendered).toContain("3 projects total (1 created, 1 updated, 1 skipped)");
-    expect(rendered).toContain("Agent results");
-    expect(rendered).toContain("Skill results");
-    expect(rendered).toContain("Project results");
+    expect(rendered).toContain("3 agentes no total (1 created, 1 updated, 1 skipped)");
+    expect(rendered).toContain("1 skill no total (1 renamed)");
+    expect(rendered).toContain("3 projetos no total (1 created, 1 updated, 1 skipped)");
+    expect(rendered).toContain("Resultados dos agentes");
+    expect(rendered).toContain("Resultados das skills");
+    expect(rendered).toContain("Resultados dos projetos");
     expect(rendered).toContain("Using claude-local adapter");
     expect(rendered).toContain("Review API keys");
   });

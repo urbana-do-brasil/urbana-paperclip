@@ -31,6 +31,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import {
   PluginBridgeContext,
+  usePluginHostLocale,
   type PluginHostContext,
   type PluginModalBoundsRequest,
   type PluginRenderCloseEvent,
@@ -136,8 +137,10 @@ function buildLauncherHostContext(
   context: PluginLauncherContext,
   renderEnvironment: PluginRenderEnvironmentContext | null,
   userId: string | null,
+  locale: PluginHostContext["locale"],
 ): PluginHostContext {
   return {
+    locale,
     companyId: context.companyId ?? null,
     companyPrefix: context.companyPrefix ?? null,
     projectId: context.projectId ?? (context.entityType === "project" ? context.entityId ?? null : null),
@@ -438,9 +441,10 @@ function LauncherRenderContent({
     queryFn: () => authApi.getSession(),
   });
   const userId = session?.user?.id ?? session?.session?.userId ?? null;
+  const locale = usePluginHostLocale();
   const hostContext = useMemo(
-    () => buildLauncherHostContext(instance.hostContext, renderEnvironment, userId),
-    [instance.hostContext, renderEnvironment, userId],
+    () => buildLauncherHostContext(instance.hostContext, renderEnvironment, userId, locale),
+    [instance.hostContext, renderEnvironment, userId, locale],
   );
 
   if (!component) {

@@ -125,6 +125,65 @@ const operationHelp: Record<string, CommandHelp> = {
       },
     },
   },
+  "company import": {
+    description: {
+      en: "Import a portable markdown company package from local path, URL, or GitHub",
+      "pt-BR": "Importar um pacote Markdown de organização a partir de um caminho local, URL ou GitHub",
+    },
+    arguments: {
+      fromPathOrUrl: { en: "Source path or URL", "pt-BR": "Caminho de origem ou URL" },
+    },
+    options: {
+      ...commonClientOptions,
+      "--include": {
+        en: "Comma-separated include set: company,agents,projects,issues,tasks,skills",
+        "pt-BR": "Conteúdo separado por vírgulas: company,agents,projects,issues,tasks,skills",
+      },
+      "--target": { en: "Target mode: new | existing", "pt-BR": "Modo de destino: new | existing" },
+      "--company-id": { en: "Existing target company ID", "pt-BR": "ID da organização de destino existente" },
+      "--new-company-name": { en: "Name override for --target new", "pt-BR": "Substituir o nome com --target new" },
+      "--agents": {
+        en: "Comma-separated agent slugs to import, or all",
+        "pt-BR": "Slugs de agentes separados por vírgulas para importar, ou all",
+      },
+      "--collision": {
+        en: "Collision strategy: rename | skip | replace",
+        "pt-BR": "Estratégia para conflitos: rename | skip | replace",
+      },
+      "--ref": {
+        en: "Git ref to use for GitHub imports (branch, tag, or commit)",
+        "pt-BR": "Referência Git para importações do GitHub (branch, tag ou commit)",
+      },
+      "--paperclip-url": { en: "Alias for --api-base on this command", "pt-BR": "Alias de --api-base neste comando" },
+      "--yes": {
+        en: "Accept default selection and skip the pre-import confirmation prompt",
+        "pt-BR": "Aceitar a seleção padrão e ignorar a confirmação antes da importação",
+      },
+      "--dry-run": { en: "Run preview only without applying", "pt-BR": "Executar somente a prévia, sem aplicar" },
+    },
+  },
+  "company import:preview": {
+    description: {
+      en: "Preview a safe company import through the raw API route",
+      "pt-BR": "Pré-visualizar uma importação segura pelo endpoint bruto da API",
+    },
+    arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "company import:apply": {
+    description: {
+      en: "Apply a safe company import through the raw API route",
+      "pt-BR": "Aplicar uma importação segura pelo endpoint bruto da API",
+    },
+    arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {

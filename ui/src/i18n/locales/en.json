@@ -3705,6 +3705,157 @@
     "plugins": "Plugins",
     "adapters": "Adapters"
   },
+  "pluginSettings": {
+    "loading": "Loading plugin details...",
+    "back": "Back to plugins",
+    "breadcrumb": {
+      "pluginDetails": "Plugin Details"
+    },
+    "tabs": {
+      "configuration": "Configuration",
+      "status": "Status"
+    },
+    "about": {
+      "title": "About",
+      "description": "Description",
+      "noDescription": "No description provided.",
+      "author": "Author",
+      "categories": "Categories",
+      "none": "None"
+    },
+    "settings": {
+      "title": "Settings",
+      "noSettings": "This plugin does not require any settings."
+    },
+    "environment": {
+      "configureFromEnvironments": "Configure this plugin from Settings → Environments.",
+      "driverSettingsDescription": "{{driver}} registers environment runtime settings there so the execution target stays instance-scoped while secret bindings still resolve through the selected organization context.",
+      "thisPlugin": "This plugin",
+      "openEnvironments": "Open Environments"
+    },
+    "status": {
+      "runtimeDashboard": "Runtime Dashboard",
+      "runtimeDashboardDescription": "Worker process, scheduled jobs, and webhook deliveries",
+      "workerProcess": "Worker Process",
+      "statusLabel": "Status",
+      "uptime": "Uptime",
+      "pendingRpcs": "Pending RPCs",
+      "crashes": "Crashes",
+      "crashCount": "{{consecutive}} consecutive / {{total}} total",
+      "lastCrash": "Last Crash",
+      "noWorker": "No worker process registered.",
+      "recentJobRuns": "Recent Job Runs",
+      "noJobRuns": "No job runs recorded yet.",
+      "recentWebhookDeliveries": "Recent Webhook Deliveries",
+      "noWebhookDeliveries": "No webhook deliveries recorded yet.",
+      "lastChecked": "Last checked:",
+      "runtimeUnavailable": "Runtime diagnostics are unavailable right now.",
+      "recentLogs": "Recent Logs",
+      "logEntries_one": "Last {{count}} log entry",
+      "logEntries_other": "Last {{count}} log entries",
+      "healthStatus": "Health Status",
+      "checkingHealth": "Checking health...",
+      "overall": "Overall",
+      "healthChecksWhenReady": "Health checks run once the plugin is ready.",
+      "lifecycle": "Lifecycle",
+      "details": "Details",
+      "pluginId": "Plugin ID",
+      "pluginKey": "Plugin Key",
+      "npmPackage": "NPM Package",
+      "version": "Version",
+      "permissions": "Permissions",
+      "noSpecialPermissions": "No special permissions requested.",
+      "lifecycleValues": {
+        "installed": "Installed",
+        "ready": "Ready",
+        "disabled": "Disabled",
+        "error": "Error",
+        "upgrade_pending": "Upgrade pending",
+        "uninstalled": "Uninstalled"
+      },
+      "workerValues": {
+        "stopped": "Stopped",
+        "starting": "Starting",
+        "running": "Running",
+        "stopping": "Stopping",
+        "crashed": "Crashed",
+        "backoff": "Waiting to retry"
+      },
+      "jobRunValues": {
+        "pending": "Pending",
+        "queued": "Queued",
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      },
+      "jobTriggerValues": {
+        "schedule": "Scheduled",
+        "manual": "Manual",
+        "retry": "Retry"
+      },
+      "webhookDeliveryValues": {
+        "pending": "Pending",
+        "success": "Succeeded",
+        "failed": "Failed"
+      }
+    },
+    "localFolders": {
+      "selectOrganization": "Select an organization to configure this plugin's local folders.",
+      "title": "Local folders",
+      "loadFailed": "Failed to load local folder settings.",
+      "loading": "Loading local folders...",
+      "saved": "Local folder saved.",
+      "savedNeedsAttention": "Local folder saved, but validation still needs attention.",
+      "saveFailed": "Failed to save local folder.",
+      "pathRequired": "Local folder path is required.",
+      "absolutePathRequired": "Local folder must be a full absolute path.",
+      "healthy": "Healthy",
+      "needsAttention": "Needs attention",
+      "readWrite": "Read/write",
+      "readOnly": "Read only",
+      "configured": "Configured",
+      "readable": "Readable",
+      "writable": "Writable",
+      "yes": "Yes",
+      "no": "No",
+      "notRequested": "Not requested",
+      "configuredPath": "Configured path",
+      "pathLabel": "Local folder path",
+      "pathPlaceholder": "/absolute/path/to/folder",
+      "save": "Save",
+      "validationProblems": "Validation problems",
+      "requiredDirectories": "Required directories",
+      "requiredFiles": "Required files",
+      "missingDirectories": "Missing directories",
+      "missingFiles": "Missing files",
+      "missingCount": "{{count}} missing",
+      "notInspected": "Not inspected",
+      "present": "Present",
+      "noneDeclared": "None declared.",
+      "rootNotInspected": "Configured root was not inspected."
+    },
+    "configuration": {
+      "selectOrganizationBeforeSaving": "Select an organization before saving plugin configuration.",
+      "saved": "Configuration saved.",
+      "saveFailed": "Failed to save configuration.",
+      "selectOrganizationBeforeTesting": "Select an organization before testing plugin configuration.",
+      "testPassed": "Configuration test passed.",
+      "testFailed": "Configuration test failed.",
+      "loading": "Loading configuration...",
+      "save": "Save Configuration",
+      "saving": "Saving...",
+      "test": "Test Configuration",
+      "testing": "Testing..."
+    },
+    "relativeTime": {
+      "justNow": "just now",
+      "seconds": "{{count}}s ago",
+      "minutes": "{{count}}m ago",
+      "hours": "{{count}}h ago",
+      "days": "{{count}}d ago"
+    }
+  },
   "instanceGeneral": {
     "loading": "Loading general settings...",
     "title": "General",

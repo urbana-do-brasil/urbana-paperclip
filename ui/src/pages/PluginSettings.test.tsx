@@ -3,7 +3,9 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { queryKeys } from "../lib/queryKeys";
 import { PluginSettings } from "./PluginSettings";
 
@@ -48,7 +50,21 @@ vi.mock("@/plugins/slots", () => ({
 }));
 
 vi.mock("@/components/PageTabBar", () => ({
-  PageTabBar: () => null,
+  PageTabBar: ({
+    items,
+    onValueChange,
+  }: {
+    items: Array<{ value: string; label: React.ReactNode }>;
+    onValueChange: (value: string) => void;
+  }) => (
+    <div>
+      {items.map((item) => (
+        <button key={item.value} type="button" onClick={() => onValueChange(item.value)}>
+          {item.label}
+        </button>
+      ))}
+    </div>
+  ),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -147,7 +163,12 @@ async function renderSettings(
 describe("PluginSettings", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  afterAll(async () => {
+    await i18n.changeLanguage(DEFAULT_LOCALE);
+  });
+
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
 
@@ -370,6 +391,204 @@ describe("PluginSettings", () => {
     expect(container.textContent).toContain("WritableYes");
     expect(container.textContent).toContain("Present");
     expect(container.textContent).not.toContain("Validation problems");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("uses PT-BR as the default UI locale for plugin settings", async () => {
+    expect(DEFAULT_LOCALE).toBe("pt-BR");
+    await i18n.changeLanguage(DEFAULT_LOCALE);
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      status: "future-lifecycle-state",
+      manifestJson: {
+        displayName: "External plugin name",
+        version: "0.1.0",
+        description: "Manifest-owned description stays as provided.",
+        author: "Plugin author",
+        capabilities: ["example.permission"],
+      },
+    }));
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain("Sobre");
+    expect(container.textContent).toContain("Descrição");
+    expect(container.textContent).toContain("Configurações");
+    expect(container.textContent).toContain("External plugin name");
+    expect(container.textContent).toContain("Manifest-owned description stays as provided.");
+    expect(container.textContent).toContain("Plugin author");
+    expect(container.textContent).toContain("future-lifecycle-state");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["pt-BR", "Sobre", "Descrição", "Configurações"],
+    ["en", "About", "Description", "Settings"],
+  ])("localizes host-owned configuration labels in %s while preserving manifest content", async (locale, about, description, settings) => {
+    await i18n.changeLanguage(locale);
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      manifestJson: {
+        displayName: "Plugin-defined display name",
+        version: "0.1.0",
+        description: "Plugin-defined description.",
+        author: "Plugin-defined author",
+        capabilities: [],
+      },
+    }));
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain(about);
+    expect(container.textContent).toContain(description);
+    expect(container.textContent).toContain(settings);
+    expect(container.textContent).toContain("Plugin-defined display name");
+    expect(container.textContent).toContain("Plugin-defined description.");
+    expect(container.textContent).toContain("Plugin-defined author");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["pt-BR", "Pastas locais", "Requer atenção", "Pastas ausentes", "Arquivos ausentes", "/caminho/absoluto/da/pasta"],
+    ["en", "Local folders", "Needs attention", "Missing directories", "Missing files", "/absolute/path/to/folder"],
+  ])("localizes host-owned folder controls in %s and preserves external diagnostics", async (locale, folderTitle, attention, missingDirectories, missingFiles, pathPlaceholder) => {
+    await i18n.changeLanguage(locale);
+    const declaration = wikiFolderDeclaration();
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      status: "ready",
+      manifestJson: {
+        displayName: "Folder plugin",
+        version: "0.1.0",
+        description: "External manifest description.",
+        author: "Plugin author",
+        capabilities: ["local.folders"],
+        localFolders: [declaration],
+      },
+    }));
+    mockPluginsApi.listLocalFolders.mockResolvedValue({
+      pluginId: "plugin-1",
+      companyId: "company-1",
+      declarations: [declaration],
+      folders: [folderStatus({
+        problems: [{ code: "not_configured", message: "External validation diagnostic." }],
+      })],
+    });
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain(folderTitle);
+    expect(container.textContent).toContain(attention);
+    expect(container.textContent).toContain(missingDirectories);
+    expect(container.textContent).toContain(missingFiles);
+    expect(container.textContent).toContain("External validation diagnostic.");
+    expect(container.textContent).toContain("Company-scoped local folder that stores wiki files.");
+    expect(container.textContent).toContain("External manifest description.");
+    expect(container.querySelector("input")?.getAttribute("placeholder")).toBe(pathPlaceholder);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["pt-BR", "Painel do runtime", "Processo de trabalho", "Status de integridade", "Permissões", "Pronto", "Em execução", "Concluída", "Agendado", "Manual", "Nova tentativa"],
+    ["en", "Runtime Dashboard", "Worker Process", "Health Status", "Permissions", "Ready", "Running", "Succeeded", "Scheduled", "Manual", "Retry"],
+  ])("localizes the status and diagnostics surface in %s", async (locale, runtimeDashboard, workerProcess, healthStatus, permissions, readyStatus, runningStatus, succeededStatus, scheduledTrigger, manualTrigger, retryTrigger) => {
+    await i18n.changeLanguage(locale);
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      status: "ready",
+      manifestJson: {
+        displayName: "Diagnostic plugin",
+        version: "0.1.0",
+        description: "Plugin-owned description.",
+        author: "Plugin author",
+        capabilities: ["plugin.capability.value"],
+      },
+    }));
+    const makeJobRun = (id: string, trigger: string, status: string, jobKey: string) => ({
+      id,
+      jobId: `job-${id}`,
+      jobKey,
+      trigger,
+      status,
+      durationMs: 1000,
+      error: null,
+      startedAt: new Date().toISOString(),
+      finishedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+    const dashboardData = {
+      pluginId: "plugin-1",
+      worker: {
+        status: "running",
+        pid: 42,
+        uptime: 60000,
+        consecutiveCrashes: 0,
+        totalCrashes: 0,
+        pendingRequests: 1,
+        lastCrashAt: null,
+        nextRestartAt: null,
+      },
+      recentJobRuns: [
+        makeJobRun("run-manual", "manual", "succeeded", "plugin-job-key"),
+        makeJobRun("run-scheduled", "schedule", "pending", "plugin-job-scheduled"),
+        makeJobRun("run-retry", "retry", "failed", "plugin-job-retry"),
+        makeJobRun("run-future", "future-trigger", "queued", "plugin-job-future"),
+      ],
+      recentWebhookDeliveries: [{
+        id: "delivery-1",
+        webhookKey: "manifest-webhook-key",
+        status: "success",
+        durationMs: 1000,
+        error: null,
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      }],
+      health: { pluginId: "plugin-1", status: "ready", healthy: true, checks: [] },
+      checkedAt: new Date().toISOString(),
+    };
+    mockPluginsApi.dashboard.mockResolvedValue(dashboardData);
+    const root = await renderSettings(container);
+    const statusTab = [...container.querySelectorAll("button")].find((button) =>
+      button.textContent === i18n.t("pluginSettings.tabs.status"),
+    );
+    expect(statusTab).toBeDefined();
+
+    await act(async () => {
+      statusTab!.click();
+    });
+    await flushReact();
+
+    expect(container.textContent).toContain(runtimeDashboard);
+    expect(container.textContent).toContain(workerProcess);
+    expect(container.textContent).toContain(healthStatus);
+    expect(container.textContent).toContain(permissions);
+    expect(container.textContent).toContain("Diagnostic plugin");
+    expect(container.textContent).toContain(readyStatus);
+    expect(container.textContent).toContain(runningStatus);
+    expect(container.textContent).toContain("plugin.capability.value");
+    expect(container.textContent).toContain("plugin-job-key");
+    expect(container.textContent).toContain("manifest-webhook-key");
+    expect(container.textContent).toContain(scheduledTrigger);
+    expect(container.textContent).toContain(manualTrigger);
+    expect(container.textContent).toContain(retryTrigger);
+    expect(container.textContent).toContain("future-trigger");
+    expect(dashboardData.recentJobRuns.map(({ trigger }) => trigger)).toEqual([
+      "manual",
+      "schedule",
+      "retry",
+      "future-trigger",
+    ]);
+    expect(container.querySelector(`[title="${succeededStatus}"]`)).toBeDefined();
+    expect(container.querySelectorAll(`[title="${succeededStatus}"]`)).toHaveLength(2);
 
     await act(async () => {
       root.unmount();

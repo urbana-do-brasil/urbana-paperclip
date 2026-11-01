@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { PluginUiContribution } from "@/api/plugins";
 import { pluginsApi } from "@/api/plugins";
+import { i18n } from "@/i18n";
 import { queryKeys } from "@/lib/queryKeys";
 import { PluginLauncherOutlet, PluginLauncherProvider } from "./launchers";
 import { _resetPluginModuleLoader, PluginSlotOutlet, registerPluginReactComponent } from "./slots";
@@ -24,10 +25,20 @@ const contribution: PluginUiContribution = {
     action: { type: "navigate", target: "/fixture" },
   }],
 };
+const localeLauncherContribution: PluginUiContribution = {
+  ...contribution,
+  launchers: [{
+    id: "locale-modal",
+    displayName: "Locale launcher",
+    placementZone: "sidebar",
+    action: { type: "openDrawer", target: "LocaleLauncher" },
+  }],
+};
 const context = { companyId: "company-1", companyPrefix: "PAP" };
 let root: Root;
 let container: HTMLDivElement;
 let client: QueryClient;
+let previousLanguage: string | undefined;
 
 async function render(errorBehavior?: "inline" | "hidden") {
   await act(async () => root.render(
@@ -45,6 +56,7 @@ async function render(errorBehavior?: "inline" | "hidden") {
 
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  previousLanguage = i18n.resolvedLanguage ?? i18n.language;
   // Module and session fetches stay pending; components are registered directly.
   vi.stubGlobal("__paperclipPluginBridge__", {});
   vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {})));
@@ -54,6 +66,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   await act(async () => root.unmount()); container.remove(); client.clear(); _resetPluginModuleLoader();
+  if (previousLanguage) await act(async () => { await i18n.changeLanguage(previousLanguage); });
   vi.unstubAllGlobals(); vi.restoreAllMocks();
 });
 
@@ -82,4 +95,28 @@ it("hides errors and keeps the last loaded slots and launchers when errorBehavio
   expect(container.textContent).toContain("Fixture sidebar item");
   expect(container.textContent).toContain("Fixture sidebar panel");
   expect(container.textContent).toContain("Fixture launcher");
+});
+
+it("updates launcher host locale while its plugin component stays mounted", async () => {
+  await act(async () => { await i18n.changeLanguage("pt-BR"); });
+  let mountCount = 0;
+  registerPluginReactComponent("fixture.sidebar", "LocaleLauncher", ({ context }) => {
+    const [mountId] = useState(() => ++mountCount);
+    return <output data-testid="launcher-locale" data-mount-id={mountId}>{context.locale}</output>;
+  });
+  client.setQueryData(queryKeys.plugins.uiContributions, [localeLauncherContribution]);
+  await render("hidden");
+  const trigger = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Locale launcher");
+  expect(trigger).toBeDefined();
+
+  await act(async () => {
+    trigger!.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(container.querySelector("[data-testid=launcher-locale]")?.textContent).toBe("pt-BR");
+  expect(container.querySelector("[data-testid=launcher-locale]")?.getAttribute("data-mount-id")).toBe("1");
+
+  await act(async () => { await i18n.changeLanguage("en"); });
+  expect(container.querySelector("[data-testid=launcher-locale]")?.textContent).toBe("en");
+  expect(container.querySelector("[data-testid=launcher-locale]")?.getAttribute("data-mount-id")).toBe("1");
 });
