@@ -3705,6 +3705,80 @@
     "plugins": "Plugins",
     "adapters": "Adapters"
   },
+  "pluginManager": {
+    "loading": "Loading plugins...",
+    "loadError": "Failed to load plugins.",
+    "title": "Plugin Manager",
+    "actions": {
+      "installPlugin": "Install Plugin",
+      "install": "Install",
+      "installing": "Installing...",
+      "cancel": "Cancel",
+      "enable": "Enable",
+      "disablePlugin": "Disable plugin",
+      "enablePlugin": "Enable plugin",
+      "openSettings": "Open Settings",
+      "review": "Review",
+      "viewFullError": "View full error",
+      "uninstallPlugin": "Uninstall plugin",
+      "uninstall": "Uninstall",
+      "uninstalling": "Uninstalling...",
+      "configure": "Configure",
+      "close": "Close"
+    },
+    "installDialog": {
+      "title": "Install Plugin",
+      "description": "Enter the npm package name of the plugin you wish to install.",
+      "packageNameLabel": "npm Package Name",
+      "packageNamePlaceholder": "@paperclipai/plugin-example"
+    },
+    "warning": {
+      "title": "Plugins are alpha.",
+      "description": "The plugin runtime and API surface are still changing. Expect breaking changes while this feature settles."
+    },
+    "available": {
+      "title": "Available Plugins",
+      "bundled": "Bundled",
+      "loading": "Loading bundled plugins...",
+      "loadError": "Failed to load bundled plugins.",
+      "empty": "No bundled plugins were found in this checkout.",
+      "firstParty": "First-party",
+      "example": "Example",
+      "experimental": "Experimental",
+      "notInstalled": "Not installed",
+      "building": "Building plugin..."
+    },
+    "installed": {
+      "title": "Installed Plugins",
+      "emptyTitle": "No plugins installed",
+      "emptyDescription": "Install a plugin to extend functionality.",
+      "noDescription": "No description provided.",
+      "packageVersion": "{{packageName}} · v{{version}}",
+      "errorTitle": "Plugin error",
+      "errorFallback": "Plugin entered an error state without a stored error message.",
+      "errorDetails": "Error Details",
+      "errorDescription": "{{name}} hit an error state.",
+      "pluginFallback": "Plugin",
+      "whatErrored": "What errored",
+      "errorSummaryFallback": "No error summary available.",
+      "fullErrorOutput": "Full error output",
+      "storedErrorFallback": "No stored error message."
+    },
+    "uninstallDialog": {
+      "title": "Uninstall Plugin",
+      "description": "Are you sure you want to uninstall {{name}}? This action cannot be undone."
+    },
+    "toasts": {
+      "installSuccess": "Plugin installed successfully",
+      "installError": "Failed to install plugin",
+      "uninstallSuccess": "Plugin uninstalled successfully",
+      "uninstallError": "Failed to uninstall plugin",
+      "enableSuccess": "Plugin enabled",
+      "enableError": "Failed to enable plugin",
+      "disableSuccess": "Plugin disabled",
+      "disableError": "Failed to disable plugin"
+    }
+  },
   "pluginSettings": {
     "loading": "Loading plugin details...",
     "back": "Back to plugins",

@@ -3800,6 +3800,80 @@
     "plugins": "Plugins",
     "adapters": "Adaptadores"
   },
+  "pluginManager": {
+    "loading": "Carregando plugins...",
+    "loadError": "Não foi possível carregar os plugins.",
+    "title": "Gerenciador de plugins",
+    "actions": {
+      "installPlugin": "Instalar plugin",
+      "install": "Instalar",
+      "installing": "Instalando...",
+      "cancel": "Cancelar",
+      "enable": "Ativar",
+      "disablePlugin": "Desativar plugin",
+      "enablePlugin": "Ativar plugin",
+      "openSettings": "Abrir configurações",
+      "review": "Revisar",
+      "viewFullError": "Ver erro completo",
+      "uninstallPlugin": "Desinstalar plugin",
+      "uninstall": "Desinstalar",
+      "uninstalling": "Desinstalando...",
+      "configure": "Configurar",
+      "close": "Fechar"
+    },
+    "installDialog": {
+      "title": "Instalar plugin",
+      "description": "Digite o nome do pacote npm do plugin que deseja instalar.",
+      "packageNameLabel": "Nome do pacote npm",
+      "packageNamePlaceholder": "@paperclipai/plugin-example"
+    },
+    "warning": {
+      "title": "Os plugins estão em fase alfa.",
+      "description": "O ambiente de execução dos plugins e a API ainda estão mudando. Espere mudanças incompatíveis enquanto este recurso amadurece."
+    },
+    "available": {
+      "title": "Plugins disponíveis",
+      "bundled": "Incluídos",
+      "loading": "Carregando plugins incluídos...",
+      "loadError": "Não foi possível carregar os plugins incluídos.",
+      "empty": "Nenhum plugin incluído foi encontrado neste checkout.",
+      "firstParty": "Oficial",
+      "example": "Exemplo",
+      "experimental": "Experimental",
+      "notInstalled": "Não instalado",
+      "building": "Compilando plugin..."
+    },
+    "installed": {
+      "title": "Plugins instalados",
+      "emptyTitle": "Nenhum plugin instalado",
+      "emptyDescription": "Instale um plugin para ampliar as funcionalidades.",
+      "noDescription": "Nenhuma descrição fornecida.",
+      "packageVersion": "{{packageName}} · v{{version}}",
+      "errorTitle": "Erro no plugin",
+      "errorFallback": "O plugin entrou em estado de erro sem uma mensagem armazenada.",
+      "errorDetails": "Detalhes do erro",
+      "errorDescription": "{{name}} entrou em estado de erro.",
+      "pluginFallback": "Plugin",
+      "whatErrored": "O que apresentou erro",
+      "errorSummaryFallback": "Nenhum resumo do erro disponível.",
+      "fullErrorOutput": "Saída completa do erro",
+      "storedErrorFallback": "Nenhuma mensagem de erro armazenada."
+    },
+    "uninstallDialog": {
+      "title": "Desinstalar plugin",
+      "description": "Tem certeza de que deseja desinstalar {{name}}? Esta ação não pode ser desfeita."
+    },
+    "toasts": {
+      "installSuccess": "Plugin instalado com sucesso",
+      "installError": "Não foi possível instalar o plugin",
+      "uninstallSuccess": "Plugin desinstalado com sucesso",
+      "uninstallError": "Não foi possível desinstalar o plugin",
+      "enableSuccess": "Plugin ativado",
+      "enableError": "Não foi possível ativar o plugin",
+      "disableSuccess": "Plugin desativado",
+      "disableError": "Não foi possível desativar o plugin"
+    }
+  },
   "pluginSettings": {
     "loading": "Carregando detalhes do plugin...",
     "back": "Voltar para plugins",

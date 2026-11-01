@@ -30,6 +30,7 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { cliMessage } from "../../localization/index.js";
 
 interface AgentListOptions extends BaseClientOptions {
   companyId?: string;
@@ -302,20 +303,20 @@ export function registerAgentCommands(program: Command): void {
           }
 
           if (rows.length === 0) {
-            printOutput([], { json: false });
+            console.log(cliMessage("emptyList"));
             return;
           }
 
           for (const row of rows) {
             console.log(
               formatInlineRecord({
-                id: row.id,
-                name: row.name,
-                role: row.role,
-                status: row.status,
-                reportsTo: row.reportsTo,
-                budgetMonthlyCents: row.budgetMonthlyCents,
-                spentMonthlyCents: row.spentMonthlyCents,
+                [cliMessage("agentListId")]: row.id,
+                [cliMessage("agentListName")]: row.name,
+                [cliMessage("agentListRole")]: row.role,
+                [cliMessage("agentListStatus")]: row.status,
+                [cliMessage("agentListReportsTo")]: row.reportsTo,
+                [cliMessage("agentListMonthlyBudget")]: row.budgetMonthlyCents,
+                [cliMessage("agentListMonthlySpent")]: row.spentMonthlyCents,
               }),
             );
           }

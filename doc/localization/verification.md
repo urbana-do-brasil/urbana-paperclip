@@ -3421,3 +3421,11 @@ Checkpoint após essas duas fatias concluídas e com 4.3g registrada como penden
 - `git diff --check` — passou.
 
 A fatia localiza ajuda, menu interativo, preview, confirmação, progresso, resultados e erros em PT-BR/en. O JSON do preview e do apply permaneceu idêntico entre idiomas, flags e valores permaneceram estáveis, erros sob `--json` mantêm stderr/código de saída neutros, e as mensagens de transferência já aplicada preservam a organização e o prefixo. Checkpoint: **298/325 tarefas**.
+
+### Gerenciador de plugins e `agent list` — 3.11c/4.3h
+
+- `PluginManager.test.tsx` + `locale-validation.test.ts`: 2 arquivos, 17/17 testes; typecheck da UI e `pnpm check:token-gates` passaram.
+- `agent-list-localization.test.ts`: 3/3 casos bilíngues passaram; ajuda real de `agent list` foi conferida em PT-BR/en. O typecheck estrito do grafo de arquivos CLI alterados passou; o typecheck completo da CLI terminou com exit 137 por limite de memória.
+- Catálogos JSON, `git diff --check` e validação estrita do OpenSpec passaram.
+
+O `PluginManager` agora localiza mensagens próprias do host, status/tags conhecidos, ações, acessibilidade, diálogos e toasts; valores desconhecidos, metadata/descrições de plugins e erros dinâmicos permanecem originais. `agent list` localiza a ajuda, o marcador de lista vazia e os rótulos humanos, preservando nomes/papéis/status/IDs/dados e a saída JSON. Checkpoint: **300/326 tarefas**. Próxima fatia: 3.11d; demais comandos de 4.3 e regressão de 4.4 continuam pendentes.

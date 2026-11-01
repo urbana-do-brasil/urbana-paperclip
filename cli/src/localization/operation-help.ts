@@ -184,6 +184,16 @@ const operationHelp: Record<string, CommandHelp> = {
       "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
     },
   },
+  "agent list": {
+    description: {
+      en: "List agents for a company",
+      "pt-BR": "Listar agentes de uma organização",
+    },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {
