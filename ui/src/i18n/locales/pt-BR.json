@@ -3924,7 +3924,36 @@
       }
     },
     "uiSlots": {
-      "workspaceChangesTab": "Alterações"
+      "llmWikiSidebar": "Wiki",
+      "llmWikiPage": "Wiki",
+      "llmWikiRouteSidebar": "Wiki",
+      "workspaceChangesTab": "Alterações",
+      "kitchenSinkPage": "Kitchen Sink",
+      "kitchenSinkSettingsPage": "Configurações do Kitchen Sink",
+      "kitchenSinkCompanySettingsPage": "Kitchen Sink",
+      "kitchenSinkDashboardWidget": "Kitchen Sink",
+      "kitchenSinkSidebar": "Kitchen Sink",
+      "kitchenSinkSidebarPanel": "Painel do Kitchen Sink",
+      "kitchenSinkProjectSidebarItem": "Kitchen Sink",
+      "kitchenSinkProjectTab": "Kitchen Sink",
+      "kitchenSinkIssueTab": "Kitchen Sink",
+      "kitchenSinkTaskDetailView": "Visão da tarefa do Kitchen Sink",
+      "kitchenSinkToolbarButton": "Ação do Kitchen Sink",
+      "kitchenSinkContextMenuItem": "Contexto do Kitchen Sink",
+      "kitchenSinkCommentAnnotation": "Anotação de comentário do Kitchen Sink",
+      "kitchenSinkCommentContextMenuItem": "Ação de comentário do Kitchen Sink",
+      "fileBrowserFilesLink": "Arquivos",
+      "fileBrowserFilesTab": "Arquivos",
+      "fileBrowserCommentFileLinks": "Links de arquivos",
+      "fileBrowserCommentOpenFiles": "Abrir em Arquivos",
+      "orchestrationSmokeHealthWidget": "Saúde do teste de fumaça da orquestração",
+      "orchestrationSmokeIssuePanel": "Teste de fumaça da orquestração",
+      "orchestrationSmokeSettings": "Teste de fumaça da orquestração",
+      "helloWorldDashboardWidget": "Hello World",
+      "pluginAuthoringSmokeHealthWidget": "Saúde do exemplo de teste de fumaça de autoria de plugin"
+    },
+    "uiLaunchers": {
+      "kitchenSinkModalLauncher": "Modal do Kitchen Sink"
     }
   },
   "pluginManager": {

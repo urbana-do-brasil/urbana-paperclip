@@ -40,6 +40,7 @@ export interface InstalledPluginBundleIdentity extends PluginBundleIdentity {
 export interface PluginUiContributionPresentation {
   pluginDisplayName: string;
   slotDisplayNames: Readonly<Record<string, string>>;
+  launcherDisplayNames: Readonly<Record<string, string>>;
 }
 
 /** Return true only when the installed package points at the host's bundle catalog entry. */
@@ -116,8 +117,52 @@ const OWN_LOCAL_FOLDER_PRESENTATION_KEYS: Record<string, { pluginKey: string; ke
 };
 
 const OWN_PLUGIN_UI_SLOT_PRESENTATION_KEYS: Record<string, Record<string, { key: string; sourceDisplayName: string }>> = {
+  "paperclipai.plugin-llm-wiki": {
+    "wiki-sidebar": { key: "llmWikiSidebar", sourceDisplayName: "Wiki" },
+    "wiki-page": { key: "llmWikiPage", sourceDisplayName: "Wiki" },
+    "wiki-route-sidebar": { key: "llmWikiRouteSidebar", sourceDisplayName: "Wiki" },
+  },
   "paperclip.workspace-diff": {
     "workspace-changes-tab": { key: "workspaceChangesTab", sourceDisplayName: "Changes" },
+  },
+  "paperclip-kitchen-sink-example": {
+    "kitchen-sink-page": { key: "kitchenSinkPage", sourceDisplayName: "Kitchen Sink" },
+    "kitchen-sink-settings-page": { key: "kitchenSinkSettingsPage", sourceDisplayName: "Kitchen Sink Settings" },
+    "kitchen-sink-company-settings-page": { key: "kitchenSinkCompanySettingsPage", sourceDisplayName: "Kitchen Sink" },
+    "kitchen-sink-dashboard-widget": { key: "kitchenSinkDashboardWidget", sourceDisplayName: "Kitchen Sink" },
+    "kitchen-sink-sidebar-link": { key: "kitchenSinkSidebar", sourceDisplayName: "Kitchen Sink" },
+    "kitchen-sink-sidebar-panel": { key: "kitchenSinkSidebarPanel", sourceDisplayName: "Kitchen Sink Panel" },
+    "kitchen-sink-project-link": { key: "kitchenSinkProjectSidebarItem", sourceDisplayName: "Kitchen Sink" },
+    "kitchen-sink-project-tab": { key: "kitchenSinkProjectTab", sourceDisplayName: "Kitchen Sink" },
+    "kitchen-sink-issue-tab": { key: "kitchenSinkIssueTab", sourceDisplayName: "Kitchen Sink" },
+    "kitchen-sink-task-detail": { key: "kitchenSinkTaskDetailView", sourceDisplayName: "Kitchen Sink Task View" },
+    "kitchen-sink-toolbar-action": { key: "kitchenSinkToolbarButton", sourceDisplayName: "Kitchen Sink Action" },
+    "kitchen-sink-context-action": { key: "kitchenSinkContextMenuItem", sourceDisplayName: "Kitchen Sink Context" },
+    "kitchen-sink-comment-annotation": { key: "kitchenSinkCommentAnnotation", sourceDisplayName: "Kitchen Sink Comment Annotation" },
+    "kitchen-sink-comment-action": { key: "kitchenSinkCommentContextMenuItem", sourceDisplayName: "Kitchen Sink Comment Action" },
+  },
+  "paperclip-file-browser-example": {
+    "files-link": { key: "fileBrowserFilesLink", sourceDisplayName: "Files" },
+    "files-tab": { key: "fileBrowserFilesTab", sourceDisplayName: "Files" },
+    "comment-file-links": { key: "fileBrowserCommentFileLinks", sourceDisplayName: "File Links" },
+    "comment-open-files": { key: "fileBrowserCommentOpenFiles", sourceDisplayName: "Open in Files" },
+  },
+  "paperclipai.plugin-orchestration-smoke-example": {
+    "health-widget": { key: "orchestrationSmokeHealthWidget", sourceDisplayName: "Orchestration Smoke Health" },
+    "issue-panel": { key: "orchestrationSmokeIssuePanel", sourceDisplayName: "Orchestration Smoke" },
+    settings: { key: "orchestrationSmokeSettings", sourceDisplayName: "Orchestration Smoke" },
+  },
+  "paperclip.hello-world-example": {
+    "hello-world-dashboard-widget": { key: "helloWorldDashboardWidget", sourceDisplayName: "Hello World" },
+  },
+  "paperclipai.plugin-authoring-smoke-example": {
+    "health-widget": { key: "pluginAuthoringSmokeHealthWidget", sourceDisplayName: "Plugin Authoring Smoke Example Health" },
+  },
+};
+
+const OWN_PLUGIN_UI_LAUNCHER_PRESENTATION_KEYS: Record<string, Record<string, { key: string; sourceDisplayName: string }>> = {
+  "paperclip-kitchen-sink-example": {
+    "kitchen-sink-launcher": { key: "kitchenSinkModalLauncher", sourceDisplayName: "Kitchen Sink Modal" },
   },
 };
 
@@ -127,20 +172,22 @@ function translate(t: TFunction, key: string, defaultValue: string): string {
 
 export function hasOwnedPluginPresentation(pluginKey: string): boolean {
   return Object.prototype.hasOwnProperty.call(OWN_PLUGIN_PRESENTATION_KEYS, pluginKey)
-    || Object.prototype.hasOwnProperty.call(OWN_PLUGIN_UI_SLOT_PRESENTATION_KEYS, pluginKey);
+    || Object.prototype.hasOwnProperty.call(OWN_PLUGIN_UI_SLOT_PRESENTATION_KEYS, pluginKey)
+    || Object.prototype.hasOwnProperty.call(OWN_PLUGIN_UI_LAUNCHER_PRESENTATION_KEYS, pluginKey);
 }
 
 export function localizePluginUiContributionPresentation<T extends {
   pluginKey: string;
   displayName: string;
   slots: Array<{ id: string; displayName: string }>;
+  launchers?: Array<{ id: string; displayName: string }>;
 }>(
   contribution: T,
   t: TFunction,
   isTrustedBundle = false,
 ): PluginUiContributionPresentation {
   if (!isTrustedBundle) {
-    return { pluginDisplayName: contribution.displayName, slotDisplayNames: {} };
+    return { pluginDisplayName: contribution.displayName, slotDisplayNames: {}, launcherDisplayNames: {} };
   }
 
   const localizedPlugin = localizePluginPresentation(
@@ -161,7 +208,22 @@ export function localizePluginUiContributionPresentation<T extends {
     slotDisplayNames[slot.id] = translate(t, `pluginPresentation.uiSlots.${ownedSlot.key}`, slot.displayName);
   }
 
-  return { pluginDisplayName: localizedPlugin.displayName, slotDisplayNames };
+  const launcherNames = Object.prototype.hasOwnProperty.call(OWN_PLUGIN_UI_LAUNCHER_PRESENTATION_KEYS, contribution.pluginKey)
+    ? OWN_PLUGIN_UI_LAUNCHER_PRESENTATION_KEYS[contribution.pluginKey]
+    : undefined;
+  const launcherDisplayNames: Record<string, string> = Object.create(null) as Record<string, string>;
+  for (const launcher of contribution.launchers ?? []) {
+    if (!launcherNames || !Object.prototype.hasOwnProperty.call(launcherNames, launcher.id)) continue;
+    const ownedLauncher = launcherNames[launcher.id];
+    if (launcher.displayName !== ownedLauncher.sourceDisplayName) continue;
+    launcherDisplayNames[launcher.id] = translate(
+      t,
+      `pluginPresentation.uiLaunchers.${ownedLauncher.key}`,
+      launcher.displayName,
+    );
+  }
+
+  return { pluginDisplayName: localizedPlugin.displayName, slotDisplayNames, launcherDisplayNames };
 }
 
 export function localizePluginPresentation(

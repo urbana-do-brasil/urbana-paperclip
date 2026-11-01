@@ -409,6 +409,7 @@ export function registerAgentCommands(program: Command): void {
           const ctx = resolveCommandContext(opts);
           const payload = updateAgentSchema.parse(parseJson(opts.payloadJson));
           const updated = await ctx.api.patch<Agent>(apiPath`/api/agents/${agentId}`, payload);
+          if (!ctx.json) console.log(adminOperationMessage("agentUpdateDone", { agentId }));
           printOutput(updated, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -424,9 +425,14 @@ export function registerAgentCommands(program: Command): void {
       .option("--yes", "Confirm deletion")
       .action(async (agentId: string, opts: AgentDeleteOptions) => {
         try {
-          if (!opts.yes) throw new Error("Refusing to delete without --yes");
+          if (!opts.yes) {
+            throw new Error(
+              opts.json ? "Refusing to delete without --yes" : adminOperationMessage("agentDeleteNeedsYes"),
+            );
+          }
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.delete(apiPath`/api/agents/${agentId}`);
+          if (!ctx.json) console.log(adminOperationMessage("agentDeleteDone", { agentId }));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);

@@ -3478,3 +3478,11 @@ Checkpoint: **315/334 tarefas**.
 - `agent create`/`hire`: 14/14 testes e typecheck estrito direcionado passaram; respostas humanas completas, JSON, rotas, payloads e erros externos preservados.
 
 Checkpoint: **318/337 tarefas**.
+
+### Distillation, slots próprios e atualização/exclusão de agentes — 3.11f3c/h4 e 4.3o
+
+- Distillation da Wiki: 134/134 testes; typecheck e build passaram. Estados, ações, avisos, erro/retry, nomes e payloads foram verificados. Links temporários para React/jsdom usados nos testes foram removidos.
+- Slots/launcher: inventário dos 27 slots e um launcher de manifests próprios, 36/36 testes focados/locale; typecheck UI, token gates e forbidden-token check passaram. Prova de bundle, colisões e props originais foram preservados; outras metadata de recursos continuam pendentes.
+- `agent update`/`delete`: 36/36 testes da suíte de agentes e typecheck estrito direcionado passaram. `--json` sem `--yes` mantém stderr original e exit code, sem requisição.
+
+Checkpoint: **321/340 tarefas**.

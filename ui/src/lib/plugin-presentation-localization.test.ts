@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterAll, describe, expect, it } from "vitest";
 import { i18n } from "@/i18n";
 import { DEFAULT_LOCALE } from "@/i18n/locales";
@@ -14,7 +15,138 @@ afterAll(async () => {
   await i18n.changeLanguage(DEFAULT_LOCALE);
 });
 
+const ownUiSlotInventory = [
+  {
+    pluginKey: "paperclipai.plugin-llm-wiki",
+    slots: [
+      { id: "wiki-sidebar", sourceDisplayName: "Wiki", messageKey: "llmWikiSidebar", ptBr: "Wiki" },
+      { id: "wiki-page", sourceDisplayName: "Wiki", messageKey: "llmWikiPage", ptBr: "Wiki" },
+      { id: "wiki-route-sidebar", sourceDisplayName: "Wiki", messageKey: "llmWikiRouteSidebar", ptBr: "Wiki" },
+    ],
+    launchers: [],
+  },
+  {
+    pluginKey: "paperclip.workspace-diff",
+    slots: [
+      { id: "workspace-changes-tab", sourceDisplayName: "Changes", messageKey: "workspaceChangesTab", ptBr: "Alterações" },
+    ],
+    launchers: [],
+  },
+  {
+    pluginKey: "paperclip-kitchen-sink-example",
+    slots: [
+      { id: "kitchen-sink-page", sourceDisplayName: "Kitchen Sink", messageKey: "kitchenSinkPage", ptBr: "Kitchen Sink" },
+      { id: "kitchen-sink-settings-page", sourceDisplayName: "Kitchen Sink Settings", messageKey: "kitchenSinkSettingsPage", ptBr: "Configurações do Kitchen Sink" },
+      { id: "kitchen-sink-company-settings-page", sourceDisplayName: "Kitchen Sink", messageKey: "kitchenSinkCompanySettingsPage", ptBr: "Kitchen Sink" },
+      { id: "kitchen-sink-dashboard-widget", sourceDisplayName: "Kitchen Sink", messageKey: "kitchenSinkDashboardWidget", ptBr: "Kitchen Sink" },
+      { id: "kitchen-sink-sidebar-link", sourceDisplayName: "Kitchen Sink", messageKey: "kitchenSinkSidebar", ptBr: "Kitchen Sink" },
+      { id: "kitchen-sink-sidebar-panel", sourceDisplayName: "Kitchen Sink Panel", messageKey: "kitchenSinkSidebarPanel", ptBr: "Painel do Kitchen Sink" },
+      { id: "kitchen-sink-project-link", sourceDisplayName: "Kitchen Sink", messageKey: "kitchenSinkProjectSidebarItem", ptBr: "Kitchen Sink" },
+      { id: "kitchen-sink-project-tab", sourceDisplayName: "Kitchen Sink", messageKey: "kitchenSinkProjectTab", ptBr: "Kitchen Sink" },
+      { id: "kitchen-sink-issue-tab", sourceDisplayName: "Kitchen Sink", messageKey: "kitchenSinkIssueTab", ptBr: "Kitchen Sink" },
+      { id: "kitchen-sink-task-detail", sourceDisplayName: "Kitchen Sink Task View", messageKey: "kitchenSinkTaskDetailView", ptBr: "Visão da tarefa do Kitchen Sink" },
+      { id: "kitchen-sink-toolbar-action", sourceDisplayName: "Kitchen Sink Action", messageKey: "kitchenSinkToolbarButton", ptBr: "Ação do Kitchen Sink" },
+      { id: "kitchen-sink-context-action", sourceDisplayName: "Kitchen Sink Context", messageKey: "kitchenSinkContextMenuItem", ptBr: "Contexto do Kitchen Sink" },
+      { id: "kitchen-sink-comment-annotation", sourceDisplayName: "Kitchen Sink Comment Annotation", messageKey: "kitchenSinkCommentAnnotation", ptBr: "Anotação de comentário do Kitchen Sink" },
+      { id: "kitchen-sink-comment-action", sourceDisplayName: "Kitchen Sink Comment Action", messageKey: "kitchenSinkCommentContextMenuItem", ptBr: "Ação de comentário do Kitchen Sink" },
+    ],
+    launchers: [
+      { id: "kitchen-sink-launcher", sourceDisplayName: "Kitchen Sink Modal", messageKey: "kitchenSinkModalLauncher", ptBr: "Modal do Kitchen Sink" },
+    ],
+  },
+  {
+    pluginKey: "paperclip-file-browser-example",
+    slots: [
+      { id: "files-link", sourceDisplayName: "Files", messageKey: "fileBrowserFilesLink", ptBr: "Arquivos" },
+      { id: "files-tab", sourceDisplayName: "Files", messageKey: "fileBrowserFilesTab", ptBr: "Arquivos" },
+      { id: "comment-file-links", sourceDisplayName: "File Links", messageKey: "fileBrowserCommentFileLinks", ptBr: "Links de arquivos" },
+      { id: "comment-open-files", sourceDisplayName: "Open in Files", messageKey: "fileBrowserCommentOpenFiles", ptBr: "Abrir em Arquivos" },
+    ],
+    launchers: [],
+  },
+  {
+    pluginKey: "paperclipai.plugin-orchestration-smoke-example",
+    slots: [
+      { id: "health-widget", sourceDisplayName: "Orchestration Smoke Health", messageKey: "orchestrationSmokeHealthWidget", ptBr: "Saúde do teste de fumaça da orquestração" },
+      { id: "issue-panel", sourceDisplayName: "Orchestration Smoke", messageKey: "orchestrationSmokeIssuePanel", ptBr: "Teste de fumaça da orquestração" },
+      { id: "settings", sourceDisplayName: "Orchestration Smoke", messageKey: "orchestrationSmokeSettings", ptBr: "Teste de fumaça da orquestração" },
+    ],
+    launchers: [],
+  },
+  {
+    pluginKey: "paperclip.hello-world-example",
+    slots: [
+      { id: "hello-world-dashboard-widget", sourceDisplayName: "Hello World", messageKey: "helloWorldDashboardWidget", ptBr: "Hello World" },
+    ],
+    launchers: [],
+  },
+  {
+    pluginKey: "paperclipai.plugin-authoring-smoke-example",
+    slots: [
+      { id: "health-widget", sourceDisplayName: "Plugin Authoring Smoke Example Health", messageKey: "pluginAuthoringSmokeHealthWidget", ptBr: "Saúde do exemplo de teste de fumaça de autoria de plugin" },
+    ],
+    launchers: [],
+  },
+] as const;
+
+const ownUiSlotManifestSources: Record<string, string[]> = {
+  "paperclipai.plugin-llm-wiki": ["../../../packages/plugins/plugin-llm-wiki/src/manifest.ts"],
+  "paperclip.workspace-diff": ["../../../packages/plugins/plugin-workspace-diff/src/manifest.ts"],
+  "paperclip-kitchen-sink-example": [
+    "../../../packages/plugins/examples/plugin-kitchen-sink-example/src/manifest.ts",
+    "../../../packages/plugins/examples/plugin-kitchen-sink-example/src/constants.ts",
+  ],
+  "paperclip-file-browser-example": ["../../../packages/plugins/examples/plugin-file-browser-example/src/manifest.ts"],
+  "paperclipai.plugin-orchestration-smoke-example": ["../../../packages/plugins/examples/plugin-orchestration-smoke-example/src/manifest.ts"],
+  "paperclip.hello-world-example": ["../../../packages/plugins/examples/plugin-hello-world-example/src/manifest.ts"],
+  "paperclipai.plugin-authoring-smoke-example": ["../../../packages/plugins/examples/plugin-authoring-smoke-example/src/manifest.ts"],
+};
+
 describe("owned plugin presentation localization", () => {
+  it("keeps the host translation allowlist aligned with all first-party slot IDs and labels", async () => {
+    for (const locale of ["pt-BR", "en"] as const) {
+      await i18n.changeLanguage(locale);
+      for (const owner of ownUiSlotInventory) {
+        const manifestSource = ownUiSlotManifestSources[owner.pluginKey]
+          ?.map((sourcePath) => readFileSync(new URL(sourcePath, import.meta.url), "utf8"))
+          .join("\n");
+        expect(manifestSource).toBeDefined();
+        const contribution = {
+          pluginKey: owner.pluginKey,
+          displayName: owner.pluginKey,
+          slots: owner.slots.map(({ id, sourceDisplayName }) => ({ id, displayName: sourceDisplayName })),
+          launchers: owner.launchers.map(({ id, sourceDisplayName }) => ({ id, displayName: sourceDisplayName })),
+        };
+        const expectedDisplayNames = Object.fromEntries(owner.slots.map((slot) => [
+          slot.id,
+          locale === "pt-BR" ? slot.ptBr : slot.sourceDisplayName,
+        ]));
+        const expectedLauncherDisplayNames = Object.fromEntries(owner.launchers.map((launcher) => [
+          launcher.id,
+          locale === "pt-BR" ? launcher.ptBr : launcher.sourceDisplayName,
+        ]));
+
+        const presentation = localizePluginUiContributionPresentation(contribution, i18n.t, true);
+        expect(presentation.slotDisplayNames).toEqual(expectedDisplayNames);
+        expect(presentation.launcherDisplayNames).toEqual(expectedLauncherDisplayNames);
+        for (const slot of owner.slots) {
+          expect(manifestSource).toContain(slot.id);
+          expect(manifestSource).toContain(`displayName: "${slot.sourceDisplayName}"`);
+          expect(i18n.exists(`pluginPresentation.uiSlots.${slot.messageKey}`, { lng: locale })).toBe(true);
+        }
+        for (const launcher of owner.launchers) {
+          expect(manifestSource).toContain(launcher.id);
+          expect(manifestSource).toContain(`displayName: "${launcher.sourceDisplayName}"`);
+          expect(i18n.exists(`pluginPresentation.uiLaunchers.${launcher.messageKey}`, { lng: locale })).toBe(true);
+        }
+        expect(contribution.slots.map((slot) => slot.displayName))
+          .toEqual(owner.slots.map((slot) => slot.sourceDisplayName));
+        expect(contribution.launchers.map((launcher) => launcher.displayName))
+          .toEqual(owner.launchers.map((launcher) => launcher.sourceDisplayName));
+      }
+    }
+  });
+
   it("recognizes a first-party source only when the installed record matches the host bundle", () => {
     const bundled = [{
       pluginKey: "paperclip.workspace-diff",
@@ -123,6 +255,7 @@ describe("owned plugin presentation localization", () => {
     expect(portuguesePresentation).toEqual({
       pluginDisplayName: "Alterações no workspace",
       slotDisplayNames: { "workspace-changes-tab": "Alterações" },
+      launcherDisplayNames: {},
     });
     expect(ownContribution.displayName).toBe("Workspace Changes");
     expect(ownContribution.slots[0]?.displayName).toBe("Changes");
@@ -131,6 +264,7 @@ describe("owned plugin presentation localization", () => {
     expect(localizePluginUiContributionPresentation(ownContribution, i18n.t, true)).toEqual({
       pluginDisplayName: "Workspace Changes",
       slotDisplayNames: { "workspace-changes-tab": "Changes" },
+      launcherDisplayNames: {},
     });
   });
 
@@ -154,6 +288,7 @@ describe("owned plugin presentation localization", () => {
     expect(localizePluginUiContributionPresentation(copiedContribution, i18n.t, false)).toEqual({
       pluginDisplayName: "Vendor Changes",
       slotDisplayNames: {},
+      launcherDisplayNames: {},
     });
     expect(copiedContribution.displayName).toBe("Vendor Changes");
     expect(copiedContribution.slots[0]?.displayName).toBe("Vendor supplied label");
@@ -164,6 +299,73 @@ describe("owned plugin presentation localization", () => {
       slots: [{ ...copiedContribution.slots[0], displayName: "User supplied label" }],
     }, i18n.t, true);
     expect(trustedPresentation.slotDisplayNames["workspace-changes-tab"]).toBeUndefined();
+  });
+
+  it("localizes allowlisted File Browser slots and Kitchen Sink launchers without rewriting declarations", async () => {
+    const ownContribution = {
+      pluginKey: "paperclip-file-browser-example",
+      displayName: "File Browser (Example)",
+      slots: [
+        { id: "files-link", displayName: "Files" },
+        { id: "files-tab", displayName: "Files" },
+        { id: "comment-file-links", displayName: "File Links" },
+        { id: "comment-open-files", displayName: "Open in Files" },
+      ],
+      launchers: [],
+    };
+    const ownLauncherContribution = {
+      pluginKey: "paperclip-kitchen-sink-example",
+      displayName: "Kitchen Sink (Example)",
+      slots: [],
+      launchers: [{ id: "kitchen-sink-launcher", displayName: "Kitchen Sink Modal" }],
+    };
+
+    await i18n.changeLanguage("pt-BR");
+    expect(localizePluginUiContributionPresentation(ownContribution, i18n.t, true)).toEqual({
+      pluginDisplayName: "Navegador de arquivos (exemplo)",
+      slotDisplayNames: {
+        "files-link": "Arquivos",
+        "files-tab": "Arquivos",
+        "comment-file-links": "Links de arquivos",
+        "comment-open-files": "Abrir em Arquivos",
+      },
+      launcherDisplayNames: {},
+    });
+    expect(localizePluginUiContributionPresentation(ownLauncherContribution, i18n.t, true).launcherDisplayNames)
+      .toEqual({ "kitchen-sink-launcher": "Modal do Kitchen Sink" });
+    expect(localizePluginUiContributionPresentation(ownLauncherContribution, i18n.t, false)).toEqual({
+      pluginDisplayName: "Kitchen Sink (Example)",
+      slotDisplayNames: {},
+      launcherDisplayNames: {},
+    });
+    expect(localizePluginUiContributionPresentation({
+      ...ownLauncherContribution,
+      launchers: [{ id: "kitchen-sink-launcher", displayName: "Operator-customized modal" }],
+    }, i18n.t, true).launcherDisplayNames).toEqual({});
+    expect(ownContribution.slots.map((slot) => slot.displayName)).toEqual([
+      "Files", "Files", "File Links", "Open in Files",
+    ]);
+    expect(ownLauncherContribution.launchers[0]?.displayName).toBe("Kitchen Sink Modal");
+
+    // A matching slot ID and label from another package does not select a translation.
+    const collidingPluginContribution = {
+      ...ownContribution,
+      pluginKey: "vendor.file-browser-compatible",
+      slots: [{ id: "files-tab", displayName: "Files" }],
+    };
+    expect(localizePluginUiContributionPresentation(collidingPluginContribution, i18n.t, true).slotDisplayNames)
+      .toEqual({});
+
+    await i18n.changeLanguage("en");
+    expect(localizePluginUiContributionPresentation(ownContribution, i18n.t, true).slotDisplayNames)
+      .toEqual({
+        "files-link": "Files",
+        "files-tab": "Files",
+        "comment-file-links": "File Links",
+        "comment-open-files": "Open in Files",
+      });
+    expect(localizePluginUiContributionPresentation(ownLauncherContribution, i18n.t, true).launcherDisplayNames)
+      .toEqual({ "kitchen-sink-launcher": "Kitchen Sink Modal" });
   });
 
   it("localizes first-party sandbox metadata and preserves unknown provider text", async () => {

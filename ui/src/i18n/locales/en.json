@@ -3829,7 +3829,36 @@
       }
     },
     "uiSlots": {
-      "workspaceChangesTab": "Changes"
+      "llmWikiSidebar": "Wiki",
+      "llmWikiPage": "Wiki",
+      "llmWikiRouteSidebar": "Wiki",
+      "workspaceChangesTab": "Changes",
+      "kitchenSinkPage": "Kitchen Sink",
+      "kitchenSinkSettingsPage": "Kitchen Sink Settings",
+      "kitchenSinkCompanySettingsPage": "Kitchen Sink",
+      "kitchenSinkDashboardWidget": "Kitchen Sink",
+      "kitchenSinkSidebar": "Kitchen Sink",
+      "kitchenSinkSidebarPanel": "Kitchen Sink Panel",
+      "kitchenSinkProjectSidebarItem": "Kitchen Sink",
+      "kitchenSinkProjectTab": "Kitchen Sink",
+      "kitchenSinkIssueTab": "Kitchen Sink",
+      "kitchenSinkTaskDetailView": "Kitchen Sink Task View",
+      "kitchenSinkToolbarButton": "Kitchen Sink Action",
+      "kitchenSinkContextMenuItem": "Kitchen Sink Context",
+      "kitchenSinkCommentAnnotation": "Kitchen Sink Comment Annotation",
+      "kitchenSinkCommentContextMenuItem": "Kitchen Sink Comment Action",
+      "fileBrowserFilesLink": "Files",
+      "fileBrowserFilesTab": "Files",
+      "fileBrowserCommentFileLinks": "File Links",
+      "fileBrowserCommentOpenFiles": "Open in Files",
+      "orchestrationSmokeHealthWidget": "Orchestration Smoke Health",
+      "orchestrationSmokeIssuePanel": "Orchestration Smoke",
+      "orchestrationSmokeSettings": "Orchestration Smoke",
+      "helloWorldDashboardWidget": "Hello World",
+      "pluginAuthoringSmokeHealthWidget": "Plugin Authoring Smoke Example Health"
+    },
+    "uiLaunchers": {
+      "kitchenSinkModalLauncher": "Kitchen Sink Modal"
     }
   },
   "pluginManager": {

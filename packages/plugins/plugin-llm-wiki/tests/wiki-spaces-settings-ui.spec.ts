@@ -48,8 +48,13 @@ let pathname: string;
 let actionCalls: ActionCall[];
 let toastCalls: ToastCall[];
 let actionErrors: Record<string, string>;
+let actionResults: Record<string, unknown>;
 let ingestionProfile: Record<string, unknown> | null;
 let overviewFolderOverride: Record<string, unknown> | null;
+let distillationOverviewData: unknown;
+let distillationOverviewLoading: boolean;
+let distillationOverviewError: { message: string } | null;
+let distillationRefreshCalls: number;
 let navigatedTo: string | null;
 let settingsOverrides: Record<string, unknown>;
 
@@ -214,8 +219,20 @@ beforeEach(() => {
   actionCalls = [];
   toastCalls = [];
   actionErrors = {};
+  actionResults = {};
   ingestionProfile = null;
   overviewFolderOverride = null;
+  distillationOverviewData = {
+    cursors: [],
+    runs: [],
+    workItems: [],
+    pageBindings: [],
+    reviewWorkItems: [],
+    counts: { cursors: 0, runningRuns: 0, failedRuns24h: 0, reviewRequired: 0 },
+  };
+  distillationOverviewLoading = false;
+  distillationOverviewError = null;
+  distillationRefreshCalls = 0;
   navigatedTo = null;
   settingsOverrides = {};
 
@@ -316,11 +333,20 @@ beforeEach(() => {
         if (key === "paperclip-ingestion-profile") {
           return dataResult(ingestionProfile);
         }
+        if (key === "distillation-overview") {
+          return {
+            data: distillationOverviewData,
+            loading: distillationOverviewLoading,
+            error: distillationOverviewError,
+            refresh: () => { distillationRefreshCalls += 1; },
+          };
+        }
         return dataResult(null);
       },
       usePluginAction: (key: string) => async (params?: unknown) => {
         actionCalls.push({ key, params });
         if (actionErrors[key]) throw new Error(actionErrors[key]);
+        if (key in actionResults) return actionResults[key];
         if (key === "create-space") {
           const input = params as SpaceInput;
           return {
@@ -793,5 +819,294 @@ describe("LLM Wiki spaces settings localization", () => {
     expect(container.querySelector('[data-testid="managed-routine-labels"]')?.textContent).toContain("Configure|Managed by {name}|Schedule");
     renderWiki("pt-BR");
     expect(container.querySelector('[data-testid="managed-routine-labels"]')?.textContent).toContain("Configurar|Gerenciado por {name}|Agendamento");
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      panelTitle: "Destilação",
+      badge: "Somente no espaço padrão",
+      off: "A destilação está desativada",
+      enable: "Ativar para projetos ativos",
+      defaults: "Padrões sugeridos:",
+      created: "O que é criado",
+      path: "wiki/projects/<slug>/standup.md",
+      missingEnglish: ["Distillation is off", "Enable for active projects", "What gets created", "Source bundles cached under"],
+      toast: "Destilação ativada",
+      toastBody: "2 projetos ativos adicionados ao conjunto de cursores de destilação.",
+      noProjects: "Nenhum projeto ativo foi encontrado",
+      noProjectsBody: "Crie ou retome um projeto e ative a destilação novamente.",
+      enableFailed: "Falha ao ativar a destilação",
+    },
+    {
+      locale: "en" as const,
+      panelTitle: "Distillation",
+      badge: "Default space only",
+      off: "Distillation is off",
+      enable: "Enable for active projects",
+      defaults: "Suggested defaults:",
+      created: "What gets created",
+      path: "wiki/projects/<slug>/standup.md",
+      missingEnglish: [],
+      toast: "Distillation enabled",
+      toastBody: "2 active projects added to the distillation cursor set.",
+      noProjects: "No active projects found",
+      noProjectsBody: "Create or resume a project, then enable distillation again.",
+      enableFailed: "Enable distillation failed",
+    },
+  ])("localizes the unconfigured distillation state and keeps enable payloads in $locale", async (copy) => {
+    pathname = "/PAP/wiki/settings/distillation";
+    actionResults["enable-paperclip-distillation-active-projects"] = {
+      selectedProjects: [{ name: "Project A" }, { name: "Project B" }],
+    };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.panelTitle);
+    expect(container.textContent).toContain(copy.badge);
+    expect(container.textContent).toContain(copy.off);
+    expect(container.textContent).toContain(copy.enable);
+    expect(container.textContent).toContain(copy.defaults);
+    expect(container.textContent).toContain(copy.created);
+    expect(container.textContent).toContain(copy.path);
+    expect(container.textContent).toContain("wiki/projects/<slug>/index.md");
+    expect(container.textContent).toContain("raw/distill/");
+    for (const originalUiCopy of copy.missingEnglish) expect(container.textContent).not.toContain(originalUiCopy);
+
+    await act(async () => findButton(copy.enable).click());
+    expect(callByKey("enable-paperclip-distillation-active-projects").at(-1)?.params).toEqual({
+      companyId: COMPANY_ID,
+      limit: 3,
+    });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.toast, body: copy.toastBody });
+
+    actionResults["enable-paperclip-distillation-active-projects"] = { selectedProjects: [] };
+    await act(async () => findButton(copy.enable).click());
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "warn", title: copy.noProjects, body: copy.noProjectsBody });
+
+    actionErrors["enable-paperclip-distillation-active-projects"] = "Original cursor API diagnostic";
+    await act(async () => findButton(copy.enable).click());
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "error", title: copy.enableFailed, body: "Original cursor API diagnostic" });
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      active: "Ativa para 1 projeto · 1 cursor em processamento · espaço padrão",
+      sourceFilters: "Filtros de origem",
+      sourceKinds: "Tipos de fonte",
+      cursorWindows: "Janelas do cursor",
+      autoApply: "Política de aplicação automática",
+      backfill: "Reprocessamento retroativo",
+      warning: "Managed policy prevents automatic patch application.",
+      confidence: "0,8",
+      externalName: "Project Alpha / FY26",
+      noEnglishUi: ["Issue scope", "Source kinds", "Cursor windows", "Auto-apply policy", "Queue backfill", "Review queue"],
+    },
+    {
+      locale: "en" as const,
+      active: "Active for 1 project · 1 cursor catching up · default space",
+      sourceFilters: "Source filters",
+      sourceKinds: "Source kinds",
+      cursorWindows: "Cursor windows",
+      autoApply: "Auto-apply policy",
+      backfill: "Backfill",
+      warning: "Managed policy prevents automatic patch application.",
+      confidence: "0.8",
+      externalName: "Project Alpha / FY26",
+      noEnglishUi: [],
+    },
+  ])("localizes configured controls, restrictions, and values in $locale", (copy) => {
+    pathname = "/PAP/wiki/settings/distillation";
+    settingsOverrides = {
+      distillationPolicy: { autoApplyRestriction: "Managed policy prevents automatic patch application." },
+    };
+    distillationOverviewData = {
+      cursors: [{
+        id: "cursor-1",
+        sourceScope: "project",
+        scopeKey: "project:project-1",
+        projectId: "project-1",
+        projectName: copy.externalName,
+        projectColor: null,
+        rootIssueId: null,
+        rootIssueIdentifier: null,
+        rootIssueTitle: null,
+        lastProcessedAt: null,
+        lastObservedAt: null,
+        pendingEventCount: 3,
+        lastSourceHash: null,
+        lastSuccessfulRunId: null,
+      }],
+      runs: [],
+      workItems: [],
+      pageBindings: [],
+      reviewWorkItems: [],
+      counts: { cursors: 1, runningRuns: 2, failedRuns24h: 1, reviewRequired: 4 },
+    };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.active);
+    expect(container.textContent).toContain(copy.sourceFilters);
+    expect(container.textContent).toContain(copy.sourceKinds);
+    expect(container.textContent).toContain(copy.cursorWindows);
+    expect(container.textContent).toContain(copy.autoApply);
+    expect(container.textContent).toContain(copy.backfill);
+    expect(container.textContent).toContain(copy.warning);
+    expect(container.textContent).toContain(copy.externalName);
+    const textInputValues = Array.from(container.querySelectorAll<HTMLInputElement>("input")).filter((input) => input.type === "text").map((input) => input.value);
+    expect(textInputValues).toContain("48000");
+    expect(textInputValues).toContain("6");
+    expect(container.textContent).toContain(copy.confidence);
+    expect(container.textContent).toContain("Claude/Codex/Gemini");
+    for (const originalUiCopy of copy.noEnglishUi) expect(container.textContent).not.toContain(originalUiCopy);
+
+    const inputs = Array.from(container.querySelectorAll<HTMLInputElement>("input[type='checkbox']"));
+    expect(inputs.length).toBe(7);
+    expect(inputs[0].checked).toBe(true);
+    expect(inputs[3].checked).toBe(true);
+    expect(inputs[3].disabled).toBe(true);
+    expect(Array.from(container.querySelectorAll<HTMLInputElement>("input[type='radio']")).map((input) => input.value)).toEqual(["never", "status", "all"]);
+    expect(Array.from(container.querySelectorAll<HTMLSelectElement>("select")).map((select) => select.value)).toEqual(["15", "72"]);
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      distill: "Destilar agora",
+      nowErrorTitle: "Falha ao iniciar a destilação",
+      nowSuccessTitle: "Destilação enfileirada",
+      nowSuccessBody: "O Wiki Maintainer vai verificar os projetos alterados da empresa e gravar no espaço padrão do Wiki.",
+      backfill: "Enfileirar reprocessamento",
+      backfillTitle: "Reprocessamento enfileirado",
+      backfillFailedTitle: "Falha ao enfileirar o reprocessamento",
+    },
+    {
+      locale: "en" as const,
+      distill: "Distill now",
+      nowErrorTitle: "Distill now failed",
+      nowSuccessTitle: "Distill now queued",
+      nowSuccessBody: "Wiki Maintainer will scan changed projects in the company and write into the default wiki space.",
+      backfill: "Queue backfill",
+      backfillTitle: "Backfill queued",
+      backfillFailedTitle: "Backfill failed",
+    },
+  ])("preserves distillation action payloads and raw failure details in $locale", async (copy) => {
+    pathname = "/PAP/wiki/settings/distillation";
+    distillationOverviewData = {
+      cursors: [{
+        id: "cursor-1",
+        sourceScope: "project",
+        scopeKey: "project:project-1",
+        projectId: "project-1",
+        projectName: "Research / Q4",
+        projectColor: null,
+        rootIssueId: null,
+        rootIssueIdentifier: null,
+        rootIssueTitle: null,
+        lastProcessedAt: null,
+        lastObservedAt: null,
+        pendingEventCount: 3,
+        lastSourceHash: null,
+        lastSuccessfulRunId: null,
+      }],
+      runs: [],
+      workItems: [],
+      pageBindings: [],
+      reviewWorkItems: [],
+      counts: { cursors: 1, runningRuns: 0, failedRuns24h: 0, reviewRequired: 0 },
+    };
+    renderWiki(copy.locale);
+
+    actionErrors["distill-paperclip-now"] = "External API diagnostic: 409 conflict";
+    await act(async () => findButton(copy.distill).click());
+    expect(callByKey("distill-paperclip-now").at(-1)?.params).toMatchObject({ companyId: COMPANY_ID });
+    expect((callByKey("distill-paperclip-now").at(-1)?.params as { idempotencyKey: string }).idempotencyKey).toMatch(/^manual:company:\d+$/);
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "error", title: copy.nowErrorTitle, body: "External API diagnostic: 409 conflict" });
+
+    delete actionErrors["distill-paperclip-now"];
+    await act(async () => findButton(copy.distill).click());
+    expect(toastCalls.at(-1)).toMatchObject({
+      tone: "success",
+      title: copy.nowSuccessTitle,
+      body: copy.nowSuccessBody,
+    });
+
+    await act(async () => findButton(copy.backfill).click());
+    expect(callByKey("backfill-paperclip-distillation").at(-1)?.params).toEqual({
+      companyId: COMPANY_ID,
+      projectId: "project-1",
+      rootIssueId: undefined,
+    });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.backfillTitle, body: "Research / Q4" });
+
+    actionErrors["backfill-paperclip-distillation"] = "Original backfill API diagnostic";
+    await act(async () => findButton(copy.backfill).click());
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "error", title: copy.backfillFailedTitle, body: "Original backfill API diagnostic" });
+  });
+
+  it.each([
+    { locale: "pt-BR" as const, title: "O reprocessamento exige o escopo de um projeto ou de uma tarefa raiz" },
+    { locale: "en" as const, title: "Backfill needs a project or root issue scope" },
+  ])("shows the localized backfill scope validation in $locale", async (copy) => {
+    pathname = "/PAP/wiki/settings/distillation";
+    distillationOverviewData = {
+      cursors: [{
+        id: "cursor-1",
+        sourceScope: "company",
+        scopeKey: "company:company-1",
+        projectId: null,
+        projectName: null,
+        projectColor: null,
+        rootIssueId: null,
+        rootIssueIdentifier: null,
+        rootIssueTitle: null,
+        lastProcessedAt: null,
+        lastObservedAt: null,
+        pendingEventCount: 0,
+        lastSourceHash: null,
+        lastSuccessfulRunId: null,
+      }],
+      runs: [],
+      workItems: [],
+      pageBindings: [],
+      reviewWorkItems: [],
+      counts: { cursors: 1, runningRuns: 0, failedRuns24h: 0, reviewRequired: 0 },
+    };
+    renderWiki(copy.locale);
+
+    await act(async () => findButton(copy.locale === "pt-BR" ? "Enfileirar reprocessamento" : "Queue backfill").click());
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "warn", title: copy.title });
+    expect(callByKey("backfill-paperclip-distillation")).toHaveLength(0);
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      loading: "Carregando visão geral da destilação…",
+      failed: "Não foi possível carregar a visão geral da destilação.",
+      refresh: "Atualizar",
+    },
+    {
+      locale: "en" as const,
+      loading: "Loading distillation overview…",
+      failed: "Could not load the distillation overview.",
+      refresh: "Refresh",
+    },
+  ])("localizes distillation loading and retry states in $locale while preserving the API diagnostic", async (copy) => {
+    pathname = "/PAP/wiki/settings/distillation";
+    distillationOverviewData = null;
+    distillationOverviewLoading = true;
+    renderWiki(copy.locale);
+    expect(container.textContent).toContain(copy.loading);
+
+    distillationOverviewLoading = false;
+    distillationOverviewError = { message: "Original distillation overview API diagnostic" };
+    renderWiki(copy.locale);
+    expect(container.textContent).toContain(copy.failed);
+    expect(container.textContent).toContain("Original distillation overview API diagnostic");
+    if (copy.locale === "pt-BR") expect(container.textContent).not.toContain("Could not load the distillation overview.");
+
+    await act(async () => findButton(copy.refresh).click());
+    expect(distillationRefreshCalls).toBe(1);
   });
 });

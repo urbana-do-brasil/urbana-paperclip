@@ -5521,6 +5521,10 @@ function MaintainerAgentLink({
   );
 }
 
+function formatDistillationCount(count: number, locale: WikiLocale): string {
+  return new Intl.NumberFormat(locale).format(count);
+}
+
 // ---------------------------------------------------------------------------
 // Distillation settings panel (configured + unconfigured states).
 // Source filters / cursor windows / model lanes / auto-apply / backfill.
@@ -5528,7 +5532,7 @@ function MaintainerAgentLink({
 // existing managed-routine and plugin-action endpoints.
 // ---------------------------------------------------------------------------
 
-function DistillationSettingsPanel({ context, settings }: { context: { companyId: string | null }; settings: SettingsData }) {
+function DistillationSettingsPanel({ context, settings, locale }: { context: { companyId: string | null }; settings: SettingsData; locale: WikiLocale }) {
   const overview = useDistillationOverview(context.companyId);
   const distillNow = usePluginAction("distill-paperclip-now");
   const enableActiveProjects = usePluginAction("enable-paperclip-distillation-active-projects");
@@ -5553,7 +5557,7 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
   async function runDistillNow() {
     if (!context.companyId) return;
     if (cursors.length === 0) {
-      toast({ tone: "warn", title: "Distill now needs at least one cursor" });
+      toast({ tone: "warn", title: wikiMessage(locale, "distillationNeedsCursor") });
       return;
     }
     setBusy("distill-now");
@@ -5564,12 +5568,12 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
       });
       toast({
         tone: "success",
-        title: "Distill now queued",
-        body: "Wiki Maintainer will scan changed projects in the company and write into the default wiki space.",
+        title: wikiMessage(locale, "distillationNowQueued"),
+        body: wikiMessage(locale, "distillationNowQueuedBody"),
       });
       overview.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Distill now failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "distillationNowFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(null);
     }
@@ -5585,14 +5589,14 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
       const count = result.selectedProjects?.length ?? 0;
       toast({
         tone: count > 0 ? "success" : "warn",
-        title: count > 0 ? "Distillation enabled" : "No active projects found",
+        title: count > 0 ? wikiMessage(locale, "distillationEnabled") : wikiMessage(locale, "distillationNoActiveProjects"),
         body: count > 0
-          ? `${count} active project${count === 1 ? "" : "s"} added to the distillation cursor set.`
-          : "Create or resume a project, then enable distillation again.",
+          ? wikiMessage(locale, count === 1 ? "distillationProjectsAdded" : "distillationProjectsAddedMany", { count: formatDistillationCount(count, locale) })
+          : wikiMessage(locale, "distillationEnableProjectsHelp"),
       });
       overview.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Enable distillation failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "distillationEnableFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(null);
     }
@@ -5602,7 +5606,7 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
     if (!context.companyId || cursors.length === 0) return;
     const target = cursors.find((cursor) => cursor.projectId) ?? cursors[0];
     if (!target.projectId && !target.rootIssueId) {
-      toast({ tone: "warn", title: "Backfill needs a project or root issue scope" });
+      toast({ tone: "warn", title: wikiMessage(locale, "distillationBackfillNeedsScope") });
       return;
     }
     setBusy("backfill");
@@ -5612,17 +5616,30 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
         projectId: target.projectId ?? undefined,
         rootIssueId: target.rootIssueId ?? undefined,
       });
-      toast({ tone: "success", title: "Backfill queued", body: target.projectName ?? target.rootIssueIdentifier ?? "Selected scope" });
+      toast({ tone: "success", title: wikiMessage(locale, "distillationBackfillQueued"), body: target.projectName ?? target.rootIssueIdentifier ?? wikiMessage(locale, "distillationSelectedScope") });
       overview.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Backfill failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "distillationBackfillFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(null);
     }
   }
 
   if (overview.loading && !data) {
-    return <Tiny>Loading distillation overview…</Tiny>;
+    return <Tiny>{wikiMessage(locale, "distillationOverviewLoading")}</Tiny>;
+  }
+
+  if (overview.error) {
+    return (
+      <div style={{ display: "grid", justifyItems: "start", gap: 8 }}>
+        <Callout tone="danger">
+          {wikiMessage(locale, "distillationOverviewFailed")} {overview.error.message}
+        </Callout>
+        <Button variant="ghost" size="sm" onClick={() => overview.refresh()}>
+          <RefreshIcon size={12} /> {wikiMessage(locale, "distillationRefresh")}
+        </Button>
+      </div>
+    );
   }
 
   if (!isConfigured) {
@@ -5633,48 +5650,44 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12 }}>
               <SparklesIcon size={36} />
               <div>
-                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>Distillation is off</h3>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>{wikiMessage(locale, "distillationOff")}</h3>
                 <Tiny style={{ marginTop: 6, fontSize: 13, color: tokens.fg, lineHeight: 1.55, maxWidth: 540 }}>
-                  When enabled, the Wiki Maintainer reads Paperclip issues, comments, and documents for this
-                  company and keeps <Mono>wiki/projects/&lt;slug&gt;/standup.md</Mono> plus <Mono>wiki/projects/&lt;slug&gt;/index.md</Mono> pages in the
-                  <strong> default wiki space</strong>. Pages stay marked stale until a cursor window succeeds -
-                  they never imply live state.
+                  {wikiMessage(locale, "distillationOffDescriptionPrefix")} <Mono>wiki/projects/&lt;slug&gt;/standup.md</Mono> {wikiMessage(locale, "distillationOffDescriptionJoin")} <Mono>wiki/projects/&lt;slug&gt;/index.md</Mono> {wikiMessage(locale, "distillationOffDescriptionMiddle")} <strong>{wikiMessage(locale, "distillationOffDescriptionDefault")}</strong>. {wikiMessage(locale, "distillationOffDescriptionSuffix")}
                 </Tiny>
                 <Tiny style={{ marginTop: 6, fontSize: 13, color: tokens.fg, lineHeight: 1.55, maxWidth: 540 }}>
-                  Other spaces do not receive Paperclip-derived pages yet. They stay on manual and raw-file
-                  ingest until per-space Paperclip ingestion profiles ship.
+                  {wikiMessage(locale, "distillationOtherSpacesWarning")}
                 </Tiny>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <Button variant="primary" size="md" onClick={enableForActiveProjects} loading={busy === "enable-active-projects"}>
-                  <SparklesIcon size={14} /> Enable for active projects
+                  <SparklesIcon size={14} /> {wikiMessage(locale, "distillationEnableActiveProjects")}
                 </Button>
-                <Button variant="default" size="md" onClick={() => overview.refresh()}>Configure manually</Button>
+                <Button variant="default" size="md" onClick={() => overview.refresh()}>{wikiMessage(locale, "distillationConfigureManually")}</Button>
               </div>
-              <Tiny>Suggested defaults: 3 active projects in the default space · all-section auto-apply where allowed · routines paused for 24h.</Tiny>
+              <Tiny>{wikiMessage(locale, "distillationSuggestedDefaults")}</Tiny>
             </div>
           </CardBody>
         </Card>
 
         <div style={{ display: "grid", gap: 12, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
           <Card>
-            <CardHeader title="What gets created" />
+            <CardHeader title={wikiMessage(locale, "distillationWhatGetsCreated")} />
             <CardBody padding={14}>
               <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: tokens.muted, lineHeight: 1.5 }}>
-                <li>Project overviews at <Mono>wiki/projects/&lt;slug&gt;/index.md</Mono></li>
-                <li>Executive standups at <Mono>wiki/projects/&lt;slug&gt;/standup.md</Mono></li>
-                <li>Decisions and history under <Mono>wiki/projects/&lt;slug&gt;/</Mono></li>
-                <li>Source bundles cached under <Mono>raw/distill/</Mono></li>
+                <li>{wikiMessage(locale, "distillationProjectOverviews")} <Mono>wiki/projects/&lt;slug&gt;/index.md</Mono></li>
+                <li>{wikiMessage(locale, "distillationExecutiveStandups")} <Mono>wiki/projects/&lt;slug&gt;/standup.md</Mono></li>
+                <li>{wikiMessage(locale, "distillationDecisionsHistory")} <Mono>wiki/projects/&lt;slug&gt;/</Mono></li>
+                <li>{wikiMessage(locale, "distillationSourceBundlesCached")} <Mono>raw/distill/</Mono></li>
               </ul>
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="What it never does" />
+            <CardHeader title={wikiMessage(locale, "distillationWhatNeverHappens")} />
             <CardBody padding={14}>
               <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: tokens.muted, lineHeight: 1.5 }}>
-                <li>Read across companies — strict per-company isolation.</li>
-                <li>Re-distill its own plugin operation issues.</li>
-                <li>Auto-apply patches when source hashes drift.</li>
+                <li>{wikiMessage(locale, "distillationNeverCrossCompanies")}</li>
+                <li>{wikiMessage(locale, "distillationNeverReadOwnOperations")}</li>
+                <li>{wikiMessage(locale, "distillationNeverApplyDriftedPatches")}</li>
               </ul>
             </CardBody>
           </Card>
@@ -5687,81 +5700,83 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
     <div style={{ display: "grid", gap: 16, minWidth: 0 }}>
       {autoApplyRestriction ? (
         <Callout tone="warn">
-          {autoApplyRestriction} The plugin ignores auto-apply requests from config and manual distill actions on this instance.
+          {autoApplyRestriction} {wikiMessage(locale, "distillationAutoApplyRestrictionSuffix")}
         </Callout>
       ) : null}
       <Callout>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <InfoIcon size={16} />
-            <strong style={{ fontSize: 13 }}>Active for {projectsCovered} project{projectsCovered === 1 ? "" : "s"} · {counts.cursors} cursor{counts.cursors === 1 ? "" : "s"} catching up · default space</strong>
+            <strong style={{ fontSize: 13 }}>{wikiMessage(locale, "distillationActiveSummary", {
+              projects: wikiMessage(locale, projectsCovered === 1 ? "distillationProjectOne" : "distillationProjectMany", { count: formatDistillationCount(projectsCovered, locale) }),
+              cursors: wikiMessage(locale, counts.cursors === 1 ? "distillationCursorOne" : "distillationCursorMany", { count: formatDistillationCount(counts.cursors, locale) }),
+            })}</strong>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <Button variant="ghost" size="sm" onClick={() => overview.refresh()}><RefreshIcon size={12} /> Refresh</Button>
-            <Button variant="primary" size="sm" onClick={runDistillNow} loading={busy === "distill-now"}><SparklesIcon size={12} /> Distill now</Button>
+            <Button variant="ghost" size="sm" onClick={() => overview.refresh()}><RefreshIcon size={12} /> {wikiMessage(locale, "distillationRefresh")}</Button>
+            <Button variant="primary" size="sm" onClick={runDistillNow} loading={busy === "distill-now"}><SparklesIcon size={12} /> {wikiMessage(locale, "distillationNow")}</Button>
           </div>
         </div>
         <Tiny style={{ marginTop: 6 }}>
-          Distillation runs on the assigned Wiki Maintainer agent and writes only into the default space.
+          {wikiMessage(locale, "distillationAgentWritesDefault")}
         </Tiny>
       </Callout>
 
       <Card>
-        <CardHeader title="Source filters" />
+        <CardHeader title={wikiMessage(locale, "distillationSourceFilters")} />
         <CardBody padding={14}>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
             <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 6 }}>
-              <legend style={{ fontSize: 12, color: tokens.muted, marginBottom: 4 }}>Issue scope</legend>
-              <CheckboxRow label="Active projects" defaultChecked help="Cursors are created for projects with recent activity." />
-              <CheckboxRow label="Root issues marked distillable" defaultChecked />
-              <CheckboxRow label="All company issues" help="May create large source windows." />
+              <legend style={{ fontSize: 12, color: tokens.muted, marginBottom: 4 }}>{wikiMessage(locale, "distillationIssueScope")}</legend>
+              <CheckboxRow label={wikiMessage(locale, "distillationActiveProjects")} defaultChecked help={wikiMessage(locale, "distillationActiveProjectsHelp")} />
+              <CheckboxRow label={wikiMessage(locale, "distillationRootIssues")} defaultChecked />
+              <CheckboxRow label={wikiMessage(locale, "distillationAllCompanyIssues")} help={wikiMessage(locale, "distillationLargeWindowsWarning")} />
               <Tiny>
-                These filters narrow the Paperclip source scope. The destination is always the default
-                wiki space in Phase 1.
+                {wikiMessage(locale, "distillationScopeDescription")}
               </Tiny>
-              <Tiny>Plugin-operation issues are always excluded to prevent feedback loops.</Tiny>
+              <Tiny>{wikiMessage(locale, "distillationPluginIssuesExcluded")}</Tiny>
             </fieldset>
             <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 6 }}>
-              <legend style={{ fontSize: 12, color: tokens.muted, marginBottom: 4 }}>Source kinds</legend>
-              <CheckboxRow label="Issue title + description" defaultChecked locked />
-              <CheckboxRow label="Comments (ranked, clipped)" defaultChecked />
-              <CheckboxRow label="Documents (plan, spec, report)" defaultChecked />
-              <CheckboxRow label="Work products / attachments" suffix="coming soon" />
-              <Tiny>Heartbeats and hidden documents are never included.</Tiny>
+              <legend style={{ fontSize: 12, color: tokens.muted, marginBottom: 4 }}>{wikiMessage(locale, "distillationSourceKinds")}</legend>
+              <CheckboxRow label={wikiMessage(locale, "distillationIssueTitleDescription")} defaultChecked locked />
+              <CheckboxRow label={wikiMessage(locale, "distillationRankedComments")} defaultChecked />
+              <CheckboxRow label={wikiMessage(locale, "distillationDocuments")} defaultChecked />
+              <CheckboxRow label={wikiMessage(locale, "distillationWorkProductsAttachments")} suffix={wikiMessage(locale, "distillationComingSoon")} />
+              <Tiny>{wikiMessage(locale, "distillationExcludedSourceKinds")}</Tiny>
             </fieldset>
           </div>
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Cursor windows" />
+        <CardHeader title={wikiMessage(locale, "distillationCursorWindows")} />
         <CardBody padding={14}>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
-            <SettingField label="Max source characters per project" hint="Source bundles above this size are clipped and the page warns 'source clipped'.">
+            <SettingField label={wikiMessage(locale, "distillationMaxSourceCharacters")} hint={wikiMessage(locale, "distillationMaxSourceCharactersHelp")}>
               <TextInput defaultValue="48000" />
             </SettingField>
-            <SettingField label="Min source age before processing" hint="Debounces a hot project so a flurry of comments collapses into one cursor window.">
-              <SelectInput defaultValue="15" options={[["5", "5 min"], ["15", "15 min"], ["30", "30 min"], ["60", "1 hour"]]} />
+            <SettingField label={wikiMessage(locale, "distillationMinSourceAge")} hint={wikiMessage(locale, "distillationMinSourceAgeHelp")}>
+              <SelectInput defaultValue="15" options={[["5", wikiMessage(locale, "distillationMinuteMany", { count: 5 })], ["15", wikiMessage(locale, "distillationMinuteMany", { count: 15 })], ["30", wikiMessage(locale, "distillationMinuteMany", { count: 30 })], ["60", wikiMessage(locale, "distillationHourOne", { count: 1 })]]} />
             </SettingField>
-            <SettingField label="Max cursor windows per routine run" hint="Routine runs that hit this cap split the remainder into the next routine fire.">
+            <SettingField label={wikiMessage(locale, "distillationMaxWindowsPerRoutine")} hint={wikiMessage(locale, "distillationMaxWindowsPerRoutineHelp")}>
               <TextInput defaultValue="6" />
             </SettingField>
-            <SettingField label="Stale window threshold" hint="After this, project pages render a 'Stale' badge until a successful run advances the cursor.">
-              <SelectInput defaultValue="72" options={[["24", "24 h"], ["48", "48 h"], ["72", "72 h"], ["168", "7 days"]]} />
+            <SettingField label={wikiMessage(locale, "distillationStaleWindowThreshold")} hint={wikiMessage(locale, "distillationStaleWindowHelp")}>
+              <SelectInput defaultValue="72" options={[["24", wikiMessage(locale, "distillationHourMany", { count: 24 })], ["48", wikiMessage(locale, "distillationHourMany", { count: 48 })], ["72", wikiMessage(locale, "distillationHourMany", { count: 72 })], ["168", wikiMessage(locale, "distillationDayMany", { count: 7 })]]} />
             </SettingField>
           </div>
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Agent execution" />
+        <CardHeader title={wikiMessage(locale, "distillationAgentExecution")} />
         <CardBody padding={14}>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
-            <SettingField label="Assigned maintainer" hint="Model selection comes from the agent adapter and its runtime config. The plugin does not choose Claude/Codex/Gemini models here.">
+            <SettingField label={wikiMessage(locale, "distillationAssignedMaintainer")} hint={wikiMessage(locale, "distillationAssignedMaintainerHelp")}>
               <div style={{ minHeight: 34, display: "flex", alignItems: "center", border: `1px solid ${tokens.border}`, borderRadius: 6, padding: "6px 10px", fontSize: 13 }}>
                 {settings.managedAgent.details
                   ? `${settings.managedAgent.details.name} · ${adapterTypeLabel(settings.managedAgent.details.adapterType)}`
-                  : "No maintainer agent resolved"}
+                  : wikiMessage(locale, "distillationNoMaintainer")}
               </div>
             </SettingField>
           </div>
@@ -5769,43 +5784,43 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
       </Card>
 
       <Card>
-        <CardHeader title="Auto-apply policy" />
+        <CardHeader title={wikiMessage(locale, "distillationAutoApplyPolicy")} />
         <CardBody padding={14}>
           <div style={{ display: "grid", gap: 8 }}>
-            <RadioRow name="autoapply" value="never" label="Never — every patch goes to review-required." />
-            <RadioRow name="autoapply" value="status" label="Executive-status sections only — standup, current direction, and risks." />
-            <RadioRow name="autoapply" value="all" label="All sections — apply when source hash matches and confidence ≥ 0.8 (default)." defaultChecked />
-            <Tiny>Stale-hash collisions always fall through to review, regardless of policy.</Tiny>
+            <RadioRow name="autoapply" value="never" label={wikiMessage(locale, "distillationAutoApplyNever")} />
+            <RadioRow name="autoapply" value="status" label={wikiMessage(locale, "distillationAutoApplyStatus")} />
+            <RadioRow name="autoapply" value="all" label={wikiMessage(locale, "distillationAutoApplyAll")} defaultChecked />
+            <Tiny>{wikiMessage(locale, "distillationStaleHashWarning")}</Tiny>
           </div>
         </CardBody>
       </Card>
 
       <Card>
         <CardHeader
-          title="Backfill"
-          right={<Button variant="default" size="sm" onClick={runBackfill} loading={busy === "backfill"}>Queue backfill</Button>}
+          title={wikiMessage(locale, "distillationBackfill")}
+          right={<Button variant="default" size="sm" onClick={runBackfill} loading={busy === "backfill"}>{wikiMessage(locale, "distillationQueueBackfill")}</Button>}
         />
         <CardBody padding={14}>
-          <Tiny style={{ marginBottom: 6 }}>Backfills replay a bounded source window for a single scope so newly-enabled projects can catch up to fresh state.</Tiny>
+          <Tiny style={{ marginBottom: 6 }}>{wikiMessage(locale, "distillationBackfillDescription")}</Tiny>
           <div style={{ display: "grid", gap: 8, fontSize: 13 }}>
-            <PropRow label="Default scope" value={cursors.find((c) => c.projectName)?.projectName ?? cursors[0]?.scopeKey ?? "—"} />
-            <PropRow label="Cursors active" value={String(counts.cursors)} />
-            <PropRow label="Runs in flight" value={String(counts.runningRuns)} />
-            <PropRow label="Failed (24h)" value={String(counts.failedRuns24h)} />
-            <PropRow label="Review queue" value={String(counts.reviewRequired)} />
+            <PropRow label={wikiMessage(locale, "distillationDefaultScope")} value={cursors.find((c) => c.projectName)?.projectName ?? cursors[0]?.scopeKey ?? "—"} />
+            <PropRow label={wikiMessage(locale, "distillationCursorsActive")} value={formatDistillationCount(counts.cursors, locale)} />
+            <PropRow label={wikiMessage(locale, "distillationRunsInFlight")} value={formatDistillationCount(counts.runningRuns, locale)} />
+            <PropRow label={wikiMessage(locale, "distillationFailed24Hours")} value={formatDistillationCount(counts.failedRuns24h, locale)} />
+            <PropRow label={wikiMessage(locale, "distillationReviewQueue")} value={formatDistillationCount(counts.reviewRequired, locale)} />
           </div>
         </CardBody>
       </Card>
 
       <Tiny>
-        Active cursors:&nbsp;
+        {wikiMessage(locale, "distillationActiveCursors")}&nbsp;
         {cursors.slice(0, 6).map((cursor, idx) => (
           <span key={cursor.id}>
             {idx > 0 ? " · " : ""}
             {cursor.projectName ?? cursor.rootIssueIdentifier ?? cursor.scopeKey}
           </span>
         ))}
-        {cursors.length > 6 ? <span>{` +${cursors.length - 6} more`}</span> : null}
+        {cursors.length > 6 ? <span>{` ${wikiMessage(locale, "distillationMoreCursors", { count: formatDistillationCount(cursors.length - 6, locale) })}`}</span> : null}
       </Tiny>
     </div>
   );
@@ -6573,11 +6588,11 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
           </section>
         ) : activeSettingsSection === "distillation" ? (
           <SettingsPanel
-            title="Distillation"
-            badge={<Badge tone="default">Default space only</Badge>}
-            description="Read Paperclip issues, comments, and documents for this company and write project pages into the default wiki space. Assets/attachments and work products stay metadata-only in Phase 5 and are excluded from source-text extraction. Other spaces cannot be selected as a destination yet - that lands with per-space Paperclip ingestion profiles."
+            title={wikiMessage(locale, "distillationPanelTitle")}
+            badge={<Badge tone="default">{wikiMessage(locale, "distillationDefaultSpaceOnly")}</Badge>}
+            description={wikiMessage(locale, "distillationPanelDescription")}
           >
-            <DistillationSettingsPanel context={context} settings={data} />
+            <DistillationSettingsPanel context={context} settings={data} locale={locale} />
           </SettingsPanel>
         ) : activeSettingsSection === "routines" ? (
           <SettingsPanel title={settingsSectionLabel(locale, "routines")} description={activeSettingsConfig.description}>

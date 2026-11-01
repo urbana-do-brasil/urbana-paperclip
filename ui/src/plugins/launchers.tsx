@@ -188,15 +188,16 @@ function launcherDisplayName(
   contribution: PluginUiContribution | undefined,
   presentation: PluginUiContributionPresentation | undefined,
 ): string {
-  if (launcher.placementZone !== "sidebar" || !contribution) return launcher.displayName;
+  const hostDisplayName = launcher.hostDisplayName ?? launcher.displayName;
+  if (launcher.placementZone !== "sidebar" || !contribution) return hostDisplayName;
   const routePath = launcherRoutePath(launcher);
-  if (!routePath) return launcher.displayName;
+  if (!routePath) return hostDisplayName;
   const routeSidebar = contribution.slots.find((slot) =>
     slot.type === "routeSidebar" && slot.routePath?.toLowerCase() === routePath
   );
   return routeSidebar
     ? presentation?.slotDisplayNames[routeSidebar.id] ?? routeSidebar.displayName
-    : launcher.displayName;
+    : hostDisplayName;
 }
 
 function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
@@ -341,7 +342,7 @@ export function usePluginLaunchers(
           pluginDisplayName: contribution.displayName,
           pluginVersion: contribution.version,
           uiEntryFile: contribution.uiEntryFile,
-          hostDisplayName: launcher.displayName,
+          hostDisplayName: presentations.get(contribution.pluginId)?.launcherDisplayNames[launcher.id] ?? launcher.displayName,
           hostPluginDisplayName: presentations.get(contribution.pluginId)?.pluginDisplayName ?? contribution.displayName,
         });
       }

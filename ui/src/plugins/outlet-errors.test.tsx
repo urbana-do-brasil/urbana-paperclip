@@ -164,7 +164,12 @@ it("localizes launcher chrome without changing the launcher declaration passed t
   client.setQueryData(queryKeys.auth.session, { user: { id: "alice" } });
 
   await render("hidden");
-  const trigger = Array.from(container.querySelectorAll("button"))
+  let trigger = Array.from(container.querySelectorAll("button"))
+    .find((button) => button.textContent === "Modal do Kitchen Sink");
+  expect(trigger).toBeDefined();
+
+  await act(async () => { await i18n.changeLanguage("en"); });
+  trigger = Array.from(container.querySelectorAll("button"))
     .find((button) => button.textContent === "Kitchen Sink Modal");
   expect(trigger).toBeDefined();
 
@@ -181,5 +186,6 @@ it("localizes launcher chrome without changing the launcher declaration passed t
   expect(receivedLauncher).not.toHaveProperty("hostPluginDisplayName");
   const dialog = container.querySelector('[role="dialog"]');
   expect(dialog?.querySelector("h2")?.textContent).toBe("Kitchen Sink Modal");
-  expect(dialog?.querySelector("p")?.textContent).toBe("Kitchen Sink (exemplo)");
+  expect(dialog?.querySelector("p")?.textContent).toBe("Kitchen Sink (Example)");
+  expect(contribution.launchers[0]?.displayName).toBe("Kitchen Sink Modal");
 });

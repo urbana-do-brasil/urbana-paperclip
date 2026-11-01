@@ -216,6 +216,25 @@ const operationHelp: Record<string, CommandHelp> = {
       "--payload-json": { en: "CreateAgentHire JSON payload", "pt-BR": "Payload JSON de CreateAgentHire" },
     },
   },
+  "agent update": {
+    description: {
+      en: "Update an agent from a JSON payload",
+      "pt-BR": "Atualizar um agente a partir de um payload JSON",
+    },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "UpdateAgent JSON payload", "pt-BR": "Payload JSON de UpdateAgent" },
+    },
+  },
+  "agent delete": {
+    description: { en: "Delete an agent", "pt-BR": "Excluir um agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--yes": { en: "Confirm deletion", "pt-BR": "Confirmar exclusão" },
+    },
+  },
   "agent get": {
     description: { en: "Get one agent", "pt-BR": "Consultar um agente" },
     arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },

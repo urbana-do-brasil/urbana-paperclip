@@ -119,6 +119,54 @@ it("localizes a verified bundled slot after matching its installed package ident
   expect(container.textContent).toBe("Alterações no workspace / Workspace Changes / Alterações / Changes");
 });
 
+it("localizes a bundled File Browser slot in host chrome while preserving plugin props across locale changes", async () => {
+  await i18n.changeLanguage("pt-BR");
+  const ownContribution: PluginUiContribution = {
+    ...contribution,
+    pluginId: "file-browser",
+    pluginKey: "paperclip-file-browser-example",
+    displayName: "File Browser (Example)",
+    slots: [{
+      type: "detailTab",
+      id: "files-tab",
+      displayName: "Files",
+      exportName: "FilesTab",
+      entityTypes: ["project_workspace"],
+    }],
+  };
+  const packageName = "@paperclipai/plugin-file-browser-example";
+  const packagePath = "/app/packages/plugins/examples/plugin-file-browser-example";
+  client.setQueryData(queryKeys.plugins.uiContributions, [ownContribution]);
+  client.setQueryData(queryKeys.plugins.all, [{
+    id: "file-browser",
+    pluginKey: ownContribution.pluginKey,
+    packageName,
+    packagePath,
+    manifestJson: { id: ownContribution.pluginKey },
+  }]);
+  client.setQueryData(queryKeys.plugins.examples, [{
+    pluginKey: ownContribution.pluginKey,
+    packageName,
+    localPath: packagePath,
+  }]);
+  client.setQueryData(queryKeys.auth.session, { user: { id: "alice" } });
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("plugin module fetch not needed for registered test component")));
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  registerPluginReactComponent(ownContribution.pluginKey, "FilesTab", MountedSlotProbe);
+
+  await act(async () => root.render(<QueryClientProvider client={client}><PresentationMountedSlotConsumer /></QueryClientProvider>));
+
+  expect(container.querySelector('[data-testid="host-slot-label"]')?.textContent).toBe("Arquivos");
+  expect(container.querySelector('[data-testid="mounted-slot-probe"]')?.getAttribute("data-display-name")).toBe("Files");
+  expect(container.querySelector('[data-testid="mounted-slot-probe"]')?.getAttribute("data-mount-id")).toBe("1");
+  expect(ownContribution.slots[0]?.displayName).toBe("Files");
+
+  await act(async () => { await i18n.changeLanguage("en"); });
+  expect(container.querySelector('[data-testid="host-slot-label"]')?.textContent).toBe("Files");
+  expect(container.querySelector('[data-testid="mounted-slot-probe"]')?.getAttribute("data-display-name")).toBe("Files");
+  expect(container.querySelector('[data-testid="mounted-slot-probe"]')?.getAttribute("data-mount-id")).toBe("1");
+});
+
 it("keeps a copied contribution in its source language when the bundle path does not match", async () => {
   await i18n.changeLanguage("pt-BR");
   client.setQueryData(queryKeys.plugins.uiContributions, [{
