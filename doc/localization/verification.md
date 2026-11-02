@@ -3563,3 +3563,17 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - Toasts de sucesso e falha ao aceitar/rejeitar agora acompanham PT-BR/en, mantendo detalhes externos e erros inline. O erro duplicado de resposta foi removido, mantendo feedback seguro no cartão. IssueDetail, cartão, helper de erros e locale: 264/264; typecheck UI passou. A auditoria integral de 6.3 ainda permanece aberta.
 - Checkpoint: **346/364 tarefas**, com 18 caixas abertas incluindo agregadoras.
+
+### Ambientes, feedback de gatilhos, execuções e histórico — 3.8i, 3.10h, 4.3aa e 6.3c
+
+- Ambientes e componentes de gatilho/locale: 59/59 testes; o novo plural de restauração foi verificado em PT-BR/en. A cobertura não executa todas as mutações dos dois shells. Textos restantes em exclusão e imagem customizada foram tratados depois em 3.8j.
+- CLI run get/cancel/issues/workspace-operations: 24/24 em três suítes; typecheck CLI passou. O trabalho em parte foi retomado após interrupção dos subagentes por limite de uso.
+- Histórico de interações: 298/298 em quatro suítes; inclui troca de idioma sem reload, conteúdo do provedor intacto e confirmação expirada na interface clássica. Typecheck UI passou; outros tipos e cobertura integrada permanecem pendentes.
+- Checkpoint: **350/368 tarefas**, com 18 caixas abertas incluindo agregadoras.
+
+### Exclusão e imagem de ambientes, logs e conexões — 3.8j, 4.3ab e 6.3d
+
+- Exclusão e imagem customizada de ambientes localizadas, com plurais PT-BR/en; testes de ambientes e catálogos 49/49. IDs, referências de segredo, dados externos e payloads foram preservados.
+- Ajuda de run log/workspace-log/watchdog-decision localizada; suíte run 20/20, com conteúdo de log, flags e JSON preservados. Resumos de conexão e decisões por item: 32/32, com nome de serviço original.
+- Rodada integrada dos arquivos afetados: 371/371 em nove suítes; typechecks UI e CLI passaram sequencialmente. Checkpoint: **353/371 tarefas**, com 18 caixas abertas incluindo agregadoras.
+- Gate `pnpm check:localization`: 68 tópicos, scanner incremental em oito fontes, 11 testes Node e 217/217 Vitest. `pnpm check:token-gates`, OpenSpec estrito e `git diff --check` passaram; CI remota e regressão final continuam pendentes.

@@ -151,6 +151,7 @@ const mockEnvironmentsApi = vi.hoisted(() => ({
 const mockInstanceSettingsApi = vi.hoisted(() => ({
   get: vi.fn(),
   getExperimental: vi.fn(),
+  update: vi.fn(),
 }));
 const mockSecretsApi = vi.hoisted(() => ({
   list: vi.fn(),
@@ -292,8 +293,8 @@ function findAction(root: ParentNode, label: string): HTMLElement | undefined {
   return Array.from(root.querySelectorAll<HTMLElement>("button,a")).find((element) => element.textContent?.trim() === label);
 }
 
-function editButtons(root: ParentNode): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>("button,a")).filter((element) => element.textContent?.trim() === "Edit");
+function editButtons(root: ParentNode, label = "Edit"): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>("button,a")).filter((element) => element.textContent?.trim() === label);
 }
 
 function click(element: Element | null | undefined) {
@@ -480,6 +481,7 @@ describe("CompanyEnvironments — test provider button", () => {
     globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
     mockInstanceSettingsApi.get.mockResolvedValue({ defaultEnvironmentId: null });
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableEnvironments: true });
+    mockInstanceSettingsApi.update.mockResolvedValue({});
     mockEnvironmentsApi.capabilities.mockResolvedValue({ adapters: [], sandboxProviders: {} });
     mockPluginsApi.list.mockResolvedValue([]);
     mockPluginsApi.listBundled.mockResolvedValue([]);
@@ -608,6 +610,149 @@ describe("CompanyEnvironments — test provider button", () => {
     expect(buttonsAfter[1].textContent?.trim()).toBe("Test provider");
     expect(buttonsAfter[1].disabled).toBe(false);
     expect(mockEnvironmentsApi.probe).toHaveBeenCalledExactlyOnceWith("env-1", "company-1");
+  });
+
+  it("localizes the environment list in English and Portuguese without changing IDs sent to APIs", async () => {
+    mockEnvironmentsApi.list.mockResolvedValue([
+      { id: "env-1", name: "Remote", driver: "ssh", description: null, config: {} },
+      { id: "env-2", name: "Alpha", driver: "sandbox", description: null, config: { provider: "e2b" } },
+    ]);
+    mockEnvironmentsApi.probe.mockResolvedValue({
+      ok: true,
+      driver: "sandbox",
+      summary: "ok",
+      details: null,
+    });
+
+    const cases = [
+      {
+        locale: "en",
+        defaultLabel: "Default",
+        ariaLabel: "Default environment",
+        addLabel: "Add environment",
+        connectionLabel: "Test connection",
+        providerLabel: "Test provider",
+        editLabel: "Edit",
+        sshFallback: "SSH host · user",
+        providerSummary: "e2b sandbox provider",
+      },
+      {
+        locale: "pt-BR",
+        defaultLabel: "Padrão",
+        ariaLabel: "Ambiente padrão",
+        addLabel: "Adicionar ambiente",
+        connectionLabel: "Testar conexão",
+        providerLabel: "Testar provedor",
+        editLabel: "Editar",
+        sshFallback: "Host SSH · usuário",
+        providerSummary: "Provedor de sandbox e2b",
+      },
+    ];
+
+    for (const testCase of cases) {
+      await act(async () => {
+        await i18n.changeLanguage(testCase.locale);
+      });
+      root = createRoot(container);
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+      await act(async () => {
+        root!.render(renderCompanyEnvironments(queryClient));
+      });
+      await waitForAssertion(() => {
+        expect(container.textContent).toContain(testCase.providerSummary);
+      });
+
+      expect(container.textContent).toContain(testCase.defaultLabel);
+      expect(container.querySelector("select")?.getAttribute("aria-label")).toBe(testCase.ariaLabel);
+      expect(container.querySelector("a[aria-label]")?.getAttribute("aria-label")).toBe(testCase.addLabel);
+      expect(container.textContent).toContain(testCase.sshFallback);
+      expect(Array.from(container.querySelectorAll("button")).map((button) => button.textContent?.trim())).toContain(
+        testCase.connectionLabel,
+      );
+      expect(editButtons(container, testCase.editLabel).map((button) => button.textContent?.trim())).toEqual([
+        testCase.editLabel,
+        testCase.editLabel,
+      ]);
+
+      const defaultEnvironmentSelect = container.querySelector("select") as HTMLSelectElement;
+      await act(async () => {
+        setSelectValue(defaultEnvironmentSelect, "env-2");
+        await flushReact();
+      });
+      expect(mockInstanceSettingsApi.update).toHaveBeenCalledWith({ defaultEnvironmentId: "env-2" });
+
+      const probeButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+        (button) => button.textContent?.trim() === testCase.providerLabel,
+      );
+      expect(probeButton).toBeTruthy();
+      await act(async () => {
+        click(probeButton);
+        await flushReact();
+      });
+      expect(container.textContent).toContain("ok");
+      expect(mockEnvironmentsApi.probe).toHaveBeenCalledWith("env-2", "company-1");
+
+      await act(async () => {
+        root?.unmount();
+      });
+      root = null;
+      container.replaceChildren();
+    }
+
+    expect(mockInstanceSettingsApi.update).toHaveBeenNthCalledWith(1, { defaultEnvironmentId: "env-2" });
+    expect(mockInstanceSettingsApi.update).toHaveBeenNthCalledWith(2, { defaultEnvironmentId: "env-2" });
+  });
+
+  it("localizes custom image setup controls while keeping provider and environment IDs intact", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockEnvironmentsApi.list.mockResolvedValue([
+      { id: "env-1", name: "Daytona", driver: "sandbox", description: null, config: { provider: "daytona" } },
+    ]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue(supportedDaytonaCapabilities());
+    mockEnvironmentsApi.customImageTemplate.mockResolvedValue({
+      activeTemplate: createTemplate({ id: "template-active" }),
+      activeTemplateMatchesConfig: false,
+      activeTemplateDrift: {
+        classification: "boot_source_drift",
+        driftedPaths: [{ path: "image", from: "base-a", to: "base-b" }],
+      },
+      activeSession: null,
+      latestSession: null,
+    });
+
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root!.render(renderCompanyEnvironments(queryClient));
+    });
+    await waitForAssertion(() => {
+      expect(editButtons(container, "Editar")[0]).toBeTruthy();
+    });
+    await act(async () => click(editButtons(container, "Editar")[0]));
+    await waitForAssertion(() => {
+      expect(getEnvironmentFormPage()).not.toBeNull();
+    });
+
+    await waitForAssertion(() => {
+      const page = getEnvironmentFormPage()!;
+      expect(page.textContent).toContain("Imagem personalizada");
+      expect(page.textContent).toContain("Inicie um sandbox de configuração");
+      expect(page.textContent).toContain("Modelo ativo");
+      expect(page.textContent).toContain("Fora de uso — A imagem-base mudou: image `base-a` -> `base-b`.");
+      expect(findButton(page, "Atualizar")).toBeTruthy();
+      expect(findButton(page, "Vincular novamente")).toBeTruthy();
+      expect(findButton(page, "Reverter")).toBeTruthy();
+      expect(findButton(page, "Desativar")).toBeTruthy();
+    });
+
+    await act(async () => click(findButton(getEnvironmentFormPage()!, "Vincular novamente")));
+    await waitForAssertion(() => {
+      expect(mockEnvironmentsApi.relinkCustomImageTemplate).toHaveBeenCalledExactlyOnceWith(
+        "env-1",
+        "company-1",
+      );
+    });
   });
 
   it("explains that successful sandbox provider tests use a temporary sandbox", async () => {
@@ -2000,6 +2145,69 @@ describe("CompanyEnvironments — test provider button", () => {
     await waitForAssertion(() => {
       expect(getEnvironmentFormPage()).toBeNull();
     });
+  });
+
+  it("localizes environment deletion details without changing reassignment or delete API values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockAgentsApi.list.mockResolvedValue([
+      { id: "agent-1", name: "Iris", status: "active", defaultEnvironmentId: "env-1" },
+    ]);
+    mockEnvironmentsApi.deleteBlastRadius.mockResolvedValue(
+      createDeleteBlastRadius({
+        staticReferences: {
+          agentDefaultCount: 2,
+          executionWorkspaceSelectionCount: 1,
+          issueSelectionCount: 1,
+          secretBindingCount: 1,
+        },
+        activeRuntimeUse: { hasActiveRuntimeUse: true },
+      }),
+    );
+
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/env-1/edit`));
+    });
+    await waitForAssertion(() => {
+      expect(getEnvironmentFormPage()?.textContent).toContain("Editar ambiente");
+    });
+
+    await act(async () =>
+      click(document.body.querySelector("[data-testid='environment-delete-button']")),
+    );
+    await waitForAssertion(() => {
+      const dialog = document.body.querySelector<HTMLElement>("[data-testid='environment-delete-dialog']");
+      expect(dialog?.textContent).toContain("Excluir Alpha?");
+      expect(dialog?.textContent).toContain("1 agente usa este ambiente como padrão");
+      expect(dialog?.textContent).toContain("2 seleções de ambiente");
+      expect(dialog?.textContent).toContain("1 vínculo de segredo será removido");
+      expect(dialog?.textContent).toContain("Execuções ativas ou locações de sandbox");
+    });
+
+    const dialog = document.body.querySelector<HTMLElement>("[data-testid='environment-delete-dialog']")!;
+    const reassignSelect = dialog.querySelector<HTMLSelectElement>(
+      "[data-testid='environment-delete-reassign-select']",
+    )!;
+    expect(reassignSelect.getAttribute("aria-label")).toBe("Transferir agentes para outro ambiente");
+    expect(Array.from(reassignSelect.querySelectorAll("option")).map((option) => option.textContent?.trim())).toEqual([
+      "Padrão: Local",
+      "Beta · sandbox",
+    ]);
+    expect(dialog.textContent).toContain("Afetados: Iris");
+
+    await act(async () => setSelectValue(reassignSelect, "env-2"));
+    const confirm = dialog.querySelector<HTMLButtonElement>("[data-testid='environment-delete-confirm']")!;
+    expect(confirm.textContent?.trim()).toBe("Excluir ambiente");
+    await act(async () => click(confirm));
+    await flushReact();
+
+    expect(mockAgentsApi.update).toHaveBeenCalledExactlyOnceWith(
+      "agent-1",
+      { defaultEnvironmentId: "env-2" },
+      "company-1",
+    );
+    expect(mockEnvironmentsApi.remove).toHaveBeenCalledExactlyOnceWith("env-1");
   });
 
   it("does not offer delete on the add-environment page", async () => {

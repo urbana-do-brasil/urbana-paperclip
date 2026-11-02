@@ -8,6 +8,13 @@ import ptBR from "./locales/pt-BR.json";
 import { isSupportedLocale } from "@paperclipai/shared/localization";
 
 describe("locale validation", () => {
+  it("uses locale-aware plural forms for restored webhook trigger feedback", () => {
+    expect(t("routines.feedback.webhookRestored", { lng: "pt-BR", count: 1 })).toBe("Gatilho de webhook restaurado");
+    expect(t("routines.feedback.webhookRestored", { lng: "pt-BR", count: 2 })).toBe("2 gatilhos de webhook restaurados");
+    expect(t("routines.feedback.webhookRestored", { lng: "pt-BR", count: 1_000_000 })).toBe("1000000 gatilhos de webhook restaurados");
+    expect(t("routines.feedback.webhookRestored", { lng: "en", count: 2 })).toBe("2 webhook triggers restored");
+  });
+
   it("resolves English messages with key and default fallbacks", () => {
     expect(t("app.noCompanies.title")).toBe(ptBR.app.noCompanies.title);
     expect(t("app.noCompanies.title", { lng: "en" })).toBe(en.app.noCompanies.title);

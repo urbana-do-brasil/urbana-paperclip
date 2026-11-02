@@ -191,14 +191,14 @@ export function registerRunCommands(command: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const rows = (await ctx.api.get<RunIssueSummary[]>(apiPath`/api/heartbeat-runs/${runId}/issues`)) ?? [];
-          printOutput(rows.map((row) => ({
+          printRunRecords(rows.map((row) => ({
             identifier: row.identifier,
             id: row.id,
             status: row.status,
             priority: row.priority,
             title: row.title,
             runStatus: row.runStatus,
-          })), { json: ctx.json });
+          })), ctx.json, runIssueLabels());
         } catch (err) {
           handleCommandError(err);
         }
@@ -216,14 +216,14 @@ export function registerRunCommands(command: Command): void {
           const rows = (await ctx.api.get<WorkspaceOperation[]>(
             apiPath`/api/heartbeat-runs/${runId}/workspace-operations`,
           )) ?? [];
-          printOutput(rows.map((row) => ({
+          printRunRecords(rows.map((row) => ({
             id: row.id,
             status: row.status,
             phase: row.phase,
             command: row.command,
             cwd: row.cwd,
             logBytes: row.logBytes,
-          })), { json: ctx.json });
+          })), ctx.json, workspaceOperationLabels());
         } catch (err) {
           handleCommandError(err);
         }
@@ -306,6 +306,19 @@ function printRuns(rows: HeartbeatRun[], json: boolean): void {
   if (rows.length === 0) printOutput([], { json: false });
 }
 
+function printRunRecords(
+  rows: Record<string, unknown>[],
+  json: boolean,
+  labels: Readonly<Record<string, string>>,
+): void {
+  if (json) {
+    printOutput(rows, { json: true });
+    return;
+  }
+  for (const row of rows) console.log(formatInlineRecord(row, { labels }));
+  if (rows.length === 0) printOutput([], { json: false });
+}
+
 function runListLabels(): Readonly<Record<string, string>> {
   return {
     id: cliMessage("runListId"),
@@ -326,6 +339,28 @@ function runEventLabels(): Readonly<Record<string, string>> {
     stream: cliMessage("runEventStream"),
     level: cliMessage("runEventLevel"),
     message: cliMessage("runEventMessage"),
+  };
+}
+
+function runIssueLabels(): Readonly<Record<string, string>> {
+  return {
+    identifier: cliMessage("runIssueIdentifier"),
+    id: cliMessage("runListId"),
+    status: cliMessage("runListStatus"),
+    priority: cliMessage("runIssuePriority"),
+    title: cliMessage("runIssueTitle"),
+    runStatus: cliMessage("runIssueRunStatus"),
+  };
+}
+
+function workspaceOperationLabels(): Readonly<Record<string, string>> {
+  return {
+    id: cliMessage("runListId"),
+    status: cliMessage("runListStatus"),
+    phase: cliMessage("runWorkspacePhase"),
+    command: cliMessage("runWorkspaceCommand"),
+    cwd: cliMessage("runWorkspaceCwd"),
+    logBytes: cliMessage("runListLogBytes"),
   };
 }
 

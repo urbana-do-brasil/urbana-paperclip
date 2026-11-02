@@ -437,10 +437,18 @@ function isPlanConfirmationInteraction(
 
 function buildPlanDecisionResponseText(
   interaction: RequestConfirmationInteraction,
+  translate?: (key: string) => string,
 ) {
-  if (interaction.status === "accepted") return "Approved plan";
+  if (interaction.status === "accepted") {
+    return translate
+      ? translate("taskDetail.interactionConfirmations.summary.planApproved")
+      : "Approved plan";
+  }
   const reason = interaction.result?.reason?.trim();
-  return reason ? `Requested changes\n\n${reason}` : "Requested changes";
+  const heading = translate
+    ? translate("taskDetail.interactionConfirmations.summary.planChangesRequested")
+    : "Requested changes";
+  return reason ? `${heading}\n\n${reason}` : heading;
 }
 
 const FEEDBACK_TERMS_URL =
@@ -1994,9 +2002,9 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
               : null;
           const body =
             interaction.kind === "ask_user_questions"
-              ? buildAnsweredQuestionsDeliveryText(interaction)
+              ? buildAnsweredQuestionsDeliveryText(interaction, (key) => String(t(key)))
               : isPlanConfirmationInteraction(interaction)
-                ? buildPlanDecisionResponseText(interaction)
+                ? buildPlanDecisionResponseText(interaction, (key) => String(t(key)))
                 : "";
           return [
             {
@@ -2041,6 +2049,7 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
     resolvedActivity,
     resolvedLinkedRuns,
     interruptibleIssueRun,
+    t,
   ]);
   const effectiveQueuedCommentQueue = useMemo(() => {
     if (!queuedCommentQueueEnabled) return null;

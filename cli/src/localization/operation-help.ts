@@ -987,6 +987,57 @@ const operationHelp: Record<string, CommandHelp> = {
       "--limit": { en: "Maximum events to return", "pt-BR": "Número máximo de eventos retornados" },
     },
   },
+  "run get": {
+    description: { en: "Get a heartbeat run", "pt-BR": "Consultar uma execução de heartbeat" },
+    arguments: { runId: { en: "Heartbeat run ID", "pt-BR": "ID da execução de heartbeat" } },
+    options: commonClientOptions,
+  },
+  "run cancel": {
+    description: { en: "Cancel a queued or running heartbeat run", "pt-BR": "Cancelar uma execução de heartbeat na fila ou em andamento" },
+    arguments: { runId: { en: "Heartbeat run ID", "pt-BR": "ID da execução de heartbeat" } },
+    options: commonClientOptions,
+  },
+  "run issues": {
+    description: { en: "List issues associated with a heartbeat run", "pt-BR": "Listar tarefas associadas a uma execução de heartbeat" },
+    arguments: { runId: { en: "Heartbeat run ID", "pt-BR": "ID da execução de heartbeat" } },
+    options: commonClientOptions,
+  },
+  "run workspace-operations": {
+    description: { en: "List workspace operations for a heartbeat run", "pt-BR": "Listar operações do espaço de trabalho de uma execução de heartbeat" },
+    arguments: { runId: { en: "Heartbeat run ID", "pt-BR": "ID da execução de heartbeat" } },
+    options: commonClientOptions,
+  },
+  "run log": {
+    description: { en: "Read heartbeat run log bytes", "pt-BR": "Ler bytes do log de uma execução de heartbeat" },
+    arguments: { runId: { en: "Heartbeat run ID", "pt-BR": "ID da execução de heartbeat" } },
+    options: {
+      ...commonClientOptions,
+      "--offset": { en: "Byte offset", "pt-BR": "Deslocamento em bytes" },
+      "--limit-bytes": { en: "Maximum bytes to read", "pt-BR": "Número máximo de bytes para leitura" },
+      "--text": { en: "Print only the log text when the API returns a text field", "pt-BR": "Exibir somente o texto do log quando a API retornar um campo text" },
+    },
+  },
+  "run workspace-log": {
+    description: { en: "Read a workspace operation log", "pt-BR": "Ler o log de uma operação do espaço de trabalho" },
+    arguments: { operationId: { en: "Workspace operation ID", "pt-BR": "ID da operação do espaço de trabalho" } },
+    options: {
+      ...commonClientOptions,
+      "--offset": { en: "Byte offset", "pt-BR": "Deslocamento em bytes" },
+      "--limit-bytes": { en: "Maximum bytes to read", "pt-BR": "Número máximo de bytes para leitura" },
+      "--text": { en: "Print only the log text when the API returns a text field", "pt-BR": "Exibir somente o texto do log quando a API retornar um campo text" },
+    },
+  },
+  "run watchdog-decision": {
+    description: { en: "Record a watchdog decision for a heartbeat run", "pt-BR": "Registrar uma decisão do watchdog para uma execução de heartbeat" },
+    arguments: { runId: { en: "Heartbeat run ID", "pt-BR": "ID da execução de heartbeat" } },
+    options: {
+      ...commonClientOptions,
+      "--decision": { en: "snooze, continue, or dismissed_false_positive", "pt-BR": "snooze, continue ou dismissed_false_positive" },
+      "--reason": { en: "Decision reason", "pt-BR": "Motivo da decisão" },
+      "--snoozed-until": { en: "Required for snooze decisions", "pt-BR": "Obrigatório para decisões snooze" },
+      "--evaluation-issue-id": { en: "Related watchdog evaluation issue ID", "pt-BR": "ID da tarefa de avaliação do watchdog relacionada" },
+    },
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {

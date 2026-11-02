@@ -4080,7 +4080,7 @@ describe("IssueDetail", () => {
         (comment) => comment.id === "interaction-response:interaction-answers",
       );
       expect(delivered).toMatchObject({
-        body: "Answered questions\n\n- Runtime — Which runtime?: Node.js",
+        body: "Questions answered\n\n- Runtime — Which runtime?: Node.js",
         createdAt: new Date("2026-04-21T00:00:04.000Z"),
         updatedAt: new Date("2026-04-21T00:00:04.000Z"),
         consumedByRunId: "run-successor",
@@ -4100,6 +4100,15 @@ describe("IssueDetail", () => {
         status: "answered",
         sourceRunId: "run-source",
       });
+    });
+
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    await waitForAssertion(() => {
+      const props = mockIssueChatThreadRender.mock.calls.at(-1)?.[0] as {
+        comments?: Array<Record<string, unknown>>;
+      };
+      expect(props.comments?.find((comment) => comment.id === "interaction-response:interaction-answers"))
+        .toMatchObject({ body: "Perguntas respondidas\n\n- Runtime — Which runtime?: Node.js" });
     });
   });
 

@@ -3299,6 +3299,12 @@ describe("IssueChatThread", () => {
       "Confirmation expired after comment",
     );
 
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    expect(container.textContent).toContain("atualizou esta tarefa");
+    expect(container.textContent).toContain("Ocultar confirmação");
+    expect(container.textContent).toContain("Confirmação expirada após um comentário");
+    expect(container.textContent).toContain("Approve the plan");
+
     act(() => {
       root.unmount();
     });

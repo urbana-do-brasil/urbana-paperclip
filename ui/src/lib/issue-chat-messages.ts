@@ -563,7 +563,7 @@ function authorNameForComment(
 
 export type IssueChatTranslator = (
   key: string,
-  options?: { count?: number; created?: number; total?: number; duration?: string; agent?: string; runId?: string; status?: string; tool?: string; actor?: string },
+  options?: { count?: number; created?: number; total?: number; duration?: string; agent?: string; runId?: string; status?: string; tool?: string; actor?: string; label?: string; service?: string },
 ) => string;
 
 function formatStatusLabel(status: string, translate?: IssueChatTranslator) {

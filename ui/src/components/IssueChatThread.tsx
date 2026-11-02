@@ -3033,6 +3033,7 @@ function ExpiredRequestConfirmationActivity({
   anchorId?: string;
   interaction: RequestConfirmationInteraction;
 }) {
+  const { t } = useTranslation();
   const {
     agentMap,
     currentUserId,
@@ -3069,7 +3070,7 @@ function ExpiredRequestConfirmationActivity({
   const detailsId = anchorId
     ? `${anchorId}-details`
     : `${interaction.id}-details`;
-  const summary = buildIssueThreadInteractionSummary(interaction);
+  const summary = buildIssueThreadInteractionSummary(interaction, (key, options) => String(t(key, options)));
 
   const rowContent = (
     <div className="min-w-0 flex-1">
@@ -3080,7 +3081,7 @@ function ExpiredRequestConfirmationActivity({
         )}
       >
         <span className="font-medium text-foreground">{actorName}</span>
-        <span className="text-muted-foreground">updated this task</span>
+        <span className="text-muted-foreground">{t("taskDetail.chatTranscript.timeline.updatedTask")}</span>
         <a
           href={anchorId ? `#${anchorId}` : undefined}
           className="text-xs text-muted-foreground transition-colors hover:text-foreground hover:underline"
@@ -3100,7 +3101,7 @@ function ExpiredRequestConfirmationActivity({
               expanded && "rotate-180",
             )}
           />
-          {expanded ? "Hide confirmation" : "Expired confirmation"}
+          {expanded ? t("taskDetail.interactionConfirmations.hideConfirmation") : t("taskDetail.interactionConfirmations.expiredConfirmation")}
         </button>
       </div>
       {expanded ? (
