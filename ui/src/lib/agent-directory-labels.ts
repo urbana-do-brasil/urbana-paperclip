@@ -4,8 +4,14 @@ import {
   type Agent,
   type Environment,
   type EnvironmentCapabilities,
+  type PluginRecord,
 } from "@paperclipai/shared";
+import type { AvailableBundledPlugin } from "@/api/plugins";
 import { isPlatformManagedEnvironment } from "./managed-sandbox-environment";
+import {
+  isBundledPluginRecord,
+  localizeSandboxProviderPresentation,
+} from "./plugin-presentation-localization";
 
 export interface AgentEnvironmentDescriptor {
   label: string;
@@ -43,12 +49,32 @@ function sandboxProviderLabel(
   environment: Environment,
   capabilities: EnvironmentCapabilities | null | undefined,
   t: TFunction,
+  installedPlugins: readonly PluginRecord[] | undefined,
+  bundledPlugins: readonly AvailableBundledPlugin[] | undefined,
 ): string {
   const provider = typeof environment.config.provider === "string"
     ? environment.config.provider.trim()
     : "";
   if (!provider) return t("agentDirectory.environment.sandbox");
-  return capabilities?.sandboxProviders?.[provider]?.displayName ?? provider;
+  const capability = capabilities?.sandboxProviders?.[provider];
+  if (!capability) return provider;
+
+  const installedPlugin = capability.pluginId && capability.pluginKey
+    ? installedPlugins?.find((plugin) =>
+        plugin.id === capability.pluginId
+        && plugin.pluginKey === capability.pluginKey
+        && plugin.manifestJson.id === capability.pluginKey,
+      )
+    : undefined;
+  const trustedBundle = Boolean(installedPlugin && isBundledPluginRecord(installedPlugin, bundledPlugins));
+  return localizeSandboxProviderPresentation(
+    provider,
+    capability.pluginKey,
+    capability.displayName ?? provider,
+    capability.description,
+    t,
+    trustedBundle,
+  ).displayName;
 }
 
 function formatEnvironmentDriver(driver: Environment["driver"], t: TFunction): string {
@@ -63,6 +89,8 @@ export function resolveAgentEnvironment(
   instanceDefaultEnvironmentId: string | null,
   capabilities: EnvironmentCapabilities | null | undefined,
   t: TFunction,
+  installedPlugins?: readonly PluginRecord[],
+  bundledPlugins?: readonly AvailableBundledPlugin[],
 ): AgentEnvironmentDescriptor {
   const environmentId = agent.defaultEnvironmentId ?? instanceDefaultEnvironmentId;
   if (!environmentId) return localAgentEnvironment(t);
@@ -76,7 +104,7 @@ export function resolveAgentEnvironment(
     ? t("agentDirectory.environment.managedByPaperclip")
     : environment.driver === "sandbox"
       ? t("agentDirectory.environment.sandboxProvider", {
-          provider: sandboxProviderLabel(environment, capabilities, t),
+          provider: sandboxProviderLabel(environment, capabilities, t, installedPlugins, bundledPlugins),
         })
       : environment.driver === "local"
         ? t("agentDirectory.environment.paperclipHost")

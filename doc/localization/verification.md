@@ -3582,3 +3582,9 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - Navegação contextual de rotinas: 4/4; categorias de plugins próprios com prova de identidade e fallback externo: 18/18 e typecheck UI. CLI connections: 5/5 e typecheck CLI; erros próprios mantêm inglês em modo JSON.
 - Gate de localização anterior ao ajuste final de stderr passou com 222/222; o teste focado foi repetido após o ajuste. Checkpoint: **356/374 tarefas**, com 18 caixas abertas incluindo agregadoras.
+
+### Cópia de webhook, sandbox e perfil CLI — 3.10j, 3.11h9 e 4.3ad
+
+- Feedback de cópia nas duas variantes de rotinas: 16/16 testes focados; valores copiados e erros reais preservados. Sandbox na lista de agentes: 14/14 no helper, 23/23 em Agents e typecheck UI; identidade externa e dados ausentes usam fallback.
+- CLI profile: 4/4 testes e typecheck CLI. Checkpoint: **359/377 tarefas**, com 18 caixas abertas incluindo agregadoras.
+- Rodada integrada posterior: 56/56 em cinco arquivos; gate de tokens, scanner incremental de fontes e OpenSpec estrito passaram.

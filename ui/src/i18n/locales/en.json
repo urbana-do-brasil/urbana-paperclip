@@ -1330,6 +1330,9 @@
           "copy": "Copy",
           "copyLabel": "Copy {{label}}",
           "failed": "Copy failed. Select and copy the text below.",
+          "secretCopied": "Copied to clipboard: {{label}}.",
+          "secretCopyFailed": "Failed to copy {{label}}.",
+          "clipboardDenied": "Clipboard access was denied.",
           "textAria": "{{label}} text"
         },
         "instructions": {

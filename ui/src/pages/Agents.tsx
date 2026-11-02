@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { agentsApi, type OrgNode } from "../api/agents";
 import { builtInAgentsApi, type BuiltInAgentState } from "../api/builtInAgents";
 import { environmentsApi } from "../api/environments";
+import { pluginsApi } from "../api/plugins";
 import { heartbeatsApi } from "../api/heartbeats";
 import { instanceSettingsApi } from "../api/instanceSettings";
 import { useCompany } from "../context/CompanyContext";
@@ -199,6 +200,17 @@ export function Agents({ initialView = "list" }: { initialView?: AgentsView } = 
     enabled: !!selectedCompanyId && environmentsEnabled,
   });
 
+  const { data: installedPlugins } = useQuery({
+    queryKey: queryKeys.plugins.all,
+    queryFn: () => pluginsApi.list(),
+    enabled: !!selectedCompanyId && environmentsEnabled,
+  });
+  const { data: bundledPlugins } = useQuery({
+    queryKey: queryKeys.plugins.examples,
+    queryFn: () => pluginsApi.listBundled(),
+    enabled: !!selectedCompanyId && environmentsEnabled,
+  });
+
   const runsQueryKey = [...queryKeys.liveRuns(selectedCompanyId!), "agents-page"] as const;
   const sharedRuns = useSharedPollingQuery({
     companyId: selectedCompanyId,
@@ -249,11 +261,13 @@ export function Agents({ initialView = "list" }: { initialView?: AgentsView } = 
           instanceSettings?.defaultEnvironmentId ?? null,
           environmentCapabilities,
           t,
+          installedPlugins,
+          bundledPlugins,
         ),
       );
     }
     return map;
-  }, [agents, environmentsById, environmentCapabilities, instanceSettings?.defaultEnvironmentId, t]);
+  }, [agents, environmentsById, environmentCapabilities, instanceSettings?.defaultEnvironmentId, installedPlugins, bundledPlugins, t]);
 
   useEffect(() => {
     setBreadcrumbs([{ label: t("agentDirectory.breadcrumb") }]);

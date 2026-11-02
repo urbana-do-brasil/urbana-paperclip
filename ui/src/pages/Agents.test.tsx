@@ -35,6 +35,11 @@ const mockEnvironmentsApi = vi.hoisted(() => ({
   capabilities: vi.fn(),
 }));
 
+const mockPluginsApi = vi.hoisted(() => ({
+  list: vi.fn(),
+  listBundled: vi.fn(),
+}));
+
 const mockHeartbeatsApi = vi.hoisted(() => ({
   liveRunsForCompany: vi.fn(),
 }));
@@ -86,6 +91,10 @@ vi.mock("../api/builtInAgents", () => ({
 
 vi.mock("../api/environments", () => ({
   environmentsApi: mockEnvironmentsApi,
+}));
+
+vi.mock("../api/plugins", () => ({
+  pluginsApi: mockPluginsApi,
 }));
 
 vi.mock("../api/heartbeats", () => ({
@@ -332,6 +341,8 @@ describe("Agents", () => {
       makeEnvironment({ id: "env-daytona" }),
     ]);
     mockEnvironmentsApi.capabilities.mockResolvedValue(environmentCapabilities);
+    mockPluginsApi.list.mockResolvedValue([]);
+    mockPluginsApi.listBundled.mockResolvedValue([]);
     mockInstanceSettingsApi.get.mockResolvedValue(makeInstanceSettings());
     mockHeartbeatsApi.liveRunsForCompany.mockResolvedValue([]);
     mockResourceMembershipsApi.listMine.mockResolvedValue({

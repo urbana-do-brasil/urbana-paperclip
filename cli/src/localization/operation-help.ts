@@ -104,6 +104,47 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
     options: commonClientOptions,
   },
+  profile: {
+    description: {
+      en: "Current user profile operations",
+      "pt-BR": "Operações do perfil do usuário atual",
+    },
+  },
+  "profile session": {
+    description: {
+      en: "Get auth session",
+      "pt-BR": "Consultar a sessão de autenticação",
+    },
+    options: commonClientOptions,
+  },
+  "profile get": {
+    description: {
+      en: "Get current auth profile",
+      "pt-BR": "Consultar o perfil de autenticação atual",
+    },
+    options: commonClientOptions,
+  },
+  "profile update": {
+    description: {
+      en: "Update current auth profile",
+      "pt-BR": "Atualizar o perfil de autenticação atual",
+    },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "profile company-user": {
+    description: {
+      en: "Get a user profile within a company",
+      "pt-BR": "Consultar o perfil de um usuário em uma organização",
+    },
+    arguments: { userSlug: { en: "User slug", "pt-BR": "Slug do usuário" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
   approval: {
     description: { en: "Approval operations", "pt-BR": "Operações de aprovação" },
   },

@@ -23,6 +23,10 @@ import { useToastActions } from "../context/ToastContext";
 import { queryKeys } from "../lib/queryKeys";
 import { copyTextToClipboard } from "../lib/clipboard";
 import { routineOverviewCopyText } from "../lib/routine-description-copy";
+import {
+  routineSecretCopyFailureToast,
+  routineSecretCopySuccessTitle,
+} from "../lib/routine-secret-copy-toast";
 import { buildMarkdownMentionOptions } from "../lib/company-members";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { RoutineDetailPlaceholder } from "../components/RoutineDetailPlaceholder";
@@ -370,16 +374,15 @@ export function RoutineDetail() {
     async (label: string, value: string) => {
       try {
         await copyTextToClipboard(value);
-        pushToast({ title: `${label} copied`, tone: "success" });
+        pushToast({ title: routineSecretCopySuccessTitle(t, label), tone: "success" });
       } catch (copyError) {
         pushToast({
-          title: `Failed to copy ${label.toLowerCase()}`,
-          body: copyError instanceof Error ? copyError.message : "Clipboard access was denied.",
+          ...routineSecretCopyFailureToast(t, label, copyError),
           tone: "error",
         });
       }
     },
-    [pushToast],
+    [pushToast, t],
   );
 
   const saveRoutine = useMutation({
