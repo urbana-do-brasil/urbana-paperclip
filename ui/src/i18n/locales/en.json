@@ -3938,6 +3938,24 @@
           "name": "Runner idle timeout (ms)",
           "description": "How long an idle warm paperclip_runner stays alive before it checkpoints and suspends."
         }
+      },
+      "e2b": {
+        "template": {
+          "name": "Template",
+          "description": "E2B sandbox template name. Defaults to base when omitted."
+        },
+        "apiKey": {
+          "name": "API key",
+          "description": "Environment-specific E2B API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to E2B_API_KEY if omitted."
+        },
+        "timeoutMs": {
+          "name": "Sandbox timeout",
+          "description": "Sandbox lifetime in milliseconds, refreshed on each command. Defaults to 1 hour. Raise this if your runs commonly idle longer than the default between commands."
+        },
+        "reuseLease": {
+          "name": "Reuse sandbox",
+          "description": "Whether to pause and reuse sandboxes across runs."
+        }
       }
     },
     "managedResources": {
@@ -5284,6 +5302,15 @@
     "retry": "Retry",
     "saveAndExit": "Save & exit",
     "closeSelector": "Close selector"
+  },
+  "markdownBody": {
+    "copyCode": "Copy code",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "copyFailed": "Copy failed",
+    "wrapLines": "Wrap lines",
+    "unwrapLines": "Unwrap lines",
+    "scrollableTable": "Scrollable table"
   },
   "notFound": {
     "breadcrumb": "Not Found",

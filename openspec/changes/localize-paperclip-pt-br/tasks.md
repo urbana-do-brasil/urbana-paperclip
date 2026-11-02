@@ -313,6 +313,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 3.10i Localizar navegação contextual de rotinas e nomes acessíveis, preservando rotas e título fornecido. Teste focado: 4/4; revisão integral de 3.10 permanece pendente.
   - [x] 3.10j Localizar feedback de cópia de URL e chave de webhook nas duas variantes, preservando valores e erros de clipboard. Testes focados: 16/16; 3.10 permanece aberta.
   - [x] 3.10k Localizar painel de campos e revisões de cases e rótulo de revisão única em status cards. Testes 43/43; CaseRevisionRail não tem import ativo e textos compartilhados de outras jornadas seguem pendentes em 3.10.
+  - [x] 3.10l Localizar rótulos acessíveis e controles de cópia/quebra de linha em MarkdownBody, preservando código e tabelas. Testes focados 74/74; clipboard real e leitor de tela não foram qualificados.
 - [ ] 3.11 Migrar UI hospedeira de plugins e conteúdo humano de plugins distribuídos no produto, além das superfícies próprias adicionais encontradas no fechamento do mapa de rotas. Verificar cada superfície nos dois idiomas e documentar limites de plugins externos não controlados. Specs: `localized-web-interface`, `localization-quality`.
   - [x] 3.11a Propagar e documentar locale reativo pelo `PluginHostContext`, slots, overlays e launcher; conteúdo de plugins externos permanece original. Testes de bridge/slots/overlays e SDK: 29/29; typechecks do SDK/UI passaram sem remount.
   - [x] 3.11b Localizar a página host `PluginSettings`, incluindo placeholder, controles e rótulos de status/gatilhos conhecidos; preservar nomes, descrições, conteúdo e mensagens livres do plugin. Testes focados + locale-validation: 25/25; typecheck UI e token gates passaram.
@@ -340,6 +341,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.11h8 Localizar categorias de plugins bundled em PluginSettings somente com identidade comprovada; preservar categorias desconhecidas e externas. Testes: 18/18; typecheck UI e gate de tokens passaram. 3.11h permanece aberta.
     - [x] 3.11h9 Localizar nomes de sandbox providers na lista de agentes apenas com identidade bundled comprovada, preservando fallback e colisões externas. Testes 14/14 e Agents 23/23; typecheck UI passou. 3.11h permanece aberta.
     - [x] 3.11h10 Localizar apresentação dos campos do schema Daytona bundled com identidade e descrição-fonte comprovadas; preservar schema original, valores e metadata externa. Testes focados 68/68 e typecheck UI passaram; outros providers permanecem em 3.11h.
+    - [x] 3.11h11 Localizar os quatro campos do schema E2B bundled com identidade e descrição-fonte comprovadas; preservar schema e metadata externa. Testes focados 16/16, locale 13/13 e typecheck UI passaram; outros providers permanecem em 3.11h.
 
 ## 4. CLI bilíngue
 
@@ -377,6 +379,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3ac Localizar help e erros próprios de connections search/request, preservando instruções, payloads, erros externos e stderr em inglês no modo JSON. Testes focados 5/5, typecheck CLI e gate de localização passaram; demais comandos e regressão integrada seguem pendentes.
   - [x] 4.3ad Localizar help de profile session/get/update/company-user, preservando rotas, payloads, JSON e erros estruturados. Testes focados 4/4 e typecheck CLI passaram; 4.3 e 4.4 permanecem abertas.
   - [x] 4.3ae Localizar help de health e dashboard get, preservando respostas, payloads, erros e saída JSON. Testes focados 4/4 e typecheck CLI passaram; 4.3/4.4 seguem abertas.
+  - [x] 4.3af Localizar help do grupo cost e dez operações, preservando flags, rotas, payloads, JSON e erros estruturados. Testes focados 4/4 e typecheck CLI passaram; 4.3/4.4 seguem abertas.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação

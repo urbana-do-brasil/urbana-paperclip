@@ -11,6 +11,7 @@ import {
   localizeManagedPluginResourceDisplayName,
   localizePluginUiContributionPresentation,
   localizeSandboxProviderPresentation,
+  localizeSandboxProviderConfigSchema,
   isTrustedBundledPluginContribution,
 } from "./plugin-presentation-localization";
 
@@ -193,6 +194,144 @@ describe("owned plugin presentation localization", () => {
       pluginId: "bundled-e2b-plugin-id",
       pluginKey: "paperclip.e2b-sandbox-provider",
     }, [{ ...installed[0]!, manifestJson: { id: "paperclip.daytona-sandbox-provider" } }], bundled)).toBe(false);
+  });
+
+  it.each([
+    ["pt-BR", "Template do sandbox", "Nome do template de sandbox do E2B. Se omitido, usa base.", "Chave de API", "Tempo limite do sandbox", "Reutilizar sandbox"],
+    ["en", "Template", "E2B sandbox template name. Defaults to base when omitted.", "API key", "Sandbox timeout", "Reuse sandbox"],
+  ] as const)("localizes E2B schema metadata from the exact bundled source in %s without changing schema or values", async (
+    locale,
+    templateName,
+    templateDescription,
+    apiKeyName,
+    timeoutName,
+    reuseName,
+  ) => {
+    await i18n.changeLanguage(locale);
+    const pluginId = "paperclip.e2b-sandbox-provider";
+    const pluginRecordId = "bundled-e2b-plugin-id";
+    const packageName = "@paperclipai/plugin-e2b";
+    const bundlePath = "/app/packages/plugins/sandbox-providers/e2b";
+    const installed = [{
+      id: pluginRecordId,
+      pluginKey: pluginId,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginId },
+    }];
+    const bundled = [{ pluginKey: pluginId, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledSandboxProvider({ pluginId: pluginRecordId, pluginKey: pluginId }, installed, bundled);
+    expect(trustedBundle).toBe(true);
+
+    const schema = {
+      type: "object",
+      required: ["template"],
+      properties: {
+        template: {
+          type: "string",
+          description: "E2B sandbox template name. Defaults to base when omitted.",
+          default: "base",
+        },
+        apiKey: {
+          type: "string",
+          format: "secret-ref",
+          description: "Environment-specific E2B API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to E2B_API_KEY if omitted.",
+        },
+        timeoutMs: {
+          type: "number",
+          description: "Sandbox lifetime in milliseconds, refreshed on each command. Defaults to 1 hour. Raise this if your runs commonly idle longer than the default between commands.",
+          default: 3_600_000,
+          minimum: 1_000,
+        },
+        reuseLease: {
+          type: "boolean",
+          description: "Whether to pause and reuse sandboxes across runs.",
+          default: false,
+        },
+        customField: {
+          type: "string",
+          title: "Provider-owned field",
+          description: "Provider-owned help text.",
+        },
+      },
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configuration = {
+      template: "custom-template",
+      apiKey: "company-secret-ref",
+      timeoutMs: 7_200_000,
+      reuseLease: true,
+      customValue: "preserve this value",
+    };
+    const configurationBefore = JSON.stringify(configuration);
+    const localized = localizeSandboxProviderConfigSchema("e2b", pluginId, schema, i18n.t, trustedBundle)!;
+
+    expect(localized.properties.template).toMatchObject({
+      title: templateName,
+      description: templateDescription,
+      default: "base",
+    });
+    expect(localized.properties.apiKey).toMatchObject({
+      title: apiKeyName,
+      format: "secret-ref",
+    });
+    expect(localized.properties.timeoutMs).toMatchObject({
+      title: timeoutName,
+      default: 3_600_000,
+      minimum: 1_000,
+    });
+    expect(localized.properties.reuseLease).toMatchObject({ title: reuseName, default: false });
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(localized.required).toEqual(["template"]);
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configuration)).toBe(configurationBefore);
+
+    if (locale === "pt-BR") {
+      expect(localized.properties.apiKey.description).toBe("Chave de API do E2B específica do ambiente. Cole uma chave ou uma referência a um segredo existente do Paperclip; valores colados são salvos como segredos da organização. Se omitida, usa E2B_API_KEY.");
+      expect(localized.properties.timeoutMs.description).toBe("Tempo de vida do sandbox em milissegundos, atualizado a cada comando. O padrão é 1 hora. Aumente este valor se suas execuções costumam ficar inativas por mais tempo que o padrão entre comandos.");
+      expect(localized.properties.reuseLease.description).toBe("Define se os sandboxes devem ser pausados e reutilizados entre execuções.");
+    } else {
+      expect(localized.properties.apiKey.description).toBe(schema.properties.apiKey.description);
+      expect(localized.properties.timeoutMs.description).toBe(schema.properties.timeoutMs.description);
+      expect(localized.properties.reuseLease.description).toBe(schema.properties.reuseLease.description);
+    }
+
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/e2b/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    for (const sourceDescription of [
+      schema.properties.template.description,
+      schema.properties.apiKey.description,
+      schema.properties.timeoutMs.description,
+      schema.properties.reuseLease.description,
+    ]) {
+      expect(manifestSource).toContain(sourceDescription);
+    }
+
+    const externalInstalled = [{
+      ...installed[0]!,
+      id: "vendor-e2b-id",
+      packageName: "vendor/e2b-compatible",
+      packagePath: "/custom/vendor/e2b-compatible",
+    }];
+    const externalTrustedBundle = isTrustedBundledSandboxProvider(
+      { pluginId: "vendor-e2b-id", pluginKey: pluginId },
+      externalInstalled,
+      bundled,
+    );
+    expect(externalTrustedBundle).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("e2b", pluginId, schema, i18n.t, externalTrustedBundle)).toBe(schema);
+
+    const changedSourceSchema = {
+      ...schema,
+      properties: {
+        ...schema.properties,
+        apiKey: { ...schema.properties.apiKey, description: "Vendor-authored E2B compatible API description." },
+      },
+    };
+    const changedSourcePresentation = localizeSandboxProviderConfigSchema("e2b", pluginId, changedSourceSchema, i18n.t, true)!;
+    expect(changedSourcePresentation.properties.apiKey).toEqual(changedSourceSchema.properties.apiKey);
   });
 
   it("localizes managed-resource plugin attribution only with matching installed and bundled identity", async () => {

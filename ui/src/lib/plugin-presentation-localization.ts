@@ -246,10 +246,12 @@ const OWN_SANDBOX_PROVIDER_PRESENTATION_KEYS: Record<string, { pluginId: string;
 
 const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
   pluginId: string;
+  key: string;
   fields: Record<string, { sourceDescription: string; key: string }>;
 }> = {
   daytona: {
     pluginId: "paperclip.daytona-sandbox-provider",
+    key: "daytona",
     fields: {
       apiKey: {
         sourceDescription: "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted.",
@@ -322,6 +324,28 @@ const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
       runnerIdleTimeoutMs: {
         sourceDescription: "How long an idle warm paperclip_runner stays alive before it checkpoints and suspends.",
         key: "runnerIdleTimeoutMs",
+      },
+    },
+  },
+  e2b: {
+    pluginId: "paperclip.e2b-sandbox-provider",
+    key: "e2b",
+    fields: {
+      template: {
+        sourceDescription: "E2B sandbox template name. Defaults to base when omitted.",
+        key: "template",
+      },
+      apiKey: {
+        sourceDescription: "Environment-specific E2B API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to E2B_API_KEY if omitted.",
+        key: "apiKey",
+      },
+      timeoutMs: {
+        sourceDescription: "Sandbox lifetime in milliseconds, refreshed on each command. Defaults to 1 hour. Raise this if your runs commonly idle longer than the default between commands.",
+        key: "timeoutMs",
+      },
+      reuseLease: {
+        sourceDescription: "Whether to pause and reuse sandboxes across runs.",
+        key: "reuseLease",
       },
     },
   },
@@ -536,8 +560,8 @@ export function localizeSandboxProviderConfigSchema<T extends PluginConfigSchema
     }
     properties[fieldKey] = {
       ...fieldSchema,
-      title: translate(t, `pluginPresentation.sandboxProviderConfigFields.daytona.${presentation.key}.name`, fieldKey),
-      description: translate(t, `pluginPresentation.sandboxProviderConfigFields.daytona.${presentation.key}.description`, presentation.sourceDescription),
+      title: translate(t, `pluginPresentation.sandboxProviderConfigFields.${ownedProvider.key}.${presentation.key}.name`, fieldKey),
+      description: translate(t, `pluginPresentation.sandboxProviderConfigFields.${ownedProvider.key}.${presentation.key}.description`, presentation.sourceDescription),
     };
     changed = true;
   }

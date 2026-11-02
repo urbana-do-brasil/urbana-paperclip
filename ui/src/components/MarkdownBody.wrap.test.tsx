@@ -72,7 +72,7 @@ describe("MarkdownBody code block wrapping", () => {
     expect(wrapButton).not.toBeNull();
     expect(actions?.getAttribute("data-active")).toBeNull();
     expect(wrapButton?.getAttribute("aria-pressed")).toBe("false");
-    expect(wrapButton?.getAttribute("aria-label")).toBe("Wrap lines");
+    expect(wrapButton?.getAttribute("aria-label")).toBe("Ativar quebra de linhas");
     expect(pre?.style.overflowX).toBe("auto");
     expect(pre?.style.whiteSpace).toBe("");
 
@@ -81,7 +81,7 @@ describe("MarkdownBody code block wrapping", () => {
     });
 
     expect(wrapButton?.getAttribute("aria-pressed")).toBe("true");
-    expect(wrapButton?.getAttribute("aria-label")).toBe("Unwrap lines");
+    expect(wrapButton?.getAttribute("aria-label")).toBe("Desativar quebra de linhas");
     expect(actions?.getAttribute("data-active")).toBe("true");
     expect(pre?.style.overflowX).toBe("hidden");
     expect(pre?.style.whiteSpace).toBe("pre-wrap");
@@ -92,7 +92,7 @@ describe("MarkdownBody code block wrapping", () => {
     });
 
     expect(wrapButton?.getAttribute("aria-pressed")).toBe("false");
-    expect(wrapButton?.getAttribute("aria-label")).toBe("Wrap lines");
+    expect(wrapButton?.getAttribute("aria-label")).toBe("Ativar quebra de linhas");
     expect(actions?.getAttribute("data-active")).toBeNull();
     expect(pre?.style.overflowX).toBe("auto");
     expect(pre?.style.whiteSpace).toBe("");

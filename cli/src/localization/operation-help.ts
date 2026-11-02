@@ -48,6 +48,81 @@ const operationHelp: Record<string, CommandHelp> = {
       "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
     },
   },
+  cost: {
+    description: {
+      en: "Cost and finance operations",
+      "pt-BR": "Operações de custos e finanças",
+    },
+  },
+  "cost summary": {
+    description: { en: "Get summarized cost data", "pt-BR": "Consultar dados de custos resumidos" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "cost by-agent": {
+    description: { en: "Get costs by agent", "pt-BR": "Consultar custos por agente" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "cost by-agent-model": {
+    description: { en: "Get costs by agent and model", "pt-BR": "Consultar custos por agente e modelo" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "cost by-provider": {
+    description: { en: "Get costs by provider", "pt-BR": "Consultar custos por provedor" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "cost by-biller": {
+    description: { en: "Get costs by biller", "pt-BR": "Consultar custos por faturador" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "cost by-project": {
+    description: { en: "Get costs by project", "pt-BR": "Consultar custos por projeto" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "cost window-spend": {
+    description: { en: "Get spending in the current cost window", "pt-BR": "Consultar os gastos da janela de custos atual" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "cost quota-windows": {
+    description: { en: "Get cost quota windows", "pt-BR": "Consultar janelas de cotas de custo" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "cost issue": {
+    description: { en: "Get cost summary for an issue", "pt-BR": "Consultar o resumo de custos de uma tarefa" },
+    arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
+    options: commonClientOptions,
+  },
+  "cost event:create": {
+    description: { en: "Record a cost event", "pt-BR": "Registrar um evento de custo" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
   connections: {
     description: {
       en: "Search or request connections from an active heartbeat run",

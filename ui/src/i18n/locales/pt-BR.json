@@ -4034,6 +4034,24 @@
           "name": "Timeout de inatividade do runner (ms)",
           "description": "Por quanto tempo um paperclip_runner aquecido e ocioso permanece ativo antes de criar um checkpoint e suspender."
         }
+      },
+      "e2b": {
+        "template": {
+          "name": "Template do sandbox",
+          "description": "Nome do template de sandbox do E2B. Se omitido, usa base."
+        },
+        "apiKey": {
+          "name": "Chave de API",
+          "description": "Chave de API do E2B específica do ambiente. Cole uma chave ou uma referência a um segredo existente do Paperclip; valores colados são salvos como segredos da organização. Se omitida, usa E2B_API_KEY."
+        },
+        "timeoutMs": {
+          "name": "Tempo limite do sandbox",
+          "description": "Tempo de vida do sandbox em milissegundos, atualizado a cada comando. O padrão é 1 hora. Aumente este valor se suas execuções costumam ficar inativas por mais tempo que o padrão entre comandos."
+        },
+        "reuseLease": {
+          "name": "Reutilizar sandbox",
+          "description": "Define se os sandboxes devem ser pausados e reutilizados entre execuções."
+        }
       }
     },
     "managedResources": {
@@ -5424,6 +5442,15 @@
     "retry": "Tentar novamente",
     "saveAndExit": "Salvar e sair",
     "closeSelector": "Fechar seletor"
+  },
+  "markdownBody": {
+    "copyCode": "Copiar código",
+    "copy": "Copiar",
+    "copied": "Copiado!",
+    "copyFailed": "Falha ao copiar",
+    "wrapLines": "Ativar quebra de linhas",
+    "unwrapLines": "Desativar quebra de linhas",
+    "scrollableTable": "Tabela com rolagem"
   },
   "notFound": {
     "breadcrumb": "Página não encontrada",

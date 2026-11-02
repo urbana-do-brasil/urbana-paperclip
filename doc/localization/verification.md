@@ -3595,3 +3595,9 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Schema Daytona: 68/68 com checagem de identidade e fallback; outros schemas de providers seguem pendentes. CLI health/dashboard: 4/4 e typecheck CLI.
 - Checkpoint: **363/381 tarefas**, com 18 caixas abertas incluindo agregadoras.
 - Repetição integrada: 83/83 em seis arquivos e StatusCardDetailDrawer 18/18 em execução separada; typecheck UI, gate de tokens, scanner de fontes e OpenSpec estrito passaram.
+
+### Markdown, schema E2B e CLI cost — 3.10l, 3.11h11 e 4.3af
+
+- MarkdownBody: 74/74 testes de renderização e preservação de conteúdo; clipboard real e leitor de tela não foram testados. E2B: 16/16, locale 13/13 e typecheck UI; a projeção exige identidade bundled e descrição-fonte, mantendo schema e dados originais.
+- CLI cost: 4/4 e typecheck CLI; rotas, JSON e erros estruturados preservados. Checkpoint: **366/384 tarefas**, 18 caixas abertas incluindo agregadoras.
+- Repetição integrada: 94/94 em seis arquivos; typecheck UI, gate de tokens, scanner de fontes e OpenSpec estrito passaram.
