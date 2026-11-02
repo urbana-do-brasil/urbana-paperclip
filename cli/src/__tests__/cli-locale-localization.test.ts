@@ -4,12 +4,14 @@ import {
   companyImportMessageCatalog,
 } from "../localization/admin-operations.js";
 import { cliMessageCatalog } from "../localization/index.js";
+import { skillOperationMessageCatalog } from "../localization/skill-operations.js";
 import { validateMessageCatalogPair } from "../localization/catalog-validation.js";
 
 const catalogs = [
   ["CLI core", cliMessageCatalog],
   ["admin operations", adminOperationMessageCatalog],
   ["company import", companyImportMessageCatalog],
+  ["skill operations", skillOperationMessageCatalog],
 ] as const;
 
 // These six company-import messages accept locale-specific grammar atoms from

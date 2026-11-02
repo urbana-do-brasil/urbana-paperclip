@@ -3503,3 +3503,11 @@ Checkpoint provisório: **328/346 tarefas**.
 - Gate: `PAPERCLIP_LOCALIZATION_BASE=origin/master pnpm check:localization` passou, com 68 tópicos, 493 fontes alteradas, 11 testes Node e 127 Vitest. Links por referência e placeholder curto têm regressões. O scanner é heurístico/incremental, contrato JSON é representativo, âncoras não são verificadas e CI remota ainda não foi executada; 7.1 segue aberta.
 
 Checkpoint: **331/349 tarefas**.
+
+### Skills, instruções e operações de agentes na CLI — 4.3r–t
+
+- Família skills: 31/31 testes focados, typecheck direcionado e paridade de catálogo passaram; erros próprios em `--json` preservam stderr inglês. O teste de exportação que dependia do locale global foi isolado explicitamente.
+- Instruções: 6/6 testes cobrem sucesso/falha, JSON, payloads e conteúdo CRLF/Unicode; typecheck direcionado passou.
+- Permissões, heartbeat e login Claude: 24/24 testes de regressão combinada, typecheck direcionado e gate de fontes passaram. Typecheck integral da CLI terminou com exit 137 por memória.
+
+Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.

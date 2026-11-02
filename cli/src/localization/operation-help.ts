@@ -22,6 +22,14 @@ const commonClientOptions: Record<string, LocaleText> = {
   "--json": { en: "Output raw JSON", "pt-BR": "Exibir JSON bruto" },
 };
 
+const companySkillOptions = {
+  ...commonClientOptions,
+  "--company-id": { en: "Company ID (overrides context default)", "pt-BR": "ID da organização (substitui o padrão do contexto)" },
+};
+const skillReferenceArgument = { skillRef: { en: "Company skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill da organização" } };
+const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
+const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
+
 const operationHelp: Record<string, CommandHelp> = {
   company: {
     description: {
@@ -235,6 +243,24 @@ const operationHelp: Record<string, CommandHelp> = {
       "--yes": { en: "Confirm deletion", "pt-BR": "Confirmar exclusão" },
     },
   },
+  "agent permissions:update": {
+    description: { en: "Update agent permissions", "pt-BR": "Atualizar as permissões do agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "UpdateAgentPermissions JSON payload", "pt-BR": "Payload JSON de UpdateAgentPermissions" },
+    },
+  },
+  "agent heartbeat:invoke": {
+    description: { en: "Invoke an agent heartbeat", "pt-BR": "Invocar um heartbeat do agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
+  "agent claude-login": {
+    description: { en: "Trigger Claude login for an agent", "pt-BR": "Iniciar o login do Claude para um agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
   "agent get": {
     description: { en: "Get one agent", "pt-BR": "Consultar um agente" },
     arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
@@ -289,6 +315,226 @@ const operationHelp: Record<string, CommandHelp> = {
     },
     arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
     options: commonClientOptions,
+  },
+  "agent skills": {
+    description: { en: "List agent skills", "pt-BR": "Listar skills do agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
+  "agent skills:sync": {
+    description: { en: "Sync desired skills onto an agent", "pt-BR": "Sincronizar as skills desejadas no agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--desired-skills": { en: "Comma-separated desired skill names", "pt-BR": "Nomes das skills desejadas, separados por vírgulas" },
+      "--mode": { en: "Merge mode: add keeps other skills; remove deletes only named skills; replace overwrites the complete set", "pt-BR": "Modo de mesclagem: add mantém as demais skills; remove exclui apenas as indicadas; replace substitui o conjunto completo" },
+    },
+  },
+  "agent instructions-bundle": {
+    description: { en: "Get an agent instructions bundle", "pt-BR": "Consultar o pacote de instruções do agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
+  "agent instructions-file:get": {
+    description: { en: "Get an agent instructions file", "pt-BR": "Consultar um arquivo de instruções do agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--path": { en: "Bundle-relative file path", "pt-BR": "Caminho do arquivo relativo ao pacote de instruções" },
+    },
+  },
+  "agent instructions-file:put": {
+    description: { en: "Create or update an agent instructions file", "pt-BR": "Criar ou atualizar um arquivo de instruções do agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--path": { en: "Bundle-relative file path", "pt-BR": "Caminho do arquivo relativo ao pacote de instruções" },
+      "--content": { en: "File content", "pt-BR": "Conteúdo do arquivo" },
+      "--content-file": { en: "Read file content from disk", "pt-BR": "Ler o conteúdo do arquivo do disco" },
+      "--clear-legacy-prompt-template": { en: "Clear legacy prompt template", "pt-BR": "Limpar o template de prompt legado" },
+    },
+  },
+  "agent instructions-file:delete": {
+    description: { en: "Delete an agent instructions file", "pt-BR": "Excluir um arquivo de instruções do agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--path": { en: "Bundle-relative file path", "pt-BR": "Caminho do arquivo relativo ao pacote de instruções" },
+    },
+  },
+  "agent instructions-path:update": {
+    description: {
+      en: "Update an agent instructions path. Process adapters require adapterConfigKey and relative paths require adapterConfig.cwd.",
+      "pt-BR": "Atualizar o caminho de instruções do agente. Adapters process exigem adapterConfigKey; caminhos relativos exigem adapterConfig.cwd.",
+    },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": {
+        en: 'UpdateAgentInstructionsPath JSON payload, for example {"path":"/tmp/AGENTS.md","adapterConfigKey":"instructionsFilePath"}',
+        "pt-BR": 'Payload JSON de UpdateAgentInstructionsPath, por exemplo {"path":"/tmp/AGENTS.md","adapterConfigKey":"instructionsFilePath"}',
+      },
+    },
+  },
+  skill: {
+    description: { en: "Company skill operations", "pt-BR": "Operações de skills da organização" },
+  },
+  "skill list": {
+    description: { en: "List company skills", "pt-BR": "Listar skills da organização" },
+    options: companySkillOptions,
+  },
+  "skill get": {
+    description: { en: "Get company skill details", "pt-BR": "Consultar detalhes de uma skill da organização" },
+    arguments: skillIdArgument,
+    options: companySkillOptions,
+  },
+  "skill file": {
+    description: { en: "Read a company skill file", "pt-BR": "Ler um arquivo de skill da organização" },
+    arguments: skillIdArgument,
+    options: {
+      ...companySkillOptions,
+      "--path": { en: "Skill-relative file path", "pt-BR": "Caminho do arquivo relativo à skill" },
+    },
+  },
+  "skill create": {
+    description: { en: "Create a local company skill", "pt-BR": "Criar uma skill local da organização" },
+    options: { ...companySkillOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "skill import": {
+    description: { en: "Import company skills from a source", "pt-BR": "Importar skills para a organização a partir de uma origem" },
+    options: { ...companySkillOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "skill scan-projects": {
+    description: { en: "Scan project workspaces for company skills", "pt-BR": "Procurar skills da organização nos espaços de trabalho dos projetos" },
+    options: { ...companySkillOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "skill file:update": {
+    description: { en: "Update a company skill file", "pt-BR": "Atualizar um arquivo de skill da organização" },
+    arguments: skillIdArgument,
+    options: { ...companySkillOptions, "--payload-json": { en: "CompanySkillFileUpdate JSON payload", "pt-BR": "Payload JSON de CompanySkillFileUpdate" } },
+  },
+  "skill update-status": {
+    description: { en: "Get company skill update status", "pt-BR": "Consultar o status de atualização da skill" },
+    arguments: skillIdArgument,
+    options: companySkillOptions,
+  },
+  "skill install-update": {
+    description: { en: "Install an available company skill update", "pt-BR": "Instalar uma atualização disponível da skill" },
+    arguments: skillIdArgument,
+    options: companySkillOptions,
+  },
+  "skill delete": {
+    description: { en: "Delete a company skill", "pt-BR": "Excluir uma skill da organização" },
+    arguments: skillIdArgument,
+    options: companySkillOptions,
+  },
+  skills: {
+    description: { en: "Company and agent skill operations", "pt-BR": "Operações de skills de organizações e agentes" },
+  },
+  "skills browse": {
+    description: { en: "Browse app-shipped catalog skills without installing them", "pt-BR": "Explorar skills incluídas no catálogo sem instalá-las" },
+    options: {
+      "--kind": { en: "Catalog kind filter (bundled or optional)", "pt-BR": "Filtrar pelo tipo do catálogo (bundled ou optional)" },
+      "--category": { en: "Catalog category filter", "pt-BR": "Filtrar pela categoria do catálogo" },
+      "--query": { en: "Search catalog text", "pt-BR": "Buscar texto no catálogo" },
+      ...commonClientOptions,
+    },
+  },
+  "skills search": {
+    description: { en: "Search app-shipped catalog skills without installing them", "pt-BR": "Buscar skills incluídas no catálogo sem instalá-las" },
+    arguments: { query: { en: "Search text", "pt-BR": "Texto da busca" } },
+    options: {
+      "--kind": { en: "Catalog kind filter (bundled or optional)", "pt-BR": "Filtrar pelo tipo do catálogo (bundled ou optional)" },
+      "--category": { en: "Catalog category filter", "pt-BR": "Filtrar pela categoria do catálogo" },
+      ...commonClientOptions,
+    },
+  },
+  "skills inspect": {
+    description: { en: "Inspect an app-shipped catalog skill before installing it", "pt-BR": "Inspecionar uma skill do catálogo antes de instalá-la" },
+    arguments: catalogReferenceArgument,
+    options: commonClientOptions,
+  },
+  "skills install": {
+    description: { en: "Install a catalog skill into the company library; does not attach it to agents", "pt-BR": "Instalar uma skill do catálogo na biblioteca da organização; não a associa a agentes" },
+    arguments: catalogReferenceArgument,
+    options: {
+      ...companySkillOptions,
+      "--as": { en: "Company skill slug override", "pt-BR": "Slug da skill na organização" },
+      "--force": { en: "Replace a same-key catalog-managed skill when the server allows it", "pt-BR": "Substituir uma skill gerenciada pelo catálogo com a mesma chave, se o servidor permitir" },
+    },
+  },
+  "skills list": { description: { en: "List company skills", "pt-BR": "Listar skills da organização" }, options: companySkillOptions },
+  "skills show": { description: { en: "Show company skill details", "pt-BR": "Mostrar detalhes de uma skill da organização" }, arguments: skillReferenceArgument, options: companySkillOptions },
+  "skills file": {
+    description: { en: "Print a company skill file", "pt-BR": "Exibir um arquivo de skill da organização" },
+    arguments: skillReferenceArgument,
+    options: { ...companySkillOptions, "--path": { en: "Relative file path", "pt-BR": "Caminho relativo do arquivo" } },
+  },
+  "skills import": {
+    description: { en: "Import company skills from a local path, GitHub, skills.sh, or URL source", "pt-BR": "Importar skills de um caminho local, GitHub, skills.sh ou URL" },
+    arguments: { source: { en: "Skill source", "pt-BR": "Origem da skill" } },
+    options: companySkillOptions,
+  },
+  "skills create": {
+    description: { en: "Create a managed local company skill", "pt-BR": "Criar uma skill local gerenciada da organização" },
+    options: {
+      ...companySkillOptions,
+      "--name": { en: "Skill name", "pt-BR": "Nome da skill" },
+      "--slug": { en: "Skill slug", "pt-BR": "Slug da skill" },
+      "--description": { en: "Skill description", "pt-BR": "Descrição da skill" },
+      "--body-file": { en: "Markdown body file; use - to read stdin", "pt-BR": "Arquivo Markdown do conteúdo; use - para ler de stdin" },
+    },
+  },
+  "skills scan-projects": {
+    description: { en: "Scan project workspaces for skills", "pt-BR": "Procurar skills nos espaços de trabalho dos projetos" },
+    options: {
+      ...companySkillOptions,
+      "--project-id": { en: "Project ID to scan; may be repeated", "pt-BR": "ID do projeto a verificar; pode ser repetido" },
+      "--workspace-id": { en: "Workspace ID to scan; may be repeated", "pt-BR": "ID do espaço de trabalho a verificar; pode ser repetido" },
+    },
+  },
+  "skills check": { description: { en: "Check company skill update status", "pt-BR": "Verificar o status de atualização das skills da organização" }, arguments: skillReferenceArgument, options: companySkillOptions },
+  "skills update": {
+    description: { en: "Install company skill updates", "pt-BR": "Instalar atualizações de skills da organização" },
+    arguments: skillReferenceArgument,
+    options: {
+      ...companySkillOptions,
+      "--all": { en: "Check all skills and install available updates", "pt-BR": "Verificar todas as skills e instalar as atualizações disponíveis" },
+      "--force": { en: "Discard local-modification or soft-audit holds; hard-stop audit findings still fail", "pt-BR": "Ignorar bloqueios por alterações locais ou avisos de auditoria; falhas críticas de auditoria continuam impedindo a atualização" },
+    },
+  },
+  "skills audit": { description: { en: "Audit installed company skill bytes without executing them", "pt-BR": "Auditar os arquivos das skills instaladas sem executá-los" }, arguments: skillReferenceArgument, options: companySkillOptions },
+  "skills reset": {
+    description: { en: "Reset a catalog-managed company skill to its pinned installed origin", "pt-BR": "Restaurar uma skill gerenciada pelo catálogo à origem fixada na instalação" },
+    arguments: skillReferenceArgument,
+    options: { ...companySkillOptions, "--yes": { en: "Confirm reset without prompting", "pt-BR": "Confirmar a restauração sem perguntar" }, "--force": { en: "Discard local modifications or accept soft audit warnings; hard-stop audit findings still fail", "pt-BR": "Descartar alterações locais ou aceitar avisos de auditoria; falhas críticas de auditoria continuam impedindo a operação" } },
+  },
+  "skills remove": {
+    description: { en: "Remove a company skill", "pt-BR": "Remover uma skill da organização" },
+    arguments: skillReferenceArgument,
+    options: { ...companySkillOptions, "--yes": { en: "Confirm removal without prompting", "pt-BR": "Confirmar a remoção sem perguntar" } },
+  },
+  "skills agent": {
+    description: { en: "Agent desired-skill and runtime sync operations", "pt-BR": "Operações de skills desejadas e sincronização de runtime do agente" },
+  },
+  "skills agent list": {
+    description: { en: "List an agent runtime skill snapshot", "pt-BR": "Listar o snapshot de skills do runtime de um agente" },
+    arguments: { agentRef: { en: "Agent ID or shortname/url-key", "pt-BR": "ID ou nome curto/chave de URL do agente" } },
+    options: companySkillOptions,
+  },
+  "skills agent sync": {
+    description: { en: "Merge an agent's desired company skills and sync runtime state", "pt-BR": "Mesclar as skills desejadas da organização para um agente e sincronizar o estado do runtime" },
+    arguments: { agentRef: { en: "Agent ID or shortname/url-key", "pt-BR": "ID ou nome curto/chave de URL do agente" } },
+    options: {
+      ...companySkillOptions,
+      "--skill": { en: "Desired company skill ID, key, or slug; may be repeated", "pt-BR": "ID, chave ou slug da skill desejada; pode ser repetido" },
+      "--mode": { en: "Merge mode: add keeps other skills; remove deletes only named skills; replace destructively overwrites the complete set", "pt-BR": "Modo de mesclagem: add mantém as demais skills; remove exclui apenas as indicadas; replace substitui o conjunto completo" },
+    },
+  },
+  "skills agent clear": {
+    description: { en: "Clear an agent's desired company skills and sync runtime state", "pt-BR": "Limpar as skills desejadas da organização para um agente e sincronizar o estado do runtime" },
+    arguments: { agentRef: { en: "Agent ID or shortname/url-key", "pt-BR": "ID ou nome curto/chave de URL do agente" } },
+    options: { ...companySkillOptions, "--yes": { en: "Confirm clear without prompting", "pt-BR": "Confirmar a limpeza sem perguntar" } },
   },
   "agent me": {
     description: {

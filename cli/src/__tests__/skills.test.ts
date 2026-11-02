@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { registerSkillsCommands } from "../commands/client/skills.js";
 import { resolveCompanySkillReference } from "../commands/client/skills.js";
+import { setCliLocale } from "../localization/index.js";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -116,7 +117,11 @@ describe("skills CLI helpers", () => {
       skill({ id: "skill-b", key: "paperclip/b", slug: "same", name: "B" }),
     ];
 
-    expect(() => resolveCompanySkillReference(rows, "same")).toThrow(/Ambiguous skill slug/);
+    setCliLocale("pt-BR");
+    expect(() => resolveCompanySkillReference(rows, "same")).toThrow("O slug \"same\" corresponde a mais de uma skill. Use o ID ou a chave da skill.");
+    setCliLocale("en");
+    expect(() => resolveCompanySkillReference(rows, "same")).toThrow("Ambiguous skill slug \"same\". Use a skill ID or key instead.");
+    setCliLocale("pt-BR");
   });
 });
 

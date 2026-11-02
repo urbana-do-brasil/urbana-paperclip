@@ -350,6 +350,9 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3o Localizar help, confirmações e requisito `--yes` de `agent update`/`delete`; preservar resposta humana, JSON, payloads, erros e stderr estruturado. Suíte de localização de agentes: 36/36; typecheck estrito direcionado passou.
   - [x] 4.3p Localizar help e títulos de `agent configuration`, `config-revisions`, `config-revision:get` e `config-revision:rollback`, preservando formatação humana, JSON, rotas, falhas e payloads. Testes focados: 4/4; typecheck CLI passou.
   - [x] 4.3q Localizar help e mensagens de `agent runtime-state`, `runtime-state:reset-session` e `task-sessions`, preservando dados, JSON, parâmetros e erros. Testes de regressão: 56/56; typecheck estrito direcionado passou.
+  - [x] 4.3r Localizar help da família de skills e mensagens próprias de operações de skills de agentes; preservar JSON, erros estruturados, nomes, flags, rotas e payloads. Testes focados: 31/31; typecheck direcionado e validação de catálogo passaram. Demais operações operacionais permanecem em 4.3.
+  - [x] 4.3s Localizar help de instructions-bundle, instructions-file:get/put/delete e instructions-path:update; preservar conteúdo CRLF/Unicode, rotas, JSON e payloads. Testes focados: 6/6; typecheck direcionado passou.
+  - [x] 4.3t Localizar help de permissions:update, heartbeat:invoke e claude-login; manter handlers, rotas, payloads e resultados. Regressão combinada: 24/24; typecheck direcionado e gate de fontes passaram.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação
