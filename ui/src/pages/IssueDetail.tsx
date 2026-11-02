@@ -57,6 +57,7 @@ import {
 import { ApiError } from "../api/client";
 import { issuesApi } from "../api/issues";
 import { CommentSubmissionUnknownError } from "../lib/comment-submit-result";
+import { interactionResolutionErrorMessage } from "../lib/interaction-resolution-error";
 import { approvalsApi } from "../api/approvals";
 import { activityApi, type RunForIssue } from "../api/activity";
 import {
@@ -306,7 +307,6 @@ import { openSkillPanelState, shouldSuppressTaskPanelUntilPlan } from "../lib/ta
 import {
   interactionReadinessRefetchInterval,
   buildAnsweredQuestionsDeliveryText,
-  buildIssueThreadInteractionSummary,
 } from "../lib/issue-thread-interactions";
 import { resolveIssueDocumentDeepLink, sameIssueDocumentHash } from "../lib/issue-document-deep-link";
 import {
@@ -4899,21 +4899,22 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
         interaction.kind === "suggest_tasks"
           ? (interaction.result?.skippedClientKeys?.length ?? 0)
           : 0;
+      const successTitle =
+        interaction.kind === "request_confirmation"
+          ? t("taskDetail.interactionResolutionToast.acceptedRequestConfirmation")
+          : interaction.kind === "request_checkbox_confirmation"
+            ? t("taskDetail.interactionResolutionToast.acceptedCheckboxConfirmation")
+            : interaction.kind === "suggest_tasks"
+              ? skippedCount > 0
+                ? t("taskDetail.interactionSuggestedTasks.resolution.createdWithSkipped", {
+                    created: createdCount,
+                    count: interaction.payload.tasks.length,
+                    skipped: skippedCount,
+                  })
+                : t("taskDetail.interactionSuggestedTasks.toast.accepted")
+              : t("taskDetail.interactionResolutionToast.acceptedGeneric");
       pushToast({
-        title:
-          interaction.kind === "request_confirmation"
-            ? "Request confirmed"
-            : interaction.kind === "request_checkbox_confirmation"
-              ? "Selection confirmed"
-              : interaction.kind === "suggest_tasks"
-                ? skippedCount > 0
-                  ? t("taskDetail.interactionSuggestedTasks.resolution.createdWithSkipped", {
-                      created: createdCount,
-                      count: interaction.payload.tasks.length,
-                      skipped: skippedCount,
-                    })
-                  : t("taskDetail.interactionSuggestedTasks.toast.accepted")
-                : "Suggested tasks accepted",
+        title: successTitle,
         tone: "success",
       });
     },
@@ -4922,13 +4923,15 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       pushToast({
         title: isSuggestedTasks
           ? t("taskDetail.interactionSuggestedTasks.toast.acceptFailed")
-          : "Accept failed",
-        body:
-          err instanceof Error
-            ? err.message
-            : isSuggestedTasks
-              ? t("taskDetail.interactionSuggestedTasks.toast.acceptUnavailable")
-              : "Unable to accept the suggested tasks",
+          : t("taskDetail.interactionResolutionToast.acceptFailed"),
+        body: interactionResolutionErrorMessage(
+          err,
+          undefined,
+          t(isSuggestedTasks
+            ? "taskDetail.interactionSuggestedTasks.toast.acceptUnavailable"
+            : "taskDetail.interactionResolutionToast.acceptUnavailable"),
+          t("taskDetail.interactionResolutionToast.retrySuffix"),
+        ),
         tone: "error",
       });
     },
@@ -4945,13 +4948,23 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       upsertInteractionInCache(interaction);
       invalidateIssueDetail();
       invalidateIssueCollections();
+      const rejectLabel =
+        interaction.kind === "request_confirmation"
+          ? interaction.payload.rejectLabel?.trim()
+          : undefined;
       pushToast({
         title:
           interaction.kind === "request_confirmation"
-            ? buildIssueThreadInteractionSummary(interaction)
+            ? rejectLabel
+              ? t("taskDetail.interactionResolutionToast.rejectedRequestWithLabel", {
+                  label: rejectLabel,
+                })
+              : t("taskDetail.interactionResolutionToast.rejectedRequest")
+            : interaction.kind === "request_checkbox_confirmation"
+              ? t("taskDetail.interactionResolutionToast.rejectedCheckboxConfirmation")
             : interaction.kind === "suggest_tasks"
               ? t("taskDetail.interactionSuggestedTasks.toast.rejected")
-              : "Suggestion rejected",
+              : t("taskDetail.interactionResolutionToast.rejectedGeneric"),
         tone: "success",
       });
     },
@@ -4960,13 +4973,15 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       pushToast({
         title: isSuggestedTasks
           ? t("taskDetail.interactionSuggestedTasks.toast.rejectFailed")
-          : "Reject failed",
-        body:
-          err instanceof Error
-            ? err.message
-            : isSuggestedTasks
-              ? t("taskDetail.interactionSuggestedTasks.toast.rejectUnavailable")
-              : "Unable to reject the suggested tasks",
+          : t("taskDetail.interactionResolutionToast.rejectFailed"),
+        body: interactionResolutionErrorMessage(
+          err,
+          undefined,
+          t(isSuggestedTasks
+            ? "taskDetail.interactionSuggestedTasks.toast.rejectUnavailable"
+            : "taskDetail.interactionResolutionToast.rejectUnavailable"),
+          t("taskDetail.interactionResolutionToast.retrySuffix"),
+        ),
         tone: "error",
       });
     },
@@ -4984,15 +4999,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       invalidateIssueDetail();
       invalidateIssueCollections();
       pushToast({
-        title: "Answers submitted",
+        title: t("taskDetail.interactionQuestions.answersSubmitted"),
         tone: "success",
-      });
-    },
-    onError: (err) => {
-      pushToast({
-        title: "Submit failed",
-        body: err instanceof Error ? err.message : "Unable to submit answers",
-        tone: "error",
       });
     },
   });

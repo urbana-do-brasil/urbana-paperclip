@@ -86,7 +86,13 @@ function serverReason(error: unknown): string | null {
     return formatUiError(error);
   }
   const fromBody = typeof body?.error === "string" ? body.error.trim() : "";
-  const fromError = error instanceof Error ? error.message.trim() : "";
+  const fromError = error instanceof Error
+    ? error.message.trim()
+    : typeof errorRecord?.message === "string"
+      ? errorRecord.message.trim()
+      : typeof error === "string"
+        ? error.trim()
+        : "";
   const reason = fromBody || fromError;
   if (!reason) return null;
   // The API writes reasons as bare clauses ("This interaction is human-only").
@@ -117,6 +123,8 @@ export type InteractionResolutionAudience = Pick<
 export function describeInteractionResolutionFailure(
   error: unknown,
   audience?: InteractionResolutionAudience | null,
+  fallbackMessage?: string,
+  retrySuffix?: string,
 ): InteractionResolutionFailure {
   const code = interactionResolutionErrorCode(error);
   const reason = serverReason(error);
@@ -162,8 +170,8 @@ export function describeInteractionResolutionFailure(
     kind: "transient",
     code,
     message: reason
-      ? `${reason}${hasAllowlistedApiPresentation(error) ? "" : " Try again."}`
-      : "Couldn't submit. Try again.",
+      ? `${reason}${hasAllowlistedApiPresentation(error) ? "" : ` ${retrySuffix ?? "Try again."}`}`
+      : fallbackMessage ?? "Couldn't submit. Try again.",
   };
 }
 
@@ -171,6 +179,8 @@ export function describeInteractionResolutionFailure(
 export function interactionResolutionErrorMessage(
   error: unknown,
   audience?: InteractionResolutionAudience | null,
+  fallbackMessage?: string,
+  retrySuffix?: string,
 ): string {
-  return describeInteractionResolutionFailure(error, audience).message;
+  return describeInteractionResolutionFailure(error, audience, fallbackMessage, retrySuffix).message;
 }

@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import type { HeartbeatRun, HeartbeatRunEvent, Issue, WorkspaceOperation } from "@paperclipai/shared";
+import { cliMessage } from "../../localization/index.js";
 import {
   addCommonClientOptions,
   apiPath,
@@ -153,7 +154,7 @@ export function registerRunCommands(command: Command): void {
               stream: event.stream,
               level: event.level,
               message: event.message,
-            }));
+            }, { labels: runEventLabels() }));
           }
           if (events.length === 0) printOutput([], { json: false });
         } catch (err) {
@@ -300,9 +301,32 @@ function printRuns(rows: HeartbeatRun[], json: boolean): void {
       startedAt: row.startedAt,
       finishedAt: row.finishedAt,
       logBytes: row.logBytes,
-    }));
+    }, { labels: runListLabels() }));
   }
   if (rows.length === 0) printOutput([], { json: false });
+}
+
+function runListLabels(): Readonly<Record<string, string>> {
+  return {
+    id: cliMessage("runListId"),
+    status: cliMessage("runListStatus"),
+    agentId: cliMessage("runListAgentId"),
+    invocationSource: cliMessage("runListInvocationSource"),
+    triggerDetail: cliMessage("runListTriggerDetail"),
+    startedAt: cliMessage("runListStartedAt"),
+    finishedAt: cliMessage("runListFinishedAt"),
+    logBytes: cliMessage("runListLogBytes"),
+  };
+}
+
+function runEventLabels(): Readonly<Record<string, string>> {
+  return {
+    seq: cliMessage("runEventSeq"),
+    eventType: cliMessage("runEventType"),
+    stream: cliMessage("runEventStream"),
+    level: cliMessage("runEventLevel"),
+    message: cliMessage("runEventMessage"),
+  };
 }
 
 function printLogResult(result: unknown, opts: { json: boolean; text?: boolean }): void {

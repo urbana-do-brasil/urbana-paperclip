@@ -3543,3 +3543,23 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Gates locais após os lotes 3.9f3h, 4.3v–y e 6.3a
 
 - `pnpm check:localization`: 68 tópicos, scanner incremental em 5 fontes alteradas, 11 testes Node e 196/196 Vitest. `pnpm check:token-gates`, validação OpenSpec estrita e `git diff --check` passaram. O scanner continua heurístico e a CI remota não foi executada; 7.1 e 7.3 permanecem abertas.
+
+### Receptor HTTP local — 6.2e
+
+- Adapter HTTP e guardas: 16/16 em três suítes, incluindo POST real a receptor temporário em loopback para PT-BR/en, com origem exata permitida apenas no ambiente do teste. Contexto e marcadores técnicos chegaram intactos; `pnpm --filter @paperclipai/server exec tsc --noEmit` passou. Isso não qualifica receptores externos nem respostas de modelos; 6.2 e 6.4 continuam abertas.
+- Checkpoint: **342/360 tarefas**, com 18 caixas abertas incluindo agregadoras.
+
+### Ambientes, falha de app e execuções da CLI — 3.8h, 3.9f3i e 4.3z
+
+- Formulário de ambientes: 45/45 testes com locale, incluindo SSH e preservação de payload e referência de segredo. Detalhe de app e painel de atividade legado: 95/95, incluindo retry, 404, detalhes externos e a confirmação de que o redirect ativo vai ao feed geral sem filtro por conexão. Typecheck UI passou sequencialmente após corrigir o retorno de um helper no teste de ambientes; ambas as tarefas agregadoras permanecem abertas.
+- CLI run list/live/events: 27/27 em quatro suítes e typecheck da CLI aprovado em uma execução; a repetição concorrente foi interrompida por recursos. Dados de eventos, JSON, rotas e erros foram preservados.
+- Checkpoint: **345/363 tarefas**, com 18 caixas abertas incluindo agregadoras.
+
+### Gate local após 3.8h, 3.9f3i e 4.3z
+
+- `pnpm check:localization`: 68 tópicos, 11 testes Node e 202/202 Vitest; o scanner incremental verificou quatro fontes alteradas no momento da execução. Typechecks UI e server diretos passaram sequencialmente; CI remota e regressão integrada seguem pendentes.
+
+### Feedback de interações — 6.3b
+
+- Toasts de sucesso e falha ao aceitar/rejeitar agora acompanham PT-BR/en, mantendo detalhes externos e erros inline. O erro duplicado de resposta foi removido, mantendo feedback seguro no cartão. IssueDetail, cartão, helper de erros e locale: 264/264; typecheck UI passou. A auditoria integral de 6.3 ainda permanece aberta.
+- Checkpoint: **346/364 tarefas**, com 18 caixas abertas incluindo agregadoras.

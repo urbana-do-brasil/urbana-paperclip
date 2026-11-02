@@ -306,6 +306,12 @@ function setInputValue(input: HTMLInputElement, value: string) {
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+function setTextAreaValue(textarea: HTMLTextAreaElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+  setter?.call(textarea, value);
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 function setSelectValue(select: HTMLSelectElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set;
   setter?.call(select, value);
@@ -734,6 +740,69 @@ describe("CompanyEnvironments — test provider button", () => {
     await flushReact();
 
     expect(getEnvironmentFormPage()).toBeNull();
+  });
+
+  it("localizes SSH environment configuration and keeps the saved secret reference unchanged", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    mockSecretsApi.list.mockResolvedValue([
+      { id: "ssh-key-secret", name: "Deploy key", scope: "company" },
+    ]);
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/new`));
+    });
+    await waitForAssertion(() => expect(getEnvironmentFormPage()).not.toBeNull());
+
+    const page = getEnvironmentFormPage()!;
+    expect(page.textContent).toContain("Adicionar ambiente");
+    expect(page.textContent).toContain("Caminho remoto do workspace");
+    expect(page.textContent).toContain("Chave privada");
+    expect(page.textContent).toContain("Nenhum segredo salvo");
+    expect(page.textContent).toContain("Hosts conhecidos");
+    expect(page.textContent).toContain("Verificação estrita da chave do host");
+    expect(page.textContent).not.toContain("Remote workspace path");
+    expect(page.textContent).not.toContain("Private key");
+
+    const textInputs = Array.from(page.querySelectorAll<HTMLInputElement>('input[type="text"]'));
+    await act(async () => {
+      setInputValue(textInputs[0]!, "Staging runner");
+      setInputValue(textInputs[1]!, "SSH execution target");
+      setInputValue(textInputs[2]!, "runner.example.invalid");
+      setInputValue(textInputs[3]!, "paperclip");
+      setInputValue(textInputs[4]!, "/srv/paperclip/workspace");
+      setInputValue(page.querySelector<HTMLInputElement>('input[type="number"]')!, "2222");
+      setTextAreaValue(
+        page.querySelectorAll<HTMLTextAreaElement>("textarea")[1]!,
+        "runner.example.invalid ssh-ed25519 AAAA",
+      );
+      setSelectValue(page.querySelectorAll<HTMLSelectElement>("select")[1]!, "ssh-key-secret");
+    });
+
+    await act(async () => click(findButton(page, "Criar ambiente")));
+    await flushReact();
+
+    expect(mockEnvironmentsApi.create).toHaveBeenCalledExactlyOnceWith("company-1", {
+      name: "Staging runner",
+      description: "SSH execution target",
+      driver: "ssh",
+      envVars: {},
+      config: {
+        host: "runner.example.invalid",
+        port: 2222,
+        username: "paperclip",
+        remoteWorkspacePath: "/srv/paperclip/workspace",
+        privateKey: null,
+        privateKeySecretRef: {
+          type: "secret_ref",
+          secretId: "ssh-key-secret",
+          version: "latest",
+        },
+        knownHosts: "runner.example.invalid ssh-ed25519 AAAA",
+        strictHostKeyChecking: true,
+      },
+    });
   });
 
   it("opens the edit form on a standalone page with existing values and closes after save", async () => {

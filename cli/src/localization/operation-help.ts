@@ -960,6 +960,33 @@ const operationHelp: Record<string, CommandHelp> = {
       "--payload-json": { en: "Claim JSON payload", "pt-BR": "Payload JSON de reivindicação" },
     },
   },
+  "run list": {
+    description: { en: "List heartbeat runs for a company", "pt-BR": "Listar execuções de heartbeat de uma organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--agent-id": { en: "Filter by agent ID", "pt-BR": "Filtrar pelo ID do agente" },
+      "--limit": { en: "Maximum runs to return", "pt-BR": "Número máximo de execuções retornadas" },
+    },
+  },
+  "run live": {
+    description: { en: "List queued and running heartbeat runs for a company", "pt-BR": "Listar execuções de heartbeat na fila ou em andamento de uma organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--limit": { en: "Maximum runs to return", "pt-BR": "Número máximo de execuções retornadas" },
+      "--min-count": { en: "Pad with recent completed runs up to this count", "pt-BR": "Completar com execuções recentes concluídas até esta quantidade" },
+    },
+  },
+  "run events": {
+    description: { en: "List heartbeat run events", "pt-BR": "Listar eventos de uma execução de heartbeat" },
+    arguments: { runId: { en: "Heartbeat run ID", "pt-BR": "ID da execução de heartbeat" } },
+    options: {
+      ...commonClientOptions,
+      "--after-seq": { en: "Only return events after this sequence", "pt-BR": "Retornar somente eventos após esta sequência" },
+      "--limit": { en: "Maximum events to return", "pt-BR": "Número máximo de eventos retornados" },
+    },
+  },
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {

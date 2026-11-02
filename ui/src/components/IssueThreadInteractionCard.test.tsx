@@ -916,6 +916,45 @@ describe("IssueThreadInteractionCard", () => {
     ).toContain("This issue-thread interaction is human-only.");
   });
 
+  it.each([
+    ["en", "The submitted data is invalid. Check the fields and try again."],
+    ["pt-BR", "Os dados enviados são inválidos. Revise os campos e tente novamente."],
+  ] as const)("shows safe localized validation feedback in %s and preserves question content", async (language, expectedError) => {
+    await i18n.changeLanguage(language);
+    const onSubmitInteractionAnswers = vi.fn(async () => {
+      throw new ApiError("Validation error", 422, {
+        error: "Validation error",
+        code: "invalid_question_response",
+        messageKey: "validation",
+      });
+    });
+    const host = renderCard({
+      interaction: pendingAskUserQuestionsInteraction,
+      onSubmitInteractionAnswers,
+    });
+
+    for (const group of ['[role="radio"]', '[role="checkbox"]']) {
+      const option = host.querySelector(group);
+      await act(async () => {
+        (option as HTMLElement | null)?.click();
+      });
+    }
+    const submit = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Send answers") || button.textContent?.includes("Enviar respostas"),
+    );
+    await act(async () => {
+      submit?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    const error = host.querySelector('[data-testid="interaction-action-error"]');
+    expect(error?.textContent).toBe(expectedError);
+    expect(host.textContent).toContain(
+      "How aggressive should the suggested-task preview collapse descendant work?",
+    );
+    expect(host.textContent).toContain("Only collapse hidden descendants");
+    expect(host.textContent).not.toContain("Validation error");
+  });
+
   it("standardizes the bare-reject button to Reject even when the payload carries a legacy rejectLabel", () => {
     const host = renderCard({
       interaction: {

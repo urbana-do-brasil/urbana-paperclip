@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getAppStoreDefinition } from "@paperclipai/shared";
 import type { AggregatorAppSnapshot, AggregatorAppsResponse } from "@paperclipai/shared/aggregator-apps";
+import { ApiError } from "@/api/client";
 import { i18n } from "@/i18n";
 import { queryKeys } from "@/lib/queryKeys";
 import { rememberSkillSourceReturn, skillSourceReturnPath } from "@/lib/skill-source-connect-return";
@@ -711,6 +712,62 @@ describe("AppDetail", () => {
     expect(container.querySelector<HTMLButtonElement>('button[aria-label="Renomear app"]')).toBeTruthy();
   });
 
+  it.each([
+    ["en", "The submitted data is invalid. Check the fields and try again.", "Retry"],
+    ["pt-BR", "Os dados enviados são inválidos. Revise os campos e tente novamente.", "Tentar novamente"],
+  ] as const)("localizes connection load failures and retries without losing the app in %s", async (locale, expectedError, retryLabel) => {
+    await i18n.changeLanguage(locale);
+    getConnectionMock
+      .mockRejectedValueOnce(new ApiError("Validation error", 400, {
+        error: "Validation error",
+        messageKey: "validation",
+      }))
+      .mockResolvedValueOnce(connection());
+
+    await renderAppDetail();
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe(expectedError);
+    expect(findButton(retryLabel)).toBeTruthy();
+
+    await act(async () => {
+      findButton(retryLabel)?.click();
+      await vi.waitFor(() => expect(container.querySelector('[role="alert"]')).toBeNull());
+    });
+
+    expect(getConnectionMock.mock.calls.length).toBeGreaterThan(1);
+    expect(container.textContent).toContain("GitHub");
+  });
+
+  it("localizes its connection failure wrapper while preserving provider detail", async () => {
+    await i18n.changeLanguage("pt-BR");
+    getConnectionMock.mockRejectedValueOnce(new ApiError(
+      "Vendor: access token expired",
+      502,
+      { error: "Vendor: access token expired" },
+    ));
+
+    await renderAppDetail();
+
+    expect(container.querySelector('[role="alert"]')?.textContent)
+      .toBe("Não foi possível concluir a solicitação. Detalhes: Vendor: access token expired");
+  });
+
+  it("localizes a missing connection and returns to the connector list", async () => {
+    await i18n.changeLanguage("pt-BR");
+    getConnectionMock.mockRejectedValueOnce(new ApiError("Connection not found", 404, {
+      error: "Connection not found",
+    }));
+
+    await renderAppDetail();
+
+    expect(container.querySelector('[role="alert"]')?.textContent)
+      .toBe("Não foi possível encontrar esse app.");
+    expect(findButton("Voltar aos conectores")).toBeTruthy();
+
+    await act(async () => findButton("Voltar aos conectores")?.click());
+    expect(mockNavigate).toHaveBeenCalledWith("/apps");
+  });
+
   it("localizes generic reconnect guidance and credential controls while preserving provider health text", async () => {
     await i18n.changeLanguage("pt-BR");
     getConnectionMock.mockResolvedValue(connection({
@@ -1319,7 +1376,8 @@ describe("AppDetail", () => {
     }
   });
 
-  it("redirects legacy connection activity to the filtered company Audit feed", async () => {
+  it.each(["en", "pt-BR"] as const)("redirects legacy activity to the company-wide tool feed in %s", async (locale) => {
+    await i18n.changeLanguage(locale);
     mockParams.tab = "activity";
     listConnectionActivityMock.mockResolvedValue({
       events: [
@@ -1363,6 +1421,10 @@ describe("AppDetail", () => {
       to: "/activity?action=tool_",
       replace: true,
     });
+    const destination = new URL(navigateComponentMock.mock.calls.at(-1)?.[0]?.to as string, "https://paperclip.test");
+    expect(destination.searchParams.get("action")).toBe("tool_");
+    expect(destination.searchParams.has("connectionId")).toBe(false);
+    expect(listConnectionActivityMock).not.toHaveBeenCalled();
   });
 
   it("removes the per-connection activity surface", async () => {

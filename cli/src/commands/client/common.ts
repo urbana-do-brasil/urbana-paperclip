@@ -203,7 +203,7 @@ export function printOutput(data: unknown, opts: { json?: boolean; label?: strin
 
   if (Array.isArray(data)) {
     if (data.length === 0) {
-      console.log(pc.dim("(empty)"));
+      console.log(pc.dim(cliMessage("emptyList")));
       return;
     }
     for (const item of data) {

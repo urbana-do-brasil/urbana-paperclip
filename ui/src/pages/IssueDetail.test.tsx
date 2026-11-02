@@ -46,6 +46,12 @@ import { getRecentTasksStorageKey, readRecentTasks } from "../lib/recent-tasks";
 import { getLastProjectId, trackRecentProject } from "../lib/recent-projects";
 import { ApiError } from "../api/client";
 import type { issuesApi } from "../api/issues";
+import {
+  pendingAskUserQuestionsInteraction,
+  pendingRequestCheckboxConfirmationInteraction,
+  pendingRequestConfirmationInteraction,
+  pendingSuggestedTasksInteraction,
+} from "../fixtures/issueThreadInteractionFixtures";
 
 const mockIssuesApi = vi.hoisted(() => ({
   get: vi.fn(),
@@ -58,6 +64,8 @@ const mockIssuesApi = vi.hoisted(() => ({
   checkMonitorNow: vi.fn(),
   listFeedbackVotes: vi.fn(),
   listInteractions: vi.fn(),
+  respondToInteraction: vi.fn(),
+  acceptInteraction: vi.fn(),
   getQueuedComments: vi.fn(),
   interruptQueuedComments: vi.fn(),
   editQueuedComment: vi.fn(),
@@ -1337,6 +1345,9 @@ describe("IssueDetail", () => {
     mockIssuesApi.checkMonitorNow.mockReset();
     mockIssuesApi.listFeedbackVotes.mockResolvedValue([]);
     mockIssuesApi.listInteractions.mockResolvedValue([]);
+    mockIssuesApi.respondToInteraction.mockReset();
+    mockIssuesApi.acceptInteraction.mockReset();
+    mockIssuesApi.rejectInteraction.mockReset();
     mockIssuesApi.getQueuedComments.mockResolvedValue(
       createQueuedCommentQueue({
         queueId: null,
@@ -1423,6 +1434,242 @@ describe("IssueDetail", () => {
     mockLocation.state = null;
     mockRouteParams.issueId = "PAP-1";
     mockRouteParams.companyPrefix = "PAP";
+  });
+
+  it.each([
+    ["en", "Answers submitted"],
+    ["pt-BR", "Respostas enviadas"],
+  ] as const)("keeps question failures inline and localizes the success confirmation in %s", async (language, successTitle) => {
+    await i18n.changeLanguage(language);
+    mockIssuesApi.get.mockResolvedValue(createIssue());
+    const interaction = {
+      ...pendingAskUserQuestionsInteraction,
+      companyId: "company-1",
+      issueId: "issue-1",
+    };
+    mockIssuesApi.listInteractions.mockResolvedValue([interaction]);
+    mockIssuesApi.respondToInteraction.mockRejectedValue(
+      new ApiError("Validation error", 422, {
+        error: "Validation error",
+        code: "invalid_question_response",
+        messageKey: "validation",
+      }),
+    );
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <IssueDetail />
+        </QueryClientProvider>,
+      );
+    });
+    await waitForAssertion(() => {
+      const props = mockIssueChatThreadRender.mock.calls.at(-1)?.[0] as {
+        onSubmitInteractionAnswers?: (
+          interaction: typeof pendingAskUserQuestionsInteraction,
+          answers: { questionId: string; optionIds: string[] }[],
+        ) => Promise<void>;
+      };
+      expect(props.onSubmitInteractionAnswers).toEqual(expect.any(Function));
+    });
+
+    const props = mockIssueChatThreadRender.mock.calls.at(-1)?.[0] as {
+      onSubmitInteractionAnswers: (
+        interaction: typeof pendingAskUserQuestionsInteraction,
+        answers: { questionId: string; optionIds: string[] }[],
+      ) => Promise<void>;
+    };
+    mockPushToast.mockClear();
+    await expect(
+      props.onSubmitInteractionAnswers(interaction, [
+        { questionId: "collapse-depth", optionIds: ["visible-root"] },
+      ]),
+    ).rejects.toThrow("Validation error");
+    expect(mockPushToast).not.toHaveBeenCalled();
+
+    const answers = [{ questionId: "collapse-depth", optionIds: ["visible-root"] }];
+    mockIssuesApi.respondToInteraction.mockResolvedValue({
+      ...interaction,
+      status: "answered",
+      result: { version: 1, answers },
+    });
+    await props.onSubmitInteractionAnswers(interaction, answers);
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: successTitle, tone: "success" }),
+    );
+  });
+
+  it.each([
+    ["en", {
+      acceptedRequest: "Request confirmed",
+      acceptedSelection: "Selection confirmed",
+      acceptedTasks: "Suggested tasks accepted",
+      rejectedRequest: "Selected “Keep the provider's option”",
+      rejectedSelection: "Declined selection",
+      rejectedTasks: "Suggestion rejected",
+      acceptFailed: "Accept failed",
+      rejectFailed: "Reject failed",
+      validation: "The submitted data is invalid. Check the fields and try again.",
+      retry: "Try again.",
+    }],
+    ["pt-BR", {
+      acceptedRequest: "Solicitação confirmada",
+      acceptedSelection: "Seleção confirmada",
+      acceptedTasks: "Tarefas sugeridas aceitas",
+      rejectedRequest: "Selecionou “Keep the provider's option”",
+      rejectedSelection: "Seleção recusada",
+      rejectedTasks: "Sugestão de tarefas recusada",
+      acceptFailed: "Falha ao aceitar",
+      rejectFailed: "Falha ao recusar",
+      validation: "Os dados enviados são inválidos. Revise os campos e tente novamente.",
+      retry: "Tente novamente.",
+    }],
+  ] as const)("localizes accept/reject confirmation toasts and preserves unknown errors in %s", async (language, copy) => {
+    await i18n.changeLanguage(language);
+    mockIssuesApi.get.mockResolvedValue(createIssue());
+    const request = {
+      ...pendingRequestConfirmationInteraction,
+      companyId: "company-1",
+      issueId: "issue-1",
+      payload: {
+        ...pendingRequestConfirmationInteraction.payload,
+        rejectLabel: "Keep the provider's option",
+      },
+    };
+    const selection = {
+      ...pendingRequestCheckboxConfirmationInteraction,
+      companyId: "company-1",
+      issueId: "issue-1",
+    };
+    const tasks = {
+      ...pendingSuggestedTasksInteraction,
+      companyId: "company-1",
+      issueId: "issue-1",
+    };
+    mockIssuesApi.listInteractions.mockResolvedValue([request, selection, tasks]);
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <IssueDetail />
+        </QueryClientProvider>,
+      );
+    });
+    await waitForAssertion(() => {
+      const props = mockIssueChatThreadRender.mock.calls.at(-1)?.[0] as {
+        onAcceptInteraction?: unknown;
+        onRejectInteraction?: unknown;
+      };
+      expect(props.onAcceptInteraction).toEqual(expect.any(Function));
+      expect(props.onRejectInteraction).toEqual(expect.any(Function));
+    });
+
+    type InteractionToResolve =
+      | typeof pendingRequestConfirmationInteraction
+      | typeof pendingRequestCheckboxConfirmationInteraction
+      | typeof pendingSuggestedTasksInteraction;
+    const callbacks = mockIssueChatThreadRender.mock.calls.at(-1)?.[0] as {
+      onAcceptInteraction: (
+        interaction: InteractionToResolve,
+        selectedClientKeys?: string[],
+        selectedOptionIds?: string[],
+        rememberAction?: boolean,
+      ) => Promise<void>;
+      onRejectInteraction: (
+        interaction: InteractionToResolve,
+        reason?: string,
+      ) => Promise<void>;
+    };
+    const expectToastTitle = async (
+      action: () => Promise<void>,
+      title: string,
+    ) => {
+      mockPushToast.mockClear();
+      await action();
+      expect(mockPushToast).toHaveBeenCalledWith(
+        expect.objectContaining({ title, tone: "success" }),
+      );
+    };
+
+    await expectToastTitle(async () => {
+      mockIssuesApi.acceptInteraction.mockResolvedValueOnce({
+        ...request,
+        status: "accepted",
+        result: { version: 1, outcome: "accepted" },
+      });
+      await callbacks.onAcceptInteraction(request);
+    }, copy.acceptedRequest);
+    await expectToastTitle(async () => {
+      mockIssuesApi.acceptInteraction.mockResolvedValueOnce({
+        ...selection,
+        status: "accepted",
+        result: { version: 1, outcome: "accepted", selectedOptionIds: [] },
+      });
+      await callbacks.onAcceptInteraction(selection);
+    }, copy.acceptedSelection);
+    await expectToastTitle(async () => {
+      mockIssuesApi.acceptInteraction.mockResolvedValueOnce({
+        ...tasks,
+        status: "accepted",
+        result: { version: 1, createdTasks: [] },
+      });
+      await callbacks.onAcceptInteraction(tasks);
+    }, copy.acceptedTasks);
+
+    await expectToastTitle(async () => {
+      mockIssuesApi.rejectInteraction.mockResolvedValueOnce({
+        ...request,
+        status: "rejected",
+        result: { version: 1, outcome: "rejected" },
+      });
+      await callbacks.onRejectInteraction(request);
+    }, copy.rejectedRequest);
+    await expectToastTitle(async () => {
+      mockIssuesApi.rejectInteraction.mockResolvedValueOnce({
+        ...selection,
+        status: "rejected",
+        result: { version: 1, outcome: "rejected" },
+      });
+      await callbacks.onRejectInteraction(selection);
+    }, copy.rejectedSelection);
+    await expectToastTitle(async () => {
+      mockIssuesApi.rejectInteraction.mockResolvedValueOnce({
+        ...tasks,
+        status: "rejected",
+        result: { version: 1, rejectionReason: null },
+      });
+      await callbacks.onRejectInteraction(tasks);
+    }, copy.rejectedTasks);
+
+    mockPushToast.mockClear();
+    mockIssuesApi.acceptInteraction.mockRejectedValueOnce(
+      new ApiError("Validation error", 422, {
+        error: "Validation error",
+        code: "invalid_question_response",
+        messageKey: "validation",
+      }),
+    );
+    await expect(callbacks.onAcceptInteraction(request)).rejects.toThrow("Validation error");
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: copy.acceptFailed,
+        body: copy.validation,
+        tone: "error",
+      }),
+    );
+
+    mockPushToast.mockClear();
+    mockIssuesApi.rejectInteraction.mockRejectedValueOnce({
+      message: "Provider refused the configured persistence path",
+    });
+    await expect(callbacks.onRejectInteraction(request)).rejects.toThrow(
+      "Provider refused the configured persistence path",
+    );
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: copy.rejectFailed,
+        body: `Provider refused the configured persistence path. ${copy.retry}`,
+        tone: "error",
+      }),
+    );
   });
 
   it("clears only the monitor after confirmation and refreshes the task", async () => {

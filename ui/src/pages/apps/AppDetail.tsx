@@ -1,4 +1,5 @@
 import { AiConnectionPoolConnector } from "@/components/ai-connections/AiConnectionPoolConnector";
+import { ApiError } from "@/api/client";
 import { aiConnectionRouterPluginKey } from "@paperclipai/shared";
 import { ConnectionInstructionsSettings } from "@/features/connections/ConnectionInstructions";
 import { HonchoWorkspaceSettings } from "@/features/connections/HonchoWorkspaceSettings";
@@ -31,6 +32,7 @@ import { useToast } from "@/context/ToastContext";
 import { useTranslation } from "@/i18n";
 import { queryKeys } from "@/lib/queryKeys";
 import { consumeSkillSourceReturn } from "@/lib/skill-source-connect-return";
+import { formatUiError } from "@/api/error-presentation";
 import { toolsApi } from "@/api/tools";
 import { agentsApi } from "@/api/agents";
 import { accessApi } from "@/api/access";
@@ -79,10 +81,34 @@ export { connectionAddress, connectionTransportLabel };
 
 export function AppDetail(props: { renderActions?: (connection: ToolConnection) => ReactNode; renderAgentSettings?: (connection: ToolConnection) => ReactNode; renderConnectionSettings?: (connection: ToolConnection) => ReactNode; onReconnect?: (connection: ToolConnection) => void } = {}) {
   const { connectionId = "" } = useParams<{ connectionId: string }>();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const connection = useQuery({ queryKey: queryKeys.tools.connection(connectionId), queryFn: () => toolsApi.getConnection(connectionId), enabled: !!connectionId });
   if (connection.isPending) return <p role="status">{t("apps.appDetail.loadingConnection")}</p>;
-  if (connection.error) return <p role="alert">{connection.error.message}</p>;
+  if (connection.error) return (
+    <div className="max-w-3xl space-y-3 p-6">
+      <p role="alert" className="text-sm text-destructive">
+        {connection.error instanceof ApiError && connection.error.status === 404
+          ? t("apps.appDetail.notFound")
+          : formatUiError(connection.error instanceof Error ? connection.error : new Error(""))}
+      </p>
+      {connection.error instanceof ApiError && connection.error.status === 404 ? (
+        <Button size="sm" variant="outline" onClick={() => navigate("/apps")}>
+          {t("apps.appDetail.backToConnectors")}
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={connection.isFetching}
+          onClick={() => { void connection.refetch(); }}
+        >
+          {connection.isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+          {t("common.retry")}
+        </Button>
+      )}
+    </div>
+  );
   const pluginKey = connection.data && aiConnectionRouterPluginKey(connection.data);
   return pluginKey ? <AiConnectionPoolConnector pluginKey={pluginKey} connection={connection.data} /> : <StandardAppDetail {...props} />;
 }
