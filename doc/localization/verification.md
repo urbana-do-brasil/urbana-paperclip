@@ -3588,3 +3588,10 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Feedback de cópia nas duas variantes de rotinas: 16/16 testes focados; valores copiados e erros reais preservados. Sandbox na lista de agentes: 14/14 no helper, 23/23 em Agents e typecheck UI; identidade externa e dados ausentes usam fallback.
 - CLI profile: 4/4 testes e typecheck CLI. Checkpoint: **359/377 tarefas**, com 18 caixas abertas incluindo agregadoras.
 - Rodada integrada posterior: 56/56 em cinco arquivos; gate de tokens, scanner incremental de fontes e OpenSpec estrito passaram.
+
+### Ambientes, cases, schema Daytona e dashboard — 3.8k, 3.10k, 3.11h10 e 4.3ae
+
+- Ambientes + locale: 49/49; cases/status cards + locale: 43/43, sendo CaseRevisionRail uma superfície sem import ativo. Permanecem textos em componentes compartilhados de rotinas e pipelines.
+- Schema Daytona: 68/68 com checagem de identidade e fallback; outros schemas de providers seguem pendentes. CLI health/dashboard: 4/4 e typecheck CLI.
+- Checkpoint: **363/381 tarefas**, com 18 caixas abertas incluindo agregadoras.
+- Repetição integrada: 83/83 em seis arquivos e StatusCardDetailDrawer 18/18 em execução separada; typecheck UI, gate de tokens, scanner de fontes e OpenSpec estrito passaram.

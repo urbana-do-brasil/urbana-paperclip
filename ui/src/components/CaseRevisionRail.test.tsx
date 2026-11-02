@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
 import { flushSync } from "react-dom";
+import { act as reactAct } from "react";
 import { createRoot } from "react-dom/client";
 import type { AnchorHTMLAttributes } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CaseDocumentRevisions } from "@/api/cases";
+import { i18n } from "@/i18n";
 import { CaseRevisionRail } from "./CaseRevisionRail";
 
 function act(callback: () => void) {
@@ -29,12 +31,15 @@ vi.mock("@/lib/router", () => ({
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
+let previousLanguage = "en";
+beforeAll(() => { previousLanguage = i18n.language; });
+afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
+
 async function flush() {
   for (let i = 0; i < 5; i += 1) {
     await Promise.resolve();
     await new Promise((r) => setTimeout(r, 0));
   }
-  flushSync(() => {});
 }
 
 const revisions: CaseDocumentRevisions = {
@@ -74,12 +79,16 @@ const revisions: CaseDocumentRevisions = {
 
 describe("CaseRevisionRail", () => {
   let container: HTMLDivElement;
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockCasesApi.listRevisions.mockReset();
   });
-  afterEach(() => container.remove());
+  afterEach(() => {
+    container.remove();
+    document.body.innerHTML = "";
+  });
 
   async function render() {
     const root = createRoot(container);
@@ -107,6 +116,54 @@ describe("CaseRevisionRail", () => {
     // Latest (rev 2) selected → its body renders; via-issue attribution shown.
     expect(container.querySelector('[data-testid="md"]')?.textContent).toBe("# Second version");
     expect(container.querySelector('a[href="/issues/PAP-42"]')).not.toBeNull();
+    act(() => root.unmount());
+  });
+
+  it.each([
+    { locale: "en", heading: "Revisions", latest: "latest", compare: "Compare", dialog: "Compare revisions for body", content: "Content" },
+    { locale: "pt-BR", heading: "Revisões", latest: "mais recente", compare: "Comparar", dialog: "Comparar revisões de body", content: "Conteúdo" },
+  ])("localizes revision history and comparison in $locale while preserving user content", async ({ locale, heading, latest, compare, dialog, content }) => {
+    await i18n.changeLanguage(locale);
+    mockCasesApi.listRevisions.mockResolvedValue(revisions);
+    const root = await render();
+    expect(container.textContent).toContain(heading);
+    expect(container.textContent).toContain(latest);
+    expect(container.textContent).toContain("polish wording");
+    expect(container.textContent).toContain("Cases Agent");
+    expect(container.textContent).toContain("# Second version");
+    expect(container.querySelector('a[href="/issues/PAP-42"]')?.textContent).toBe("PAP-42");
+
+    const compareButton = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.trim() === compare);
+    expect(compareButton).toBeDefined();
+    await reactAct(async () => {
+      compareButton!.click();
+      await flush();
+    });
+    expect(document.body.textContent).toContain(dialog);
+    expect(document.body.textContent).toContain(content);
+    expect(document.body.textContent).toContain("# First version");
+    act(() => root.unmount());
+  });
+
+  it.each([
+    { locale: "en", loading: "Loading revisions…", failed: "Could not load revisions.", empty: "No revisions yet." },
+    { locale: "pt-BR", loading: "Carregando revisões…", failed: "Não foi possível carregar as revisões.", empty: "Ainda não há revisões." },
+  ])("localizes loading, error, and empty revision states in $locale", async ({ locale, loading, failed, empty }) => {
+    await i18n.changeLanguage(locale);
+    mockCasesApi.listRevisions.mockReturnValue(new Promise(() => {}));
+    let root = await render();
+    expect(container.textContent).toContain(loading);
+    act(() => root.unmount());
+
+    mockCasesApi.listRevisions.mockRejectedValue(new Error("private server detail"));
+    root = await render();
+    expect(container.textContent).toContain(failed);
+    expect(container.textContent).not.toContain("private server detail");
+    act(() => root.unmount());
+
+    mockCasesApi.listRevisions.mockResolvedValue({ ...revisions, revisions: [] });
+    root = await render();
+    expect(container.textContent).toContain(empty);
     act(() => root.unmount());
   });
 

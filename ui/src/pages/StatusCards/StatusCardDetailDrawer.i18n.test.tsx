@@ -336,6 +336,23 @@ describe("StatusCardDetailDrawer shell localization", () => {
     expect(document.body.querySelector('a[href="/issues/PAP-101"]')).toBeTruthy();
   });
 
+  it("localizes the single-revision label in PT-BR/en", async () => {
+    const createdAt = new Date(Date.now() - 60_000).toISOString();
+    statusCardsApi.updates.mockResolvedValue([
+      summaryUpdate("single-revision", "full", [], createdAt, null),
+    ]);
+    await render(baseCard({ summaryBody: "Latest user summary" }));
+    await flush();
+
+    expect(visibleText()).toContain("Revisão 1 · mais recente");
+    expect(visibleText()).toContain("Latest user summary");
+
+    await act(async () => { await i18n.changeLanguage("en"); });
+    await flush();
+    expect(visibleText()).toContain("Revision 1 · latest");
+    expect(visibleText()).toContain("Latest user summary");
+  });
+
   it("localizes empty-summary setup states and keeps the setup task link intact", async () => {
     await render(baseCard({
       summaryBody: null,

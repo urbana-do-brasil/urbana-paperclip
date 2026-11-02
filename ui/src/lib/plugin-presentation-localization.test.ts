@@ -4,6 +4,7 @@ import { i18n } from "@/i18n";
 import { DEFAULT_LOCALE } from "@/i18n/locales";
 import {
   isBundledPluginRecord,
+  isTrustedBundledSandboxProvider,
   localizePluginLocalFolderPresentation,
   localizePluginPresentation,
   localizeManagedPluginDisplayName,
@@ -164,6 +165,34 @@ describe("owned plugin presentation localization", () => {
     expect(isBundledPluginRecord(installed, bundled)).toBe(true);
     expect(isBundledPluginRecord({ ...installed, packagePath: "/custom/vendor-copy" }, bundled)).toBe(false);
     expect(isBundledPluginRecord({ ...installed, packageName: "vendor/workspace-diff" }, bundled)).toBe(false);
+  });
+
+  it("requires a sandbox capability key and manifest id to match the bundled installed plugin id", () => {
+    const installed = [{
+      id: "bundled-e2b-plugin-id",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "@paperclipai/plugin-e2b",
+      packagePath: "/app/packages/plugins/sandbox-providers/e2b",
+      manifestJson: { id: "paperclip.e2b-sandbox-provider" },
+    }];
+    const bundled = [{
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "@paperclipai/plugin-e2b",
+      localPath: "/app/packages/plugins/sandbox-providers/e2b",
+    }];
+
+    expect(isTrustedBundledSandboxProvider({
+      pluginId: "bundled-e2b-plugin-id",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+    }, installed, bundled)).toBe(true);
+    expect(isTrustedBundledSandboxProvider({
+      pluginId: "bundled-e2b-plugin-id",
+      pluginKey: "paperclip.daytona-sandbox-provider",
+    }, installed, bundled)).toBe(false);
+    expect(isTrustedBundledSandboxProvider({
+      pluginId: "bundled-e2b-plugin-id",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+    }, [{ ...installed[0]!, manifestJson: { id: "paperclip.daytona-sandbox-provider" } }], bundled)).toBe(false);
   });
 
   it("localizes managed-resource plugin attribution only with matching installed and bundled identity", async () => {

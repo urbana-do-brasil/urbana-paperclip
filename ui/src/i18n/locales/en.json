@@ -2078,6 +2078,25 @@
       "loadError": "Could not load linked cases."
     },
     "attachments": { "empty": "No attachments." },
+    "revisions": {
+      "heading": "Revisions",
+      "compare": "Compare",
+      "compareTitle": "Compare revisions for {{documentKey}}",
+      "old": "Old",
+      "new": "New",
+      "selectRevision": "Select revision",
+      "selectTwo": "Select two revisions to compare.",
+      "sameRevision": "Both sides are the same revision.",
+      "content": "Content",
+      "loading": "Loading revisions…",
+      "loadError": "Could not load revisions.",
+      "empty": "No revisions yet.",
+      "revisionShort": "rev {{revision}}",
+      "option": "Revision {{revision}} · {{relativeTime}} · {{actor}}",
+      "latest": "latest",
+      "noBody": "This revision has no body.",
+      "actor": { "board": "Board" }
+    },
     "activity": {
       "loading": "Loading activity...",
       "error": "Could not load activity.",
@@ -2128,6 +2147,9 @@
       "none": "None",
       "saving": "Saving...",
       "fields": "Fields",
+      "fieldsHint": "Field names come from the skill schema; values are rendered by type.",
+      "noFields": "No fields set.",
+      "booleanTrue": "True",
       "linkedTasks": "Linked tasks",
       "linkedTask": "Task {{identifier}}: {{title}}",
       "linkedTaskWithoutIdentifier": "Task: {{title}}",
@@ -3842,6 +3864,82 @@
         "description": "CreateOS sandboxes with live command output and optional pause/resume reuse."
       }
     },
+    "sandboxProviderConfigFields": {
+      "daytona": {
+        "apiKey": {
+          "name": "API key",
+          "description": "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted."
+        },
+        "apiUrl": {
+          "name": "API URL",
+          "description": "Optional Daytona API base URL. If omitted, the Daytona SDK uses its configured default endpoint."
+        },
+        "target": {
+          "name": "Target",
+          "description": "Optional Daytona target/region identifier."
+        },
+        "snapshot": {
+          "name": "Snapshot",
+          "description": "Optional Daytona snapshot name to start from."
+        },
+        "image": {
+          "name": "Image",
+          "description": "Optional base image or Daytona Image reference. If set, the sandbox is created from this image instead of a snapshot."
+        },
+        "language": {
+          "name": "Language",
+          "description": "Optional Daytona language hint for direct code execution. If omitted, Daytona uses its default runtime."
+        },
+        "cpu": {
+          "name": "CPU",
+          "description": "Optional CPU allocation in cores."
+        },
+        "memory": {
+          "name": "Memory",
+          "description": "Optional memory allocation in GiB. Supported sandbox sizes are 1, 2, 4, and 8 GiB."
+        },
+        "disk": {
+          "name": "Disk",
+          "description": "Optional disk allocation in GiB."
+        },
+        "gpu": {
+          "name": "GPU",
+          "description": "Optional GPU allocation in units."
+        },
+        "timeoutMs": {
+          "name": "Operation timeout (ms)",
+          "description": "Timeout for Daytona operations in milliseconds. Fresh lease acquisition shares one budget across creation, setup, and inline cleanup."
+        },
+        "livenessTimeoutMs": {
+          "name": "Liveness timeout (ms)",
+          "description": "Per-call timeout in milliseconds for the sandbox liveness read (refreshData). A silently unresponsive sandbox connection surfaces as a fast error instead of stalling until the outer RPC ceiling. The start and recovery calls derive their own deadline from timeoutMs, not this bound. `0` or less disables the bound. Defaults to 30000 when unset."
+        },
+        "autoStopInterval": {
+          "name": "Auto-stop interval (min)",
+          "description": "Daytona auto-stop interval in minutes. `0` disables auto-stop. Defaults to 15 when unset."
+        },
+        "autoArchiveInterval": {
+          "name": "Auto-archive interval (min)",
+          "description": "Daytona auto-archive interval in minutes. Stopped sandboxes still count against the storage quota until archived, so this defaults to 60 when unset. `0` uses Daytona's max interval."
+        },
+        "autoDeleteInterval": {
+          "name": "Auto-delete interval (min)",
+          "description": "Daytona auto-delete interval in minutes. Backstop reaper for sandboxes nobody resumes; defaults to 10080 (7 days) when unset. `-1` disables auto-delete and `0` deletes immediately after stop."
+        },
+        "reuseLease": {
+          "name": "Reuse sandbox between runs",
+          "description": "Whether to stop and later resume the sandbox across runs instead of deleting it on release."
+        },
+        "runnerLifecycleMode": {
+          "name": "paperclip_runner lifecycle",
+          "description": "paperclip_runner lifecycle for this environment. Inherit uses the agent setting; warm keeps runnerd and the sandbox available between turns."
+        },
+        "runnerIdleTimeoutMs": {
+          "name": "Runner idle timeout (ms)",
+          "description": "How long an idle warm paperclip_runner stays alive before it checkpoints and suspends."
+        }
+      }
+    },
     "managedResources": {
       "llmWiki": {
         "agent": {
@@ -4330,6 +4428,10 @@
     }
   },
   "companyEnvironments": {
+    "discardUnsavedChanges": "Discard unsaved environment changes?",
+    "noEnvironmentSelected": "No environment selected",
+    "selectCompanyToCreate": "Select a company to create environments",
+    "selectCompanyToTest": "Select a company to test environments",
     "breadcrumbSettings": "Settings",
     "breadcrumbEnvironments": "Environments",
     "breadcrumbAdd": "Add environment",

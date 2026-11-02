@@ -31,6 +31,23 @@ const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
 
 const operationHelp: Record<string, CommandHelp> = {
+  health: {
+    description: { en: "Check API health", "pt-BR": "Verificar a integridade da API" },
+    options: commonClientOptions,
+  },
+  dashboard: {
+    description: { en: "Dashboard summary operations", "pt-BR": "Operações de resumo do painel" },
+  },
+  "dashboard get": {
+    description: {
+      en: "Get dashboard summary for a company",
+      "pt-BR": "Consultar o resumo do painel de uma organização",
+    },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
   connections: {
     description: {
       en: "Search or request connections from an active heartbeat run",

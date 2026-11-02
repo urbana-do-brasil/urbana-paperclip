@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 
-import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { AnchorHTMLAttributes } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CaseFieldsPanel } from "./CaseFieldsPanel";
+import { act as reactAct } from "react";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { CaseFieldValue, CaseFieldsPanel } from "./CaseFieldsPanel";
 
 function act(callback: () => void) {
-  flushSync(callback);
+  reactAct(callback);
 }
 
 vi.mock("@/lib/router", () => ({
@@ -17,12 +18,18 @@ vi.mock("@/lib/router", () => ({
   useCaseHref: () => (...segments: string[]) =>
     `/PAP/${["cases", ...segments].filter(Boolean).join("/")}`,
 }));
+vi.mock("@/lib/clipboard", () => ({ copyTextToClipboard: vi.fn().mockResolvedValue(undefined) }));
+
+let previousLanguage = "en";
+beforeAll(() => { previousLanguage = i18n.language; });
+afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("CaseFieldsPanel", () => {
   let container: HTMLDivElement;
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -38,9 +45,47 @@ describe("CaseFieldsPanel", () => {
     return root;
   }
 
-  it("shows the empty state when there are no fields", () => {
+  it.each([
+    { locale: "en", heading: "Fields", empty: "No fields set." },
+    { locale: "pt-BR", heading: "Campos", empty: "Nenhum campo definido." },
+  ])("localizes the field panel empty state in $locale", async ({ locale, heading, empty }) => {
+    await i18n.changeLanguage(locale);
     const root = render({});
-    expect(container.textContent).toContain("No fields set");
+    expect(container.textContent).toContain(heading);
+    expect(container.textContent).toContain(empty);
+    act(() => root.unmount());
+  });
+
+  it("updates own labels and boolean accessibility across PT-BR/en while preserving field data", async () => {
+    const root = render({ launch_name: "Paperclip launch", enabled: true });
+    expect(container.textContent).toContain("Fields");
+    expect(container.textContent).toContain("Field names come from the skill schema; values are rendered by type.");
+    expect(container.textContent).toContain("Paperclip launch");
+    expect(container.querySelector('[aria-label="True"]')).not.toBeNull();
+
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    expect(container.textContent).toContain("Campos");
+    expect(container.textContent).toContain("Os nomes dos campos vêm do esquema da competência; os valores são exibidos conforme o tipo.");
+    expect(container.textContent).toContain("Paperclip launch");
+    expect(container.querySelector('[aria-label="Verdadeiro"]')).not.toBeNull();
+    act(() => root.unmount());
+  });
+
+  it.each([
+    { locale: "en", copied: "Copied" },
+    { locale: "pt-BR", copied: "Copiado" },
+  ])("localizes compact value copy feedback in $locale", async ({ locale, copied }) => {
+    await i18n.changeLanguage(locale);
+    const root = createRoot(container);
+    act(() => root.render(<CaseFieldValue value="release-note" variant="compact" />));
+    const copyButton = container.querySelector("button");
+    expect(copyButton).not.toBeNull();
+    await reactAct(async () => {
+      copyButton!.click();
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain(copied);
+    expect(container.textContent).toContain("release-note");
     act(() => root.unmount());
   });
 

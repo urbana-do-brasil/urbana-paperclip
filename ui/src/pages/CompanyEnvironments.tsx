@@ -59,7 +59,8 @@ import { useToast } from "@/context/ToastContext";
 import { t as translate, useTranslation } from "@/i18n";
 import { environmentDisplayLabel, isPlatformManagedEnvironment } from "@/lib/managed-sandbox-environment";
 import {
-  isBundledPluginRecord,
+  isTrustedBundledSandboxProvider,
+  localizeSandboxProviderConfigSchema,
   localizeSandboxProviderPresentation,
 } from "@/lib/plugin-presentation-localization";
 import { queryKeys } from "@/lib/queryKeys";
@@ -262,7 +263,6 @@ function createEnvironmentFormFromEnvironment(environment: Environment): Environ
   };
 }
 
-const DISCARD_ENVIRONMENT_CHANGES_MESSAGE = "Discard unsaved environment changes?";
 
 function stableJsonStringify(value: unknown): string {
   if (Array.isArray(value)) {
@@ -1474,13 +1474,6 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
     queryFn: () => pluginsApi.listBundled(),
     enabled: Boolean(selectedCompanyId) && environmentsEnabled,
   });
-  const bundledPluginIds = useMemo(() => new Set(
-    (installedPlugins ?? [])
-      .filter((plugin) => plugin.manifestJson.id === plugin.pluginKey
-        && isBundledPluginRecord(plugin, bundledPlugins))
-      .map((plugin) => plugin.id),
-  ), [bundledPlugins, installedPlugins]);
-
   const { data: secrets } = useQuery({
     queryKey: selectedCompanyId ? ["company-secrets", selectedCompanyId] : ["company-secrets", "none"],
     queryFn: () => secretsApi.list(selectedCompanyId!),
@@ -1503,7 +1496,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
   // shape the floor admits.
   const managedEnvironmentEnvVarsMutation = useMutation({
     mutationFn: async (envVars: EnvironmentFormState["envVars"]) => {
-      if (!editingEnvironmentId) throw new Error("No environment selected");
+      if (!editingEnvironmentId) throw new Error(t("companyEnvironments.noEnvironmentSelected"));
       return await environmentsApi.update(editingEnvironmentId, { envVars }, selectedCompanyId);
     },
     onSuccess: async (environment) => {
@@ -1540,7 +1533,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
         return await environmentsApi.update(editingEnvironmentId, body, selectedCompanyId);
       }
 
-      if (!selectedCompanyId) throw new Error("Select a company to create environments");
+      if (!selectedCompanyId) throw new Error(t("companyEnvironments.selectCompanyToCreate"));
       return await environmentsApi.create(selectedCompanyId!, body);
     },
     onSuccess: async (environment) => {
@@ -1720,7 +1713,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
 
   const draftEnvironmentProbeMutation = useMutation({
     mutationFn: async (form: EnvironmentFormState) => {
-      if (!selectedCompanyId) throw new Error("Select a company to test environments");
+      if (!selectedCompanyId) throw new Error(t("companyEnvironments.selectCompanyToTest"));
       const body = buildEnvironmentPayload(form);
       return await environmentsApi.probeConfig(selectedCompanyId, body);
     },
@@ -1804,7 +1797,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
     return (
       !environmentHasUnsavedChanges ||
       typeof window === "undefined" ||
-      window.confirm(DISCARD_ENVIRONMENT_CHANGES_MESSAGE)
+      window.confirm(t("companyEnvironments.discardUnsavedChanges"))
     );
   }
 
@@ -1846,7 +1839,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
         return;
       }
 
-      if (window.confirm(DISCARD_ENVIRONMENT_CHANGES_MESSAGE)) return;
+      if (window.confirm(t("companyEnvironments.discardUnsavedChanges"))) return;
       event.preventDefault();
       event.stopPropagation();
     }
@@ -1857,7 +1850,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("click", handleDocumentClick, true);
     };
-  }, [environmentHasUnsavedChanges]);
+  }, [environmentHasUnsavedChanges, t]);
 
   function closeEnvironmentForm() {
     if (environmentMutation.isPending) return;
@@ -1879,19 +1872,28 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
   const discoveredPluginSandboxProviders = Object.entries(environmentCapabilities?.sandboxProviders ?? {})
     .filter(([provider, capability]) => provider !== "fake" && capability.supportsRunExecution)
     .map(([provider, capability]) => {
+      const trustedBundle = isTrustedBundledSandboxProvider(capability, installedPlugins, bundledPlugins);
+      const configSchema = normalizeJsonSchema(capability.configSchema);
       const presentation = localizeSandboxProviderPresentation(
         provider,
         capability.pluginKey,
         capability.displayName || provider,
         capability.description,
         t,
-        capability.pluginId !== undefined && bundledPluginIds.has(capability.pluginId),
+        trustedBundle,
       );
       return {
         provider,
         displayName: presentation.displayName,
         description: presentation.description,
-        configSchema: normalizeJsonSchema(capability.configSchema),
+        configSchema,
+        configPresentationSchema: localizeSandboxProviderConfigSchema(
+          provider,
+          capability.pluginKey,
+          configSchema,
+          t,
+          trustedBundle,
+        ),
       };
     })
     .sort((left, right) => left.displayName.localeCompare(right.displayName));
@@ -1902,7 +1904,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
     !discoveredPluginSandboxProviders.some((provider) => provider.provider === environmentForm.sandboxProvider)
       ? [
           ...discoveredPluginSandboxProviders,
-          { provider: environmentForm.sandboxProvider, displayName: environmentForm.sandboxProvider, description: undefined, configSchema: null },
+          { provider: environmentForm.sandboxProvider, displayName: environmentForm.sandboxProvider, description: undefined, configSchema: null, configPresentationSchema: null },
         ]
       : discoveredPluginSandboxProviders;
 
@@ -1959,8 +1961,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
         editingSandboxCapability?.displayName ?? editingSandboxProvider,
         editingSandboxCapability?.description,
         t,
-        editingSandboxCapability?.pluginId !== undefined
-          && bundledPluginIds.has(editingSandboxCapability.pluginId),
+        isTrustedBundledSandboxProvider(editingSandboxCapability ?? {}, installedPlugins, bundledPlugins),
       ).displayName
     : "sandbox";
   const nonLocalEnvironments = savedEnvironments.filter((environment) => !isLocalEnvironment(environment));
@@ -2131,8 +2132,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
                     sandboxProviderCapability?.displayName ?? sandboxProvider,
                     sandboxProviderCapability?.description,
                     t,
-                    sandboxProviderCapability?.pluginId !== undefined
-                      && bundledPluginIds.has(sandboxProviderCapability.pluginId),
+                    isTrustedBundledSandboxProvider(sandboxProviderCapability ?? {}, installedPlugins, bundledPlugins),
                   ).displayName
                 : "sandbox";
             return (
@@ -2563,7 +2563,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
                   ) : null}
                   {selectedSandboxSchema ? (
                     <JsonSchemaForm
-                      schema={selectedSandboxSchema as any}
+                      schema={(selectedSandboxProvider?.configPresentationSchema ?? selectedSandboxSchema) as any}
                       values={environmentForm.sandboxConfig}
                       onChange={(values) =>
                         setEnvironmentForm((current) => ({ ...current, sandboxConfig: values }))}

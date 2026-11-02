@@ -584,6 +584,182 @@ describe("CompanyEnvironments — test provider button", () => {
     vi.clearAllMocks();
   });
 
+  it.each([
+    ["pt-BR", "Chave de API", "Chave de API do Daytona específica do ambiente.", "Intervalo de parada automática (min)"],
+    ["en", "API key", "Environment-specific Daytona API key.", "Auto-stop interval (min)"],
+  ] as const)("localizes only verified bundled Daytona schema presentation in %s", async (locale, apiKeyLabel, apiKeyHelp, intervalLabel) => {
+    await i18n.changeLanguage(locale);
+    const bundlePath = "/app/packages/plugins/sandbox-providers/daytona";
+    const apiKeyDescription = "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted.";
+    const autoStopDescription = "Daytona auto-stop interval in minutes. `0` disables auto-stop. Defaults to 15 when unset.";
+    const sourceSchema = {
+      type: "object",
+      properties: {
+        apiKey: { type: "string", format: "secret-ref", description: apiKeyDescription },
+        autoStopInterval: { type: "number", default: 15, description: autoStopDescription },
+        customField: { type: "string", title: "Vendor-owned field", description: "Vendor-owned help text." },
+        target: { type: "string", description: "Changed first-party text stays as authored." },
+      },
+    };
+    mockPluginsApi.list.mockResolvedValue([{
+      id: "daytona-plugin-id",
+      pluginKey: "paperclip.daytona-sandbox-provider",
+      packageName: "@paperclipai/plugin-daytona",
+      packagePath: bundlePath,
+      manifestJson: { id: "paperclip.daytona-sandbox-provider" },
+    }]);
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      pluginKey: "paperclip.daytona-sandbox-provider",
+      packageName: "@paperclipai/plugin-daytona",
+      localPath: bundlePath,
+    }]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue({
+      adapters: [],
+      drivers: { local: "supported", ssh: "supported", sandbox: "supported", plugin: "unsupported" },
+      sandboxProviders: {
+        daytona: {
+          status: "supported",
+          supportsRunExecution: true,
+          displayName: "Daytona Sandbox",
+          description: "Provisions Daytona sandboxes with configurable image or snapshot selection, startup timeouts, and lease reuse.",
+          pluginId: "daytona-plugin-id",
+          pluginKey: "paperclip.daytona-sandbox-provider",
+          configSchema: sourceSchema,
+        },
+      },
+    });
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/new`)));
+    await waitForAssertion(() => expect(getEnvironmentFormPage()).toBeTruthy());
+
+    const dialog = getEnvironmentFormPage()!;
+    const driverSelect = Array.from(dialog.querySelectorAll("select")).find((select) =>
+      Array.from(select.options).some((option) => option.value === "sandbox"),
+    ) as HTMLSelectElement | undefined;
+    await waitForAssertion(() => expect(driverSelect).toBeTruthy());
+    await act(async () => setSelectValue(driverSelect!, "sandbox"));
+    await waitForAssertion(() => expect(dialog.textContent).toContain(apiKeyLabel));
+
+    expect(dialog.textContent).toContain(apiKeyHelp);
+    expect(dialog.textContent).toContain(intervalLabel);
+    expect(dialog.textContent).toContain("Vendor-owned field");
+    expect(dialog.textContent).toContain("Vendor-owned help text.");
+    expect(dialog.textContent).toContain("Changed first-party text stays as authored.");
+    expect(sourceSchema.properties.apiKey).not.toHaveProperty("title");
+    expect(sourceSchema.properties.apiKey.description).toBe(apiKeyDescription);
+    expect(sourceSchema.properties.autoStopInterval.description).toBe(autoStopDescription);
+    queryClient.clear();
+  });
+
+  it("preserves sandbox schema metadata when an external package reuses the bundled provider identity", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockPluginsApi.list.mockResolvedValue([{
+      id: "vendor-daytona-id",
+      pluginKey: "paperclip.daytona-sandbox-provider",
+      packageName: "vendor/compatible-daytona",
+      packagePath: "/custom/vendor/compatible-daytona",
+      manifestJson: { id: "paperclip.daytona-sandbox-provider" },
+    }]);
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      pluginKey: "paperclip.daytona-sandbox-provider",
+      packageName: "@paperclipai/plugin-daytona",
+      localPath: "/app/packages/plugins/sandbox-providers/daytona",
+    }]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue({
+      adapters: [],
+      drivers: { local: "supported", ssh: "supported", sandbox: "supported", plugin: "unsupported" },
+      sandboxProviders: {
+        daytona: {
+          status: "supported",
+          supportsRunExecution: true,
+          displayName: "Vendor Daytona",
+          description: "Vendor-owned provider description.",
+          pluginId: "vendor-daytona-id",
+          pluginKey: "paperclip.daytona-sandbox-provider",
+          configSchema: {
+            type: "object",
+            properties: {
+              apiKey: { type: "string", description: "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted." },
+            },
+          },
+        },
+      },
+    });
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/new`)));
+    await waitForAssertion(() => expect(getEnvironmentFormPage()).toBeTruthy());
+    const dialog = getEnvironmentFormPage()!;
+    const driverSelect = Array.from(dialog.querySelectorAll("select")).find((select) =>
+      Array.from(select.options).some((option) => option.value === "sandbox"),
+    ) as HTMLSelectElement | undefined;
+    await waitForAssertion(() => expect(driverSelect).toBeTruthy());
+    await act(async () => setSelectValue(driverSelect!, "sandbox"));
+    await waitForAssertion(() => expect(dialog.textContent).toContain("Environment-specific Daytona API key."));
+
+    expect(dialog.textContent).toContain("Api Key");
+    expect(dialog.textContent).toContain("Vendor-owned provider description.");
+    expect(dialog.textContent).not.toContain("Chave de API do Daytona");
+    queryClient.clear();
+  });
+
+  it("does not trust a bundled plugin id when the capability declares a different plugin key", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const e2bBundlePath = "/app/packages/plugins/sandbox-providers/e2b";
+    const daytonaApiKeyDescription = "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted.";
+    mockPluginsApi.list.mockResolvedValue([{
+      id: "bundled-e2b-plugin-id",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "@paperclipai/plugin-e2b",
+      packagePath: e2bBundlePath,
+      manifestJson: { id: "paperclip.e2b-sandbox-provider" },
+    }]);
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "@paperclipai/plugin-e2b",
+      localPath: e2bBundlePath,
+    }]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue({
+      adapters: [],
+      drivers: { local: "supported", ssh: "supported", sandbox: "supported", plugin: "unsupported" },
+      sandboxProviders: {
+        daytona: {
+          status: "supported",
+          supportsRunExecution: true,
+          displayName: "Daytona Sandbox",
+          description: "Provisions Daytona sandboxes with configurable image or snapshot selection, startup timeouts, and lease reuse.",
+          pluginId: "bundled-e2b-plugin-id",
+          pluginKey: "paperclip.daytona-sandbox-provider",
+          configSchema: {
+            type: "object",
+            properties: {
+              apiKey: { type: "string", description: daytonaApiKeyDescription },
+            },
+          },
+        },
+      },
+    });
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/new`)));
+    await waitForAssertion(() => expect(getEnvironmentFormPage()).toBeTruthy());
+    const dialog = getEnvironmentFormPage()!;
+    const driverSelect = Array.from(dialog.querySelectorAll("select")).find((select) =>
+      Array.from(select.options).some((option) => option.value === "sandbox"),
+    ) as HTMLSelectElement | undefined;
+    await waitForAssertion(() => expect(driverSelect).toBeTruthy());
+    await act(async () => setSelectValue(driverSelect!, "sandbox"));
+    await waitForAssertion(() => expect(dialog.textContent).toContain(daytonaApiKeyDescription));
+
+    expect(dialog.textContent).toContain("Daytona Sandbox");
+    expect(dialog.textContent).toContain("Api Key");
+    expect(dialog.textContent).toContain("Provisions Daytona sandboxes");
+    expect(dialog.textContent).not.toContain("Sandbox Daytona");
+    expect(dialog.textContent).not.toContain("Chave de API");
+    queryClient.clear();
+  });
+
   it("shows the testing state only on the clicked environment's button", async () => {
     root = createRoot(container);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -1040,10 +1216,12 @@ describe("CompanyEnvironments — test provider button", () => {
     expect(confirmSpy).toHaveBeenCalledWith("Discard unsaved environment changes?");
     expect(getEnvironmentFormPage()).not.toBeNull();
 
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
     confirmSpy.mockReturnValue(true);
-    await act(async () => click(findButton(document.body, "Cancel")));
+    await act(async () => click(findButton(document.body, "Cancelar")));
     await flushReact();
 
+    expect(confirmSpy).toHaveBeenLastCalledWith("Descartar alterações não salvas no ambiente?");
     expect(getEnvironmentFormPage()).toBeNull();
   });
 

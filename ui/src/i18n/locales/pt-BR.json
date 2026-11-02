@@ -2129,6 +2129,25 @@
       "loadError": "Não foi possível carregar os casos vinculados."
     },
     "attachments": { "empty": "Não há anexos." },
+    "revisions": {
+      "heading": "Revisões",
+      "compare": "Comparar",
+      "compareTitle": "Comparar revisões de {{documentKey}}",
+      "old": "Anterior",
+      "new": "Nova",
+      "selectRevision": "Selecionar revisão",
+      "selectTwo": "Selecione duas revisões para comparar.",
+      "sameRevision": "As duas versões são a mesma revisão.",
+      "content": "Conteúdo",
+      "loading": "Carregando revisões…",
+      "loadError": "Não foi possível carregar as revisões.",
+      "empty": "Ainda não há revisões.",
+      "revisionShort": "rev. {{revision}}",
+      "option": "Revisão {{revision}} · {{relativeTime}} · {{actor}}",
+      "latest": "mais recente",
+      "noBody": "Esta revisão não tem conteúdo.",
+      "actor": { "board": "Quadro" }
+    },
     "activity": {
       "loading": "Carregando atividade...",
       "error": "Não foi possível carregar a atividade.",
@@ -2182,6 +2201,9 @@
       "none": "Nenhum",
       "saving": "Salvando...",
       "fields": "Campos",
+      "fieldsHint": "Os nomes dos campos vêm do esquema da competência; os valores são exibidos conforme o tipo.",
+      "noFields": "Nenhum campo definido.",
+      "booleanTrue": "Verdadeiro",
       "linkedTasks": "Tarefas vinculadas",
       "linkedTask": "Tarefa {{identifier}}: {{title}}",
       "linkedTaskWithoutIdentifier": "Tarefa: {{title}}",
@@ -3938,6 +3960,82 @@
         "description": "Sandboxes do CreateOS com saída de comandos ao vivo e reutilização opcional com pausa e retomada."
       }
     },
+    "sandboxProviderConfigFields": {
+      "daytona": {
+        "apiKey": {
+          "name": "Chave de API",
+          "description": "Chave de API do Daytona específica do ambiente. Cole uma chave ou uma referência a um segredo existente do Paperclip; chaves coladas são salvas como segredos da organização. Se omitida, usa DAYTONA_API_KEY."
+        },
+        "apiUrl": {
+          "name": "URL da API",
+          "description": "URL base opcional da API do Daytona. Se omitida, o SDK do Daytona usa o endpoint padrão configurado."
+        },
+        "target": {
+          "name": "Destino",
+          "description": "Identificador opcional de destino ou região do Daytona."
+        },
+        "snapshot": {
+          "name": "Snapshot",
+          "description": "Nome opcional do snapshot do Daytona a partir do qual iniciar."
+        },
+        "image": {
+          "name": "Imagem",
+          "description": "Imagem base ou referência de imagem do Daytona opcional. Se definida, o sandbox será criado a partir dessa imagem em vez de um snapshot."
+        },
+        "language": {
+          "name": "Linguagem",
+          "description": "Indicação opcional de linguagem do Daytona para execução direta de código. Se omitida, o Daytona usa o runtime padrão."
+        },
+        "cpu": {
+          "name": "CPU",
+          "description": "Alocação opcional de CPU em núcleos."
+        },
+        "memory": {
+          "name": "Memória",
+          "description": "Alocação opcional de memória em GiB. Os tamanhos de sandbox aceitos são 1, 2, 4 e 8 GiB."
+        },
+        "disk": {
+          "name": "Disco",
+          "description": "Alocação opcional de disco em GiB."
+        },
+        "gpu": {
+          "name": "GPU",
+          "description": "Alocação opcional de GPU em unidades."
+        },
+        "timeoutMs": {
+          "name": "Timeout das operações (ms)",
+          "description": "Timeout das operações do Daytona em milissegundos. A aquisição de um lease novo compartilha um único limite entre criação, configuração e limpeza inline."
+        },
+        "livenessTimeoutMs": {
+          "name": "Timeout de atividade (ms)",
+          "description": "Timeout por chamada em milissegundos para a leitura de atividade do sandbox (refreshData). Uma conexão de sandbox sem resposta gera um erro rápido, em vez de aguardar até o limite externo de RPC. As chamadas de inicialização e recuperação derivam seus próprios prazos de timeoutMs, não deste limite. `0` ou menos desativa o limite. O padrão é 30000 quando omitido."
+        },
+        "autoStopInterval": {
+          "name": "Intervalo de parada automática (min)",
+          "description": "Intervalo de parada automática do Daytona em minutos. `0` desativa a parada automática. O padrão é 15 quando omitido."
+        },
+        "autoArchiveInterval": {
+          "name": "Intervalo de arquivamento automático (min)",
+          "description": "Intervalo de arquivamento automático do Daytona em minutos. Sandboxes parados ainda contam para a cota de armazenamento até serem arquivados; por isso, o padrão é 60 quando omitido. `0` usa o intervalo máximo do Daytona."
+        },
+        "autoDeleteInterval": {
+          "name": "Intervalo de exclusão automática (min)",
+          "description": "Intervalo de exclusão automática do Daytona em minutos. É uma limpeza de segurança para sandboxes que ninguém retoma; o padrão é 10080 (7 dias) quando omitido. `-1` desativa a exclusão automática e `0` exclui logo após a parada."
+        },
+        "reuseLease": {
+          "name": "Reutilizar sandbox entre execuções",
+          "description": "Se o sandbox deve ser parado e retomado em execuções futuras, em vez de excluído ao liberar o lease."
+        },
+        "runnerLifecycleMode": {
+          "name": "Ciclo de vida do paperclip_runner",
+          "description": "Ciclo de vida do paperclip_runner para este ambiente. Herdar usa a configuração do agente; aquecido mantém runnerd e o sandbox disponíveis entre turnos."
+        },
+        "runnerIdleTimeoutMs": {
+          "name": "Timeout de inatividade do runner (ms)",
+          "description": "Por quanto tempo um paperclip_runner aquecido e ocioso permanece ativo antes de criar um checkpoint e suspender."
+        }
+      }
+    },
     "managedResources": {
       "llmWiki": {
         "agent": {
@@ -4430,6 +4528,10 @@
     }
   },
   "companyEnvironments": {
+    "discardUnsavedChanges": "Descartar alterações não salvas no ambiente?",
+    "noEnvironmentSelected": "Nenhum ambiente selecionado",
+    "selectCompanyToCreate": "Selecione uma empresa para criar ambientes",
+    "selectCompanyToTest": "Selecione uma empresa para testar ambientes",
     "breadcrumbSettings": "Configurações",
     "breadcrumbEnvironments": "Ambientes",
     "breadcrumbAdd": "Adicionar ambiente",

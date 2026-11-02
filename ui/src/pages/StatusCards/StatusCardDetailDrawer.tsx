@@ -378,7 +378,9 @@ export function StatusCardDetailDrawer({
                       </SelectContent>
                     </Select>
                   ) : latestRevisionNumber > 0 ? (
-                    <span className="text-xs text-muted-foreground">Revision {latestRevisionNumber} · latest</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t("statusCards.detailSummary.latestRevision", { revision: latestRevisionNumber })}
+                    </span>
                   ) : null}
                 </div>
               ) : null}

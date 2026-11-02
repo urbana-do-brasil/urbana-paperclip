@@ -15,6 +15,13 @@ export interface LocalizedPluginResourcePresentation {
   description?: string;
 }
 
+interface PluginConfigSchemaPresentationNode {
+  title?: string;
+  description?: string;
+  properties?: Record<string, PluginConfigSchemaPresentationNode>;
+  [key: string]: unknown;
+}
+
 export interface PluginBundleIdentity {
   pluginKey: string;
   packageName: string;
@@ -30,6 +37,11 @@ export interface AvailablePluginBundleIdentity {
 export interface PluginUiContributionIdentity {
   pluginId: string;
   pluginKey: string;
+}
+
+export interface SandboxProviderPluginIdentity {
+  pluginId?: string;
+  pluginKey?: string;
 }
 
 export interface InstalledPluginBundleIdentity extends PluginBundleIdentity {
@@ -65,6 +77,21 @@ export function isBundledPluginRecord(
     && bundled.packageName === plugin.packageName
     && bundled.localPath === plugin.packagePath,
   );
+}
+
+/** Require the capability identity to match one installed plugin and its exact bundled package. */
+export function isTrustedBundledSandboxProvider(
+  capability: SandboxProviderPluginIdentity,
+  installedPlugins: readonly InstalledPluginBundleIdentity[] | undefined,
+  bundledPlugins: readonly AvailablePluginBundleIdentity[] | undefined,
+): boolean {
+  if (!capability.pluginId || !capability.pluginKey) return false;
+  const installed = installedPlugins?.find((plugin) =>
+    plugin.id === capability.pluginId
+    && plugin.pluginKey === capability.pluginKey
+    && plugin.manifestJson.id === capability.pluginKey,
+  );
+  return Boolean(installed && isBundledPluginRecord(installed, bundledPlugins));
 }
 
 /** Require both the contribution-to-record link and the host's exact bundle identity. */
@@ -215,6 +242,89 @@ const OWN_SANDBOX_PROVIDER_PRESENTATION_KEYS: Record<string, { pluginId: string;
   e2b: { pluginId: "paperclip.e2b-sandbox-provider", key: "e2b" },
   "exe-dev": { pluginId: "paperclip.exe-dev-sandbox-provider", key: "exeDev" },
   createos: { pluginId: "paperclip.createos-sandbox-provider", key: "createos" },
+};
+
+const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
+  pluginId: string;
+  fields: Record<string, { sourceDescription: string; key: string }>;
+}> = {
+  daytona: {
+    pluginId: "paperclip.daytona-sandbox-provider",
+    fields: {
+      apiKey: {
+        sourceDescription: "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted.",
+        key: "apiKey",
+      },
+      apiUrl: {
+        sourceDescription: "Optional Daytona API base URL. If omitted, the Daytona SDK uses its configured default endpoint.",
+        key: "apiUrl",
+      },
+      target: {
+        sourceDescription: "Optional Daytona target/region identifier.",
+        key: "target",
+      },
+      snapshot: {
+        sourceDescription: "Optional Daytona snapshot name to start from.",
+        key: "snapshot",
+      },
+      image: {
+        sourceDescription: "Optional base image or Daytona Image reference. If set, the sandbox is created from this image instead of a snapshot.",
+        key: "image",
+      },
+      language: {
+        sourceDescription: "Optional Daytona language hint for direct code execution. If omitted, Daytona uses its default runtime.",
+        key: "language",
+      },
+      cpu: {
+        sourceDescription: "Optional CPU allocation in cores.",
+        key: "cpu",
+      },
+      memory: {
+        sourceDescription: "Optional memory allocation in GiB. Supported sandbox sizes are 1, 2, 4, and 8 GiB.",
+        key: "memory",
+      },
+      disk: {
+        sourceDescription: "Optional disk allocation in GiB.",
+        key: "disk",
+      },
+      gpu: {
+        sourceDescription: "Optional GPU allocation in units.",
+        key: "gpu",
+      },
+      timeoutMs: {
+        sourceDescription: "Timeout for Daytona operations in milliseconds. Fresh lease acquisition shares one budget across creation, setup, and inline cleanup.",
+        key: "timeoutMs",
+      },
+      livenessTimeoutMs: {
+        sourceDescription: "Per-call timeout in milliseconds for the sandbox liveness read (refreshData). A silently unresponsive sandbox connection surfaces as a fast error instead of stalling until the outer RPC ceiling. The start and recovery calls derive their own deadline from timeoutMs, not this bound. `0` or less disables the bound. Defaults to 30000 when unset.",
+        key: "livenessTimeoutMs",
+      },
+      autoStopInterval: {
+        sourceDescription: "Daytona auto-stop interval in minutes. `0` disables auto-stop. Defaults to 15 when unset.",
+        key: "autoStopInterval",
+      },
+      autoArchiveInterval: {
+        sourceDescription: "Daytona auto-archive interval in minutes. Stopped sandboxes still count against the storage quota until archived, so this defaults to 60 when unset. `0` uses Daytona's max interval.",
+        key: "autoArchiveInterval",
+      },
+      autoDeleteInterval: {
+        sourceDescription: "Daytona auto-delete interval in minutes. Backstop reaper for sandboxes nobody resumes; defaults to 10080 (7 days) when unset. `-1` disables auto-delete and `0` deletes immediately after stop.",
+        key: "autoDeleteInterval",
+      },
+      reuseLease: {
+        sourceDescription: "Whether to stop and later resume the sandbox across runs instead of deleting it on release.",
+        key: "reuseLease",
+      },
+      runnerLifecycleMode: {
+        sourceDescription: "paperclip_runner lifecycle for this environment. Inherit uses the agent setting; warm keeps runnerd and the sandbox available between turns.",
+        key: "runnerLifecycleMode",
+      },
+      runnerIdleTimeoutMs: {
+        sourceDescription: "How long an idle warm paperclip_runner stays alive before it checkpoints and suspends.",
+        key: "runnerIdleTimeoutMs",
+      },
+    },
+  },
 };
 
 const OWN_LOCAL_FOLDER_PRESENTATION_KEYS: Record<string, { pluginKey: string; key: string }> = {
@@ -388,6 +498,50 @@ export function localizeSandboxProviderPresentation(
           ),
         }),
   };
+}
+
+/**
+ * Localize only known display metadata in a verified bundled provider schema.
+ * The source schema stays untouched; unknown fields and changed descriptions
+ * pass through verbatim, and config keys/constraints/values are never mapped.
+ */
+export function localizeSandboxProviderConfigSchema<T extends PluginConfigSchemaPresentationNode | null>(
+  providerKey: string,
+  pluginKey: string | undefined,
+  schema: T,
+  t: TFunction,
+  isTrustedBundle = false,
+): T {
+  const ownedProvider = OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION[providerKey];
+  if (
+    !schema
+    || !isTrustedBundle
+    || !ownedProvider
+    || ownedProvider.pluginId !== pluginKey
+    || !schema.properties
+  ) {
+    return schema;
+  }
+
+  let changed = false;
+  const properties = { ...schema.properties };
+  for (const [fieldKey, presentation] of Object.entries(ownedProvider.fields)) {
+    const fieldSchema = properties[fieldKey];
+    if (
+      !fieldSchema
+      || fieldSchema.title !== undefined
+      || fieldSchema.description !== presentation.sourceDescription
+    ) {
+      continue;
+    }
+    properties[fieldKey] = {
+      ...fieldSchema,
+      title: translate(t, `pluginPresentation.sandboxProviderConfigFields.daytona.${presentation.key}.name`, fieldKey),
+      description: translate(t, `pluginPresentation.sandboxProviderConfigFields.daytona.${presentation.key}.description`, presentation.sourceDescription),
+    };
+    changed = true;
+  }
+  return (changed ? { ...schema, properties } : schema) as T;
 }
 
 export function localizePluginLocalFolderPresentation(

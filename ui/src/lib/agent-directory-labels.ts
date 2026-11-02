@@ -9,7 +9,7 @@ import {
 import type { AvailableBundledPlugin } from "@/api/plugins";
 import { isPlatformManagedEnvironment } from "./managed-sandbox-environment";
 import {
-  isBundledPluginRecord,
+  isTrustedBundledSandboxProvider,
   localizeSandboxProviderPresentation,
 } from "./plugin-presentation-localization";
 
@@ -59,14 +59,7 @@ function sandboxProviderLabel(
   const capability = capabilities?.sandboxProviders?.[provider];
   if (!capability) return provider;
 
-  const installedPlugin = capability.pluginId && capability.pluginKey
-    ? installedPlugins?.find((plugin) =>
-        plugin.id === capability.pluginId
-        && plugin.pluginKey === capability.pluginKey
-        && plugin.manifestJson.id === capability.pluginKey,
-      )
-    : undefined;
-  const trustedBundle = Boolean(installedPlugin && isBundledPluginRecord(installedPlugin, bundledPlugins));
+  const trustedBundle = isTrustedBundledSandboxProvider(capability, installedPlugins, bundledPlugins);
   return localizeSandboxProviderPresentation(
     provider,
     capability.pluginKey,
