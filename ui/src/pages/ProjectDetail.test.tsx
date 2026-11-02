@@ -28,6 +28,7 @@ const mockBudgetsApi = vi.hoisted(() => ({ overview: vi.fn(), upsertPolicy: vi.f
 const mockExecutionWorkspacesApi = vi.hoisted(() => ({ list: vi.fn() }));
 const mockInstanceSettingsApi = vi.hoisted(() => ({ getExperimental: vi.fn() }));
 const mockAssetsApi = vi.hoisted(() => ({ uploadImage: vi.fn() }));
+const mockPluginsApi = vi.hoisted(() => ({ list: vi.fn(), listBundled: vi.fn() }));
 const mockResourceMembershipsApi = vi.hoisted(() => ({
   listMine: vi.fn(),
   updateProject: vi.fn(),
@@ -56,6 +57,7 @@ vi.mock("../api/budgets", () => ({ budgetsApi: mockBudgetsApi }));
 vi.mock("../api/execution-workspaces", () => ({ executionWorkspacesApi: mockExecutionWorkspacesApi }));
 vi.mock("../api/instanceSettings", () => ({ instanceSettingsApi: mockInstanceSettingsApi }));
 vi.mock("../api/assets", () => ({ assetsApi: mockAssetsApi }));
+vi.mock("../api/plugins", () => ({ pluginsApi: mockPluginsApi }));
 vi.mock("../api/resourceMemberships", () => ({ resourceMembershipsApi: mockResourceMembershipsApi }));
 
 vi.mock("@/lib/router", () => ({
@@ -202,6 +204,8 @@ describe("ProjectDetail", () => {
     mockBudgetsApi.overview.mockResolvedValue({ policies: [] });
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: false });
     mockExecutionWorkspacesApi.list.mockResolvedValue([]);
+    mockPluginsApi.list.mockResolvedValue([]);
+    mockPluginsApi.listBundled.mockResolvedValue([]);
     mockResourceMembershipsApi.listMine.mockResolvedValue({
       projectMemberships: {},
       agentMemberships: {},
@@ -298,6 +302,55 @@ describe("ProjectDetail", () => {
       projectId: "project-1",
       originKindPrefix: "plugin:paperclip.missions",
     });
+  });
+
+  it("localizes managed plugin attribution after installed and bundled package identities match", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    mockProjectsApi.get.mockResolvedValue(project({
+      managedByPlugin: {
+        id: "managed-1",
+        pluginId: "plugin-workspace",
+        pluginKey: "paperclip.workspace-diff",
+        pluginDisplayName: "Workspace Changes",
+        resourceKind: "project",
+        resourceKey: "operations",
+        defaultsJson: {},
+        createdAt: new Date("2026-05-01T00:00:00Z"),
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+    }));
+    mockPluginsApi.list.mockResolvedValue([{
+      id: "plugin-workspace",
+      pluginKey: "paperclip.workspace-diff",
+      packageName: "@paperclipai/plugin-workspace-diff",
+      packagePath: "/app/packages/plugins/plugin-workspace-diff",
+      manifestJson: { id: "paperclip.workspace-diff", displayName: "Workspace Changes" },
+    }]);
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      pluginKey: "paperclip.workspace-diff",
+      packageName: "@paperclipai/plugin-workspace-diff",
+      localPath: "/app/packages/plugins/plugin-workspace-diff",
+    }]);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root = createRoot(container);
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <ProjectDetail />
+        </QueryClientProvider>,
+      );
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(container.textContent).toContain("Gerenciado pelo plugin Alterações no workspace");
+    expect(container.textContent).not.toContain("Workspace Changes");
+    expect(mockPluginsApi.list).toHaveBeenCalledTimes(1);
+    expect(mockPluginsApi.listBundled).toHaveBeenCalledTimes(1);
+    queryClient.clear();
   });
 
   it("localizes project detail navigation and notices while preserving project and plugin names", async () => {

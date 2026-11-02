@@ -6204,6 +6204,88 @@
       "cleaningUp": { "title": "Limpando recursos do agente", "description": "Os recursos necessários estão sendo removidos. O encerramento ainda não foi concluído." }
     }
   },
+  "builtInBundle": {
+    "title": "Estado do pacote",
+    "adapter": "Adaptador",
+    "skill": "Habilidade",
+    "instructions": "Instruções",
+    "routine": "Rotina",
+    "proposal": "Proposta",
+    "configure": "Configurar",
+    "view": "Ver",
+    "reviewProposal": "Revisar proposta",
+    "scheduleLabelFallback": "Agenda",
+    "adapterPendingApproval": "Aguardando aprovação do conselho para contratação antes de poder executar.",
+    "adapterNeedsSetup": "Escolha um adaptador para executar este agente.",
+    "scheduleEnabled": "A agenda está ativada e pode criar trabalho em segundo plano.",
+    "scheduleDisabled": "Nada é executado até você ativar a agenda — por padrão, ela custa zero tokens.",
+    "proposalPending": "Uma proposta de atualização de {{agent}} aguarda revisão.",
+    "resourceLabels": {
+      "routineLowercase": "rotina"
+    },
+    "resources": {
+      "reflectionCoachAgent": "Agente de reflexão",
+      "reflectionCoachSkill": "Agente de reflexão",
+      "reflectionCoachRoutine": "Revisar trajetórias recentes de agentes e propor melhorias de instruções",
+      "summarizerAgent": "Agente de resumos",
+      "summarizerSkill": "Resumir status",
+      "summarizerRoutine": "Atualizar espaços de resumo desatualizados"
+    },
+    "drift": {
+      "operatorModified": "Você editou este recurso. Suas alterações serão mantidas até você restaurar o padrão.",
+      "updateAvailable": "O Paperclip publicou um padrão mais recente.",
+      "missing": "Ainda não foi criado — recrie o recurso com o padrão publicado."
+    },
+    "actions": {
+      "working": "Processando…",
+      "cancel": "Cancelar",
+      "update": {
+        "title": "Atualizar {{label}} para o padrão mais recente?",
+        "body": "Você não editou este recurso, então o Paperclip vai substituí-lo pela versão publicada mais recente. Suas personalizações não serão afetadas, e as credenciais e configurações do adaptador não serão alteradas.",
+        "label": "Atualizar"
+      },
+      "reset": {
+        "title": "Restaurar {{label}} para o padrão publicado?",
+        "body": "Isso substitui sua versão editada pelo padrão atual do Paperclip. Não será possível recuperar suas edições. As credenciais e configurações do adaptador não serão alteradas.",
+        "confirm": "Restaurar {{label}}",
+        "label": "Restaurar"
+      },
+      "recreate": {
+        "title": "Recriar {{label}}?",
+        "body": "Este recurso está ausente. O Paperclip vai recriá-lo com o padrão publicado. As credenciais e configurações do adaptador não serão alteradas.",
+        "label": "Recriar"
+      }
+    },
+    "routineActions": {
+      "runOnce": {
+        "title": "Executar {{agent}} uma vez?",
+        "body": "O Paperclip criará uma tarefa de rotina agora. Isso não ativa a agenda semanal nem o trabalho em segundo plano.",
+        "label": "Executar uma vez"
+      },
+      "disableSchedule": {
+        "title": "Desativar a agenda?",
+        "body": "O Paperclip interromperá as próximas execuções agendadas de {{agent}}. A ação Executar uma vez continuará disponível.",
+        "label": "Desativar agenda"
+      },
+      "enableSchedule": {
+        "title": "Ativar a agenda?",
+        "body": "O Paperclip permitirá que {{agent}} crie tarefas de rotina nesta agenda. Essas tarefas podem consumir tokens.",
+        "label": "Ativar agenda"
+      }
+    },
+    "status": {
+      "ready": { "label": "Pronto", "title": "Criado e igual ao padrão publicado" },
+      "needs_setup": { "label": "Precisa de configuração", "title": "Presente, mas ainda não pode ser usado" },
+      "missing": { "label": "Ausente", "title": "O recurso esperado não existe; a reconciliação vai recriá-lo" },
+      "error": { "label": "Erro", "title": "Falha ao carregar ou reconciliar" },
+      "update_available": { "label": "Atualização disponível", "title": "Sem edições — um padrão publicado mais recente pode ser aplicado" },
+      "drifted": { "label": "Modificado", "title": "Você editou este recurso; suas alterações serão mantidas" },
+      "schedule_off": { "label": "Agenda desativada", "title": "Nenhum trabalho em segundo plano é executado até você ativar a agenda — sem custo de tokens" },
+      "schedule_on": { "label": "Agenda ativa", "title": "Executa conforme a agenda configurada" },
+      "pending_approval": { "label": "Aguardando aprovação", "title": "Aguardando aprovação do conselho antes de poder executar" },
+      "proposal_pending": { "label": "Proposta pendente", "title": "Uma proposta de atualização aguarda sua revisão" }
+    }
+  },
   "agentOverview": {
     "adapterDefault": "Padrão do adaptador",
     "identity": "Identidade",
@@ -8005,7 +8087,8 @@
       "advanced": {
         "hide": "Ocultar configurações avançadas da cópia",
         "show": "Mostrar configurações avançadas da cópia",
-        "implementationLabel": "Implementação gerenciada pelo host:"
+        "implementationLabel": "Implementação gerenciada pelo host:",
+        "implementationName": "Árvore de trabalho do Git (worktree)"
       },
       "fields": {
         "environment": "Ambiente",

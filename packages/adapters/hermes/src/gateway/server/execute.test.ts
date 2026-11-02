@@ -175,7 +175,9 @@ describe("execute", () => {
     expect(body.session_id).toBe("paperclip:company:company-1:agent:agent-1:issue:issue-1");
   });
 
-  it.each([false, true])("preserves chat handoff policy on gateway turns (resumed=%s)", async (resumed) => {
+  it.each([
+    [false, "en"], [true, "en"], [false, "pt-BR"], [true, "pt-BR"],
+  ] as const)("preserves chat handoff policy on gateway turns (resumed=%s, locale=%s)", async (resumed, locale) => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => new Response(JSON.stringify(
       String(input).endsWith("/v1/runs")
         ? { run_id: "run-hermes-1", status: "started" }
@@ -183,8 +185,17 @@ describe("execute", () => {
     ), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     const ctx = makeCtx({ apiBaseUrl: "http://127.0.0.1:8642", apiKey: "secret-key", timeoutSec: 5 });
-    ctx.config.payloadTemplate = { input: "Custom gateway instruction." };
-    const directive = "Chat directive: clarify goals and hand plans off to project tasks.";
+    ctx.config.payloadTemplate = { input: "Custom gateway instruction: preserve `response_mode=json`." };
+    const technicalMarkers = [
+      "`curl --fail --silent https://example.invalid/health`",
+      "`X-Trace-Mode: RAW`",
+      "`WAITING_FOR_REVIEW`",
+    ];
+    const directive = [
+      "Chat directive: clarify goals and hand plans off to project tasks.",
+      "Preserve these exact technical markers:",
+      ...technicalMarkers,
+    ].join(" ");
     ctx.context = {
       conversationMode: true,
       issueId: "issue-1",
@@ -195,7 +206,7 @@ describe("execute", () => {
         issue: { id: "issue-1", workMode: "planning", status: "in_progress" },
         interactionKind: "request_confirmation",
         interactionStatus: "accepted",
-        communicationLocale: "en",
+        communicationLocale: locale,
         simplifiedEnglishInteractions: true,
       },
     };
@@ -204,10 +215,18 @@ describe("execute", () => {
     const calls = fetchMock.mock.calls as Array<[RequestInfo | URL, RequestInit?]>;
     const call = calls.find(([input]) => String(input).endsWith("/v1/runs"));
     const prompt = JSON.parse(String(call?.[1]?.body)).input as string;
-    expect(prompt).toContain("Custom gateway instruction.");
+    expect(prompt).toContain("Custom gateway instruction: preserve `response_mode=json`.");
     expect(prompt).toContain(directive);
-    expect(prompt).toContain("Write human-facing replies, comments, questions, confirmations, and options in English.");
-    expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+    for (const marker of technicalMarkers) expect(prompt).toContain(marker);
+    expect(prompt).toContain(locale === "pt-BR"
+      ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+      : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+    if (locale === "pt-BR") {
+      expect(prompt).toContain("keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR)");
+      expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+    } else {
+      expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+    }
     expect(prompt).not.toContain("Execution contract:");
     expect(prompt).not.toContain("clear final disposition");
     expect(prompt).not.toContain("Create child issues");

@@ -1602,12 +1602,16 @@ describe("Secrets page layout", () => {
       (row) => row.textContent?.includes(definition.name),
     ) as HTMLElement | undefined;
     await act(async () => definitionRow?.click());
-    await waitForReact(() => document.body.querySelector('button[aria-label="Ações para Personal GitHub token"]') !== null);
+    await waitForReact(
+      () => document.body.querySelector('[role="dialog"] button[aria-label="Ações para Personal GitHub token"]') !== null,
+    );
 
     async function openMoreActions() {
-      const moreButton = document.body.querySelector<HTMLButtonElement>(
+      const detailSheet = document.body.querySelector('[role="dialog"]');
+      const moreButton = detailSheet?.querySelector<HTMLButtonElement>(
         'button[aria-label="Ações para Personal GitHub token"]',
       );
+      expect(moreButton).not.toBeNull();
       await act(async () => {
         moreButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
         moreButton?.click();

@@ -29,6 +29,7 @@ check-*.mjs
 !.github/scripts/tests/check-*.mjs
 !scripts/check-*.mjs
 !scripts/__tests__/check-localized-help.test.mjs
+!scripts/__tests__/check-localized-source-literals.test.mjs
 new-agent*.json
 newcompany.json
 seed-*.mjs

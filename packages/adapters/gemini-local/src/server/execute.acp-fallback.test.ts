@@ -71,7 +71,10 @@ vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
 });
 
 import { execute } from "./execute.js";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import {
+  createCommunicationLocalePromptFixture,
+  createPromptContextFixture,
+} from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
 
 function buildContext(config: Record<string, unknown> = {}) {
   return {
@@ -145,6 +148,65 @@ describe("gemini_local ACP startup fallback", () => {
           if (state === "missing") {
             expect(prompts[1]?.match(/Frozen Slack preferences\./g)).toHaveLength(1);
           }
+        }
+      } finally {
+        await rm(cwd, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it.each(["pt-BR", "en"] as const)(
+    "passes the resolved communication locale through the Gemini CLI prompt argument (%s)",
+    async (locale) => {
+      const cwd = await mkdtemp(path.join(tmpdir(), "gemini-locale-prompt-"));
+      const prompts: string[] = [];
+      const promptTemplate = "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.";
+      try {
+        runAdapterExecutionTargetProcess.mockReset().mockResolvedValue({
+          exitCode: 0, signal: null, timedOut: false,
+          stdout: JSON.stringify({
+            type: "message", role: "assistant", content: "done",
+          }),
+          stderr: "", pid: 123, startedAt: new Date().toISOString(),
+        });
+
+        for (const sessionId of [null, "gemini-session-existing"] as const) {
+          const ctx = buildContext({ engine: "cli", cwd, env: {}, promptTemplate });
+          await execute({
+            ...ctx,
+            runtime: { ...ctx.runtime, sessionId },
+            context: createCommunicationLocalePromptFixture(locale),
+            onMeta: async (meta) => { prompts.push(meta.prompt ?? ""); },
+          });
+
+          const invocation = (runAdapterExecutionTargetProcess.mock.calls as unknown[][]).at(-1);
+          const args = invocation?.[3] as string[] | undefined;
+          const prompt = prompts.at(-1) ?? "";
+          expect(args).toContain("--prompt");
+          expect(args?.at(-1)).toBe(prompt);
+          if (sessionId) expect(args).toContain(sessionId);
+        }
+
+        const languageDirective = locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+        expect(prompts).toHaveLength(2);
+        for (const prompt of prompts) {
+          expect(prompt).toContain("## Human communication language");
+          expect(prompt).toContain(languageDirective);
+          expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+          expect(prompt).toContain("`X-Trace-Mode: RAW`");
+          expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        }
+        expect(prompts[0]).toContain("Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.");
+        expect(prompts[0]).toContain("## Owned assignment");
+        expect(prompts[1]).toContain("## Compact assignment");
+        expect(prompts[1]).not.toContain("Configured agent instruction:");
+        if (locale === "pt-BR") {
+          expect(prompts[0]).toContain("Do not switch these interactions to English.");
+          expect(prompts[0]).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompts[0]).toContain("ASD-STE100 Simplified Technical English");
         }
       } finally {
         await rm(cwd, { recursive: true, force: true });

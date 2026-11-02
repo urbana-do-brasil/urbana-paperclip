@@ -260,6 +260,36 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
     options: commonClientOptions,
   },
+  "agent runtime-state": {
+    description: {
+      en: "Get agent runtime state",
+      "pt-BR": "Consultar o estado de runtime do agente",
+    },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
+  "agent runtime-state:reset-session": {
+    description: {
+      en: "Reset an agent runtime session",
+      "pt-BR": "Redefinir uma sessão de runtime do agente",
+    },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--task-key": {
+        en: "Specific task session key",
+        "pt-BR": "Chave específica da sessão da tarefa",
+      },
+    },
+  },
+  "agent task-sessions": {
+    description: {
+      en: "List agent task sessions",
+      "pt-BR": "Listar sessões de tarefas do agente",
+    },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
   "agent me": {
     description: {
       en: "Show the current agent identity",
@@ -287,6 +317,44 @@ const operationHelp: Record<string, CommandHelp> = {
         "pt-BR": "Status das tarefas separados por vírgulas",
       },
     },
+  },
+  "agent configuration": {
+    description: {
+      en: "Get redacted agent configuration",
+      "pt-BR": "Consultar a configuração do agente com segredos ocultos",
+    },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
+  "agent config-revisions": {
+    description: {
+      en: "List agent config revisions",
+      "pt-BR": "Listar revisões da configuração do agente",
+    },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: commonClientOptions,
+  },
+  "agent config-revision:get": {
+    description: {
+      en: "Get one agent config revision",
+      "pt-BR": "Consultar uma revisão da configuração do agente",
+    },
+    arguments: {
+      agentId: { en: "Agent ID", "pt-BR": "ID do agente" },
+      revisionId: { en: "Revision ID", "pt-BR": "ID da revisão" },
+    },
+    options: commonClientOptions,
+  },
+  "agent config-revision:rollback": {
+    description: {
+      en: "Roll an agent back to a config revision",
+      "pt-BR": "Restaurar a configuração do agente para uma revisão",
+    },
+    arguments: {
+      agentId: { en: "Agent ID", "pt-BR": "ID do agente" },
+      revisionId: { en: "Revision ID", "pt-BR": "ID da revisão" },
+    },
+    options: commonClientOptions,
   },
 };
 

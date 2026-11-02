@@ -86,3 +86,58 @@ test("coverage gate rejects the deliberately excluded MCP fixture guide", () => 
     assert.match(result.stderr, /outside the public help bundle/);
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });
+
+test("coverage gate rejects broken relative links and accepts local topic links", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-help-link-gate-"));
+  try {
+    const english = "docs/guides/example.md";
+    const portuguese = "docs/pt-BR/guides/example.md";
+    for (const file of [english, portuguese]) fs.mkdirSync(path.dirname(path.join(tmp, file)), { recursive: true });
+    fs.writeFileSync(path.join(tmp, english), "# English\n[valid topic](/guides/example#details)\n[missing](./missing.md)\n");
+    fs.writeFileSync(path.join(tmp, portuguese), "# Português\n[valid topic](/guides/example)\n");
+    const manifest = path.join(tmp, "topics.json");
+    fs.writeFileSync(manifest, JSON.stringify([{
+      slug: "guides/example",
+      group: "operator",
+      source: english,
+      portugueseSource: portuguese,
+    }]));
+
+    const check = () => spawnSync(process.execPath, [checker, "--manifest", manifest, "--root", tmp], { encoding: "utf8" });
+    const broken = check();
+    assert.equal(broken.status, 1);
+    assert.match(broken.stderr, /link to missing local file '\.\/missing\.md'/);
+
+    fs.writeFileSync(path.join(tmp, english), "# English\n[valid topic](/guides/example#details)\n");
+    const valid = check();
+    assert.equal(valid.status, 0, valid.stderr);
+    assert.match(valid.stdout, /1 topics with both source files/);
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+test("coverage gate checks reference-style local links", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-help-reference-link-gate-"));
+  try {
+    const english = "docs/guides/example.md";
+    const portuguese = "docs/pt-BR/guides/example.md";
+    for (const file of [english, portuguese]) fs.mkdirSync(path.dirname(path.join(tmp, file)), { recursive: true });
+    fs.writeFileSync(path.join(tmp, english), "# English\n[missing page][missing]\n\n[missing]: ./missing.md\n");
+    fs.writeFileSync(path.join(tmp, portuguese), "# Português\n[local page][guide]\n\n[guide]: /guides/example#details\n");
+    const manifest = path.join(tmp, "topics.json");
+    fs.writeFileSync(manifest, JSON.stringify([{
+      slug: "guides/example",
+      group: "operator",
+      source: english,
+      portugueseSource: portuguese,
+    }]));
+
+    const check = () => spawnSync(process.execPath, [checker, "--manifest", manifest, "--root", tmp], { encoding: "utf8" });
+    const broken = check();
+    assert.equal(broken.status, 1);
+    assert.match(broken.stderr, /link to missing local file '\.\/missing\.md'/);
+
+    fs.writeFileSync(path.join(tmp, english), "# English\n[local page][guide]\n\n[guide]: /guides/example\n");
+    const valid = check();
+    assert.equal(valid.status, 0, valid.stderr);
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});

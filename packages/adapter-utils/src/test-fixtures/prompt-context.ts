@@ -54,3 +54,25 @@ export function createPromptContextFixture() {
     },
   };
 }
+
+/** Credential-free wake fixture for adapter prompt-boundary locale tests. */
+export function createCommunicationLocalePromptFixture(locale: "pt-BR" | "en") {
+  const context = createPromptContextFixture();
+  const technicalAssignment = [
+    "Preserve exact technical markers:",
+    "`curl --fail --silent https://example.invalid/health`;",
+    "header `X-Trace-Mode: RAW`;",
+    "enum `WAITING_FOR_REVIEW`.",
+  ].join(" ");
+  return {
+    ...context,
+    paperclipTaskMarkdownAssignment: `## Owned assignment\n\n${technicalAssignment}`,
+    paperclipTaskMarkdownAssignmentCompact: `## Compact assignment\n\n${technicalAssignment}`,
+    paperclipTaskCommunicationGuidance: "Saved agent instruction: keep `handoff_mode=SAFE` unchanged.",
+    paperclipWake: {
+      ...context.paperclipWake,
+      communicationLocale: locale,
+      simplifiedEnglishInteractions: true,
+    },
+  };
+}

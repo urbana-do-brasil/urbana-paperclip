@@ -53,7 +53,10 @@ console.log("Fixture completed\\nsession_id: ${SESSION_ID}");
     await fs.rm(dir, { recursive: true, force: true });
   });
 
-  function context(overrides: Partial<AdapterExecutionContext> = {}): AdapterExecutionContext {
+  function context(
+    overrides: Partial<AdapterExecutionContext> = {},
+    locale: "pt-BR" | "en" = "en",
+  ): AdapterExecutionContext {
     return {
       runId: "run-fresh",
       agent: {
@@ -75,7 +78,7 @@ console.log("Fixture completed\\nsession_id: ${SESSION_ID}");
           comments: [{ id: "comment-synthetic", body: "Fresh human direction." }],
           commentWindow: { requestedCount: 1, includedCount: 1, missingCount: 0 },
           fallbackFetchNeeded: false,
-          communicationLocale: "en",
+          communicationLocale: locale,
           simplifiedEnglishInteractions: true,
         },
       },
@@ -92,8 +95,25 @@ console.log("Fixture completed\\nsession_id: ${SESSION_ID}");
     return invocation.args[invocation.args.indexOf("-q") + 1];
   }
 
-  it.each([false, true])("keeps instructions out of fresh and resumed user turns (conversation=%s)", async (conversationMode) => {
-    const fresh = context();
+  it.each([
+    [false, "en"], [true, "en"], [false, "pt-BR"], [true, "pt-BR"],
+  ] as const)("keeps the locale directive in fresh and resumed user turns (conversation=%s, locale=%s)", async (conversationMode, locale) => {
+    const fresh = context({}, locale);
+    const technicalMarkers = [
+      "`curl --fail --silent https://example.invalid/health`",
+      "`X-Trace-Mode: RAW`",
+      "`WAITING_FOR_REVIEW`",
+    ];
+    fresh.context.paperclipTaskMarkdownAssignment = [
+      "Complete current synthetic task.",
+      "Preserve these exact technical markers:",
+      ...technicalMarkers,
+    ].join(" ");
+    fresh.context.paperclipTaskMarkdownCompact = [
+      "Current synthetic task.",
+      "Preserve these exact technical markers:",
+      ...technicalMarkers,
+    ].join(" ");
     fresh.context.conversationMode = conversationMode;
     const first = await execute(fresh);
     const params = sessionCodec.deserialize(sessionCodec.serialize(first.sessionParams ?? null));
@@ -103,14 +123,23 @@ console.log("Fixture completed\\nsession_id: ${SESSION_ID}");
     const [initial, resumed] = await invocations();
     expect(initial.args).not.toContain("--resume");
     expect(resumed.args.slice(resumed.args.indexOf("--resume"))).toEqual(["--resume", SESSION_ID]);
+    const languageDirective = locale === "pt-BR"
+      ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+      : "Write human-facing replies, comments, questions, confirmations, and options in English.";
     for (const invocation of [initial, resumed]) {
       expect(invocation.systemPrompt).toContain(INSTRUCTIONS);
       expect(invocation.systemPrompt).toContain(`Resolve any relative file references from ${dir}/`);
       expect(query(invocation)).not.toContain(INSTRUCTIONS);
       expect(query(invocation)).not.toContain("Safe multiline update pattern:");
       expect(query(invocation)).toContain("Fresh human direction.");
-      expect(query(invocation)).toContain("Write human-facing replies, comments, questions, confirmations, and options in English.");
-      expect(query(invocation)).toContain("ASD-STE100 Simplified Technical English");
+      for (const marker of technicalMarkers) expect(query(invocation)).toContain(marker);
+      expect(query(invocation)).toContain(languageDirective);
+      if (locale === "pt-BR") {
+        expect(query(invocation)).toContain("keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR)");
+        expect(query(invocation)).not.toContain("ASD-STE100 Simplified Technical English");
+      } else {
+        expect(query(invocation)).toContain("ASD-STE100 Simplified Technical English");
+      }
       expect(query(invocation)).toContain(invocation.runId);
       expect(query(invocation)).toContain("company-synthetic");
       expect(invocation.systemPrompt).toContain("$PAPERCLIP_API_KEY");

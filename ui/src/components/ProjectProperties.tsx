@@ -869,7 +869,7 @@ export function ProjectProperties({ project, repositories, onUpdate, onFieldUpda
                     {executionWorkspaceAdvancedOpen ? (
                       <div className="space-y-3">
                         <div className="text-xs text-muted-foreground">
-                          {t("projectProperties.executionWorkspaces.advanced.implementationLabel")} <span className="text-foreground">Git worktree</span>
+                          {t("projectProperties.executionWorkspaces.advanced.implementationLabel")} <span className="text-foreground">{t("projectProperties.executionWorkspaces.advanced.implementationName")}</span>
                         </div>
                         {showExecutionWorkspaceEnvironmentControl ? (
                           <div>

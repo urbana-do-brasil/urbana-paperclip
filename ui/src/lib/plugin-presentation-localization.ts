@@ -34,7 +34,13 @@ export interface PluginUiContributionIdentity {
 
 export interface InstalledPluginBundleIdentity extends PluginBundleIdentity {
   id: string;
-  manifestJson: { id: string };
+  manifestJson: { id: string; displayName?: string | null };
+}
+
+export interface ManagedPluginAttributionIdentity {
+  pluginId: string;
+  pluginKey: string;
+  pluginDisplayName: string;
 }
 
 export interface PluginUiContributionPresentation {
@@ -70,6 +76,36 @@ export function isTrustedBundledPluginContribution(
     && installed.manifestJson.id === contribution.pluginKey
     && isBundledPluginRecord(installed, bundledPlugins),
   );
+}
+
+/**
+ * Resolve a managed resource's plugin label only when its attribution matches
+ * the installed manifest and that exact installed package matches the host's
+ * bundled catalog. Missing evidence, stale attribution, and external packages
+ * retain the display name carried by the resource API.
+ */
+export function localizeManagedPluginDisplayName(
+  attribution: ManagedPluginAttributionIdentity,
+  installedPlugins: readonly InstalledPluginBundleIdentity[] | undefined,
+  bundledPlugins: readonly AvailablePluginBundleIdentity[] | undefined,
+  t: TFunction,
+): string {
+  const installed = installedPlugins?.find((plugin) =>
+    plugin.id === attribution.pluginId
+    && plugin.pluginKey === attribution.pluginKey
+    && plugin.manifestJson.id === attribution.pluginKey
+    && plugin.manifestJson.displayName === attribution.pluginDisplayName,
+  );
+  if (!installed || !isBundledPluginRecord(installed, bundledPlugins)) {
+    return attribution.pluginDisplayName;
+  }
+  return localizePluginPresentation(
+    attribution.pluginKey,
+    attribution.pluginDisplayName,
+    "",
+    t,
+    true,
+  ).displayName;
 }
 
 /**

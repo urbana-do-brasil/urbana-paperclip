@@ -6,6 +6,7 @@ import {
   isBundledPluginRecord,
   localizePluginLocalFolderPresentation,
   localizePluginPresentation,
+  localizeManagedPluginDisplayName,
   localizePluginUiContributionPresentation,
   localizeSandboxProviderPresentation,
   isTrustedBundledPluginContribution,
@@ -162,6 +163,49 @@ describe("owned plugin presentation localization", () => {
     expect(isBundledPluginRecord(installed, bundled)).toBe(true);
     expect(isBundledPluginRecord({ ...installed, packagePath: "/custom/vendor-copy" }, bundled)).toBe(false);
     expect(isBundledPluginRecord({ ...installed, packageName: "vendor/workspace-diff" }, bundled)).toBe(false);
+  });
+
+  it("localizes managed-resource plugin attribution only with matching installed and bundled identity", async () => {
+    const attribution = {
+      pluginId: "plugin-workspace",
+      pluginKey: "paperclip.workspace-diff",
+      pluginDisplayName: "Workspace Changes",
+    };
+    const installed = [{
+      id: "plugin-workspace",
+      pluginKey: "paperclip.workspace-diff",
+      packageName: "@paperclipai/plugin-workspace-diff",
+      packagePath: "/app/packages/plugins/plugin-workspace-diff",
+      manifestJson: { id: "paperclip.workspace-diff", displayName: "Workspace Changes" },
+    }];
+    const bundled = [{
+      pluginKey: "paperclip.workspace-diff",
+      packageName: "@paperclipai/plugin-workspace-diff",
+      localPath: "/app/packages/plugins/plugin-workspace-diff",
+    }];
+
+    await i18n.changeLanguage("pt-BR");
+    expect(localizeManagedPluginDisplayName(attribution, installed, bundled, i18n.t))
+      .toBe("Alterações no workspace");
+
+    expect(localizeManagedPluginDisplayName(attribution, undefined, bundled, i18n.t))
+      .toBe("Workspace Changes");
+    expect(localizeManagedPluginDisplayName(attribution, installed, undefined, i18n.t))
+      .toBe("Workspace Changes");
+    expect(localizeManagedPluginDisplayName(attribution, [{
+      ...installed[0], id: "other-plugin",
+    }], bundled, i18n.t)).toBe("Workspace Changes");
+    expect(localizeManagedPluginDisplayName(attribution, [{
+      ...installed[0], manifestJson: { ...installed[0].manifestJson, displayName: "Stale name" },
+    }], bundled, i18n.t)).toBe("Workspace Changes");
+    expect(localizeManagedPluginDisplayName(attribution, [{
+      ...installed[0], packagePath: "/custom/vendor-copy",
+    }], bundled, i18n.t)).toBe("Workspace Changes");
+    expect(localizeManagedPluginDisplayName({
+      ...attribution,
+      pluginKey: "vendor.workspace-diff",
+      pluginDisplayName: "External Workspace Tool",
+    }, installed, bundled, i18n.t)).toBe("External Workspace Tool");
   });
 
   it("requires a UI contribution to match its installed record and exact bundled package", () => {

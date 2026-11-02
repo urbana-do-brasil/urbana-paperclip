@@ -132,6 +132,8 @@ type ManagedProject = {
 type ManagedRoutine = {
   status: string;
   routineId?: string | null;
+  pluginKey?: string | null;
+  resourceKind?: string | null;
   resourceKey?: string | null;
   missingRefs?: Array<{ pluginKey?: string; resourceKind: string; resourceKey: string }>;
   defaultDrift?: {
@@ -171,6 +173,8 @@ type ManagedRoutinesListItemWithDrift = ManagedRoutinesListItem & {
 type ManagedSkill = {
   status: string;
   skillId?: string | null;
+  pluginKey?: string | null;
+  resourceKind?: string | null;
   resourceKey?: string | null;
   defaultDrift?: { changedFiles: string[] } | null;
   skill?: {
@@ -409,7 +413,7 @@ function Badge({ children, tone = "default", style }: { children: ReactNode; ton
   );
 }
 
-function HiddenOpBadge() {
+function HiddenOpBadge({ locale }: { locale: WikiLocale }) {
   return (
     <span style={{
       display: "inline-flex",
@@ -422,7 +426,7 @@ function HiddenOpBadge() {
       background: tokens.hiddenOpBg,
       color: tokens.hiddenOpFg,
       border: `1px solid ${tokens.hiddenOpBorder}`,
-    }}>📖 wiki task</span>
+    }}>{wikiMessage(locale, "wikiTaskBadge")}</span>
   );
 }
 
@@ -625,12 +629,12 @@ function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
 
 type AutosaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
 
-function AutosaveStatusLabel({ status, error }: { status: AutosaveStatus; error: string | null }) {
-  if (status === "saving") return <Tiny>Saving…</Tiny>;
-  if (status === "saved") return <Tiny>Saved</Tiny>;
-  if (status === "dirty") return <Tiny>Unsaved changes</Tiny>;
-  if (status === "error") return <Tiny style={{ color: "oklch(0.7 0.2 25)" }}>{error ?? "Autosave failed"}</Tiny>;
-  return <Tiny>Autosave on</Tiny>;
+function AutosaveStatusLabel({ status, error, locale }: { status: AutosaveStatus; error: string | null; locale: WikiLocale }) {
+  if (status === "saving") return <Tiny>{wikiMessage(locale, "autosaveSaving")}</Tiny>;
+  if (status === "saved") return <Tiny>{wikiMessage(locale, "autosaveSaved")}</Tiny>;
+  if (status === "dirty") return <Tiny>{wikiMessage(locale, "autosaveUnsavedChanges")}</Tiny>;
+  if (status === "error") return <Tiny style={{ color: "oklch(0.7 0.2 25)" }}>{error ?? wikiMessage(locale, "autosaveFailed")}</Tiny>;
+  return <Tiny>{wikiMessage(locale, "autosaveOn")}</Tiny>;
 }
 
 function AutosaveMarkdownEditor({
@@ -638,6 +642,7 @@ function AutosaveMarkdownEditor({
   placeholder,
   minHeight,
   resetKey,
+  locale,
   onSave,
   onStatusChange,
 }: {
@@ -645,6 +650,7 @@ function AutosaveMarkdownEditor({
   placeholder?: string;
   minHeight?: number;
   resetKey: string;
+  locale: WikiLocale;
   onSave: (value: string) => Promise<void>;
   onStatusChange?: (status: AutosaveStatus) => void;
 }) {
@@ -699,7 +705,7 @@ function AutosaveMarkdownEditor({
           min-height: ${minHeight ?? 260}px;
         }
       `}</style>
-      <AutosaveStatusLabel status={status} error={error} />
+      <AutosaveStatusLabel status={status} error={error} locale={locale} />
     </div>
   );
 }
@@ -3441,6 +3447,7 @@ function PageDetail({ context, path, spaceSlug, locale }: { context: { companyId
             key={`${path}:${hash}`}
             resetKey={`${path}:${hash}`}
             value={contents}
+            locale={locale}
             placeholder={wikiMessage(locale, "editPagePlaceholder", { path })}
             minHeight={isMobile ? 260 : 420}
             onSave={async (nextContents) => {
@@ -4622,37 +4629,37 @@ function QueryTab({ context, locale, overview }: { context: { companyId: string 
 // Lint tab.
 // ---------------------------------------------------------------------------
 
-function LintTab({ context, overview, refreshOverview }: { context: { companyId: string | null }; overview: OverviewData; refreshOverview: () => void }) {
+function LintTab({ context, overview, refreshOverview, locale }: { context: { companyId: string | null }; overview: OverviewData; refreshOverview: () => void; locale: WikiLocale }) {
   const isMobile = useIsMobileLayout();
   return (
     <div style={{ flex: 1, minHeight: isMobile ? "auto" : 0, overflow: isMobile ? "visible" : "auto", padding: isMobile ? "16px" : "24px 28px", display: "grid", gap: isMobile ? 14 : 18, minWidth: 0 }}>
-      <LintPanelContent context={context} overview={overview} refreshOverview={refreshOverview} />
+      <LintPanelContent context={context} overview={overview} refreshOverview={refreshOverview} locale={locale} />
     </div>
   );
 }
 
-function SettingsLintPanel({ context }: { context: { companyId: string | null } }) {
+function SettingsLintPanel({ context, locale }: { context: { companyId: string | null }; locale: WikiLocale }) {
   const overview = useOverview(context.companyId);
 
   if (overview.error) {
-    return <SettingsPanel title="Lint" badge={<HiddenOpBadge />} description="Run structural checks for orphan pages, missing backlinks, and stale provenance.">
-      <Callout tone="danger">LLM Wiki bridge error: {overview.error.message}</Callout>
+    return <SettingsPanel title={wikiMessage(locale, "settingsLint")} badge={<HiddenOpBadge locale={locale} />} description={wikiMessage(locale, "lintPanelDescription")}>
+      <Callout tone="danger">{wikiMessage(locale, "bridgeError", { message: overview.error.message })}</Callout>
     </SettingsPanel>;
   }
 
   if (!overview.data) {
-    return <SettingsPanel title="Lint" badge={<HiddenOpBadge />} description="Run structural checks for orphan pages, missing backlinks, and stale provenance.">
-      <Tiny>Loading lint controls…</Tiny>
+    return <SettingsPanel title={wikiMessage(locale, "settingsLint")} badge={<HiddenOpBadge locale={locale} />} description={wikiMessage(locale, "lintPanelDescription")}>
+      <Tiny>{wikiMessage(locale, "lintLoading")}</Tiny>
     </SettingsPanel>;
   }
 
   return (
     <SettingsPanel
-      title="Lint"
-      badge={<HiddenOpBadge />}
-      description="Run structural checks for orphan pages, missing backlinks, and stale provenance."
+      title={wikiMessage(locale, "settingsLint")}
+      badge={<HiddenOpBadge locale={locale} />}
+      description={wikiMessage(locale, "lintPanelDescription")}
     >
-      <LintPanelContent context={context} overview={overview.data} refreshOverview={overview.refresh} showHeading={false} />
+      <LintPanelContent context={context} overview={overview.data} refreshOverview={overview.refresh} locale={locale} showHeading={false} />
     </SettingsPanel>
   );
 }
@@ -4661,11 +4668,13 @@ function LintPanelContent({
   context,
   overview,
   refreshOverview,
+  locale,
   showHeading = true,
 }: {
   context: { companyId: string | null };
   overview: OverviewData;
   refreshOverview: () => void;
+  locale: WikiLocale;
   showHeading?: boolean;
 }) {
   const create = usePluginAction("create-operation");
@@ -4687,11 +4696,11 @@ function LintPanelContent({
         title: `Run LLM Wiki lint · ${activeSpaceSlug}`,
         prompt: overview.prompts.lint,
       });
-      toast({ tone: "success", title: "Lint queued", body: "Lint runs as a Wiki Maintainer task. Findings will appear here once the run completes." });
+      toast({ tone: "success", title: wikiMessage(locale, "lintQueued"), body: wikiMessage(locale, "lintQueuedBody") });
       operations.refresh();
       refreshOverview();
     } catch (err) {
-      toast({ tone: "error", title: "Could not run lint", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "lintCouldNotRun"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -4705,23 +4714,23 @@ function LintPanelContent({
   return (
     <div style={{ display: "grid", gap: isMobile ? 14 : 18, minWidth: 0 }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        {showHeading ? <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Lint</h2> : null}
-        <Badge style={unfilledSurfaceStyle}>{recent.length} run{recent.length === 1 ? "" : "s"}</Badge>
-        <Button variant="primary" size="sm" onClick={runLint} loading={busy} style={{ marginLeft: isMobile ? 0 : "auto" }}>▶ Run lint now</Button>
+        {showHeading ? <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{wikiMessage(locale, "settingsLint")}</h2> : null}
+        <Badge style={unfilledSurfaceStyle}>{wikiMessage(locale, recent.length === 1 ? "lintRunCountOne" : "lintRunCountMany", { count: new Intl.NumberFormat(locale).format(recent.length) })}</Badge>
+        <Button variant="primary" size="sm" onClick={runLint} loading={busy} style={{ marginLeft: isMobile ? 0 : "auto" }}>{wikiMessage(locale, "lintRunNow")}</Button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-        <StatCard label="Findings" value={String(counts.total)} hint={latestDone ? `last run ${formatTime(latestDone.createdAt)}` : "no runs yet"} />
-        <StatCard label="Critical" value={String(counts.critical)} hint="contradictions / conflict" tone={counts.critical > 0 ? "danger" : undefined} />
-        <StatCard label="Orphans" value={String(counts.orphan)} hint="no inbound backlinks" />
-        <StatCard label="Stale" value={String(counts.stale)} hint="provenance > 30d" />
-        <StatCard label="Index drift" value={String(counts.index)} hint="wiki/index.md / wiki/log.md" />
+        <StatCard label={wikiMessage(locale, "lintFindings")} value={new Intl.NumberFormat(locale).format(counts.total)} hint={latestDone ? wikiMessage(locale, "lintLastRun", { time: formatWikiRelativeTime(latestDone.createdAt, locale) }) : wikiMessage(locale, "lintNoRunsYet")} />
+        <StatCard label={wikiMessage(locale, "lintCritical")} value={new Intl.NumberFormat(locale).format(counts.critical)} hint={wikiMessage(locale, "lintContradictionsConflict")} tone={counts.critical > 0 ? "danger" : undefined} />
+        <StatCard label={wikiMessage(locale, "lintOrphans")} value={new Intl.NumberFormat(locale).format(counts.orphan)} hint={wikiMessage(locale, "lintNoInboundBacklinks")} />
+        <StatCard label={wikiMessage(locale, "lintStale")} value={new Intl.NumberFormat(locale).format(counts.stale)} hint={wikiMessage(locale, "lintProvenanceOver30Days")} />
+        <StatCard label={wikiMessage(locale, "lintIndexDrift")} value={new Intl.NumberFormat(locale).format(counts.index)} hint={wikiMessage(locale, "lintIndexPaths")} />
       </div>
       <Card style={unfilledSurfaceStyle}>
-        <CardHeader title="Findings" badges={<HiddenOpBadge />} right={<Tiny>Lint runs as a Wiki Maintainer task. Critical findings can optionally open visible follow-up issues — toggle in Settings → Lint policy.</Tiny>} />
+        <CardHeader title={wikiMessage(locale, "lintFindings")} badges={<HiddenOpBadge locale={locale} />} right={<Tiny>{wikiMessage(locale, "lintTaskDescription")}</Tiny>} />
         <CardBody padding={0}>
           {findings.length === 0 ? (
             <div style={{ padding: 16, color: tokens.muted, fontSize: 13 }}>
-              {latestDone ? "Latest lint run reported no findings." : "No completed lint runs yet. Use ▶ Run lint now to start one."}
+              {latestDone ? wikiMessage(locale, "lintLatestNoFindings") : wikiMessage(locale, "lintNoCompletedRuns")}
             </div>
           ) : findings.map((f, idx) => {
             const severityTone: Tone = f.severity === "critical" ? "failed" : f.severity === "orphan" ? "paused" : "default";
@@ -4731,7 +4740,7 @@ function LintPanelContent({
                 primary={
                   <span>
                     <Badge tone={severityTone} style={severityTone === "default" ? unfilledSurfaceStyle : undefined}>
-                      {String(f.severity ?? "info")}
+                      {lintSeverityLabel(locale, String(f.severity ?? "info"))}
                     </Badge>
                     <span style={{ marginLeft: 8 }}>{String(f.message ?? f.title ?? "(no description)")}</span>
                   </span>
@@ -4743,20 +4752,46 @@ function LintPanelContent({
         </CardBody>
       </Card>
       <Card style={unfilledSurfaceStyle}>
-        <CardHeader title="Recent lint runs" />
+        <CardHeader title={wikiMessage(locale, "lintRecentRuns")} />
         <CardBody padding={0}>
-          {recent.length === 0 ? <div style={{ padding: 12, color: tokens.muted, fontSize: 13 }}>No lint runs yet.</div> : recent.map((op) => (
+          {recent.length === 0 ? <div style={{ padding: 12, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "lintNoRuns")}</div> : recent.map((op) => (
             <Row
               key={op.id}
-              primary={<><Mono>op-{op.id.slice(0, 6)}</Mono> {op.hiddenIssueTitle ?? "Wiki lint"}</>}
-              secondary={formatTime(op.createdAt)}
-              right={<Badge tone={statusTone(op.status)}>{op.status}</Badge>}
+              primary={<><Mono>op-{op.id.slice(0, 6)}</Mono> {op.hiddenIssueTitle ?? wikiMessage(locale, "lintOperationFallback")}</>}
+              secondary={formatWikiRelativeTime(op.createdAt, locale)}
+              right={<Badge tone={statusTone(op.status)}>{lintOperationStatusLabel(locale, op.status)}</Badge>}
             />
           ))}
         </CardBody>
       </Card>
     </div>
   );
+}
+
+function lintSeverityLabel(locale: WikiLocale, severity: string): string {
+  const messageKey: Partial<Record<string, WikiMessageKey>> = {
+    critical: "lintSeverityCritical",
+    orphan: "lintSeverityOrphan",
+    stale: "lintSeverityStale",
+    info: "lintSeverityInfo",
+  };
+  const key = messageKey[severity];
+  return key ? wikiMessage(locale, key) : severity;
+}
+
+function lintOperationStatusLabel(locale: WikiLocale, status: string): string {
+  const messageKey: Partial<Record<string, WikiMessageKey>> = {
+    todo: "lintStatusTodo",
+    queued: "lintStatusQueued",
+    in_progress: "lintStatusInProgress",
+    running: "lintStatusRunning",
+    blocked: "lintStatusBlocked",
+    failed: "lintStatusFailed",
+    paused: "lintStatusPaused",
+    done: "lintStatusDone",
+  };
+  const key = messageKey[status];
+  return key ? wikiMessage(locale, key) : status;
 }
 
 function StatCard({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "danger" | "warn" }) {
@@ -4810,24 +4845,38 @@ function runStatusTone(status: string): Tone {
   return "default";
 }
 
-function runStatusLabel(status: string): string {
+function runStatusLabel(locale: WikiLocale, status: string): string {
   switch (status) {
     case "review_required":
-      return "review required";
+      return wikiMessage(locale, "reviewRequired");
     case "refused_cost_cap":
-      return "cost capped";
+      return wikiMessage(locale, "costCapped");
     case "source_ready":
-      return "source ready";
+      return wikiMessage(locale, "sourceReady");
+    case "running":
+      return wikiMessage(locale, "runStatusRunning");
+    case "succeeded":
+    case "completed":
+    case "done":
+      return wikiMessage(locale, "runStatusSucceeded");
+    case "failed":
+    case "error":
+      return wikiMessage(locale, "runStatusFailed");
+    case "queued":
+      return wikiMessage(locale, "runStatusQueued");
+    case "paused":
+      return wikiMessage(locale, "runStatusPaused");
+    case "blocked":
+      return wikiMessage(locale, "runStatusBlocked");
+    case "todo":
+      return wikiMessage(locale, "runStatusTodo");
     default:
       return status.replace(/_/g, " ");
   }
 }
 
 function wikiRunStatusLabel(locale: WikiLocale, status: string): string {
-  if (status === "review_required") return wikiMessage(locale, "reviewRequired");
-  if (status === "refused_cost_cap") return wikiMessage(locale, "costCapped");
-  if (status === "source_ready") return wikiMessage(locale, "sourceReady");
-  return runStatusLabel(status);
+  return runStatusLabel(locale, status);
 }
 
 function HistoryTab({ context, locale, overview }: { context: { companyId: string | null; companyPrefix?: string | null }; locale: WikiLocale; overview: OverviewData }) {
@@ -4873,24 +4922,27 @@ function SettingsTab({ context, locale, initialSection = "root" }: { context: { 
   );
 }
 
-const ROUTINE_FALLBACKS: Record<string, { title: string; cron: string }> = {
-  "cursor-window-processing": { title: "Process LLM Wiki updates", cron: "0 */6 * * *" },
-  "nightly-wiki-lint": { title: "Run LLM Wiki lint", cron: "0 3 * * *" },
-  "index-refresh": { title: "Refresh LLM Wiki index", cron: "0 * * * *" },
+const ROUTINE_FALLBACKS: Record<string, { sourceTitle: string; titleKey: WikiMessageKey; cron: string }> = {
+  "cursor-window-processing": { sourceTitle: "Process LLM Wiki updates", titleKey: "setupRoutineCursorWindowTitle", cron: "0 */6 * * *" },
+  "nightly-wiki-lint": { sourceTitle: "Run LLM Wiki lint", titleKey: "setupRoutineNightlyLintTitle", cron: "0 3 * * *" },
+  "index-refresh": { sourceTitle: "Refresh LLM Wiki index", titleKey: "setupRoutineIndexRefreshTitle", cron: "0 * * * *" },
 };
 
-const MANAGED_SKILL_LABELS: Record<string, string> = {
-  "wiki-maintainer": "LLM Wiki Maintainer",
-  "wiki-ingest": "Wiki Ingest",
-  "wiki-query": "Wiki Query",
-  "wiki-lint": "Wiki Lint",
-  "paperclip-distill": "Paperclip Distill",
-  "index-refresh": "Index Refresh",
+const MANAGED_SKILL_LABELS: Record<string, { sourceName: string; messageKey: WikiMessageKey }> = {
+  "wiki-maintainer": { sourceName: "LLM Wiki Maintainer", messageKey: "setupSkillWikiMaintainerName" },
+  "wiki-ingest": { sourceName: "Wiki Ingest", messageKey: "setupSkillIngestName" },
+  "wiki-query": { sourceName: "Wiki Query", messageKey: "setupSkillQueryName" },
+  "wiki-lint": { sourceName: "Wiki Lint", messageKey: "setupSkillLintName" },
+  "paperclip-distill": { sourceName: "Paperclip Distill", messageKey: "setupSkillPaperclipDistillName" },
+  "index-refresh": { sourceName: "Index Refresh", messageKey: "setupSkillIndexRefreshName" },
 };
 
 function routineFallbackFor(routine: ManagedRoutine, locale: WikiLocale) {
-  const key = routine.resourceKey?.split(":").pop() ?? "";
-  return ROUTINE_FALLBACKS[key] ?? { title: routine.resourceKey ?? wikiMessage(locale, "setupManagedRoutineLabel"), cron: "—" };
+  const key = routineResourceKey(routine);
+  const fallback = key ? ROUTINE_FALLBACKS[key] : undefined;
+  return key && fallback
+    ? { title: routineDisplayTitle(routine, key, locale), cron: fallback.cron }
+    : { title: routine.routine?.title ?? routine.details?.title ?? routine.resourceKey ?? wikiMessage(locale, "setupManagedRoutineLabel"), cron: "—" };
 }
 
 function managedRoutineStatus(routine: ManagedRoutine) {
@@ -4904,7 +4956,25 @@ type RoutineHealthItem = {
 };
 
 function routineResourceKey(routine: ManagedRoutine) {
-  return routine.resourceKey?.split(":").pop() ?? "";
+  if (routine.pluginKey !== PLUGIN_ID || routine.resourceKind !== "routine") return null;
+  const resourceKey = routine.resourceKey ?? "";
+  const ownedKey = Object.keys(ROUTINE_FALLBACKS).find((key) =>
+    resourceKey === key
+    || resourceKey === `plugin:${PLUGIN_ID}:${key}`
+    || resourceKey === `${PLUGIN_ID}:routine:${key}`,
+  );
+  return ownedKey ?? null;
+}
+
+function routineDisplayTitle(routine: ManagedRoutine | undefined, key: string, locale: WikiLocale) {
+  const fallback = ROUTINE_FALLBACKS[key];
+  if (!fallback) return routine?.routine?.title ?? routine?.details?.title ?? routine?.resourceKey ?? wikiMessage(locale, "setupManagedRoutineLabel");
+  const currentTitle = routine?.routine?.title ?? routine?.details?.title;
+  const isOwnedResource = !routine || routineResourceKey(routine) === key;
+  if (!isOwnedResource) return currentTitle ?? routine?.resourceKey ?? wikiMessage(locale, "setupManagedRoutineLabel");
+  return currentTitle && currentTitle !== fallback.sourceTitle
+    ? currentTitle
+    : wikiMessage(locale, fallback.titleKey);
 }
 
 function managedAgentIsReady(resource: ManagedAgent) {
@@ -4919,17 +4989,24 @@ function managedSkillIsReady(resource: ManagedSkill) {
   return resource.status !== "missing" && Boolean(resource.skillId);
 }
 
-function managedResourceKey(resourceKey?: string | null) {
-  return resourceKey?.split(":").pop() ?? "";
-}
-
 function skillLabel(resource: ManagedSkill, locale: WikiLocale) {
-  const declaredLabel = MANAGED_SKILL_LABELS[managedResourceKey(resource.resourceKey)];
-  return declaredLabel ?? resource.details?.name ?? resource.skill?.name ?? wikiMessage(locale, "setupManagedSkillLabel");
+  const currentName = resource.details?.name ?? resource.skill?.name;
+  const declaredLabel = MANAGED_SKILL_LABELS[resource.resourceKey ?? ""];
+  const isOwnedSkill = resource.pluginKey === PLUGIN_ID && resource.resourceKind === "skill";
+  if (isOwnedSkill && declaredLabel && (!currentName || currentName === declaredLabel.sourceName)) {
+    return wikiMessage(locale, declaredLabel.messageKey);
+  }
+  return currentName ?? wikiMessage(locale, "setupManagedSkillLabel");
 }
 
 function buildAgentHealthItems(managedAgent: ManagedAgent, locale: WikiLocale): RoutineHealthItem[] {
-  const agentName = managedAgent.details?.name ?? "Wiki Maintainer";
+  const sourceName = "Wiki Maintainer";
+  const currentName = managedAgent.details?.name;
+  const isOwnedMaintainer = managedAgent.source === "managed"
+    && managedAgent.resourceKey === `${PLUGIN_ID}:agent:wiki-maintainer`;
+  const agentName = isOwnedMaintainer && (!currentName || currentName === sourceName)
+    ? wikiMessage(locale, "setupWikiMaintainerName")
+    : currentName ?? wikiMessage(locale, "setupManagedAgentLabel");
   return [{
     label: agentName,
     ok: managedAgentIsReady(managedAgent) && !managedAgent.defaultDrift?.changedFiles.length,
@@ -4942,7 +5019,13 @@ function buildAgentHealthItems(managedAgent: ManagedAgent, locale: WikiLocale): 
 }
 
 function buildProjectHealthItems(managedProject: ManagedProject, locale: WikiLocale): RoutineHealthItem[] {
-  const projectName = managedProject.details?.name ?? "LLM Wiki";
+  const sourceName = "LLM Wiki";
+  const currentName = managedProject.details?.name;
+  const isOwnedProject = managedProject.source === "managed"
+    && managedProject.resourceKey === `${PLUGIN_ID}:project:llm-wiki`;
+  const projectName = isOwnedProject && (!currentName || currentName === sourceName)
+    ? wikiMessage(locale, "setupLLMWikiProjectName")
+    : currentName ?? wikiMessage(locale, "setupManagedProjectLabel");
   return [{
     label: projectName,
     ok: managedProjectIsReady(managedProject),
@@ -4977,13 +5060,18 @@ function buildRoutineHealthItems(
   managedProject: ManagedProject,
   locale: WikiLocale,
 ): RoutineHealthItem[] {
-  const routineByKey = new Map(routines.map((routine) => [routineResourceKey(routine), routine]));
+  const routineByKey = new Map<string, ManagedRoutine>();
+  for (const routine of routines) {
+    const key = routineResourceKey(routine);
+    if (key) routineByKey.set(key, routine);
+  }
   const expectedAgentId = managedAgent.source === "managed" ? managedAgent.agentId ?? null : null;
   const expectedProjectId = managedProject.source === "managed" ? managedProject.projectId ?? null : null;
   const items: RoutineHealthItem[] = [];
 
   for (const [key, fallback] of Object.entries(ROUTINE_FALLBACKS)) {
     const routine = routineByKey.get(key);
+    const fallbackTitle = routineDisplayTitle(routine, key, locale);
     const routineAgentId = routine?.routine?.assigneeAgentId ?? null;
     const routineProjectId = routine?.routine?.projectId ?? null;
     const missingRefs = routine?.missingRefs ?? [];
@@ -4994,22 +5082,22 @@ function buildRoutineHealthItems(
     const missingProject = Boolean(expectedProjectId && !routineProjectId);
     const blockedByManagedResources = !expectedAgentId || !expectedProjectId;
     const ok = Boolean(routine && !missing && missingRefs.length === 0 && !wrongAgent && !wrongProject && !missingAgent && !missingProject && !blockedByManagedResources);
-    let detail = wikiMessage(locale, "setupRoutineHealthy", { routine: fallback.title });
+    let detail = wikiMessage(locale, "setupRoutineHealthy", { routine: fallbackTitle });
     if (missing) {
-      detail = wikiMessage(locale, "setupRoutineMissing", { routine: fallback.title });
+      detail = wikiMessage(locale, "setupRoutineMissing", { routine: fallbackTitle });
     } else if (missingRefs.length > 0) {
       detail = wikiMessage(locale, "setupRoutineUnresolved", {
-        routine: fallback.title,
+        routine: fallbackTitle,
         refs: missingRefs.map((ref) => `${ref.resourceKind}:${ref.resourceKey}`).join(", "),
       });
     } else if (blockedByManagedResources) {
-      detail = wikiMessage(locale, "setupRoutineBlocked", { routine: fallback.title });
+      detail = wikiMessage(locale, "setupRoutineBlocked", { routine: fallbackTitle });
     } else if (wrongAgent || missingAgent) {
-      detail = wikiMessage(locale, "setupRoutineWrongAgent", { routine: fallback.title });
+      detail = wikiMessage(locale, "setupRoutineWrongAgent", { routine: fallbackTitle });
     } else if (wrongProject || missingProject) {
-      detail = wikiMessage(locale, "setupRoutineWrongProject", { routine: fallback.title });
+      detail = wikiMessage(locale, "setupRoutineWrongProject", { routine: fallbackTitle });
     }
-    items.push({ label: fallback.title, ok, detail });
+    items.push({ label: fallbackTitle, ok, detail });
   }
 
   return items;
@@ -5429,18 +5517,41 @@ function FolderHealthChecklist({ folder, locale }: { folder: FolderStatus; local
 type MaintainerAgentOption = SettingsData["agentOptions"][number];
 type ProjectOption = SettingsData["projectOptions"][number];
 
-function agentStatusLabel(status?: string | null) {
-  if (!status) return "unknown";
-  return status.replace(/_/g, " ");
+function managedStatusLabel(locale: WikiLocale, status?: string | null) {
+  if (!status) return wikiMessage(locale, "setupStatusUnknown");
+  const messageKey: Partial<Record<string, WikiMessageKey>> = {
+    unknown: "setupStatusUnknown",
+    idle: "setupStatusIdle",
+    active: "setupStatusActive",
+    paused: "setupStatusPaused",
+    pending_approval: "setupStatusPendingApproval",
+    running: "setupStatusRunning",
+    in_progress: "setupStatusInProgress",
+    blocked: "setupStatusBlocked",
+    done: "setupStatusDone",
+    completed: "setupStatusDone",
+    failed: "setupStatusFailed",
+    error: "setupStatusError",
+    created: "setupStatusCreated",
+    resolved: "setupStatusResolved",
+    missing: "setupStatusMissing",
+    missing_refs: "setupStatusMissingRefs",
+    archived: "setupStatusArchived",
+  };
+  const key = messageKey[status];
+  return key ? wikiMessage(locale, key) : status.replace(/_/g, " ");
 }
 
-function projectStatusLabel(status?: string | null) {
-  if (!status) return "unknown";
-  return status.replace(/_/g, " ");
+function agentStatusLabel(locale: WikiLocale, status?: string | null) {
+  return managedStatusLabel(locale, status);
 }
 
-function adapterTypeLabel(adapterType?: string | null) {
-  if (!adapterType) return "unknown adapter";
+function projectStatusLabel(locale: WikiLocale, status?: string | null) {
+  return managedStatusLabel(locale, status);
+}
+
+function adapterTypeLabel(adapterType: string | null | undefined, locale: WikiLocale) {
+  if (!adapterType) return wikiMessage(locale, "setupUnknownAdapter");
   return adapterType.replace(/_/g, " ");
 }
 
@@ -5473,7 +5584,7 @@ function AgentAvatar({ agent, size = 30 }: { agent: Pick<MaintainerAgentOption, 
   );
 }
 
-function AgentOptionLabel({ agent, muted = false }: { agent: MaintainerAgentOption; muted?: boolean }) {
+function AgentOptionLabel({ agent, locale, muted = false }: { agent: MaintainerAgentOption; locale: WikiLocale; muted?: boolean }) {
   return (
     <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
       <AgentAvatar agent={agent} />
@@ -5482,7 +5593,7 @@ function AgentOptionLabel({ agent, muted = false }: { agent: MaintainerAgentOpti
           {agent.name}
         </span>
         <span style={{ fontSize: 11, color: tokens.muted, textTransform: "capitalize" }}>
-          {agentStatusLabel(agent.status)} · {adapterTypeLabel(agent.adapterType)}
+          {agentStatusLabel(locale, agent.status)} · {adapterTypeLabel(agent.adapterType, locale)}
         </span>
       </span>
     </span>
@@ -5491,9 +5602,11 @@ function AgentOptionLabel({ agent, muted = false }: { agent: MaintainerAgentOpti
 
 function MaintainerAgentLink({
   agent,
+  locale,
   hrefProps,
 }: {
   agent: MaintainerAgentOption;
+  locale: WikiLocale;
   hrefProps?: Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "style">;
 }) {
   return (
@@ -5511,10 +5624,10 @@ function MaintainerAgentLink({
       <AgentAvatar agent={agent} />
       <span style={{ display: "grid", gap: 1, minWidth: 0, textAlign: "left" }}>
         <span style={{ fontSize: 13, fontWeight: 650, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          Resolve agent wiki maintainer
+          {wikiMessage(locale, "setupResolveAgentLabel")}
         </span>
         <span style={{ fontSize: 11, color: tokens.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {agent.name} · {agentStatusLabel(agent.status)} · {adapterTypeLabel(agent.adapterType)}
+          {agent.name} · {agentStatusLabel(locale, agent.status)} · {adapterTypeLabel(agent.adapterType, locale)}
         </span>
       </span>
     </a>
@@ -5545,6 +5658,10 @@ function DistillationSettingsPanel({ context, settings, locale }: { context: { c
   const counts = data?.counts ?? { cursors: 0, runningRuns: 0, failedRuns24h: 0, reviewRequired: 0 };
   const isConfigured = cursors.length > 0;
   const autoApplyRestriction = settings.distillationPolicy?.autoApplyRestriction ?? null;
+  const publicDeploymentRestriction = autoApplyRestriction === wikiMessage("en", "distillationPublicDeploymentRestriction")
+    && settings.distillationPolicy?.autoApplyAllowed === false
+    && settings.distillationPolicy.deploymentMode === "authenticated"
+    && settings.distillationPolicy.deploymentExposure === "public";
 
   const projectsCovered = useMemo(() => {
     const set = new Set<string>();
@@ -5700,7 +5817,7 @@ function DistillationSettingsPanel({ context, settings, locale }: { context: { c
     <div style={{ display: "grid", gap: 16, minWidth: 0 }}>
       {autoApplyRestriction ? (
         <Callout tone="warn">
-          {autoApplyRestriction} {wikiMessage(locale, "distillationAutoApplyRestrictionSuffix")}
+          {publicDeploymentRestriction ? wikiMessage(locale, "distillationPublicDeploymentRestriction") : autoApplyRestriction} {wikiMessage(locale, "distillationAutoApplyRestrictionSuffix")}
         </Callout>
       ) : null}
       <Callout>
@@ -5775,7 +5892,7 @@ function DistillationSettingsPanel({ context, settings, locale }: { context: { c
             <SettingField label={wikiMessage(locale, "distillationAssignedMaintainer")} hint={wikiMessage(locale, "distillationAssignedMaintainerHelp")}>
               <div style={{ minHeight: 34, display: "flex", alignItems: "center", border: `1px solid ${tokens.border}`, borderRadius: 6, padding: "6px 10px", fontSize: 13 }}>
                 {settings.managedAgent.details
-                  ? `${settings.managedAgent.details.name} · ${adapterTypeLabel(settings.managedAgent.details.adapterType)}`
+                  ? `${settings.managedAgent.details.name} · ${adapterTypeLabel(settings.managedAgent.details.adapterType, locale)}`
                   : wikiMessage(locale, "distillationNoMaintainer")}
               </div>
             </SettingField>
@@ -6001,7 +6118,7 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
   const projectFallbackOption: ProjectOption | null = data.managedProject.projectId
     ? {
         id: data.managedProject.projectId,
-        name: data.managedProject.details?.name ?? "Current project",
+        name: data.managedProject.details?.name ?? wikiMessage(locale, "setupCurrentProject"),
         status: data.managedProject.details?.status ?? data.managedProject.status,
         color: data.managedProject.details?.color ?? null,
       }
@@ -6014,13 +6131,16 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
   const currentEventPolicy = eventPolicy ?? data.eventIngestion;
   const managedRoutineItems: ManagedRoutinesListItemWithDrift[] = managedRoutines.map((routine) => {
     const fallback = routineFallbackFor(routine, locale);
+    const ownedRoutineKey = routineResourceKey(routine);
     const key = routine.resourceKey ?? routine.routineId ?? fallback.title;
     const status = managedRoutineStatus(routine);
     const assigneeAgentId = routine.routine?.assigneeAgentId ?? routine.details?.assigneeAgentId ?? null;
 
     return {
       key,
-      title: routine.routine?.title ?? routine.details?.title ?? fallback.title,
+      title: ownedRoutineKey
+        ? routineDisplayTitle(routine, ownedRoutineKey, locale)
+        : routine.routine?.title ?? routine.details?.title ?? fallback.title,
       status: status === "missing" || status === "missing_refs" ? "paused" : status,
       routineId: routine.routineId ?? routine.routine?.id ?? null,
       href: routine.routineId ? `/routines/${routine.routineId}` : null,
@@ -6102,10 +6222,10 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
     try {
       const next = await updateEventIngestion({ companyId: context.companyId, ...eventPolicy }) as EventIngestionSettings;
       setEventPolicy(next);
-      toast({ tone: "success", title: "Event ingestion controls saved" });
+      toast({ tone: "success", title: wikiMessage(locale, "eventIngestionSaved") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Could not save event controls", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "eventIngestionSaveFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setEventPolicyBusy(false);
     }
@@ -6414,7 +6534,7 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                     />
                   </fieldset>
                   <Tiny>
-                    {wikiMessage(locale, "setupAdapterPrefix")} {adapterTypeLabel(currentMaintainerAgent?.adapterType ?? data.managedAgent.details?.adapterType ?? null)}
+                    {wikiMessage(locale, "setupAdapterPrefix")} {adapterTypeLabel(currentMaintainerAgent?.adapterType ?? data.managedAgent.details?.adapterType ?? null, locale)}
                   </Tiny>
                   {maintainerPendingApproval ? (
                     <Callout tone="warn">
@@ -6520,7 +6640,7 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                     />
                   </fieldset>
                   <Tiny>
-                    {wikiMessage(locale, "setupStatusPrefix")} {projectStatusLabel(currentProjectOption?.status ?? data.managedProject.details?.status ?? data.managedProject.status)}
+                    {wikiMessage(locale, "setupStatusPrefix")} {projectStatusLabel(locale, currentProjectOption?.status ?? data.managedProject.details?.status ?? data.managedProject.status)}
                   </Tiny>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Button size="sm" variant="primary" onClick={chooseProject} loading={projectBusy} disabled={!effectiveSelectedProjectId}>{wikiMessage(locale, "setupSaveProject")}</Button>
@@ -6595,7 +6715,7 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
             <DistillationSettingsPanel context={context} settings={data} locale={locale} />
           </SettingsPanel>
         ) : activeSettingsSection === "routines" ? (
-          <SettingsPanel title={settingsSectionLabel(locale, "routines")} description={activeSettingsConfig.description}>
+          <SettingsPanel title={settingsSectionLabel(locale, "routines")} description={settingsSectionDescription(locale, activeSettingsConfig.key)}>
           <div style={{ display: "grid", gap: 12 }}>
             {routineDefaultDriftItems.length > 0 ? (
               <Callout tone="warn">
@@ -6652,17 +6772,17 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
           </div>
           </SettingsPanel>
         ) : activeSettingsSection === "lint" ? (
-          <SettingsLintPanel context={context} />
+          <SettingsLintPanel context={context} locale={locale} />
         ) : activeSettingsSection === "spaces" ? (
           <SpacesSettingsPanel context={context} locale={locale} description={settingsSectionDescription(locale, "spaces")} />
         ) : activeSettingsSection === "events" ? (
           <SettingsPanel
-            title="Paperclip event ingestion"
-            badge={<Badge tone={currentEventPolicy.enabled ? "running" : "default"}>{currentEventPolicy.enabled ? "enabled" : "off by default"}</Badge>}
-            description={activeSettingsConfig.description}
+            title={wikiMessage(locale, "eventIngestionTitle")}
+            badge={<Badge tone={currentEventPolicy.enabled ? "running" : "default"}>{wikiMessage(locale, currentEventPolicy.enabled ? "eventIngestionEnabled" : "eventIngestionOffByDefault")}</Badge>}
+            description={settingsSectionDescription(locale, activeSettingsConfig.key)}
           >
           <Tiny style={{ marginBottom: 10 }}>
-            Company-scoped Paperclip events can advance default-space cursors. Enable only the first-party text sources this wiki should observe for default-space distillation.
+            {wikiMessage(locale, "eventIngestionDescription")}
           </Tiny>
           <div style={{ display: "grid", gap: 10 }}>
             <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
@@ -6671,13 +6791,13 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                 checked={currentEventPolicy.enabled}
                 onChange={(event) => setEventPolicy({ ...currentEventPolicy, enabled: event.currentTarget.checked })}
               />
-              Enable event ingestion for this company
+              {wikiMessage(locale, "eventIngestionEnableForCompany")}
             </label>
             <div style={{ display: "grid", gap: 8, paddingLeft: isMobile ? 0 : 22 }}>
               {([
-                ["issues", "Issues", "Capture issue title and description when issue events fire."],
-                ["comments", "Comments", "Capture comment body when comment-created events fire."],
-                ["documents", "Documents", "Capture document body when document-created or document-updated events fire."],
+                ["issues", "eventIngestionIssues", "eventIngestionIssuesHelp"],
+                ["comments", "eventIngestionComments", "eventIngestionCommentsHelp"],
+                ["documents", "eventIngestionDocuments", "eventIngestionDocumentsHelp"],
               ] as const).map(([key, label, help]) => (
                 <label key={key} style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 8, rowGap: 2, alignItems: "start", fontSize: 13 }}>
                   <input
@@ -6689,14 +6809,14 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
                     })}
                   />
                   <span>
-                    {label}
-                    <Tiny style={{ display: "block" }}>{help}</Tiny>
+                    {wikiMessage(locale, label)}
+                    <Tiny style={{ display: "block" }}>{wikiMessage(locale, help)}</Tiny>
                   </span>
                 </label>
               ))}
             </div>
             <div style={{ display: "grid", gap: 6, maxWidth: isMobile ? "none" : 220 }}>
-              <label style={{ fontSize: 12, color: tokens.muted }}>Max characters per captured event</label>
+              <label style={{ fontSize: 12, color: tokens.muted }}>{wikiMessage(locale, "eventIngestionMaxCharacters")}</label>
               <TextInput
                 value={String(currentEventPolicy.maxCharacters)}
                 onChange={(event) => {
@@ -6706,11 +6826,11 @@ function SettingsBody({ context, locale, initialSection = "root" }: { context: {
               />
             </div>
             <Callout tone="warn">
-              Event ingestion records selected Paperclip issue, comment, and document activity for the default wiki space. Assets/attachments and work products are excluded here: Phase 5 allows metadata-only references later, not blob reads or linked-content fetches. It never reads across companies or creates non-default space cursors.
+              {wikiMessage(locale, "eventIngestionPolicyWarning")}
             </Callout>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <Button size="sm" variant="primary" onClick={saveEventPolicy} loading={eventPolicyBusy}>Save controls</Button>
-              <Button size="sm" variant="ghost" onClick={() => setEventPolicy(data.eventIngestion)}>Revert</Button>
+              <Button size="sm" variant="primary" onClick={saveEventPolicy} loading={eventPolicyBusy}>{wikiMessage(locale, "eventIngestionSave")}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setEventPolicy(data.eventIngestion)}>{wikiMessage(locale, "eventIngestionRevert")}</Button>
             </div>
           </div>
           </SettingsPanel>

@@ -1362,6 +1362,8 @@ Duplicate headings receive stable suffixes.
     mockSettingsManagedRoutines = [{
       status: "resolved",
       routineId: "routine-1",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      resourceKind: "routine",
       resourceKey: "nightly-wiki-lint",
       routine: {
         id: "routine-1",
@@ -1441,6 +1443,8 @@ Duplicate headings receive stable suffixes.
     mockSettingsManagedRoutines = [{
       status: "resolved",
       routineId: "routine-1",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      resourceKind: "routine",
       resourceKey: "nightly-wiki-lint",
       routine: {
         id: "routine-1",

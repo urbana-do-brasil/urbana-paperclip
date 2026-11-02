@@ -232,6 +232,7 @@ export function CompanySettings() {
             <input
               className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
               type="text"
+              aria-label={t("companySettings.organizationName")}
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
             />
@@ -248,6 +249,7 @@ export function CompanySettings() {
             <input
               className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
               type="text"
+              aria-label={t("companySettings.description")}
               value={description}
               placeholder={t("companySettings.descriptionPlaceholder")}
               onChange={(e) => setDescription(e.target.value)}
@@ -279,6 +281,7 @@ export function CompanySettings() {
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                    aria-label={t("companySettings.logo")}
                     onChange={handleLogoFileChange}
                     className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none file:mr-4 file:rounded-md file:border-0 file:bg-muted file:px-2.5 file:py-1 file:text-xs"
                   />

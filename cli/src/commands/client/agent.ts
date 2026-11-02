@@ -508,6 +508,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/configuration`);
+          if (!ctx.json) console.log(cliMessage("agentConfigurationOutput"));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -524,6 +525,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/config-revisions`);
+          if (!ctx.json) console.log(cliMessage("agentConfigRevisionsOutput"));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -541,6 +543,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/config-revisions/${revisionId}`);
+          if (!ctx.json) console.log(cliMessage("agentConfigRevisionOutput"));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -558,6 +561,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.post(apiPath`/api/agents/${agentId}/config-revisions/${revisionId}/rollback`, {});
+          if (!ctx.json) console.log(`${cliMessage("agentConfigRevisionRollbackOutput")} ${revisionId}.`);
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -574,6 +578,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/runtime-state`);
+          if (!ctx.json) console.log(cliMessage("agentRuntimeStateOutput"));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -592,6 +597,7 @@ export function registerAgentCommands(program: Command): void {
           const ctx = resolveCommandContext(opts);
           const payload = resetAgentSessionSchema.parse({ taskKey: opts.taskKey });
           const result = await ctx.api.post(apiPath`/api/agents/${agentId}/runtime-state/reset-session`, payload);
+          if (!ctx.json) console.log(adminOperationMessage("agentRuntimeSessionResetDone", { agentId }));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -608,6 +614,13 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/task-sessions`);
+          if (!ctx.json) {
+            console.log(cliMessage("agentTaskSessionsOutput"));
+            if (Array.isArray(result) && result.length === 0) {
+              console.log(cliMessage("emptyList"));
+              return;
+            }
+          }
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -897,7 +910,7 @@ export function registerAgentCommands(program: Command): void {
             }
           }
           console.log("");
-          console.log("# Run this in your shell before launching codex/claude:");
+          console.log(cliMessage("agentLocalCliShellInstruction"));
           console.log(exportsText);
         } catch (err) {
           handleCommandError(err);

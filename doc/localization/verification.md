@@ -3486,3 +3486,20 @@ Checkpoint: **318/337 tarefas**.
 - `agent update`/`delete`: 36/36 testes da suíte de agentes e typecheck estrito direcionado passaram. `--json` sem `--yes` mantém stderr original e exit code, sem requisição.
 
 Checkpoint: **321/340 tarefas**.
+
+### Configurações da Wiki, recursos gerenciados e CLI — 3.11f3d/h5–h7 e 4.3p/q
+
+- Lint, ingestão de eventos, autosave e fallbacks completaram as seções ativas de configurações da Wiki: 151/151 testes, typecheck e build; nomes default de recursos gerenciados verificados com valores editados e colisões externas em 155/155 testes. A homologação integrada em navegador permanece em 7.3.
+- Bundles gerenciados e atribuições em projetos/rotinas: 26/26 e 25/25 testes, typecheck UI e token gates; tradução exige identidade comprovada e mantém valores externos/customizados. Outras superfícies host permanecem pendentes em 3.11h.
+- Configuração/revisões e runtime/sessões de agentes na CLI: 4/4 e 56/56 testes. Typecheck completo CLI passou na rodada inicial de 4.3p; o typecheck direcionado de 4.3q passou e a execução integral posterior terminou com exit 137. A formatação humana anterior e o JSON foram preservados.
+- Auditoria 3.8: 285/285 testes UI e 97/97 MCP em PostgreSQL descartável sem skips. O seletor intermitente de Secrets foi restrito ao Sheet. A matriz visual e de teclado ainda está em execução. O ledger 3.10 foi reconciliado com f5/g e flags, sem alegar homologação visual.
+
+Checkpoint provisório: **328/346 tarefas**.
+
+### Browser administrativo, adapters e gate de localização — 3.8g, 6.2d e 7.1a
+
+- Browser: 8/8 combinações PT-BR/en × claro/escuro × desktop/mobile, com aprovações, membros, acesso negado, segredos sintéticos, configurações, teclado e overflow. As APIs funcionais são simuladas. Após corrigir shutdown da fixture, um cenário novo passou 1/1 sem gerar diretórios residuais. Oito diretórios antigos em `/tmp` permaneceram após rejeição automática do comando de remoção.
+- Adapters: 9 suítes de carriers 138/138; seis suítes de integração PostgreSQL efêmero 87/87 sem skips. Em lote ampliado, 494/495 passaram sob concorrência; o timeout pré-existente passou em repetição isolada junto a ACPX (9/9). Typechecks de adapter-utils/11 adapters e do teste HTTP direcionado passaram; typecheck integral do servidor terminou com SIGKILL/137. Compatibilidade remota e respostas reais não foram qualificadas.
+- Gate: `PAPERCLIP_LOCALIZATION_BASE=origin/master pnpm check:localization` passou, com 68 tópicos, 493 fontes alteradas, 11 testes Node e 127 Vitest. Links por referência e placeholder curto têm regressões. O scanner é heurístico/incremental, contrato JSON é representativo, âncoras não são verificadas e CI remota ainda não foi executada; 7.1 segue aberta.
+
+Checkpoint: **331/349 tarefas**.

@@ -20,6 +20,7 @@ import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useToastActions } from "../context/ToastContext";
 import { useStreamlinedUiEnabled } from "../hooks/useStreamlinedUiEnabled";
+import { useManagedPluginDisplayName } from "../hooks/useManagedPluginDisplayName";
 import { queryKeys } from "../lib/queryKeys";
 import { copyTextToClipboard } from "../lib/clipboard";
 import { routineOverviewCopyText } from "../lib/routine-description-copy";
@@ -172,6 +173,7 @@ export function RoutineDetail() {
     queryFn: () => routinesApi.get(routineId!),
     enabled: !!routineId,
   });
+  const managedPluginDisplayName = useManagedPluginDisplayName(routine?.managedByPlugin);
   const activeIssueId = routine?.activeIssue?.id;
   const { data: liveRuns } = useQuery({
     queryKey: queryKeys.issues.liveRuns(activeIssueId!),
@@ -816,7 +818,7 @@ export function RoutineDetail() {
             {routine.managedByPlugin ? (
               <Badge variant="outline" className="hidden shrink-0 gap-1.5 text-xs text-muted-foreground sm:inline-flex">
                 <Sparkles className="h-3 w-3" />
-                {routine.managedByPlugin.pluginDisplayName}
+                {managedPluginDisplayName ?? routine.managedByPlugin.pluginDisplayName}
                 <span className="font-mono text-(length:--text-nano)">{routine.managedByPlugin.resourceKey}</span>
               </Badge>
             ) : null}

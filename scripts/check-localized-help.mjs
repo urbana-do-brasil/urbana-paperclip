@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Coverage gate for the public help map. Fallback keeps the UI usable but never
-// makes a missing Portuguese guide pass this check. CI integration belongs to
-// OpenSpec task 7.1, once all currently pending guides have been translated.
+// makes a missing Portuguese guide or broken local link pass this check.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,6 +40,7 @@ try {
   if (!Array.isArray(manifest)) throw new Error("Manifest must be an array");
   const selected = group ? manifest.filter((topic) => topic.group === group) : manifest;
   if (!selected.length) throw new Error(`No topics found${group ? ` for group ${group}` : ""}`);
+  const publicSlugs = new Set(manifest.map((topic) => topic?.slug).filter((slug) => typeof slug === "string"));
   const seen = new Set();
   const errors = [];
   for (const topic of selected) {
@@ -64,6 +64,11 @@ try {
       }
       if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
         errors.push(`${topic.slug}: missing ${label} guide`);
+        continue;
+      }
+      for (const href of markdownLinkTargets(fs.readFileSync(file, "utf8"))) {
+        const problem = resolveLocalHelpLink(href, file, contentRoot, publicSlugs);
+        if (problem) errors.push(`${topic.slug}: ${label} guide has ${problem}`);
       }
     }
   }
@@ -105,4 +110,68 @@ function assertBundlePatternsMatch(contentPath) {
   if (JSON.stringify(actualPatterns) !== JSON.stringify(publicHelpGlobPatterns)) {
     throw new Error("Public help bundle patterns changed; update the localized-help coverage gate to match ui/src/help/content.ts");
   }
+}
+
+function markdownLinkTargets(markdown) {
+  const withoutFences = markdown.replace(/^\s{0,3}(```+|~~~+)[^\n]*\n[\s\S]*?^\s{0,3}\1\s*$/gm, "");
+  const withoutInlineCode = withoutFences.replace(/(`+)[^`]*?\1/g, "");
+  const links = [];
+  for (const match of withoutInlineCode.matchAll(/!?\[[^\]]*\]\(\s*(?:<([^>]+)>|([^\s)]+))(?:\s+["'][^)]*["'])?\s*\)/g)) {
+    links.push((match[1] ?? match[2] ?? "").trim());
+  }
+
+  const definitions = new Map();
+  const definitionPattern = /^[ \t]{0,3}\[([^\]]+)\]:[ \t]*(?:<([^>\n]+)>|(\S+))(?:[ \t]+(?:"[^"]*"|'[^']*'|\([^)]*\)))?[ \t]*$/gm;
+  const withoutDefinitions = withoutInlineCode.replace(definitionPattern, (_line, label, angleTarget, plainTarget) => {
+    definitions.set(normalizeReferenceLabel(label), (angleTarget ?? plainTarget ?? "").trim());
+    return "";
+  });
+  for (const match of withoutDefinitions.matchAll(/!?\[([^\]]*)\](?:\[([^\]]*)\])?/g)) {
+    // Inline links were already collected above. Their link text can otherwise
+    // look like a shortcut reference when a definition has the same label.
+    const afterLinkText = (match.index ?? 0) + match[0].length;
+    if (withoutDefinitions[afterLinkText] === "(") continue;
+    const label = normalizeReferenceLabel(match[2] || match[1] || "");
+    const target = definitions.get(label);
+    if (target) links.push(target);
+  }
+  return links;
+}
+
+function normalizeReferenceLabel(label) {
+  return label.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+}
+
+function resolveLocalHelpLink(href, sourceFile, contentRoot, publicSlugs) {
+  if (!href || href.startsWith("#") || href.startsWith("//") || /^[a-z][a-z0-9+.-]*:/i.test(href)) return undefined;
+  if (href.startsWith("/")) {
+    let slug;
+    try {
+      slug = decodeURIComponent(href).slice(1).split(/[?#]/)[0];
+    } catch {
+      return `a malformed local link '${href}'`;
+    }
+    slug = path.posix.normalize(slug).replace(/^\.\//, "").replace(/\.md$/i, "").replace(/\/$/, "");
+    if (!slug || !publicSlugs.has(slug)) return `a link to missing public help topic '${href}'`;
+    return undefined;
+  }
+
+  let relativePath;
+  try {
+    relativePath = decodeURIComponent(href.split(/[?#]/)[0]);
+  } catch {
+    return `a malformed local link '${href}'`;
+  }
+  if (!relativePath) return undefined;
+  const target = path.resolve(path.dirname(sourceFile), relativePath);
+  if (target !== contentRoot && !target.startsWith(`${contentRoot}${path.sep}`)) {
+    return `a link outside the repository '${href}'`;
+  }
+  const candidates = path.extname(target)
+    ? [target]
+    : [target, `${target}.md`, path.join(target, "index.md")];
+  if (!candidates.some((candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile())) {
+    return `a link to missing local file '${href}'`;
+  }
+  return undefined;
 }

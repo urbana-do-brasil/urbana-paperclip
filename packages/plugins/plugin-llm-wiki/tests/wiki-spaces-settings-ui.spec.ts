@@ -51,6 +51,7 @@ let actionErrors: Record<string, string>;
 let actionResults: Record<string, unknown>;
 let ingestionProfile: Record<string, unknown> | null;
 let overviewFolderOverride: Record<string, unknown> | null;
+let operationsData: unknown;
 let distillationOverviewData: unknown;
 let distillationOverviewLoading: boolean;
 let distillationOverviewError: { message: string } | null;
@@ -126,17 +127,20 @@ function dataResult<T>(data: T) {
 }
 
 function settingsData() {
-  const routines = [
-    "cursor-window-processing",
-    "nightly-wiki-lint",
-    "index-refresh",
-  ].map((key) => ({
+  const routineDeclarations: Array<[string, string]> = [
+    ["cursor-window-processing", "Process LLM Wiki updates"],
+    ["nightly-wiki-lint", "Run LLM Wiki lint"],
+    ["index-refresh", "Refresh LLM Wiki index"],
+  ];
+  const routines = routineDeclarations.map(([key, title]) => ({
     status: "resolved",
     routineId: `routine-${key}`,
-    resourceKey: `plugin:paperclipai.plugin-llm-wiki:${key}`,
+    pluginKey: "paperclipai.plugin-llm-wiki",
+    resourceKind: "routine",
+    resourceKey: key,
     routine: {
       id: `routine-${key}`,
-      title: key,
+      title,
       status: "active",
       assigneeAgentId: "agent-1",
       projectId: "project-1",
@@ -150,15 +154,17 @@ function settingsData() {
       status: "resolved",
       source: "managed",
       agentId: "agent-1",
+      resourceKey: "paperclipai.plugin-llm-wiki:agent:wiki-maintainer",
       details: { name: "Wiki Maintainer", status: "idle", adapterType: "claude_local", icon: "book-open" },
     },
     managedProject: {
       status: "resolved",
       source: "managed",
       projectId: "project-1",
+      resourceKey: "paperclipai.plugin-llm-wiki:project:llm-wiki",
       details: { name: "LLM Wiki", status: "active" },
     },
-    managedSkills: [{ status: "resolved", skillId: "skill-1", resourceKey: "wiki-maintainer", details: { name: "LLM Wiki Maintainer" } }],
+    managedSkills: [{ status: "resolved", skillId: "skill-1", pluginKey: "paperclipai.plugin-llm-wiki", resourceKind: "skill", resourceKey: "wiki-maintainer", details: { name: "LLM Wiki Maintainer" } }],
     managedRoutines: routines,
     eventIngestion: {
       enabled: false,
@@ -204,8 +210,9 @@ function findButton(label: string, scope: ParentNode = container): HTMLButtonEle
   return button as HTMLButtonElement;
 }
 
-function setInputValue(input: HTMLInputElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+function setInputValue(input: HTMLInputElement | HTMLTextAreaElement, value: string) {
+  const prototype = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
   if (!setter) throw new Error("Input value setter is unavailable in this test environment.");
   setter.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -222,6 +229,7 @@ beforeEach(() => {
   actionResults = {};
   ingestionProfile = null;
   overviewFolderOverride = null;
+  operationsData = { operations: [] };
   distillationOverviewData = {
     cursors: [],
     runs: [],
@@ -264,6 +272,11 @@ beforeEach(() => {
         },
         props.value === "project-2" ? "Research Project" : (props.placeholder ?? "Project"),
       ),
+      MarkdownEditor: (props: { value: string; onChange: (value: string) => void }) => createElement("textarea", {
+        value: props.value,
+        onChange: (event: { currentTarget: { value: string } }) => props.onChange(event.currentTarget.value),
+      }),
+      MarkdownBlock: (props: { content: string }) => createElement("div", null, props.content),
       ManagedRoutinesList: (props: {
         routines: Array<{
           key: string;
@@ -301,6 +314,7 @@ beforeEach(() => {
             "div",
             { key: routine.key },
             createElement("span", null, routine.title),
+            createElement("span", null, routine.resourceKey ?? ""),
             createElement("button", { type: "button", onClick: () => props.onRunNow?.(routine) }, "Run now"),
             createElement("button", { type: "button", onClick: () => props.onToggleEnabled?.(routine, routine.status === "active") }, "Pause routine"),
             createElement("button", { type: "button", onClick: () => props.onReset?.(routine) }, "Reset routine"),
@@ -325,7 +339,22 @@ beforeEach(() => {
           });
         }
         if (key === "settings") return dataResult({ ...settingsData(), ...settingsOverrides });
+        if (key === "operations") return dataResult(operationsData);
         if (key === "spaces") return dataResult({ spaces: [defaultSpace, engineeringSpace] });
+        if (key === "page-content") {
+          const path = typeof params?.path === "string" ? params.path : "wiki/concepts/knowledge.md";
+          return dataResult({
+            wikiId: "default",
+            path,
+            contents: "# Wiki page\n\nOriginal wiki page content.",
+            title: "Wiki page",
+            pageType: "concept",
+            backlinks: [],
+            sourceRefs: [],
+            updatedAt: null,
+            hash: "page-hash",
+          });
+        }
         if (key === "space") {
           const spaceSlug = typeof params?.spaceSlug === "string" ? params.spaceSlug : "default";
           return dataResult(folderStatusFor(spaceSlug));
@@ -542,8 +571,9 @@ describe("LLM Wiki spaces settings localization", () => {
       projects: "Projetos gerenciados",
       routines: "Rotinas gerenciadas",
       pending: "O Wiki Maintainer está aguardando aprovação.",
-      skillMissing: "LLM Wiki Maintainer não está instalada na biblioteca de skills da empresa.",
-      routineMissingRef: "A rotina “Run LLM Wiki lint” não consegue resolver agent:wiki-maintainer.",
+      agentLabel: "Responsável pelo Wiki",
+      skillMissing: "Responsável pelo LLM Wiki não está instalada na biblioteca de skills da empresa.",
+      routineMissingRef: "A rotina “Executar verificação do LLM Wiki” não consegue resolver agent:wiki-maintainer.",
       noEnglishUi: ["Managed Agents", "Managed Skills", "Managed Projects", "Managed Routines", "Re-sync skills"],
     },
     {
@@ -553,6 +583,7 @@ describe("LLM Wiki spaces settings localization", () => {
       projects: "Managed Projects",
       routines: "Managed Routines",
       pending: "The Wiki Maintainer is pending approval.",
+      agentLabel: "Wiki Maintainer",
       skillMissing: "LLM Wiki Maintainer is not installed in the company skill library.",
       routineMissingRef: "Run LLM Wiki lint cannot resolve agent:wiki-maintainer.",
       noEnglishUi: [],
@@ -564,6 +595,7 @@ describe("LLM Wiki spaces settings localization", () => {
         status: "resolved",
         source: "managed",
         agentId: "agent-1",
+        resourceKey: "paperclipai.plugin-llm-wiki:agent:wiki-maintainer",
         defaultDrift: { entryFile: "AGENTS.md", changedFiles: ["AGENTS.md"] },
         details: { name: "Wiki Maintainer", status: "pending_approval", adapterType: "claude_local", icon: "book-open" },
       },
@@ -576,13 +608,17 @@ describe("LLM Wiki spaces settings localization", () => {
       managedSkills: [{
         status: "missing",
         skillId: null,
+        pluginKey: "paperclipai.plugin-llm-wiki",
+        resourceKind: "skill",
         resourceKey: "wiki-maintainer",
         details: { name: "LLM Wiki Maintainer", key: "wiki-maintainer", description: null },
       }],
       managedRoutines: [{
         status: "missing_refs",
         routineId: "routine-nightly",
-        resourceKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+        pluginKey: "paperclipai.plugin-llm-wiki",
+        resourceKind: "routine",
+        resourceKey: "nightly-wiki-lint",
         routine: {
           id: "routine-nightly",
           title: "Run LLM Wiki lint",
@@ -602,16 +638,141 @@ describe("LLM Wiki spaces settings localization", () => {
     expect(container.textContent).toContain(copy.projects);
     expect(container.textContent).toContain(copy.routines);
     expect(container.textContent).toContain(copy.pending);
+    expect(container.textContent).toContain(copy.agentLabel);
     expect(container.textContent).toContain(copy.skillMissing);
     expect(container.textContent).toContain(copy.routineMissingRef);
     expect(container.textContent).toContain("Research Project");
     expect(container.textContent).toContain("Wiki Maintainer");
-    expect(container.textContent).toContain("LLM Wiki Maintainer");
     expect(container.textContent).toContain("AGENTS.md");
-    expect(container.textContent).toContain("Run LLM Wiki lint");
     for (const originalUiCopy of copy.noEnglishUi) expect(container.textContent).not.toContain(originalUiCopy);
     expect(container.textContent).toContain("agent:wiki-maintainer");
     expect(container.textContent).toContain("claude local");
+  });
+
+  it("preserves operator names and external metadata when displaying managed resource titles", () => {
+    pathname = "/PAP/wiki/settings";
+    settingsOverrides = {
+      managedAgent: {
+        status: "resolved",
+        source: "managed",
+        agentId: "agent-1",
+        resourceKey: "paperclipai.plugin-llm-wiki:agent:wiki-maintainer",
+        details: { name: "My Wiki Steward", status: "idle", adapterType: "claude_local" },
+      },
+      managedProject: {
+        status: "resolved",
+        source: "managed",
+        projectId: "project-1",
+        resourceKey: "paperclipai.plugin-llm-wiki:project:llm-wiki",
+        details: { name: "Team Research Hub", status: "active" },
+      },
+      managedSkills: [
+        {
+          status: "resolved",
+          skillId: "skill-custom",
+          pluginKey: "paperclipai.plugin-llm-wiki",
+          resourceKind: "skill",
+          resourceKey: "wiki-lint",
+          details: { name: "Editorial Review", key: "wiki-lint", description: null },
+        },
+        {
+          status: "resolved",
+          skillId: "skill-external",
+          pluginKey: "org.example.external",
+          resourceKind: "skill",
+          resourceKey: "wiki-query",
+          details: { name: "Wiki Query", key: "wiki-query", description: null },
+        },
+      ],
+      managedRoutines: [
+        {
+          status: "resolved",
+          routineId: "routine-custom",
+          pluginKey: "paperclipai.plugin-llm-wiki",
+          resourceKind: "routine",
+          resourceKey: "nightly-wiki-lint",
+          routine: {
+            id: "routine-custom",
+            title: "Nightly editorial review",
+            status: "active",
+            assigneeAgentId: "agent-1",
+            projectId: "project-1",
+          },
+        },
+      ],
+    };
+    renderWiki("pt-BR");
+
+    expect(container.textContent).toContain("My Wiki Steward");
+    expect(container.textContent).toContain("Team Research Hub");
+    expect(container.textContent).toContain("Editorial Review");
+    expect(container.textContent).toContain("Wiki Query");
+    expect(container.textContent).toContain("Nightly editorial review");
+    expect(container.textContent).not.toContain("Verificação do Wiki");
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      agent: "Responsável pelo Wiki",
+      skills: ["Responsável pelo LLM Wiki", "Ingestão do Wiki", "Consulta do Wiki", "Verificação do Wiki", "Destilação do Paperclip", "Atualização do índice"],
+      routines: ["Processar atualizações do LLM Wiki", "Executar verificação do LLM Wiki", "Atualizar índice do LLM Wiki"],
+    },
+    {
+      locale: "en" as const,
+      agent: "Wiki Maintainer",
+      skills: ["LLM Wiki Maintainer", "Wiki Ingest", "Wiki Query", "Wiki Lint", "Paperclip Distill", "Index Refresh"],
+      routines: ["Process LLM Wiki updates", "Run LLM Wiki lint", "Refresh LLM Wiki index"],
+    },
+  ])("localizes exact default managed-resource names in $locale", (copy) => {
+    pathname = "/PAP/wiki/settings";
+    const managedSkillNames: Array<[string, string]> = [
+      ["wiki-maintainer", "LLM Wiki Maintainer"],
+      ["wiki-ingest", "Wiki Ingest"],
+      ["wiki-query", "Wiki Query"],
+      ["wiki-lint", "Wiki Lint"],
+      ["paperclip-distill", "Paperclip Distill"],
+      ["index-refresh", "Index Refresh"],
+    ];
+    settingsOverrides = {
+      managedSkills: managedSkillNames.map(([resourceKey, name]) => ({
+        status: "resolved",
+        skillId: `skill-${resourceKey}`,
+        pluginKey: "paperclipai.plugin-llm-wiki",
+        resourceKind: "skill",
+        resourceKey,
+        details: { name },
+      })),
+    };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.agent);
+    expect(container.textContent).toContain("LLM Wiki");
+    for (const label of [...copy.skills, ...copy.routines]) expect(container.textContent).toContain(label);
+  });
+
+  it("preserves same-key routine titles from another plugin", () => {
+    pathname = "/PAP/wiki/settings/routines";
+    settingsOverrides = {
+      managedRoutines: [{
+        status: "resolved",
+        routineId: "routine-external",
+        pluginKey: "org.example.external",
+        resourceKind: "routine",
+        resourceKey: "cursor-window-processing",
+        routine: {
+          id: "routine-external",
+          title: "Process LLM Wiki updates",
+          status: "active",
+          assigneeAgentId: "agent-1",
+          projectId: "project-1",
+        },
+      }],
+    };
+    renderWiki("pt-BR");
+
+    expect(container.textContent).toContain("Process LLM Wiki updates");
+    expect(container.textContent).toContain("Processar atualizações do LLM Wiki");
   });
 
   it.each([
@@ -676,12 +837,15 @@ describe("LLM Wiki spaces settings localization", () => {
         status: "resolved",
         source: "managed",
         agentId: "agent-1",
+        resourceKey: "paperclipai.plugin-llm-wiki:agent:wiki-maintainer",
         defaultDrift: { entryFile: "AGENTS.md", changedFiles: ["AGENTS.md"] },
         details: { name: "Wiki Maintainer", status: "idle", adapterType: "claude_local", icon: "book-open" },
       },
       managedRoutines: [{
         status: "resolved",
         routineId: "routine-nightly",
+        pluginKey: "paperclipai.plugin-llm-wiki",
+        resourceKind: "routine",
         resourceKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
         routine: {
           id: "routine-nightly",
@@ -736,7 +900,7 @@ describe("LLM Wiki spaces settings localization", () => {
   it.each([
     {
       locale: "pt-BR" as const,
-      confirmPrefix: 'Atualizar "Run LLM Wiki lint" para os padrões atuais do plugin LLM Wiki?',
+      confirmPrefix: 'Atualizar "Executar verificação do LLM Wiki" para os padrões atuais do plugin LLM Wiki?',
       runNowToast: "Execução da rotina iniciada",
       pauseToast: "Rotina pausada",
       resetToast: "Padrões da rotina atualizados",
@@ -756,6 +920,8 @@ describe("LLM Wiki spaces settings localization", () => {
       managedRoutines: [{
         status: "resolved",
         routineId: "routine-nightly",
+        pluginKey: "paperclipai.plugin-llm-wiki",
+        resourceKind: "routine",
         resourceKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
         defaultDrift: { changedFields: ["description"] },
         routine: {
@@ -1108,5 +1274,340 @@ describe("LLM Wiki spaces settings localization", () => {
 
     await act(async () => findButton(copy.refresh).click());
     expect(distillationRefreshCalls).toBe(1);
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      title: "Verificação",
+      description: "Execute verificações estruturais para páginas órfãs, links de retorno ausentes e proveniência desatualizada.",
+      run: "▶ Executar verificação agora",
+      findings: "OCORRÊNCIAS",
+      recent: "Execuções recentes de verificação",
+      severity: "crítico",
+      done: "concluída",
+      queued: "Verificação enfileirada",
+      queuedBody: "A verificação é executada como uma tarefa do Wiki Maintainer. Os resultados aparecerão aqui quando a execução terminar.",
+      couldNotRun: "Não foi possível executar a verificação",
+      noEnglishUi: ["Run structural checks", "Run lint now", "Recent lint runs", "No completed lint runs yet", "Critical", "Orphans", "wiki task"],
+    },
+    {
+      locale: "en" as const,
+      title: "Lint",
+      description: "Run structural checks for orphan pages, missing backlinks, and stale provenance.",
+      run: "▶ Run lint now",
+      findings: "FINDINGS",
+      recent: "Recent lint runs",
+      severity: "critical",
+      done: "done",
+      queued: "Lint queued",
+      queuedBody: "Lint runs as a Wiki Maintainer task. Findings will appear here once the run completes.",
+      couldNotRun: "Could not run lint",
+      noEnglishUi: [],
+    },
+  ])("localizes lint controls and summaries in $locale while preserving operation content and request values", async (copy) => {
+    pathname = "/PAP/wiki/settings/lint";
+    operationsData = {
+      operations: [{
+        id: "lint-operation-123456",
+        operationType: "lint",
+        status: "done",
+        hiddenIssueId: null,
+        hiddenIssueIdentifier: null,
+        hiddenIssueTitle: "Original lint operation title",
+        hiddenIssueStatus: "done",
+        projectId: "project-1",
+        runIds: [],
+        costCents: 0,
+        warnings: [{ severity: "critical", message: "Original linter diagnostic", path: "wiki/concepts/knowledge.md" }],
+        affectedPages: [],
+        createdAt: "2026-10-31T12:00:00.000Z",
+        updatedAt: "2026-10-31T12:00:00.000Z",
+      }],
+    };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.title);
+    expect(container.textContent).toContain(copy.description);
+    expect(container.textContent).toContain(copy.run);
+    expect(container.textContent).toContain(copy.findings);
+    expect(container.textContent).toContain(copy.recent);
+    expect(container.textContent).toContain(copy.severity);
+    expect(container.textContent).toContain(copy.done);
+    expect(container.textContent).toContain("Original linter diagnostic");
+    expect(container.textContent).toContain("wiki/concepts/knowledge.md");
+    expect(container.textContent).toContain("Original lint operation title");
+    for (const originalUiCopy of copy.noEnglishUi) expect(container.textContent).not.toContain(originalUiCopy);
+
+    await act(async () => findButton(copy.run).click());
+    expect(callByKey("create-operation").at(-1)?.params).toEqual({
+      companyId: COMPANY_ID,
+      spaceSlug: "default",
+      operationType: "lint",
+      title: "Run LLM Wiki lint · default",
+      prompt: "Original lint prompt",
+    });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.queued, body: copy.queuedBody });
+
+    actionErrors["create-operation"] = "Original lint API diagnostic";
+    await act(async () => findButton(copy.run).click());
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "error", title: copy.couldNotRun, body: "Original lint API diagnostic" });
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      title: "Ingestão de eventos do Paperclip",
+      sectionDescription: "Captura de eventos do Paperclip no espaço padrão (tarefas, comentários e documentos).",
+      enabled: "Ativar a ingestão de eventos para esta empresa",
+      issue: "Tarefas",
+      comment: "Comentários",
+      document: "Documentos",
+      maxCharacters: "Máximo de caracteres por evento capturado",
+      save: "Salvar controles",
+      revert: "Reverter",
+      saved: "Configurações de ingestão de eventos salvas",
+      failed: "Não foi possível salvar as configurações de eventos",
+      phase: "Fase 5",
+      policyWarning: "A ingestão registra a atividade selecionada de tarefas, comentários e documentos do Paperclip no espaço padrão do Wiki.",
+      noEnglishUi: ["Paperclip event ingestion", "Enable event ingestion for this company", "Issues", "Comments", "Documents", "Max characters per captured event", "Save controls"],
+    },
+    {
+      locale: "en" as const,
+      title: "Paperclip event ingestion",
+      sectionDescription: "Paperclip event capture into the default space (issues, comments, documents).",
+      enabled: "Enable event ingestion for this company",
+      issue: "Issues",
+      comment: "Comments",
+      document: "Documents",
+      maxCharacters: "Max characters per captured event",
+      save: "Save controls",
+      revert: "Revert",
+      saved: "Event ingestion controls saved",
+      failed: "Could not save event controls",
+      phase: "Phase 5",
+      policyWarning: "Event ingestion records selected Paperclip issue, comment, and document activity for the default wiki space.",
+      noEnglishUi: [],
+    },
+  ])("localizes event ingestion controls and preserves the settings payload in $locale", async (copy) => {
+    pathname = "/PAP/wiki/settings/events";
+    const savedPolicy = {
+      enabled: true,
+      sources: { issues: true, comments: false, documents: false },
+      wikiId: "default",
+      maxCharacters: 12000,
+    };
+    actionResults["update-event-ingestion-settings"] = savedPolicy;
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.title);
+    expect(container.textContent).toContain(copy.sectionDescription);
+    expect(container.textContent).toContain(copy.enabled);
+    expect(container.textContent).toContain(copy.issue);
+    expect(container.textContent).toContain(copy.comment);
+    expect(container.textContent).toContain(copy.document);
+    expect(container.textContent).toContain(copy.maxCharacters);
+    expect(container.textContent).toContain(copy.policyWarning);
+    expect(container.textContent).toContain(copy.save);
+    expect(container.textContent).toContain(copy.revert);
+    expect(container.textContent).toContain(copy.phase);
+    for (const originalUiCopy of copy.noEnglishUi) expect(container.textContent).not.toContain(originalUiCopy);
+
+    const enableLabel = Array.from(container.querySelectorAll("label"))
+      .find((label) => label.textContent?.includes(copy.enabled));
+    const enableCheckbox = enableLabel?.querySelector<HTMLInputElement>("input[type='checkbox']");
+    const issueLabel = Array.from(container.querySelectorAll("label"))
+      .find((label) => label.textContent?.includes(copy.issue));
+    const issueCheckbox = issueLabel?.querySelector<HTMLInputElement>("input[type='checkbox']");
+    expect(enableCheckbox).not.toBeNull();
+    expect(issueCheckbox).not.toBeNull();
+    act(() => enableCheckbox!.click());
+    act(() => issueCheckbox!.click());
+    await act(async () => findButton(copy.save).click());
+
+    expect(callByKey("update-event-ingestion-settings").at(-1)?.params).toEqual({ companyId: COMPANY_ID, ...savedPolicy });
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "success", title: copy.saved });
+
+    actionErrors["update-event-ingestion-settings"] = "Original event settings API diagnostic";
+    await act(async () => findButton(copy.save).click());
+    expect(toastCalls.at(-1)).toMatchObject({ tone: "error", title: copy.failed, body: "Original event settings API diagnostic" });
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      status: "Status: em andamento",
+      englishStatus: "Status: in progress",
+    },
+    {
+      locale: "en" as const,
+      status: "Status: in progress",
+      englishStatus: null,
+    },
+  ])("localizes managed project status labels in $locale without changing the status value", (copy) => {
+    pathname = "/PAP/wiki/settings";
+    settingsOverrides = {
+      managedProject: {
+        status: "resolved",
+        source: "managed",
+        projectId: "project-1",
+        details: { name: "LLM Wiki", status: "in_progress" },
+      },
+      projectOptions: [{ id: "project-1", name: "LLM Wiki", status: "in_progress" }],
+    };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.status);
+    if (copy.englishStatus) expect(container.textContent).not.toContain(copy.englishStatus);
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      restriction: "Implantações autenticadas com exposição pública sempre exigem revisão manual antes de gravar no Wiki.",
+      sourceRestriction: "Authenticated/public deployments always require manual review before wiki writes.",
+      noEnglish: "Authenticated/public deployments always require manual review before wiki writes.",
+    },
+    {
+      locale: "en" as const,
+      restriction: "Authenticated/public deployments always require manual review before wiki writes.",
+      sourceRestriction: "Authenticated/public deployments always require manual review before wiki writes.",
+      noEnglish: null,
+    },
+    {
+      locale: "pt-BR" as const,
+      restriction: "Custom deployment policy requires manual review before wiki writes.",
+      sourceRestriction: "Custom deployment policy requires manual review before wiki writes.",
+      noEnglish: "Authenticated/public deployments always require manual review before wiki writes.",
+    },
+  ])("localizes only the owned public-deployment auto-apply restriction in $locale", (copy) => {
+    pathname = "/PAP/wiki/settings/distillation";
+    settingsOverrides = {
+      distillationPolicy: {
+        autoApplyAllowed: false,
+        autoApplyRestriction: copy.sourceRestriction,
+        deploymentMode: "authenticated",
+        deploymentExposure: "public",
+      },
+    };
+    distillationOverviewData = {
+      cursors: [{
+        id: "cursor-1",
+        sourceScope: "project",
+        scopeKey: "project:project-1",
+        projectId: "project-1",
+        projectName: "Research / Q4",
+        projectColor: null,
+        rootIssueId: null,
+        rootIssueIdentifier: null,
+        rootIssueTitle: null,
+        lastProcessedAt: null,
+        lastObservedAt: null,
+        pendingEventCount: 0,
+        lastSourceHash: null,
+        lastSuccessfulRunId: null,
+      }],
+      runs: [],
+      workItems: [],
+      pageBindings: [],
+      reviewWorkItems: [],
+      counts: { cursors: 1, runningRuns: 0, failedRuns24h: 0, reviewRequired: 0 },
+    };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.restriction);
+    if (copy.noEnglish) expect(container.textContent).not.toContain(copy.noEnglish);
+  });
+
+  it.each([
+    { locale: "pt-BR" as const, description: "Manutenção agendada do Wiki.", noEnglish: "Scheduled wiki maintenance." },
+    { locale: "en" as const, description: "Scheduled wiki maintenance.", noEnglish: null },
+  ])("localizes routine section description in $locale", (copy) => {
+    pathname = "/PAP/wiki/settings/routines";
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.description);
+    if (copy.noEnglish) expect(container.textContent).not.toContain(copy.noEnglish);
+  });
+
+  it.each([
+    {
+      locale: "pt-BR" as const,
+      title: "Executar verificação do LLM Wiki",
+      noEnglish: ["Run LLM Wiki lint", "Process LLM Wiki updates", "Refresh LLM Wiki index"],
+    },
+    {
+      locale: "en" as const,
+      title: "Run LLM Wiki lint",
+      noEnglish: [],
+    },
+  ])("localizes synthetic routine fallback names in $locale while retaining routine identifiers", (copy) => {
+    pathname = "/PAP/wiki/settings/routines";
+    settingsOverrides = {
+      managedRoutines: [{
+        status: "missing",
+        routineId: null,
+        pluginKey: "paperclipai.plugin-llm-wiki",
+        resourceKind: "routine",
+        resourceKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+        routine: null,
+        details: { cronExpression: "0 3 * * *" },
+      }],
+    };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.title);
+    expect(container.textContent).toContain("nightly-wiki-lint");
+    for (const originalUiCopy of copy.noEnglish) expect(container.textContent).not.toContain(originalUiCopy);
+  });
+
+  it.each([
+    { locale: "pt-BR" as const, label: "Projeto atual", noEnglish: "Current project" },
+    { locale: "en" as const, label: "Current project", noEnglish: null },
+  ])("localizes the synthetic current-project fallback in $locale", (copy) => {
+    pathname = "/PAP/wiki/settings/routines";
+    settingsOverrides = {
+      managedProject: { status: "resolved", source: "managed", projectId: "project-1", details: null },
+      projectOptions: [],
+    };
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain(copy.label);
+    if (copy.noEnglish) expect(container.textContent).not.toContain(copy.noEnglish);
+  });
+
+  it.each([
+    { locale: "pt-BR" as const, edit: "Editar página", on: "Salvamento automático ativado", dirty: "Alterações não salvas", saving: "Salvando…", saved: "Salvo", noEnglish: ["Autosave on", "Unsaved changes", "Saving…", "Saved", "Autosave failed"] },
+    { locale: "en" as const, edit: "Edit page", on: "Autosave on", dirty: "Unsaved changes", saving: "Saving…", saved: "Saved", noEnglish: [] },
+  ])("localizes page autosave status in $locale while leaving page text intact until edited", async (copy) => {
+    pathname = "/PAP/wiki/page/wiki/concepts/knowledge.md";
+    renderWiki(copy.locale);
+
+    expect(container.textContent).toContain("Original wiki page content.");
+    act(() => findButton(copy.edit).click());
+    expect(container.textContent).toContain(copy.on);
+    const editor = container.querySelector<HTMLTextAreaElement>("textarea");
+    expect(editor?.value).toContain("Original wiki page content.");
+
+    vi.useFakeTimers();
+    let resolveWrite: (value: { hash: string }) => void = () => undefined;
+    actionResults["write-page"] = new Promise<{ hash: string }>((resolve) => { resolveWrite = resolve; });
+    act(() => setInputValue(editor!, "# Wiki page\n\nChanged only in the editor."));
+    expect(container.textContent).toContain(copy.dirty);
+    expect(callByKey("write-page")).toHaveLength(0);
+    await act(async () => { await vi.advanceTimersByTimeAsync(800); });
+    expect(container.textContent).toContain(copy.saving);
+    expect(callByKey("write-page")).toHaveLength(1);
+    await act(async () => { resolveWrite({ hash: "saved-page-hash" }); });
+    expect(container.textContent).toContain(copy.saved);
+
+    delete actionResults["write-page"];
+    actionErrors["write-page"] = "Original write-page diagnostic";
+    act(() => setInputValue(editor!, "# Wiki page\n\nA failed save keeps this diagnostic."));
+    await act(async () => { await vi.advanceTimersByTimeAsync(800); });
+    expect(container.textContent).toContain("Original write-page diagnostic");
+    expect(callByKey("write-page")).toHaveLength(2);
+    vi.useRealTimers();
+    for (const originalUiCopy of copy.noEnglish) expect(container.textContent).not.toContain(originalUiCopy);
   });
 });

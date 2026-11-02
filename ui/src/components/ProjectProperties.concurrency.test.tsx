@@ -180,3 +180,19 @@ it("hides project isolation controls without rewriting its policy", () => {
   expect(container.querySelector('select[aria-label="Shared workspace concurrency"]')).toBeNull();
   expect(onFieldUpdate).not.toHaveBeenCalled();
 });
+
+it.each([
+  { locale: "en", implementation: "Git worktree" },
+  { locale: "pt-BR", implementation: "Árvore de trabalho do Git (worktree)" },
+])("localizes the advanced implementation label in $locale", async ({ locale, implementation }) => {
+  await reactAct(async () => { await i18n.changeLanguage(locale); });
+  render(makeProject(), vi.fn());
+
+  const showLabel = i18n.t("projectProperties.executionWorkspaces.advanced.show");
+  const advancedButton = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === showLabel);
+  expect(advancedButton).toBeDefined();
+  act(() => advancedButton?.click());
+
+  expect(container.textContent).toContain(implementation);
+  if (locale === "pt-BR") expect(container.textContent).not.toContain("Git worktree");
+});

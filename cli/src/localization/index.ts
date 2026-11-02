@@ -4,7 +4,7 @@ import { expandHomePrefix } from "../config/home.js";
 import { readRawProfileLocale } from "../client/context.js";
 import type { Command, Option } from "commander";
 
-const messages = {
+export const cliMessageCatalog = {
   en: {
     description: "Paperclip CLI — setup, diagnose, and configure your instance",
     languageOption: "Language for this invocation: pt-BR or en (does not save the profile)",
@@ -30,6 +30,13 @@ const messages = {
     agentListReportsTo: "Reports to",
     agentListMonthlyBudget: "Monthly budget (cents)",
     agentListMonthlySpent: "Monthly spend (cents)",
+    agentConfigurationOutput: "Agent configuration (secrets redacted):",
+    agentConfigRevisionsOutput: "Agent configuration revisions:",
+    agentConfigRevisionOutput: "Agent configuration revision:",
+    agentConfigRevisionRollbackOutput: "Agent configuration rolled back to revision",
+    agentRuntimeStateOutput: "Agent runtime state:",
+    agentTaskSessionsOutput: "Agent task sessions:",
+    agentLocalCliShellInstruction: "# Run this in your shell before launching codex/claude:",
     companyCurrentUnavailable: "Current company is not available. Pass --company-id, set PAPERCLIP_COMPANY_ID, set a context profile companyId, or authenticate with an agent API key.",
     companyCreatePermissionRequired: "Creating companies requires board/instance-admin authentication. Agent API keys are scoped to one company; use `paperclipai company list --json` or `paperclipai company current --json` to select the scoped company, or rerun create with a board token/login.",
   },
@@ -58,16 +65,23 @@ const messages = {
     agentListReportsTo: "Reporta a",
     agentListMonthlyBudget: "Orçamento mensal (centavos)",
     agentListMonthlySpent: "Gasto mensal (centavos)",
+    agentConfigurationOutput: "Configuração do agente (segredos ocultos):",
+    agentConfigRevisionsOutput: "Revisões da configuração do agente:",
+    agentConfigRevisionOutput: "Revisão da configuração do agente:",
+    agentConfigRevisionRollbackOutput: "Configuração do agente restaurada para a revisão",
+    agentRuntimeStateOutput: "Estado de runtime do agente:",
+    agentTaskSessionsOutput: "Sessões de tarefas do agente:",
+    agentLocalCliShellInstruction: "# Execute no seu shell antes de iniciar codex/claude:",
     companyCurrentUnavailable: "A organização atual não está disponível. Informe --company-id, defina PAPERCLIP_COMPANY_ID, configure companyId em um perfil de contexto ou autentique-se com uma chave de API de agente.",
     companyCreatePermissionRequired: "Para criar organizações é necessária autenticação board/instance-admin. Chaves de API de agente são limitadas a uma organização; use `paperclipai company list --json` ou `paperclipai company current --json` para selecionar a organização do escopo, ou execute create novamente com um token do board/login.",
   },
 } as const;
 
-type MessageKey = keyof typeof messages.en;
+type MessageKey = keyof typeof cliMessageCatalog.en;
 let currentLocale: SupportedLocale = DEFAULT_USER_LOCALE;
 let commandLineShape: Command | undefined;
 export function getCliLocale(): SupportedLocale { return currentLocale; }
-export function cliMessage(key: MessageKey): string { return messages[currentLocale][key]; }
+export function cliMessage(key: MessageKey): string { return cliMessageCatalog[currentLocale][key]; }
 export function setCliLocale(locale: SupportedLocale): void { currentLocale = locale; }
 export function setCliCommandLineShape(command?: Command): void { commandLineShape = command; }
 

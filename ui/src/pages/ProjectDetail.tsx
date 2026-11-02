@@ -32,6 +32,7 @@ import { collectLiveIssueIds } from "../lib/liveIssueIds";
 import { projectRouteRef } from "../lib/utils";
 import { PROJECT_ICONS } from "../lib/project-icons";
 import { usePublishSharedQueryData, useSharedPollingQuery } from "../hooks/useSharedPolling";
+import { useManagedPluginDisplayName } from "../hooks/useManagedPluginDisplayName";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -369,6 +370,7 @@ export function ProjectDetail() {
       ? previous
       : undefined,
   });
+  const managedPluginDisplayName = useManagedPluginDisplayName(project?.managedByPlugin);
   const canonicalProjectRef = project ? projectRouteRef(project) : routeProjectRef;
   const projectLookupRef = project?.id ?? routeProjectRef;
   const resolvedCompanyId = project?.companyId ?? selectedCompanyId;
@@ -785,7 +787,7 @@ export function ProjectDetail() {
           {project.managedByPlugin ? (
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-(length:--text-micro) font-medium text-muted-foreground">
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: project.color ?? "var(--project-seed)" }} />
-              {t("projectDetail.managedByPlugin", { plugin: project.managedByPlugin.pluginDisplayName })}
+              {t("projectDetail.managedByPlugin", { plugin: managedPluginDisplayName ?? project.managedByPlugin.pluginDisplayName })}
             </div>
           ) : null}
         </div>

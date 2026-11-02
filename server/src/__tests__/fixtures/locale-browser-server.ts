@@ -36,8 +36,9 @@ app.use(express.json());
 app.get("/api/health", (_req, res) => res.json({ status: "ok", deploymentMode: "authenticated", deploymentExposure: "private", authReady: true, bootstrapStatus: "ready", hiddenSettings: [] }));
 app.post("/__fixture/organizations", async (req, res) => {
   if (!req.actor.userId) { res.sendStatus(401); return; }
+  const prefixSuffix = req.actor.userId.replaceAll("-", "").slice(-8).toUpperCase();
   const rows = await db.insert(companies).values([
-    { name: "Locale Fixture One", issuePrefix: "LFO" }, { name: "Locale Fixture Two", issuePrefix: "LFT" },
+    { name: "Locale Fixture One", issuePrefix: `L${prefixSuffix}` }, { name: "Locale Fixture Two", issuePrefix: `M${prefixSuffix}` },
   ]).returning();
   await db.insert(companyMemberships).values(rows.map((company) => ({ companyId: company.id, principalType: "user", principalId: req.actor.userId!, membershipRole: "owner", status: "active" })));
   res.json(rows);
@@ -69,12 +70,22 @@ const dist = fileURLToPath(new URL("../../../../ui/dist/", import.meta.url));
 app.use(express.static(dist));
 app.get("/{*page}", (_req, res) => res.sendFile(path.join(dist, "index.html")));
 const server = app.listen(port, "127.0.0.1", () => process.stdout.write(`Locale browser fixture ready on ${origin}\n`));
-let stopping = false;
-async function stop() {
-  if (stopping) return;
-  stopping = true;
-  server.closeAllConnections(); server.close();
-  await database.cleanup(); fs.rmSync(home, { recursive: true, force: true }); process.exit(0);
+let stopping: Promise<void> | null = null;
+function stop(): Promise<void> {
+  if (stopping) return stopping;
+  server.closeAllConnections();
+  const serverClosed = new Promise<void>((resolve) => server.close(() => resolve()));
+  stopping = Promise.all([database.cleanup(), serverClosed])
+    .then(() => undefined)
+    .finally(() => fs.rmSync(home, { recursive: true, force: true }));
+  return stopping;
 }
-process.on("SIGTERM", () => { void stop(); });
-process.on("SIGINT", () => { void stop(); });
+function handleStopSignal() {
+  void stop().catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`Locale browser fixture shutdown failed: ${message}\n`);
+    process.exitCode = 1;
+  });
+}
+process.on("SIGTERM", handleStopSignal);
+process.on("SIGINT", handleStopSignal);

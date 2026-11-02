@@ -6060,6 +6060,88 @@
       "cleaningUp": { "title": "Cleaning up agent", "description": "Required resources are being removed. Termination is not complete." }
     }
   },
+  "builtInBundle": {
+    "title": "Bundle status",
+    "adapter": "Adapter",
+    "skill": "Skill",
+    "instructions": "Instructions",
+    "routine": "Routine",
+    "proposal": "Proposal",
+    "configure": "Configure",
+    "view": "View",
+    "reviewProposal": "Review proposal",
+    "scheduleLabelFallback": "Schedule",
+    "adapterPendingApproval": "Waiting on board hire approval before this agent can run.",
+    "adapterNeedsSetup": "Pick an adapter this agent can run on.",
+    "scheduleEnabled": "The schedule is enabled and can create background work.",
+    "scheduleDisabled": "Nothing runs until you enable the schedule — it costs zero tokens by default.",
+    "proposalPending": "A proposed {{agent}} update is waiting for review.",
+    "resourceLabels": {
+      "routineLowercase": "routine"
+    },
+    "resources": {
+      "reflectionCoachAgent": "Reflection Coach",
+      "reflectionCoachSkill": "Reflection Coach",
+      "reflectionCoachRoutine": "Review recent agent trajectories for coaching proposals",
+      "summarizerAgent": "Summarizer",
+      "summarizerSkill": "Summarize status",
+      "summarizerRoutine": "Refresh stale summary slots"
+    },
+    "drift": {
+      "operatorModified": "You've edited this. Your changes are kept until you reset.",
+      "updateAvailable": "Paperclip shipped a newer default.",
+      "missing": "Not materialized yet — recreate it from the shipped default."
+    },
+    "actions": {
+      "working": "Working…",
+      "cancel": "Cancel",
+      "update": {
+        "title": "Update {{label}} to the newest default?",
+        "body": "You haven't edited this, so Paperclip will replace it with the newer shipped version. Nothing you customized is affected, and your adapter credentials and settings are not touched.",
+        "label": "Update"
+      },
+      "reset": {
+        "title": "Reset {{label}} to the shipped default?",
+        "body": "This replaces your edited version with Paperclip's current default. Your edits can't be recovered. Adapter credentials and settings are not touched.",
+        "confirm": "Reset {{label}}",
+        "label": "Reset"
+      },
+      "recreate": {
+        "title": "Recreate {{label}}?",
+        "body": "This resource is missing. Paperclip will recreate it from the shipped default. Adapter credentials and settings are not touched.",
+        "label": "Recreate"
+      }
+    },
+    "routineActions": {
+      "runOnce": {
+        "title": "Run {{agent}} once?",
+        "body": "Paperclip will create one routine task now. This does not enable the weekly schedule or turn on background work.",
+        "label": "Run once"
+      },
+      "disableSchedule": {
+        "title": "Disable the schedule?",
+        "body": "Paperclip will stop future scheduled {{agent}} runs. Manual Run once remains available.",
+        "label": "Disable schedule"
+      },
+      "enableSchedule": {
+        "title": "Enable the schedule?",
+        "body": "Paperclip will allow {{agent}} to create routine tasks on this schedule. It can spend tokens when those tasks run.",
+        "label": "Enable schedule"
+      }
+    },
+    "status": {
+      "ready": { "label": "Ready", "title": "Materialized and matches the shipped default" },
+      "needs_setup": { "label": "Needs setup", "title": "Present but not usable yet" },
+      "missing": { "label": "Missing", "title": "Expected resource absent; reconcile will recreate it" },
+      "error": { "label": "Error", "title": "Failed to load or reconcile" },
+      "update_available": { "label": "Update available", "title": "Unedited — a newer shipped default can be applied" },
+      "drifted": { "label": "Drifted", "title": "You've edited this; your changes are kept, not overwritten" },
+      "schedule_off": { "label": "Schedule off", "title": "No background work runs until you enable it — costs zero tokens" },
+      "schedule_on": { "label": "Schedule on", "title": "Runs on the configured schedule" },
+      "pending_approval": { "label": "Pending approval", "title": "Waiting on board hire approval before it can run" },
+      "proposal_pending": { "label": "Proposal pending", "title": "A proposed update is waiting for your review" }
+    }
+  },
   "agentOverview": {
     "adapterDefault": "Adapter default",
     "identity": "Identity",
@@ -7817,7 +7899,8 @@
       "advanced": {
         "hide": "Hide advanced checkout settings",
         "show": "Show advanced checkout settings",
-        "implementationLabel": "Host-managed implementation:"
+        "implementationLabel": "Host-managed implementation:",
+        "implementationName": "Git worktree"
       },
       "fields": {
         "environment": "Environment",

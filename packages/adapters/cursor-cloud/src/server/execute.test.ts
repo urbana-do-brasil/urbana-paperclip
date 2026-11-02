@@ -1,7 +1,10 @@
 import { generateKeyPairSync, sign, verify } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AdapterExecutionContext } from "@paperclipai/adapter-utils";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import {
+  createCommunicationLocalePromptFixture,
+  createPromptContextFixture,
+} from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
 import { execute } from "./execute.js";
 
 type MockRunOptions = {
@@ -185,6 +188,68 @@ describe("cursor_cloud execute", () => {
     expect(prompt.indexOf("Append the same ledger entry.")).toBeLessThan(prompt.indexOf("Change the final scope to the launch checklist."));
     expect(prompt.split("Append the same ledger entry.")).toHaveLength(3);
   });
+
+  it.each(["pt-BR", "en"] as const)(
+    "preserves %s communication locale and technical markers in fresh and resumed Cursor SDK send payloads",
+    async (locale) => {
+      const sdkAgent = createMockSdkAgent();
+      createMock.mockResolvedValue(sdkAgent);
+      const ctx = createContext({ context: createCommunicationLocalePromptFixture(locale) });
+      delete ctx.config.promptTemplate;
+
+      const freshResult = await execute(ctx);
+      const resumedSdkAgent = createMockSdkAgent({ agentId: "agent-resumed" });
+      getRunMock.mockResolvedValue(createMockRun({ status: "finished" }));
+      resumeMock.mockResolvedValue(resumedSdkAgent);
+      const resumedContext = createContext({
+        runtime: {
+          sessionId: null,
+          sessionDisplayId: "agent-previous",
+          taskKey: null,
+          sessionParams: {
+            cursorAgentId: "agent-previous",
+            latestRunId: "run-previous",
+            runtime: "cloud",
+            envType: "cloud",
+            repos: [{ url: "https://github.com/paperclipai/paperclip.git", startingRef: "main" }],
+          },
+        },
+        context: createCommunicationLocalePromptFixture(locale),
+      });
+      delete resumedContext.config.promptTemplate;
+      const resumedResult = await execute(resumedContext);
+
+      expect(freshResult.exitCode).toBe(0);
+      expect(resumedResult.exitCode).toBe(0);
+      expect(createMock).toHaveBeenCalledTimes(1);
+      expect(resumeMock).toHaveBeenCalledTimes(1);
+      expect(resumedSdkAgent.send).toHaveBeenCalledTimes(1);
+      for (const [index, prompt] of [
+        String(sdkAgent.send.mock.calls[0]?.[0]),
+        String(resumedSdkAgent.send.mock.calls[0]?.[0]),
+      ].entries()) {
+        expect(prompt).toContain("## Human communication language");
+        expect(prompt).toContain(locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        if (index === 0) {
+          expect(prompt).toContain("`handoff_mode=SAFE`");
+        } else {
+          // The saved agent guidance was received on the initial turn; resume
+          // sends the current locale and task delta without repeating it.
+          expect(prompt).not.toContain("`handoff_mode=SAFE`");
+        }
+        if (locale === "pt-BR") {
+          expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+        }
+      }
+    },
+  );
 
   it("delivers a large wake through the SDK prompt without a configured JSON env copy", async () => {
     const sdkAgent = createMockSdkAgent();

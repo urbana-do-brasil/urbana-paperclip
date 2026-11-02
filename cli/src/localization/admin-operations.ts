@@ -1,7 +1,7 @@
 import { getCliLocale } from "./index.js";
 import type { SupportedLocale } from "@paperclipai/shared/localization";
 
-const messages = {
+export const adminOperationMessageCatalog = {
   en: {
     installPathManual: "Add Paperclip to PATH for this shell:\n  {command}",
     installPathQuestion: "Add ~/.local/bin to PATH in {path}?",
@@ -26,6 +26,7 @@ const messages = {
     agentDeleteNeedsYes: "Refusing to delete an agent without --yes.",
     agentCreateDone: "Created agent.",
     agentHireDone: "Created agent hire request.",
+    agentRuntimeSessionResetDone: "Reset runtime session for agent {agentId}.",
     installGitWarning: "Warning: Installing {repo}@{ref} executes dependency and build scripts from that repository.",
     installGitConsentRequired: "Installing {repo}@{ref} executes dependency and build scripts from that repository. Re-run with --yes to consent in non-interactive environments.",
     installGitConfirm: "Installing {repo}@{ref} executes dependency and build scripts from that repository. Continue?",
@@ -175,6 +176,7 @@ const messages = {
     agentDeleteNeedsYes: "A exclusão do agente foi recusada sem --yes.",
     agentCreateDone: "Agente criado.",
     agentHireDone: "Solicitação de contratação de agente criada.",
+    agentRuntimeSessionResetDone: "Sessão de runtime redefinida para o agente {agentId}.",
     installGitWarning: "Aviso: instalar {repo}@{ref} executa scripts de dependências e build desse repositório.",
     installGitConsentRequired: "Instalar {repo}@{ref} executa scripts de dependências e build desse repositório. Execute novamente com --yes para autorizar em ambientes não interativos.",
     installGitConfirm: "Instalar {repo}@{ref} executa scripts de dependências e build desse repositório. Continuar?",
@@ -302,9 +304,9 @@ const messages = {
   },
 } as const;
 
-export type AdminOperationMessageId = keyof typeof messages.en;
+export type AdminOperationMessageId = keyof typeof adminOperationMessageCatalog.en;
 
-const companyImportMessages = {
+export const companyImportMessageCatalog = {
   en: {
     sourceRequired: "Source path or URL is required.",
     invalidInclude: "Invalid --include value. Use one or more of: company,agents,projects,issues,tasks,skills",
@@ -515,14 +517,14 @@ const companyImportMessages = {
   },
 } as const;
 
-export type CompanyImportMessageId = keyof typeof companyImportMessages.en;
+export type CompanyImportMessageId = keyof typeof companyImportMessageCatalog.en;
 
 export function companyImportCatalogMessage(
   id: CompanyImportMessageId,
   values: Record<string, string | number> = {},
   locale: SupportedLocale = getCliLocale(),
 ): string {
-  const template: string = companyImportMessages[locale][id];
+  const template: string = companyImportMessageCatalog[locale][id];
   return template.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (_match, key: string) => String(values[key] ?? `{${key}}`));
 }
 
@@ -561,6 +563,6 @@ export function adminOperationMessage(
   values: Record<string, string | number> = {},
   locale: SupportedLocale = getCliLocale(),
 ): string {
-  const template: string = messages[locale][id];
+  const template: string = adminOperationMessageCatalog[locale][id];
   return template.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (_match, key: string) => String(values[key] ?? `{${key}}`));
 }
