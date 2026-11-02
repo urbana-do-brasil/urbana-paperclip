@@ -13,6 +13,8 @@
  */
 
 import type { InteractionAudienceDescription } from "./interaction-audience";
+import { parseApiErrorMessage } from "@paperclipai/shared/api-error-messages";
+import { formatUiError } from "../api/error-presentation";
 
 /**
  * Denials that mean "you are outside this card's resolver audience". Mirrors the
@@ -71,9 +73,18 @@ function errorStatus(error: unknown): number | null {
   return typeof status === "number" ? status : null;
 }
 
+function hasAllowlistedApiPresentation(error: unknown): boolean {
+  const body = record(record(error)?.body);
+  return Boolean(parseApiErrorMessage(body));
+}
+
 /** The server's human-readable reason, preserved verbatim apart from punctuation. */
 function serverReason(error: unknown): string | null {
-  const body = record(record(error)?.body);
+  const errorRecord = record(error);
+  const body = record(errorRecord?.body);
+  if (error instanceof Error && hasAllowlistedApiPresentation(error)) {
+    return formatUiError(error);
+  }
   const fromBody = typeof body?.error === "string" ? body.error.trim() : "";
   const fromError = error instanceof Error ? error.message.trim() : "";
   const reason = fromBody || fromError;
@@ -150,7 +161,9 @@ export function describeInteractionResolutionFailure(
   return {
     kind: "transient",
     code,
-    message: reason ? `${reason} Try again.` : "Couldn't submit. Try again.",
+    message: reason
+      ? `${reason}${hasAllowlistedApiPresentation(error) ? "" : " Try again."}`
+      : "Couldn't submit. Try again.",
   };
 }
 

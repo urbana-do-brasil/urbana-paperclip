@@ -102,6 +102,24 @@ describe("InlineEditor", () => {
     act(() => root.unmount());
   });
 
+  it("keeps a display-only label out of the editable value", () => {
+    const onSave = vi.fn();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(<InlineEditor as="h2" value="Wiki Ingest" displayValue="Ingestão do Wiki" onSave={onSave} />);
+    });
+    const display = container.querySelector("h2");
+    expect(display?.textContent).toBe("Ingestão do Wiki");
+
+    act(() => {
+      display?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(container.querySelector("textarea")?.value).toBe("Wiki Ingest");
+    expect(onSave).not.toHaveBeenCalled();
+    act(() => root.unmount());
+  });
+
   it("calls onSave with empty string when nullable and the field is cleared (single-line)", () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     const root = createRoot(container);

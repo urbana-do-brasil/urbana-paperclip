@@ -43,6 +43,11 @@ export interface ManagedPluginAttributionIdentity {
   pluginDisplayName: string;
 }
 
+export interface ManagedPluginResourceAttributionIdentity extends ManagedPluginAttributionIdentity {
+  resourceKind: "agent" | "skill" | "project" | "routine";
+  resourceKey: string;
+}
+
 export interface PluginUiContributionPresentation {
   pluginDisplayName: string;
   slotDisplayNames: Readonly<Record<string, string>>;
@@ -135,6 +140,63 @@ const OWN_PLUGIN_PRESENTATION_KEYS: Record<string, string> = {
   "paperclipai.plugin-authoring-smoke-example": "pluginAuthoringSmokeExample",
   "paperclipai.plugin-orchestration-smoke-example": "pluginOrchestrationSmokeExample",
 };
+
+const OWN_PLUGIN_RESOURCE_PRESENTATION_KEYS: Record<string, Partial<Record<
+  ManagedPluginResourceAttributionIdentity["resourceKind"],
+  Record<string, { sourceDisplayName: string; messageKey: string }>
+>>> = {
+  "paperclipai.plugin-llm-wiki": {
+    agent: {
+      "wiki-maintainer": { sourceDisplayName: "Wiki Maintainer", messageKey: "llmWiki.agent.wikiMaintainer" },
+    },
+    skill: {
+      "wiki-maintainer": { sourceDisplayName: "LLM Wiki Maintainer", messageKey: "llmWiki.skill.wikiMaintainer" },
+      "wiki-ingest": { sourceDisplayName: "Wiki Ingest", messageKey: "llmWiki.skill.wikiIngest" },
+      "wiki-query": { sourceDisplayName: "Wiki Query", messageKey: "llmWiki.skill.wikiQuery" },
+      "wiki-lint": { sourceDisplayName: "Wiki Lint", messageKey: "llmWiki.skill.wikiLint" },
+      "paperclip-distill": { sourceDisplayName: "Paperclip Distill", messageKey: "llmWiki.skill.paperclipDistill" },
+      "index-refresh": { sourceDisplayName: "Index Refresh", messageKey: "llmWiki.skill.indexRefresh" },
+    },
+    project: {
+      "llm-wiki": { sourceDisplayName: "LLM Wiki", messageKey: "llmWiki.project.llmWiki" },
+    },
+    routine: {
+      "cursor-window-processing": { sourceDisplayName: "Process LLM Wiki updates", messageKey: "llmWiki.routine.cursorWindowProcessing" },
+      "nightly-wiki-lint": { sourceDisplayName: "Run LLM Wiki lint", messageKey: "llmWiki.routine.nightlyWikiLint" },
+      "index-refresh": { sourceDisplayName: "Refresh LLM Wiki index", messageKey: "llmWiki.routine.indexRefresh" },
+    },
+  },
+};
+
+/**
+ * Translate a resource label only when the host proves that its exact
+ * installed plugin package is the bundled first-party package and the current
+ * resource name still matches the bundled declaration. Renamed resources,
+ * copied identifiers, external packages, and unknown declarations keep their
+ * current API name.
+ */
+export function localizeManagedPluginResourceDisplayName(
+  attribution: ManagedPluginResourceAttributionIdentity | null | undefined,
+  currentDisplayName: string,
+  installedPlugins: readonly InstalledPluginBundleIdentity[] | undefined,
+  bundledPlugins: readonly AvailablePluginBundleIdentity[] | undefined,
+  t: TFunction,
+): string {
+  if (!attribution) return currentDisplayName;
+  const installed = installedPlugins?.find((plugin) =>
+    plugin.id === attribution.pluginId
+    && plugin.pluginKey === attribution.pluginKey
+    && plugin.manifestJson.id === attribution.pluginKey
+    && plugin.manifestJson.displayName === attribution.pluginDisplayName,
+  );
+  if (!installed || !isBundledPluginRecord(installed, bundledPlugins)) return currentDisplayName;
+
+  const ownedPresentation = OWN_PLUGIN_RESOURCE_PRESENTATION_KEYS[attribution.pluginKey]?.[attribution.resourceKind]?.[attribution.resourceKey];
+  if (!ownedPresentation || ownedPresentation.sourceDisplayName !== currentDisplayName) {
+    return currentDisplayName;
+  }
+  return translate(t, `pluginPresentation.managedResources.${ownedPresentation.messageKey}`, currentDisplayName);
+}
 
 const OWN_SANDBOX_PROVIDER_PRESENTATION_KEYS: Record<string, { pluginId: string; key: string }> = {
   "fake-plugin": { pluginId: "paperclip.fake-sandbox-provider", key: "fake" },

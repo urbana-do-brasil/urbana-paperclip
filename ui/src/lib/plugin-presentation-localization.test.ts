@@ -7,6 +7,7 @@ import {
   localizePluginLocalFolderPresentation,
   localizePluginPresentation,
   localizeManagedPluginDisplayName,
+  localizeManagedPluginResourceDisplayName,
   localizePluginUiContributionPresentation,
   localizeSandboxProviderPresentation,
   isTrustedBundledPluginContribution,
@@ -206,6 +207,96 @@ describe("owned plugin presentation localization", () => {
       pluginKey: "vendor.workspace-diff",
       pluginDisplayName: "External Workspace Tool",
     }, installed, bundled, i18n.t)).toBe("External Workspace Tool");
+  });
+
+  it("localizes only unchanged LLM Wiki resource names from an exactly bundled source", async () => {
+    const attribution = {
+      pluginId: "wiki-plugin",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      pluginDisplayName: "LLM Wiki",
+    };
+    const installed = [{
+      id: "wiki-plugin",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      packageName: "@paperclipai/plugin-llm-wiki",
+      packagePath: "/app/packages/plugins/plugin-llm-wiki",
+      manifestJson: { id: "paperclipai.plugin-llm-wiki", displayName: "LLM Wiki" },
+    }];
+    const bundled = [{
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      packageName: "@paperclipai/plugin-llm-wiki",
+      localPath: "/app/packages/plugins/plugin-llm-wiki",
+    }];
+
+    await i18n.changeLanguage("pt-BR");
+    const skillAttribution = { ...attribution, resourceKind: "skill" as const, resourceKey: "wiki-ingest" };
+    const persistedResource = { id: "wiki-ingest-id", name: "Wiki Ingest", description: "Original content" };
+    expect(localizeManagedPluginResourceDisplayName(
+      skillAttribution,
+      persistedResource.name,
+      installed,
+      bundled,
+      i18n.t,
+    )).toBe("Ingestão do Wiki");
+    expect(persistedResource).toEqual({ id: "wiki-ingest-id", name: "Wiki Ingest", description: "Original content" });
+
+    expect(localizeManagedPluginResourceDisplayName(
+      { ...attribution, resourceKind: "routine", resourceKey: "nightly-wiki-lint" },
+      "Run LLM Wiki lint",
+      installed,
+      bundled,
+      i18n.t,
+    )).toBe("Executar verificação do LLM Wiki");
+    expect(localizeManagedPluginResourceDisplayName(
+      { ...attribution, resourceKind: "agent", resourceKey: "wiki-maintainer" },
+      "Wiki Maintainer",
+      installed,
+      bundled,
+      i18n.t,
+    )).toBe("Responsável pelo Wiki");
+
+    expect(localizeManagedPluginResourceDisplayName(
+      skillAttribution,
+      "Team's renamed ingestion guide",
+      installed,
+      bundled,
+      i18n.t,
+    )).toBe("Team's renamed ingestion guide");
+    expect(localizeManagedPluginResourceDisplayName(
+      undefined,
+      "Unmanaged skill name",
+      installed,
+      bundled,
+      i18n.t,
+    )).toBe("Unmanaged skill name");
+    expect(localizeManagedPluginResourceDisplayName(
+      { ...skillAttribution, resourceKey: "unknown-skill" },
+      "Third-party skill name",
+      installed,
+      bundled,
+      i18n.t,
+    )).toBe("Third-party skill name");
+    expect(localizeManagedPluginResourceDisplayName(
+      { ...skillAttribution, pluginKey: "vendor.plugin-llm-wiki", pluginDisplayName: "Vendor Wiki" },
+      "Vendor skill name",
+      installed,
+      bundled,
+      i18n.t,
+    )).toBe("Vendor skill name");
+    expect(localizeManagedPluginResourceDisplayName(
+      skillAttribution,
+      persistedResource.name,
+      [{ ...installed[0], packageName: "vendor/copied-llm-wiki", packagePath: "/custom/vendor-copy" }],
+      bundled,
+      i18n.t,
+    )).toBe("Wiki Ingest");
+    expect(localizeManagedPluginResourceDisplayName(
+      skillAttribution,
+      persistedResource.name,
+      installed,
+      undefined,
+      i18n.t,
+    )).toBe("Wiki Ingest");
   });
 
   it("requires a UI contribution to match its installed record and exact bundled package", () => {

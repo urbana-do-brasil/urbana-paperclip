@@ -33,6 +33,7 @@ import { projectRouteRef } from "../lib/utils";
 import { PROJECT_ICONS } from "../lib/project-icons";
 import { usePublishSharedQueryData, useSharedPollingQuery } from "../hooks/useSharedPolling";
 import { useManagedPluginDisplayName } from "../hooks/useManagedPluginDisplayName";
+import { useManagedPluginResourceDisplayName } from "../hooks/useManagedPluginResourceDisplayNames";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -374,6 +375,11 @@ export function ProjectDetail() {
   const canonicalProjectRef = project ? projectRouteRef(project) : routeProjectRef;
   const projectLookupRef = project?.id ?? routeProjectRef;
   const resolvedCompanyId = project?.companyId ?? selectedCompanyId;
+  const projectDisplayName = useManagedPluginResourceDisplayName(
+    resolvedCompanyId,
+    "project",
+    project ? { id: project.id, name: project.name } : undefined,
+  );
   const membershipsQuery = useResourceMemberships(resolvedCompanyId);
   const membershipMutation = useResourceMembershipMutation(resolvedCompanyId);
   const projectMembershipState = project?.id
@@ -774,6 +780,7 @@ export function ProjectDetail() {
         <div className="min-w-0 space-y-2">
           <InlineEditor
             value={project.name}
+            displayValue={projectDisplayName ?? project.name}
             onSave={(name) => updateProject.mutate({ name })}
             as="h2"
             className="text-xl font-bold"

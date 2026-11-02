@@ -65,8 +65,11 @@ export function nextRoutineStatus(currentStatus: string, enabled: boolean) {
 
 export function RoutineListRow<TRoutine extends RoutineListRowItem>({
   routine,
+  displayTitle,
   projectById,
   agentById,
+  projectDisplayNames,
+  agentDisplayNames,
   runningRoutineId,
   statusMutationRoutineId,
   href,
@@ -87,8 +90,11 @@ export function RoutineListRow<TRoutine extends RoutineListRowItem>({
   onToggleArchived,
 }: {
   routine: TRoutine;
+  displayTitle?: string;
   projectById: Map<string, RoutineListProjectSummary>;
   agentById: Map<string, RoutineListAgentSummary>;
+  projectDisplayNames?: ReadonlyMap<string, string>;
+  agentDisplayNames?: ReadonlyMap<string, string>;
   runningRoutineId: string | null;
   statusMutationRoutineId: string | null;
   href: string;
@@ -115,6 +121,7 @@ export function RoutineListRow<TRoutine extends RoutineListRowItem>({
   const isStatusPending = statusMutationRoutineId === routine.id;
   const project = routine.projectId ? projectById.get(routine.projectId) ?? null : null;
   const agent = routine.assigneeAgentId ? agentById.get(routine.assigneeAgentId) ?? null : null;
+  const routineLabel = displayTitle ?? routine.title;
   const isDraft = !isArchived && !routine.assigneeAgentId;
   const runDisabled = runningRoutineId === routine.id || isArchived || disableRunNow;
 
@@ -137,14 +144,14 @@ export function RoutineListRow<TRoutine extends RoutineListRowItem>({
             type="checkbox"
             className="h-4 w-4 rounded border-border"
             checked={selected}
-            aria-label={t("routines.row.select", { name: routine.title })}
+            aria-label={t("routines.row.select", { name: routineLabel })}
             onChange={(event) => onSelectChange?.(routine, event.target.checked)}
           />
         </div>
       ) : null}
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="truncate text-sm font-medium">{routine.title}</span>
+          <span className="truncate text-sm font-medium">{routineLabel}</span>
           {(isArchived || routine.status === "paused" || isDraft) ? (
             <span className="text-xs text-muted-foreground">
               {isArchived ? t("routines.row.status.archived") : isDraft ? t("routines.row.status.draft") : t("routines.row.status.paused")}
@@ -160,11 +167,11 @@ export function RoutineListRow<TRoutine extends RoutineListRowItem>({
               className="h-2.5 w-2.5 shrink-0 rounded-sm"
               style={{ backgroundColor: project?.color ?? "var(--project-none)" }}
             />
-            <span>{routine.projectId ? (project?.name ?? t("routines.row.unknownProject")) : t("routines.row.noProject")}</span>
+            <span>{routine.projectId ? (projectDisplayNames?.get(routine.projectId) ?? project?.name ?? t("routines.row.unknownProject")) : t("routines.row.noProject")}</span>
           </span>
           <span className="flex items-center gap-2">
             {routine.assigneeAgentId ? <AgentAvatar agent={{ ...agent, id: routine.assigneeAgentId }} size={16} className="h-3.5 w-3.5 shrink-0"/> : null}
-            <span>{routine.assigneeAgentId ? (agent?.name ?? t("routines.row.unknownAgent")) : t("routines.row.noDefaultAgent")}</span>
+            <span>{routine.assigneeAgentId ? (agentDisplayNames?.get(routine.assigneeAgentId) ?? agent?.name ?? t("routines.row.unknownAgent")) : t("routines.row.noDefaultAgent")}</span>
           </span>
           <span>
             {formatLastRunTimestamp(routine.lastRun?.triggeredAt, i18n.language)}

@@ -13,6 +13,7 @@ import {
   activityLog,
   agentWakeupRequests,
   agents,
+  authUsers,
   companies,
   createDb,
   goals,
@@ -21,12 +22,14 @@ import {
   issueQuestionResponseDeliveries,
   issueThreadInteractions,
   issues,
+  userLocalePreferences,
 } from "@paperclipai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 import { issueThreadInteractionService } from "../services/issue-thread-interactions.js";
+import { resolveCommunicationLocaleSnapshot } from "../services/heartbeat/communication-locale.js";
 import {
   buildQuestionResponseDeliveryEnvelope,
   formatQuestionResponseSteeringMessage,
@@ -72,6 +75,8 @@ describeEmbeddedPostgres("question response delivery", () => {
 
   afterEach(async () => {
     await db.delete(issueQuestionResponseDeliveries);
+    await db.delete(userLocalePreferences);
+    await db.delete(authUsers);
     await db.delete(issueThreadInteractions);
     await db.delete(issueComments);
     await db.delete(activityLog);
@@ -95,6 +100,8 @@ describeEmbeddedPostgres("question response delivery", () => {
       successorStatus?: "queued" | "running";
       sourceCommentBody?: string;
       attachSourceCommentToInteraction?: boolean;
+      sourceLocale?: "pt-BR" | "en";
+      answerUserId?: string;
     } = {},
   ) {
     const companyId = randomUUID();
@@ -144,7 +151,12 @@ describeEmbeddedPostgres("question response delivery", () => {
       status: args.sourceStatus ?? "succeeded",
       runtimeMode: args.runtimeMode ?? "native",
       driverKind: "codex",
-      contextSnapshot: { issueId },
+      contextSnapshot: {
+        issueId,
+        ...(args.sourceLocale
+          ? { communicationLocale: args.sourceLocale, communicationLocaleSource: "user" }
+          : {}),
+      },
       ...(args.sourceStatus === "running"
         ? { startedAt: new Date() }
         : { finishedAt: new Date() }),
@@ -275,7 +287,7 @@ describeEmbeddedPostgres("question response delivery", () => {
           },
         ],
       },
-      { userId: "board-user" },
+      { userId: args.answerUserId ?? "board-user" },
     );
     return {
       companyId,
@@ -374,6 +386,84 @@ describeEmbeddedPostgres("question response delivery", () => {
       mode: "wake_fallback",
       targetRunId: continuationRunId,
     });
+  });
+
+  it("uses the answering account's language for a shared structured response while preserving its original history", async () => {
+    const requesterId = randomUUID();
+    const responderId = randomUUID();
+    const now = new Date();
+    await db.insert(authUsers).values([
+      { id: requesterId, name: "Portuguese requester", email: `${requesterId}@example.test`, createdAt: now, updatedAt: now },
+      { id: responderId, name: "English responder", email: `${responderId}@example.test`, createdAt: now, updatedAt: now },
+    ]);
+    await db.insert(userLocalePreferences).values([
+      { userId: requesterId, locale: "pt-BR" },
+      { userId: responderId, locale: "en" },
+    ]);
+
+    const seeded = await seed({ sourceLocale: "pt-BR", answerUserId: responderId });
+    const [persisted] = await db.select().from(issueThreadInteractions)
+      .where(eq(issueThreadInteractions.id, seeded.interaction.id));
+    expect(persisted?.payload).toEqual(expect.objectContaining({
+      questions: expect.arrayContaining([
+        expect.objectContaining({ id: "purpose", prompt: "What is it for?" }),
+        expect.objectContaining({
+          id: "runtime",
+          prompt: "Which runtime?",
+          options: [{ id: "node", label: "Node.js" }, { id: "bun", label: "Bun" }],
+        }),
+      ]),
+    }));
+    const envelope = buildQuestionResponseDeliveryEnvelope(seeded.interaction);
+    expect(envelope.questionSet.questions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ prompt: "What is it for?" }),
+      expect.objectContaining({
+        prompt: "Which runtime?",
+        options: [{ id: "node", label: "Node.js" }, { id: "bun", label: "Bun" }],
+      }),
+    ]));
+    expect(envelope.response).toMatchObject({ answers: { runtime: { selectedOptionIds: ["node"] } } });
+
+    let continuationLocale: Awaited<ReturnType<typeof resolveCommunicationLocaleSnapshot>> | null = null;
+    const wakeup = vi.fn().mockImplementation(async (_agentId: string, options: {
+      requestedByActorType: "user" | "agent" | "system";
+      requestedByActorId: string;
+      communicationOriginRunId: string | null;
+    }) => {
+      continuationLocale = await resolveCommunicationLocaleSnapshot(db, {
+        companyId: seeded.companyId,
+        agentId: seeded.agentId,
+        requesterType: options.requestedByActorType,
+        requesterId: options.requestedByActorId,
+        originRunId: options.communicationOriginRunId,
+      });
+      const [run] = await db.insert(heartbeatRuns).values({
+        id: randomUUID(),
+        companyId: seeded.companyId,
+        agentId: seeded.agentId,
+        invocationSource: "automation",
+        status: "queued",
+        runtimeMode: "native",
+        driverKind: "codex",
+        contextSnapshot: { issueId: seeded.issueId, ...(continuationLocale ?? {}) },
+      }).returning();
+      return run;
+    });
+
+    const outcome = await questionResponseDeliveryService(db, {
+      heartbeat: { wakeup } as never,
+    }).deliver(seeded.interaction.id);
+
+    expect(wakeup).toHaveBeenCalledWith(seeded.agentId, expect.objectContaining({
+      requestedByActorType: "user",
+      requestedByActorId: responderId,
+      communicationOriginRunId: seeded.sourceRunId,
+    }));
+    expect(continuationLocale).toEqual({ communicationLocale: "en", communicationLocaleSource: "user" });
+    expect(outcome).toMatchObject({ status: "fallback_queued", mode: "wake_fallback" });
+    const [unchanged] = await db.select().from(issueThreadInteractions)
+      .where(eq(issueThreadInteractions.id, seeded.interaction.id));
+    expect(unchanged?.payload).toEqual(persisted?.payload);
   });
 
   it.each(["native", "legacy"] as const)(

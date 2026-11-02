@@ -5,6 +5,7 @@ import { projectsApi } from "../api/projects";
 import { useCompany } from "../context/CompanyContext";
 import { useDialogActions } from "../context/DialogContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
+import { useManagedPluginResourceDisplayNames } from "../hooks/useManagedPluginResourceDisplayNames";
 import { queryKeys } from "../lib/queryKeys";
 import { EntityRow } from "../components/EntityRow";
 import { ProjectTile } from "../components/ProjectTile";
@@ -95,6 +96,7 @@ export function Projects() {
     queryFn: () => projectsApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId,
   });
+  const projectDisplayNames = useManagedPluginResourceDisplayNames(selectedCompanyId, "project", allProjects);
   const membershipsQuery = useResourceMemberships(selectedCompanyId);
   const membershipMutation = useResourceMembershipMutation(selectedCompanyId);
   const projects = useMemo(
@@ -237,7 +239,7 @@ export function Projects() {
                       <EntityRow
                         key={project.id}
                         leading={<ProjectTile color={project.color ?? null} icon={project.icon ?? null} size="sm" />}
-                        title={project.name}
+                        title={projectDisplayNames.get(project.id) ?? project.name}
                         subtitle={project.description ?? undefined}
                         reserveSubtitleSpace
                         to={projectUrl(project)}

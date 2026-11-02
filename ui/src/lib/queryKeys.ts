@@ -741,6 +741,10 @@ export const queryKeys = {
       ["plugins", pluginId, "dashboard"] as const,
     logs: (pluginId: string) => ["plugins", pluginId, "logs"] as const,
   },
+  managedResourceAttributions: {
+    list: (companyId: string, resourceKind: string, resourceIds: readonly string[]) =>
+      ["managed-resource-attributions", companyId, resourceKind, [...resourceIds].sort()] as const,
+  },
   adapters: {
     all: ["adapters"] as const,
   },

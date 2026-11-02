@@ -9,6 +9,7 @@ import { environmentsApi } from "../api/environments";
 import { heartbeatsApi } from "../api/heartbeats";
 import { instanceSettingsApi } from "../api/instanceSettings";
 import { useCompany } from "../context/CompanyContext";
+import { useManagedPluginResourceDisplayNames } from "../hooks/useManagedPluginResourceDisplayNames";
 import { useDialogActions } from "../context/DialogContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useSidebar } from "../context/SidebarContext";
@@ -165,6 +166,7 @@ export function Agents() {
     queryFn: () => agentsApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId,
   });
+  const agentDisplayNames = useManagedPluginResourceDisplayNames(selectedCompanyId, "agent", agents);
 
   const { data: orgTree } = useQuery({
     queryKey: queryKeys.org(selectedCompanyId!),
@@ -308,7 +310,7 @@ export function Agents() {
     return (
       <EntityRow
         key={agent.id}
-        title={agent.name}
+        title={agentDisplayNames.get(agent.id) ?? agent.name}
         titleAccessory={<PrimaryAgentIndicator agentId={agent.id} companyId={agent.companyId} />}
         // Fixed (truncating) title width at xl so the `meta` group starts at a
         // constant x on every row — that's what makes the model + timestamp
@@ -465,6 +467,7 @@ export function Agents() {
               tab={tab}
               memberships={membershipsQuery.data}
               builtInByAgentId={builtInByAgentId}
+              displayNames={agentDisplayNames}
               onConfigureBuiltIn={setConfigureState}
             />
           ))}
@@ -509,6 +512,7 @@ function OrgTreeNode({
   tab,
   memberships,
   builtInByAgentId,
+  displayNames,
   onConfigureBuiltIn,
 }: {
   node: OrgNode;
@@ -521,6 +525,7 @@ function OrgTreeNode({
   tab: FilterTab;
   memberships: ReturnType<typeof useResourceMemberships>["data"];
   builtInByAgentId: Map<string, BuiltInAgentState>;
+  displayNames: ReadonlyMap<string, string>;
   onConfigureBuiltIn: (state: BuiltInAgentState) => void;
 }) {
   const { t } = useTranslation();
@@ -550,7 +555,7 @@ function OrgTreeNode({
               cluster wraps to a second line under pressure instead of starving
               the name at narrow widths. */}
           <div className="min-w-(--sz-7rem) truncate">
-            <span className="text-sm font-medium">{node.name}</span>
+            <span className="text-sm font-medium">{displayNames.get(node.id) ?? node.name}</span>
             <span className="text-xs text-muted-foreground ml-2">
               {agentRoleLabel(node.role, t)}
               {agent?.title ? ` - ${agent.title}` : ""}
@@ -628,6 +633,7 @@ function OrgTreeNode({
               tab={tab}
               memberships={memberships}
               builtInByAgentId={builtInByAgentId}
+              displayNames={displayNames}
               onConfigureBuiltIn={onConfigureBuiltIn}
             />
           ))}

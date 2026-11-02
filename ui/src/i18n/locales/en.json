@@ -3822,6 +3822,29 @@
         "description": "CreateOS sandboxes with live command output and optional pause/resume reuse."
       }
     },
+    "managedResources": {
+      "llmWiki": {
+        "agent": {
+          "wikiMaintainer": "Wiki Maintainer"
+        },
+        "skill": {
+          "wikiMaintainer": "LLM Wiki Maintainer",
+          "wikiIngest": "Wiki Ingest",
+          "wikiQuery": "Wiki Query",
+          "wikiLint": "Wiki Lint",
+          "paperclipDistill": "Paperclip Distill",
+          "indexRefresh": "Index Refresh"
+        },
+        "project": {
+          "llmWiki": "LLM Wiki"
+        },
+        "routine": {
+          "cursorWindowProcessing": "Process LLM Wiki updates",
+          "nightlyWikiLint": "Run LLM Wiki lint",
+          "indexRefresh": "Refresh LLM Wiki index"
+        }
+      }
+    },
     "localFolders": {
       "llmWikiRoot": {
         "name": "Wiki root",

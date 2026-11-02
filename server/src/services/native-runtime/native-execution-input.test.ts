@@ -154,6 +154,22 @@ describe("native execution input external-chat framing", () => {
           task: { prompt: expect.stringContaining("Write human-facing replies, comments, questions, confirmations, and options in English.") },
         });
       }
+      const portugueseInput = buildNativeExecutionInput({
+        ...args,
+        wakePayload: { ...wakePayload, communicationLocale: "pt-BR" },
+      });
+      expect(portugueseInput.task.prompt).toContain(
+        "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR).",
+      );
+      expect(portugueseInput.task.prompt).not.toContain(
+        "Write human-facing replies, comments, questions, confirmations, and options in English.",
+      );
+      // The run language guides new communication; it does not translate
+      // persisted question labels, answers, or the original user request.
+      expect(portugueseInput.task.prompt).toContain("Choose a color: Amber");
+      expect(portugueseInput.task.prompt).toContain(
+        "Ask for a color, then tell me the selected color.",
+      );
       expect(input.task.prompt.indexOf("Choose a color: Amber")).toBeLessThan(
         input.task.prompt.indexOf(
           "Ask for a color, then tell me the selected color.",

@@ -33,3 +33,14 @@ describe("audit query keys", () => {
     expect(routine).toContain("routine-1");
   });
 });
+
+describe("managed resource attribution query keys", () => {
+  it("separates companies and normalizes resource ID order", () => {
+    const companyA = queryKeys.managedResourceAttributions.list("company-a", "agent", ["agent-2", "agent-1"]);
+    const companyASorted = queryKeys.managedResourceAttributions.list("company-a", "agent", ["agent-1", "agent-2"]);
+    const companyB = queryKeys.managedResourceAttributions.list("company-b", "agent", ["agent-1", "agent-2"]);
+
+    expect(companyA).toEqual(companyASorted);
+    expect(companyA).not.toEqual(companyB);
+  });
+});

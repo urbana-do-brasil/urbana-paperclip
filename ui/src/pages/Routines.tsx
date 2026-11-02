@@ -50,6 +50,7 @@ import { auditSectionHref } from "./audit/audit-navigation";
 import { routineDetailHref } from "../components/RoutineContextualSidebar";
 import { usePublishSharedQueryData, useSharedPollingQuery } from "../hooks/useSharedPolling";
 import { useStreamlinedUiEnabled } from "../hooks/useStreamlinedUiEnabled";
+import { useManagedPluginResourceDisplayNames } from "../hooks/useManagedPluginResourceDisplayNames";
 import type { RoutineListItem, RoutineVariable } from "@paperclipai/shared";
 import type { FolderListItem } from "@paperclipai/shared";
 import { Tabs } from "@/components/ui/tabs";
@@ -399,6 +400,13 @@ export function Routines() {
     queryFn: () => projectsApi.list(selectedCompanyId!, { includeArchived: true }),
     enabled: !!selectedCompanyId,
   });
+  const routineNameInputs = useMemo(
+    () => (routines ?? []).map((routine) => ({ id: routine.id, name: routine.title })),
+    [routines],
+  );
+  const routineDisplayNames = useManagedPluginResourceDisplayNames(selectedCompanyId, "routine", routineNameInputs);
+  const agentDisplayNames = useManagedPluginResourceDisplayNames(selectedCompanyId, "agent", agents);
+  const projectDisplayNames = useManagedPluginResourceDisplayNames(selectedCompanyId, "project", projects);
   const { data: companyMembers } = useQuery({
     queryKey: queryKeys.access.companyUserDirectory(selectedCompanyId!),
     queryFn: () => accessApi.listUserDirectory(selectedCompanyId!),
@@ -1370,8 +1378,11 @@ export function Routines() {
                         <RoutineListRow
                           key={routine.id}
                           routine={routine}
+                          displayTitle={routineDisplayNames.get(routine.id)}
                           projectById={projectById}
                           agentById={agentById}
+                          projectDisplayNames={projectDisplayNames}
+                          agentDisplayNames={agentDisplayNames}
                           runningRoutineId={runningRoutineId}
                           statusMutationRoutineId={statusMutationRoutineId}
                           href={`/routines/${routine.id}`}

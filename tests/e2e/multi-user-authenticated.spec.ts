@@ -1,11 +1,15 @@
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { test, expect, type Browser, type Page } from "@playwright/test";
+import { closeRegisteredClients, createDb, heartbeatRuns } from "../../packages/db/src/index.ts";
 
 const BASE = process.env.PAPERCLIP_E2E_BASE_URL ?? "http://127.0.0.1:3105";
 const DATA_DIR = process.env.PAPERCLIP_E2E_DATA_DIR ?? process.env.PAPERCLIP_HOME;
 const CONFIG_PATH = process.env.PAPERCLIP_E2E_CONFIG_PATH ?? path.resolve(process.cwd(), ".paperclip/config.json");
+const FIXTURE_ROOT = process.env.PAPERCLIP_E2E_FIXTURE_ROOT;
 const BOOTSTRAP_SCRIPT_PATH = path.resolve(process.cwd(), "packages/db/scripts/create-auth-bootstrap-invite.ts");
 const OWNER_PASSWORD = "paperclip-owner-password";
 const INVITED_PASSWORD = "paperclip-invited-password";
@@ -35,6 +39,85 @@ type SessionJsonResponse<T> = {
   text: string;
   json: T | null;
 };
+
+function isPathWithin(parentPath: string, childPath: string): boolean {
+  const relativePath = path.relative(parentPath, childPath);
+  return relativePath === "" || (!relativePath.startsWith(`..${path.sep}`) && relativePath !== ".." && !path.isAbsolute(relativePath));
+}
+
+function assertDisposableStructuredInteractionFixture() {
+  const configuredDataDir = process.env.PAPERCLIP_E2E_DATA_DIR;
+  const configuredConfigPath = process.env.PAPERCLIP_E2E_CONFIG_PATH;
+  if (process.env.DATABASE_URL || process.env.PAPERCLIP_DATABASE_URL) {
+    throw new Error("Structured interaction browser coverage refuses inherited external database URLs");
+  }
+  if (!FIXTURE_ROOT || !configuredDataDir || !configuredConfigPath) {
+    throw new Error(
+      "Structured interaction browser coverage requires explicit PAPERCLIP_E2E_FIXTURE_ROOT, PAPERCLIP_E2E_DATA_DIR, and PAPERCLIP_E2E_CONFIG_PATH fixture paths",
+    );
+  }
+
+  const tempRoot = realpathSync(tmpdir());
+  const fixtureRoot = realpathSync(FIXTURE_ROOT);
+  if (
+    !isPathWithin(tempRoot, fixtureRoot) ||
+    !/^paperclip-structured-locale-audit\.[A-Za-z0-9]+$/.test(path.basename(fixtureRoot))
+  ) {
+    throw new Error("Structured interaction browser fixture must live in its generated temporary root");
+  }
+
+  const markerPath = path.join(fixtureRoot, ".paperclip-structured-interactions-fixture");
+  if (
+    !existsSync(markerPath) ||
+    readFileSync(markerPath, "utf8") !== "paperclip-structured-interactions-fixture-v1\n"
+  ) {
+    throw new Error("Structured interaction browser fixture marker is missing or invalid");
+  }
+
+  const dataDir = realpathSync(configuredDataDir);
+  const configPath = realpathSync(configuredConfigPath);
+  if (
+    !isPathWithin(fixtureRoot, dataDir) ||
+    !isPathWithin(fixtureRoot, configPath) ||
+    !isPathWithin(dataDir, configPath)
+  ) {
+    throw new Error("Structured interaction browser config and data must be inside the temporary fixture data directory");
+  }
+
+  const config = JSON.parse(readFileSync(configPath, "utf8")) as {
+    database?: { mode?: string; embeddedPostgresDataDir?: string };
+    server?: { deploymentMode?: string; host?: string; port?: number };
+  };
+  const embeddedPostgresDataDir = config.database?.embeddedPostgresDataDir;
+  if (
+    config.database?.mode !== "embedded-postgres" ||
+    !embeddedPostgresDataDir ||
+    !path.isAbsolute(embeddedPostgresDataDir) ||
+    !isPathWithin(fixtureRoot, realpathSync(embeddedPostgresDataDir)) ||
+    !isPathWithin(dataDir, realpathSync(embeddedPostgresDataDir))
+  ) {
+    throw new Error("Structured interaction browser fixture must use only its embedded temporary PostgreSQL database");
+  }
+
+  const baseUrl = new URL(BASE);
+  const loopbackHost = baseUrl.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  const configuredServerHost = config.server?.host?.replace(/^\[|\]$/g, "").toLowerCase();
+  const effectivePort = Number(baseUrl.port || (baseUrl.protocol === "https:" ? "443" : "80"));
+  if (
+    config.server?.deploymentMode !== "authenticated" ||
+    !["localhost", "127.0.0.1", "::1"].includes(loopbackHost) ||
+    !configuredServerHost ||
+    !["localhost", "127.0.0.1", "::1"].includes(configuredServerHost) ||
+    baseUrl.protocol !== "http:" ||
+    baseUrl.username !== "" ||
+    baseUrl.password !== "" ||
+    (config.server.port !== undefined && config.server.port !== effectivePort)
+  ) {
+    throw new Error("Structured interaction browser fixture endpoint must be its authenticated loopback server");
+  }
+
+  return { config, embeddedPostgresDataDir: realpathSync(embeddedPostgresDataDir) };
+}
 
 const runId = Date.now();
 const companyName = `MU-Auth-${runId}`;
@@ -98,6 +181,11 @@ async function signUp(page: Page, user: HumanUser) {
   await page.getByLabel("Password").fill(user.password);
   await page.getByRole("button", { name: "Create Account" }).click();
   await expect(page).not.toHaveURL(/\/auth/, { timeout: 20_000 });
+}
+
+async function chooseEnglishForUnauthenticatedBrowser(page: Page) {
+  await page.goto(`${BASE}/auth`);
+  await page.getByRole("combobox").selectOption("en");
 }
 
 async function acceptBootstrapInvite(page: Page, inviteUrl: string) {
@@ -319,6 +407,262 @@ test.describe("Multi-user: authenticated mode", () => {
         }
       );
       expect(forbiddenInviteRes.status).toBe(403);
+    } finally {
+      await invited.context.close();
+    }
+  });
+
+  test("shared structured questions use each account locale and preserve the original history", async ({
+    browser,
+    page,
+  }) => {
+    test.setTimeout(180_000);
+    test.skip(
+      process.env.PAPERCLIP_E2E_STRUCTURED_INTERACTIONS !== "1",
+      "Requires an explicit disposable fixture; set PAPERCLIP_E2E_STRUCTURED_INTERACTIONS=1 with the fixture paths",
+    );
+    const disposableFixture = assertDisposableStructuredInteractionFixture();
+    const suffix = `structured-${runId}`;
+    const requester = { ...ownerUser, email: `${suffix}-requester@paperclip.local` };
+    const responder = { ...invitedUser, email: `${suffix}-responder@paperclip.local` };
+    expect((await (await page.request.get(`${BASE}/api/health`)).json()).deploymentMode).toBe("authenticated");
+
+    await chooseEnglishForUnauthenticatedBrowser(page);
+    await signUp(page, requester);
+    const requesterEnglishPreference = await sessionJsonRequest(page, `${BASE}/api/auth/locale-preference`, {
+      method: "PUT",
+      data: { locale: "en" },
+    });
+    expect(requesterEnglishPreference.ok).toBe(true);
+    await page.reload();
+    const bootstrapInviteUrl = createBootstrapInvite();
+    const bootstrapToken = new URL(bootstrapInviteUrl).pathname.split("/").at(-1);
+    expect(bootstrapToken).toBeTruthy();
+    const bootstrapAcceptance = await sessionJsonRequest(page, `${BASE}/api/invites/${bootstrapToken}/accept`, {
+      method: "POST",
+      data: { requestType: "human" },
+    });
+    expect(bootstrapAcceptance.status).toBe(202);
+    await page.goto("/");
+    const company = await createCompanyForSession(page, `Shared question ${suffix}`);
+    const companyPrefix = company.issuePrefix ?? company.id;
+
+    const ptPreference = await sessionJsonRequest(page, `${BASE}/api/auth/locale-preference`, {
+      method: "PUT",
+      data: { locale: "pt-BR" },
+    });
+    expect(ptPreference.ok).toBe(true);
+    await page.reload();
+
+    const agentResponse = await sessionJsonRequest<{ id: string }>(page, `${BASE}/api/companies/${company.id}/agents`, {
+      method: "POST",
+      data: {
+        name: `No-model question fixture ${suffix}`,
+        role: "engineer",
+        adapterType: "process",
+        adapterConfig: { command: process.execPath, args: ["-e", "process.exit(0)"] },
+        runtimeConfig: { heartbeat: { enabled: false, wakeOnDemand: false } },
+      },
+    });
+    expect(agentResponse.ok).toBe(true);
+    const issueResponse = await sessionJsonRequest<{
+      id: string;
+      identifier: string;
+      responsibleUserId: string | null;
+    }>(page, `${BASE}/api/companies/${company.id}/issues`, {
+      method: "POST",
+      data: {
+        title: `Shared language history ${suffix}`,
+        status: "todo",
+        assigneeAgentId: agentResponse.json!.id,
+      },
+    });
+    expect(issueResponse.ok).toBe(true);
+    const issue = issueResponse.json!;
+    const originalComment = "Original requester note: preserve HTTP 401.";
+    const commentResponse = await sessionJsonRequest(page, `${BASE}/api/issues/${issue.id}/comments`, {
+      method: "POST",
+      data: { body: originalComment },
+    });
+    expect(commentResponse.ok).toBe(true);
+
+    // Seed only the server-owned native-run provenance needed to exercise the
+    // same response validator; the fake process agent is never woken.
+    const postmaster = readFileSync(
+      path.join(disposableFixture.embeddedPostgresDataDir, "postmaster.pid"),
+      "utf8",
+    ).split(/\r?\n/);
+    const databasePort = Number(postmaster[3]);
+    if (!Number.isInteger(databasePort) || databasePort < 1 || databasePort > 65535) {
+      throw new Error("The disposable database did not publish its running port");
+    }
+    const databaseUrl = `postgres://paperclip:paperclip@127.0.0.1:${databasePort}/paperclip`;
+    const db = createDb(databaseUrl);
+    const sourceRunId = randomUUID();
+    const capturedAt = new Date();
+    try {
+      await db.insert(heartbeatRuns).values({
+        id: sourceRunId,
+        companyId: company.id,
+        agentId: agentResponse.json!.id,
+        scopeKind: "issue",
+        issueId: issue.id,
+        status: "succeeded",
+        runtimeMode: "native",
+        runtimeModeResolvedAt: capturedAt,
+        nativeIssueId: issue.id,
+        driverKind: "codex",
+        startedAt: new Date(capturedAt.getTime() - 1_000),
+        finishedAt: capturedAt,
+        responsibleUserId: issue.responsibleUserId,
+        contextSnapshot: {
+          issueId: issue.id,
+          communicationLocale: "pt-BR",
+          communicationLocaleSource: "user",
+        },
+      });
+    } finally {
+      await closeRegisteredClients(databaseUrl);
+    }
+
+    const createdInteraction = await sessionJsonRequest<{
+      id: string;
+      status: string;
+      payload: Record<string, unknown>;
+    }>(page, `${BASE}/api/issues/${issue.id}/interactions`, {
+      method: "POST",
+      data: {
+        kind: "ask_user_questions",
+        sourceRunId,
+        idempotencyKey: `paperclip-runner-question:${sourceRunId}:shared-language-browser`,
+        continuationPolicy: "none",
+        resolverPolicy: "anyone",
+        payload: {
+          version: 1,
+          runtimeRequestId: "shared-language-browser",
+          questionSet: {
+            schema: "paperclip.question_set.v1",
+            title: "Original deployment choice",
+            questions: [{
+              id: "color",
+              prompt: "Which color?",
+              required: true,
+              answerMode: "single_select",
+              options: [{ id: "amber", label: "Amber" }, { id: "blue", label: "Blue" }],
+            }],
+          },
+        },
+      },
+    });
+    expect(createdInteraction.ok).toBe(true);
+    expect(createdInteraction.json).toMatchObject({ status: "pending" });
+    const interaction = createdInteraction.json!;
+
+    const issueUrl = `${BASE}/${companyPrefix}/issues/${issue.identifier}`;
+    await page.goto(issueUrl);
+    await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
+    await expect(page.getByText("Pergunta 1", { exact: true })).toBeVisible();
+    await expect(page.getByText("Which color?", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Enviar respostas", exact: true })).toBeVisible();
+    await expect(page.getByText(originalComment, { exact: true })).toBeVisible();
+
+    const invite = await sessionJsonRequest<{ inviteUrl: string }>(page, `${BASE}/api/companies/${company.id}/invites`, {
+      method: "POST",
+      data: { allowedJoinTypes: "human", humanRole: "operator" },
+    });
+    expect(invite.ok).toBe(true);
+    const invited = await newPage(browser);
+    try {
+      await chooseEnglishForUnauthenticatedBrowser(invited.page);
+      await signUpFromInvite(invited.page, invite.json!.inviteUrl, responder);
+      const responderEnglishPreference = await sessionJsonRequest(invited.page, `${BASE}/api/auth/locale-preference`, {
+        method: "PUT",
+        data: { locale: "en" },
+      });
+      expect(responderEnglishPreference.ok).toBe(true);
+      await invited.page.reload();
+      await acceptHumanInvite(invited.page);
+      const enPreference = await sessionJsonRequest(invited.page, `${BASE}/api/auth/locale-preference`, {
+        method: "PUT",
+        data: { locale: "en" },
+      });
+      expect(enPreference.ok).toBe(true);
+      await invited.page.goto(issueUrl);
+      await expect(invited.page.locator("html")).toHaveAttribute("lang", "en");
+      await expect(invited.page.getByText("Question 1", { exact: true })).toBeVisible();
+      await expect(invited.page.getByText("Which color?", { exact: true })).toBeVisible();
+      await expect(invited.page.getByRole("button", { name: "Submit answers", exact: true })).toBeVisible();
+      await expect(invited.page.getByText(originalComment, { exact: true })).toBeVisible();
+
+      const responseUrl = new RegExp(`/api/issues/${issue.id}/interactions/${interaction.id}/respond$`);
+      let capturedResponseStatus = 0;
+      let capturedResponseBody: Record<string, unknown> | null = null;
+      await invited.page.route(responseUrl, async (route) => {
+        const body = route.request().postDataJSON() as {
+          answers: Array<{ questionId: string; optionIds: string[]; otherText?: string }>;
+        };
+        expect(body.answers).toMatchObject([{ questionId: "color", optionIds: ["amber"] }]);
+        const invalidBody = {
+          ...body,
+          answers: [{ ...body.answers[0]!, optionIds: ["invalid-from-browser"] }],
+        };
+        const response = await route.fetch({ postData: JSON.stringify(invalidBody) });
+        capturedResponseStatus = response.status();
+        capturedResponseBody = await response.json();
+        await route.fulfill({ response });
+      });
+      await invited.page.getByRole("radio", { name: "Amber", exact: true }).click();
+      await invited.page.getByRole("button", { name: "Submit answers", exact: true }).click();
+      await expect(invited.page.getByText("The submitted data is invalid. Check the fields and try again.", { exact: true })).toBeVisible();
+      expect(capturedResponseStatus).toBe(422);
+      expect(capturedResponseBody).toMatchObject({
+        code: "invalid_question_response",
+        messageKey: "validation",
+      });
+      const pendingAfterError = await sessionJsonRequest<Array<{ id: string; status: string; result: unknown; payload: Record<string, unknown> }>>(
+        invited.page,
+        `${BASE}/api/issues/${issue.id}/interactions`,
+      );
+      expect(pendingAfterError.ok).toBe(true);
+      expect(pendingAfterError.json?.find((entry) => entry.id === interaction.id)).toMatchObject({
+        status: "pending",
+        result: null,
+        payload: interaction.payload,
+      });
+
+      await invited.page.unroute(responseUrl);
+      await invited.page.getByRole("button", { name: "Submit answers", exact: true }).click();
+      await expect.poll(async () => {
+        const current = await sessionJsonRequest<Array<{ id: string; status: string }>>(
+          invited.page,
+          `${BASE}/api/issues/${issue.id}/interactions`,
+        );
+        return current.json?.find((entry) => entry.id === interaction.id)?.status;
+      }).toBe("answered");
+
+      const ownerLocale = await sessionJsonRequest<{ locale: string }>(page, `${BASE}/api/auth/locale-preference`);
+      const responderLocale = await sessionJsonRequest<{ locale: string }>(invited.page, `${BASE}/api/auth/locale-preference`);
+      expect(ownerLocale.json?.locale).toBe("pt-BR");
+      expect(responderLocale.json?.locale).toBe("en");
+      const sharedInteractions = await sessionJsonRequest<Array<{
+        id: string;
+        status: string;
+        payload: Record<string, unknown>;
+        result: { answers?: Array<{ questionId: string; optionIds: string[] }> } | null;
+      }>>(page, `${BASE}/api/issues/${issue.id}/interactions`);
+      const answered = sharedInteractions.json?.find((entry) => entry.id === interaction.id);
+      expect(answered).toMatchObject({
+        status: "answered",
+        payload: interaction.payload,
+        result: { answers: [{ questionId: "color", optionIds: ["amber"] }] },
+      });
+
+      await page.reload();
+      await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
+      await expect(page.getByText("Pergunta 1", { exact: true })).toBeVisible();
+      await expect(page.getByText("Which color?", { exact: true })).toBeVisible();
+      await expect(page.getByText("Amber", { exact: true })).toBeVisible();
+      await expect(page.getByText(originalComment, { exact: true })).toBeVisible();
     } finally {
       await invited.context.close();
     }

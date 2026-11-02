@@ -31,6 +31,258 @@ const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
 
 const operationHelp: Record<string, CommandHelp> = {
+  approval: {
+    description: { en: "Approval operations", "pt-BR": "Operações de aprovação" },
+  },
+  "approval list": {
+    description: { en: "List approvals for a company", "pt-BR": "Listar aprovações de uma organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--status": { en: "Status filter", "pt-BR": "Filtro de status" },
+    },
+  },
+  "approval get": {
+    description: { en: "Get one approval", "pt-BR": "Consultar uma aprovação" },
+    arguments: { approvalId: { en: "Approval ID", "pt-BR": "ID da aprovação" } },
+    options: commonClientOptions,
+  },
+  "approval create": {
+    description: { en: "Create an approval request", "pt-BR": "Criar uma solicitação de aprovação" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--type": {
+        en: "Approval type (hire_agent|approve_ceo_strategy)",
+        "pt-BR": "Tipo de aprovação (hire_agent|approve_ceo_strategy)",
+      },
+      "--payload": { en: "Approval payload as JSON object", "pt-BR": "Payload da aprovação como objeto JSON" },
+      "--requested-by-agent-id": { en: "Requesting agent ID", "pt-BR": "ID do agente solicitante" },
+      "--issue-ids": { en: "Comma-separated linked issue IDs", "pt-BR": "IDs das tarefas vinculadas, separados por vírgulas" },
+    },
+  },
+  "approval approve": {
+    description: { en: "Approve an approval request", "pt-BR": "Aprovar uma solicitação de aprovação" },
+    arguments: { approvalId: { en: "Approval ID", "pt-BR": "ID da aprovação" } },
+    options: {
+      ...commonClientOptions,
+      "--decision-note": { en: "Decision note", "pt-BR": "Nota da decisão" },
+      "--decided-by-user-id": { en: "Decision actor user ID", "pt-BR": "ID do usuário responsável pela decisão" },
+    },
+  },
+  "approval reject": {
+    description: { en: "Reject an approval request", "pt-BR": "Rejeitar uma solicitação de aprovação" },
+    arguments: { approvalId: { en: "Approval ID", "pt-BR": "ID da aprovação" } },
+    options: {
+      ...commonClientOptions,
+      "--decision-note": { en: "Decision note", "pt-BR": "Nota da decisão" },
+      "--decided-by-user-id": { en: "Decision actor user ID", "pt-BR": "ID do usuário responsável pela decisão" },
+    },
+  },
+  "approval request-revision": {
+    description: { en: "Request revision for an approval", "pt-BR": "Solicitar revisão de uma aprovação" },
+    arguments: { approvalId: { en: "Approval ID", "pt-BR": "ID da aprovação" } },
+    options: {
+      ...commonClientOptions,
+      "--decision-note": { en: "Decision note", "pt-BR": "Nota da decisão" },
+      "--decided-by-user-id": { en: "Decision actor user ID", "pt-BR": "ID do usuário responsável pela decisão" },
+    },
+  },
+  "approval resubmit": {
+    description: {
+      en: "Resubmit an approval (optionally with new payload)",
+      "pt-BR": "Reenviar uma aprovação (opcionalmente com um novo payload)",
+    },
+    arguments: { approvalId: { en: "Approval ID", "pt-BR": "ID da aprovação" } },
+    options: {
+      ...commonClientOptions,
+      "--payload": { en: "Payload JSON object", "pt-BR": "Payload como objeto JSON" },
+    },
+  },
+  "approval comment": {
+    description: { en: "Add comment to an approval", "pt-BR": "Adicionar comentário a uma aprovação" },
+    arguments: { approvalId: { en: "Approval ID", "pt-BR": "ID da aprovação" } },
+    options: {
+      ...commonClientOptions,
+      "--body": { en: "Comment body", "pt-BR": "Conteúdo do comentário" },
+    },
+  },
+  goal: {
+    description: { en: "Goal operations", "pt-BR": "Operações de metas" },
+  },
+  "project list": {
+    description: { en: "List projects for a company", "pt-BR": "Listar projetos de uma organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "project get": {
+    description: { en: "Get one project by ID or shortname", "pt-BR": "Consultar um projeto por ID ou nome curto" },
+    arguments: { project: { en: "Project ID or shortname", "pt-BR": "ID ou nome curto do projeto" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID for shortname lookup", "pt-BR": "ID da organização para buscar pelo nome curto" },
+    },
+  },
+  "project create": {
+    description: { en: "Create a project", "pt-BR": "Criar um projeto" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--name": { en: "Project name", "pt-BR": "Nome do projeto" },
+      "--description": { en: "Project description", "pt-BR": "Descrição do projeto" },
+      "--status": { en: "Project status", "pt-BR": "Status do projeto" },
+      "--goal-id": { en: "Deprecated single goal ID", "pt-BR": "ID único de meta (obsoleto)" },
+      "--goal-ids": { en: "Comma-separated goal IDs", "pt-BR": "IDs de metas separados por vírgulas" },
+      "--lead-agent-id": { en: "Lead agent ID", "pt-BR": "ID do agente responsável" },
+      "--target-date": { en: "Target date", "pt-BR": "Data de destino" },
+      "--color": { en: "Project color", "pt-BR": "Cor do projeto" },
+      "--env-json": { en: "Project env binding JSON", "pt-BR": "JSON de variáveis de ambiente do projeto" },
+      "--execution-workspace-policy-json": { en: "Execution workspace policy JSON", "pt-BR": "JSON da política de espaço de execução" },
+    },
+  },
+  "project update": {
+    description: { en: "Update a project", "pt-BR": "Atualizar um projeto" },
+    arguments: { project: { en: "Project ID or shortname", "pt-BR": "ID ou nome curto do projeto" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID for shortname lookup", "pt-BR": "ID da organização para buscar pelo nome curto" },
+      "--name": { en: "Project name", "pt-BR": "Nome do projeto" },
+      "--description": { en: "Project description", "pt-BR": "Descrição do projeto" },
+      "--status": { en: "Project status", "pt-BR": "Status do projeto" },
+      "--goal-id": { en: "Deprecated single goal ID", "pt-BR": "ID único de meta (obsoleto)" },
+      "--goal-ids": { en: "Comma-separated goal IDs", "pt-BR": "IDs de metas separados por vírgulas" },
+      "--lead-agent-id": { en: "Lead agent ID", "pt-BR": "ID do agente responsável" },
+      "--target-date": { en: "Target date", "pt-BR": "Data de destino" },
+      "--color": { en: "Project color", "pt-BR": "Cor do projeto" },
+      "--env-json": { en: "Project env binding JSON", "pt-BR": "JSON de variáveis de ambiente do projeto" },
+      "--execution-workspace-policy-json": { en: "Execution workspace policy JSON", "pt-BR": "JSON da política de espaço de execução" },
+      "--archived-at": { en: "Archive timestamp or null", "pt-BR": "Timestamp de arquivamento ou null" },
+    },
+  },
+  "project delete": {
+    description: { en: "Delete a project", "pt-BR": "Excluir um projeto" },
+    arguments: { project: { en: "Project ID or shortname", "pt-BR": "ID ou nome curto do projeto" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID for shortname lookup", "pt-BR": "ID da organização para buscar pelo nome curto" },
+      "--yes": { en: "Confirm deletion", "pt-BR": "Confirmar exclusão" },
+    },
+  },
+  "goal list": {
+    description: { en: "List goals for a company", "pt-BR": "Listar metas de uma organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "goal get": {
+    description: { en: "Get one goal", "pt-BR": "Consultar uma meta" },
+    arguments: { goalId: { en: "Goal ID", "pt-BR": "ID da meta" } },
+    options: commonClientOptions,
+  },
+  "goal create": {
+    description: { en: "Create a goal", "pt-BR": "Criar uma meta" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--title": { en: "Goal title", "pt-BR": "Título da meta" },
+      "--description": { en: "Goal description", "pt-BR": "Descrição da meta" },
+      "--level": { en: "Goal level", "pt-BR": "Nível da meta" },
+      "--status": { en: "Goal status", "pt-BR": "Status da meta" },
+      "--parent-id": { en: "Parent goal ID", "pt-BR": "ID da meta pai" },
+      "--owner-agent-id": { en: "Owner agent ID", "pt-BR": "ID do agente responsável" },
+    },
+  },
+  "goal update": {
+    description: { en: "Update a goal", "pt-BR": "Atualizar uma meta" },
+    arguments: { goalId: { en: "Goal ID", "pt-BR": "ID da meta" } },
+    options: {
+      ...commonClientOptions,
+      "--title": { en: "Goal title", "pt-BR": "Título da meta" },
+      "--description": { en: "Goal description", "pt-BR": "Descrição da meta" },
+      "--level": { en: "Goal level", "pt-BR": "Nível da meta" },
+      "--status": { en: "Goal status", "pt-BR": "Status da meta" },
+      "--parent-id": { en: "Parent goal ID", "pt-BR": "ID da meta pai" },
+      "--owner-agent-id": { en: "Owner agent ID", "pt-BR": "ID do agente responsável" },
+    },
+  },
+  "goal delete": {
+    description: { en: "Delete a goal", "pt-BR": "Excluir uma meta" },
+    arguments: { goalId: { en: "Goal ID", "pt-BR": "ID da meta" } },
+    options: {
+      ...commonClientOptions,
+      "--yes": { en: "Confirm deletion", "pt-BR": "Confirmar exclusão" },
+    },
+  },
+  "issue list": {
+    description: { en: "List issues for a company", "pt-BR": "Listar tarefas de uma organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--status": { en: "Comma-separated statuses", "pt-BR": "Status separados por vírgulas" },
+      "--assignee-agent-id": { en: "Filter by assignee agent ID", "pt-BR": "Filtrar pelo ID do agente responsável" },
+      "--project-id": { en: "Filter by project ID", "pt-BR": "Filtrar pelo ID do projeto" },
+      "--match": { en: "Local text match on identifier/title/description", "pt-BR": "Busca local no identificador/título/descrição" },
+    },
+  },
+  "issue get": {
+    description: {
+      en: "Get an issue by UUID or identifier (e.g. PC-12)",
+      "pt-BR": "Consultar uma tarefa por UUID ou identificador (ex.: PC-12)",
+    },
+    arguments: { idOrIdentifier: { en: "Issue ID or identifier", "pt-BR": "ID ou identificador da tarefa" } },
+    options: commonClientOptions,
+  },
+  "issue create": {
+    description: { en: "Create an issue", "pt-BR": "Criar uma tarefa" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--title": { en: "Issue title", "pt-BR": "Título da tarefa" },
+      "--description": { en: "Issue description", "pt-BR": "Descrição da tarefa" },
+      "--status": { en: "Issue status", "pt-BR": "Status da tarefa" },
+      "--priority": { en: "Issue priority", "pt-BR": "Prioridade da tarefa" },
+      "--assignee-agent-id": { en: "Assignee agent ID", "pt-BR": "ID do agente responsável" },
+      "--project-id": { en: "Project ID", "pt-BR": "ID do projeto" },
+      "--goal-id": { en: "Goal ID", "pt-BR": "ID da meta" },
+      "--parent-id": { en: "Parent issue ID", "pt-BR": "ID da tarefa pai" },
+      "--standalone": {
+        en: "Create a top-level issue. Without --parent-id, an agent run's issue otherwise becomes the parent.",
+        "pt-BR": "Criar uma tarefa de nível superior. Sem --parent-id, a tarefa da execução do agente será usada como tarefa pai.",
+      },
+      "--request-depth": { en: "Request depth integer", "pt-BR": "Profundidade da solicitação (inteiro)" },
+      "--billing-code": { en: "Billing code", "pt-BR": "Código de faturamento" },
+    },
+  },
+  "issue update": {
+    description: { en: "Update an issue", "pt-BR": "Atualizar uma tarefa" },
+    arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
+    options: {
+      ...commonClientOptions,
+      "--title": { en: "Issue title", "pt-BR": "Título da tarefa" },
+      "--description": { en: "Issue description", "pt-BR": "Descrição da tarefa" },
+      "--status": { en: "Issue status", "pt-BR": "Status da tarefa" },
+      "--priority": { en: "Issue priority", "pt-BR": "Prioridade da tarefa" },
+      "--assignee-agent-id": { en: "Assignee agent ID", "pt-BR": "ID do agente responsável" },
+      "--project-id": { en: "Project ID", "pt-BR": "ID do projeto" },
+      "--goal-id": { en: "Goal ID", "pt-BR": "ID da meta" },
+      "--parent-id": { en: "Parent issue ID", "pt-BR": "ID da tarefa pai" },
+      "--request-depth": { en: "Request depth integer", "pt-BR": "Profundidade da solicitação (inteiro)" },
+      "--billing-code": { en: "Billing code", "pt-BR": "Código de faturamento" },
+      "--comment": { en: "Optional comment to add with update", "pt-BR": "Comentário opcional para adicionar junto com a atualização" },
+      "--hidden-at": { en: "Set hiddenAt timestamp or literal 'null'", "pt-BR": "Definir o timestamp de hiddenAt ou o literal 'null'" },
+    },
+  },
+  "issue delete": {
+    description: { en: "Delete an issue", "pt-BR": "Excluir uma tarefa" },
+    arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
+    options: {
+      ...commonClientOptions,
+      "--yes": { en: "Confirm deletion", "pt-BR": "Confirmar exclusão" },
+    },
+  },
   company: {
     description: {
       en: "Company operations",

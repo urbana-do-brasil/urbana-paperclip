@@ -31,6 +31,10 @@ function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
 }
 
+function outputLines(spy: ReturnType<typeof vi.spyOn>): string[] {
+  return spy.mock.calls.map((call: readonly unknown[]) => String(call[0]));
+}
+
 describe("agent local-cli output localization", () => {
   let tempRoot: string;
   let logSpy: ReturnType<typeof vi.spyOn>;
@@ -92,7 +96,7 @@ describe("agent local-cli output localization", () => {
   ])("localizes the shell comment in $locale while preserving copyable exports", async ({ locale, instruction }) => {
     await runCommand(locale);
 
-    expect(logSpy.mock.calls.map(([line]) => String(line))).toEqual([
+    expect(outputLines(logSpy)).toEqual([
       `Agent: ${AGENT.name} (${AGENT_ID})`,
       `API key created: ${CREATED_KEY.name} (${API_KEY_ID})`,
       "",
@@ -113,7 +117,7 @@ describe("agent local-cli output localization", () => {
   it.each(["pt-BR", "en"] as const)("keeps the structured %s response free of localized framing", async (locale) => {
     await runCommand(locale, true);
 
-    const [output] = logSpy.mock.calls.map(([line]) => String(line));
+    const [output] = outputLines(logSpy);
     expect(JSON.parse(output!)).toEqual({
       agent: { id: AGENT_ID, name: AGENT.name, urlKey: AGENT.urlKey, companyId: COMPANY_ID },
       key: CREATED_KEY,

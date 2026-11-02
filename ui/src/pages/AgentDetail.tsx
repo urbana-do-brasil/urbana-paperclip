@@ -29,6 +29,7 @@ import { projectsApi } from "../api/projects";
 import { usePanel } from "../context/PanelContext";
 import { useSidebar } from "../context/SidebarContext";
 import { useCompany } from "../context/CompanyContext";
+import { useManagedPluginResourceDisplayName } from "../hooks/useManagedPluginResourceDisplayNames";
 import { useToastActions } from "../context/ToastContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { queryKeys } from "../lib/queryKeys";
@@ -833,6 +834,11 @@ export function AgentDetail() {
   });
   const lifecycle = useAgentLifecycleStatus(agent);
   const resolvedCompanyId = agent?.companyId ?? selectedCompanyId;
+  const agentDisplayName = useManagedPluginResourceDisplayName(
+    resolvedCompanyId,
+    "agent",
+    agent ? { id: agent.id, name: agent.name } : undefined,
+  );
   const canonicalAgentRef = agent ? agentRouteRef(agent) : routeAgentRef;
   const handleLegacyTabChange = useCallback((next: string) => {
     if (!prepareAgentNavigation()) return;
@@ -1063,7 +1069,7 @@ export function AgentDetail() {
     const crumbs: { label: string; href?: string }[] = [
       { label: t("agentDetailNavigation.agents"), href: "/agents" },
     ];
-    const agentName = agent?.name ?? routeAgentRef ?? t("agentDetailNavigation.agentFallback");
+    const agentName = agentDisplayName ?? agent?.name ?? routeAgentRef ?? t("agentDetailNavigation.agentFallback");
     if (activeView === "overview" && !urlRunId) {
       crumbs.push({ label: agentName });
     } else {
@@ -1079,7 +1085,7 @@ export function AgentDetail() {
       }
     }
     setBreadcrumbs(crumbs);
-  }, [setBreadcrumbs, agent, routeAgentRef, canonicalAgentRef, activeView, urlRunId, t]);
+  }, [setBreadcrumbs, agent, agentDisplayName, routeAgentRef, canonicalAgentRef, activeView, urlRunId, t]);
 
   useEffect(() => {
     closePanel();
@@ -1269,11 +1275,11 @@ export function AgentDetail() {
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-5 border-b border-border pb-6">
         <div className="flex min-w-0 items-center gap-4">
-          <div role="img" aria-label={t("agentDetailHeader.avatarLabel", { agentName: agent.name })} className="shrink-0">
+          <div role="img" aria-label={t("agentDetailHeader.avatarLabel", { agentName: agentDisplayName ?? agent.name })} className="shrink-0">
             <AgentCharacter agent={agent} state={characterStateForAgent(currentAgent.status)} size={96} trackingScope="page" />
           </div>
           <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2"><h1 className="truncate text-2xl font-semibold tracking-tight">{agent.name}</h1><PrimaryAgentIndicator agentId={agent.id} companyId={agent.companyId} /></div>
+            <div className="flex items-center gap-2"><h1 className="truncate text-2xl font-semibold tracking-tight">{agentDisplayName ?? agent.name}</h1><PrimaryAgentIndicator agentId={agent.id} companyId={agent.companyId} /></div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {agent.adapterType === "claude_local" || agent.adapterType === "codex_local"
                 ? <img src={`/brands/${agent.adapterType === "claude_local" ? "claude" : "codex"}-color.svg`} className="size-4" alt="" />

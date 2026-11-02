@@ -203,11 +203,13 @@ export interface OrgChartProps {
   orgTree?: OrgNode[];
   /** Agent records paired with a pre-filtered embedded tree. */
   agents?: Agent[];
+  /** Display-only translated names for managed agents. */
+  displayNames?: ReadonlyMap<string, string>;
   /** Hides page-level actions and breadcrumb ownership. */
   embedded?: boolean;
 }
 
-export function OrgChart({ orgTree: providedOrgTree, agents: providedAgents, embedded = false }: OrgChartProps = {}) {
+export function OrgChart({ orgTree: providedOrgTree, agents: providedAgents, displayNames, embedded = false }: OrgChartProps = {}) {
   const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
@@ -245,7 +247,16 @@ export function OrgChart({ orgTree: providedOrgTree, agents: providedAgents, emb
   }, [embedded, setBreadcrumbs, t]);
 
   // Layout computation
-  const layout = useMemo(() => layoutForest(orgTree ?? []), [orgTree]);
+  const layout = useMemo(() => {
+    function withDisplayNames(node: OrgNode): OrgNode {
+      return {
+        ...node,
+        name: displayNames?.get(node.id) ?? node.name,
+        reports: node.reports.map(withDisplayNames),
+      };
+    }
+    return layoutForest((orgTree ?? []).map(withDisplayNames));
+  }, [orgTree, displayNames]);
   const allNodes = useMemo(() => flattenLayout(layout), [layout]);
   const edges = useMemo(() => collectEdges(layout), [layout]);
 

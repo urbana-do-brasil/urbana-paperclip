@@ -17,6 +17,7 @@ import { agentsApi } from "../api/agents";
 import { projectsApi } from "../api/projects";
 import { accessApi } from "../api/access";
 import { useCompany } from "../context/CompanyContext";
+import { useManagedPluginResourceDisplayName } from "../hooks/useManagedPluginResourceDisplayNames";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useToastActions } from "../context/ToastContext";
 import { queryKeys } from "../lib/queryKeys";
@@ -192,6 +193,11 @@ export function RoutineDetail() {
     queryFn: () => routinesApi.get(routineId!),
     enabled: !!routineId,
   });
+  const routineDisplayName = useManagedPluginResourceDisplayName(
+    routine?.companyId ?? selectedCompanyId,
+    "routine",
+    routine ? { id: routine.id, name: routine.title } : undefined,
+  );
   const activeIssueId = routine?.activeIssue?.id;
   const { data: liveRuns } = useQuery({
     queryKey: queryKeys.issues.liveRuns(activeIssueId!),
@@ -340,14 +346,14 @@ export function RoutineDetail() {
 
   useEffect(() => {
     if (!routine) return;
-    setBreadcrumbs([{ label: t("routines.list.title"), href: "/routines" }, { label: routine.title }]);
+    setBreadcrumbs([{ label: t("routines.list.title"), href: "/routines" }, { label: routineDisplayName ?? routine.title }]);
     if (!routineDefaults) return;
     const changedRoutine = hydratedRoutineIdRef.current !== routine.id;
     if (changedRoutine || !isEditDirty) {
       setEditDraft(routineDefaults);
       hydratedRoutineIdRef.current = routine.id;
     }
-  }, [routine, routineDefaults, isEditDirty, setBreadcrumbs, t]);
+  }, [routine, routineDisplayName, routineDefaults, isEditDirty, setBreadcrumbs, t]);
 
   useEffect(() => {
     autoResizeTextarea(titleInputRef.current);

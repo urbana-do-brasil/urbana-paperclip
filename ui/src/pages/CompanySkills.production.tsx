@@ -30,6 +30,7 @@ import { companySkillsApi } from "../api/companySkills";
 import { foldersApi } from "../api/folders";
 import { agentsApi } from "../api/agents";
 import { useCompany } from "../context/CompanyContext";
+import { useManagedPluginResourceDisplayNames } from "../hooks/useManagedPluginResourceDisplayNames";
 import { useBreadcrumbs, type Breadcrumb } from "../context/BreadcrumbContext";
 import { useToastActions } from "../context/ToastContext";
 import { queryKeys } from "../lib/queryKeys";
@@ -2888,6 +2889,7 @@ function SkillTagsEditor({
 
 export function SkillDetailPage({
   detail,
+  displayName,
   folderDisplayPath,
   catalogSource,
   routeSkills,
@@ -2930,6 +2932,7 @@ export function SkillDetailPage({
   studioHref,
 }: {
   detail: CompanySkillDetail | null | undefined;
+  displayName?: string;
   folderDisplayPath?: string | null;
   catalogSource?: CatalogSkillSource | null;
   routeSkills?: CompanySkillRouteSubject[];
@@ -3352,7 +3355,7 @@ export function SkillDetailPage({
               />
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
-                  <h1 className="truncate text-2xl font-semibold">{detail.name}</h1>
+                  <h1 className="truncate text-2xl font-semibold">{displayName ?? detail.name}</h1>
                   {/* Source icon sits right after the title; the tooltip names
                       where the skill was installed from (PAP-10907). */}
                   <Tooltip>
@@ -4238,6 +4241,7 @@ export function CompanySkills() {
   });
 
   const installedSkills = skillsQuery.data ?? [];
+  const managedSkillDisplayNames = useManagedPluginResourceDisplayNames(selectedCompanyId, "skill", installedSkills);
   const routeResolution = useMemo(
     () => resolveSkillRouteToken(routeSkillToken, installedSkills),
     [routeSkillToken, installedSkills],
@@ -4678,6 +4682,10 @@ export function CompanySkills() {
     });
     return sortDiscoveryCards(filtered, discoverySort, discoveryTab !== "bundled");
   }, [discoveryTabCards, discoveryCategory, discoverySearch, discoverySearchActive, discoverySort, discoveryTab, folderSelection, folderSubtreeIds]);
+  const localizedVisibleDiscoveryCards = useMemo(() => visibleDiscoveryCards.map((card) => {
+    const displayName = card.skillId ? managedSkillDisplayNames.get(card.skillId) : undefined;
+    return displayName && displayName !== card.name ? { ...card, name: displayName } : card;
+  }), [visibleDiscoveryCards, managedSkillDisplayNames]);
 
   const selectedCatalogSkill = catalogDetailQuery.data
     ?? (catalogListQuery.data ?? []).find((entry) => entry.id === selectedCatalogRef || entry.key === selectedCatalogRef)
@@ -5515,7 +5523,7 @@ export function CompanySkills() {
           onSearchChange={setDiscoverySearch}
           sort={discoverySort}
           onSortChange={setDiscoverySort}
-          cards={visibleDiscoveryCards}
+          cards={localizedVisibleDiscoveryCards}
           onOpenCard={openDiscoveryCard}
           loading={skillsQuery.isLoading || catalogListQuery.isLoading}
           error={skillsQuery.error?.message ?? catalogListQuery.error?.message ?? null}
@@ -5598,6 +5606,7 @@ export function CompanySkills() {
       ) : activeView === "installed" && selectedSkillId ? (
         <SkillDetailPage
           detail={activeDetail}
+          displayName={managedSkillDisplayNames.get(activeDetail?.id ?? "")}
           folderDisplayPath={activeSkillFolderDisplayPath}
           catalogSource={catalogSourceForDetail}
           routeSkills={installedSkills}

@@ -20,6 +20,7 @@ import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useToastActions } from "../context/ToastContext";
 import { useStreamlinedUiEnabled } from "../hooks/useStreamlinedUiEnabled";
+import { useManagedPluginResourceDisplayName } from "../hooks/useManagedPluginResourceDisplayNames";
 import { useManagedPluginDisplayName } from "../hooks/useManagedPluginDisplayName";
 import { queryKeys } from "../lib/queryKeys";
 import { copyTextToClipboard } from "../lib/clipboard";
@@ -173,6 +174,11 @@ export function RoutineDetail() {
     queryFn: () => routinesApi.get(routineId!),
     enabled: !!routineId,
   });
+  const routineDisplayName = useManagedPluginResourceDisplayName(
+    routine?.companyId ?? selectedCompanyId,
+    "routine",
+    routine ? { id: routine.id, name: routine.title } : undefined,
+  );
   const managedPluginDisplayName = useManagedPluginDisplayName(routine?.managedByPlugin);
   const activeIssueId = routine?.activeIssue?.id;
   const { data: liveRuns } = useQuery({
@@ -322,14 +328,14 @@ export function RoutineDetail() {
 
   useEffect(() => {
     if (!routine) return;
-    if (!triggerSetup) setBreadcrumbs([{ label: t("routines.list.title"), href: "/routines" }, { label: routine.title }]);
+    if (!triggerSetup) setBreadcrumbs([{ label: t("routines.list.title"), href: "/routines" }, { label: routineDisplayName ?? routine.title }]);
     if (!routineDefaults) return;
     const changedRoutine = hydratedRoutineIdRef.current !== routine.id;
     if (changedRoutine || !isEditDirty) {
       setEditDraft(routineDefaults);
       hydratedRoutineIdRef.current = routine.id;
     }
-  }, [routine, routineDefaults, isEditDirty, setBreadcrumbs, t, triggerSetup]);
+  }, [routine, routineDisplayName, routineDefaults, isEditDirty, setBreadcrumbs, t, triggerSetup]);
 
   useEffect(() => {
     autoResizeTextarea(titleInputRef.current);
@@ -813,7 +819,7 @@ export function RoutineDetail() {
                 }}
               />
             ) : (
-              <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{routine.title}</h1>
+              <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{routineDisplayName ?? routine.title}</h1>
             )}
             {routine.managedByPlugin ? (
               <Badge variant="outline" className="hidden shrink-0 gap-1.5 text-xs text-muted-foreground sm:inline-flex">

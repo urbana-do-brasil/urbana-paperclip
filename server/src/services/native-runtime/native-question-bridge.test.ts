@@ -1,9 +1,11 @@
 import { createLocalNativeQuestionBridge } from "./local-native-question-bridge.js";
 import { randomUUID } from "node:crypto";
+import express from "express";
 import { mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import request from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq, sql } from "drizzle-orm";
 
@@ -47,6 +49,8 @@ import {
   type IssuePostCommitAction,
 } from "../issues.js";
 import { questionResponseDeliveryService } from "../question-response-delivery.js";
+import { issueRoutes } from "../../routes/issues.js";
+import { errorHandler } from "../../middleware/index.js";
 import * as questionPatternValidation from "../question-pattern-validation.js";
 import { heartbeatService } from "../heartbeat.js";
 import { DurablePrpControlPlane } from "../../vendor/paperclip-runner/index.js";
@@ -403,7 +407,12 @@ describeEmbeddedPostgres("native question bridge", () => {
     await validateNativeQuestionResponseInput(interaction!, answer);
     await expect(validateNativeQuestionResponseInput(interaction!, {
       answers: [{ questionId: "color", optionIds: ["red"] }],
-    })).rejects.toThrow(/unknown option red/);
+    })).rejects.toMatchObject({
+      message: expect.stringMatching(/unknown option red/),
+      status: 422,
+      details: { code: "invalid_question_response" },
+      presentation: { key: "validation" },
+    });
 
     const answered = await issueThreadInteractionService(db).answerQuestions(
       { id: issueId, companyId, status: "in_progress" },
@@ -441,6 +450,53 @@ describeEmbeddedPostgres("native question bridge", () => {
     if (answered.kind !== "ask_user_questions") throw new Error("expected question interaction");
     await expect(nativeQuestionRunToCancel(db, answered)).resolves.toBe(runId);
     release();
+  });
+
+  it("returns localized validation metadata from the real response route without resolving the question", async () => {
+    await seed();
+    const interaction = await projectNativeRuntimeRequest({
+      db,
+      binding: binding(),
+      event: runtimeRequestEvent(),
+    });
+    expect(interaction).toMatchObject({ kind: "ask_user_questions", status: "pending" });
+
+    const app = express();
+    app.use(express.json());
+    app.use((req, _res, next) => {
+      req.actor = {
+        type: "board",
+        source: "session",
+        userId: "operator-1",
+        companyIds: [companyId],
+        memberships: [{ companyId, status: "active", membershipRole: "member" }],
+        isInstanceAdmin: false,
+      };
+      next();
+    });
+    app.use("/api", issueRoutes(db, {} as never));
+    app.use(errorHandler);
+
+    const response = await request(app)
+      .post(`/api/issues/${issueId}/interactions/${interaction!.id}/respond`)
+      .send({ answers: [{ questionId: "color", optionIds: ["not-an-option"] }] });
+
+    expect(response.status).toBe(422);
+    expect(response.body).toMatchObject({
+      error: expect.stringMatching(/unknown option not-an-option/),
+      code: "invalid_question_response",
+      details: { code: "invalid_question_response" },
+      messageKey: "validation",
+    });
+    const [unchanged] = await db
+      .select()
+      .from(issueThreadInteractions)
+      .where(eq(issueThreadInteractions.id, interaction!.id));
+    expect(unchanged).toMatchObject({
+      status: "pending",
+      payload: interaction!.payload,
+      result: null,
+    });
   });
 
   it.each(["legacy", "canonical_select"])("keeps %s custom-answer normalization and rejects blank public answers", async (mode) => {

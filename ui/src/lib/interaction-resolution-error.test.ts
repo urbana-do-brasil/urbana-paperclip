@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { ApiError } from "../api/client";
+import { i18n } from "../i18n";
 import {
   describeInteractionResolutionFailure,
   interactionResolutionErrorCode,
@@ -15,6 +16,8 @@ const openAudience = { shortSummary: "Anyone can respond", isOpen: true };
 function denial(status: number, code: string, message: string) {
   return new ApiError(message, status, { error: message, code, details: { code } });
 }
+
+afterEach(async () => { await i18n.changeLanguage("pt-BR"); });
 
 describe("interactionResolutionErrorCode", () => {
   it("reads the top-level code the API returns", () => {
@@ -161,5 +164,24 @@ describe("describeInteractionResolutionFailure", () => {
     expect(
       interactionResolutionErrorMessage(denial(403, "interaction_human_only", "Agents cannot resolve this."), null),
     ).toBe("Agents cannot resolve this.");
+  });
+
+  it.each([
+    ["pt-BR", "Os dados enviados são inválidos. Revise os campos e tente novamente."],
+    ["en", "The submitted data is invalid. Check the fields and try again."],
+  ] as const)("localizes an allowlisted validation identity in %s", async (locale, expected) => {
+    const original = "Native question response contains unknown option red";
+    const error = new ApiError(original, 422, {
+      error: original,
+      code: "invalid_question_response",
+      details: { code: "invalid_question_response" },
+      messageKey: "validation",
+    });
+    await i18n.changeLanguage(locale);
+
+    expect(interactionResolutionErrorMessage(error)).toBe(expected);
+    expect(error.message).toBe(original);
+    expect(error.status).toBe(422);
+    expect(error.body).toMatchObject({ code: "invalid_question_response", messageKey: "validation" });
   });
 });

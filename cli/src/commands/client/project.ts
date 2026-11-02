@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import pc from "picocolors";
 import type { Project } from "@paperclipai/shared";
 import { createProjectSchema, updateProjectSchema } from "@paperclipai/shared";
 import {
@@ -10,6 +11,7 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { cliMessage, cliMessageCatalog } from "../../localization/index.js";
 
 interface ProjectListOptions extends BaseClientOptions {
   companyId?: string;
@@ -64,7 +66,7 @@ export function registerProjectCommands(program: Command): void {
             return;
           }
           if (rows.length === 0) {
-            printOutput([], { json: false });
+            console.log(pc.dim(cliMessage("emptyList")));
             return;
           }
           for (const row of rows) {
@@ -75,6 +77,15 @@ export function registerProjectCommands(program: Command): void {
               urlKey: row.urlKey,
               goalIds: row.goalIds?.join(",") ?? "",
               leadAgentId: row.leadAgentId,
+            }, {
+              labels: {
+                id: cliMessage("projectListId"),
+                name: cliMessage("projectListName"),
+                status: cliMessage("projectListStatus"),
+                urlKey: cliMessage("projectListUrlKey"),
+                goalIds: cliMessage("projectListGoalIds"),
+                leadAgentId: cliMessage("projectListLeadAgentId"),
+              },
             }));
           }
         } catch (err) {
@@ -95,6 +106,10 @@ export function registerProjectCommands(program: Command): void {
           const ctx = resolveCommandContext(opts);
           const query = ctx.companyId ? `?${new URLSearchParams({ companyId: ctx.companyId }).toString()}` : "";
           const row = await ctx.api.get<Project>(`${apiPath`/api/projects/${projectRef}`}${query}`);
+          if (row === null && !ctx.json) {
+            console.log(pc.dim(cliMessage("emptyValue")));
+            return;
+          }
           printOutput(row, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -130,8 +145,8 @@ export function registerProjectCommands(program: Command): void {
             leadAgentId: parseNullableString(opts.leadAgentId),
             targetDate: parseNullableString(opts.targetDate),
             color: parseNullableString(opts.color),
-            env: parseOptionalJson(opts.envJson),
-            executionWorkspacePolicy: parseOptionalJson(opts.executionWorkspacePolicyJson),
+            env: parseOptionalJson(opts.envJson, ctx.json),
+            executionWorkspacePolicy: parseOptionalJson(opts.executionWorkspacePolicyJson, ctx.json),
           });
           const created = await ctx.api.post<Project>(apiPath`/api/companies/${ctx.companyId}/projects`, payload);
           printOutput(created, { json: ctx.json });
@@ -171,8 +186,8 @@ export function registerProjectCommands(program: Command): void {
             leadAgentId: parseNullableString(opts.leadAgentId),
             targetDate: parseNullableString(opts.targetDate),
             color: parseNullableString(opts.color),
-            env: parseOptionalJson(opts.envJson),
-            executionWorkspacePolicy: parseOptionalJson(opts.executionWorkspacePolicyJson),
+            env: parseOptionalJson(opts.envJson, ctx.json),
+            executionWorkspacePolicy: parseOptionalJson(opts.executionWorkspacePolicyJson, ctx.json),
             archivedAt: parseNullableString(opts.archivedAt),
           });
           const query = ctx.companyId ? `?${new URLSearchParams({ companyId: ctx.companyId }).toString()}` : "";
@@ -194,7 +209,13 @@ export function registerProjectCommands(program: Command): void {
       .option("--yes", "Confirm deletion")
       .action(async (projectRef: string, opts: ProjectDeleteOptions) => {
         try {
-          if (!opts.yes) throw new Error("Deletion requires --yes.");
+          if (!opts.yes) {
+            throw new Error(
+              opts.json
+                ? cliMessageCatalog.en.projectDeleteNeedsYes
+                : cliMessage("projectDeleteNeedsYes"),
+            );
+          }
           const ctx = resolveCommandContext(opts);
           const query = ctx.companyId ? `?${new URLSearchParams({ companyId: ctx.companyId }).toString()}` : "";
           const deleted = await ctx.api.delete<Project>(`${apiPath`/api/projects/${projectRef}`}${query}`);
@@ -217,12 +238,18 @@ function parseNullableString(value: string | undefined): string | null | undefin
   return value.trim().toLowerCase() === "null" ? null : value;
 }
 
-function parseOptionalJson(value: string | undefined): unknown {
+function parseOptionalJson(value: string | undefined, json: boolean): unknown {
   if (value === undefined) return undefined;
   if (value.trim().toLowerCase() === "null") return null;
   try {
     return JSON.parse(value);
   } catch (err) {
-    throw new Error(`Invalid JSON: ${err instanceof Error ? err.message : String(err)}`);
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new Error(formatProjectInvalidJsonMessage(detail, json));
   }
+}
+
+function formatProjectInvalidJsonMessage(detail: string, json: boolean): string {
+  const template = json ? cliMessageCatalog.en.projectInvalidJson : cliMessage("projectInvalidJson");
+  return template.replace("{error}", detail);
 }

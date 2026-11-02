@@ -14,6 +14,7 @@ import { useDialogActions } from "../context/DialogContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useSidebar } from "../context/SidebarContext";
 import { useStreamlinedUiEnabled } from "../hooks/useStreamlinedUiEnabled";
+import { useManagedPluginResourceDisplayNames } from "../hooks/useManagedPluginResourceDisplayNames";
 import { queryKeys } from "../lib/queryKeys";
 import { AgentStatusBadge } from "../components/StatusBadge";
 import { EntityRow } from "../components/EntityRow";
@@ -176,6 +177,7 @@ export function Agents({ initialView = "list" }: { initialView?: AgentsView } = 
     queryFn: () => agentsApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId,
   });
+  const agentDisplayNames = useManagedPluginResourceDisplayNames(selectedCompanyId, "agent", agents);
 
   const { data: orgTree } = useQuery({
     queryKey: queryKeys.org(selectedCompanyId!),
@@ -311,7 +313,7 @@ export function Agents({ initialView = "list" }: { initialView?: AgentsView } = 
     return (
       <EntityRow
         key={agent.id}
-        title={agent.name}
+        title={agentDisplayNames.get(agent.id) ?? agent.name}
         titleAccessory={<PrimaryAgentIndicator agentId={agent.id} companyId={agent.companyId} />}
         titleClassName="flex-1 @5xl:flex-none @5xl:w-56"
         titleTextClassName="truncate"
@@ -450,7 +452,7 @@ export function Agents({ initialView = "list" }: { initialView?: AgentsView } = 
 
       {/* Org chart view */}
       {effectiveView === "org" && filteredOrg.length > 0 && (
-        <OrgChart embedded orgTree={filteredOrg} agents={agents ?? []} />
+        <OrgChart embedded orgTree={filteredOrg} agents={agents ?? []} displayNames={agentDisplayNames} />
       )}
 
       {effectiveView === "org" && orgTree && orgTree.length > 0 && filteredOrg.length === 0 && (

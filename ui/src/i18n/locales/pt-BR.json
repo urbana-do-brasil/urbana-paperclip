@@ -3917,6 +3917,29 @@
         "description": "Sandboxes do CreateOS com saída de comandos ao vivo e reutilização opcional com pausa e retomada."
       }
     },
+    "managedResources": {
+      "llmWiki": {
+        "agent": {
+          "wikiMaintainer": "Responsável pelo Wiki"
+        },
+        "skill": {
+          "wikiMaintainer": "Responsável pelo LLM Wiki",
+          "wikiIngest": "Ingestão do Wiki",
+          "wikiQuery": "Consulta do Wiki",
+          "wikiLint": "Verificação do Wiki",
+          "paperclipDistill": "Destilação do Paperclip",
+          "indexRefresh": "Atualização do índice"
+        },
+        "project": {
+          "llmWiki": "LLM Wiki"
+        },
+        "routine": {
+          "cursorWindowProcessing": "Processar atualizações do LLM Wiki",
+          "nightlyWikiLint": "Executar verificação do LLM Wiki",
+          "indexRefresh": "Atualizar índice do LLM Wiki"
+        }
+      }
+    },
     "localFolders": {
       "llmWikiRoot": {
         "name": "Pasta raiz da Wiki",
