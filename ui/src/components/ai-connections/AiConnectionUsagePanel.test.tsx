@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import type { AiManagedConnectionSummary, AiConnectionUsage } from "@paperclipai/shared";
 import { AiConnectionUsagePanel } from "./AiConnectionUsagePanel";
 
@@ -12,12 +13,13 @@ const account: AiManagedConnectionSummary = { id: "connection", grantId: "grant"
 let root: ReturnType<typeof createRoot>;
 let host: HTMLDivElement;
 let client: QueryClient;
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.resetAllMocks();
   client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
 });
-afterEach(() => { flushSync(() => root.unmount()); client.clear(); host.remove(); });
+afterEach(async () => { flushSync(() => root.unmount()); client.clear(); host.remove(); await i18n.changeLanguage("en"); });
 function render(value = account) {
   flushSync(() => root.render(<QueryClientProvider client={client}><AiConnectionUsagePanel key={value.id} account={value} /></QueryClientProvider>));
 }
@@ -104,4 +106,29 @@ it("shows cached pool observations without offering or making a provider call", 
   expect(host.textContent).toContain("Usage not reported");
   expect(host.querySelector("button")).toBeNull();
   expect(api.probeUsage).not.toHaveBeenCalled();
+});
+
+it.each([
+  ["en", "Usage", "Account usage limits", "Check usage", "Provider unavailable. Try again."],
+  ["pt-BR", "Uso", "Limites de uso da conta", "Verificar uso", "Provedor indisponível. Tente novamente."],
+] as const)("localizes usage states and stable error codes in %s", async (locale, title, sectionLabel, checkLabel, errorText) => {
+  await i18n.changeLanguage(locale);
+  api.probeUsage.mockResolvedValue({ status: "error", errorCode: "provider_unavailable", message: "Upstream maintenance detail" });
+  render();
+
+  expect(host.querySelector("h3")?.textContent).toBe(title);
+  expect(host.querySelector("section")?.getAttribute("aria-label")).toBe(sectionLabel);
+  expect(host.querySelector("button")?.textContent).toBe(checkLabel);
+  click();
+  await vi.waitFor(() => expect(host.querySelector('[role="alert"]')?.textContent).toBe(errorText));
+});
+
+it.each([
+  ["en", "Usage unavailable. Details: Provider maintenance window 93"],
+  ["pt-BR", "Não foi possível verificar o uso. Detalhes: Provider maintenance window 93"],
+] as const)("localizes unknown usage error framing in %s and preserves provider detail", async (locale, message) => {
+  await i18n.changeLanguage(locale);
+  api.probeUsage.mockResolvedValue({ status: "error", message: "Provider maintenance window 93" });
+  render(); click();
+  await vi.waitFor(() => expect(host.querySelector('[role="alert"]')?.textContent).toBe(message));
 });

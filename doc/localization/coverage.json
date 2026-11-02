@@ -918,9 +918,12 @@
         "4.3q runtime-state/reset-session/task-sessions: 56/56 testes em 11 arquivos; typecheck direcionado passou.",
         "4.3r skills: help, mensagens e erros estruturados; 31/31 testes e typecheck direcionado, catálogo integrado ao gate.",
         "4.3s instruções de agentes: 6/6 testes, conteúdo CRLF/Unicode e JSON preservados.",
-        "4.3t permissions:update/heartbeat:invoke/claude-login: 24/24 regressões combinadas, typecheck direcionado e gate de fontes passaram."
+        "4.3t permissions:update/heartbeat:invoke/claude-login: 24/24 regressões combinadas, typecheck direcionado e gate de fontes passaram.",
+        "activity list/create/issue: help e rótulos humanos PT-BR/en; sucesso/falha por operação, valores e JSON preservados; testes focados 5/5 e typecheck da CLI passaram.",
+        "cli/src/__tests__/activity-localization.test.ts",
+        "cli/src/__tests__/activity-parity.test.ts"
       ],
-      "limits": "Operações de organização 4.3a–g e agentes/skills 4.3h–t parcialmente verificadas em PT-BR/en. Outras operações de skills e demais grupos operacionais, além da regressão 4.4, permanecem pendentes. Typecheck integral da CLI apresentou exit 137 por memória; typechecks direcionados passaram."
+      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e a família activity foram verificadas parcialmente em PT-BR/en. Outros grupos operacionais e a regressão 4.4 permanecem pendentes. Typecheck da CLI passou no lote activity; rodadas anteriores registraram exit 137 por memória."
     },
     {
       "id": "help-start",

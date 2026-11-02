@@ -3511,3 +3511,35 @@ Checkpoint: **331/349 tarefas**.
 - Permissões, heartbeat e login Claude: 24/24 testes de regressão combinada, typecheck direcionado e gate de fontes passaram. Typecheck integral da CLI terminou com exit 137 por memória.
 
 Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
+
+### Operações de issues, projetos, objetivos e aprovações — 4.3u
+
+- Cinco suítes focadas de localização da CLI passaram: 31/31 testes. Elas cobrem saídas em PT-BR/en, respostas estruturadas, rotas, payloads, validações e erros externos para as operações implementadas. A regressão integrada e os demais comandos seguem pendentes em 4.3 e 4.4.
+- Com a inclusão desta subtarefa, o checklist registra **335/353 tarefas**; as 18 caixas abertas incluem tarefas agregadoras e subtarefas.
+
+### Activity e verificações de interações e plugins — 4.3v, 6.3 e 3.11h
+
+- CLI activity: help PT-BR/en para list/create/issue e rótulos humanos da lista; testes focados 5/5 e typecheck da CLI passaram. As tarefas gerais 4.3/4.4 permanecem abertas.
+- Interações: 77 testes sem banco passaram; 72 testes PostgreSQL passaram em namespace descartável não root (atribuição, entrega de respostas e ponte nativa). O fluxo E2E de duas contas e a aceitação integral ainda precisam de confirmação; 6.3 permanece aberta.
+- Recursos gerenciados: rota/serviço 5/5 e apresentação/cache 16/16 passaram. A suíte Wiki passou 48/48 após declarar React como dependência de desenvolvimento. A instalação offline congelada inicialmente encontrou inconsistências preexistentes nos importers de plugin-file-browser-example e plugin-kitchen-sink-example; após reconciliar ambos, `pnpm install --frozen-lockfile --ignore-scripts --offline` passou. A tarefa 3.11h permanece aberta.
+- Checkpoint: **336/354 tarefas**, com 18 caixas abertas incluindo agregadoras.
+
+### Tokens de agentes na CLI — 4.3w
+
+- Help, rótulos de listagem e erros próprios de create/list/revoke foram localizados. Os erros próprios mantêm stderr em inglês em `--json`; payloads e rotas foram preservados. Suítes focadas 12/12, typecheck da CLI e gate de literais passaram. As tarefas gerais 4.3 e 4.4 continuam abertas.
+- Checkpoint: **337/355 tarefas**, com 18 caixas abertas incluindo agregadoras.
+
+### Pool de conexões de IA e tokens de usuário — 3.9f3h e 4.3x–y
+
+- Conexões de IA: pool, uso e estados especiais de AppsConnect localizados. Suítes UI 229/229 e locale 12/12; após correção para preservar o nome padrão persistido, pool 2/2 e typecheck UI passaram. APIs simuladas; o feed de atividade geral não comprova histórico escopado à conexão.
+- CLI: token board e board-claim passaram 18/18 na suíte combinada e 6/6 respectivamente; teste isolado de token board 6/6 após ampliar fixture. O typecheck da CLI terminou com 137 sob concorrência e passou após repetição sequencial.
+- Checkpoint: **340/358 tarefas**; as 18 caixas abertas incluem agregadoras.
+
+### Fluxo de interação com duas contas — 6.3a
+
+- Playwright Chromium: 1/1 em servidor authenticated e PostgreSQL isolados, com duas contas PT-BR/en. A requisição inválida retornou 422 e metadados de validação, preservando a pergunta pendente; a resposta válida e o conteúdo original foram verificados após reload. O helper de convite foi atualizado para o formulário atual e mantém fallback legado; a suíte ampla não foi executada.
+- Checkpoint: **341/359 tarefas**, 18 caixas abertas incluindo agregadoras. A tarefa 6.3 permanece aberta até a revisão dos demais critérios.
+
+### Gates locais após os lotes 3.9f3h, 4.3v–y e 6.3a
+
+- `pnpm check:localization`: 68 tópicos, scanner incremental em 5 fontes alteradas, 11 testes Node e 196/196 Vitest. `pnpm check:token-gates`, validação OpenSpec estrita e `git diff --check` passaram. O scanner continua heurístico e a CI remota não foi executada; 7.1 e 7.3 permanecem abertas.

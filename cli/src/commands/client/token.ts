@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import pc from "picocolors";
 import { createAgentKeySchema, createBoardApiKeySchema, type Agent } from "@paperclipai/shared";
 import {
   addCommonClientOptions,
@@ -9,6 +10,7 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { cliMessage, getCliLocale, isCliJsonRequested } from "../../localization/index.js";
 
 interface AgentTokenOptions extends BaseClientOptions {
   companyId?: string;
@@ -75,7 +77,7 @@ export function registerTokenCommands(program: Command): void {
           const agentRow = await resolveAgent(ctx.api, ctx.companyId ?? "", opts.agent ?? "");
           const payload = createAgentKeySchema.parse({ name: opts.name });
           const key = await ctx.api.post<CreatedAgentKey>(apiPath`/api/agents/${agentRow.id}/keys`, payload);
-          if (!key) throw new Error("Failed to create agent API key");
+          if (!key) throw new Error(tokenAgentMessage("tokenAgentCreateFailed"));
           printOutput(
             {
               agentId: agentRow.id,
@@ -108,9 +110,19 @@ export function registerTokenCommands(program: Command): void {
             return;
           }
           for (const key of keys) {
-            console.log(formatInlineRecord({ id: key.id, name: key.name, createdAt: key.createdAt, revokedAt: key.revokedAt ?? null }));
+            console.log(formatInlineRecord(
+              { id: key.id, name: key.name, createdAt: key.createdAt, revokedAt: key.revokedAt ?? null },
+              {
+                labels: {
+                  id: cliMessage("tokenAgentListId"),
+                  name: cliMessage("tokenAgentListName"),
+                  createdAt: cliMessage("tokenAgentListCreatedAt"),
+                  revokedAt: cliMessage("tokenAgentListRevokedAt"),
+                },
+              },
+            ));
           }
-          if (keys.length === 0) printOutput([], { json: false });
+          if (keys.length === 0) console.log(pc.dim(cliMessage("emptyList")));
         } catch (err) {
           handleCommandError(err);
         }
@@ -159,7 +171,7 @@ export function registerTokenCommands(program: Command): void {
             expiresAt,
           });
           const key = await ctx.api.post<CreatedBoardKey>("/api/board-api-keys", payload);
-          if (!key) throw new Error("Failed to create board API key");
+          if (!key) throw new Error(tokenBoardMessage("tokenBoardCreateFailed"));
           printOutput({ key }, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -181,16 +193,28 @@ export function registerTokenCommands(program: Command): void {
             return;
           }
           for (const key of keys) {
-            console.log(formatInlineRecord({
-              id: key.id,
-              name: key.name,
-              createdAt: key.createdAt,
-              lastUsedAt: key.lastUsedAt,
-              expiresAt: key.expiresAt,
-              revokedAt: key.revokedAt,
-            }));
+            console.log(formatInlineRecord(
+              {
+                id: key.id,
+                name: key.name,
+                createdAt: key.createdAt,
+                lastUsedAt: key.lastUsedAt,
+                expiresAt: key.expiresAt,
+                revokedAt: key.revokedAt,
+              },
+              {
+                labels: {
+                  id: cliMessage("tokenBoardListId"),
+                  name: cliMessage("tokenBoardListName"),
+                  createdAt: cliMessage("tokenBoardListCreatedAt"),
+                  lastUsedAt: cliMessage("tokenBoardListLastUsedAt"),
+                  expiresAt: cliMessage("tokenBoardListExpiresAt"),
+                  revokedAt: cliMessage("tokenBoardListRevokedAt"),
+                },
+              },
+            ));
           }
-          if (keys.length === 0) printOutput([], { json: false });
+          if (keys.length === 0) console.log(pc.dim(cliMessage("emptyList")));
         } catch (err) {
           handleCommandError(err);
         }
@@ -216,28 +240,50 @@ export function registerTokenCommands(program: Command): void {
 
 async function resolveAgent(api: { get<T>(path: string): Promise<T | null> }, companyId: string, agentRef: string): Promise<Agent> {
   const trimmed = agentRef.trim();
-  if (!trimmed) throw new Error("Agent reference is required");
+  if (!trimmed) throw new Error(tokenAgentMessage("tokenAgentReferenceRequired"));
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trimmed)) {
     const agent = await api.get<Agent>(apiPath`/api/agents/${trimmed}`);
-    if (!agent || agent.companyId !== companyId) throw new Error(`Agent not found: ${agentRef}`);
+    if (!agent || agent.companyId !== companyId) {
+      throw new Error(tokenAgentMessage("tokenAgentNotFound", { agentRef }));
+    }
     return agent;
   }
   const query = new URLSearchParams({ companyId });
   const agent = await api.get<Agent>(`${apiPath`/api/agents/${trimmed}`}?${query.toString()}`);
-  if (!agent || agent.companyId !== companyId) throw new Error(`Agent not found: ${agentRef}`);
+  if (!agent || agent.companyId !== companyId) {
+    throw new Error(tokenAgentMessage("tokenAgentNotFound", { agentRef }));
+  }
   return agent;
+}
+
+function tokenAgentMessage(
+  key: "tokenAgentCreateFailed" | "tokenAgentReferenceRequired" | "tokenAgentNotFound",
+  values?: Readonly<Record<string, string | number>>,
+): string {
+  return cliMessage(key, values, isCliJsonRequested() ? "en" : getCliLocale());
+}
+
+function tokenBoardMessage(
+  key: "tokenBoardCreateFailed" | "tokenBoardInvalidExpiresAt" | "tokenBoardInvalidTtlDays",
+  values?: Readonly<Record<string, string | number>>,
+): string {
+  return cliMessage(key, values, isCliJsonRequested() ? "en" : getCliLocale());
 }
 
 function resolveBoardKeyExpiresAt(opts: BoardTokenOptions): Date | null | undefined {
   if (opts.neverExpires) return null;
   if (opts.expiresAt?.trim()) {
     const date = new Date(opts.expiresAt.trim());
-    if (!Number.isFinite(date.getTime())) throw new Error(`Invalid --expires-at value: ${opts.expiresAt}`);
+    if (!Number.isFinite(date.getTime())) {
+      throw new Error(tokenBoardMessage("tokenBoardInvalidExpiresAt", { value: opts.expiresAt.trim() }));
+    }
     return date;
   }
   if (opts.ttlDays?.trim()) {
     const days = Number(opts.ttlDays);
-    if (!Number.isFinite(days) || days <= 0) throw new Error(`Invalid --ttl-days value: ${opts.ttlDays}`);
+    if (!Number.isFinite(days) || days <= 0) {
+      throw new Error(tokenBoardMessage("tokenBoardInvalidTtlDays", { value: opts.ttlDays.trim() }));
+    }
     return new Date(Date.now() + Math.floor(days * 24 * 60 * 60 * 1000));
   }
   return undefined;

@@ -3,7 +3,7 @@
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CONNECTABLE_APP_DEFINITIONS, GOOGLE_WORKSPACE_CONNECTOR_PROFILES, getAppStoreDefinition } from "@paperclipai/shared";
+import { CONNECTABLE_APP_DEFINITIONS, GOOGLE_WORKSPACE_CONNECTOR_PROFILES, aiConnectionRouterAppDefinition, getAppStoreDefinition } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
 import { i18n } from "@/i18n";
@@ -807,6 +807,48 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await vi.waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/apps?source=composio&targetToolkit=circleback_mcp", { replace: true }));
     expect(connectAppMock).not.toHaveBeenCalled();
     expect(startOAuthMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["en", "The request could not be completed. Details: Composio account lookup failed", "Try again"],
+    ["pt-BR", "Não foi possível concluir a solicitação. Detalhes: Composio account lookup failed", "Tentar novamente"],
+  ] as const)("localizes Composio saved-account lookup failure in %s and preserves its detail", async (locale, message, retry) => {
+    await i18n.changeLanguage(locale);
+    mockSearch.value = "source=composio&targetToolkit=circleback_mcp";
+    listConnectionsMock.mockRejectedValue(new Error("Composio account lookup failed"));
+
+    await render();
+
+    await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain(message));
+    expect(buttonByText(retry)).toBeTruthy();
+    expect(buttonByText(locale === "en" ? "Cancel" : "Cancelar")).toBeTruthy();
+    expect(connectAppMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["en", "The request could not be completed. Details: AI account lookup failed"],
+    ["pt-BR", "Não foi possível concluir a solicitação. Detalhes: AI account lookup failed"],
+  ] as const)("localizes AI account reconnect failure in %s and preserves its detail", async (locale, message) => {
+    await i18n.changeLanguage(locale);
+    mockSearch.value = "source=openai&reconnect=connection-to-restore";
+    vi.spyOn(aiConnectionsApi, "list").mockRejectedValue(new Error("AI account lookup failed"));
+
+    await render();
+
+    await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain(message));
+  });
+
+  it.each([
+    ["en", "The request could not be completed. Details: Router catalog unavailable"],
+    ["pt-BR", "Não foi possível concluir a solicitação. Detalhes: Router catalog unavailable"],
+  ] as const)("localizes AI router lookup failure in %s and preserves its detail", async (locale, message) => {
+    await i18n.changeLanguage(locale);
+    mockSearch.value = `source=${aiConnectionRouterAppDefinition("example/router", { name: "Example router", description: "Example" }).slug}`;
+    listGalleryMock.mockRejectedValue(new Error("Router catalog unavailable"));
+
+    await render();
+
+    await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain(message));
   });
 
   it("retains explicit new-account setup even when Composio is saved", async () => {

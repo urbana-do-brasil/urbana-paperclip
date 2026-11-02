@@ -31,6 +31,41 @@ const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
 
 const operationHelp: Record<string, CommandHelp> = {
+  activity: {
+    description: { en: "Activity log operations", "pt-BR": "Operações do registro de atividade" },
+  },
+  "activity list": {
+    description: {
+      en: "List company activity log entries",
+      "pt-BR": "Listar entradas do registro de atividade da organização",
+    },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--agent-id": { en: "Filter by agent ID", "pt-BR": "Filtrar pelo ID do agente" },
+      "--entity-type": { en: "Filter by entity type", "pt-BR": "Filtrar pelo tipo de entidade" },
+      "--entity-id": { en: "Filter by entity ID", "pt-BR": "Filtrar pelo ID da entidade" },
+    },
+  },
+  "activity create": {
+    description: {
+      en: "Create a company activity log entry",
+      "pt-BR": "Criar uma entrada no registro de atividade da organização",
+    },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "CreateActivity JSON payload", "pt-BR": "Payload JSON de CreateActivity" },
+    },
+  },
+  "activity issue": {
+    description: {
+      en: "List activity for an issue",
+      "pt-BR": "Listar a atividade de uma tarefa",
+    },
+    arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
+    options: commonClientOptions,
+  },
   approval: {
     description: { en: "Approval operations", "pt-BR": "Operações de aprovação" },
   },
@@ -853,6 +888,77 @@ const operationHelp: Record<string, CommandHelp> = {
       revisionId: { en: "Revision ID", "pt-BR": "ID da revisão" },
     },
     options: commonClientOptions,
+  },
+  token: {
+    description: { en: "Manage Paperclip API tokens", "pt-BR": "Gerenciar tokens de API do Paperclip" },
+  },
+  "token agent": {
+    description: { en: "Manage agent API keys", "pt-BR": "Gerenciar chaves de API de agentes" },
+  },
+  "token agent create": {
+    description: { en: "Create an agent API key", "pt-BR": "Criar uma chave de API de agente" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--agent": { en: "Agent ID, shortname, or unambiguous name", "pt-BR": "ID, nome curto ou nome sem ambiguidade do agente" },
+      "--name": { en: "API key label", "pt-BR": "Nome da chave de API" },
+    },
+  },
+  "token agent list": {
+    description: { en: "List agent API keys", "pt-BR": "Listar chaves de API de um agente" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--agent": { en: "Agent ID, shortname, or unambiguous name", "pt-BR": "ID, nome curto ou nome sem ambiguidade do agente" },
+    },
+  },
+  "token agent revoke": {
+    description: { en: "Revoke an agent API key", "pt-BR": "Revogar uma chave de API de agente" },
+    arguments: { keyId: { en: "Agent API key ID", "pt-BR": "ID da chave de API do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--agent": { en: "Agent ID, shortname, or unambiguous name", "pt-BR": "ID, nome curto ou nome sem ambiguidade do agente" },
+    },
+  },
+  "token board": {
+    description: { en: "Manage board API keys", "pt-BR": "Gerenciar chaves de API do board" },
+  },
+  "token board create": {
+    description: { en: "Create a named board API key", "pt-BR": "Criar uma chave de API nomeada do board" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID used for audit context", "pt-BR": "ID da organização usada no contexto de auditoria" },
+      "--name": { en: "API key label", "pt-BR": "Nome da chave de API" },
+      "--expires-at": { en: "Expiration timestamp", "pt-BR": "Data e hora de expiração" },
+      "--ttl-days": { en: "Expiration in days from now", "pt-BR": "Prazo de expiração em dias a partir de agora" },
+      "--never-expires": { en: "Create a non-expiring key", "pt-BR": "Criar uma chave sem expiração" },
+    },
+  },
+  "token board list": {
+    description: { en: "List board API keys for the current board user", "pt-BR": "Listar as chaves de API do usuário atual do board" },
+    options: commonClientOptions,
+  },
+  "token board revoke": {
+    description: { en: "Revoke a board API key", "pt-BR": "Revogar uma chave de API do board" },
+    arguments: { keyId: { en: "Board API key ID", "pt-BR": "ID da chave de API do board" } },
+    options: commonClientOptions,
+  },
+  "board-claim": {
+    description: { en: "Board claim token operations", "pt-BR": "Operações de reivindicação de acesso do board" },
+  },
+  "board-claim show": {
+    description: { en: "Inspect a board claim token", "pt-BR": "Consultar um token de reivindicação do board" },
+    arguments: { token: { en: "Claim token", "pt-BR": "Token de reivindicação" } },
+    options: commonClientOptions,
+  },
+  "board-claim claim": {
+    description: { en: "Claim a board claim token", "pt-BR": "Reivindicar um token de acesso do board" },
+    arguments: { token: { en: "Claim token", "pt-BR": "Token de reivindicação" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "Claim JSON payload", "pt-BR": "Payload JSON de reivindicação" },
+    },
   },
 };
 

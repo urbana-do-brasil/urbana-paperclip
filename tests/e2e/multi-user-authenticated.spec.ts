@@ -222,7 +222,35 @@ async function createAuthenticatedInvite(page: Page, companyPrefix: string) {
 
 async function signUpFromInvite(page: Page, inviteUrl: string, user: HumanUser) {
   await page.goto(inviteUrl);
-  await expect(page.getByText("Sign in or create an account before submitting a human join request.")).toBeVisible();
+  const inlineAuthHeading = page.getByRole("heading", { name: "Create your account", exact: true });
+  const legacyAuthPrompt = page.getByText(
+    "Sign in or create an account before submitting a human join request.",
+    { exact: true },
+  );
+  await expect.poll(async () =>
+    (await inlineAuthHeading.isVisible().catch(() => false)) ||
+    (await legacyAuthPrompt.isVisible().catch(() => false)),
+  { timeout: 20_000 }).toBe(true);
+
+  if (await inlineAuthHeading.isVisible().catch(() => false)) {
+    await expect(inlineAuthHeading).toBeVisible();
+    await page.getByLabel("Name").fill(user.name);
+    await page.getByLabel("Email").fill(user.email);
+    await page.getByLabel("Password").fill(user.password);
+    await page.getByRole("button", { name: "Create account and continue" }).click();
+    await expect.poll(async () => {
+      const session = await sessionJsonRequest<{ user?: { email?: string | null } }>(
+        page,
+        `${BASE}/api/auth/get-session`,
+      );
+      return session.json?.user?.email ?? null;
+    }, { timeout: 20_000 }).toBe(user.email);
+    return;
+  }
+
+  // Keep compatibility with the earlier invite landing flow used by existing
+  // authenticated browser fixtures.
+  await expect(legacyAuthPrompt).toBeVisible();
   await page.getByRole("link", { name: "Sign in / Create account" }).click();
   await expect(page).toHaveURL(/\/auth\?next=/);
   await expect(page.getByRole("heading", { name: "Sign in to Paperclip" })).toBeVisible();
@@ -235,12 +263,26 @@ async function signUpFromInvite(page: Page, inviteUrl: string, user: HumanUser) 
 }
 
 async function acceptHumanInvite(page: Page) {
-  await expect(page.getByRole("button", { name: "Join company" })).toBeEnabled();
-  await page.getByRole("button", { name: "Join company" }).click();
-  await expect(page.getByRole("heading", { name: "You joined the company" })).toBeVisible({
-    timeout: 20_000,
-  });
-  await page.getByRole("link", { name: "Open board" }).click();
+  const joinButton = page.getByRole("button", { name: "Join company" });
+  if (await joinButton.isVisible().catch(() => false)) {
+    await expect(joinButton).toBeEnabled();
+    await joinButton.click();
+    await expect(page.getByRole("heading", { name: "You joined the company" })).toBeVisible({
+      timeout: 20_000,
+    });
+    await page.getByRole("link", { name: "Open board" }).click();
+    return;
+  }
+
+  // Authenticated human invites are accepted automatically after account
+  // creation. An already accepted invite can briefly show its opening state
+  // while the destination company route is selected.
+  await expect.poll(async () => {
+    if (!/\/invite\/[^/]+$/.test(page.url())) return true;
+    return await page.getByText(/^(Opening organization\.\.\.|Abrindo organização\.\.\.)$/)
+      .isVisible()
+      .catch(() => false);
+  }, { timeout: 20_000 }).toBe(true);
 }
 
 async function sessionJsonRequest<T>(
@@ -561,8 +603,8 @@ test.describe("Multi-user: authenticated mode", () => {
     const issueUrl = `${BASE}/${companyPrefix}/issues/${issue.identifier}`;
     await page.goto(issueUrl);
     await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
-    await expect(page.getByText("Pergunta 1", { exact: true })).toBeVisible();
-    await expect(page.getByText("Which color?", { exact: true })).toBeVisible();
+    await expect(page.getByText("Perguntas", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("task-chat-interaction").getByText("Which color?", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Enviar respostas", exact: true })).toBeVisible();
     await expect(page.getByText(originalComment, { exact: true })).toBeVisible();
 
@@ -575,13 +617,13 @@ test.describe("Multi-user: authenticated mode", () => {
     try {
       await chooseEnglishForUnauthenticatedBrowser(invited.page);
       await signUpFromInvite(invited.page, invite.json!.inviteUrl, responder);
+      await acceptHumanInvite(invited.page);
       const responderEnglishPreference = await sessionJsonRequest(invited.page, `${BASE}/api/auth/locale-preference`, {
         method: "PUT",
         data: { locale: "en" },
       });
       expect(responderEnglishPreference.ok).toBe(true);
       await invited.page.reload();
-      await acceptHumanInvite(invited.page);
       const enPreference = await sessionJsonRequest(invited.page, `${BASE}/api/auth/locale-preference`, {
         method: "PUT",
         data: { locale: "en" },
@@ -589,15 +631,23 @@ test.describe("Multi-user: authenticated mode", () => {
       expect(enPreference.ok).toBe(true);
       await invited.page.goto(issueUrl);
       await expect(invited.page.locator("html")).toHaveAttribute("lang", "en");
-      await expect(invited.page.getByText("Question 1", { exact: true })).toBeVisible();
-      await expect(invited.page.getByText("Which color?", { exact: true })).toBeVisible();
+      await expect(invited.page.getByText("Questions", { exact: true })).toBeVisible();
+      await expect(invited.page.getByTestId("task-chat-interaction").getByText("Which color?", { exact: true })).toBeVisible();
       await expect(invited.page.getByRole("button", { name: "Submit answers", exact: true })).toBeVisible();
       await expect(invited.page.getByText(originalComment, { exact: true })).toBeVisible();
 
-      const responseUrl = new RegExp(`/api/issues/${issue.id}/interactions/${interaction.id}/respond$`);
+      const responsePath = `/api/issues/${issue.identifier}/interactions/${interaction.id}/respond`;
+      const responseUrlMatcher = (url: URL) => url.pathname.replace(/\/+$/, "") === responsePath;
       let capturedResponseStatus = 0;
       let capturedResponseBody: Record<string, unknown> | null = null;
-      await invited.page.route(responseUrl, async (route) => {
+      const observedResponsePaths: string[] = [];
+      invited.page.on("request", (request) => {
+        const pathname = new URL(request.url()).pathname;
+        if (pathname.includes("/interactions/") && pathname.endsWith("/respond")) {
+          observedResponsePaths.push(pathname);
+        }
+      });
+      await invited.page.route(responseUrlMatcher, async (route) => {
         const body = route.request().postDataJSON() as {
           answers: Array<{ questionId: string; optionIds: string[]; otherText?: string }>;
         };
@@ -614,7 +664,7 @@ test.describe("Multi-user: authenticated mode", () => {
       await invited.page.getByRole("radio", { name: "Amber", exact: true }).click();
       await invited.page.getByRole("button", { name: "Submit answers", exact: true }).click();
       await expect(invited.page.getByText("The submitted data is invalid. Check the fields and try again.", { exact: true })).toBeVisible();
-      expect(capturedResponseStatus).toBe(422);
+      expect(capturedResponseStatus, `Observed response paths: ${observedResponsePaths.join(", ") || "none"}`).toBe(422);
       expect(capturedResponseBody).toMatchObject({
         code: "invalid_question_response",
         messageKey: "validation",
@@ -630,7 +680,7 @@ test.describe("Multi-user: authenticated mode", () => {
         payload: interaction.payload,
       });
 
-      await invited.page.unroute(responseUrl);
+      await invited.page.unroute(responseUrlMatcher);
       await invited.page.getByRole("button", { name: "Submit answers", exact: true }).click();
       await expect.poll(async () => {
         const current = await sessionJsonRequest<Array<{ id: string; status: string }>>(
@@ -659,9 +709,12 @@ test.describe("Multi-user: authenticated mode", () => {
 
       await page.reload();
       await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
-      await expect(page.getByText("Pergunta 1", { exact: true })).toBeVisible();
-      await expect(page.getByText("Which color?", { exact: true })).toBeVisible();
-      await expect(page.getByText("Amber", { exact: true })).toBeVisible();
+      const answeredQuestionHistory = page.getByTestId("task-chat-answered-questions-receipt");
+      await expect(answeredQuestionHistory).toBeVisible();
+      await expect(answeredQuestionHistory.locator("summary")).toHaveText("Perguntas respondidas");
+      await answeredQuestionHistory.locator("summary").click();
+      await expect(answeredQuestionHistory.getByText("Which color?", { exact: true })).toBeVisible();
+      await expect(answeredQuestionHistory.getByText("Resposta: Amber", { exact: true })).toBeVisible();
       await expect(page.getByText(originalComment, { exact: true })).toBeVisible();
     } finally {
       await invited.context.close();

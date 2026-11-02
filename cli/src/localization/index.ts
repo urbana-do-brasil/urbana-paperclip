@@ -46,6 +46,29 @@ export const cliMessageCatalog = {
     approvalListStatus: "Status",
     approvalListRequestedByAgentId: "Requested by agent ID",
     approvalListRequestedByUserId: "Requested by user ID",
+    activityListId: "ID",
+    activityListAction: "Action",
+    activityListActorType: "Actor type",
+    activityListActorId: "Actor ID",
+    activityListEntityType: "Entity type",
+    activityListEntityId: "Entity ID",
+    activityListCreatedAt: "Created at",
+    tokenAgentCreateFailed: "Failed to create agent API key",
+    tokenAgentReferenceRequired: "Agent reference is required",
+    tokenAgentNotFound: "Agent not found: {agentRef}",
+    tokenAgentListId: "ID",
+    tokenAgentListName: "Name",
+    tokenAgentListCreatedAt: "Created at",
+    tokenAgentListRevokedAt: "Revoked at",
+    tokenBoardCreateFailed: "Failed to create board API key",
+    tokenBoardInvalidExpiresAt: "Invalid --expires-at value: {value}",
+    tokenBoardInvalidTtlDays: "Invalid --ttl-days value: {value}",
+    tokenBoardListId: "ID",
+    tokenBoardListName: "Name",
+    tokenBoardListCreatedAt: "Created at",
+    tokenBoardListLastUsedAt: "Last used at",
+    tokenBoardListExpiresAt: "Expires at",
+    tokenBoardListRevokedAt: "Revoked at",
     agentInboxIdentifier: "Identifier",
     agentInboxId: "ID",
     agentInboxName: "Name",
@@ -111,6 +134,29 @@ export const cliMessageCatalog = {
     approvalListStatus: "Status",
     approvalListRequestedByAgentId: "Solicitado pelo ID do agente",
     approvalListRequestedByUserId: "Solicitado pelo ID do usuário",
+    activityListId: "ID",
+    activityListAction: "Ação",
+    activityListActorType: "Tipo de ator",
+    activityListActorId: "ID do ator",
+    activityListEntityType: "Tipo de entidade",
+    activityListEntityId: "ID da entidade",
+    activityListCreatedAt: "Criado em",
+    tokenAgentCreateFailed: "Não foi possível criar a chave de API do agente",
+    tokenAgentReferenceRequired: "Informe a referência do agente",
+    tokenAgentNotFound: "Agente não encontrado: {agentRef}",
+    tokenAgentListId: "ID",
+    tokenAgentListName: "Nome",
+    tokenAgentListCreatedAt: "Criado em",
+    tokenAgentListRevokedAt: "Revogado em",
+    tokenBoardCreateFailed: "Não foi possível criar a chave de API do board",
+    tokenBoardInvalidExpiresAt: "Valor inválido para --expires-at: {value}",
+    tokenBoardInvalidTtlDays: "Valor inválido para --ttl-days: {value}",
+    tokenBoardListId: "ID",
+    tokenBoardListName: "Nome",
+    tokenBoardListCreatedAt: "Criado em",
+    tokenBoardListLastUsedAt: "Último uso em",
+    tokenBoardListExpiresAt: "Expira em",
+    tokenBoardListRevokedAt: "Revogado em",
     agentInboxIdentifier: "Identificador",
     agentInboxId: "ID",
     agentInboxName: "Nome",
@@ -141,7 +187,17 @@ type MessageKey = keyof typeof cliMessageCatalog.en;
 let currentLocale: SupportedLocale = DEFAULT_USER_LOCALE;
 let commandLineShape: Command | undefined;
 export function getCliLocale(): SupportedLocale { return currentLocale; }
-export function cliMessage(key: MessageKey): string { return cliMessageCatalog[currentLocale][key]; }
+export function cliMessage(
+  key: MessageKey,
+  values?: Readonly<Record<string, string | number>>,
+  locale: SupportedLocale = currentLocale,
+): string {
+  let message: string = cliMessageCatalog[locale][key];
+  for (const [name, value] of Object.entries(values ?? {})) {
+    message = message.replaceAll(`{${name}}`, String(value));
+  }
+  return message;
+}
 export function setCliLocale(locale: SupportedLocale): void { currentLocale = locale; }
 export function setCliCommandLineShape(command?: Command): void { commandLineShape = command; }
 
