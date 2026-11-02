@@ -31,6 +31,44 @@ const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
 
 const operationHelp: Record<string, CommandHelp> = {
+  connections: {
+    description: {
+      en: "Search or request connections from an active heartbeat run",
+      "pt-BR": "Pesquisar ou solicitar conexões durante uma execução ativa de heartbeat",
+    },
+  },
+  "connections search": {
+    description: {
+      en: "Search available connections for a service or capability",
+      "pt-BR": "Pesquisar conexões disponíveis por serviço ou capacidade",
+    },
+    arguments: { query: { en: "Service name or capability", "pt-BR": "Nome do serviço ou capacidade" } },
+    options: {
+      "--retry-provider-choice": {
+        en: "Reconsider a provider choice only at the user’s explicit request",
+        "pt-BR": "Reavaliar uma escolha de provedor somente a pedido explícito do usuário",
+      },
+      "--json": { en: "Print formatted JSON", "pt-BR": "Exibir JSON formatado" },
+    },
+  },
+  "connections request": {
+    description: {
+      en: "Request a connection to a service",
+      "pt-BR": "Solicitar conexão com um serviço",
+    },
+    arguments: { service: { en: "Connectable service slug", "pt-BR": "Slug do serviço que pode ser conectado" } },
+    options: {
+      "--target-service": {
+        en: "Requested app when the user explicitly names an external provider",
+        "pt-BR": "Aplicativo solicitado quando o usuário mencionar explicitamente um provedor externo",
+      },
+      "--selection-interaction-id": {
+        en: "Answered external-provider question ID",
+        "pt-BR": "ID da pergunta sobre o provedor externo que já foi respondida",
+      },
+      "--json": { en: "Print formatted JSON", "pt-BR": "Exibir JSON formatado" },
+    },
+  },
   activity: {
     description: { en: "Activity log operations", "pt-BR": "Operações do registro de atividade" },
   },

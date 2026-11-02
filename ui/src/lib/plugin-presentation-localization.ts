@@ -141,6 +141,13 @@ const OWN_PLUGIN_PRESENTATION_KEYS: Record<string, string> = {
   "paperclipai.plugin-orchestration-smoke-example": "pluginOrchestrationSmokeExample",
 };
 
+const OWN_PLUGIN_CATEGORY_KEYS: Record<string, string> = {
+  connector: "connector",
+  workspace: "workspace",
+  automation: "automation",
+  ui: "ui",
+};
+
 const OWN_PLUGIN_RESOURCE_PRESENTATION_KEYS: Record<string, Partial<Record<
   ManagedPluginResourceAttributionIdentity["resourceKind"],
   Record<string, { sourceDisplayName: string; messageKey: string }>
@@ -340,6 +347,17 @@ export function localizePluginPresentation(
     displayName: translate(t, `pluginPresentation.plugins.${key}.name`, fallbackDisplayName),
     description: translate(t, `pluginPresentation.plugins.${key}.description`, fallbackDescription),
   };
+}
+
+/** Translate the fixed plugin category enum only for a verified first-party bundle. */
+export function localizePluginCategory(
+  category: string,
+  t: TFunction,
+  isTrustedBundle = false,
+): string {
+  const key = OWN_PLUGIN_CATEGORY_KEYS[category];
+  if (!isTrustedBundle || !key) return category;
+  return translate(t, `pluginSettings.about.categoryValues.${key}`, category);
 }
 
 export function localizeSandboxProviderPresentation(

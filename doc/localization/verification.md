@@ -3577,3 +3577,8 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Ajuda de run log/workspace-log/watchdog-decision localizada; suíte run 20/20, com conteúdo de log, flags e JSON preservados. Resumos de conexão e decisões por item: 32/32, com nome de serviço original.
 - Rodada integrada dos arquivos afetados: 371/371 em nove suítes; typechecks UI e CLI passaram sequencialmente. Checkpoint: **353/371 tarefas**, com 18 caixas abertas incluindo agregadoras.
 - Gate `pnpm check:localization`: 68 tópicos, scanner incremental em oito fontes, 11 testes Node e 217/217 Vitest. `pnpm check:token-gates`, OpenSpec estrito e `git diff --check` passaram; CI remota e regressão final continuam pendentes.
+
+### Navegação de rotinas, categorias de plugins e CLI de conexões — 3.10i, 3.11h8 e 4.3ac
+
+- Navegação contextual de rotinas: 4/4; categorias de plugins próprios com prova de identidade e fallback externo: 18/18 e typecheck UI. CLI connections: 5/5 e typecheck CLI; erros próprios mantêm inglês em modo JSON.
+- Gate de localização anterior ao ajuste final de stderr passou com 222/222; o teste focado foi repetido após o ajuste. Checkpoint: **356/374 tarefas**, com 18 caixas abertas incluindo agregadoras.

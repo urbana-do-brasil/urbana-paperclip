@@ -309,6 +309,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
       - [x] 3.10g4a Verificar 403 em Cases, Status Cards e SummarySlotCard em PT-BR/en; Cases passou a preservar detalhes da API. Testes focados: 52/52; typecheck UI passou.
       - [x] 3.10g4b Verificar rotas e auditoria escopada de rotinas em production, preservando permissão e navegação. Rotas nos dois shells e feed escopado corrigido no production: 19/19 testes; typecheck UI passou. Outros tipos de escopo seguem o contrato anterior do feed geral.
   - [x] 3.10h Localizar feedback de criação, alteração, exclusão, rotação e restauração de gatilhos nas duas variantes de detalhe, preservando URLs e segredos. Suítes existentes de gatilhos e locale: 59/59 em conjunto com ambientes; plural PT-BR/en verificado. Cobertura integrada das mutações permanece em 3.10/7.3.
+  - [x] 3.10i Localizar navegação contextual de rotinas e nomes acessíveis, preservando rotas e título fornecido. Teste focado: 4/4; revisão integral de 3.10 permanece pendente.
 - [ ] 3.11 Migrar UI hospedeira de plugins e conteúdo humano de plugins distribuídos no produto, além das superfícies próprias adicionais encontradas no fechamento do mapa de rotas. Verificar cada superfície nos dois idiomas e documentar limites de plugins externos não controlados. Specs: `localized-web-interface`, `localization-quality`.
   - [x] 3.11a Propagar e documentar locale reativo pelo `PluginHostContext`, slots, overlays e launcher; conteúdo de plugins externos permanece original. Testes de bridge/slots/overlays e SDK: 29/29; typechecks do SDK/UI passaram sem remount.
   - [x] 3.11b Localizar a página host `PluginSettings`, incluindo placeholder, controles e rótulos de status/gatilhos conhecidos; preservar nomes, descrições, conteúdo e mensagens livres do plugin. Testes focados + locale-validation: 25/25; typecheck UI e token gates passaram.
@@ -333,6 +334,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.11h5 Localizar painel de bundles gerenciados próprios e chips, preservando nomes editados, agendas e dados; somente traduzir defaults com identidade e texto de origem comprovados. Testes focados: 26/26; typecheck UI e token gates passaram.
     - [x] 3.11h6 Localizar atribuições de plugin em detalhes de projetos/rotinas apenas quando pacote e manifesto bundled comprovam a origem; fallback original em caso de divergência/falha. Testes focados: 25/25; typecheck UI e token gates passaram.
     - [x] 3.11h7 Localizar nomes default de recursos gerenciados da Wiki em Setup/health apenas com identidade e texto próprios; preservar valores customizados e colisões externas. Suíte Wiki: 155/155; typecheck e build passaram. Outras superfícies host seguem pendentes.
+    - [x] 3.11h8 Localizar categorias de plugins bundled em PluginSettings somente com identidade comprovada; preservar categorias desconhecidas e externas. Testes: 18/18; typecheck UI e gate de tokens passaram. 3.11h permanece aberta.
 
 ## 4. CLI bilíngue
 
@@ -367,6 +369,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3z Localizar help e saídas humanas de run list/live/events e marcador vazio compartilhado, preservando eventos, rotas, JSON e erros. Quatro suítes focadas: 27/27; typecheck da CLI passou em uma execução. Demais comandos e regressão integrada permanecem em 4.3 e 4.4.
   - [x] 4.3aa Localizar help de run get/cancel e listagens de issues/operações de workspace vinculadas à execução, preservando conteúdo, rotas, JSON e falhas estruturadas. Três suítes focadas: 24/24; typecheck CLI passou. Demais comandos e regressão integrada permanecem pendentes.
   - [x] 4.3ab Localizar help de run log/workspace-log/watchdog-decision, preservando logs, flags, payloads, JSON e falhas estruturadas. Suíte focada run: 20/20; typecheck CLI e suíte integrada 371/371 passaram. Demais comandos e regressão de processo permanecem pendentes.
+  - [x] 4.3ac Localizar help e erros próprios de connections search/request, preservando instruções, payloads, erros externos e stderr em inglês no modo JSON. Testes focados 5/5, typecheck CLI e gate de localização passaram; demais comandos e regressão integrada seguem pendentes.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação

@@ -3991,6 +3991,12 @@
       "noDescription": "No description provided.",
       "author": "Author",
       "categories": "Categories",
+      "categoryValues": {
+        "connector": "Connector",
+        "workspace": "Workspace",
+        "automation": "Automation",
+        "ui": "UI"
+      },
       "none": "None"
     },
     "settings": {

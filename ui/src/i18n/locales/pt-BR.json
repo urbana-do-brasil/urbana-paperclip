@@ -4087,6 +4087,12 @@
       "noDescription": "Nenhuma descrição fornecida.",
       "author": "Autor",
       "categories": "Categorias",
+      "categoryValues": {
+        "connector": "Conector",
+        "workspace": "Workspace",
+        "automation": "Automação",
+        "ui": "Interface"
+      },
       "none": "Nenhuma"
     },
     "settings": {

@@ -205,6 +205,90 @@ describe("PluginSettings", () => {
     });
   });
 
+  it.each([
+    ["pt-BR", "Automação", "Interface"],
+    ["en", "Automation", "UI"],
+  ])("localizes fixed categories for a verified first-party plugin in %s", async (locale, automation, uiCategory) => {
+    const bundlePath = "/app/packages/plugins/sandbox-providers/e2b";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "@paperclipai/plugin-e2b",
+      packagePath: bundlePath,
+      categories: ["automation", "ui", "vendor-category"],
+      manifestJson: {
+        id: "paperclip.e2b-sandbox-provider",
+        displayName: "E2B Sandbox Provider",
+        version: "0.1.0",
+        description: "E2B environments for Paperclip.",
+        author: "Paperclip",
+        categories: ["automation", "ui"],
+        capabilities: ["environment.drivers.register"],
+        environmentDrivers: [],
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      packageName: "@paperclipai/plugin-e2b",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      displayName: "E2B Sandbox Provider",
+      description: "First-party E2B sandbox provider.",
+      localPath: bundlePath,
+      tag: "first-party",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    await i18n.changeLanguage(locale);
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain(automation);
+    expect(container.textContent).toContain(uiCategory);
+    expect(container.textContent).toContain("vendor-category");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("preserves plugin categories for an external package that reuses a first-party key", async () => {
+    const bundlePath = "/app/packages/plugins/sandbox-providers/e2b";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "vendor/compatible-e2b",
+      packagePath: "/custom/vendor/compatible-e2b",
+      categories: ["automation"],
+      manifestJson: {
+        id: "paperclip.e2b-sandbox-provider",
+        displayName: "Vendor E2B",
+        version: "1.0.0",
+        description: "Vendor-owned description.",
+        author: "Vendor",
+        categories: ["automation"],
+        capabilities: [],
+        environmentDrivers: [],
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      packageName: "@paperclipai/plugin-e2b",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      displayName: "E2B Sandbox Provider",
+      description: "First-party E2B sandbox provider.",
+      localPath: bundlePath,
+      tag: "first-party",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    await i18n.changeLanguage("pt-BR");
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain("automation");
+    expect(container.textContent).not.toContain("Automação");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("renders unconfigured manifest local folders with required paths", async () => {
     const declaration = wikiFolderDeclaration();
     mockPluginsApi.get.mockResolvedValue(basePlugin({

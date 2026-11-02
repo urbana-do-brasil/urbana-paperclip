@@ -25,6 +25,7 @@ import { PageTabBar } from "@/components/PageTabBar";
 import { useTranslation } from "@/i18n";
 import {
   isBundledPluginRecord,
+  localizePluginCategory,
   localizePluginPresentation,
   localizePluginLocalFolderPresentation,
   localizeSandboxProviderPresentation,
@@ -255,7 +256,7 @@ export function PluginSettings() {
                       {plugin.categories.length > 0 ? (
                         plugin.categories.map((category) => (
                           <Badge key={category} variant="outline" className="capitalize">
-                            {category}
+                            {localizePluginCategory(category, t, trustedBundle)}
                           </Badge>
                         ))
                       ) : (

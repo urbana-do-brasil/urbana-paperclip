@@ -1,4 +1,5 @@
 import path from "node:path";
+import { CONNECTION_INTENT_AGENT_GUIDANCE } from "@paperclipai/shared";
 import { DEFAULT_USER_LOCALE, isSupportedLocale, type SupportedLocale } from "@paperclipai/shared/localization";
 import { expandHomePrefix } from "../config/home.js";
 import { readRawProfileLocale } from "../client/context.js";
@@ -112,6 +113,9 @@ export const cliMessageCatalog = {
     agentLocalCliShellInstruction: "# Run this in your shell before launching codex/claude:",
     companyCurrentUnavailable: "Current company is not available. Pass --company-id, set PAPERCLIP_COMPANY_ID, set a context profile companyId, or authenticate with an agent API key.",
     companyCreatePermissionRequired: "Creating companies requires board/instance-admin authentication. Agent API keys are scoped to one company; use `paperclipai company list --json` or `paperclipai company current --json` to select the scoped company, or rerun create with a board token/login.",
+    connectionRuntimeRequired: "This command requires the runtime connection environment from an active heartbeat run",
+    connectionRuntimeRequestFailedStatus: "Runtime connection request failed with {status}",
+    connectionGuidance: CONNECTION_INTENT_AGENT_GUIDANCE,
   },
   "pt-BR": {
     description: "CLI do Paperclip — instale, diagnostique e configure sua instância",
@@ -220,6 +224,16 @@ export const cliMessageCatalog = {
     agentLocalCliShellInstruction: "# Execute no seu shell antes de iniciar codex/claude:",
     companyCurrentUnavailable: "A organização atual não está disponível. Informe --company-id, defina PAPERCLIP_COMPANY_ID, configure companyId em um perfil de contexto ou autentique-se com uma chave de API de agente.",
     companyCreatePermissionRequired: "Para criar organizações é necessária autenticação board/instance-admin. Chaves de API de agente são limitadas a uma organização; use `paperclipai company list --json` ou `paperclipai company current --json` para selecionar a organização do escopo, ou execute create novamente com um token do board/login.",
+    connectionRuntimeRequired: "Este comando exige o ambiente de conexões do runtime em uma execução ativa de heartbeat",
+    connectionRuntimeRequestFailedStatus: "A solicitação de conexão do runtime falhou com status {status}",
+    connectionGuidance: [
+      "Ferramentas de conexão:",
+      "- Quando o usuário pedir para conectar um serviço, chame `connections_search` antes de qualquer ferramenta do serviço, mesmo que ele já esteja instalado. Pesquise também quando uma tarefa precisar de um serviço e não houver certeza de que o acesso está disponível. Pesquise pelo nome ou capacidade e siga a `instruction` retornada.",
+      "- Use os identificadores de serviço retornados e as ferramentas de conexão para configurar o acesso. Respeite as escolhas registradas do usuário; nunca invente acesso nem peça credenciais em comentários.",
+      "- Se as ferramentas instaladas estiverem Off ou a conexão não estiver habilitada para este agente, chame `connection_request` com o `connectionId` salvo e os `toolNames` necessários. Isso cria um cartão de acesso com aprovação humana; nunca substitua por uma pergunta genérica de permissão nem altere permissões por conta própria.",
+      "- Enquanto aguarda uma ação do usuário, conclua o trabalho independente e depois ceda o controle sem tentar novamente nem consultar repetidamente. Ao continuar, siga o resultado registrado e use a conexão instalada.",
+      "- Não use ferramentas de conexão para URLs arbitrárias de MCP nem para trabalhos sem relação.",
+    ].join("\n"),
   },
 } as const;
 
