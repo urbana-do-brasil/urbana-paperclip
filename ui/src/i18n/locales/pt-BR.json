@@ -4258,6 +4258,134 @@
           "name": "Backend do Kubernetes",
           "description": "sandbox-cr (padrão, alfa — requer kubernetes-sigs/agent-sandbox instalado) | job (fallback estável — Job batch/v1, entrypoint de execução única, sem exec de vários comandos)"
         }
+      },
+      "exeDev": {
+        "apiKey": {
+          "name": "Token de API",
+          "description": "Cole seu token de API do exe.dev ou escolha um segredo salvo do Paperclip. Crie um em exe.dev → Settings → API tokens com escopo `/exec` (`new`, `ls`, `rm` e também `cp` se usar VM de origem)."
+        },
+        "sshPrivateKey": {
+          "name": "Chave privada SSH",
+          "description": "Cole a chave privada SSH registrada no exe.dev ou escolha um segredo salvo. Deixe em branco para usar uma chave no host (consulte Avançado → Acesso SSH)."
+        },
+        "sshUser": {
+          "name": "Usuário SSH",
+          "description": "Usuário de login na VM. Deixe em branco para usar o padrão da imagem, geralmente `root`."
+        },
+        "sshIdentityFile": {
+          "name": "Arquivo de identidade SSH",
+          "description": "Caminho absoluto para uma chave privada no host do Paperclip. Usado somente quando Chave privada SSH está vazia."
+        },
+        "sshPort": {
+          "name": "Porta SSH",
+          "description": "Porta SSH para acesso direto à VM."
+        },
+        "strictHostKeyChecking": {
+          "name": "Verificação da chave do host",
+          "description": "Política de chave do host passada ao ssh por StrictHostKeyChecking. Os valores comuns são `accept-new`, `yes` ou `no`."
+        },
+        "image": {
+          "name": "Imagem da VM",
+          "description": "Imagem de contêiner opcional para usar ao criar a VM."
+        },
+        "cpu": {
+          "name": "Quantidade de CPUs",
+          "description": "Quantidade opcional de CPUs passada para `exe.dev new --cpu`."
+        },
+        "memory": {
+          "name": "Memória",
+          "description": "Tamanho opcional de memória, como `4GB`."
+        },
+        "disk": {
+          "name": "Disco",
+          "description": "Tamanho opcional do disco, como `20GB`."
+        },
+        "sourceVm": {
+          "name": "VM de origem",
+          "description": "Nome de uma VM existente do exe.dev a ser copiada para cada execução com `exe.dev cp`, incluindo disco e configuração. Deixe em branco para criar uma VM nova com `exe.dev new`. Seu token de API precisa permitir `cp`: os tokens listam os comandos permitidos, e um token sem `cp` falha com HTTP 403. Quando preenchido, deixe imagem, comando, env, integrações, tags, script de configuração, prompt e comentário vazios: `cp` não os aplica e o salvamento exige que esses campos estejam limpos."
+        },
+        "command": {
+          "name": "Comando da VM",
+          "description": "Comando de contêiner opcional passado para `exe.dev new --command`."
+        },
+        "env": {
+          "name": "Variáveis de ambiente",
+          "description": "Variáveis de ambiente opcionais aplicadas ao criar a VM."
+        },
+        "integrations": {
+          "name": "Integrações",
+          "description": "Integrações opcionais do exe.dev para anexar durante a criação da VM."
+        },
+        "tags": {
+          "name": "Tags",
+          "description": "Tags opcionais para aplicar durante a criação da VM."
+        },
+        "setupScript": {
+          "name": "Script de configuração",
+          "description": "Script opcional de configuração inicial passado para `exe.dev new --setup-script`."
+        },
+        "prompt": {
+          "name": "Prompt Shelley",
+          "description": "Prompt Shelley opcional passado para `exe.dev new --prompt`."
+        },
+        "comment": {
+          "name": "Observação da VM",
+          "description": "Observação curta opcional anexada às VMs criadas."
+        },
+        "namePrefix": {
+          "name": "Prefixo do nome da VM",
+          "description": "Prefixo opcional usado ao gerar nomes de VM."
+        },
+        "apiUrl": {
+          "name": "URL da API",
+          "description": "URL base HTTPS opcional da API do exe.dev ou endpoint /exec. O padrão é https://exe.dev/exec."
+        },
+        "timeoutMs": {
+          "name": "Tempo limite das operações (ms)",
+          "description": "Tempo limite das operações de ciclo de vida da VM e SSH, em milissegundos."
+        },
+        "reuseLease": {
+          "name": "Reutilizar VM",
+          "description": "Mantém a VM ativa entre execuções em vez de excluí-la ao liberar o lease."
+        }
+      },
+      "createos": {
+        "apiUrl": {
+          "name": "URL da API",
+          "description": "https://api.sb.createos.sh"
+        },
+        "apiKey": {
+          "name": "Chave de API",
+          "description": "Chave de API do CreateOS ou referência a um segredo do Paperclip. Chaves salvas viram segredos da organização. O endpoint oficial pode usar CREATEOS_API_KEY do host; endpoints personalizados exigem uma chave explícita."
+        },
+        "shape": {
+          "name": "Formato",
+          "description": "Escolha o tamanho de CPU e memória do sandbox."
+        },
+        "rootfs": {
+          "name": "Sistema de arquivos raiz ou template",
+          "description": "Sistema de arquivos raiz ou ID/nome de um template pronto. Omita para usar o padrão do provedor. A imagem precisa fornecer Bash e as dependências do runtime de agente selecionado."
+        },
+        "region": {
+          "name": "Região",
+          "description": "Região opcional; deve corresponder à região do endpoint da API."
+        },
+        "timeoutMs": {
+          "name": "Tempo limite das operações (ms)",
+          "description": "Tempo limite das operações e dos comandos por padrão, em milissegundos. Não representa o tempo de vida do sandbox."
+        },
+        "reuseLease": {
+          "name": "Reutilizar sandbox",
+          "description": "Pausa o sandbox após uma execução e o retoma em execuções futuras, em vez de excluí-lo."
+        }
+      }
+    },
+    "sandboxProviderConfigGroups": {
+      "exeDev": {
+        "sshAccess": "Acesso SSH",
+        "vmResources": "Recursos da VM",
+        "vmCreation": "Criação da VM",
+        "apiRuntime": "API e runtime"
       }
     },
     "managedResources": {
@@ -9093,6 +9221,8 @@
       "permissions": {
         "access": {
           "heading": "Quais agentes podem usar esta conexão?",
+          "loading": "Carregando acesso…",
+          "loadError": "Não foi possível carregar o acesso à conexão.",
           "saving": "Salvando…",
           "modeAria": "Quais agentes podem usar esta conexão",
           "specific": "Somente os agentes que eu escolher",
@@ -9107,7 +9237,8 @@
           "selectedCount_other": "{{count}} agentes selecionados",
           "selectedCount_many": "{{count}} agentes selecionados",
           "noEditableAgents": "Você ainda não pode editar nenhum agente.",
-          "requiredByInstall": "Obrigatório pela configuração de instalação desta conexão"
+          "requiredByInstall": "Obrigatório pela configuração de instalação desta conexão",
+          "emailRemovingAgentNotice": "Ao remover um agente atribuído, ele deixa de receber e enviar mensagens pela caixa de entrada."
         },
         "actions": {
           "heading": "Ações",
@@ -9194,6 +9325,7 @@
         "thenRefreshList": " e atualize esta lista.",
         "whichHumans": "Quais pessoas podem usar esta credencial",
         "justMe": "Somente eu",
+        "onlyCredentialOwner": "Somente a pessoa titular da credencial pode usar esta conexão.",
         "onlyYouCanUse": "Somente você pode usar esta conexão.",
         "humansIChoose": "As pessoas que eu escolher",
         "onlySelectedPeople": "Somente as pessoas selecionadas na sua organização.",

@@ -4162,6 +4162,134 @@
           "name": "Kubernetes backend",
           "description": "sandbox-cr (default, alpha — requires kubernetes-sigs/agent-sandbox installed) | job (stable fallback — batch/v1 Job, one-shot entrypoint, no multi-command exec)"
         }
+      },
+      "exeDev": {
+        "apiKey": {
+          "name": "API token",
+          "description": "Paste your exe.dev API token, or pick a saved Paperclip secret. Create one at exe.dev → Settings → API tokens with `/exec` scope (`new`, `ls`, `rm`, plus `cp` if you use Source VM)."
+        },
+        "sshPrivateKey": {
+          "name": "SSH private key",
+          "description": "Paste the SSH private key you registered with exe.dev, or pick a saved secret. Leave blank to fall back to an on-host key (see Advanced → SSH access)."
+        },
+        "sshUser": {
+          "name": "SSH user",
+          "description": "Login user on the VM. Leave blank to use the image default, usually `root`."
+        },
+        "sshIdentityFile": {
+          "name": "SSH identity file",
+          "description": "Absolute path to a private key on the Paperclip host. Used only when SSH Private Key is empty."
+        },
+        "sshPort": {
+          "name": "SSH port",
+          "description": "SSH port for direct VM access."
+        },
+        "strictHostKeyChecking": {
+          "name": "Host key checking",
+          "description": "Host key policy passed to ssh via StrictHostKeyChecking. Typical values are `accept-new`, `yes`, or `no`."
+        },
+        "image": {
+          "name": "VM image",
+          "description": "Optional container image to use when creating the VM."
+        },
+        "cpu": {
+          "name": "CPU count",
+          "description": "Optional CPU count passed to `exe.dev new --cpu`."
+        },
+        "memory": {
+          "name": "Memory",
+          "description": "Optional memory size such as `4GB`."
+        },
+        "disk": {
+          "name": "Disk",
+          "description": "Optional disk size such as `20GB`."
+        },
+        "sourceVm": {
+          "name": "Source VM",
+          "description": "Name of an existing exe.dev VM to copy for each run with `exe.dev cp`, disk and config included. Leave blank to create a fresh VM with `exe.dev new`. Your API token must allow `cp`: tokens list their permitted commands, and one without `cp` fails with a 403. When set, leave image, command, env, integrations, tags, setup script, prompt, and comment empty: `cp` cannot apply them, and saving fails until they are cleared."
+        },
+        "command": {
+          "name": "VM command",
+          "description": "Optional container command passed to `exe.dev new --command`."
+        },
+        "env": {
+          "name": "Environment variables",
+          "description": "Optional environment variables applied at VM creation time."
+        },
+        "integrations": {
+          "name": "Integrations",
+          "description": "Optional exe.dev integrations to attach during VM creation."
+        },
+        "tags": {
+          "name": "Tags",
+          "description": "Optional tags to apply during VM creation."
+        },
+        "setupScript": {
+          "name": "Setup script",
+          "description": "Optional first-boot setup script passed to `exe.dev new --setup-script`."
+        },
+        "prompt": {
+          "name": "Shelley prompt",
+          "description": "Optional Shelley prompt passed to `exe.dev new --prompt`."
+        },
+        "comment": {
+          "name": "VM note",
+          "description": "Optional short note attached to created VMs."
+        },
+        "namePrefix": {
+          "name": "VM name prefix",
+          "description": "Optional prefix used when generating VM names."
+        },
+        "apiUrl": {
+          "name": "API URL",
+          "description": "Optional exe.dev HTTPS API base URL or /exec endpoint. Defaults to https://exe.dev/exec."
+        },
+        "timeoutMs": {
+          "name": "Operation timeout (ms)",
+          "description": "Timeout for VM lifecycle and SSH operations in milliseconds."
+        },
+        "reuseLease": {
+          "name": "Reuse VM",
+          "description": "Whether to keep the VM alive between runs instead of deleting it on release."
+        }
+      },
+      "createos": {
+        "apiUrl": {
+          "name": "API URL",
+          "description": "https://api.sb.createos.sh"
+        },
+        "apiKey": {
+          "name": "API key",
+          "description": "CreateOS API key or Paperclip secret reference. Saved keys become company secrets. The official API endpoint can use CREATEOS_API_KEY from the host; custom endpoints require an explicit key."
+        },
+        "shape": {
+          "name": "Shape",
+          "description": "Choose the sandbox CPU and memory size."
+        },
+        "rootfs": {
+          "name": "Root filesystem or template",
+          "description": "Root filesystem or ready template ID/name. Omit to use the provider default. The image must supply Bash and the selected agent runtime dependencies."
+        },
+        "region": {
+          "name": "Region",
+          "description": "Optional region; must match the API endpoint's region."
+        },
+        "timeoutMs": {
+          "name": "Operation timeout (ms)",
+          "description": "Operation and default command timeout in milliseconds. This is not a sandbox lifetime."
+        },
+        "reuseLease": {
+          "name": "Reuse sandbox",
+          "description": "Pause the sandbox after a run and resume it for subsequent runs instead of deleting it."
+        }
+      }
+    },
+    "sandboxProviderConfigGroups": {
+      "exeDev": {
+        "sshAccess": "SSH access",
+        "vmResources": "VM resources",
+        "vmCreation": "VM creation",
+        "apiRuntime": "API + runtime"
       }
     },
     "managedResources": {
@@ -8890,6 +9018,8 @@
       "permissions": {
         "access": {
           "heading": "Which agents can use this connection?",
+          "loading": "Loading access…",
+          "loadError": "Connection access could not be loaded.",
           "saving": "Saving…",
           "modeAria": "Which agents can use this connection",
           "specific": "Just agents I pick",
@@ -8903,7 +9033,8 @@
           "selectedCount_one": "{{count}} agent selected",
           "selectedCount_other": "{{count}} agents selected",
           "noEditableAgents": "You cannot edit any agents yet.",
-          "requiredByInstall": "Required by this connection's install setting"
+          "requiredByInstall": "Required by this connection's install setting",
+          "emailRemovingAgentNotice": "Removing an assigned agent stops receiving and sending from its inbox."
         },
         "actions": {
           "heading": "Actions",
@@ -8985,6 +9116,7 @@
         "thenRefreshList": ", then refresh this list.",
         "whichHumans": "Which humans can use this credential",
         "justMe": "Just me",
+        "onlyCredentialOwner": "Only the credential owner can use this connection.",
         "onlyYouCanUse": "Only you can use this connection.",
         "humansIChoose": "Humans I pick",
         "onlySelectedPeople": "Only selected people in your company.",

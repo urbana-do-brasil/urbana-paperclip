@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatEndpointDetail } from "./ChatEndpointDetail";
 import { queryKeys } from "@/lib/queryKeys";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { i18n } from "@/i18n";
 
 const mocks = vi.hoisted(() => ({
   tab: "settings", get: vi.fn(), conversations: vi.fn(), activity: vi.fn(), setup: vi.fn(),
@@ -71,7 +72,8 @@ describe("AgentMail connection management tabs", () => {
     await render("settings"); expect(container.textContent).toContain("Email settings");
     await render("access");
     expect(container.textContent).not.toContain("Email settings");
-    expect(container.textContent).toContain("Any human in the organization");
+    expect(container.textContent).toContain(i18n.t("apps.appDetail.identities.anyHumanInCompany"));
+    expect(container.textContent).toContain(i18n.t("apps.appDetail.permissions.access.heading"));
     expect(container.textContent).toContain("Ralph");
     expect(mocks.grants).toHaveBeenCalledWith("account"); expect(mocks.installs).toHaveBeenCalledWith("account");
     expect(mocks.grants).not.toHaveBeenCalledWith("runtime");

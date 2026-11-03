@@ -1034,6 +1034,256 @@ describe("owned plugin presentation localization", () => {
     expect(changedSourcePresentation.properties.kubeconfig).toEqual(changedSourceSchema.properties.kubeconfig);
   });
 
+  it.each([
+    ["pt-BR", "Token de API", "Cole seu token de API do exe.dev", "VM de origem", "Acesso SSH", "Recursos da VM", "Criação da VM", "API e runtime"],
+    ["en", "API token", "Paste your exe.dev API token", "Source VM", "SSH access", "VM resources", "VM creation", "API + runtime"],
+  ] as const)("localizes exe.dev schema metadata only for the exact bundled source in %s", async (
+    locale,
+    apiKeyTitle,
+    apiKeyDescriptionStart,
+    sourceVmTitle,
+    sshGroup,
+    resourcesGroup,
+    creationGroup,
+    runtimeGroup,
+  ) => {
+    await i18n.changeLanguage(locale);
+    const pluginId = "paperclip.exe-dev-sandbox-provider";
+    const pluginRecordId = "bundled-exe-dev-plugin-id";
+    const packageName = "@paperclipai/plugin-exe-dev";
+    const bundlePath = "/app/packages/plugins/sandbox-providers/exe-dev";
+    const installed = [{
+      id: pluginRecordId,
+      pluginKey: pluginId,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginId },
+    }];
+    const bundled = [{ pluginKey: pluginId, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledSandboxProvider({ pluginId: pluginRecordId, pluginKey: pluginId }, installed, bundled);
+    expect(trustedBundle).toBe(true);
+
+    const sourceDescriptions = [
+      "Paste your exe.dev API token, or pick a saved Paperclip secret. Create one at exe.dev → Settings → API tokens with `/exec` scope (`new`, `ls`, `rm`, plus `cp` if you use Source VM).",
+      "Paste the SSH private key you registered with exe.dev, or pick a saved secret. Leave blank to fall back to an on-host key (see Advanced → SSH access).",
+      "Login user on the VM. Leave blank to use the image default, usually `root`.",
+      "Absolute path to a private key on the Paperclip host. Used only when SSH Private Key is empty.",
+      "SSH port for direct VM access.",
+      "Host key policy passed to ssh via StrictHostKeyChecking. Typical values are `accept-new`, `yes`, or `no`.",
+      "Optional container image to use when creating the VM.",
+      "Optional CPU count passed to `exe.dev new --cpu`.",
+      "Optional memory size such as `4GB`.",
+      "Optional disk size such as `20GB`.",
+      "Name of an existing exe.dev VM to copy for each run with `exe.dev cp`, disk and config included. Leave blank to create a fresh VM with `exe.dev new`. Your API token must allow `cp`: tokens list their permitted commands, and one without `cp` fails with a 403. When set, leave image, command, env, integrations, tags, setup script, prompt, and comment empty: `cp` cannot apply them, and saving fails until they are cleared.",
+      "Optional container command passed to `exe.dev new --command`.",
+      "Optional environment variables applied at VM creation time.",
+      "Optional exe.dev integrations to attach during VM creation.",
+      "Optional tags to apply during VM creation.",
+      "Optional first-boot setup script passed to `exe.dev new --setup-script`.",
+      "Optional Shelley prompt passed to `exe.dev new --prompt`.",
+      "Optional short note attached to created VMs.",
+      "Optional prefix used when generating VM names.",
+      "Optional exe.dev HTTPS API base URL or /exec endpoint. Defaults to https://exe.dev/exec.",
+      "Timeout for VM lifecycle and SSH operations in milliseconds.",
+      "Whether to keep the VM alive between runs instead of deleting it on release.",
+    ];
+    const schema = {
+      type: "object",
+      properties: {
+        apiKey: { type: "string", format: "secret-ref", description: sourceDescriptions[0] },
+        sshPrivateKey: { type: "string", format: "secret-ref", description: sourceDescriptions[1] },
+        sshUser: { type: "string", description: sourceDescriptions[2], "x-paperclip-advanced": true, "x-paperclip-group": "SSH access" },
+        sshIdentityFile: { type: "string", description: sourceDescriptions[3], "x-paperclip-advanced": true, "x-paperclip-group": "SSH access" },
+        sshPort: { type: "number", default: 22, description: sourceDescriptions[4], "x-paperclip-advanced": true, "x-paperclip-group": "SSH access" },
+        strictHostKeyChecking: { type: "string", default: "accept-new", description: sourceDescriptions[5], "x-paperclip-advanced": true, "x-paperclip-group": "SSH access" },
+        image: { type: "string", description: sourceDescriptions[6], "x-paperclip-advanced": true, "x-paperclip-group": "VM resources" },
+        cpu: { type: "number", default: 4, description: sourceDescriptions[7], "x-paperclip-advanced": true, "x-paperclip-group": "VM resources" },
+        memory: { type: "string", default: "4GB", description: sourceDescriptions[8], "x-paperclip-advanced": true, "x-paperclip-group": "VM resources" },
+        disk: { type: "string", default: "20GB", description: sourceDescriptions[9], "x-paperclip-advanced": true, "x-paperclip-group": "VM resources" },
+        sourceVm: { type: "string", title: "Source VM", description: sourceDescriptions[10], "x-paperclip-advanced": true, "x-paperclip-group": "VM creation" },
+        command: { type: "string", description: sourceDescriptions[11], "x-paperclip-advanced": true, "x-paperclip-group": "VM creation" },
+        env: { type: "object", description: sourceDescriptions[12], "x-paperclip-advanced": true, "x-paperclip-group": "VM creation" },
+        integrations: { type: "array", description: sourceDescriptions[13], "x-paperclip-advanced": true, "x-paperclip-group": "VM creation" },
+        tags: { type: "array", description: sourceDescriptions[14], "x-paperclip-advanced": true, "x-paperclip-group": "VM creation" },
+        setupScript: { type: "string", description: sourceDescriptions[15], "x-paperclip-advanced": true, "x-paperclip-group": "VM creation" },
+        prompt: { type: "string", description: sourceDescriptions[16], "x-paperclip-advanced": true, "x-paperclip-group": "VM creation" },
+        comment: { type: "string", description: sourceDescriptions[17], "x-paperclip-advanced": true, "x-paperclip-group": "VM creation" },
+        namePrefix: { type: "string", default: "paperclip", description: sourceDescriptions[18], "x-paperclip-advanced": true, "x-paperclip-group": "VM creation" },
+        apiUrl: { type: "string", description: sourceDescriptions[19], "x-paperclip-advanced": true, "x-paperclip-group": "API + runtime" },
+        timeoutMs: { type: "number", default: 300000, description: sourceDescriptions[20], "x-paperclip-advanced": true, "x-paperclip-group": "API + runtime" },
+        reuseLease: { type: "boolean", default: false, description: sourceDescriptions[21], "x-paperclip-advanced": true, "x-paperclip-group": "API + runtime" },
+        customField: { type: "string", title: "Provider-owned field", description: "Vendor-owned help text." },
+      },
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configuration = {
+      apiKey: "11111111-1111-4111-8111-111111111111",
+      sshUser: "root",
+      sourceVm: "build-image",
+      cpu: 8,
+      namePrefix: "team-vm",
+      reuseLease: true,
+      customValue: "leave untouched",
+    };
+    const configurationBefore = JSON.stringify(configuration);
+    const localized = localizeSandboxProviderConfigSchema("exe-dev", pluginId, schema, i18n.t, trustedBundle)!;
+
+    expect(localized.properties.apiKey).toMatchObject({ title: apiKeyTitle });
+    expect(localized.properties.apiKey.description.startsWith(apiKeyDescriptionStart)).toBe(true);
+    expect(localized.properties.sourceVm).toMatchObject({ title: sourceVmTitle });
+    expect(localized.properties.sshUser).toMatchObject({ "x-paperclip-group": sshGroup });
+    expect(localized.properties.cpu).toMatchObject({ default: 4, "x-paperclip-group": resourcesGroup });
+    expect(localized.properties.command).toMatchObject({ "x-paperclip-group": creationGroup });
+    expect(localized.properties.apiUrl).toMatchObject({ "x-paperclip-group": runtimeGroup });
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configuration)).toBe(configurationBefore);
+
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/exe-dev/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    for (const sourceDescription of sourceDescriptions) expect(manifestSource).toContain(sourceDescription);
+
+    const externalInstalled = [{
+      ...installed[0]!,
+      id: "vendor-exe-dev-id",
+      packageName: "vendor/exe-dev-compatible",
+      packagePath: "/custom/vendor/exe-dev-compatible",
+    }];
+    const externalTrustedBundle = isTrustedBundledSandboxProvider(
+      { pluginId: "vendor-exe-dev-id", pluginKey: pluginId },
+      externalInstalled,
+      bundled,
+    );
+    expect(externalTrustedBundle).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("exe-dev", pluginId, schema, i18n.t, externalTrustedBundle)).toBe(schema);
+
+    const wrongManifestIdentity = isTrustedBundledSandboxProvider(
+      { pluginId: pluginRecordId, pluginKey: pluginId },
+      [{ ...installed[0]!, manifestJson: { id: "paperclip.createos-sandbox-provider" } }],
+      bundled,
+    );
+    expect(wrongManifestIdentity).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("exe-dev", pluginId, schema, i18n.t, wrongManifestIdentity)).toBe(schema);
+
+    const changedSourceSchema = {
+      ...schema,
+      properties: {
+        ...schema.properties,
+        apiKey: { ...schema.properties.apiKey, description: "Vendor-authored exe.dev compatible token help." },
+      },
+    };
+    const changedSourcePresentation = localizeSandboxProviderConfigSchema("exe-dev", pluginId, changedSourceSchema, i18n.t, true)!;
+    expect(changedSourcePresentation.properties.apiKey).toEqual(changedSourceSchema.properties.apiKey);
+  });
+
+  it.each([
+    ["pt-BR", "URL da API", "Chave de API", "Formato", "Escolha o tamanho de CPU e memória do sandbox."],
+    ["en", "API URL", "API key", "Shape", "Choose the sandbox CPU and memory size."],
+  ] as const)("localizes CreateOS schema metadata only for the exact bundled source in %s", async (
+    locale,
+    apiUrlTitle,
+    apiKeyTitle,
+    shapeTitle,
+    shapeDescription,
+  ) => {
+    await i18n.changeLanguage(locale);
+    const pluginId = "paperclip.createos-sandbox-provider";
+    const pluginRecordId = "bundled-createos-plugin-id";
+    const packageName = "@paperclipai/plugin-createos";
+    const bundlePath = "/app/packages/plugins/sandbox-providers/createos";
+    const installed = [{
+      id: pluginRecordId,
+      pluginKey: pluginId,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginId },
+    }];
+    const bundled = [{ pluginKey: pluginId, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledSandboxProvider({ pluginId: pluginRecordId, pluginKey: pluginId }, installed, bundled);
+    expect(trustedBundle).toBe(true);
+
+    const sourceDescriptions = [
+      "https://api.sb.createos.sh",
+      "CreateOS API key or Paperclip secret reference. Saved keys become company secrets. The official API endpoint can use CREATEOS_API_KEY from the host; custom endpoints require an explicit key.",
+      "Choose the sandbox CPU and memory size.",
+      "Root filesystem or ready template ID/name. Omit to use the provider default. The image must supply Bash and the selected agent runtime dependencies.",
+      "Optional region; must match the API endpoint's region.",
+      "Operation and default command timeout in milliseconds. This is not a sandbox lifetime.",
+      "Pause the sandbox after a run and resume it for subsequent runs instead of deleting it.",
+    ];
+    const schema = {
+      type: "object",
+      required: ["apiUrl", "shape"],
+      properties: {
+        apiUrl: { type: "string", title: "API URL", default: "https://api.sb.createos.sh", description: sourceDescriptions[0] },
+        apiKey: { type: "string", format: "secret-ref", description: sourceDescriptions[1] },
+        shape: {
+          type: "string",
+          title: "Shape",
+          description: sourceDescriptions[2],
+          enum: ["s-1vcpu-256mb", "s-0.5vcpu-1gb", "s-2vcpu-4gb"],
+        },
+        rootfs: { type: "string", description: sourceDescriptions[3] },
+        region: { type: "string", description: sourceDescriptions[4] },
+        timeoutMs: { type: "integer", minimum: 1, maximum: 86400000, default: 300000, description: sourceDescriptions[5] },
+        reuseLease: { type: "boolean", default: false, description: sourceDescriptions[6] },
+        customField: { type: "string", title: "Provider-owned field", description: "Vendor-owned help text." },
+      },
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configuration = {
+      apiUrl: "https://api.sb.createos.sh",
+      apiKey: "22222222-2222-4222-8222-222222222222",
+      shape: "s-2vcpu-4gb",
+      region: "us-west",
+      timeoutMs: 600000,
+      reuseLease: true,
+      customValue: "keep this value",
+    };
+    const configurationBefore = JSON.stringify(configuration);
+    const localized = localizeSandboxProviderConfigSchema("createos", pluginId, schema, i18n.t, trustedBundle)!;
+
+    expect(localized.properties.apiUrl).toMatchObject({ title: apiUrlTitle, default: "https://api.sb.createos.sh" });
+    expect(localized.properties.apiKey).toMatchObject({ title: apiKeyTitle, format: "secret-ref" });
+    expect(localized.properties.shape).toMatchObject({ title: shapeTitle, description: shapeDescription, enum: schema.properties.shape.enum });
+    expect(localized.properties.timeoutMs).toMatchObject({ minimum: 1, maximum: 86400000, default: 300000 });
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(localized.required).toEqual(["apiUrl", "shape"]);
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configuration)).toBe(configurationBefore);
+
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/createos/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    for (const sourceDescription of sourceDescriptions) expect(manifestSource).toContain(sourceDescription);
+
+    const externalInstalled = [{
+      ...installed[0]!,
+      id: "vendor-createos-id",
+      packageName: "vendor/createos-compatible",
+      packagePath: "/custom/vendor/createos-compatible",
+    }];
+    const externalTrustedBundle = isTrustedBundledSandboxProvider(
+      { pluginId: "vendor-createos-id", pluginKey: pluginId },
+      externalInstalled,
+      bundled,
+    );
+    expect(externalTrustedBundle).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("createos", pluginId, schema, i18n.t, externalTrustedBundle)).toBe(schema);
+
+    const wrongManifestIdentity = isTrustedBundledSandboxProvider(
+      { pluginId: pluginRecordId, pluginKey: pluginId },
+      [{ ...installed[0]!, manifestJson: { id: "paperclip.exe-dev-sandbox-provider" } }],
+      bundled,
+    );
+    expect(wrongManifestIdentity).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("createos", pluginId, schema, i18n.t, wrongManifestIdentity)).toBe(schema);
+    expect(localizeSandboxProviderConfigSchema("createos", "paperclip.exe-dev-sandbox-provider", schema, i18n.t, true)).toBe(schema);
+  });
+
   it("localizes managed-resource plugin attribution only with matching installed and bundled identity", async () => {
     const attribution = {
       pluginId: "plugin-workspace",

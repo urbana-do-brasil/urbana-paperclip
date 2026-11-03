@@ -3624,3 +3624,8 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Pipelines: 24/24 testes de carga/mutation, incluindo erro conhecido e detalhe externo. Schema Kubernetes: 24/24 e typecheck UI, com identidade e descrição exatas; isso localiza uma integração existente, sem implantar Kubernetes.
 - CLI de gatilhos de rotina: 9/9, typecheck CLI e gates de localização. Checkpoint: **378/396 tarefas**, 18 caixas abertas incluindo agregadoras.
 - Rodada integrada: 70/70 em seis arquivos; typecheck UI, gate de tokens, scanner de fontes e OpenSpec estrito passaram.
+
+### Acesso de e-mail, schemas exe.dev/CreateOS e CLI adapter — 3.8l, 3.11h16 e 4.3ak
+
+- Acesso de e-mail: 117/117 testes de consumidores, incluindo preservação de payload e bloqueio de edição. Schemas exe.dev/CreateOS: 4/4 com identidade/fallback e schema preservado. CLI adapter: 4/4.
+- Rodada integrada posterior: 59/59 em cinco arquivos; typechecks UI e CLI passaram sequencialmente. Checkpoint: **381/399 tarefas**, 18 caixas abertas incluindo agregadoras.

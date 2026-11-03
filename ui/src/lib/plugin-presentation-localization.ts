@@ -247,7 +247,8 @@ const OWN_SANDBOX_PROVIDER_PRESENTATION_KEYS: Record<string, { pluginId: string;
 const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
   pluginId: string;
   key: string;
-  fields: Record<string, { sourceDescription: string; key: string }>;
+  fields: Record<string, { sourceDescription: string; sourceTitle?: string; key: string }>;
+  groups?: Record<string, string>;
 }> = {
   cloudflare: {
     pluginId: "paperclip.cloudflare-sandbox-provider",
@@ -569,6 +570,143 @@ const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
       },
     },
   },
+  "exe-dev": {
+    pluginId: "paperclip.exe-dev-sandbox-provider",
+    key: "exeDev",
+    groups: {
+      "SSH access": "sshAccess",
+      "VM resources": "vmResources",
+      "VM creation": "vmCreation",
+      "API + runtime": "apiRuntime",
+    },
+    fields: {
+      apiKey: {
+        sourceDescription: "Paste your exe.dev API token, or pick a saved Paperclip secret. Create one at exe.dev → Settings → API tokens with `/exec` scope (`new`, `ls`, `rm`, plus `cp` if you use Source VM).",
+        key: "apiKey",
+      },
+      sshPrivateKey: {
+        sourceDescription: "Paste the SSH private key you registered with exe.dev, or pick a saved secret. Leave blank to fall back to an on-host key (see Advanced → SSH access).",
+        key: "sshPrivateKey",
+      },
+      sshUser: {
+        sourceDescription: "Login user on the VM. Leave blank to use the image default, usually `root`.",
+        key: "sshUser",
+      },
+      sshIdentityFile: {
+        sourceDescription: "Absolute path to a private key on the Paperclip host. Used only when SSH Private Key is empty.",
+        key: "sshIdentityFile",
+      },
+      sshPort: {
+        sourceDescription: "SSH port for direct VM access.",
+        key: "sshPort",
+      },
+      strictHostKeyChecking: {
+        sourceDescription: "Host key policy passed to ssh via StrictHostKeyChecking. Typical values are `accept-new`, `yes`, or `no`.",
+        key: "strictHostKeyChecking",
+      },
+      image: {
+        sourceDescription: "Optional container image to use when creating the VM.",
+        key: "image",
+      },
+      cpu: {
+        sourceDescription: "Optional CPU count passed to `exe.dev new --cpu`.",
+        key: "cpu",
+      },
+      memory: {
+        sourceDescription: "Optional memory size such as `4GB`.",
+        key: "memory",
+      },
+      disk: {
+        sourceDescription: "Optional disk size such as `20GB`.",
+        key: "disk",
+      },
+      sourceVm: {
+        sourceTitle: "Source VM",
+        sourceDescription: "Name of an existing exe.dev VM to copy for each run with `exe.dev cp`, disk and config included. Leave blank to create a fresh VM with `exe.dev new`. Your API token must allow `cp`: tokens list their permitted commands, and one without `cp` fails with a 403. When set, leave image, command, env, integrations, tags, setup script, prompt, and comment empty: `cp` cannot apply them, and saving fails until they are cleared.",
+        key: "sourceVm",
+      },
+      command: {
+        sourceDescription: "Optional container command passed to `exe.dev new --command`.",
+        key: "command",
+      },
+      env: {
+        sourceDescription: "Optional environment variables applied at VM creation time.",
+        key: "env",
+      },
+      integrations: {
+        sourceDescription: "Optional exe.dev integrations to attach during VM creation.",
+        key: "integrations",
+      },
+      tags: {
+        sourceDescription: "Optional tags to apply during VM creation.",
+        key: "tags",
+      },
+      setupScript: {
+        sourceDescription: "Optional first-boot setup script passed to `exe.dev new --setup-script`.",
+        key: "setupScript",
+      },
+      prompt: {
+        sourceDescription: "Optional Shelley prompt passed to `exe.dev new --prompt`.",
+        key: "prompt",
+      },
+      comment: {
+        sourceDescription: "Optional short note attached to created VMs.",
+        key: "comment",
+      },
+      namePrefix: {
+        sourceDescription: "Optional prefix used when generating VM names.",
+        key: "namePrefix",
+      },
+      apiUrl: {
+        sourceDescription: "Optional exe.dev HTTPS API base URL or /exec endpoint. Defaults to https://exe.dev/exec.",
+        key: "apiUrl",
+      },
+      timeoutMs: {
+        sourceDescription: "Timeout for VM lifecycle and SSH operations in milliseconds.",
+        key: "timeoutMs",
+      },
+      reuseLease: {
+        sourceDescription: "Whether to keep the VM alive between runs instead of deleting it on release.",
+        key: "reuseLease",
+      },
+    },
+  },
+  createos: {
+    pluginId: "paperclip.createos-sandbox-provider",
+    key: "createos",
+    fields: {
+      apiUrl: {
+        sourceTitle: "API URL",
+        sourceDescription: "https://api.sb.createos.sh",
+        key: "apiUrl",
+      },
+      apiKey: {
+        sourceDescription: "CreateOS API key or Paperclip secret reference. Saved keys become company secrets. The official API endpoint can use CREATEOS_API_KEY from the host; custom endpoints require an explicit key.",
+        key: "apiKey",
+      },
+      shape: {
+        sourceTitle: "Shape",
+        sourceDescription: "Choose the sandbox CPU and memory size.",
+        key: "shape",
+      },
+      rootfs: {
+        sourceDescription: "Root filesystem or ready template ID/name. Omit to use the provider default. The image must supply Bash and the selected agent runtime dependencies.",
+        key: "rootfs",
+      },
+      region: {
+        sourceDescription: "Optional region; must match the API endpoint's region.",
+        key: "region",
+      },
+      timeoutMs: {
+        sourceDescription: "Operation and default command timeout in milliseconds. This is not a sandbox lifetime.",
+        key: "timeoutMs",
+      },
+      reuseLease: {
+        sourceDescription: "Pause the sandbox after a run and resume it for subsequent runs instead of deleting it.",
+        key: "reuseLease",
+      },
+    },
+  },
 };
 
 const OWN_LOCAL_FOLDER_PRESENTATION_KEYS: Record<string, { pluginKey: string; key: string }> = {
@@ -769,21 +907,43 @@ export function localizeSandboxProviderConfigSchema<T extends PluginConfigSchema
 
   let changed = false;
   const properties = { ...schema.properties };
-  for (const [fieldKey, presentation] of Object.entries(ownedProvider.fields)) {
-    const fieldSchema = properties[fieldKey];
+  for (const [fieldKey, fieldSchema] of Object.entries(properties)) {
+    let nextFieldSchema = fieldSchema;
+    const presentation = ownedProvider.fields[fieldKey];
     if (
-      !fieldSchema
-      || fieldSchema.title !== undefined
-      || fieldSchema.description !== presentation.sourceDescription
+      presentation
+      && fieldSchema.description === presentation.sourceDescription
+      && (presentation.sourceTitle === undefined
+        ? fieldSchema.title === undefined
+        : fieldSchema.title === presentation.sourceTitle)
     ) {
-      continue;
+      nextFieldSchema = {
+        ...nextFieldSchema,
+        title: translate(t, `pluginPresentation.sandboxProviderConfigFields.${ownedProvider.key}.${presentation.key}.name`, fieldKey),
+        description: translate(t, `pluginPresentation.sandboxProviderConfigFields.${ownedProvider.key}.${presentation.key}.description`, presentation.sourceDescription),
+      };
     }
-    properties[fieldKey] = {
-      ...fieldSchema,
-      title: translate(t, `pluginPresentation.sandboxProviderConfigFields.${ownedProvider.key}.${presentation.key}.name`, fieldKey),
-      description: translate(t, `pluginPresentation.sandboxProviderConfigFields.${ownedProvider.key}.${presentation.key}.description`, presentation.sourceDescription),
-    };
-    changed = true;
+
+    const rawGroup = nextFieldSchema["x-paperclip-group"];
+    if (
+      nextFieldSchema["x-paperclip-advanced"] === true
+      && typeof rawGroup === "string"
+      && ownedProvider.groups?.[rawGroup]
+    ) {
+      nextFieldSchema = {
+        ...nextFieldSchema,
+        "x-paperclip-group": translate(
+          t,
+          `pluginPresentation.sandboxProviderConfigGroups.${ownedProvider.key}.${ownedProvider.groups[rawGroup]}`,
+          rawGroup,
+        ),
+      };
+    }
+
+    if (nextFieldSchema !== fieldSchema) {
+      properties[fieldKey] = nextFieldSchema;
+      changed = true;
+    }
   }
   return (changed ? { ...schema, properties } : schema) as T;
 }

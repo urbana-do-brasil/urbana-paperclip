@@ -31,6 +31,81 @@ const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
 
 const operationHelp: Record<string, CommandHelp> = {
+  adapter: {
+    description: { en: "Adapter management operations", "pt-BR": "Operações de gerenciamento de adapters" },
+  },
+  "adapter list": {
+    description: { en: "List registered adapters", "pt-BR": "Listar adapters registrados" },
+    options: commonClientOptions,
+  },
+  "adapter install": {
+    description: { en: "Install an external adapter", "pt-BR": "Instalar um adapter externo" },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "adapter get": {
+    description: { en: "Get one adapter", "pt-BR": "Consultar um adapter" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: commonClientOptions,
+  },
+  "adapter update": {
+    description: { en: "Update adapter settings", "pt-BR": "Atualizar as configurações do adapter" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "adapter override": {
+    description: { en: "Pause or resume a built-in adapter override", "pt-BR": "Pausar ou retomar uma substituição de adapter integrado" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "adapter reload": {
+    description: { en: "Reload an adapter", "pt-BR": "Recarregar um adapter" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "adapter reinstall": {
+    description: { en: "Reinstall an adapter", "pt-BR": "Reinstalar um adapter" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "adapter delete": {
+    description: { en: "Delete an external adapter registration", "pt-BR": "Excluir o registro de um adapter externo" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: commonClientOptions,
+  },
+  "adapter config-schema": {
+    description: { en: "Get adapter config schema", "pt-BR": "Consultar o esquema de configuração do adapter" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: commonClientOptions,
+  },
+  "adapter ui-parser": {
+    description: { en: "Get adapter UI parser JavaScript", "pt-BR": "Consultar o JavaScript do parser de interface do adapter" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: commonClientOptions,
+  },
+  "adapter models": {
+    description: { en: "List adapter models for a company", "pt-BR": "Listar modelos do adapter para uma organização" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--refresh": { en: "Refresh provider model list", "pt-BR": "Atualizar a lista de modelos do provedor" },
+      "--environment-id": { en: "Environment ID for environment-aware adapters", "pt-BR": "ID do ambiente para adapters que consideram o ambiente" },
+    },
+  },
+  "adapter detect-model": {
+    description: { en: "Detect adapter model", "pt-BR": "Detectar o modelo do adapter" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" } },
+  },
+  "adapter test-environment": {
+    description: { en: "Test adapter environment configuration", "pt-BR": "Testar a configuração de ambiente do adapter" },
+    arguments: { type: { en: "Adapter type", "pt-BR": "Tipo de adapter" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
   asset: {
     description: { en: "Asset operations", "pt-BR": "Operações de arquivos de mídia" },
   },
