@@ -1242,6 +1242,16 @@ const operationHelp: Record<string, CommandHelp> = {
     description: { en: "List pipelines", "pt-BR": "Listar pipelines" },
     options: companyOptions,
   },
+  secrets: {
+    description: { en: "Secret declaration and provider operations", "pt-BR": "Operações de declarações de segredos e provedores" },
+  },
+  "secrets list": {
+    description: { en: "List secret metadata for a company", "pt-BR": "Listar metadados dos segredos de uma organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
   "agent me": {
     description: {
       en: "Show the current agent identity",

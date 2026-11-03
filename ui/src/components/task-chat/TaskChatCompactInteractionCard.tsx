@@ -89,33 +89,21 @@ export interface TaskChatCompactInteractionCardProps extends SharedInteractionPr
 
 const KIND_COPY = {
   suggest_tasks: {
-    fallbackTitle: "Suggested tasks",
-    label: "Tasks",
     icon: GitBranch,
   },
   ask_user_questions: {
-    fallbackTitle: "Questions",
-    label: "Questions",
     icon: CircleHelp,
   },
   request_confirmation: {
-    fallbackTitle: "Confirmation",
-    label: "Confirmation",
     icon: CheckCircle2,
   },
   request_checkbox_confirmation: {
-    fallbackTitle: "Choose options",
-    label: "Selection",
     icon: ListChecks,
   },
   request_item_verdicts: {
-    fallbackTitle: "Review items",
-    label: "Review",
     icon: MessageSquareQuote,
   },
   connection_intent: {
-    fallbackTitle: "Connect service",
-    label: "Connection",
     icon: Plug,
   },
 } as const;
@@ -190,23 +178,26 @@ function InteractionShell({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
-  const kind = KIND_COPY[interaction.kind];
-  const Icon = kind.icon;
+  const Icon = KIND_COPY[interaction.kind].icon;
   const fallbackTitle = interaction.kind === "ask_user_questions"
     ? t("taskDetail.interactionQuestions.questionsLabel")
     : interaction.kind === "suggest_tasks"
       ? t("taskDetail.interactionConfirmations.kind.suggestedTasks")
       : interaction.kind === "request_item_verdicts"
         ? t("taskDetail.interactionConfirmations.title.reviewItems")
-    : kind.fallbackTitle;
+        : interaction.kind === "request_checkbox_confirmation"
+          ? t("taskDetail.interactionConfirmations.kind.checkboxConfirmation")
+          : interaction.kind === "connection_intent"
+            ? t("taskDetail.interactionConfirmations.kind.connectionRequest")
+            : t("taskDetail.interactionConfirmations.kind.confirmation");
   const questionStatus = interaction.kind === "ask_user_questions"
     ? questionStatusKey(interaction.status)
     : null;
   const localizedStatus = questionStatus
     ? t(`taskDetail.interactionQuestions.status.${questionStatus}`)
-    : (interaction.kind === "suggest_tasks" || interaction.kind === "request_item_verdicts") && questionStatusKey(interaction.status)
+    : questionStatusKey(interaction.status)
       ? t(`taskDetail.interactionConfirmations.status.${questionStatusKey(interaction.status)}`)
-    : statusLabel(interaction.status);
+      : statusLabel(interaction.status);
   const title = (
     <div className="flex min-w-0 items-center gap-2">
       <Icon aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />

@@ -88,7 +88,7 @@ configuração de pipelines) foi concluída em PT-BR/en. 3.10d foi dividida em d
 e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
-em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checkpoint após as fatias 3.8l, 3.9f3i, 3.10t, 3.11a–f3/g1–g3/h1–h18/i–j, 4.3ao, 6.2e, 6.3d e 7.1a é **393/411 tarefas** no checklist
+em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checkpoint após as fatias 3.8l, 3.9f3i, 3.10t, 3.11a–f3/g1–g3/h1–h18/i–j, 4.3ap, 6.2e, 6.3e e 7.1a é **395/413 tarefas** no checklist
 do OpenSpec. 3.10f–g estão concluídas; 4.3f cobre a exportação de organizações,
 e 5.2a/5.3a adicionam dois guias públicos traduzidos. Próximas: metadata restante de 3.11h e operações da CLI; outras operações de 4.3 e 5.2/5.3 continuam parciais.
 
@@ -366,6 +366,8 @@ Próximos passos:
 Não interprete a contagem de 81/108 como percentual da tradução: os itens têm
 tamanhos muito diferentes e a contagem inclui subtarefas e seus grupos pais.
 O arquivo de tarefas mantém a lista detalhada e suas dependências.
+
+A [matriz de qualificação por runtime](runtime-qualification.md) distingue evidência de transporte da homologação de respostas reais, ainda pendente.
 
 ## Cobertura
 

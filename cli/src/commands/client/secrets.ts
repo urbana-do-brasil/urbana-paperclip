@@ -20,6 +20,7 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { secretListColumnLabels } from "../../localization/secret-operations.js";
 
 interface SecretListOptions extends BaseClientOptions {
   companyId?: string;
@@ -234,6 +235,24 @@ function renderSecret(secret: CompanySecret): Record<string, unknown> {
   };
 }
 
+function printSecretList(rows: CompanySecret[], json: boolean): void {
+  if (json) {
+    printOutput(rows, { json: true });
+    return;
+  }
+  if (rows.length === 0) {
+    printOutput([], { json: false });
+    return;
+  }
+  for (const row of rows) {
+    console.log(formatSecretMetadata(row));
+  }
+}
+
+function formatSecretMetadata(secret: CompanySecret): string {
+  return formatInlineRecord(renderSecret(secret), { labels: secretListColumnLabels() });
+}
+
 function printProviderHealth(rows: SecretProviderHealth[], json: boolean): void {
   if (json) {
     printOutput(rows, { json: true });
@@ -376,7 +395,7 @@ export function registerSecretCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const rows = (await ctx.api.get<CompanySecret[]>(apiPath`/api/companies/${ctx.companyId}/secrets`)) ?? [];
-          printOutput(ctx.json ? rows : rows.map(renderSecret), { json: ctx.json });
+          printSecretList(rows, ctx.json);
         } catch (err) {
           handleCommandError(err);
         }

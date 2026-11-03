@@ -3650,3 +3650,8 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - Aviso estruturado de caso bloqueado e `pipelines list`: testes focados 17/17 e 7/7, respectivamente; typecheck UI passou. Typecheck CLI da segunda rodada foi encerrado com 137 durante concorrência; verificação sequencial permanece necessária.
 - Integração destes cinco lotes: 56/56 testes em sete arquivos; gates de tokens e literais, validação estrita OpenSpec e `git diff --check` passaram.
+
+### Confirmações compactas, secrets list e matriz de runtimes
+
+- Títulos e status de confirmações compactas e ajuda/saída humana de `secrets list` localizados; conteúdo livre, metadados e JSON preservados. Rodada integrada com validação de catálogos: 54/54 testes. Outras variantes de interações e operações de secrets continuam pendentes.
+- A [matriz de runtimes](runtime-qualification.md) separa testes de transporte de respostas reais ainda não qualificadas. Gate de ajuda: 68 tópicos. Checkpoint: **395/413 tarefas**, 18 caixas abertas incluindo agregadoras.

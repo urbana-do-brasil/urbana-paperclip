@@ -408,6 +408,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3am Localizar help e relatório humano de feedback report, preservando flags, dados, JSON e stderr estruturado. Suítes focadas 18/18 e typecheck CLI passaram; 4.3/4.4 seguem abertas.
   - [x] 4.3an Localizar ajuda e cabeçalhos humanos de teams browse/search em PT-BR/en; preservar valores, dados, JSON e erros. Suítes focadas: 15/15; typecheck CLI passou. Demais operações e regressão integrada seguem abertas.
   - [x] 4.3ao Localizar help, rótulos humanos e prefixo de erro de pipelines list, preservando dados, rota, JSON e detalhes de erro. Testes focados 7/7; typecheck CLI encerrado por recursos (137) durante execução paralela. Demais operações e regressão integrada seguem abertas.
+  - [x] 4.3ap Localizar ajuda e rótulos humanos de secrets list em PT-BR/en, preservando metadados, rota, JSON e erros. Testes da CLI e lote integrado passaram; demais operações seguem abertas.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação
@@ -433,6 +434,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 6.3b Localizar confirmações e erros próprios dos toasts ao responder, aceitar ou rejeitar interações, preservando feedback inline e texto externo. Quatro suítes UI: 264/264; typecheck UI passou. A revisão integral de 6.3 permanece pendente.
   - [x] 6.3c Localizar resumos de perguntas e confirmações e projeções temporárias de histórico, inclusive troca de idioma na página aberta e confirmação expirada na interface clássica. Perguntas, respostas e texto do provedor permanecem originais; quatro suítes UI: 298/298; typecheck UI passou. Demais tipos de interação ainda requerem auditoria.
   - [x] 6.3d Localizar resumos de solicitação de conexão e verificar resumos de decisões por item em PT-BR/en, preservando nome do serviço e dados externos. Teste focado: 32/32; typecheck UI e suíte integrada 371/371 passaram. A revisão integral de 6.3 continua pendente.
+  - [x] 6.3e Localizar títulos de fallback e status em cartões compactos de confirmação e seleção, mantendo prompts e payloads originais. Testes de interação e lote integrado passaram; demais variantes permanecem em auditoria.
 - [ ] 6.4 Documentar política e matriz de suporte por runtime e qualificar comunicação real com credenciais autorizadas e dados descartáveis. Verificar respostas e interações em PT-BR/en por runtime/modelo declarado, registrar falhas/limites e não aprovar um runtime apenas pelo conteúdo da fixture de prompt. Specs: `agent-interaction-language`, `localization-quality`.
 
 ## 7. Integração e aceitação integral

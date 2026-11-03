@@ -180,6 +180,66 @@ describe("TaskChatInteractionCard", () => {
     ]);
   });
 
+  it("localizes fallback titles and resolved statuses for confirmation kinds", async () => {
+    const interactions: Array<{
+      interaction: IssueThreadInteraction;
+      prompt: string;
+    }> = [
+      {
+        interaction: createRequestConfirmation({
+          title: null,
+          status: "rejected",
+        }),
+        prompt: "Approve the plan?",
+      },
+      {
+        interaction: {
+          ...pendingRequestCheckboxConfirmationInteraction,
+          title: null,
+          status: "expired",
+        },
+        prompt: pendingRequestCheckboxConfirmationInteraction.payload.prompt,
+      },
+    ];
+    const expectedByLanguage = {
+      en: [
+        { title: "Confirmation", status: "Rejected" },
+        { title: "Checkbox confirmation", status: "Expired" },
+      ],
+      "pt-BR": [
+        { title: "Confirmação", status: "Recusada" },
+        { title: "Confirmação por opções", status: "Expirada" },
+      ],
+    } as const;
+
+    for (const language of ["en", "pt-BR"] as const) {
+      await i18n.changeLanguage(language);
+      for (const [index, { interaction, prompt }] of interactions.entries()) {
+        flushSync(() => {
+          root.render(
+            <TooltipProvider>
+              <ThemeProvider>
+                <TaskChatInteractionCard
+                  item={interactionItem(interaction)}
+                  presentation="takeover"
+                />
+              </ThemeProvider>
+            </TooltipProvider>,
+          );
+        });
+
+        expect(container.textContent).toContain(
+          expectedByLanguage[language][index].title,
+        );
+        expect(
+          container.querySelector('[data-testid="interaction-status-badge"]')
+            ?.textContent,
+        ).toContain(expectedByLanguage[language][index].status);
+        expect(container.textContent).toContain(prompt);
+      }
+    }
+  });
+
   it("localizes the compact suggested-task receipt summary and keeps task titles intact", async () => {
     await i18n.changeLanguage("pt-BR");
     const interaction = { ...acceptedSuggestedTasksInteraction, title: null };
