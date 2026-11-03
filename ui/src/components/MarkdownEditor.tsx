@@ -59,6 +59,7 @@ import { unescapeBlockquoteMarkers } from "../lib/blockquote-markdown";
 import { pasteNormalizationPlugin } from "../lib/paste-normalization";
 import { cn } from "../lib/utils";
 import { useEditorAutocomplete, type SlashCommandOption } from "../context/EditorAutocompleteContext";
+import { useTranslation } from "../i18n";
 
 /* ---- Mention types ---- */
 
@@ -744,6 +745,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
   onSubmit,
   readOnly = false,
 }: MarkdownEditorProps, forwardedRef) {
+  const { t } = useTranslation();
   const editorValue = useMemo(() => prepareMarkdownForEditor(value), [value]);
   const { slashCommands: sharedSlashCommands } = useEditorAutocomplete();
   const slashCommands = useMemo(
@@ -1341,7 +1343,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
       >
         <div className="flex items-start justify-between gap-3 px-3 pt-2 text-xs text-muted-foreground">
           <p>
-            Rich editor unavailable for this markdown. Showing raw source instead.{" "}
+            {t("markdownEditor.fallbackMessage")}{" "}
             <span data-testid="markdown-editor-fallback-code" className="font-mono">
               {richEditorError.code}
             </span>
@@ -1349,6 +1351,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
           <button
             type="button"
             className="shrink-0 underline underline-offset-2 hover:text-foreground"
+            data-testid="markdown-editor-retry"
             onClick={() => {
               // The retry remounts MDXEditor, so re-arm the mount-time guard:
               // a fresh mount can emit an empty onChange that would otherwise
@@ -1357,7 +1360,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
               setRichEditorError(null);
             }}
           >
-            Retry rich editor
+            {t("markdownEditor.retryRichEditor")}
           </button>
         </div>
         <textarea
@@ -1673,27 +1676,27 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
                 )}
                 {option.kind === "issue" && (
                   <span className="ml-auto text-(length:--text-nano) uppercase tracking-wide text-muted-foreground">
-                    Task
+                    {t("markdownEditor.autocomplete.task")}
                   </span>
                 )}
                 {option.kind === "project" && option.projectId && (
                   <span className="ml-auto text-(length:--text-nano) uppercase tracking-wide text-muted-foreground">
-                    Project
+                    {t("markdownEditor.autocomplete.project")}
                   </span>
                 )}
                 {option.kind === "user" && (
                   <span className="ml-auto text-(length:--text-nano) uppercase tracking-wide text-muted-foreground">
-                    User
+                    {t("markdownEditor.autocomplete.user")}
                   </span>
                 )}
                 {option.kind === "skill" && (
                   <span className="ml-auto text-(length:--text-nano) uppercase tracking-wide text-muted-foreground">
-                    Skill
+                    {t("markdownEditor.autocomplete.skill")}
                   </span>
                 )}
                 {option.kind === "routine" && (
                   <span className="ml-auto text-(length:--text-nano) uppercase tracking-wide text-muted-foreground">
-                    Routine
+                    {t("markdownEditor.autocomplete.routine")}
                   </span>
                 )}
                 {option.kind === "action" && (

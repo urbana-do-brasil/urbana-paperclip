@@ -334,6 +334,155 @@ describe("owned plugin presentation localization", () => {
     expect(changedSourcePresentation.properties.apiKey).toEqual(changedSourceSchema.properties.apiKey);
   });
 
+  it.each(["pt-BR", "en"] as const)("localizes Novita schema metadata only for the exact bundled source in %s", async (locale) => {
+    await i18n.changeLanguage(locale);
+    const pluginId = "paperclip.novita-sandbox-provider";
+    const pluginRecordId = "bundled-novita-plugin-id";
+    const packageName = "@paperclipai/plugin-novita-sandbox";
+    const bundlePath = "/app/packages/plugins/sandbox-providers/novita";
+    const installed = [{
+      id: pluginRecordId,
+      pluginKey: pluginId,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginId },
+    }];
+    const bundled = [{ pluginKey: pluginId, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledSandboxProvider({ pluginId: pluginRecordId, pluginKey: pluginId }, installed, bundled);
+    expect(trustedBundle).toBe(true);
+
+    const sourceDescriptions = {
+      apiKey: "Environment-specific Novita API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to NOVITA_API_KEY if omitted.",
+      domain: "Optional Novita API domain override. Leave empty to use the SDK default.",
+      template: "Novita sandbox template ID or name. Leave blank to use the SDK's default base template.",
+      requestedCwd: "Workspace directory to create inside the sandbox lease.",
+      timeoutMs: "Sandbox lifetime and default per-command timeout in milliseconds.",
+      requestTimeoutMs: "HTTP/RPC request timeout for Novita SDK calls in milliseconds.",
+      secure: "Use secure connections when supported by the Novita SDK.",
+      autoPause: "Enable Novita sandbox auto-pause behavior when supported by the selected template.",
+      reuseLease: "Pause and later resume the sandbox across Paperclip runs instead of killing it on release.",
+    };
+    const ptBrDescriptions = {
+      apiKey: "Chave de API do Novita específica do ambiente. Cole uma chave ou uma referência a um segredo existente do Paperclip; chaves coladas são salvas como segredos da organização. Se omitida, usa NOVITA_API_KEY.",
+      domain: "Substituição opcional do domínio da API do Novita. Deixe vazio para usar o padrão do SDK.",
+      template: "ID ou nome do template do sandbox Novita. Deixe em branco para usar o template base padrão do SDK.",
+      requestedCwd: "Diretório de trabalho a ser criado dentro do lease do sandbox.",
+      timeoutMs: "Tempo de vida do sandbox e tempo limite padrão por comando, em milissegundos.",
+      requestTimeoutMs: "Tempo limite de solicitação HTTP/RPC para chamadas do SDK Novita, em milissegundos.",
+      secure: "Usa conexões seguras quando compatível com o SDK do Novita.",
+      autoPause: "Ativa o comportamento de pausa automática do Novita quando compatível com o template selecionado.",
+      reuseLease: "Pausa e depois retoma o sandbox entre execuções do Paperclip em vez de encerrá-lo ao liberar.",
+    };
+    const ptBrNames = {
+      apiKey: "Chave de API",
+      domain: "Domínio da API",
+      template: "Template do sandbox",
+      requestedCwd: "Diretório de trabalho",
+      timeoutMs: "Tempo limite do sandbox",
+      requestTimeoutMs: "Tempo limite da solicitação",
+      secure: "Conexão segura",
+      autoPause: "Pausa automática",
+      reuseLease: "Reutilizar sandbox",
+    };
+    const enNames = {
+      apiKey: "API key",
+      domain: "API domain",
+      template: "Sandbox template",
+      requestedCwd: "Workspace directory",
+      timeoutMs: "Sandbox timeout",
+      requestTimeoutMs: "Request timeout",
+      secure: "Secure connection",
+      autoPause: "Auto-pause",
+      reuseLease: "Reuse sandbox",
+    };
+    const schema = {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        apiKey: { type: "string", format: "secret-ref", description: sourceDescriptions.apiKey },
+        domain: { type: "string", description: sourceDescriptions.domain },
+        template: { type: "string", description: sourceDescriptions.template },
+        requestedCwd: { type: "string", default: "/home/user/paperclip-workspace", description: sourceDescriptions.requestedCwd },
+        timeoutMs: { type: "number", default: 300000, description: sourceDescriptions.timeoutMs },
+        requestTimeoutMs: { type: "number", default: 30000, description: sourceDescriptions.requestTimeoutMs },
+        secure: { type: "boolean", default: true, description: sourceDescriptions.secure },
+        autoPause: { type: "boolean", default: false, description: sourceDescriptions.autoPause },
+        reuseLease: { type: "boolean", default: false, description: sourceDescriptions.reuseLease },
+        customField: { type: "string", title: "Provider-owned field", description: "Provider-owned help text." },
+      },
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configuration = {
+      apiKey: "company-secret-ref",
+      domain: "api.custom.novita.example",
+      template: "custom-template",
+      requestedCwd: "/custom/workspace",
+      timeoutMs: 600000,
+      requestTimeoutMs: 45000,
+      secure: false,
+      autoPause: true,
+      reuseLease: true,
+      customValue: "preserve this arbitrary config value",
+    };
+    const configurationBefore = JSON.stringify(configuration);
+    const localized = localizeSandboxProviderConfigSchema("novita", pluginId, schema, i18n.t, trustedBundle)!;
+    const expectedNames = locale === "pt-BR" ? ptBrNames : enNames;
+    const expectedDescriptions = locale === "pt-BR" ? ptBrDescriptions : sourceDescriptions;
+
+    for (const [fieldKey, sourceDescription] of Object.entries(sourceDescriptions)) {
+      const sourceField = schema.properties[fieldKey as keyof typeof schema.properties];
+      expect(localized.properties[fieldKey as keyof typeof localized.properties]).toEqual({
+        ...sourceField,
+        title: expectedNames[fieldKey as keyof typeof expectedNames],
+        description: expectedDescriptions[fieldKey as keyof typeof expectedDescriptions],
+      });
+      expect(sourceDescription).toBeTruthy();
+    }
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(localized.additionalProperties).toBe(false);
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configuration)).toBe(configurationBefore);
+
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/novita/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    const packageJson = JSON.parse(readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/novita/package.json", import.meta.url),
+      "utf8",
+    )) as { name: string };
+    expect(packageJson.name).toBe(packageName);
+    expect(manifestSource).toContain(`const PLUGIN_ID = "${pluginId}"`);
+    expect(manifestSource).toContain('driverKey: "novita"');
+    for (const sourceDescription of Object.values(sourceDescriptions)) {
+      expect(manifestSource).toContain(sourceDescription);
+    }
+
+    const externalInstalled = [{
+      ...installed[0]!,
+      id: "vendor-novita-id",
+      packageName: "vendor/novita-compatible",
+      packagePath: "/custom/vendor/novita-compatible",
+    }];
+    const externalTrustedBundle = isTrustedBundledSandboxProvider(
+      { pluginId: "vendor-novita-id", pluginKey: pluginId },
+      externalInstalled,
+      bundled,
+    );
+    expect(externalTrustedBundle).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("novita", pluginId, schema, i18n.t, externalTrustedBundle)).toBe(schema);
+
+    const changedSourceSchema = {
+      ...schema,
+      properties: {
+        ...schema.properties,
+        apiKey: { ...schema.properties.apiKey, description: "Vendor-authored Novita-compatible API description." },
+      },
+    };
+    const changedSourcePresentation = localizeSandboxProviderConfigSchema("novita", pluginId, changedSourceSchema, i18n.t, true)!;
+    expect(changedSourcePresentation.properties.apiKey).toEqual(changedSourceSchema.properties.apiKey);
+  });
+
   it("localizes managed-resource plugin attribution only with matching installed and bundled identity", async () => {
     const attribution = {
       pluginId: "plugin-workspace",

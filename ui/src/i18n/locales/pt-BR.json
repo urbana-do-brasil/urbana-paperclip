@@ -1664,6 +1664,7 @@
     },
     "feedback": {
       "routineCreated": "Rotina criada",
+      "selectCompanyToCreateSecrets": "Selecione uma empresa para criar segredos",
       "addFirstTrigger": "Adicione o primeiro gatilho para ativar o fluxo.",
       "draftSaved": "Rascunho salvo. Defina um agente padrão antes de ativar a automação.",
       "folderCreatedMoveFailed": "Pasta criada, mas a movimentação falhou",
@@ -4052,6 +4053,44 @@
           "name": "Reutilizar sandbox",
           "description": "Define se os sandboxes devem ser pausados e reutilizados entre execuções."
         }
+      },
+      "novita": {
+        "apiKey": {
+          "name": "Chave de API",
+          "description": "Chave de API do Novita específica do ambiente. Cole uma chave ou uma referência a um segredo existente do Paperclip; chaves coladas são salvas como segredos da organização. Se omitida, usa NOVITA_API_KEY."
+        },
+        "domain": {
+          "name": "Domínio da API",
+          "description": "Substituição opcional do domínio da API do Novita. Deixe vazio para usar o padrão do SDK."
+        },
+        "template": {
+          "name": "Template do sandbox",
+          "description": "ID ou nome do template do sandbox Novita. Deixe em branco para usar o template base padrão do SDK."
+        },
+        "requestedCwd": {
+          "name": "Diretório de trabalho",
+          "description": "Diretório de trabalho a ser criado dentro do lease do sandbox."
+        },
+        "timeoutMs": {
+          "name": "Tempo limite do sandbox",
+          "description": "Tempo de vida do sandbox e tempo limite padrão por comando, em milissegundos."
+        },
+        "requestTimeoutMs": {
+          "name": "Tempo limite da solicitação",
+          "description": "Tempo limite de solicitação HTTP/RPC para chamadas do SDK Novita, em milissegundos."
+        },
+        "secure": {
+          "name": "Conexão segura",
+          "description": "Usa conexões seguras quando compatível com o SDK do Novita."
+        },
+        "autoPause": {
+          "name": "Pausa automática",
+          "description": "Ativa o comportamento de pausa automática do Novita quando compatível com o template selecionado."
+        },
+        "reuseLease": {
+          "name": "Reutilizar sandbox",
+          "description": "Pausa e depois retoma o sandbox entre execuções do Paperclip em vez de encerrá-lo ao liberar."
+        }
       }
     },
     "managedResources": {
@@ -5451,6 +5490,17 @@
     "wrapLines": "Ativar quebra de linhas",
     "unwrapLines": "Desativar quebra de linhas",
     "scrollableTable": "Tabela com rolagem"
+  },
+  "markdownEditor": {
+    "fallbackMessage": "O editor formatado não está disponível para este Markdown. Exibindo o texto original.",
+    "retryRichEditor": "Tentar usar o editor formatado novamente",
+    "autocomplete": {
+      "task": "Tarefa",
+      "project": "Projeto",
+      "user": "Usuário",
+      "skill": "Skill",
+      "routine": "Rotina"
+    }
   },
   "notFound": {
     "breadcrumb": "Página não encontrada",

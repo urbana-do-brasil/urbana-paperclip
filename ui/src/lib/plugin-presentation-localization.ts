@@ -349,6 +349,48 @@ const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
       },
     },
   },
+  novita: {
+    pluginId: "paperclip.novita-sandbox-provider",
+    key: "novita",
+    fields: {
+      apiKey: {
+        sourceDescription: "Environment-specific Novita API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to NOVITA_API_KEY if omitted.",
+        key: "apiKey",
+      },
+      domain: {
+        sourceDescription: "Optional Novita API domain override. Leave empty to use the SDK default.",
+        key: "domain",
+      },
+      template: {
+        sourceDescription: "Novita sandbox template ID or name. Leave blank to use the SDK's default base template.",
+        key: "template",
+      },
+      requestedCwd: {
+        sourceDescription: "Workspace directory to create inside the sandbox lease.",
+        key: "requestedCwd",
+      },
+      timeoutMs: {
+        sourceDescription: "Sandbox lifetime and default per-command timeout in milliseconds.",
+        key: "timeoutMs",
+      },
+      requestTimeoutMs: {
+        sourceDescription: "HTTP/RPC request timeout for Novita SDK calls in milliseconds.",
+        key: "requestTimeoutMs",
+      },
+      secure: {
+        sourceDescription: "Use secure connections when supported by the Novita SDK.",
+        key: "secure",
+      },
+      autoPause: {
+        sourceDescription: "Enable Novita sandbox auto-pause behavior when supported by the selected template.",
+        key: "autoPause",
+      },
+      reuseLease: {
+        sourceDescription: "Pause and later resume the sandbox across Paperclip runs instead of killing it on release.",
+        key: "reuseLease",
+      },
+    },
+  },
 };
 
 const OWN_LOCAL_FOLDER_PRESENTATION_KEYS: Record<string, { pluginKey: string; key: string }> = {

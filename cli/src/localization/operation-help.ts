@@ -31,6 +31,36 @@ const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
 
 const operationHelp: Record<string, CommandHelp> = {
+  asset: {
+    description: { en: "Asset operations", "pt-BR": "Operações de arquivos de mídia" },
+  },
+  "asset image:upload": {
+    description: { en: "Upload a company image asset", "pt-BR": "Enviar uma imagem para a organização" },
+    options: {
+      ...commonClientOptions,
+      "--file": { en: "Image file path", "pt-BR": "Caminho do arquivo de imagem" },
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--namespace": { en: "Asset namespace suffix", "pt-BR": "Sufixo do namespace do ativo" },
+      "--alt": { en: "Alt text metadata", "pt-BR": "Texto alternativo" },
+      "--title": { en: "Title metadata", "pt-BR": "Metadados do título" },
+    },
+  },
+  "asset logo:upload": {
+    description: { en: "Upload a company logo", "pt-BR": "Enviar o logotipo da organização" },
+    options: {
+      ...commonClientOptions,
+      "--file": { en: "Logo file path", "pt-BR": "Caminho do arquivo do logotipo" },
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "asset content": {
+    description: { en: "Download asset content", "pt-BR": "Baixar o conteúdo de um arquivo de mídia" },
+    arguments: { assetId: { en: "Asset ID", "pt-BR": "ID do ativo" } },
+    options: {
+      ...commonClientOptions,
+      "--out": { en: "Write content to a file instead of stdout", "pt-BR": "Gravar o conteúdo em um arquivo em vez de stdout" },
+    },
+  },
   health: {
     description: { en: "Check API health", "pt-BR": "Verificar a integridade da API" },
     options: commonClientOptions,

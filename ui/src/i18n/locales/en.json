@@ -1621,6 +1621,7 @@
     },
     "feedback": {
       "routineCreated": "Routine created",
+      "selectCompanyToCreateSecrets": "Select a company to create secrets",
       "addFirstTrigger": "Add the first trigger to turn it into a live workflow.",
       "draftSaved": "Draft saved. Add a default agent before enabling automation.",
       "folderCreatedMoveFailed": "Folder created, move failed",
@@ -3956,6 +3957,44 @@
           "name": "Reuse sandbox",
           "description": "Whether to pause and reuse sandboxes across runs."
         }
+      },
+      "novita": {
+        "apiKey": {
+          "name": "API key",
+          "description": "Environment-specific Novita API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to NOVITA_API_KEY if omitted."
+        },
+        "domain": {
+          "name": "API domain",
+          "description": "Optional Novita API domain override. Leave empty to use the SDK default."
+        },
+        "template": {
+          "name": "Sandbox template",
+          "description": "Novita sandbox template ID or name. Leave blank to use the SDK's default base template."
+        },
+        "requestedCwd": {
+          "name": "Workspace directory",
+          "description": "Workspace directory to create inside the sandbox lease."
+        },
+        "timeoutMs": {
+          "name": "Sandbox timeout",
+          "description": "Sandbox lifetime and default per-command timeout in milliseconds."
+        },
+        "requestTimeoutMs": {
+          "name": "Request timeout",
+          "description": "HTTP/RPC request timeout for Novita SDK calls in milliseconds."
+        },
+        "secure": {
+          "name": "Secure connection",
+          "description": "Use secure connections when supported by the Novita SDK."
+        },
+        "autoPause": {
+          "name": "Auto-pause",
+          "description": "Enable Novita sandbox auto-pause behavior when supported by the selected template."
+        },
+        "reuseLease": {
+          "name": "Reuse sandbox",
+          "description": "Pause and later resume the sandbox across Paperclip runs instead of killing it on release."
+        }
       }
     },
     "managedResources": {
@@ -5311,6 +5350,17 @@
     "wrapLines": "Wrap lines",
     "unwrapLines": "Unwrap lines",
     "scrollableTable": "Scrollable table"
+  },
+  "markdownEditor": {
+    "fallbackMessage": "Rich editor unavailable for this markdown. Showing raw source instead.",
+    "retryRichEditor": "Retry rich editor",
+    "autocomplete": {
+      "task": "Task",
+      "project": "Project",
+      "user": "User",
+      "skill": "Skill",
+      "routine": "Routine"
+    }
   },
   "notFound": {
     "breadcrumb": "Not Found",

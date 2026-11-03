@@ -4,6 +4,8 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { buildIssueReferenceHref, buildProjectMentionHref, buildRoutineMentionHref, buildSkillMentionHref } from "@paperclipai/shared";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import {
   computeMentionMenuPosition,
   findClosestAutocompleteAnchor,
@@ -227,10 +229,8 @@ async function flush() {
 }
 
 function clickRetryRichEditor(scope: HTMLElement) {
-  const button = Array.from(scope.querySelectorAll("button")).find((candidate) =>
-    candidate.textContent?.includes("Retry rich editor"),
-  );
-  if (!button) throw new Error('"Retry rich editor" button not found');
+  const button = scope.querySelector('[data-testid="markdown-editor-retry"]');
+  if (!(button instanceof HTMLButtonElement)) throw new Error("Markdown editor retry button not found");
   button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 }
 
@@ -300,7 +300,8 @@ describe("MarkdownEditor", () => {
   let container: HTMLDivElement;
   let originalRangeRect: typeof Range.prototype.getBoundingClientRect;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     originalRangeRect = Range.prototype.getBoundingClientRect;
@@ -317,9 +318,10 @@ describe("MarkdownEditor", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     Range.prototype.getBoundingClientRect = originalRangeRect;
+    await i18n.changeLanguage(DEFAULT_LOCALE);
     vi.clearAllMocks();
     mdxEditorMockState.emitMountEmptyReset = false;
     mdxEditorMockState.emitMountParseError = false;
@@ -756,7 +758,11 @@ describe("MarkdownEditor", () => {
     });
   });
 
-  it("recovers the rich editor on retry after a transient parse failure", async () => {
+  it.each([
+    ["en", "Rich editor unavailable for this markdown. Showing raw source instead.", "Retry rich editor"],
+    ["pt-BR", "O editor formatado não está disponível para este Markdown. Exibindo o texto original.", "Tentar usar o editor formatado novamente"],
+  ])("recovers the rich editor on retry after a transient parse failure in %s", async (locale, message, retryLabel) => {
+    await i18n.changeLanguage(locale);
     mdxEditorMockState.emitMountParseError = true;
     const handleChange = vi.fn();
     const root = createRoot(container);
@@ -776,6 +782,8 @@ describe("MarkdownEditor", () => {
       expect(container.querySelector("textarea")).not.toBeNull();
     });
     expect(fallbackCode(container)).toBe("MDE-PARSE");
+    expect(container.textContent).toContain(message);
+    expect(container.querySelector('[data-testid="markdown-editor-retry"]')?.textContent).toBe(retryLabel);
 
     // The failure was transient; the next mount imports the same markdown fine.
     mdxEditorMockState.emitMountParseError = false;
@@ -787,7 +795,7 @@ describe("MarkdownEditor", () => {
     await waitPastEmptyHeuristic();
 
     expect(container.querySelector("textarea")).toBeNull();
-    expect(container.textContent).not.toContain("Rich editor unavailable for this markdown");
+    expect(container.textContent).not.toContain(message);
     expect(container.textContent).toContain("Rename <name> to the real name.");
     expect(handleChange).not.toHaveBeenCalledWith("");
 
@@ -1466,7 +1474,11 @@ describe("MarkdownEditor", () => {
     });
   });
 
-  it("renders the task tag and identifier for issue mention options", async () => {
+  it.each([
+    ["en", "Task"],
+    ["pt-BR", "Tarefa"],
+  ])("renders the localized task tag and preserves the identifier in %s", async (locale, taskLabel) => {
+    await i18n.changeLanguage(locale);
     const handleChange = vi.fn();
     const { option, root } = await openMentionMenuFor(
       handleChange,
@@ -1484,7 +1496,7 @@ describe("MarkdownEditor", () => {
 
     expect(option.textContent).toContain("PAP-102");
     expect(option.textContent).toContain("@task references");
-    expect(option.textContent).toContain("Task");
+    expect(option.textContent).toContain(taskLabel);
 
     await act(async () => {
       root.unmount();

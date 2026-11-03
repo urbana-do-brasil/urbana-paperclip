@@ -3601,3 +3601,8 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - MarkdownBody: 74/74 testes de renderização e preservação de conteúdo; clipboard real e leitor de tela não foram testados. E2B: 16/16, locale 13/13 e typecheck UI; a projeção exige identidade bundled e descrição-fonte, mantendo schema e dados originais.
 - CLI cost: 4/4 e typecheck CLI; rotas, JSON e erros estruturados preservados. Checkpoint: **366/384 tarefas**, 18 caixas abertas incluindo agregadoras.
 - Repetição integrada: 94/94 em seis arquivos; typecheck UI, gate de tokens, scanner de fontes e OpenSpec estrito passaram.
+
+### Editor Markdown, schema Novita e CLI asset — 3.10m, 3.11h12 e 4.3ag
+
+- Rodada integrada: 93/93 em quatro arquivos, após corrigir a expectativa do teste de erro 422 para aceitar a moldura localizada e ainda exigir o detalhe externo. Typechecks UI e CLI passaram sequencialmente.
+- O schema Novita usa a mesma prova de origem e fallback externo; o editor mantém conteúdo e IDs. As tarefas agregadoras continuam abertas. Checkpoint: **369/387 tarefas**, 18 caixas abertas incluindo agregadoras.
