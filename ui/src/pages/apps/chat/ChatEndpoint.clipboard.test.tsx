@@ -9,6 +9,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChatSetupSidebarProvider } from "@/context/ChatSetupSidebarContext";
 import { ChatSetupSidebar } from "@/components/chat/ChatSetupNavigation";
+import { i18n } from "@/i18n";
 import { ChatEndpointSetup } from "./ChatEndpointSetup";
 import { ChatEndpointDetail } from "./ChatEndpointDetail";
 
@@ -18,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   listAgents: vi.fn(),
   tab: "access",
   listActivityPage: vi.fn(),
+  replayDelivery: vi.fn(),
   create: vi.fn(),
   createSlackApp: vi.fn(),
   update: vi.fn(),
@@ -76,7 +78,8 @@ describe("chat setup and identity-link clipboard actions", () => {
   let execCommand: ReturnType<typeof vi.fn>;
   const secret = "synthetic-one-time-webhook-secret";
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     localStorage.clear();
     vi.spyOn(window, "open").mockReturnValue(null);
     mocks.listAgents.mockResolvedValue([{ id: "agent-a", name: "Maya", status: "idle" }]);
@@ -195,6 +198,54 @@ describe("chat setup and identity-link clipboard actions", () => {
     await click("Previous");
     expect(container.textContent).toContain("Page 1");
   });
+
+  it.each([
+    ["en", "Connection activity", "Inbound delivery", "Replay", "Page 1", "Connection setup is incomplete.", "Delivery queued for replay"],
+    ["pt-BR", "Atividade da conexão", "Entrega recebida", "Reexecutar", "Página 1", "A configuração da conexão está incompleta.", "Entrega colocada na fila para reexecução"],
+  ])(
+    "localizes chat activity in %s while preserving provider evidence and identifiers",
+    async (locale, heading, kind, replayLabel, pageLabel, healthLabel, toastTitle) => {
+      await i18n.changeLanguage(locale);
+      mocks.tab = "activity";
+      const providerSummary = "Provider callback: <external> event 42";
+      const providerDetail = "HTTP 429 Retry-After: 30; request_id=ext-77";
+      const providerActivityId = "delivery-provider-id-42";
+      const providerTimestamp = "2026-11-03T12:34:56.000Z";
+      mocks.listActivityPage.mockResolvedValue({
+        items: [{
+          id: providerActivityId,
+          kind: "delivery",
+          status: "failed",
+          summary: providerSummary,
+          detail: providerDetail,
+          createdAt: providerTimestamp,
+          replayable: true,
+        }],
+        nextCursor: null,
+      });
+      mocks.replayDelivery.mockResolvedValue(undefined);
+
+      await render("slack", true);
+
+      expect(container.textContent).toContain(heading);
+      expect(container.textContent).toContain(kind);
+      expect(container.textContent).toContain(pageLabel);
+      expect(container.textContent).toContain(healthLabel);
+      expect(container.textContent).toContain(providerSummary);
+      expect(container.textContent).toContain(providerDetail);
+      expect(container.querySelector("external")).toBeNull();
+      expect(container.querySelector("time")?.getAttribute("datetime")).toBe(providerTimestamp);
+      expect(container.querySelector("time")?.textContent).toContain(":56");
+      const replayButton = [...container.querySelectorAll("button")]
+        .find((button) => button.textContent?.trim() === replayLabel);
+      expect(replayButton).toBeDefined();
+      flushSync(() => replayButton!.click());
+      await settle();
+
+      expect(mocks.replayDelivery).toHaveBeenCalledWith("endpoint-a", providerActivityId);
+      expect(mocks.pushToast).toHaveBeenCalledWith({ title: toastTitle, tone: "success" });
+    },
+  );
 
   it.each(["slack", "microsoft-teams"] as const)(
     "copies the %s manifest via the insecure-context fallback",

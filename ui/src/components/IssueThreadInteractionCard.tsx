@@ -138,15 +138,23 @@ function resolveActorLabel(args: {
   agentMap?: Map<string, Agent>;
   currentUserId?: string | null;
   userLabelMap?: ReadonlyMap<string, string> | null;
+  translate?: (key: string) => string;
 }) {
-  const { agentId, userId, agentMap, currentUserId, userLabelMap } = args;
+  const { agentId, userId, agentMap, currentUserId, userLabelMap, translate } = args;
   if (agentId) {
     return agentMap?.get(agentId)?.name ?? agentId.slice(0, 8);
   }
   if (userId) {
-    return formatAssigneeUserLabel(userId, currentUserId, userLabelMap) ?? "Board";
+    if (currentUserId && userId === currentUserId) {
+      return translate?.("organizationActivity.actors.you") ?? "You";
+    }
+    if (userId === "local-board" && !userLabelMap?.get(userId)?.trim()) {
+      return translate?.("organizationActivity.actors.board") ?? "Board";
+    }
+    const label = formatAssigneeUserLabel(userId, currentUserId, userLabelMap);
+    return label ?? translate?.("organizationActivity.actors.board") ?? "Board";
   }
-  return "Unknown";
+  return translate?.("organizationActivity.actors.unknown") ?? "Unknown";
 }
 
 /**
@@ -639,6 +647,7 @@ function TaskTreeNode({
     agentMap,
     currentUserId,
     userLabelMap,
+    translate: (key) => String(t(key)),
   });
   const hasExplicitAssignee = Boolean(
     node.task.assigneeAgentId || node.task.assigneeUserId,
@@ -2473,6 +2482,7 @@ function RequestConnectionAuthorizationCard({
   interaction,
   state,
   isAddressee,
+  resolvedByCurrentUser,
   providerName,
   addresseeLabel,
   requestingAgentLabel,
@@ -2484,6 +2494,8 @@ function RequestConnectionAuthorizationCard({
   state: ConnectionAuthorizationCardState;
   /** Is the signed-in reader the person the server addressed? */
   isAddressee: boolean;
+  /** The resolver is the signed-in user, derived from IDs rather than labels. */
+  resolvedByCurrentUser: boolean;
   providerName: string;
   addresseeLabel: string;
   requestingAgentLabel: string | null;
@@ -2620,10 +2632,9 @@ function RequestConnectionAuthorizationCard({
           headline={connectionT("authorization.providerConnected", { provider: providerName })}
           detail={
             <>
-              Connected by{" "}
+              {connectionT("authorization.connectedBy")}{" "}
               <span className="font-medium text-foreground">
-                {/* "You" is display-cased for a badge; this is mid-sentence. */}
-                {(resolvedByLabel ?? addresseeLabel) === "You"
+                {resolvedByCurrentUser
                   ? connectionT("authorization.youLowercase")
                   : resolvedByLabel ?? addresseeLabel}
               </span>
@@ -3842,6 +3853,7 @@ export function IssueThreadInteractionCard({
         agentMap,
         currentUserId,
         userLabelMap,
+        translate: (key) => String(t(key)),
       })
     : null;
   const connectionAuthorizationStyles = connectionAuthorization && connectionAuthorizationState
@@ -3888,6 +3900,7 @@ export function IssueThreadInteractionCard({
     agentMap,
     currentUserId,
     userLabelMap,
+    translate: (key) => String(t(key)),
   });
   const resolvedByLabel =
     interaction.resolvedByAgentId || interaction.resolvedByUserId
@@ -3897,8 +3910,15 @@ export function IssueThreadInteractionCard({
           agentMap,
           currentUserId,
           userLabelMap,
+          translate: (key) => String(t(key)),
         })
       : null;
+  const resolvedByCurrentUser = Boolean(
+    !interaction.resolvedByAgentId &&
+      currentUserId &&
+      (interaction.resolvedByUserId ?? interaction.addresseeUserId) ===
+        currentUserId,
+  );
   // P4: audit-visible distinction between agent and human resolution.
   const resolvedByAgent = Boolean(interaction.resolvedByAgentId);
   // PAP-17280: the effective audience, shown *before* anyone responds so a
@@ -4087,6 +4107,7 @@ export function IssueThreadInteractionCard({
               interaction={interaction}
               state={connectionAuthorizationState}
               isAddressee={isConnectionAddressee}
+              resolvedByCurrentUser={resolvedByCurrentUser}
               providerName={connectionAuthorization.providerName}
               addresseeLabel={addresseeLabel
                 ?? String(t("taskDetail.interactionConnections.authorization.addressedPerson"))}

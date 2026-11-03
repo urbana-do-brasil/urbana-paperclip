@@ -1629,6 +1629,54 @@ describe("IssueThreadInteractionCard tool-action card", () => {
     ).not.toBeNull();
   });
 
+  it.each([
+    ["en", "You", "Board"],
+    ["pt-BR", "Você", "Painel"],
+  ] as const)("localizes current-user and board actor fallbacks in %s", async (language, currentUserLabel, boardLabel) => {
+    await i18n.changeLanguage(language);
+    const resolved = {
+      ...pendingRequestConfirmationInteraction,
+      status: "accepted" as const,
+      resolvedAt: new Date("2026-08-24T13:30:00.000Z"),
+      result: { version: 1 as const, outcome: "accepted" as const },
+      resolvedByUserId: issueThreadInteractionFixtureMeta.currentUserId,
+    };
+    const currentUserHost = renderCard({
+      interaction: resolved,
+      currentUserId: issueThreadInteractionFixtureMeta.currentUserId,
+    });
+    expect(currentUserHost.querySelector('[data-testid="interaction-resolved-footer"]')?.textContent).toContain(currentUserLabel);
+
+    // Render the board actor through the same audit footer, with a different viewer.
+    act(() => root?.unmount());
+    container?.remove();
+    root = null;
+    container = null;
+    const boardHost = renderCard({
+      interaction: { ...resolved, resolvedByUserId: "local-board" },
+      currentUserId: "another-user",
+    });
+    expect(boardHost.querySelector('[data-testid="interaction-resolved-footer"]')?.textContent).toContain(boardLabel);
+  });
+
+  it("preserves a user-provided display name of Board in Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const interaction = {
+      ...pendingRequestConfirmationInteraction,
+      status: "accepted" as const,
+      resolvedAt: new Date("2026-08-24T13:30:00.000Z"),
+      result: { version: 1 as const, outcome: "accepted" as const },
+      resolvedByUserId: "user-board-name",
+    };
+    const host = renderCard({
+      interaction,
+      currentUserId: issueThreadInteractionFixtureMeta.currentUserId,
+      userLabelMap: new Map([["user-board-name", "Board"]]),
+    });
+
+    expect(host.querySelector('[data-testid="interaction-resolved-footer"]')?.textContent).toContain("Board");
+  });
+
   it("renders a withdrawn footer with the withdrawer, reason, and agent chip", () => {
     const host = renderCard({
       interaction: withdrawnRequestConfirmationInteraction,
@@ -2000,6 +2048,24 @@ describe("IssueThreadInteractionCard connection-authorization card", () => {
     expect(buttonLabels(host)).not.toContain("Connect Gmail");
     // The card states its own resolver, so the shared footer must not repeat it.
     expect(host.querySelector('[data-testid="interaction-resolved-footer"]')).toBeNull();
+  });
+
+  it.each([
+    ["en", "Connected by you", "on "],
+    ["pt-BR", "Conectado por você", " em "],
+  ] as const)("uses resolver identity for localized connected copy in %s", async (language, expectedResolver, datePrefix) => {
+    await i18n.changeLanguage(language);
+    const host = renderCard({
+      interaction: resolvedConnectionAuthorizationInteraction,
+      currentUserId: issueThreadInteractionFixtureMeta.currentUserId,
+      onAcceptInteraction: async () => {},
+      onRejectInteraction: async () => {},
+    });
+
+    const connected = host.querySelector('[data-testid="connection-authorization-connected"]');
+    expect(connected?.textContent).toContain(expectedResolver);
+    expect(connected?.textContent).toContain(datePrefix);
+    expect(host.innerHTML).not.toContain("accounts.google.com");
   });
 });
 

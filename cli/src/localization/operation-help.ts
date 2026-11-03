@@ -35,6 +35,183 @@ const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
 
 const operationHelp: Record<string, CommandHelp> = {
+  plugin: {
+    description: { en: "Plugin lifecycle management", "pt-BR": "Gerenciamento do ciclo de vida de plugins" },
+  },
+  "plugin init": {
+    description: { en: "Scaffold a local Paperclip plugin project", "pt-BR": "Criar a estrutura de um projeto local de plugin do Paperclip" },
+    arguments: { packageName: { en: "Package name", "pt-BR": "Nome do pacote" } },
+    options: {
+      ...commonClientOptions,
+      "--output": { en: "Directory to create the plugin folder in", "pt-BR": "Diretório onde a pasta do plugin será criada" },
+      "--template": { en: "Starter template", "pt-BR": "Modelo inicial" },
+      "--category": { en: "Manifest category", "pt-BR": "Categoria do manifesto" },
+      "--display-name": { en: "Manifest display name", "pt-BR": "Nome de exibição do manifesto" },
+      "--description": { en: "Manifest description", "pt-BR": "Descrição do manifesto" },
+      "--author": { en: "Manifest author", "pt-BR": "Autoria do manifesto" },
+      "--sdk-path": { en: "Local @paperclipai/plugin-sdk package path", "pt-BR": "Caminho local do pacote @paperclipai/plugin-sdk" },
+    },
+  },
+  "plugin list": {
+    description: { en: "List installed plugins", "pt-BR": "Listar plugins instalados" },
+    options: { ...commonClientOptions, "--status": { en: "Filter by status (ready, error, disabled, installed, upgrade_pending)", "pt-BR": "Filtrar por status (ready, error, disabled, installed, upgrade_pending)" } },
+  },
+  "plugin install": {
+    description: {
+      en: "Install a plugin from a local path or npm package.\n  Examples:\n    paperclipai plugin install ./my-plugin              # local path\n    paperclipai plugin install @acme/plugin-linear      # npm package\n    paperclipai plugin install @acme/plugin-linear@1.2  # pinned version",
+      "pt-BR": "Instalar um plugin de um caminho local ou pacote npm.\n  Exemplos:\n    paperclipai plugin install ./my-plugin              # caminho local\n    paperclipai plugin install @acme/plugin-linear      # pacote npm\n    paperclipai plugin install @acme/plugin-linear@1.2  # versão fixada",
+    },
+    arguments: { package: { en: "Plugin package or path", "pt-BR": "Pacote ou caminho do plugin" } },
+    options: {
+      ...commonClientOptions,
+      "--local": { en: "Treat <package> as a local filesystem path", "pt-BR": "Tratar <package> como caminho local do sistema de arquivos" },
+      "--version": { en: "Specific npm version to install (npm packages only)", "pt-BR": "Versão específica para instalar (somente pacotes npm)" },
+      "--no-verify-target": { en: "Skip the pre-install probe that reports which Paperclip instance the plugin installs into", "pt-BR": "Ignorar a verificação anterior à instalação que identifica a instância do Paperclip de destino" },
+    },
+  },
+  "plugin target": {
+    description: {
+      en: "Show which Paperclip instance plugin commands will talk to.\n  Reports the resolved API URL plus the server status/version/mode from\n  GET /api/health so you can confirm you are installing into the branch\n  runtime and not a stale control-plane host.",
+      "pt-BR": "Mostrar com qual instância do Paperclip os comandos de plugin vão se comunicar.\n  Exibe a URL da API resolvida e o status/versão/modo do servidor obtidos em\n  GET /api/health para confirmar a instalação no runtime desta branch,\n  em vez de um host de controle desatualizado.",
+    },
+    options: commonClientOptions,
+  },
+  "plugin uninstall": {
+    description: { en: "Uninstall a plugin by its plugin key or database ID.\n  Use --force to hard-purge all state and config.", "pt-BR": "Desinstalar um plugin pela chave ou pelo ID do banco de dados.\n  Use --force para remover permanentemente todo o estado e a configuração." },
+    arguments: { pluginKey: { en: "Plugin key or database ID", "pt-BR": "Chave do plugin ou ID do banco de dados" } },
+    options: { ...commonClientOptions, "--force": { en: "Purge all plugin state and config (hard delete)", "pt-BR": "Remover permanentemente todo o estado e a configuração do plugin" } },
+  },
+  "plugin enable": {
+    description: { en: "Enable a disabled or errored plugin", "pt-BR": "Ativar um plugin desativado ou com erro" },
+    arguments: { pluginKey: { en: "Plugin key or database ID", "pt-BR": "Chave do plugin ou ID do banco de dados" } },
+    options: commonClientOptions,
+  },
+  "plugin disable": {
+    description: { en: "Disable a running plugin without uninstalling it", "pt-BR": "Desativar um plugin em execução sem desinstalá-lo" },
+    arguments: { pluginKey: { en: "Plugin key or database ID", "pt-BR": "Chave do plugin ou ID do banco de dados" } },
+    options: commonClientOptions,
+  },
+  "plugin inspect": {
+    description: { en: "Show full details for an installed plugin", "pt-BR": "Mostrar todos os detalhes de um plugin instalado" },
+    arguments: { pluginKey: { en: "Plugin key or database ID", "pt-BR": "Chave do plugin ou ID do banco de dados" } },
+    options: commonClientOptions,
+  },
+  "plugin examples": {
+    description: { en: "List bundled example plugins available for local install", "pt-BR": "Listar plugins de exemplo incluídos e disponíveis para instalação local" },
+    options: commonClientOptions,
+  },
+  "plugin ui-contributions": {
+    description: { en: "List plugin UI contributions", "pt-BR": "Listar contribuições de interface dos plugins" },
+    options: commonClientOptions,
+  },
+  "plugin tools": {
+    description: { en: "List plugin tools", "pt-BR": "Listar ferramentas dos plugins" },
+    options: commonClientOptions,
+  },
+  "plugin tool:execute": {
+    description: { en: "Execute a plugin tool", "pt-BR": "Executar uma ferramenta de plugin" },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin health": {
+    description: { en: "Get plugin health", "pt-BR": "Consultar a integridade do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: commonClientOptions,
+  },
+  "plugin logs": {
+    description: { en: "Get plugin logs", "pt-BR": "Consultar os logs do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: commonClientOptions,
+  },
+  "plugin upgrade": {
+    description: { en: "Upgrade a plugin", "pt-BR": "Atualizar um plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin config": {
+    description: { en: "Get company-scoped plugin config", "pt-BR": "Consultar a configuração do plugin na organização" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" } },
+  },
+  "plugin config:set": {
+    description: { en: "Set company-scoped plugin config", "pt-BR": "Definir a configuração do plugin na organização" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" }, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin config:test": {
+    description: { en: "Test company-scoped plugin config", "pt-BR": "Testar a configuração do plugin na organização" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" }, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin jobs": {
+    description: { en: "List plugin jobs", "pt-BR": "Listar jobs do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: commonClientOptions,
+  },
+  "plugin job:runs": {
+    description: { en: "List plugin job runs", "pt-BR": "Listar execuções de jobs do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" }, jobId: { en: "Job ID", "pt-BR": "ID do job" } },
+    options: commonClientOptions,
+  },
+  "plugin job:trigger": {
+    description: { en: "Trigger a plugin job", "pt-BR": "Acionar um job do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" }, jobId: { en: "Job ID", "pt-BR": "ID do job" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin webhook": {
+    description: { en: "Deliver a plugin webhook", "pt-BR": "Enviar um webhook ao plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" }, key: { en: "Endpoint or data/action key", "pt-BR": "Chave do endpoint, dado ou ação" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin dashboard": {
+    description: { en: "Get plugin dashboard data", "pt-BR": "Consultar os dados do painel do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: commonClientOptions,
+  },
+  "plugin bridge:data": {
+    description: { en: "Send plugin bridge data", "pt-BR": "Enviar dados pela ponte do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin bridge:action": {
+    description: { en: "Send plugin bridge action", "pt-BR": "Enviar uma ação pela ponte do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin bridge:stream": {
+    description: { en: "Stream a plugin bridge channel", "pt-BR": "Transmitir um canal da ponte do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" }, channel: { en: "Stream channel", "pt-BR": "Canal de transmissão" } },
+    options: { ...commonClientOptions, "--duration-ms": { en: "Stop streaming after this many milliseconds", "pt-BR": "Parar a transmissão após este número de milissegundos" } },
+  },
+  "plugin data": {
+    description: { en: "Get plugin URL-keyed data", "pt-BR": "Consultar dados do plugin identificados pela URL" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" }, key: { en: "Endpoint or data/action key", "pt-BR": "Chave do endpoint, dado ou ação" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin action": {
+    description: { en: "Invoke plugin URL-keyed action", "pt-BR": "Acionar uma ação do plugin identificada pela URL" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" }, key: { en: "Endpoint or data/action key", "pt-BR": "Chave do endpoint, dado ou ação" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin local-folders": {
+    description: { en: "List plugin local folder bindings", "pt-BR": "Listar vínculos de pastas locais do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" } },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" } },
+  },
+  "plugin local-folder:status": {
+    description: { en: "Get plugin local folder status", "pt-BR": "Consultar o status da pasta local do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" }, folderKey: { en: "Local folder key", "pt-BR": "Chave da pasta local" } },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" } },
+  },
+  "plugin local-folder:validate": {
+    description: { en: "Validate plugin local folder binding", "pt-BR": "Validar o vínculo de pasta local do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" }, folderKey: { en: "Local folder key", "pt-BR": "Chave da pasta local" } },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" }, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "plugin local-folder:set": {
+    description: { en: "Set plugin local folder binding", "pt-BR": "Definir o vínculo de pasta local do plugin" },
+    arguments: { pluginId: { en: "Plugin ID or key", "pt-BR": "ID ou chave do plugin" }, folderKey: { en: "Local folder key", "pt-BR": "Chave da pasta local" } },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" }, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
   org: {
     description: { en: "Organization chart operations", "pt-BR": "Operações do organograma" },
   },

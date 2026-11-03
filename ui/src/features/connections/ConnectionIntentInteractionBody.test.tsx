@@ -544,6 +544,37 @@ describe("ConnectionIntentInteractionBody dialog behavior", () => {
 describe("AI repair inside the card", () => {
   const interaction: ConnectionIntentInteraction = { ...pendingConnectionIntentInteraction, payload: { ...pendingConnectionIntentInteraction.payload, purpose: "ai" } };
   const connection = { id: "selected-account", name: "My Codex account", provider: "openai", method: "api_key", ownership: "personal", ownerName: "Dotta", status: "revoked" };
+  it.each([
+    ["en", "The agent’s AI connection changed. Reload the task and try again."],
+    ["pt-BR", "A conexão de IA do agente mudou. Recarregue a tarefa e tente novamente."],
+  ] as const)("localizes the stale agent connection error in %s", async (language, errorMessage) => {
+    await i18n.changeLanguage(language);
+    const binding = { provider: "openai", method: "api_key", mode: "delegated", connectionId: connection.id, grantId: "old-grant" };
+    setupOptionsMock.mockResolvedValue({
+      interaction,
+      existingConnections: [],
+      aiConnection: binding,
+      aiRepair: { connection: { ...connection, grantId: "old-grant" }, canReconnect: true },
+    });
+    getAgentMock.mockResolvedValue({
+      id: interaction.payload.requestingAgentId,
+      runtimeConfig: { aiConnection: { ...binding, connectionId: "changed-account" } },
+    });
+    renderBody(interaction);
+    await flush();
+    await act(() => button(language === "en" ? "Fix connection" : "Corrigir conexão")!.click());
+    await waitForAssertion(() => expect(button("Reconnect selected account")).toBeDefined());
+    await act(() => credentialRender.mock.lastCall![0].onComplete({
+      connectionId: "replacement-account",
+      grantId: "new-grant",
+      method: "api_key",
+    }));
+    await flush();
+
+    expect(document.body.textContent).toContain(errorMessage);
+    expect(completeMock).not.toHaveBeenCalled();
+    expect(updateAgentMock).not.toHaveBeenCalled();
+  });
   it.each(["openrouter", "bedrock", "gateway"] as const)("retains the selected %s route through task-card account repair", async kind => {
     const routing = kind === "bedrock"
       ? { kind, protocol: "bedrock", region: "us-east-1", auth: "bearer", models: [] }

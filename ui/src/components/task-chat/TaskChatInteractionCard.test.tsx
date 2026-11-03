@@ -375,6 +375,33 @@ describe("TaskChatInteractionCard", () => {
     }
   });
 
+  it("localizes the shared approval preparation notice in English and Portuguese", async () => {
+    const interaction = createRequestConfirmation({
+      acceptanceBlocker: "workspace_sync_pending",
+    });
+    for (const [language, notice] of [
+      ["en", "Preparing approval…"],
+      ["pt-BR", "Preparando a aprovação…"],
+    ] as const) {
+      await i18n.changeLanguage(language);
+      flushSync(() => {
+        root.render(
+          <TooltipProvider>
+            <ThemeProvider>
+              <TaskChatInteractionCard
+                item={interactionItem(interaction)}
+                presentation="takeover"
+                onAcceptInteraction={vi.fn()}
+              />
+            </ThemeProvider>
+          </TooltipProvider>,
+        );
+      });
+
+      expect(container.querySelector('[role="status"]')?.textContent).toBe(notice);
+    }
+  });
+
   it("localizes tool and secret receipt details in English and Portuguese", async () => {
     const expectedByLanguage = {
       en: ["Risk: write", "Source secret", "Secret binding", "Reason given by the agent", "Expires"],

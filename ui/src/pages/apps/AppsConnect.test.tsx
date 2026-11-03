@@ -400,6 +400,18 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(container.textContent).toContain("Escolha o app que você quer disponibilizar para seus agentes.");
   });
 
+  it.each([
+    ["en", "Select a company to continue."],
+    ["pt-BR", "Selecione uma organização para continuar."],
+  ] as const)("localizes the missing organization state in %s", async (locale, message) => {
+    await i18n.changeLanguage(locale);
+    mockCompany.value = { selectedCompanyId: undefined, selectedCompany: null };
+
+    await render(undefined, false, <ConnectionSetupFlow />);
+
+    expect(container.textContent?.trim()).toBe(message);
+  });
+
   it("localizes the completed connection summary while preserving identity, counts, and the done action", async () => {
     await i18n.changeLanguage("pt-BR");
     const summaryInput = {

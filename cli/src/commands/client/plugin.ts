@@ -14,6 +14,7 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { pluginOperationMessage } from "../../localization/plugin-operations.js";
 
 // ---------------------------------------------------------------------------
 // Types mirroring server-side shapes
@@ -97,9 +98,7 @@ interface PluginCompanyOptions extends PluginJsonOptions {
 
 function requireCompanyId(ctx: { companyId?: string }): string {
   if (!ctx.companyId) {
-    throw new Error(
-      "Company ID is required. Pass --company-id, set PAPERCLIP_COMPANY_ID, or set context profile companyId via `paperclipai context set`.",
-    );
+    throw new Error(pluginOperationMessage("companyIdRequired"));
   }
   return ctx.companyId;
 }
@@ -176,8 +175,8 @@ export function buildPluginInstallRequest(
 
 export function renderLocalPluginInstallHint(packagePath: string): string {
   return [
-    pc.dim("Local plugin installs run trusted local code from your machine."),
-    pc.dim(`Keep ${pc.cyan("pnpm dev")} running in ${packagePath}; Paperclip watches rebuilt dist output and reloads the plugin worker.`),
+    pc.dim(pluginOperationMessage("localInstallTrustedCode")),
+    pc.dim(pluginOperationMessage("localInstallWatch", { devCommand: pc.cyan("pnpm dev"), packagePath })),
   ].join("\n");
 }
 
@@ -213,13 +212,13 @@ export async function probeTargetDiagnostics(
  * unit-tested without a live server.
  */
 export function formatTargetDiagnostics(diag: TargetDiagnostics): string {
-  const lines = [pc.dim(`Target Paperclip: ${pc.cyan(diag.apiBase)}`)];
+  const lines = [pc.dim(`${pluginOperationMessage("targetPaperclip")} ${pc.cyan(diag.apiBase)}`)];
 
   if (!diag.reachable) {
-    lines.push(pc.yellow(`  health: unreachable${diag.error ? ` (${diag.error.split("\n")[0]})` : ""}`));
+    lines.push(pc.yellow(`  ${pluginOperationMessage("targetHealth")} ${pluginOperationMessage("targetUnreachable")}${diag.error ? ` (${diag.error.split("\n")[0]})` : ""}`));
     lines.push(
       pc.dim(
-        `  Verify the right instance is running, then pass ${pc.cyan("--api-base <url>")} or set ${pc.cyan("PAPERCLIP_API_URL")} if it lives elsewhere.`,
+        `  ${pluginOperationMessage("targetVerify", { apiBaseOption: pc.cyan("--api-base <url>"), apiUrlEnv: pc.cyan("PAPERCLIP_API_URL") })}`,
       ),
     );
     return lines.join("\n");
@@ -233,7 +232,7 @@ export function formatTargetDiagnostics(diag: TargetDiagnostics): string {
   if (health.deploymentExposure) detailParts.push(`exposure=${health.deploymentExposure}`);
 
   lines.push(
-    pc.dim(`  health: ${detailParts.length > 0 ? detailParts.join("  ") : "ok (no details exposed)"}`),
+    pc.dim(`  ${pluginOperationMessage("targetHealth")} ${detailParts.length > 0 ? detailParts.join("  ") : pluginOperationMessage("targetHealthNoDetails")}`),
   );
   return lines.join("\n");
 }
@@ -249,14 +248,14 @@ function formatPlugin(p: PluginRecord): string {
           : pc.yellow(p.status);
 
   const parts = [
-    `key=${pc.bold(p.pluginKey)}`,
-    `status=${statusColor}`,
-    `version=${p.version}`,
-    `id=${pc.dim(p.id)}`,
+    `${pluginOperationMessage("keyLabel")}=${pc.bold(p.pluginKey)}`,
+    `${pluginOperationMessage("statusLabel")}=${statusColor}`,
+    `${pluginOperationMessage("versionLabel")}=${p.version}`,
+    `${pluginOperationMessage("idLabel")}=${pc.dim(p.id)}`,
   ];
 
   if (p.lastError) {
-    parts.push(`error=${pc.red(p.lastError.slice(0, 80))}`);
+    parts.push(`${pluginOperationMessage("errorLabel")}=${pc.red(p.lastError.slice(0, 80))}`);
   }
 
   return parts.join("  ");
@@ -298,20 +297,56 @@ export function buildPluginInitNextCommands(outputDir: string): string[] {
 
 export function renderPluginInitSuccess(result: PluginInitResult): string {
   return [
-    pc.green(`✓ Created plugin scaffold at ${result.outputDir}`),
+    pc.green(pluginOperationMessage("createdScaffold", { outputDir: result.outputDir })),
     "",
-    "Next commands:",
+    pluginOperationMessage("nextCommands"),
     ...result.nextCommands.map((command) => `  ${pc.cyan(command)}`),
   ].join("\n");
 }
 
 export function runPluginInitCommand(packageName: string, opts: PluginInitOptions): PluginInitResult {
   const scaffoldOptions = buildPluginInitScaffoldOptions(packageName, opts);
-  const outputDir = scaffoldPluginProject(scaffoldOptions);
+  let outputDir: string;
+  try {
+    outputDir = scaffoldPluginProject(scaffoldOptions);
+  } catch (error) {
+    throw localizePluginScaffoldValidationError(error) ?? error;
+  }
   return {
     outputDir,
     nextCommands: buildPluginInitNextCommands(outputDir),
   };
+}
+
+function localizePluginScaffoldValidationError(error: unknown): Error | undefined {
+  if (!(error instanceof Error)) return undefined;
+
+  const invalidTemplate = error.message.match(/^Invalid template '([^']+)'\. Expected one of: (.+)$/);
+  if (invalidTemplate) {
+    return new Error(pluginOperationMessage("invalidTemplate", {
+      template: invalidTemplate[1]!,
+      options: invalidTemplate[2]!,
+    }));
+  }
+
+  if (error.message === "Invalid plugin name. Must be lowercase and may include scope, dots, underscores, or hyphens.") {
+    return new Error(pluginOperationMessage("invalidPluginName"));
+  }
+
+  const invalidCategory = error.message.match(/^Invalid category '([^']+)'\. Expected one of: (.+)$/);
+  if (invalidCategory) {
+    return new Error(pluginOperationMessage("invalidCategory", {
+      category: invalidCategory[1]!,
+      options: invalidCategory[2]!,
+    }));
+  }
+
+  const existingDirectory = error.message.match(/^Directory already exists: (.+)$/);
+  if (existingDirectory) {
+    return new Error(pluginOperationMessage("outputDirectoryExists", { outputDir: existingDirectory[1]! }));
+  }
+
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -379,7 +414,7 @@ export function registerPluginCommands(program: Command): void {
 
           const rows = plugins ?? [];
           if (rows.length === 0) {
-            console.log(pc.dim("No plugins installed."));
+            console.log(pc.dim(pluginOperationMessage("noPlugins")));
             return;
           }
 
@@ -433,8 +468,11 @@ export function registerPluginCommands(program: Command): void {
             console.log(
               pc.dim(
                 installRequest.isLocalPath
-                  ? `Installing plugin from local path: ${installRequest.packageName}`
-                  : `Installing plugin: ${installRequest.packageName}${opts.version ? `@${opts.version}` : ""}`,
+                  ? pluginOperationMessage("installingLocal", { packageName: installRequest.packageName })
+                  : pluginOperationMessage("installingPackage", {
+                      packageName: installRequest.packageName,
+                      versionSuffix: opts.version ? `@${opts.version}` : "",
+                    }),
               ),
             );
           }
@@ -450,18 +488,18 @@ export function registerPluginCommands(program: Command): void {
           }
 
           if (!installedPlugin) {
-            console.log(pc.dim("Install returned no plugin record."));
+            console.log(pc.dim(pluginOperationMessage("installReturnedNoRecord")));
             return;
           }
 
-          console.log(
-            pc.green(
-              `✓ Installed ${pc.bold(installedPlugin.pluginKey)} v${installedPlugin.version} (${installedPlugin.status})`,
-            ),
-          );
+          console.log(pc.green(pluginOperationMessage("installed", {
+            pluginKey: pc.bold(installedPlugin.pluginKey),
+            version: installedPlugin.version,
+            status: installedPlugin.status,
+          })));
 
           if (installedPlugin.lastError) {
-            console.log(pc.red(`  Warning: ${installedPlugin.lastError}`));
+            console.log(pc.red(`  ${pluginOperationMessage("warning")} ${installedPlugin.lastError}`));
           }
 
           if (installRequest.isLocalPath) {
@@ -523,8 +561,8 @@ export function registerPluginCommands(program: Command): void {
             console.log(
               pc.dim(
                 purge
-                  ? `Uninstalling and purging plugin: ${pluginKey}`
-                  : `Uninstalling plugin: ${pluginKey}`,
+                  ? pluginOperationMessage("uninstallingAndPurging", { pluginKey })
+                  : pluginOperationMessage("uninstalling", { pluginKey }),
               ),
             );
           }
@@ -538,7 +576,10 @@ export function registerPluginCommands(program: Command): void {
             return;
           }
 
-          console.log(pc.green(`✓ Uninstalled ${pc.bold(pluginKey)}${purge ? " (purged)" : ""}`));
+          console.log(pc.green(pluginOperationMessage("uninstalled", {
+            pluginKey: pc.bold(pluginKey),
+            purgedSuffix: purge ? pluginOperationMessage("purged") : "",
+          })));
         } catch (err) {
           handleCommandError(err);
         }
@@ -564,7 +605,10 @@ export function registerPluginCommands(program: Command): void {
             return;
           }
 
-          console.log(pc.green(`✓ Enabled ${pc.bold(pluginKey)} — status: ${result?.status ?? "unknown"}`));
+          console.log(pc.green(pluginOperationMessage("enabled", {
+            pluginKey: pc.bold(pluginKey),
+            status: result?.status ?? "unknown",
+          })));
         } catch (err) {
           handleCommandError(err);
         }
@@ -590,7 +634,10 @@ export function registerPluginCommands(program: Command): void {
             return;
           }
 
-          console.log(pc.dim(`Disabled ${pc.bold(pluginKey)} — status: ${result?.status ?? "unknown"}`));
+          console.log(pc.dim(pluginOperationMessage("disabled", {
+            pluginKey: pc.bold(pluginKey),
+            status: result?.status ?? "unknown",
+          })));
         } catch (err) {
           handleCommandError(err);
         }
@@ -617,13 +664,17 @@ export function registerPluginCommands(program: Command): void {
           }
 
           if (!result) {
-            console.log(pc.red(`Plugin not found: ${pluginKey}`));
+            console.log(pc.red(pluginOperationMessage("pluginNotFound", { pluginKey })));
             process.exit(1);
           }
 
           console.log(formatPlugin(result));
           if (result.lastError) {
-            console.log(`\n${pc.red("Last error:")}\n${result.lastError}`);
+            console.log([
+              "",
+              pc.red(pluginOperationMessage("lastError")),
+              result.lastError,
+            ].join(String.fromCharCode(10)));
           }
         } catch (err) {
           handleCommandError(err);
@@ -659,7 +710,7 @@ export function registerPluginCommands(program: Command): void {
 
           const rows = examples ?? [];
           if (rows.length === 0) {
-            console.log(pc.dim("No bundled examples available."));
+            console.log(pc.dim(pluginOperationMessage("noExamples")));
             return;
           }
 
@@ -769,7 +820,7 @@ function addPluginConfigGet(parent: Command, name: string, description: string):
       .option("-C, --company-id <id>", "Company ID")
       .action(async (pluginId: string, opts: PluginCompanyOptions) => {
         try {
-          const ctx = resolveCommandContext(opts, { requireCompany: true });
+          const ctx = resolveCommandContext(opts);
           const companyId = requireCompanyId(ctx);
           printOutput(
             await ctx.api.get(`/api/plugins/${encodeURIComponent(pluginId)}/config?companyId=${encodeURIComponent(companyId)}`),
@@ -793,12 +844,13 @@ function addPluginConfigPost(parent: Command, name: string, description: string,
       .option("--payload-json <json>", "JSON payload", "{}")
       .action(async (pluginId: string, opts: PluginCompanyOptions) => {
         try {
-          const ctx = resolveCommandContext(opts, { requireCompany: true });
+          const ctx = resolveCommandContext(opts);
           const payload = parseJson(opts.payloadJson ?? "{}") as Record<string, unknown>;
+          const companyId = requireCompanyId(ctx);
           printOutput(
             await ctx.api.post(`/api/plugins/${encodeURIComponent(pluginId)}/${suffix}`, {
               ...payload,
-              companyId: ctx.companyId,
+              companyId,
             }),
             { json: ctx.json },
           );
@@ -852,8 +904,9 @@ function addPluginLocalFolderGet(parent: Command, name: string, description: str
       .requiredOption("-C, --company-id <id>", "Company ID")
       .action(async (pluginId: string, opts: PluginCompanyOptions) => {
         try {
-          const ctx = resolveCommandContext(opts, { requireCompany: true });
-          printOutput(await ctx.api.get(`/api/plugins/${encodeURIComponent(pluginId)}/companies/${ctx.companyId}/local-folders`), { json: ctx.json });
+          const ctx = resolveCommandContext(opts);
+          const companyId = requireCompanyId(ctx);
+          printOutput(await ctx.api.get(`/api/plugins/${encodeURIComponent(pluginId)}/companies/${companyId}/local-folders`), { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
         }
@@ -872,9 +925,10 @@ function addPluginLocalFolderKeyGet(parent: Command, name: string, description: 
       .requiredOption("-C, --company-id <id>", "Company ID")
       .action(async (pluginId: string, folderKey: string, opts: PluginCompanyOptions) => {
         try {
-          const ctx = resolveCommandContext(opts, { requireCompany: true });
+          const ctx = resolveCommandContext(opts);
+          const companyId = requireCompanyId(ctx);
           printOutput(
-            await ctx.api.get(`/api/plugins/${encodeURIComponent(pluginId)}/companies/${ctx.companyId}/local-folders/${encodeURIComponent(folderKey)}/${suffix}`),
+            await ctx.api.get(`/api/plugins/${encodeURIComponent(pluginId)}/companies/${companyId}/local-folders/${encodeURIComponent(folderKey)}/${suffix}`),
             { json: ctx.json },
           );
         } catch (err) {
@@ -896,10 +950,11 @@ function addPluginLocalFolderKeyPost(parent: Command, name: string, description:
       .option("--payload-json <json>", "JSON payload", "{}")
       .action(async (pluginId: string, folderKey: string, opts: PluginCompanyOptions) => {
         try {
-          const ctx = resolveCommandContext(opts, { requireCompany: true });
+          const ctx = resolveCommandContext(opts);
+          const companyId = requireCompanyId(ctx);
           printOutput(
             await ctx.api.post(
-              `/api/plugins/${encodeURIComponent(pluginId)}/companies/${ctx.companyId}/local-folders/${encodeURIComponent(folderKey)}/${suffix}`,
+              `/api/plugins/${encodeURIComponent(pluginId)}/companies/${companyId}/local-folders/${encodeURIComponent(folderKey)}/${suffix}`,
               parseJson(opts.payloadJson ?? "{}"),
             ),
             { json: ctx.json },
@@ -923,10 +978,11 @@ function addPluginLocalFolderKeyPut(parent: Command, name: string, description: 
       .requiredOption("--payload-json <json>", "JSON payload")
       .action(async (pluginId: string, folderKey: string, opts: PluginCompanyOptions) => {
         try {
-          const ctx = resolveCommandContext(opts, { requireCompany: true });
+          const ctx = resolveCommandContext(opts);
+          const companyId = requireCompanyId(ctx);
           printOutput(
             await ctx.api.put(
-              `/api/plugins/${encodeURIComponent(pluginId)}/companies/${ctx.companyId}/local-folders/${encodeURIComponent(folderKey)}`,
+              `/api/plugins/${encodeURIComponent(pluginId)}/companies/${companyId}/local-folders/${encodeURIComponent(folderKey)}`,
               parseJson(opts.payloadJson ?? "{}"),
             ),
             { json: ctx.json },
@@ -947,7 +1003,7 @@ function parseOptionalInt(value: string | undefined): number | undefined {
   if (value === undefined) return undefined;
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new Error(`Invalid integer value: ${value}`);
+    throw new Error(pluginOperationMessage("invalidInteger", { value }));
   }
   return parsed;
 }

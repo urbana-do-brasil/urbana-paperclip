@@ -58,6 +58,7 @@ import { AppLogo } from "../AppLogo";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";
 import { useToast } from "@/context/ToastContext";
+import { t as translate, useTranslation } from "@/i18n";
 import { formatDateTime } from "@/lib/utils";
 import { queryKeys } from "@/lib/queryKeys";
 import { copyTextToClipboard } from "@/lib/clipboard";
@@ -65,10 +66,13 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from "@/lib/route
 
 const tabs = ["settings", "access", "reviews", "conversations", "activity"] as const;
 type ChatTab = (typeof tabs)[number];
-const tabItems = tabs.map((value) => ({
-  value,
-  label: value[0].toUpperCase() + value.slice(1),
-}));
+const tabLabelKeys: Record<ChatTab, string> = {
+  settings: "apps.chatEndpointDetail.tabs.settings",
+  access: "apps.chatEndpointDetail.tabs.access",
+  reviews: "apps.chatEndpointDetail.tabs.reviews",
+  conversations: "apps.chatEndpointDetail.tabs.conversations",
+  activity: "apps.chatEndpointDetail.tabs.activity",
+};
 const providerNames: Record<ChatProvider, string> = {
   speko: "Speko",
   agentmail: "AgentMail",
@@ -80,57 +84,47 @@ const providerNames: Record<ChatProvider, string> = {
   "imessage-photon": "iMessage Photon",
 };
 
-const providerLifecycleGuidance: Record<
-  ChatProvider,
-  { reconnect: string; remove: string }
-> = {
-  speko: {
-    reconnect: "Reverify this voice persona and update its signed session tools. Existing task assignments stay attached to their history.",
-    remove: "Stop this connection from accepting voice requests. Accepted work and task history remain in Paperclip.",
-  },
-  agentmail: { reconnect: "Reconnect the same email inbox.", remove: "Disconnect email and retain task history." },
-  slack: {
-    reconnect:
-      "Reconnect verifies or replaces credentials for this same Slack app. It does not reinstall the app or change its workspace or channel membership.",
-    remove:
-      "Paperclip archives the endpoint, stops new ingress, and retires its saved Slack credentials. It does not uninstall the Slack app: the app remains installed, and its bot remains in channels, until you remove them in Slack.",
-  },
-  github: {
-    reconnect:
-      "Reconnect verifies this same App and installation, then updates its webhook URL, secret, and secure delivery settings. It does not reinstall the App or change repository access.",
-    remove:
-      "Paperclip archives the endpoint, stops new ingress, and retires its saved App key and webhook secret. It does not uninstall the GitHub App: the App, its installations, and its webhook settings remain until you remove or update them on GitHub.",
-  },
-  discord: {
-    reconnect:
-      "Reconnect verifies this same Discord application and server installation. It does not add or remove the bot from the server.",
-    remove:
-      "Paperclip archives the endpoint, stops its Paperclip Gateway connection, and retires its saved bot token. It does not uninstall the bot: the bot remains in the Discord server, and the application remains in the Developer Portal, until you remove them there.",
-  },
-  "microsoft-teams": {
-    reconnect:
-      "Reconnect verifies this same Microsoft app, tenant, and bot identity. It does not upload or reinstall the Teams app.",
-    remove:
-      "Paperclip archives the endpoint, stops new ingress, and retires its saved client secret. It does not uninstall the Teams app: the Entra app registration, Azure Bot, custom Teams app, and Teams installations remain until you remove them in Microsoft.",
-  },
-  "imessage-photon": {
-    reconnect: "Reconnect verifies the same Photon project and line allocation, then recovers eligible missed messages.",
-    remove: "Disconnect archives this channel and removes its saved secret. Your Photon project, number, subscription, and Messages history remain in Photon.",
-  },
-  telegram: {
-    reconnect:
-      "Reconnect verifies this same BotFather bot and automatically refreshes its Paperclip webhook and command menu.",
-    remove:
-      "Paperclip archives the endpoint and queues durable removal of its Telegram webhook and command menu. After Telegram confirms that cleanup, Paperclip retires the saved token. The BotFather bot and its chat memberships remain until you remove them in Telegram.",
-  },
+const activityKindKeys: Record<ChatActivityItem["kind"], string> = {
+  delivery: "apps.chatEndpointDetail.activity.kinds.delivery",
+  publication: "apps.chatEndpointDetail.activity.kinds.publication",
+  action: "apps.chatEndpointDetail.activity.kinds.action",
+  health: "apps.chatEndpointDetail.activity.kinds.health",
+  repair: "apps.chatEndpointDetail.activity.kinds.repair",
 };
 
-const activityKindLabels: Record<ChatActivityItem["kind"], string> = {
-  delivery: "Inbound delivery",
-  publication: "Outbound publication",
-  action: "Provider action",
-  health: "Connection health",
-  repair: "Connection repair",
+const providerLifecycleGuidanceKeys: Record<ChatProvider, { reconnect: string; remove: string }> = {
+  speko: {
+    reconnect: "apps.chatEndpointDetail.lifecycle.reconnect.speko",
+    remove: "apps.chatEndpointDetail.lifecycle.remove.speko",
+  },
+  agentmail: {
+    reconnect: "apps.chatEndpointDetail.lifecycle.reconnect.agentmail",
+    remove: "apps.chatEndpointDetail.lifecycle.remove.agentmail",
+  },
+  slack: {
+    reconnect: "apps.chatEndpointDetail.lifecycle.reconnect.slack",
+    remove: "apps.chatEndpointDetail.lifecycle.remove.slack",
+  },
+  github: {
+    reconnect: "apps.chatEndpointDetail.lifecycle.reconnect.github",
+    remove: "apps.chatEndpointDetail.lifecycle.remove.github",
+  },
+  discord: {
+    reconnect: "apps.chatEndpointDetail.lifecycle.reconnect.discord",
+    remove: "apps.chatEndpointDetail.lifecycle.remove.discord",
+  },
+  "microsoft-teams": {
+    reconnect: "apps.chatEndpointDetail.lifecycle.reconnect.microsoftTeams",
+    remove: "apps.chatEndpointDetail.lifecycle.remove.microsoftTeams",
+  },
+  "imessage-photon": {
+    reconnect: "apps.chatEndpointDetail.lifecycle.reconnect.imessagePhoton",
+    remove: "apps.chatEndpointDetail.lifecycle.remove.imessagePhoton",
+  },
+  telegram: {
+    reconnect: "apps.chatEndpointDetail.lifecycle.reconnect.telegram",
+    remove: "apps.chatEndpointDetail.lifecycle.remove.telegram",
+  },
 };
 
 const replayableFailureStates = new Set(["failed"]);
@@ -179,15 +173,15 @@ export function activityResolutionActions(item: ChatActivityItem) {
     : offered.filter((action) => action === "cancel");
 }
 
-export function activityResolutionDescription(item: ChatActivityItem): string {
+export function activityResolutionDescription(item: ChatActivityItem, t: typeof translate = translate): string {
   const phase = item.fileTransfer?.phase;
   if (phase === "file_info_unknown")
-    return "The file upload was confirmed, but its Teams notification was not. Check Teams first. Retrying sends only that notification, not the file bytes, and may create a duplicate card.";
+    return t("apps.chatEndpointDetail.activity.resolution.fileInfoUnknown");
   if (phase === "consent_unknown")
-    return "The consent card may have reached Teams. File delivery is not confirmed. Cancelling here does not remove any card already sent.";
+    return t("apps.chatEndpointDetail.activity.resolution.consentUnknown");
   if (phase)
-    return "The file may already exist in OneDrive. Cancelling stops this Paperclip transfer; it does not delete remote bytes. Uploads cannot be marked delivered or retried from this uncertain state.";
-  return "Paperclip lost confirmation after sending. Check the provider conversation first. Retrying can create a duplicate message.";
+    return t("apps.chatEndpointDetail.activity.resolution.fileTransferUnknown");
+  return t("apps.chatEndpointDetail.activity.resolution.deliveryUnknown");
 }
 
 export function isResolutionEligible(item: ChatActivityItem): boolean {
@@ -208,21 +202,24 @@ export function isIndividuallyToggleableResource(
   );
 }
 
-function activityDetailLabel(item: ChatActivityItem): string {
-  return replayableFailureStates.has(item.status) ? "Reason" : "Details";
+function activityDetailLabel(item: ChatActivityItem, t: typeof translate = translate): string {
+  return replayableFailureStates.has(item.status)
+    ? t("apps.chatEndpointDetail.activity.reason")
+    : t("apps.chatEndpointDetail.activity.details");
 }
 
 export function connectionHealthPresentation(
   endpoint: Pick<ChatEndpoint, "status" | "healthMessage" | "lastError">,
+  t: typeof translate = translate,
 ) {
   // Health events outlive pause/removal. They are history, not lifecycle state.
   const lifecycleMessages = {
-    draft: "Connection setup is incomplete.",
-    verifying: "Connection verification is in progress.",
-    paused: "Connection is paused. Resume it to receive new messages.",
-    attention: "Connection needs attention.",
-    revoked: "Connection access is revoked. Reconnect to verify access.",
-    archived: "Connection has been removed from Paperclip.",
+    draft: t("apps.chatEndpointDetail.activity.connectionSetupIncomplete"),
+    verifying: t("apps.chatEndpointDetail.activity.connectionVerificationInProgress"),
+    paused: t("apps.chatEndpointDetail.activity.connectionPaused"),
+    attention: t("apps.chatEndpointDetail.activity.connectionNeedsAttention"),
+    revoked: t("apps.chatEndpointDetail.activity.connectionAccessRevoked"),
+    archived: t("apps.chatEndpointDetail.activity.connectionRemoved"),
   };
   const lifecycleMessage =
     endpoint.status === "active" ? null : lifecycleMessages[endpoint.status];
@@ -231,12 +228,13 @@ export function connectionHealthPresentation(
     previousHealth: lifecycleMessage ? (endpoint.healthMessage ?? null) : null,
     error: endpoint.lastError ?? null,
     errorLabel: ["active", "attention", "revoked"].includes(endpoint.status)
-      ? "Reason"
-      : "Last reported error",
+      ? t("apps.chatEndpointDetail.activity.reason")
+      : t("apps.chatEndpointDetail.activity.lastReportedError"),
   };
 }
 
 export function ChatEndpointDetail() {
+  const { t } = useTranslation();
   const { endpointId = "", tab: routeTab, reviewId } = useParams<{
     endpointId: string;
     tab?: string;
@@ -265,7 +263,7 @@ export function ChatEndpointDetail() {
     queryFn: () => agentsApi.get(endpoint!.assignedAgentId),
     enabled: endpoint?.provider === "github",
   });
-  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<"numberCopied" | "copyNumberFailed" | null>(null);
   const agentQuery = useQuery({
     queryKey: queryKeys.agents.detail(endpoint?.assignedAgentId ?? ""),
     queryFn: () => agentsApi.get(endpoint!.assignedAgentId, endpoint!.companyId),
@@ -275,19 +273,17 @@ export function ChatEndpointDetail() {
   useEffect(() => {
     if (!endpoint || !activeTab) return;
     setBreadcrumbs([
-      { label: "Connectors", href: "/apps" },
+      { label: t("navigation.connectors"), href: "/apps" },
       {
         label: `${endpoint.assignedAgentName} · ${providerNames[endpoint.provider]}`,
         href: `/apps/chat/${endpoint.id}/settings`,
       },
-      ...(reviewId ? [{ label: "Reviews", href: `/apps/chat/${endpoint.id}/reviews` }, { label: "Review" }] : [{
-        label:
-          tabItems.find((item) => item.value === activeTab)?.label ??
-          "Settings",
+      ...(reviewId ? [{ label: t(tabLabelKeys.reviews), href: `/apps/chat/${endpoint.id}/reviews` }, { label: t("apps.chatEndpointDetail.review") }] : [{
+        label: t(tabLabelKeys[activeTab]),
       }]),
     ]);
     return () => setBreadcrumbs([]);
-  }, [activeTab, endpoint, reviewId, setBreadcrumbs]);
+  }, [activeTab, endpoint, reviewId, setBreadcrumbs, t]);
 
   if (!activeTab)
     return <Navigate replace to={`/apps/chat/${endpointId}/settings`} />;
@@ -295,17 +291,17 @@ export function ChatEndpointDetail() {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading connection…
+        {t("apps.chatEndpointDetail.loadingConnection")}
       </div>
     );
   if (endpointQuery.isError || !endpoint)
     return (
       <div className="space-y-3">
         <p className="text-sm text-destructive">
-          This chat connection could not be loaded.
+          {t("apps.chatEndpointDetail.loadFailed")}
         </p>
         <Button variant="outline" onClick={() => endpointQuery.refetch()}>
-          Try again
+          {t("apps.chatEndpointDetail.tryAgain")}
         </Button>
       </div>
     );
@@ -329,7 +325,7 @@ export function ChatEndpointDetail() {
             {endpoint.provider === "github" ? (endpoint.botLabel ?? endpoint.assignedAgentName) : endpoint.assignedAgentName}
           </h1>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            {endpoint.provider === "github" ? <><AppLogo name="GitHub" brandKey="github" compact className="size-4! rounded-sm bg-transparent" /><Link to={`/agents/${endpoint.assignedAgentId}`} className="hover:underline">{endpoint.assignedAgentName}</Link>{endpoint.providerAccountLabel && <span>· {endpoint.providerAccountLabel}</span>}</> : endpoint.providerAccountLabel ?? (endpoint.provider === "agentmail" ? endpoint.botExternalId ?? "Email connection" : "Chat connection")}
+            {endpoint.provider === "github" ? <><AppLogo name="GitHub" brandKey="github" compact className="size-4! rounded-sm bg-transparent" /><Link to={`/agents/${endpoint.assignedAgentId}`} className="hover:underline">{endpoint.assignedAgentName}</Link>{endpoint.providerAccountLabel && <span>· {endpoint.providerAccountLabel}</span>}</> : endpoint.providerAccountLabel ?? (endpoint.provider === "agentmail" ? endpoint.botExternalId ?? t("apps.chatEndpointDetail.emailConnection") : t("apps.chatEndpointDetail.chatConnection"))}
           </p>
           {endpoint.provider === "github" && <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
             <GitHubBotMention endpoint={endpoint} />
@@ -338,17 +334,17 @@ export function ChatEndpointDetail() {
           {endpoint.provider === "imessage-photon" && endpoint.botExternalId && endpoint.photonAllocation !== "shared" && (
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
               <span>{endpoint.botExternalId}</span>
-              <Button variant="ghost" size="sm" aria-label="Copy dedicated number" onClick={async () => {
-                try { await copyTextToClipboard(endpoint.botExternalId!); setCopyStatus("Number copied"); }
-                catch { setCopyStatus("Could not copy the number. Select and copy it manually."); }
-              }}><Copy className="size-4" />Copy number</Button>
-              <span role="status" className="text-muted-foreground">{copyStatus}</span>
+              <Button variant="ghost" size="sm" aria-label={t("apps.chatEndpointDetail.copyDedicatedNumber")} onClick={async () => {
+                try { await copyTextToClipboard(endpoint.botExternalId!); setCopyStatus("numberCopied"); }
+                catch { setCopyStatus("copyNumberFailed"); }
+              }}><Copy className="size-4" />{t("apps.chatEndpointDetail.copyNumber")}</Button>
+              <span role="status" className="text-muted-foreground">{copyStatus ? t(`apps.chatEndpointDetail.${copyStatus}`) : ""}</span>
             </div>
           )}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {slackUrl && <Button asChild variant="outline"><a href={slackUrl} target="_blank" rel="noopener noreferrer">Open Slack <ExternalLink className="size-4" /></a></Button>}
+          {slackUrl && <Button asChild variant="outline"><a href={slackUrl} target="_blank" rel="noopener noreferrer">{t("apps.chatEndpointDetail.openProvider", { provider: "Slack" })} <ExternalLink className="size-4" /></a></Button>}
           {setupIncomplete ? (
             <Button
               variant="outline"
@@ -358,7 +354,7 @@ export function ChatEndpointDetail() {
                 )
               }
             >
-              Continue setup
+              {t("apps.chatEndpointDetail.continueSetup")}
             </Button>
           ) : null}
           {["paused", "attention", "revoked"].includes(endpoint.status) && <StatusBadge status={endpoint.status} />}
@@ -853,6 +849,7 @@ function Activity({
   endpointId: string;
   endpoint: Awaited<ReturnType<typeof chatEndpointsApi.get>>;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { pushToast } = useToast();
@@ -879,14 +876,16 @@ function Activity({
         queryKey: queryKeys.chatEndpoints.activity(endpointId),
       });
       pushToast({
-        title: `${item.kind === "publication" ? "Publication" : "Delivery"} queued for replay`,
+        title: t(item.kind === "publication"
+          ? "apps.chatEndpointDetail.activity.replayPublicationQueued"
+          : "apps.chatEndpointDetail.activity.replayDeliveryQueued"),
         tone: "success",
       });
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't replay activity",
-        body: error instanceof Error ? error.message : "Try again.",
+        title: t("apps.chatEndpointDetail.activity.replayFailed"),
+        body: error instanceof Error ? error.message : t("apps.chatEndpointDetail.activity.tryAgain"),
         tone: "error",
       }),
   });
@@ -919,33 +918,30 @@ function Activity({
       await queryClient.invalidateQueries({
         queryKey: queryKeys.chatEndpoints.activity(endpointId),
       });
+      const toastKey = input.item.actionType === "slash_task_start"
+        ? input.action === "retry_anyway"
+          ? "apps.chatEndpointDetail.activity.taskStartRetried"
+          : "apps.chatEndpointDetail.activity.taskStartCancelled"
+        : input.item.actionType === "provider_effect"
+          ? input.action === "mark_delivered"
+            ? "apps.chatEndpointDetail.activity.providerReplyMarkedDelivered"
+            : input.action === "retry_anyway"
+              ? "apps.chatEndpointDetail.activity.providerReplyRetried"
+              : "apps.chatEndpointDetail.activity.providerReplyCancelled"
+          : input.action === "mark_delivered"
+            ? "apps.chatEndpointDetail.activity.publicationMarkedDelivered"
+            : input.action === "retry_anyway"
+              ? "apps.chatEndpointDetail.activity.publicationQueuedForRetry"
+              : "apps.chatEndpointDetail.activity.publicationCancelled";
       pushToast({
-        title:
-          input.item.actionType === "slash_task_start" &&
-          input.action === "retry_anyway"
-            ? "Task start retried"
-            : input.item.actionType === "slash_task_start"
-              ? "Task start cancelled"
-              : input.item.actionType === "provider_effect" &&
-                  input.action === "mark_delivered"
-                ? "Provider reply marked delivered"
-                : input.item.actionType === "provider_effect" &&
-                    input.action === "retry_anyway"
-                  ? "Provider reply retried"
-                  : input.item.actionType === "provider_effect"
-                    ? "Provider reply cancelled"
-                    : input.action === "mark_delivered"
-                      ? "Publication marked delivered"
-                      : input.action === "retry_anyway"
-                        ? "Publication queued for retry"
-                        : "Publication cancelled",
+        title: t(toastKey),
         tone: "success",
       });
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't resolve activity",
-        body: error instanceof Error ? error.message : "Try again.",
+        title: t("apps.chatEndpointDetail.activity.resolveFailed"),
+        body: error instanceof Error ? error.message : t("apps.chatEndpointDetail.activity.tryAgain"),
         tone: "error",
       }),
   });
@@ -970,20 +966,22 @@ function Activity({
       }
       if (endpoint.provider !== "agentmail") queryClient.setQueryData(queryKeys.chatEndpoints.detail(endpointId), next);
       pushToast({
-        title: action === "pause" ? "Connection paused" : "Connection resumed",
+        title: t(action === "pause"
+          ? "apps.chatEndpointDetail.activity.connectionPausedToast"
+          : "apps.chatEndpointDetail.activity.connectionResumedToast"),
         tone: "success",
       });
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't update connection",
-        body: error instanceof Error ? error.message : "Try again.",
+        title: t("apps.chatEndpointDetail.activity.updateConnectionFailed"),
+        body: error instanceof Error ? error.message : t("apps.chatEndpointDetail.activity.tryAgain"),
         tone: "error",
       }),
   });
   const rows = query.data?.items ?? [];
   const { status } = endpoint;
-  const health = connectionHealthPresentation(endpoint);
+  const health = connectionHealthPresentation(endpoint, t);
   const lifecycleAction = lifecycle.variables;
   const callbackSurfaceRows = endpoint.setup?.callbackSurfaces
     ? ([
@@ -994,7 +992,7 @@ function Activity({
     : [];
   return (
     <section className="space-y-5">
-      <h2 className="text-lg font-semibold">Connection activity</h2>
+      <h2 className="text-lg font-semibold">{t("apps.chatEndpointDetail.activity.title")}</h2>
       {((status !== "active" && health.message) || health.error) && (
         <div
           className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${status === "attention" || status === "revoked" ? "border-destructive/40 bg-destructive/5 text-destructive" : "border-border bg-muted/30 text-foreground"}`}
@@ -1006,7 +1004,7 @@ function Activity({
             {health.message && <p>{health.message}</p>}
             {health.previousHealth && (
               <p className="mt-1 text-xs opacity-80">
-                <span className="font-medium">Last reported health:</span>{" "}
+                <span className="font-medium">{t("apps.chatEndpointDetail.activity.lastReportedHealth")}:</span>{" "}
                 {health.previousHealth}
               </p>
             )}
@@ -1021,9 +1019,9 @@ function Activity({
       )}
       <details className="group rounded-lg border border-border">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-medium chat-connection-health-summary">
-          <span>Connection health and controls</span>
+          <span>{t("apps.chatEndpointDetail.activity.healthAndControls")}</span>
           <span className="flex items-center gap-2">
-            {endpoint.setup?.callbacksNeedUpdate && <span className="text-xs text-(--status-task-blocked)">Callback URLs need attention</span>}
+            {endpoint.setup?.callbacksNeedUpdate && <span className="text-xs text-(--status-task-blocked)">{t("apps.chatEndpointDetail.activity.callbackUrlsNeedAttention")}</span>}
             <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
           </span>
         </summary>
@@ -1032,11 +1030,11 @@ function Activity({
         <div
           className="space-y-3 text-sm"
         >
-          <p className="font-medium">Slack callback health</p>
+          <p className="font-medium">{t("apps.chatEndpointDetail.activity.slackCallbackHealth")}</p>
           <p className="text-xs text-muted-foreground">
             {endpoint.setup?.callbacksNeedUpdate
-              ? "Slack callback URLs need an update. Save the current App Manifest, then exercise Events, Interactivity, and the registered command again."
-              : "Paperclip records each callback surface independently after Slack successfully calls it."}
+              ? t("apps.chatEndpointDetail.activity.slackCallbacksNeedUpdate")
+              : t("apps.chatEndpointDetail.activity.slackCallbacksRecorded")}
           </p>
           <div className="divide-y divide-border border-y border-border">
             {callbackSurfaceRows.map(([label, surface]) => (
@@ -1044,14 +1042,14 @@ function Activity({
                 <p className="text-xs font-medium">{label}</p>
                 <p className="text-xs text-muted-foreground">
                   {surface.status === "current"
-                    ? "Current"
+                    ? t("apps.chatEndpointDetail.activity.callbackCurrent")
                     : surface.status === "stale"
-                      ? "Stale URL"
-                      : "Not observed"}
+                      ? t("apps.chatEndpointDetail.activity.callbackStale")
+                      : t("apps.chatEndpointDetail.activity.callbackNotObserved")}
                 </p>
                 {surface.observedAt && (
                   <p className="text-xs text-muted-foreground">
-                    Last observed{" "}
+                    {t("apps.chatEndpointDetail.activity.lastObserved")}{" "}
                     <time
                       dateTime={surface.observedAt}
                       title={surface.observedAt}
@@ -1082,7 +1080,7 @@ function Activity({
                 ) : (
                   <Pause />
                 )}
-                Pause
+                {t("apps.chatEndpointDetail.activity.pause")}
               </Button>
             )}
             {status === "paused" && (
@@ -1096,7 +1094,7 @@ function Activity({
                 ) : (
                   <Play />
                 )}
-                Resume
+                {t("apps.chatEndpointDetail.activity.resume")}
               </Button>
             )}
             {[
@@ -1120,8 +1118,8 @@ function Activity({
               >
                 <RefreshCw />
                 {status === "draft" || status === "verifying"
-                  ? "Finish setup"
-                  : "Reconnect"}
+                  ? t("apps.chatEndpointDetail.activity.finishSetup")
+                  : t("apps.chatEndpointDetail.activity.reconnect")}
               </Button>
             )}
             <Button
@@ -1131,12 +1129,12 @@ function Activity({
               onClick={() => setRemoveOpen(true)}
             >
               <Trash2 />
-              Remove connection
+              {t("apps.chatEndpointDetail.activity.removeConnection")}
             </Button>
           </div>
           {status !== "draft" && status !== "verifying" && (
             <p className="text-xs text-muted-foreground">
-              {providerLifecycleGuidance[endpoint.provider].reconnect}
+              {t(providerLifecycleGuidanceKeys[endpoint.provider].reconnect)}
             </p>
           )}
         </div>
@@ -1145,32 +1143,32 @@ function Activity({
       </details>
       <div className="space-y-2">
         <h3 className="text-sm font-semibold">
-          Recent activity
+          {t("apps.chatEndpointDetail.activity.recentActivity")}
         </h3>
         {endpoint.provider === "agentmail" && rows.some((item) => item.kind === "publication" && item.status === "delivery_unknown") && (
           <p className="text-sm text-muted-foreground">
-            Review unconfirmed email delivery in the{" "}
-            <Link to={`/apps/chat/${endpointId}/conversations`} className="underline underline-offset-4">conversation’s task</Link>.
+            {t("apps.chatEndpointDetail.activity.reviewUnconfirmedEmail")}{" "}
+            <Link to={`/apps/chat/${endpointId}/conversations`} className="underline underline-offset-4">{t("apps.chatEndpointDetail.activity.conversationTask")}</Link>.
           </p>
         )}
         <div className="divide-y divide-border border-y border-border">
           {query.isLoading && (
             <div className="flex items-center gap-2 py-5 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Loading activity…
+              {t("apps.chatEndpointDetail.activity.loading")}
             </div>
           )}
           {query.isError && (
             <div className="flex flex-wrap items-center justify-between gap-3 py-4">
               <p className="text-sm text-destructive" role="alert">
-                Connection activity could not be loaded.
+                {t("apps.chatEndpointDetail.activity.loadFailed")}
               </p>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => query.refetch()}
               >
-                Try again
+                {t("apps.chatEndpointDetail.activity.tryAgain")}
               </Button>
             </div>
           )}
@@ -1192,7 +1190,7 @@ function Activity({
                       {formatDateTime(item.createdAt, { includeSeconds: true })}
                     </time>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{activityKindLabels[item.kind]}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t(activityKindKeys[item.kind])}</p>
                   {item.fileTransfer && (
                     <p className="mt-1 text-xs text-muted-foreground">
                       {item.fileTransfer.filename} —{" "}
@@ -1202,7 +1200,7 @@ function Activity({
                   {item.detail && (
                     <p className="mt-1 text-xs text-muted-foreground">
                       <span className="font-medium text-foreground">
-                        {activityDetailLabel(item)}:
+                        {activityDetailLabel(item, t)}:
                       </span>{" "}
                       {item.detail}
                     </p>
@@ -1212,7 +1210,7 @@ function Activity({
                   <Button
                     size="sm"
                     variant="outline"
-                    aria-label={`Replay failed ${item.kind}`}
+                    aria-label={t("apps.chatEndpointDetail.activity.replayFailedAria", { kind: t(activityKindKeys[item.kind]) })}
                     disabled={replay.isPending}
                     onClick={() => replay.mutate(item)}
                   >
@@ -1221,7 +1219,7 @@ function Activity({
                     ) : (
                       <RefreshCw />
                     )}
-                    Replay
+                    {t("apps.chatEndpointDetail.activity.replay")}
                   </Button>
                 )}
                 {endpoint.provider !== "agentmail" && isResolutionEligible(item) && (
@@ -1230,23 +1228,23 @@ function Activity({
                     variant="outline"
                     onClick={() => setResolutionItem(item)}
                   >
-                    Resolve
+                    {t("apps.chatEndpointDetail.activity.resolve")}
                   </Button>
                 )}
               </div>
             ))}
           {!query.isLoading && !query.isError && rows.length === 0 && (
             <p className="py-5 text-sm text-muted-foreground">
-              No connection activity yet.
+              {t("apps.chatEndpointDetail.activity.empty")}
             </p>
           )}
         </div>
       </div>
-      <nav aria-label="Activity pagination" className="flex items-center justify-between gap-3">
-        <span className="text-xs text-muted-foreground">Page {cursors.length}</span>
+      <nav aria-label={t("apps.chatEndpointDetail.activity.paginationAria")} className="flex items-center justify-between gap-3">
+        <span className="text-xs text-muted-foreground">{t("apps.chatEndpointDetail.activity.page", { number: cursors.length })}</span>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" disabled={cursors.length === 1 || query.isFetching} onClick={() => setCursors((pages) => pages.slice(0, -1))}>Previous</Button>
-          <Button size="sm" variant="outline" disabled={!query.data?.nextCursor || query.isFetching || query.isError} onClick={() => { if (query.data?.nextCursor) setCursors((pages) => [...pages, query.data.nextCursor!]); }}>Next</Button>
+          <Button size="sm" variant="outline" disabled={cursors.length === 1 || query.isFetching} onClick={() => setCursors((pages) => pages.slice(0, -1))}>{t("apps.chatEndpointDetail.activity.previous")}</Button>
+          <Button size="sm" variant="outline" disabled={!query.data?.nextCursor || query.isFetching || query.isError} onClick={() => { if (query.data?.nextCursor) setCursors((pages) => [...pages, query.data.nextCursor!]); }}>{t("apps.chatEndpointDetail.activity.next")}</Button>
         </div>
       </nav>
       <AlertDialog
@@ -1257,24 +1255,24 @@ function Activity({
           <AlertDialogHeader>
             <AlertDialogTitle>
               {resolutionItem?.actionType === "slash_task_start"
-                ? "Resolve unconfirmed task start"
+                ? t("apps.chatEndpointDetail.activity.resolution.resolveTaskStart")
                 : resolutionItem?.actionType === "provider_effect"
-                  ? "Resolve unconfirmed provider reply"
-                  : "Resolve unconfirmed delivery"}
+                  ? t("apps.chatEndpointDetail.activity.resolution.resolveProviderReply")
+                  : t("apps.chatEndpointDetail.activity.resolution.resolveDelivery")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {resolutionItem?.actionType === "slash_task_start"
-                ? "Paperclip lost confirmation after asking Slack to start the task. Check Slack first. Retrying can create a duplicate starter message and task."
+                ? t("apps.chatEndpointDetail.activity.resolution.taskStartUnknown")
                 : resolutionItem?.actionType === "provider_effect"
-                  ? "Paperclip lost confirmation after sending this provider reply. Check the provider first. Marking it delivered applies any pending Paperclip state change; retrying can create a duplicate message."
+                  ? t("apps.chatEndpointDetail.activity.resolution.providerReplyUnknown")
                   : resolutionItem
-                    ? activityResolutionDescription(resolutionItem)
+                    ? activityResolutionDescription(resolutionItem, t)
                     : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="sm:flex-wrap">
             <AlertDialogCancel disabled={resolveActivity.isPending}>
-              Keep unresolved
+              {t("apps.chatEndpointDetail.activity.resolution.keepUnresolved")}
             </AlertDialogCancel>
             {resolutionItem &&
               activityResolutionActions(resolutionItem).includes("cancel") && (
@@ -1290,12 +1288,12 @@ function Activity({
                   }
                 >
                   {resolutionItem.actionType === "slash_task_start"
-                    ? "Cancel task start"
+                    ? t("apps.chatEndpointDetail.activity.resolution.cancelTaskStart")
                     : resolutionItem.actionType === "provider_effect"
-                      ? "Cancel provider reply"
+                      ? t("apps.chatEndpointDetail.activity.resolution.cancelProviderReply")
                       : resolutionItem.fileTransfer
-                        ? "Cancel file transfer"
-                        : "Cancel publication"}
+                        ? t("apps.chatEndpointDetail.activity.resolution.cancelFileTransfer")
+                        : t("apps.chatEndpointDetail.activity.resolution.cancelPublication")}
                 </Button>
               )}
             {resolutionItem &&
@@ -1314,8 +1312,8 @@ function Activity({
                   }
                 >
                   {resolutionItem.fileTransfer
-                    ? "Retry file notification"
-                    : "Retry anyway"}
+                    ? t("apps.chatEndpointDetail.activity.resolution.retryFileNotification")
+                    : t("apps.chatEndpointDetail.activity.resolution.retryAnyway")}
                 </Button>
               )}
             {resolutionItem &&
@@ -1334,7 +1332,7 @@ function Activity({
                     }
                   }}
                 >
-                  Mark delivered
+                  {t("apps.chatEndpointDetail.activity.resolution.markDelivered")}
                 </AlertDialogAction>
               )}
           </AlertDialogFooter>
@@ -1343,24 +1341,25 @@ function Activity({
       <AlertDialog open={removeOpen} onOpenChange={setRemoveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove this connection?</AlertDialogTitle>
+            <AlertDialogTitle>{t("apps.chatEndpointDetail.activity.removeConnectionTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {endpoint.assignedAgentName} will stop receiving new work from
-              {` ${providerNames[endpoint.provider]}`}. Existing Paperclip tasks
-              remain available.{" "}
-              {providerLifecycleGuidance[endpoint.provider].remove}
+              {t("apps.chatEndpointDetail.activity.removeConnectionDescription", {
+                agent: endpoint.assignedAgentName,
+                provider: providerNames[endpoint.provider],
+                guidance: t(providerLifecycleGuidanceKeys[endpoint.provider].remove),
+              })}
               {endpoint.provider === "slack" && (
                 <> <a
                   href={endpoint.setup?.slackRegistration?.managementUrl ?? "https://api.slack.com/apps"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline underline-offset-4"
-                >Open Slack app settings</a> to manage or delete the Slack app.</>
+                >{t("apps.chatEndpointDetail.activity.openSlackAppSettings")}</a>{t("apps.chatEndpointDetail.activity.manageSlackAppSuffix")}</>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("apps.chatEndpointDetail.activity.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={lifecycle.isPending}
@@ -1369,7 +1368,7 @@ function Activity({
               {lifecycle.isPending && (
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
-              Remove connection
+              {t("apps.chatEndpointDetail.activity.removeConnection")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3667,3 +3667,28 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Confirmações tool/secret, recibos e datas localizados; prompts, respostas e demais dados externos preservados. Cartões: 35/35.
 - Família secrets: ajuda e mensagens próprias, saídas humanas de create/link e saúde do provedor. Contratos API/JSON, incluindo resposta vazia, e erros externos preservados. Testes focados: 20/20; typecheck CLI passou.
 - Integração: **110/110 testes em seis arquivos**; gate da ajuda e 11 testes Node passaram; typecheck UI e gates de tokens/literais passaram. Checkpoint: **399/417 tarefas**, com 18 caixas abertas incluindo agregadoras.
+
+### Execução local da lane de localização
+
+- `PAPERCLIP_LOCALIZATION_BASE=origin/master pnpm check:localization` passou: 68 tópicos com fontes para ambos os idiomas, scanner incremental de 524 arquivos, 11 testes Node e 288 testes em 48 arquivos Vitest. A execução foi local, com outros lotes em andamento; não é evidência de execução da CI remota. O scanner segue heurístico, a verificação de JSON é representativa e a tarefa 7.1 permanece aberta.
+
+### Auditoria de conectores de chat — 3.9f6
+
+- As rotas `/apps/chat/connect` e `/apps/chat/:endpointId/...` são condicionadas por `ChatConnectorsExperimentalGate`; as telas ativas `ChatEndpointSetup` e `ChatEndpointDetail` têm literais próprios em inglês e ainda não estavam explícitas no inventário 3.9. Incluídas no escopo em 3.9f6: localizar e testar estados, permissões e jornadas com a flag ligada. A evidência anterior de `EmailConnectionAccess` não prova cobertura integral dessas rotas.
+- Checkpoint antes da implementação: **399/418 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Estado sem organização e atores em interações — 3.9f3j/6.3g
+
+- Estado sem organização do setup de conexões usa tradução existente; AppsConnect passou 218/218.
+- Aviso de preparação, erro próprio e fallbacks de ator traduzidos; identidade, nomes reais e dados externos preservados. Quatro suítes de interação: 195/195.
+- Checkpoint intermediário: **401/420 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Família plugin CLI — 4.3ar
+
+- Ajuda dos 33 comandos, lifecycle e validações próprias localizados. JSON, dados e erros externos permanecem intactos; subprocessos verificaram stderr em inglês em modo estruturado e ordem original das validações do gerador. Testes: 27/27; typecheck CLI e gates de fontes/ajuda passaram. Mocks não qualificam integração com uma instância real.
+- Checkpoint intermediário: **402/421 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Navegação e atividade de conectores de chat — 3.9f6a
+
+- Shell e aba Activity localizados em PT-BR/en; testes preservam dados externos, ID enviado no replay, URL e segundos. Suíte focada 33/33. Access, People, Conversations e setup continuam pendentes em 3.9f6.
+- Rodada integrada dos lotes de CLI plugin, interações, setup sem organização e atividade: **473/473 testes em nove arquivos**. Checkpoint: **403/422 tarefas**, 19 caixas abertas incluindo agregadoras.
