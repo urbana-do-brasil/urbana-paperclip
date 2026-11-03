@@ -105,6 +105,7 @@ import {
   type PlannedIssueInsert,
 } from "./worktree-merge-history-lib.js";
 import { detectGitWorkspaceInfo } from "./git-workspace.js";
+import { worktreeListMarkerLabels } from "../localization/worktree-operations.js";
 
 type WorktreeInitOptions = {
   name?: string;
@@ -3632,10 +3633,11 @@ export async function worktreeListCommand(opts: WorktreeListOptions): Promise<vo
     return;
   }
 
+  const markers = worktreeListMarkerLabels();
   for (const choice of choices) {
     const flags = [
-      choice.isCurrent ? "current" : null,
-      choice.hasPaperclipConfig ? "paperclip" : "no-paperclip-config",
+      choice.isCurrent ? markers.current : null,
+      choice.hasPaperclipConfig ? markers.paperclipConfig : markers.noPaperclipConfig,
     ].filter((value): value is string => value !== null);
     p.log.message(`${choice.branchLabel}  ${choice.worktree}  [${flags.join(", ")}]`);
   }

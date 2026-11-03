@@ -33,8 +33,126 @@ const companyOptions = {
 const skillReferenceArgument = { skillRef: { en: "Company skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill da organização" } };
 const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
+const worktreeHomeOption = {
+  en: "Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ~/.paperclip-worktrees)",
+  "pt-BR": "Diretório raiz das instâncias de worktree (variável PAPERCLIP_WORKTREES_DIR, padrão: ~/.paperclip-worktrees)",
+};
+const worktreeSourceOptions = {
+  "--from-config": { en: "Source config.json to seed from", "pt-BR": "Arquivo config.json de origem para copiar os dados" },
+  "--from-data-dir": { en: "Source PAPERCLIP_HOME used when deriving the source config", "pt-BR": "PAPERCLIP_HOME de origem usado para localizar a configuração" },
+  "--from-instance": { en: "Source instance id when deriving the source config", "pt-BR": "ID da instância de origem usado para localizar a configuração" },
+};
+const worktreeSeedOptions = {
+  "--seed-mode": { en: "Seed profile: minimal or full (default: minimal)", "pt-BR": "Perfil de cópia: minimal ou full (padrão: minimal)" },
+  "--preserve-live-work": { en: "Do not quarantine copied agent work or workspace runtime services in the seeded worktree", "pt-BR": "Não isolar o trabalho copiado dos agentes nem os serviços de runtime dos workspaces na worktree" },
+};
 
 const operationHelp: Record<string, CommandHelp> = {
+  worktree: {
+    description: { en: "Worktree-local Paperclip instance helpers", "pt-BR": "Ferramentas para instâncias locais do Paperclip em worktrees" },
+  },
+  "worktree:make": {
+    description: { en: "Create ~/NAME as a git worktree, then initialize an isolated Paperclip instance inside it", "pt-BR": "Criar ~/NOME como worktree do Git e inicializar nela uma instância isolada do Paperclip" },
+    arguments: { name: { en: "Worktree name — auto-prefixed with paperclip- if needed (created at ~/paperclip-NAME)", "pt-BR": "Nome da worktree — recebe o prefixo paperclip- quando necessário (criada em ~/paperclip-NOME)" } },
+    options: {
+      "--start-point": { en: "Remote ref to base the new branch on (env: PAPERCLIP_WORKTREE_START_POINT)", "pt-BR": "Referência remota usada como base da nova branch (variável PAPERCLIP_WORKTREE_START_POINT)" },
+      "--instance": { en: "Explicit isolated instance id", "pt-BR": "ID explícito da instância isolada" },
+      "--home": worktreeHomeOption,
+      ...worktreeSourceOptions,
+      "--from-instance": { en: "Source instance id when deriving the source config", "pt-BR": "ID da instância de origem usado para localizar a configuração" },
+      "--server-port": { en: "Preferred server port", "pt-BR": "Porta preferencial do servidor" },
+      "--db-port": { en: "Preferred embedded Postgres port", "pt-BR": "Porta preferencial do PostgreSQL integrado" },
+      ...worktreeSeedOptions,
+      "--no-seed": { en: "Skip database seeding from the source instance", "pt-BR": "Não copiar o banco de dados da instância de origem" },
+      "--empty": { en: "Create an empty instance without immediate or deferred database copying", "pt-BR": "Criar uma instância vazia sem copiar o banco agora ou depois" },
+      "--force": { en: "Replace existing repo-local config and isolated instance data", "pt-BR": "Substituir a configuração local do repositório e os dados da instância isolada" },
+    },
+  },
+  "worktree init": {
+    description: { en: "Create repo-local config/env and an isolated instance for this worktree", "pt-BR": "Criar a configuração local do repositório, o arquivo env e uma instância isolada para esta worktree" },
+    options: {
+      "--name": { en: "Display name used to derive the instance id", "pt-BR": "Nome de exibição usado para definir o ID da instância" },
+      "--instance": { en: "Explicit isolated instance id", "pt-BR": "ID explícito da instância isolada" },
+      "--home": worktreeHomeOption,
+      ...worktreeSourceOptions,
+      "--from-instance": { en: "Source instance id when deriving the source config", "pt-BR": "ID da instância de origem usado para localizar a configuração" },
+      "--server-port": { en: "Preferred server port", "pt-BR": "Porta preferencial do servidor" },
+      "--db-port": { en: "Preferred embedded Postgres port", "pt-BR": "Porta preferencial do PostgreSQL integrado" },
+      "--seed-mode": worktreeSeedOptions["--seed-mode"],
+      "--preserve-live-work": worktreeSeedOptions["--preserve-live-work"],
+      "--no-seed": { en: "Skip database seeding from the source instance", "pt-BR": "Não copiar o banco de dados da instância de origem" },
+      "--empty": { en: "Create an empty instance without immediate or deferred database copying", "pt-BR": "Criar uma instância vazia sem copiar o banco agora ou depois" },
+      "--force": { en: "Replace existing repo-local config and isolated instance data", "pt-BR": "Substituir a configuração local do repositório e os dados da instância isolada" },
+    },
+  },
+  "worktree env": {
+    description: { en: "Print shell exports for the current worktree-local Paperclip instance", "pt-BR": "Exibir exportações de shell da instância local do Paperclip nesta worktree" },
+    options: {
+      "--config": { en: "Path to config file", "pt-BR": "Caminho do arquivo de configuração" },
+      "--json": { en: "Print JSON instead of shell exports", "pt-BR": "Exibir JSON em vez das exportações de shell" },
+    },
+  },
+  "worktree ensure-seeded": {
+    description: { en: "Seed a seed-pending worktree database exactly once from its source instance", "pt-BR": "Copiar uma única vez os dados da instância de origem para o banco pendente desta worktree" },
+    options: {
+      "--config": { en: "Path to the target worktree config file", "pt-BR": "Caminho do arquivo de configuração da worktree de destino" },
+      ...worktreeSourceOptions,
+      "--preserve-live-work": worktreeSeedOptions["--preserve-live-work"],
+    },
+  },
+  "worktree:list": {
+    description: { en: "List git worktrees visible from this repo and whether they look like Paperclip worktrees", "pt-BR": "Listar as worktrees Git visíveis neste repositório e indicar quais parecem ser worktrees do Paperclip" },
+    options: { "--json": { en: "Print JSON instead of text output", "pt-BR": "Exibir JSON em vez de texto" } },
+  },
+  "worktree:merge-history": {
+    description: { en: "Preview or import issue/comment history from another worktree into the current instance", "pt-BR": "Pré-visualizar ou importar o histórico de tarefas e comentários de outra worktree para a instância atual" },
+    arguments: { source: { en: "Optional source worktree path, directory name, or branch name (back-compat alias for --from)", "pt-BR": "Caminho, nome de diretório ou branch opcional da worktree de origem (alias compatível com --from)" } },
+    options: {
+      "--from": { en: "Source worktree path, directory name, branch name, or current", "pt-BR": "Caminho, nome de diretório, branch da worktree de origem ou current" },
+      "--to": { en: "Target worktree path, directory name, branch name, or current (defaults to current)", "pt-BR": "Caminho, nome de diretório, branch da worktree de destino ou current (padrão: current)" },
+      "--company": { en: "Shared company id or issue prefix inside the chosen source/target instances", "pt-BR": "ID da organização compartilhada ou prefixo de tarefa nas instâncias de origem/destino" },
+      "--scope": { en: "Comma-separated scopes to import (issues, comments)", "pt-BR": "Escopos a importar, separados por vírgula (issues, comments)" },
+      "--apply": { en: "Apply the import after previewing the plan", "pt-BR": "Aplicar a importação após pré-visualizar o plano" },
+      "--dry": { en: "Preview only and do not import anything", "pt-BR": "Somente pré-visualizar, sem importar dados" },
+      "--yes": { en: "Skip the interactive confirmation prompt when applying", "pt-BR": "Ignorar a confirmação interativa ao aplicar" },
+    },
+  },
+  "worktree reseed": {
+    description: { en: "Re-seed an existing worktree-local instance from another Paperclip instance or worktree", "pt-BR": "Recopiar os dados de outra instância ou worktree do Paperclip para uma instância local existente" },
+    options: {
+      "--from": { en: "Source worktree path, directory name, branch name, or current", "pt-BR": "Caminho, nome de diretório, branch da worktree de origem ou current" },
+      "--to": { en: "Target worktree path, directory name, branch name, or current (defaults to current)", "pt-BR": "Caminho, nome de diretório, branch da worktree de destino ou current (padrão: current)" },
+      ...worktreeSourceOptions,
+      "--from-instance": { en: "Source instance id when deriving the source config", "pt-BR": "ID da instância de origem usado para localizar a configuração" },
+      "--seed-mode": { en: "Seed profile: minimal or full (default: full)", "pt-BR": "Perfil de cópia: minimal ou full (padrão: full)" },
+      "--preserve-live-work": worktreeSeedOptions["--preserve-live-work"],
+      "--yes": { en: "Skip the destructive confirmation prompt", "pt-BR": "Ignorar a confirmação da operação destrutiva" },
+      "--allow-live-target": { en: "Override the guard that requires the target worktree DB to be stopped first", "pt-BR": "Ignorar a proteção que exige parar o banco da worktree de destino antes da operação" },
+      "--backup-target": { en: "Retain a recoverable full backup of the isolated target DB before reseeding", "pt-BR": "Manter um backup completo recuperável do banco isolado de destino antes de recopiá-lo" },
+    },
+  },
+  "worktree repair": {
+    description: { en: "Create or repair a linked worktree-local Paperclip instance without touching the primary checkout", "pt-BR": "Criar ou reparar uma instância local vinculada à worktree sem alterar o checkout principal" },
+    options: {
+      "--branch": { en: "Existing branch/worktree selector to repair, or a branch name to create under .paperclip/worktrees", "pt-BR": "Seletor de branch/worktree existente para reparar ou nome de branch a criar em .paperclip/worktrees" },
+      "--home": worktreeHomeOption,
+      ...worktreeSourceOptions,
+      "--from-instance": { en: "Source instance id when deriving the source config (default: default)", "pt-BR": "ID da instância de origem usado para localizar a configuração (padrão: default)" },
+      "--seed-mode": worktreeSeedOptions["--seed-mode"],
+      "--preserve-live-work": worktreeSeedOptions["--preserve-live-work"],
+      "--no-seed": { en: "Repair metadata only and skip reseeding when bootstrapping a missing worktree config", "pt-BR": "Reparar somente os metadados e não recopiá-los ao inicializar uma configuração ausente da worktree" },
+      "--allow-live-target": { en: "Override the guard that requires the target worktree DB to be stopped first", "pt-BR": "Ignorar a proteção que exige parar o banco da worktree de destino antes da operação" },
+    },
+  },
+  "worktree:cleanup": {
+    description: { en: "Safely remove a worktree, its branch, and its isolated instance data", "pt-BR": "Remover com segurança uma worktree, sua branch e os dados da instância isolada" },
+    arguments: { name: { en: "Worktree name — auto-prefixed with paperclip- if needed", "pt-BR": "Nome da worktree — recebe o prefixo paperclip- quando necessário" } },
+    options: {
+      "--instance": { en: "Explicit instance id (if different from the worktree name)", "pt-BR": "ID explícito da instância (se for diferente do nome da worktree)" },
+      "--home": worktreeHomeOption,
+      "--force": { en: "Bypass safety checks (uncommitted changes, unique commits)", "pt-BR": "Ignorar verificações de segurança (alterações não confirmadas e commits exclusivos)" },
+    },
+  },
   plugin: {
     description: { en: "Plugin lifecycle management", "pt-BR": "Gerenciamento do ciclo de vida de plugins" },
   },

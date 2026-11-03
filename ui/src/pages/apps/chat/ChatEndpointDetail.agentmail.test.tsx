@@ -38,7 +38,8 @@ describe("AgentMail connection management tabs", () => {
   const endpoint = { id: "inbox", companyId: "company", connectionId: "runtime", provider: "agentmail",
     assignedAgentId: "ralph", assignedAgentName: "Ralph", botExternalId: "ralph@example.test",
     allowUnlinkedPeople: false, status: "active", setup: { step: "complete" } };
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.clearAllMocks();
     mocks.tab = "settings";
     mocks.get.mockResolvedValue(endpoint);
@@ -77,6 +78,17 @@ describe("AgentMail connection management tabs", () => {
     expect(container.textContent).toContain("Ralph");
     expect(mocks.grants).toHaveBeenCalledWith("account"); expect(mocks.installs).toHaveBeenCalledWith("account");
     expect(mocks.grants).not.toHaveBeenCalledWith("runtime");
+  });
+  it.each([
+    ["en", "Access", "These settings apply to the saved AgentMail account and all inboxes using it."],
+    ["pt-BR", "Acesso", "Estas configurações se aplicam à conta AgentMail salva e a todas as caixas de entrada que a utilizam."],
+  ])("localizes the saved AgentMail access wrapper in %s", async (locale, heading, accountNote) => {
+    await i18n.changeLanguage(locale);
+    await render("access");
+    await vi.waitFor(() => expect(container.textContent).toContain(accountNote));
+    expect(container.textContent).toContain(heading);
+    expect(mocks.getConnection).toHaveBeenCalledWith("runtime");
+    expect(mocks.grants).toHaveBeenCalledWith("account");
   });
   it("shows an access failure rather than editable controls when the credential cannot load", async () => {
     mocks.getConnection.mockRejectedValue(new Error("Offline")); await render("access");

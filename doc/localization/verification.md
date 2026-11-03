@@ -3692,3 +3692,10 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - Shell e aba Activity localizados em PT-BR/en; testes preservam dados externos, ID enviado no replay, URL e segundos. Suíte focada 33/33. Access, People, Conversations e setup continuam pendentes em 3.9f6.
 - Rodada integrada dos lotes de CLI plugin, interações, setup sem organização e atividade: **473/473 testes em nove arquivos**. Checkpoint: **403/422 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Acesso de conectores, worktrees e transporte ACP
+
+- Access/People de conectores de chat: 45/45, preservando identidade e dados externos. Outras abas e setup ainda abertos. Ajuda worktree e consultas/listagem: 4/4, typecheck CLI; operações mutáveis pendentes.
+- Matriz ACP Claude/Codex/Gemini PT-BR/en × auto/acp: 12/12 com FakeRuntime, execução nova e retomada; sem credenciais ou modelo real.
+- Rodada de sete arquivos: 166/167 passaram; o teste de restauração que depende de EACCES falhou ao executar como root, que ignora a proteção da pasta. Repetição excluindo somente esse caso: 166 passaram, um ignorado. Esse caso não foi qualificado nesta rodada.
+- Checkpoint: **406/425 tarefas**, 19 caixas abertas incluindo agregadoras.

@@ -17,9 +17,9 @@ vice-versa.
 
 | `adapterType` | Caminho que deve ser identificado no registro | Evidência determinística disponível | Resposta real PT-BR/en |
 | --- | --- | --- | --- |
-| `claude_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/claude-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en, nova execução e retomada com `engine=cli`. Essa evidência não cobre `engine=auto`/`acp` nem resposta do modelo. | Não qualificada. |
-| `codex_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/codex-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en, nova execução e retomada com `engine=cli`. Essa evidência não cobre `engine=auto`/`acp` nem resposta do modelo. | Não qualificada. |
-| `gemini_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/gemini-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en, nova execução e retomada com `engine=cli`. Essa evidência não cobre `engine=auto`/`acp` nem resposta do modelo. | Não qualificada. |
+| `claude_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/claude-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en com `engine=cli`; `packages/adapters/claude-local/src/server/acp.test.ts` cobre `auto`/`acp`, execução nova e retomada até FakeRuntime. Nenhum qualifica resposta do modelo. | Não qualificada. |
+| `codex_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/codex-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en com `engine=cli`; `packages/adapters/codex-local/src/server/acp.test.ts` cobre `auto`/`acp`, execução nova e retomada até FakeRuntime. Nenhum qualifica resposta do modelo. | Não qualificada. |
+| `gemini_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/gemini-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en com `engine=cli`; `packages/adapters/gemini-local/src/server/acp.test.ts` cobre `auto`/`acp`, execução nova e retomada até FakeRuntime. Nenhum qualifica resposta do modelo. | Não qualificada. |
 | `cursor` | adapter local Cursor | `packages/adapters/cursor-local/src/server/execute.test.ts` verifica a orientação montada no prompt. | Não qualificada. |
 | `cursor_cloud` | adapter Cursor Cloud | `packages/adapters/cursor-cloud/src/server/execute.test.ts` verifica a orientação montada no prompt. | Não qualificada. |
 | `grok_local` | adapter local Grok | `packages/adapters/grok-local/src/server/execute.test.ts` verifica a orientação montada no prompt. | Não qualificada. |

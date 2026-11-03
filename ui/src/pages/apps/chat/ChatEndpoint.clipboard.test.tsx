@@ -37,6 +37,10 @@ const mocks = vi.hoisted(() => ({
   setParams: vi.fn(),
 }));
 vi.mock("@/api/chatEndpoints", () => ({ chatEndpointsApi: mocks }));
+vi.mock("./SlackToolSettings", () => ({
+  SlackSearchAccess: () => null,
+  SlackToolsSettings: () => null,
+}));
 vi.mock("@/api/githubChat", () => ({ githubChatApi: {
   configuration: async () => ({ revision: 0, configuration: {} }),
   progress: async () => mocks.get(),
@@ -135,7 +139,7 @@ describe("chat setup and identity-link clipboard actions", () => {
     flushSync(() => {});
   }
   async function click(text: string) {
-    const button = [...document.querySelectorAll("button")].find(
+    const button = [...document.body.querySelectorAll("button")].find(
       (node) => node.textContent?.trim() === text,
     );
     expect(button, text).toBeDefined();
@@ -244,6 +248,64 @@ describe("chat setup and identity-link clipboard actions", () => {
 
       expect(mocks.replayDelivery).toHaveBeenCalledWith("endpoint-a", providerActivityId);
       expect(mocks.pushToast).toHaveBeenCalledWith({ title: toastTitle, tone: "success" });
+    },
+  );
+
+  it.each([
+    ["en", "People", "Waiting for account confirmation", "Create confirmation link", "Confirm <Taylor ext>", "Copy link"],
+    ["pt-BR", "Pessoas", "Aguardando confirmação da conta", "Criar link de confirmação", "Confirmar <Taylor ext>", "Copiar link"],
+  ])(
+    "localizes the %s identity access flow and keeps external identity/link data intact",
+    async (locale, heading, pendingLabel, createLabel, confirmationHeading, copyLinkLabel) => {
+      await i18n.changeLanguage(locale);
+      mocks.tab = "access";
+      const externalLabel = "<Taylor ext>";
+      const confirmationUrl = "/chat-identity/confirm?token=synthetic-private-confirmation-token";
+      const absoluteConfirmationUrl = new URL(confirmationUrl, window.location.origin).toString();
+      mocks.listPrincipals.mockResolvedValue([{
+        id: "link-row-42",
+        principalId: "slack-principal-42",
+        externalLabel,
+        status: "pending",
+      }]);
+      mocks.createLinkIntent.mockResolvedValue({ confirmationUrl });
+
+      await render("slack", true);
+
+      expect(container.textContent).toContain(heading);
+      expect(container.textContent).toContain(externalLabel);
+      expect(container.textContent).toContain(pendingLabel);
+      expect(container.querySelector("taylor")).toBeNull();
+      await click(createLabel);
+      expect(mocks.createLinkIntent).toHaveBeenCalledWith("endpoint-a", "slack-principal-42");
+      expect(container.textContent).toContain(confirmationHeading);
+      expect(container.textContent).toContain(absoluteConfirmationUrl);
+      await click(copyLinkLabel);
+      expect(copied).toEqual([absoluteConfirmationUrl]);
+    },
+  );
+
+  it.each([
+    ["en", "Invite people", "Invite people to talk to Maya", "Send /paperclip connect in Slack.", "Copy command", "Copy invitation", "Invitation copied"],
+    ["pt-BR", "Convidar pessoas", "Convide pessoas para conversar com Maya", "Envie /paperclip connect no Slack.", "Copiar comando", "Copiar convite", "Convite copiado"],
+  ])(
+    "localizes Slack invitation instructions and keeps the copied route values in %s",
+    async (locale, inviteLabel, dialogTitle, instruction, copyCommandLabel, copyInviteLabel, inviteCopiedLabel) => {
+      await i18n.changeLanguage(locale);
+      mocks.tab = "access";
+
+      await render("slack", true);
+      await click(inviteLabel);
+
+      expect(document.body.textContent).toContain(dialogTitle);
+      expect(document.body.textContent).toContain(instruction);
+      await click(copyCommandLabel);
+      expect(copied).toEqual(["/paperclip connect"]);
+      await click(copyInviteLabel);
+      expect(document.body.textContent).toContain(inviteCopiedLabel);
+      expect(copied[1]).toContain("Maya");
+      expect(copied[1]).toContain("https://app.slack.com/");
+      expect(copied[1]).toContain("/paperclip connect");
     },
   );
 
