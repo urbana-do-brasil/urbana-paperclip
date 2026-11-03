@@ -334,6 +334,173 @@ describe("owned plugin presentation localization", () => {
     expect(changedSourcePresentation.properties.apiKey).toEqual(changedSourceSchema.properties.apiKey);
   });
 
+  it.each(["pt-BR", "en"] as const)("localizes Modal schema metadata only for the exact bundled source in %s", async (locale) => {
+    await i18n.changeLanguage(locale);
+    const pluginId = "paperclip.modal-sandbox-provider";
+    const pluginRecordId = "bundled-modal-plugin-id";
+    const packageName = "@paperclipai/plugin-modal";
+    const bundlePath = "/app/packages/plugins/sandbox-providers/modal";
+    const installed = [{
+      id: pluginRecordId,
+      pluginKey: pluginId,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginId },
+    }];
+    const bundled = [{ pluginKey: pluginId, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledSandboxProvider({ pluginId: pluginRecordId, pluginKey: pluginId }, installed, bundled);
+    expect(trustedBundle).toBe(true);
+
+    const sourceDescriptions = {
+      appName: "Modal App name used as the parent for sandboxes. The plugin calls `modal.apps.fromName(appName, { createIfMissing: true })`, so the App is created on first acquire if it does not already exist.",
+      image: "Container image reference passed to `modal.images.fromRegistry()`, e.g. `python:3.13` or `node:24`. The default `node:24` satisfies the sandbox runtime contract (node, sh, and tar on PATH).",
+      tokenId: "Modal token ID. Paste a token or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Required.",
+      tokenSecret: "Modal token secret paired with tokenId. Required.",
+      environment: "Optional Modal environment name. Falls back to the SDK profile default.",
+      workdir: "Remote working directory inside the sandbox.",
+      sandboxTimeoutMs: "Maximum sandbox lifetime in milliseconds. Must be a positive multiple of 1000 between 1000 and 86400000 (24 hours).",
+      idleTimeoutMs: "Optional idle timeout in milliseconds. When set, Modal terminates the sandbox if no exec is active for this duration. Must be a positive multiple of 1000.",
+      execTimeoutMs: "Default per-exec timeout in milliseconds when the caller does not provide one. Must be a positive multiple of 1000.",
+      blockNetwork: "Whether to block all egress network access from the sandbox.",
+      cidrAllowlist: "Optional list of CIDRs the sandbox is allowed to reach. Cannot be combined with blockNetwork.",
+      reuseLease: "When true, the sandbox is detached (not terminated) on release and resumed by id later. Reuse relies on Modal's sandbox lifetime and idle timeout because Modal has no separate pause primitive.",
+    };
+    const ptBrDescriptions = {
+      appName: "Nome do App do Modal usado como pai dos sandboxes. O plugin chama `modal.apps.fromName(appName, { createIfMissing: true })`, então o App é criado na primeira aquisição se ainda não existir.",
+      image: "Referência de imagem de contêiner passada para `modal.images.fromRegistry()`, por exemplo `python:3.13` ou `node:24`. A imagem padrão `node:24` atende ao contrato de runtime do sandbox (node, sh e tar no PATH).",
+      tokenId: "ID do token Modal. Cole um token ou uma referência existente de segredo do Paperclip; os ambientes salvos armazenam valores colados como segredos da organização. Obrigatório.",
+      tokenSecret: "Segredo do token Modal associado a tokenId. Obrigatório.",
+      environment: "Nome opcional do ambiente Modal. Se omitido, usa o perfil padrão do SDK.",
+      workdir: "Diretório de trabalho remoto dentro do sandbox.",
+      sandboxTimeoutMs: "Tempo de vida máximo do sandbox em milissegundos. Deve ser um múltiplo positivo de 1000 entre 1000 e 86400000 (24 horas).",
+      idleTimeoutMs: "Timeout de inatividade opcional em milissegundos. Quando definido, o Modal encerra o sandbox se nenhum exec estiver ativo durante esse período. Deve ser um múltiplo positivo de 1000.",
+      execTimeoutMs: "Timeout padrão por exec, em milissegundos, quando quem faz a chamada não fornece um. Deve ser um múltiplo positivo de 1000.",
+      blockNetwork: "Define se todo o acesso de saída à rede do sandbox deve ser bloqueado.",
+      cidrAllowlist: "Lista opcional de CIDRs que o sandbox pode acessar. Não pode ser combinada com blockNetwork.",
+      reuseLease: "Quando true, o sandbox é desconectado (não encerrado) ao liberar e retomado por ID depois. A reutilização depende do tempo de vida do sandbox e do timeout de inatividade do Modal, pois o Modal não tem uma operação de pausa separada.",
+    };
+    const ptBrNames = {
+      appName: "Nome do App do Modal",
+      image: "Imagem de contêiner",
+      tokenId: "ID do token Modal",
+      tokenSecret: "Segredo do token Modal",
+      environment: "Ambiente Modal",
+      workdir: "Diretório de trabalho remoto",
+      sandboxTimeoutMs: "Duração do sandbox (ms)",
+      idleTimeoutMs: "Timeout de inatividade (ms)",
+      execTimeoutMs: "Timeout padrão de exec (ms)",
+      blockNetwork: "Bloquear tráfego de saída da rede",
+      cidrAllowlist: "Lista de CIDRs permitidos",
+      reuseLease: "Reutilizar sandbox entre execuções",
+    };
+    const enNames = {
+      appName: "Modal App name",
+      image: "Container image",
+      tokenId: "Modal token ID",
+      tokenSecret: "Modal token secret",
+      environment: "Modal environment",
+      workdir: "Remote working directory",
+      sandboxTimeoutMs: "Sandbox lifetime (ms)",
+      idleTimeoutMs: "Idle timeout (ms)",
+      execTimeoutMs: "Default exec timeout (ms)",
+      blockNetwork: "Block network egress",
+      cidrAllowlist: "CIDR allowlist",
+      reuseLease: "Reuse sandbox between runs",
+    };
+    const schema = {
+      type: "object",
+      required: ["appName", "image"],
+      properties: {
+        appName: { type: "string", description: sourceDescriptions.appName, default: "paperclip" },
+        image: { type: "string", description: sourceDescriptions.image, default: "node:24" },
+        tokenId: { type: "string", format: "secret-ref", description: sourceDescriptions.tokenId },
+        tokenSecret: { type: "string", format: "secret-ref", description: sourceDescriptions.tokenSecret },
+        environment: { type: "string", description: sourceDescriptions.environment },
+        workdir: { type: "string", description: sourceDescriptions.workdir, default: "/workspace/paperclip" },
+        sandboxTimeoutMs: { type: "number", description: sourceDescriptions.sandboxTimeoutMs, default: 3_600_000 },
+        idleTimeoutMs: { type: "number", description: sourceDescriptions.idleTimeoutMs },
+        execTimeoutMs: { type: "number", description: sourceDescriptions.execTimeoutMs, default: 300_000 },
+        blockNetwork: { type: "boolean", description: sourceDescriptions.blockNetwork, default: false },
+        cidrAllowlist: { type: "array", items: { type: "string" }, description: sourceDescriptions.cidrAllowlist },
+        reuseLease: { type: "boolean", description: sourceDescriptions.reuseLease, default: false },
+        customField: { type: "string", title: "Provider-owned field", description: "Provider-owned help text." },
+      },
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configuration = {
+      appName: "customer-modal-app",
+      image: "python:3.13",
+      tokenId: "company-secret-id-ref",
+      tokenSecret: "company-secret-value-ref",
+      environment: "production",
+      workdir: "/custom/workspace",
+      sandboxTimeoutMs: 7_200_000,
+      idleTimeoutMs: 120_000,
+      execTimeoutMs: 240_000,
+      blockNetwork: true,
+      cidrAllowlist: ["10.0.0.0/8"],
+      reuseLease: true,
+      providerArbitraryValue: { preserve: true },
+    };
+    const configurationBefore = JSON.stringify(configuration);
+    const localized = localizeSandboxProviderConfigSchema("modal", pluginId, schema, i18n.t, trustedBundle)!;
+    const expectedNames = locale === "pt-BR" ? ptBrNames : enNames;
+    const expectedDescriptions = locale === "pt-BR" ? ptBrDescriptions : sourceDescriptions;
+
+    for (const [fieldKey, sourceDescription] of Object.entries(sourceDescriptions)) {
+      const sourceField = schema.properties[fieldKey as keyof typeof schema.properties];
+      expect(localized.properties[fieldKey as keyof typeof localized.properties]).toEqual({
+        ...sourceField,
+        title: expectedNames[fieldKey as keyof typeof expectedNames],
+        description: expectedDescriptions[fieldKey as keyof typeof expectedDescriptions],
+      });
+      expect(sourceDescription).toBeTruthy();
+    }
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(localized.required).toEqual(["appName", "image"]);
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configuration)).toBe(configurationBefore);
+
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/modal/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    const packageJson = JSON.parse(readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/modal/package.json", import.meta.url),
+      "utf8",
+    )) as { name: string };
+    expect(packageJson.name).toBe(packageName);
+    expect(manifestSource).toContain(`const PLUGIN_ID = "${pluginId}"`);
+    expect(manifestSource).toContain('driverKey: "modal"');
+    for (const sourceDescription of Object.values(sourceDescriptions)) {
+      expect(manifestSource).toContain(sourceDescription);
+    }
+
+    const externalInstalled = [{
+      ...installed[0]!,
+      id: "vendor-modal-id",
+      packageName: "vendor/modal-compatible",
+      packagePath: "/custom/vendor/modal-compatible",
+    }];
+    const externalTrustedBundle = isTrustedBundledSandboxProvider(
+      { pluginId: "vendor-modal-id", pluginKey: pluginId },
+      externalInstalled,
+      bundled,
+    );
+    expect(externalTrustedBundle).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("modal", pluginId, schema, i18n.t, externalTrustedBundle)).toBe(schema);
+
+    const changedSourceSchema = {
+      ...schema,
+      properties: {
+        ...schema.properties,
+        tokenId: { ...schema.properties.tokenId, description: "Vendor-authored Modal-compatible token description." },
+      },
+    };
+    const changedSourcePresentation = localizeSandboxProviderConfigSchema("modal", pluginId, changedSourceSchema, i18n.t, true)!;
+    expect(changedSourcePresentation.properties.tokenId).toEqual(changedSourceSchema.properties.tokenId);
+  });
+
   it.each(["pt-BR", "en"] as const)("localizes Novita schema metadata only for the exact bundled source in %s", async (locale) => {
     await i18n.changeLanguage(locale);
     const pluginId = "paperclip.novita-sandbox-provider";

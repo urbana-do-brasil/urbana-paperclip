@@ -249,6 +249,60 @@ const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
   key: string;
   fields: Record<string, { sourceDescription: string; key: string }>;
 }> = {
+  modal: {
+    pluginId: "paperclip.modal-sandbox-provider",
+    key: "modal",
+    fields: {
+      appName: {
+        sourceDescription: "Modal App name used as the parent for sandboxes. The plugin calls `modal.apps.fromName(appName, { createIfMissing: true })`, so the App is created on first acquire if it does not already exist.",
+        key: "appName",
+      },
+      image: {
+        sourceDescription: "Container image reference passed to `modal.images.fromRegistry()`, e.g. `python:3.13` or `node:24`. The default `node:24` satisfies the sandbox runtime contract (node, sh, and tar on PATH).",
+        key: "image",
+      },
+      tokenId: {
+        sourceDescription: "Modal token ID. Paste a token or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Required.",
+        key: "tokenId",
+      },
+      tokenSecret: {
+        sourceDescription: "Modal token secret paired with tokenId. Required.",
+        key: "tokenSecret",
+      },
+      environment: {
+        sourceDescription: "Optional Modal environment name. Falls back to the SDK profile default.",
+        key: "environment",
+      },
+      workdir: {
+        sourceDescription: "Remote working directory inside the sandbox.",
+        key: "workdir",
+      },
+      sandboxTimeoutMs: {
+        sourceDescription: "Maximum sandbox lifetime in milliseconds. Must be a positive multiple of 1000 between 1000 and 86400000 (24 hours).",
+        key: "sandboxTimeoutMs",
+      },
+      idleTimeoutMs: {
+        sourceDescription: "Optional idle timeout in milliseconds. When set, Modal terminates the sandbox if no exec is active for this duration. Must be a positive multiple of 1000.",
+        key: "idleTimeoutMs",
+      },
+      execTimeoutMs: {
+        sourceDescription: "Default per-exec timeout in milliseconds when the caller does not provide one. Must be a positive multiple of 1000.",
+        key: "execTimeoutMs",
+      },
+      blockNetwork: {
+        sourceDescription: "Whether to block all egress network access from the sandbox.",
+        key: "blockNetwork",
+      },
+      cidrAllowlist: {
+        sourceDescription: "Optional list of CIDRs the sandbox is allowed to reach. Cannot be combined with blockNetwork.",
+        key: "cidrAllowlist",
+      },
+      reuseLease: {
+        sourceDescription: "When true, the sandbox is detached (not terminated) on release and resumed by id later. Reuse relies on Modal's sandbox lifetime and idle timeout because Modal has no separate pause primitive.",
+        key: "reuseLease",
+      },
+    },
+  },
   daytona: {
     pluginId: "paperclip.daytona-sandbox-provider",
     key: "daytona",

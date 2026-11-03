@@ -3606,3 +3606,9 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - Rodada integrada: 93/93 em quatro arquivos, após corrigir a expectativa do teste de erro 422 para aceitar a moldura localizada e ainda exigir o detalhe externo. Typechecks UI e CLI passaram sequencialmente.
 - O schema Novita usa a mesma prova de origem e fallback externo; o editor mantém conteúdo e IDs. As tarefas agregadoras continuam abertas. Checkpoint: **369/387 tarefas**, 18 caixas abertas incluindo agregadoras.
+
+### Responsáveis, schema Modal e CLI de rotinas — 3.10n, 3.11h13 e 4.3ah
+
+- Popover de responsáveis nos dois modos: IssuesList + locale 69/69; preservados os IDs e corrigida a abertura do botão. Schema Modal: 33/33 e typecheck UI, com identidade e descrição exatas; outros providers permanecem pendentes.
+- CLI routine list/get: 5/5; alerta próprio de webhook localizado. Checkpoint: **372/390 tarefas**, 18 caixas abertas incluindo agregadoras.
+- Rodada integrada posterior: 100/100 em cinco arquivos; typechecks UI/CLI, gates de tokens e fontes e OpenSpec estrito passaram.

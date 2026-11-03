@@ -1295,6 +1295,7 @@
         "saveTrigger": "Salvar gatilho",
         "errors": {
           "draftSave": "Não foi possível salvar o rascunho neste navegador. Mantenha esta página aberta e tente novamente.",
+          "webhookRequired": "Crie o webhook antes de concluir a configuração.",
           "saveTrigger": "Não foi possível salvar o gatilho. Tente novamente.",
           "saveSchedule": "Não foi possível salvar o agendamento.",
           "replaceKey": "Não foi possível trocar a chave.",
@@ -3962,6 +3963,56 @@
       }
     },
     "sandboxProviderConfigFields": {
+      "modal": {
+        "appName": {
+          "name": "Nome do App do Modal",
+          "description": "Nome do App do Modal usado como pai dos sandboxes. O plugin chama `modal.apps.fromName(appName, { createIfMissing: true })`, então o App é criado na primeira aquisição se ainda não existir."
+        },
+        "image": {
+          "name": "Imagem de contêiner",
+          "description": "Referência de imagem de contêiner passada para `modal.images.fromRegistry()`, por exemplo `python:3.13` ou `node:24`. A imagem padrão `node:24` atende ao contrato de runtime do sandbox (node, sh e tar no PATH)."
+        },
+        "tokenId": {
+          "name": "ID do token Modal",
+          "description": "ID do token Modal. Cole um token ou uma referência existente de segredo do Paperclip; os ambientes salvos armazenam valores colados como segredos da organização. Obrigatório."
+        },
+        "tokenSecret": {
+          "name": "Segredo do token Modal",
+          "description": "Segredo do token Modal associado a tokenId. Obrigatório."
+        },
+        "environment": {
+          "name": "Ambiente Modal",
+          "description": "Nome opcional do ambiente Modal. Se omitido, usa o perfil padrão do SDK."
+        },
+        "workdir": {
+          "name": "Diretório de trabalho remoto",
+          "description": "Diretório de trabalho remoto dentro do sandbox."
+        },
+        "sandboxTimeoutMs": {
+          "name": "Duração do sandbox (ms)",
+          "description": "Tempo de vida máximo do sandbox em milissegundos. Deve ser um múltiplo positivo de 1000 entre 1000 e 86400000 (24 horas)."
+        },
+        "idleTimeoutMs": {
+          "name": "Timeout de inatividade (ms)",
+          "description": "Timeout de inatividade opcional em milissegundos. Quando definido, o Modal encerra o sandbox se nenhum exec estiver ativo durante esse período. Deve ser um múltiplo positivo de 1000."
+        },
+        "execTimeoutMs": {
+          "name": "Timeout padrão de exec (ms)",
+          "description": "Timeout padrão por exec, em milissegundos, quando quem faz a chamada não fornece um. Deve ser um múltiplo positivo de 1000."
+        },
+        "blockNetwork": {
+          "name": "Bloquear tráfego de saída da rede",
+          "description": "Define se todo o acesso de saída à rede do sandbox deve ser bloqueado."
+        },
+        "cidrAllowlist": {
+          "name": "Lista de CIDRs permitidos",
+          "description": "Lista opcional de CIDRs que o sandbox pode acessar. Não pode ser combinada com blockNetwork."
+        },
+        "reuseLease": {
+          "name": "Reutilizar sandbox entre execuções",
+          "description": "Quando true, o sandbox é desconectado (não encerrado) ao liberar e retomado por ID depois. A reutilização depende do tempo de vida do sandbox e do timeout de inatividade do Modal, pois o Modal não tem uma operação de pausa separada."
+        }
+      },
       "daytona": {
         "apiKey": {
           "name": "Chave de API",
@@ -10581,6 +10632,7 @@
       "filterByWorkspace": "Filtrar por espaço de trabalho",
       "subTask": "Subtarefa",
       "updated": "Atualizada",
+      "changeResponsibleForTask": "Alterar responsável pela tarefa {{identifier}}",
       "live": "Em execução",
       "liveDescendants_one": "{{count}} em execução abaixo",
       "liveDescendants_other": "{{count}} em execução abaixo",

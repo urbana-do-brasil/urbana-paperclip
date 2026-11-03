@@ -2253,6 +2253,103 @@ describe("IssuesList", () => {
     });
   });
 
+  it("localizes the responsible picker and preserves assignment IDs in both list variants", async () => {
+    const expectedByLocale = {
+      "pt-BR": {
+        assignee: "Responsável",
+        trigger: "Alterar responsável pela tarefa PAP-17",
+        search: "Buscar responsável",
+        searchPlaceholder: "Buscar responsável...",
+        unassigned: "Sem responsável",
+        me: "Eu",
+      },
+      en: {
+        assignee: "Responsible",
+        trigger: "Change responsible for task PAP-17",
+        search: "Search responsible",
+        searchPlaceholder: "Search responsible...",
+        unassigned: "No responsible",
+        me: "Me",
+      },
+    } as const;
+
+    for (const locale of ["pt-BR", "en"] as const) {
+      await i18n.changeLanguage(locale);
+
+      for (const enableStreamlinedUi of [true, false]) {
+        mockInstanceSettingsApi.getExperimental.mockResolvedValue({
+          enableIsolatedWorkspaces: false,
+          enableExternalObjects: false,
+          enableStreamlinedUi,
+        });
+        mockAuthApi.getSession.mockResolvedValue({
+          user: { id: "user-current" },
+          session: null,
+        });
+
+        const listKey = `paperclip:responsible-picker-${locale}-${enableStreamlinedUi ? "streamlined" : "legacy"}`;
+        localStorage.setItem(`${listKey}:company-1:issue-columns`, JSON.stringify(["id", "assignee"]));
+        const onUpdateIssue = vi.fn();
+        const { root } = renderWithQueryClient(
+          <IssuesList
+            issues={[createIssue({ id: "routine-issue-id", identifier: "PAP-17" })]}
+            agents={[{ id: "agent-23", name: "Routine Agent" }]}
+            projects={[]}
+            viewStateKey={listKey}
+            onUpdateIssue={onUpdateIssue}
+          />,
+          container,
+        );
+        const expected = expectedByLocale[locale];
+        await waitForAssertion(() => {
+          const trigger = document.body.querySelector<HTMLButtonElement>(`button[aria-label="${expected.trigger}"]`);
+          expect(trigger?.textContent).toContain(expected.assignee);
+          expect(trigger?.title).toBe(expected.trigger);
+        });
+        await flush();
+        await flush();
+
+        const trigger = document.body.querySelector<HTMLButtonElement>(`button[aria-label="${expected.trigger}"]`)!;
+        act(() => trigger.click());
+        expect(trigger.getAttribute("aria-expanded")).toBe("true");
+        await waitForAssertion(() => {
+          const search = document.body.querySelector<HTMLInputElement>(`input[aria-label="${expected.search}"]`);
+          expect(search?.placeholder).toBe(expected.searchPlaceholder);
+          expect(document.body.textContent).toContain(expected.unassigned);
+          expect(document.body.textContent).toContain(expected.me);
+          expect(document.body.textContent).toContain("Routine Agent");
+        });
+
+        const meOption = Array.from(document.body.querySelectorAll("button")).find(
+          (button) => button.textContent?.trim() === expected.me,
+        )!;
+        act(() => meOption.click());
+        expect(onUpdateIssue).toHaveBeenLastCalledWith("routine-issue-id", {
+          assigneeAgentId: null,
+          assigneeUserId: "user-current",
+        });
+
+        await waitForAssertion(() => {
+          expect(document.body.querySelector(`input[aria-label="${expected.search}"]`)).toBeNull();
+        });
+        act(() => trigger.click());
+        await waitForAssertion(() => {
+          expect(document.body.textContent).toContain("Routine Agent");
+        });
+        const agentOption = Array.from(document.body.querySelectorAll("button")).find(
+          (button) => button.textContent?.includes("Routine Agent"),
+        )!;
+        act(() => agentOption.click());
+        expect(onUpdateIssue).toHaveBeenLastCalledWith("routine-issue-id", {
+          assigneeAgentId: "agent-23",
+          assigneeUserId: null,
+        });
+
+        act(() => root.unmount());
+      }
+    }
+  });
+
   it("preserves stored grouping across refresh when initial assignees are applied", async () => {
     await i18n.changeLanguage("en");
     localStorage.setItem(

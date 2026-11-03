@@ -409,7 +409,7 @@ function TriggerSetup({
         });
       else {
         if (!createdRef.current)
-          throw new Error("Create the webhook before finishing setup.");
+          throw new Error(t("routines.detail.triggers.errors.webhookRequired"));
         await routinesApi.updateTrigger(createdRef.current.id, {
           setupPending: false,
         });
@@ -424,7 +424,7 @@ function TriggerSetup({
       await onRefresh();
       onExit();
     },
-    [routineId, onRefresh, onExit, storagePrefix],
+    [routineId, onRefresh, onExit, storagePrefix, t],
   );
   const { routine: currentRoutine } = useRoutineDetail();
   return (

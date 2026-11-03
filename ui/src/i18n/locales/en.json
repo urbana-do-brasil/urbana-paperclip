@@ -1255,6 +1255,7 @@
         "saveTrigger": "Save trigger",
         "errors": {
           "draftSave": "Couldn’t save your draft in this browser. Keep this page open and try again.",
+          "webhookRequired": "Create the webhook before finishing setup.",
           "saveTrigger": "Couldn’t save the trigger. Please try again.",
           "saveSchedule": "Couldn’t save schedule.",
           "replaceKey": "Couldn’t replace the key.",
@@ -3866,6 +3867,56 @@
       }
     },
     "sandboxProviderConfigFields": {
+      "modal": {
+        "appName": {
+          "name": "Modal App name",
+          "description": "Modal App name used as the parent for sandboxes. The plugin calls `modal.apps.fromName(appName, { createIfMissing: true })`, so the App is created on first acquire if it does not already exist."
+        },
+        "image": {
+          "name": "Container image",
+          "description": "Container image reference passed to `modal.images.fromRegistry()`, e.g. `python:3.13` or `node:24`. The default `node:24` satisfies the sandbox runtime contract (node, sh, and tar on PATH)."
+        },
+        "tokenId": {
+          "name": "Modal token ID",
+          "description": "Modal token ID. Paste a token or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Required."
+        },
+        "tokenSecret": {
+          "name": "Modal token secret",
+          "description": "Modal token secret paired with tokenId. Required."
+        },
+        "environment": {
+          "name": "Modal environment",
+          "description": "Optional Modal environment name. Falls back to the SDK profile default."
+        },
+        "workdir": {
+          "name": "Remote working directory",
+          "description": "Remote working directory inside the sandbox."
+        },
+        "sandboxTimeoutMs": {
+          "name": "Sandbox lifetime (ms)",
+          "description": "Maximum sandbox lifetime in milliseconds. Must be a positive multiple of 1000 between 1000 and 86400000 (24 hours)."
+        },
+        "idleTimeoutMs": {
+          "name": "Idle timeout (ms)",
+          "description": "Optional idle timeout in milliseconds. When set, Modal terminates the sandbox if no exec is active for this duration. Must be a positive multiple of 1000."
+        },
+        "execTimeoutMs": {
+          "name": "Default exec timeout (ms)",
+          "description": "Default per-exec timeout in milliseconds when the caller does not provide one. Must be a positive multiple of 1000."
+        },
+        "blockNetwork": {
+          "name": "Block network egress",
+          "description": "Whether to block all egress network access from the sandbox."
+        },
+        "cidrAllowlist": {
+          "name": "CIDR allowlist",
+          "description": "Optional list of CIDRs the sandbox is allowed to reach. Cannot be combined with blockNetwork."
+        },
+        "reuseLease": {
+          "name": "Reuse sandbox between runs",
+          "description": "When true, the sandbox is detached (not terminated) on release and resumed by id later. Reuse relies on Modal's sandbox lifetime and idle timeout because Modal has no separate pause primitive."
+        }
+      },
       "daytona": {
         "apiKey": {
           "name": "API key",
@@ -10346,6 +10397,7 @@
       "filterByWorkspace": "Filter by workspace",
       "subTask": "Sub-task",
       "updated": "Updated",
+      "changeResponsibleForTask": "Change responsible for task {{identifier}}",
       "live": "Live",
       "liveDescendants_one": "{{count}} live below",
       "liveDescendants_other": "{{count}} live below",

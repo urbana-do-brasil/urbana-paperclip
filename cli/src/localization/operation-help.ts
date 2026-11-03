@@ -267,6 +267,22 @@ const operationHelp: Record<string, CommandHelp> = {
       "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
     },
   },
+  routine: {
+    description: { en: "Routine API operations", "pt-BR": "Operações da API de rotinas" },
+  },
+  "routine list": {
+    description: { en: "List routines", "pt-BR": "Listar rotinas" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--project-id": { en: "Filter by project ID", "pt-BR": "Filtrar pelo ID do projeto" },
+    },
+  },
+  "routine get": {
+    description: { en: "Get a routine", "pt-BR": "Consultar uma rotina" },
+    arguments: { id: { en: "Routine ID", "pt-BR": "ID da rotina" } },
+    options: commonClientOptions,
+  },
   approval: {
     description: { en: "Approval operations", "pt-BR": "Operações de aprovação" },
   },

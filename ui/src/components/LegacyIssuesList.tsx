@@ -733,6 +733,13 @@ export function IssuesList({
   onUpdateIssue,
 }: IssuesListProps) {
   const { t } = useTranslation();
+  const responsibleLabel = t("taskCollection.filters.responsible");
+  const responsibleSearchLabel = t("taskCollection.filters.searchOptions", {
+    label: responsibleLabel.toLocaleLowerCase(),
+  });
+  const responsibleSearchPlaceholder = t("taskCollection.filters.searchOptionsPlaceholder", {
+    label: responsibleLabel.toLocaleLowerCase(),
+  });
   const rootRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -2262,14 +2269,17 @@ export function IssuesList({
                                 >
                                   <PopoverTrigger asChild>
                                     <button
+                                      type="button"
+                                      aria-label={t("taskCollection.rows.changeResponsibleForTask", { identifier: issue.identifier })}
+                                      title={t("taskCollection.rows.changeResponsibleForTask", { identifier: issue.identifier })}
                                       className="flex w-full shrink-0 items-center overflow-hidden rounded-md px-2 py-1 transition-colors hover:bg-accent/50"
-                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                      onClick={(e) => e.stopPropagation()}
                                     >
                                       {issue.assigneeAgentId && agentName(issue.assigneeAgentId) ? (
                                         <AgentIdentity agent={agents!.find((agent) => agent.id === issue.assigneeAgentId)!} size="sm" className="min-w-0" />
                                       ) : issue.assigneeUserId ? (
                                         <Identity
-                                          name={assigneeUserLabel ?? "User"}
+                                          name={assigneeUserLabel ?? t("taskCollection.rows.user")}
                                           avatarUrl={assigneeUserProfile?.image ?? null}
                                           size="sm"
                                           className="min-w-0"
@@ -2279,7 +2289,7 @@ export function IssuesList({
                                           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-muted-foreground/35 bg-muted/30">
                                             <User className="h-3.5 w-3.5" />
                                           </span>
-                                          Assignee
+                                          {responsibleLabel}
                                         </span>
                                       )}
                                     </button>
@@ -2292,13 +2302,16 @@ export function IssuesList({
                                   >
                                     <input
                                       className="mb-1 w-full border-b border-border bg-transparent px-2 py-1.5 text-xs outline-none placeholder:text-muted-foreground/50"
-                                      placeholder="Search responsible..."
+                                      type="search"
+                                      aria-label={responsibleSearchLabel}
+                                      placeholder={responsibleSearchPlaceholder}
                                       value={assigneeSearch}
                                       onChange={(e) => setAssigneeSearch(e.target.value)}
                                       autoFocus
                                     />
                                     <div className="max-h-48 overflow-y-auto overscroll-contain">
                                       <button
+                                        type="button"
                                         className={cn(
                                           "flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-accent/50",
                                           !issue.assigneeAgentId && !issue.assigneeUserId && "bg-accent",
@@ -2309,10 +2322,11 @@ export function IssuesList({
                                           assignIssue(issue.id, null, null);
                                         }}
                                       >
-                                        No responsible
+                                        {t("taskCollection.filters.noResponsible")}
                                       </button>
                                       {currentUserId && (
                                         <button
+                                          type="button"
                                           className={cn(
                                             "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-accent/50",
                                             issue.assigneeUserId === currentUserId && "bg-accent",
@@ -2324,7 +2338,7 @@ export function IssuesList({
                                           }}
                                         >
                                           <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                          <span>Me</span>
+                                          <span>{t("taskCollection.filters.me")}</span>
                                         </button>
                                       )}
                                       {(agents ?? [])
@@ -2334,6 +2348,7 @@ export function IssuesList({
                                         })
                                         .map((agent) => (
                                           <button
+                                            type="button"
                                             key={agent.id}
                                             className={cn(
                                               "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-accent/50",
