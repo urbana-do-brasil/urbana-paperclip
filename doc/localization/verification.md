@@ -3728,3 +3728,12 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - Mensagens próprias localizadas; correção da detecção de commits exclusivos e de remoto homônimo desatualizado. Erros nas verificações Git bloqueiam cleanup sem --force; falha de `git worktree remove` interrompe antes de remover diretório, branch ou instância. Testes com fixtures Git descartáveis preservam stderr externo, dados e contratos; 18 testes direcionados, typecheck CLI e integração worktree/email 12/12 passaram.
 - Checkpoint: **415/434 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Worktree make e contratos auth
+
+- `worktree:make`: mensagens de criação, conflitos e instalação best-effort localizadas; Git e instalador controlados preservam branch, paths, configuração e erros externos. Testes direcionados 19/19; typecheck CLI passou.
+- `auth`: JSON, stderr, métodos, autenticação, rotas e payloads verificados em PT-BR/en, com fixtures locais. Rodada integrada auth/worktree: 13/13. Checkpoint: **417/436 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Navegação do setup e Telegram — 3.9f6e
+
+- Shell de setup e configuração Telegram localizados; comandos, URL do BotFather, token e payload permanecem intactos. Testes focados 52/52; integração com auth/worktree e catálogo 78/78; typechecks UI/CLI passaram. Outros provedores e revisão de flags seguem pendentes em 3.9f6. Checkpoint: **418/437 tarefas**, 19 caixas abertas incluindo agregadoras.

@@ -195,6 +195,43 @@ describe("chat setup and identity-link clipboard actions", () => {
     return endpoint;
   }
 
+  it.each([
+    ["en", "Create Maya in Telegram", "Create a bot with BotFather", "Open BotFather", "Paperclip works with Telegram's default bot privacy mode", "Bot token", "Connect bot", "Connect provider", "Connection setup progress"],
+    ["pt-BR", "Criar Maya no Telegram", "Crie um bot com o BotFather", "Abrir BotFather", "O Paperclip funciona com o modo de privacidade padrão dos bots do Telegram", "Token do bot", "Conectar bot", "Conectar provedor", "Progresso da configuração da conexão"],
+  ])("localizes Telegram setup in %s and preserves the BotFather URL, command, and entered token", async (locale, heading, createDescription, botFatherLabel, privacyIntro, tokenLabel, connectLabel, stepLabel, progressAria) => {
+    await i18n.changeLanguage(locale);
+    const endpoint = await render("telegram");
+    expect(container.querySelector("h1")?.textContent).toBe(heading);
+    expect(container.textContent).toContain(createDescription);
+    expect(container.textContent).toContain(privacyIntro);
+    expect(container.textContent).toContain("/newbot");
+    expect(container.textContent).toContain("/task@bot_username <request>");
+    expect(container.querySelector("aside nav")?.getAttribute("aria-label")).toBe(progressAria);
+    expect(container.querySelector('aside button[aria-current="step"]')?.textContent).toContain(stepLabel);
+
+    await click(botFatherLabel);
+    expect(window.open).toHaveBeenCalledWith("https://t.me/BotFather", "_blank", "noopener,noreferrer");
+
+    const token = "  123456:synthetic-telegram-token  ";
+    const tokenInput = [...container.querySelectorAll("label")]
+      .find((label) => label.textContent?.trim() === tokenLabel)
+      ?.querySelector("input");
+    expect(tokenInput).toBeDefined();
+    expect(tokenInput?.type).toBe("password");
+    flushSync(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(tokenInput, token);
+      tokenInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(tokenInput?.value).toBe(token);
+
+    mocks.setup.mockResolvedValueOnce({ ...endpoint, setup: { ...endpoint.setup!, step: "test" } });
+    await click(connectLabel);
+    expect(mocks.setup).toHaveBeenCalledWith("endpoint-a", {
+      action: "configure",
+      credentials: { botToken: token },
+    });
+  });
+
   it("pages older activity and lets users return after a page fails", async () => {
     mocks.tab = "activity";
     const item = (id: string) => ({ id, kind: "delivery", status: "processed", summary: id, createdAt: "2026-01-01T00:00:00Z" });

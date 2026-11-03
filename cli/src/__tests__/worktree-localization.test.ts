@@ -12,6 +12,7 @@ import {
   worktreeEnsureSeededCommand,
   worktreeInitCommand,
   worktreeListCommand,
+  worktreeMakeCommand,
 } from "../commands/worktree.js";
 import { applyOperationHelpLocalization } from "../localization/operation-help.js";
 import { cliMessage, localizeHelpTitle, parseCliLocale, setCliCommandLineShape, setCliLocale } from "../localization/index.js";
@@ -643,6 +644,87 @@ describe("worktree CLI localization", () => {
       expect(fs.existsSync(instanceRoot)).toBe(true);
       expect(execFileSync("git", ["branch", "--list", branchName], { cwd: repoRoot, encoding: "utf8" }).trim()).toContain(branchName);
       expect(execFileSync("git", ["worktree", "list", "--porcelain"], { cwd: repoRoot, encoding: "utf8" })).toContain(targetPath);
+    }
+  });
+
+  it("localizes worktree:make lifecycle and best-effort install status while preserving installer diagnostics", async () => {
+    let activeHome = "";
+    vi.spyOn(os, "homedir").mockImplementation(() => activeHome);
+
+    for (const locale of ["pt-BR", "en"] as const) {
+      const repoRoot = path.join(tempRoot, "make", locale, "repo");
+      activeHome = path.join(tempRoot, "make", locale, "home");
+      const instanceHome = path.join(tempRoot, "make", locale, "instances-home");
+      const worktreeName = "paperclip-make-fixture";
+      const targetPath = path.join(activeHome, worktreeName);
+      const instanceId = `make-${locale.toLowerCase()}`;
+      const installerPath = path.join(tempRoot, `fixture-pnpm-${locale.toLowerCase()}`);
+
+      fs.mkdirSync(repoRoot, { recursive: true });
+      fs.mkdirSync(activeHome, { recursive: true });
+      execFileSync("git", ["init", "--initial-branch=main"], { cwd: repoRoot, stdio: "ignore" });
+      execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: repoRoot });
+      execFileSync("git", ["config", "user.name", "Paperclip Test"], { cwd: repoRoot });
+      fs.writeFileSync(path.join(repoRoot, "README.md"), "worktree make fixture\n");
+      fs.writeFileSync(path.join(repoRoot, "package.json"), JSON.stringify({ name: "make-fixture", version: "1.0.0" }, null, 2));
+      execFileSync("git", ["add", "README.md", "package.json"], { cwd: repoRoot });
+      execFileSync("git", ["commit", "-m", "fixture"], { cwd: repoRoot, stdio: "ignore" });
+      fs.writeFileSync(installerPath, "#!/usr/bin/env node\nprocess.stderr.write('fixture installer failure\\n');\nprocess.exit(1);\n");
+      fs.chmodSync(installerPath, 0o755);
+      process.chdir(repoRoot);
+      setCliLocale(locale);
+      process.env.npm_execpath = installerPath;
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      stderrLogSpy.mockClear();
+      stderrWriteSpy.mockClear();
+
+      await worktreeMakeCommand("make-fixture", {
+        seed: false,
+        home: instanceHome,
+        instance: instanceId,
+      });
+      const output = [
+        ...stdoutLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stderrLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stderrWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+      ].join("\n");
+
+      expect(output).toContain(locale === "en" ? `Created git worktree at ${targetPath}.` : `Worktree do Git criada em ${targetPath}.`);
+      expect(output).toContain(locale === "en"
+        ? "Failed to install dependencies (continuing anyway)."
+        : "Falha ao instalar dependências (continuando mesmo assim).");
+      expect(output).toContain("fixture installer failure");
+      expect(output).toContain(locale === "en" ? "Repo config:" : "Configuração do repositório:");
+      expect(output).toContain(locale === "en" ? "Worktree ready." : "Worktree pronta.");
+      expect(fs.existsSync(path.join(targetPath, ".paperclip", "config.json"))).toBe(true);
+      expect(fs.existsSync(path.join(targetPath, ".paperclip", ".env"))).toBe(true);
+      expect(execFileSync("git", ["branch", "--list", worktreeName], { cwd: repoRoot, encoding: "utf8" }).trim()).toBe(`+ ${worktreeName}`);
+
+      let existingTargetError = "";
+      try {
+        await worktreeMakeCommand("make-fixture", {
+          seed: false,
+          home: instanceHome,
+          instance: instanceId,
+        });
+      } catch (error) {
+        existingTargetError = error instanceof Error ? error.message : String(error);
+      }
+      expect(existingTargetError).toBe(locale === "en"
+        ? `Target path already exists: ${targetPath}`
+        : `O caminho de destino já existe: ${targetPath}`);
+
+      let invalidNameError = "";
+      try {
+        await worktreeMakeCommand("invalid/name", { seed: false, home: instanceHome });
+      } catch (error) {
+        invalidNameError = error instanceof Error ? error.message : String(error);
+      }
+      expect(invalidNameError).toBe(locale === "en"
+        ? "Worktree name must contain only letters, numbers, dots, underscores, or dashes."
+        : "O nome da worktree deve conter apenas letras, números, pontos, sublinhados ou hífens.");
     }
   });
 });

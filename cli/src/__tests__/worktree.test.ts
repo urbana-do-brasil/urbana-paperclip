@@ -66,6 +66,7 @@ import {
   rewriteLocalUrlPort,
   sanitizeWorktreeInstanceId,
 } from "../commands/worktree-lib.js";
+import { getCliLocale, setCliLocale } from "../localization/index.js";
 import type { PaperclipConfig } from "../config/schema.js";
 import {
   EMBEDDED_POSTGRES_TEST_TIMEOUT_MS,
@@ -341,9 +342,15 @@ describe("worktree helpers", () => {
   });
 
   it("rejects worktree:make names that are not safe directory/branch names", () => {
-    expect(() => resolveWorktreeMakeTargetPath("paperclip/pr-432")).toThrow(
-      "Worktree name must contain only letters, numbers, dots, underscores, or dashes.",
-    );
+    const previousLocale = getCliLocale();
+    setCliLocale("en");
+    try {
+      expect(() => resolveWorktreeMakeTargetPath("paperclip/pr-432")).toThrow(
+        "Worktree name must contain only letters, numbers, dots, underscores, or dashes.",
+      );
+    } finally {
+      setCliLocale(previousLocale);
+    }
   });
 
   it("reuses the current pnpm executable for worktree dependency installation", () => {

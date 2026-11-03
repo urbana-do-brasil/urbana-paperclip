@@ -43,6 +43,7 @@ import { useNavigate, useSearchParams } from "@/lib/router";
 import { queryKeys } from "@/lib/queryKeys";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { useCopyAction } from "@/lib/use-copy-action";
+import { useTranslation } from "@/i18n";
 import { isAgentStatusInvokable, slackAppConfigurationSchema, type SlackAppConfiguration } from "@paperclipai/shared";
 import { sanitizedSetupErrorMessage } from "./chat-setup-error";
 import {
@@ -110,18 +111,22 @@ export function ChatConnectionPurpose({ provider, onChat, onTools }: {
   onChat: () => void;
   onTools: () => void;
 }) {
+  const { t } = useTranslation();
   const { setBreadcrumbs } = useBreadcrumbs();
   useEffect(() => {
-    setBreadcrumbs([{ label: "Connectors", href: "/apps" }, { label: "Choose connection" }]);
+    setBreadcrumbs([
+      { label: t("apps.chatEndpointSetup.breadcrumbs.connectors"), href: "/apps" },
+      { label: t("apps.chatEndpointSetup.breadcrumbs.chooseConnection") },
+    ]);
     return () => setBreadcrumbs([]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
   return (
       <div className="max-w-2xl space-y-6">
         <ChatSetupNavigation labels={provider === "slack" ? ["Choose agent", "App configuration access token", "Install Slack app", "Send a message"] : undefined} step={0} availableStep={0} onSelect={onChat} />
         <div>
-          <h1 className="text-xl font-bold">Choose how to connect</h1>
+          <h1 className="text-xl font-bold">{t("apps.chatEndpointSetup.purpose.heading")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            What should this {providerNames[provider]} connection do?
+            {t("apps.chatEndpointSetup.purpose.question", { provider: providerNames[provider] })}
           </p>
         </div>
         <div className="grid gap-3">
@@ -133,11 +138,10 @@ export function ChatConnectionPurpose({ provider, onChat, onTools }: {
             <AgentAvatar size={48} />
             <span>
               <span className="block text-sm font-semibold">
-                Chat with an agent
+                {t("apps.chatEndpointSetup.purpose.chatTitle")}
               </span>
               <span className="mt-1 block text-sm text-muted-foreground">
-                People in {providerNames[provider]} can start and continue
-                Paperclip tasks.
+                {t("apps.chatEndpointSetup.purpose.chatDescription", { provider: providerNames[provider] })}
               </span>
             </span>
           </button>
@@ -151,11 +155,10 @@ export function ChatConnectionPurpose({ provider, onChat, onTools }: {
             </span>
             <span>
               <span className="block text-sm font-semibold">
-                Use this connection as an agent tool
+                {t("apps.chatEndpointSetup.purpose.toolTitle")}
               </span>
               <span className="mt-1 block text-sm text-muted-foreground">
-                Let agents use {providerNames[provider]} actions and data while
-                they work.
+                {t("apps.chatEndpointSetup.purpose.toolDescription", { provider: providerNames[provider] })}
               </span>
             </span>
           </button>
@@ -177,6 +180,7 @@ function ChatSdkEndpointSetup() {
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const { pushToast } = useToast();
+  const { t } = useTranslation();
   const provider = isProvider(params.get("provider"))
     ? (params.get("provider") as ChatProvider)
     : null;
@@ -200,11 +204,11 @@ function ChatSdkEndpointSetup() {
 
   useEffect(() => {
     setBreadcrumbs([
-      { label: "Connectors", href: "/apps" },
-      { label: "Connect chat" },
+      { label: t("apps.chatEndpointSetup.breadcrumbs.connectors"), href: "/apps" },
+      { label: t("apps.chatEndpointSetup.breadcrumbs.connectChat") },
     ]);
     return () => setBreadcrumbs([]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
 
   const agentsQuery = useQuery({
     queryKey: ["chat-endpoint-setup-agents", selectedCompanyId],
@@ -496,13 +500,13 @@ function ChatSdkEndpointSetup() {
   if (!provider)
     return (
       <p className="text-sm text-destructive">
-        This chat provider is not supported.
+        {t("apps.chatEndpointSetup.unsupportedProvider")}
       </p>
     );
   if (!selectedCompanyId)
     return (
       <p className="text-sm text-muted-foreground">
-        Select an organization to connect chat.
+        {t("apps.chatEndpointSetup.selectOrganization")}
       </p>
     );
 
@@ -524,21 +528,20 @@ function ChatSdkEndpointSetup() {
           <>
             <div>
               <h1 className="text-xl font-bold">
-                Which agent do you want to chat with?
+                {t("apps.chatEndpointSetup.agent.heading")}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                This agent is permanent for the connection. Connect another
-                channel to represent a different agent.
+                {t("apps.chatEndpointSetup.agent.description")}
               </p>
             </div>
             {endpoint ? (
-              <Input aria-label="Assigned agent" value={endpoint.assignedAgentName ?? selectedAgent?.name ?? agentId} readOnly />
+              <Input aria-label={t("apps.chatEndpointSetup.agent.assignedAgent")} value={endpoint.assignedAgentName ?? selectedAgent?.name ?? agentId} readOnly />
             ) : <AgentSelect
               agents={activeAgents}
               value={agentId}
               onChange={setAgentId}
-              placeholder="Choose an active agent"
-              emptyMessage="No active agents are available."
+              placeholder={t("apps.chatEndpointSetup.agent.chooseActive")}
+              emptyMessage={t("apps.chatEndpointSetup.agent.noneAvailable")}
             />}
             {isSlack && (selectedAgent || endpoint) && <SlackSetupAdvanced>
               <SlackAppDetails value={slackDetails} readOnly={!slackDetailsEditable || createEndpoint.isPending}
@@ -555,7 +558,7 @@ function ChatSdkEndpointSetup() {
                 {createEndpoint.isPending && (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 )}
-                Continue
+                {t("apps.chatEndpointSetup.agent.continue")}
               </Button>
             </SetupWizardFooter>
           </>
@@ -662,7 +665,7 @@ function ChatSdkEndpointSetup() {
         )}
         {step !== 0 && !isSlack && <div className="flex justify-start">
           <Button className="text-muted-foreground" variant="ghost" onClick={() => navigate("/apps")}>
-            Save &amp; exit
+            {t("common.saveAndExit")}
           </Button>
         </div>}
       </div>
@@ -712,6 +715,7 @@ function ProviderConnectStep({
     values?: Record<string, string>,
   ) => void;
 }) {
+  const { t } = useTranslation();
   const { pushToast } = useToast();
   const navigate = useNavigate();
   const slackBotToken = (credentials.botToken ?? "").trim();
@@ -969,40 +973,37 @@ function ProviderConnectStep({
     return (
       <div className="space-y-5">
         <div>
-          <h1 className="text-xl font-bold">Create {agentName} in Telegram</h1>
+          <h1 className="text-xl font-bold">{t("apps.chatEndpointSetup.telegram.heading", { agent: agentName })}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {repairing
-              ? "Reconnect verifies this same BotFather bot and automatically refreshes its Paperclip webhook and command menu. It does not recreate the bot or change its chat memberships. Leave the token blank to reuse the saved credential."
-              : "Create a bot with BotFather, then paste the token it gives you."}
+              ? t("apps.chatEndpointSetup.telegram.reconnectDescription")
+              : t("apps.chatEndpointSetup.telegram.createDescription")}
           </p>
         </div>
         <ol className="list-decimal space-y-2 pl-5 text-sm">
           <li>
-            Open BotFather and send <code>/newbot</code>.
+            {t("apps.chatEndpointSetup.telegram.botFatherInstruction")} <code>/newbot</code>.
           </li>
-          <li>Enter the bot display name.</li>
+          <li>{t("apps.chatEndpointSetup.telegram.displayNameInstruction")}</li>
           <li>
-            Choose an available username ending in <code>bot</code>.
+            {t("apps.chatEndpointSetup.telegram.usernameInstruction")} <code>bot</code>.
           </li>
         </ol>
         <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-          Paperclip works with Telegram&apos;s default bot privacy mode and
-          registers its command menu automatically. In a group, ordinary
-          mentions are not delivered to bots: start or continue work with{" "}
-          <code>/task@bot_username &lt;request&gt;</code>, or reply directly to
-          a message from the bot.
+          {t("apps.chatEndpointSetup.telegram.privacyNoteBeforeCommand")} {" "}
+          <code>/task@bot_username &lt;request&gt;</code>
+          {t("apps.chatEndpointSetup.telegram.privacyNoteAfterCommand")}
         </p>
         <Button
           variant="outline"
           onClick={() => openProviderSetup("https://t.me/BotFather")}
         >
-          Open BotFather <ExternalLink />
+          {t("apps.chatEndpointSetup.telegram.openBotFather")} <ExternalLink />
         </Button>
-        {field("botToken", "Bot token")}
+        {field("botToken", t("apps.chatEndpointSetup.telegram.botToken"))}
         {(!endpoint.setup?.webhookUrl || automaticSlack && !endpoint.setup?.slackOAuthCallbackUri?.startsWith("https://")) && (
           <p className="text-sm text-destructive">
-            Configure a public HTTPS URL for this Paperclip instance before
-            connecting Telegram.
+            {t("apps.chatEndpointSetup.telegram.httpsPrerequisite")}
           </p>
         )}
         <Button
@@ -1016,7 +1017,7 @@ function ProviderConnectStep({
           }
         >
           {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-          {repairing ? "Reconnect bot" : "Connect bot"}
+          {repairing ? t("apps.chatEndpointSetup.telegram.reconnect") : t("apps.chatEndpointSetup.telegram.connect")}
         </Button>
       </div>
     );

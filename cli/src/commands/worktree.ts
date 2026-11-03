@@ -300,12 +300,10 @@ const WORKTREE_NAME_PREFIX = "paperclip-";
 function resolveWorktreeMakeName(name: string): string {
   const value = nonEmpty(name);
   if (!value) {
-    throw new Error("Worktree name is required.");
+    throw new Error(worktreeOperationMessage("worktreeNameRequired"));
   }
   if (!/^[A-Za-z0-9._-]+$/.test(value)) {
-    throw new Error(
-      "Worktree name must contain only letters, numbers, dots, underscores, or dashes.",
-    );
+    throw new Error(worktreeOperationMessage("invalidWorktreeName"));
   }
   return value.startsWith(WORKTREE_NAME_PREFIX) ? value : `${WORKTREE_NAME_PREFIX}${value}`;
 }
@@ -2656,7 +2654,7 @@ export async function worktreeMakeCommand(nameArg: string, opts: WorktreeMakeOpt
   const sourceConfigPath = resolveSourceConfigPath(opts);
   const targetPath = resolveWorktreeMakeTargetPath(name);
   if (existsSync(targetPath)) {
-    throw new Error(`Target path already exists: ${targetPath}`);
+    throw new Error(worktreeOperationMessage("worktreeMakeTargetExists", { targetPath }));
   }
 
   mkdirSync(path.dirname(targetPath), { recursive: true });
@@ -2668,9 +2666,10 @@ export async function worktreeMakeCommand(nameArg: string, opts: WorktreeMakeOpt
         stdio: ["ignore", "pipe", "pipe"],
       });
     } catch (error) {
-      throw new Error(
-        `Failed to fetch from remote "${remote}": ${extractExecSyncErrorMessage(error) ?? String(error)}`,
-      );
+      throw new Error(worktreeOperationMessage("worktreeMakeFetchFailed", {
+        remote,
+        detail: extractExecSyncErrorMessage(error) ?? String(error),
+      }));
     }
   }
 
@@ -2682,15 +2681,15 @@ export async function worktreeMakeCommand(nameArg: string, opts: WorktreeMakeOpt
   });
 
   const spinner = p.spinner();
-  spinner.start(`Creating git worktree at ${targetPath}...`);
+  spinner.start(worktreeOperationMessage("worktreeMakeStarting", { targetPath }));
   try {
     execFileSync("git", worktreeArgs, {
       cwd: sourceCwd,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    spinner.stop(`Created git worktree at ${targetPath}.`);
+    spinner.stop(worktreeOperationMessage("worktreeMakeCreated", { targetPath }));
   } catch (error) {
-    spinner.stop(pc.red("Failed to create git worktree."));
+    spinner.stop(pc.red(worktreeOperationMessage("worktreeMakeFailed")));
     throw new Error(extractExecSyncErrorMessage(error) ?? String(error));
   }
 
@@ -2732,16 +2731,16 @@ export function resolvePnpmInstallInvocation(
 
 function installDependenciesBestEffort(targetPath: string): void {
   const installSpinner = p.spinner();
-  installSpinner.start("Installing dependencies...");
+  installSpinner.start(worktreeOperationMessage("worktreeInstallStarting"));
   const pnpm = resolvePnpmInstallInvocation();
   try {
     execFileSync(pnpm.command, [...pnpm.argsPrefix, "install"], {
       cwd: targetPath,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    installSpinner.stop("Installed dependencies.");
+    installSpinner.stop(worktreeOperationMessage("worktreeInstallComplete"));
   } catch (error) {
-    installSpinner.stop(pc.yellow("Failed to install dependencies (continuing anyway)."));
+    installSpinner.stop(pc.yellow(worktreeOperationMessage("worktreeInstallFailed")));
     p.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
   }
 }

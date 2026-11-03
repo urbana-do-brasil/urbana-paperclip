@@ -9670,6 +9670,52 @@
       "loadError": "Não foi possível carregar as ferramentas deste app.",
       "retry": "Tentar novamente"
     },
+    "chatEndpointSetup": {
+      "breadcrumbs": {
+        "connectors": "Conectores",
+        "chooseConnection": "Escolher conexão",
+        "connectChat": "Conectar chat"
+      },
+      "progressAria": "Progresso da configuração da conexão",
+      "steps": {
+        "chooseAgent": "Escolher agente",
+        "connectProvider": "Conectar provedor",
+        "tryIt": "Testar"
+      },
+      "purpose": {
+        "heading": "Escolha como se conectar",
+        "question": "O que esta conexão com {{provider}} deve fazer?",
+        "chatTitle": "Conversar com um agente",
+        "chatDescription": "As pessoas no {{provider}} podem iniciar e continuar tarefas do Paperclip.",
+        "toolTitle": "Usar esta conexão como ferramenta de agente",
+        "toolDescription": "Permita que os agentes usem ações e dados do {{provider}} enquanto trabalham."
+      },
+      "unsupportedProvider": "Este provedor de chat não é compatível.",
+      "selectOrganization": "Selecione uma organização para conectar o chat.",
+      "agent": {
+        "heading": "Com qual agente você quer conversar?",
+        "description": "Este agente fica vinculado permanentemente à conexão. Conecte outro canal para representar um agente diferente.",
+        "assignedAgent": "Agente atribuído",
+        "chooseActive": "Escolha um agente ativo",
+        "noneAvailable": "Não há agentes ativos disponíveis.",
+        "continue": "Continuar"
+      },
+      "telegram": {
+        "heading": "Criar {{agent}} no Telegram",
+        "reconnectDescription": "A reconexão verifica este mesmo bot do BotFather e atualiza automaticamente o webhook e o menu de comandos do Paperclip. Ela não recria o bot nem altera os chats dos quais ele participa. Deixe o token em branco para reutilizar a credencial salva.",
+        "createDescription": "Crie um bot com o BotFather e cole o token fornecido.",
+        "botFatherInstruction": "Abra o BotFather e envie",
+        "displayNameInstruction": "Informe o nome de exibição do bot.",
+        "usernameInstruction": "Escolha um nome de usuário disponível que termine em",
+        "privacyNoteBeforeCommand": "O Paperclip funciona com o modo de privacidade padrão dos bots do Telegram e registra o menu de comandos automaticamente. Em um grupo, menções comuns não chegam aos bots: inicie ou continue o trabalho com",
+        "privacyNoteAfterCommand": ", ou responda diretamente a uma mensagem do bot.",
+        "openBotFather": "Abrir BotFather",
+        "botToken": "Token do bot",
+        "httpsPrerequisite": "Configure uma URL HTTPS pública para esta instância do Paperclip antes de conectar o Telegram.",
+        "reconnect": "Reconectar bot",
+        "connect": "Conectar bot"
+      }
+    },
     "chatEndpointDetail": {
       "tabs": {
         "settings": "Configurações",
