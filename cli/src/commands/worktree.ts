@@ -105,7 +105,7 @@ import {
   type PlannedIssueInsert,
 } from "./worktree-merge-history-lib.js";
 import { detectGitWorkspaceInfo } from "./git-workspace.js";
-import { worktreeListMarkerLabels } from "../localization/worktree-operations.js";
+import { worktreeListMarkerLabels, worktreeOperationMessage } from "../localization/worktree-operations.js";
 
 type WorktreeInitOptions = {
   name?: string;
@@ -284,14 +284,14 @@ function formatSeededWorktreeExecutionQuarantineSummary(
   summary: SeededWorktreeExecutionQuarantineSummary,
 ): string {
   return [
-    `disabled timer heartbeats: ${summary.disabledTimerHeartbeats}`,
-    `reset running agents: ${summary.resetRunningAgents}`,
-    `quarantined in-progress issues: ${summary.quarantinedInProgressIssues}`,
-    `unassigned todo issues: ${summary.unassignedTodoIssues}`,
-    `unassigned review issues: ${summary.unassignedReviewIssues}`,
-    `stopped project workspace runtimes: ${summary.stoppedProjectWorkspaceRuntimes}`,
-    `stopped execution workspace runtimes: ${summary.stoppedExecutionWorkspaceRuntimes}`,
-    `stopped runtime services: ${summary.stoppedRuntimeServices}`,
+    worktreeOperationMessage("disabledTimerHeartbeats", { count: summary.disabledTimerHeartbeats }),
+    worktreeOperationMessage("resetRunningAgents", { count: summary.resetRunningAgents }),
+    worktreeOperationMessage("quarantinedInProgressIssues", { count: summary.quarantinedInProgressIssues }),
+    worktreeOperationMessage("unassignedTodoIssues", { count: summary.unassignedTodoIssues }),
+    worktreeOperationMessage("unassignedReviewIssues", { count: summary.unassignedReviewIssues }),
+    worktreeOperationMessage("stoppedProjectWorkspaceRuntimes", { count: summary.stoppedProjectWorkspaceRuntimes }),
+    worktreeOperationMessage("stoppedExecutionWorkspaceRuntimes", { count: summary.stoppedExecutionWorkspaceRuntimes }),
+    worktreeOperationMessage("stoppedRuntimeServices", { count: summary.stoppedRuntimeServices }),
   ].join(", ");
 }
 
@@ -2415,7 +2415,7 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
   );
   const seedMode = opts.seedMode ?? "minimal";
   if (!isWorktreeSeedMode(seedMode)) {
-    throw new Error(`Unsupported seed mode "${seedMode}". Expected one of: minimal, full.`);
+    throw new Error(worktreeOperationMessage("invalidSeedMode", { seedMode }));
   }
   const instanceId = sanitizeWorktreeInstanceId(opts.instance ?? worktreeName);
   const paths = resolveWorktreeLocalPaths({
@@ -2431,9 +2431,10 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
   const sourceConfig = existsSync(sourceConfigPath) ? readConfig(sourceConfigPath) : null;
 
   if ((existsSync(paths.configPath) || existsSync(paths.instanceRoot)) && !opts.force) {
-    throw new Error(
-      `Worktree config already exists at ${paths.configPath} or instance data exists at ${paths.instanceRoot}. Re-run with --force to replace it.`,
-    );
+    throw new Error(worktreeOperationMessage("configAlreadyExists", {
+      configPath: paths.configPath,
+      instanceRoot: paths.instanceRoot,
+    }));
   }
 
   if (opts.force) {
@@ -2533,12 +2534,10 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
   let reboundWorkspaceSummary: SeedWorktreeDatabaseResult["reboundWorkspaces"] = [];
   if (!opts.empty && opts.seed !== false) {
     if (!sourceConfig) {
-      throw new Error(
-        `Cannot seed worktree database because source config was not found at ${sourceConfigPath}. Use --no-seed or provide --from-config.`,
-      );
+      throw new Error(worktreeOperationMessage("missingSourceConfig", { sourceConfigPath }));
     }
     const spinner = p.spinner();
-    spinner.start(`Seeding isolated worktree database from source instance (${seedMode})...`);
+    spinner.start(worktreeOperationMessage("seedStarting", { seedMode }));
     const markers = resolveWorktreeSeedMarkerPaths(paths.configPath);
     const releaseSeedLock = await acquireWorktreeSeedLock(markers.lock);
     try {
@@ -2557,48 +2556,48 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
       seedExecutionQuarantineSummary = seeded.executionQuarantine;
       pausedScheduledRoutineCount = seeded.pausedScheduledRoutines;
       reboundWorkspaceSummary = seeded.reboundWorkspaces;
-      spinner.stop(`Seeded isolated worktree database (${seedMode}).`);
+      spinner.stop(worktreeOperationMessage("seedComplete", { seedMode }));
     } catch (error) {
-      spinner.stop(pc.red("Failed to seed worktree database."));
+      spinner.stop(pc.red(worktreeOperationMessage("seedFailed")));
       throw error;
     } finally {
       await releaseSeedLock();
     }
   }
 
-  p.log.message(pc.dim(`Repo config: ${paths.configPath}`));
-  p.log.message(pc.dim(`Repo env: ${paths.envPath}`));
-  p.log.message(pc.dim(`Isolated home: ${paths.homeDir}`));
-  p.log.message(pc.dim(`Instance: ${paths.instanceId}`));
-  p.log.message(pc.dim(`Worktree badge: ${branding.name} (${branding.color})`));
-  p.log.message(pc.dim(`Server port: ${serverPort} | DB port: ${databasePort}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("repoConfig")} ${paths.configPath}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("repoEnv")} ${paths.envPath}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("isolatedHome")} ${paths.homeDir}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("instance")} ${paths.instanceId}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("worktreeBadge")} ${branding.name} (${branding.color})`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("serverPort")} ${serverPort} | ${worktreeOperationMessage("dbPort")} ${databasePort}`));
   if (copiedGitHooks?.copied) {
     p.log.message(
-      pc.dim(`Mirrored git hooks: ${copiedGitHooks.sourceHooksPath} -> ${copiedGitHooks.targetHooksPath}`),
+      pc.dim(`${worktreeOperationMessage("mirroredGitHooks")} ${copiedGitHooks.sourceHooksPath} -> ${copiedGitHooks.targetHooksPath}`),
     );
   }
   if (seedSummary) {
-    p.log.message(pc.dim(`Seed mode: ${seedMode}`));
-    p.log.message(pc.dim(`Seed snapshot: ${seedSummary}`));
+    p.log.message(pc.dim(`${worktreeOperationMessage("seedMode")} ${seedMode}`));
+    p.log.message(pc.dim(`${worktreeOperationMessage("seedSnapshot")} ${seedSummary}`));
     if (opts.preserveLiveWork) {
-      p.log.warning("Preserved copied live work; this worktree instance may auto-run source-instance assignments.");
+      p.log.warning(worktreeOperationMessage("preservedLiveWork"));
     } else if (seedExecutionQuarantineSummary) {
       p.log.message(
-        pc.dim(`Seed execution quarantine: ${formatSeededWorktreeExecutionQuarantineSummary(seedExecutionQuarantineSummary)}`),
+        pc.dim(`${worktreeOperationMessage("seedExecutionQuarantine")} ${formatSeededWorktreeExecutionQuarantineSummary(seedExecutionQuarantineSummary)}`),
       );
     }
     if (pausedScheduledRoutineCount != null) {
-      p.log.message(pc.dim(`Paused scheduled routines: ${pausedScheduledRoutineCount}`));
+      p.log.message(pc.dim(`${worktreeOperationMessage("pausedScheduledRoutines")} ${pausedScheduledRoutineCount}`));
     }
     for (const rebound of reboundWorkspaceSummary) {
       p.log.message(
-        pc.dim(`Rebound workspace ${rebound.name}: ${rebound.fromCwd} -> ${rebound.toCwd}`),
+        pc.dim(worktreeOperationMessage("reboundWorkspace", rebound)),
       );
     }
   }
   p.outro(
     pc.green(
-      `Worktree ready. Run Paperclip inside this repo and the CLI/server will use ${paths.instanceId} automatically.`,
+      worktreeOperationMessage("worktreeReady", { instanceId: paths.instanceId }),
     ),
   );
 }

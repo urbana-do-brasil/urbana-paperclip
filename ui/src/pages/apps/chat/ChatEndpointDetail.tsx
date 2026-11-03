@@ -827,6 +827,7 @@ function Conversations({
   endpointId: string;
   provider: ChatProvider;
 }) {
+  const { t } = useTranslation();
   const query = useQuery({
     queryKey: queryKeys.chatEndpoints.conversations(endpointId),
     queryFn: () => chatEndpointsApi.listConversations(endpointId),
@@ -834,10 +835,10 @@ function Conversations({
   });
   return (
     <section className="space-y-4">
-      {query.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading conversations…</p> : query.isError ? (
+      {query.isPending ? <p role="status" className="text-sm text-muted-foreground">{t("apps.chatEndpointDetail.conversations.loading")}</p> : query.isError ? (
         <div className="space-y-3">
-          <p role="alert" className="text-sm text-destructive">Conversations could not be loaded.</p>
-          <Button variant="outline" onClick={() => void query.refetch()}>Try again</Button>
+          <p role="alert" className="text-sm text-destructive">{t("apps.chatEndpointDetail.conversations.loadFailed")}</p>
+          <Button variant="outline" onClick={() => void query.refetch()}>{t("apps.chatEndpointDetail.tryAgain")}</Button>
         </div>
       ) : <ChatConversationList rows={query.data} provider={provider} />}
     </section>

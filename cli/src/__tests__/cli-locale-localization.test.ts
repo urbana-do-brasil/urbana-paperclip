@@ -7,6 +7,7 @@ import { cliMessageCatalog } from "../localization/index.js";
 import { skillOperationMessageCatalog } from "../localization/skill-operations.js";
 import { feedbackOperationMessageCatalog } from "../localization/feedback-operations.js";
 import { pluginOperationMessageCatalog } from "../localization/plugin-operations.js";
+import { worktreeOperationMessageCatalog } from "../localization/worktree-operations.js";
 import { validateMessageCatalogPair } from "../localization/catalog-validation.js";
 
 const catalogs = [
@@ -16,6 +17,7 @@ const catalogs = [
   ["skill operations", skillOperationMessageCatalog],
   ["feedback operations", feedbackOperationMessageCatalog],
   ["plugin operations", pluginOperationMessageCatalog],
+  ["worktree operations", worktreeOperationMessageCatalog],
 ] as const;
 
 // These six company-import messages accept locale-specific grammar atoms from

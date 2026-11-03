@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   registerWorktreeCommands,
   worktreeEnvCommand,
+  worktreeInitCommand,
   worktreeListCommand,
 } from "../commands/worktree.js";
 import { applyOperationHelpLocalization } from "../localization/operation-help.js";
@@ -15,6 +16,7 @@ import { cliMessage, localizeHelpTitle, parseCliLocale, setCliCommandLineShape, 
 
 const ORIGINAL_ARGV = process.argv;
 const ORIGINAL_CWD = process.cwd();
+const ORIGINAL_ENV = { ...process.env };
 
 function makeProgram(locale: SupportedLocale): Command {
   setCliLocale(locale);
@@ -52,6 +54,10 @@ describe("worktree CLI localization", () => {
   let stderrWriteSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    process.env = { ...ORIGINAL_ENV };
+    for (const key of Object.keys(process.env)) {
+      if (key.startsWith("PAPERCLIP_")) delete process.env[key];
+    }
     tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-worktree-l10n-"));
     process.argv = ["node", "paperclipai"];
     stdoutLogSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
@@ -63,6 +69,7 @@ describe("worktree CLI localization", () => {
   afterEach(() => {
     process.chdir(ORIGINAL_CWD);
     process.argv = ORIGINAL_ARGV;
+    process.env = { ...ORIGINAL_ENV };
     setCliCommandLineShape(undefined);
     setCliLocale("pt-BR");
     vi.restoreAllMocks();
@@ -213,5 +220,118 @@ describe("worktree CLI localization", () => {
     expect(errors[0]).toContain("fatal: not a git repository");
     expect(stdoutLogSpy).not.toHaveBeenCalled();
     expect(stdoutWriteSpy).not.toHaveBeenCalled();
+  });
+
+  it("localizes the empty-init lifecycle while preserving generated config, env values, and ports", async () => {
+    const outputs: string[] = [];
+    for (const locale of ["pt-BR", "en"] as const) {
+      const repoRoot = path.join(tempRoot, locale);
+      const home = path.join(tempRoot, "homes", locale);
+      const instanceId = `empty-${locale.toLowerCase()}`;
+      fs.mkdirSync(repoRoot, { recursive: true });
+      execFileSync("git", ["init", "--initial-branch=feature-empty"], { cwd: repoRoot, stdio: "ignore" });
+      process.chdir(repoRoot);
+      setCliLocale(locale);
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      await worktreeInitCommand({
+        name: "empty-fixture",
+        instance: instanceId,
+        home,
+        fromConfig: path.join(tempRoot, "missing-source.json"),
+        empty: true,
+      });
+
+      const output = [
+        ...stdoutLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+      ].join("\n");
+      outputs.push(output);
+      expect(output).toContain(locale === "en" ? "Repo config:" : "Configuração do repositório:");
+      expect(output).toContain(locale === "en" ? "Repo env:" : "Arquivo env do repositório:");
+      expect(output).toContain(locale === "en" ? "Isolated home:" : "Diretório isolado:");
+      expect(output).toContain(locale === "en" ? "Worktree ready." : "Worktree pronta.");
+
+      const configPath = path.join(repoRoot, ".paperclip", "config.json");
+      const envPath = path.join(repoRoot, ".paperclip", ".env");
+      const config = JSON.parse(fs.readFileSync(configPath, "utf8")) as {
+        server: { port: number };
+        database: { embeddedPostgresPort: number };
+      };
+      const envContents = fs.readFileSync(envPath, "utf8");
+      expect(output).toContain(configPath);
+      expect(output).toContain(envPath);
+      expect(output).toContain(home);
+      expect(output).toContain(instanceId);
+      expect(output).toContain(`Server port: ${config.server.port}`.replace("Server port:", locale === "en" ? "Server port:" : "Porta do servidor:"));
+      expect(output).toContain(`${config.database.embeddedPostgresPort}`);
+      expect(envContents).toContain(`PAPERCLIP_INSTANCE_ID=${instanceId}`);
+      expect(envContents).toContain("PAPERCLIP_WORKTREE_NAME=empty-fixture");
+      expect(fs.existsSync(path.join(repoRoot, ".paperclip", "seed-empty"))).toBe(true);
+      expect(fs.existsSync(path.join(repoRoot, ".paperclip", "seed-manifest.json"))).toBe(false);
+      expect(fs.existsSync(path.join(repoRoot, ".paperclip", "seed-pending"))).toBe(false);
+    }
+    expect(outputs[0]).not.toBe(outputs[1]);
+    expect(stderrLogSpy).not.toHaveBeenCalled();
+    expect(stderrWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])).join("")).toBe("");
+  });
+
+  it("localizes worktree init validation but leaves file parser diagnostics unchanged", async () => {
+    const repoRoot = path.join(tempRoot, "init-errors");
+    fs.mkdirSync(repoRoot, { recursive: true });
+    execFileSync("git", ["init", "--initial-branch=init-errors"], { cwd: repoRoot, stdio: "ignore" });
+    process.chdir(repoRoot);
+
+    const invalidSeedErrors: string[] = [];
+    for (const locale of ["pt-BR", "en"] as const) {
+      setCliLocale(locale);
+      try {
+        await worktreeInitCommand({ seedMode: "fast", home: path.join(tempRoot, "invalid-seed-home") });
+        throw new Error("expected invalid seed mode to fail");
+      } catch (error) {
+        invalidSeedErrors.push(error instanceof Error ? error.message : String(error));
+      }
+    }
+    expect(invalidSeedErrors[0]).toContain('Modo de cópia não suportado "fast"');
+    expect(invalidSeedErrors[1]).toContain('Unsupported seed mode "fast"');
+
+    const existingConfigDir = path.join(repoRoot, ".paperclip");
+    fs.mkdirSync(existingConfigDir, { recursive: true });
+    const configPath = path.join(existingConfigDir, "config.json");
+    fs.writeFileSync(configPath, "{}\n");
+    const existingConfigErrors: string[] = [];
+    for (const locale of ["pt-BR", "en"] as const) {
+      setCliLocale(locale);
+      try {
+        await worktreeInitCommand({
+          name: "init-errors",
+          home: path.join(tempRoot, "existing-home"),
+          fromConfig: path.join(tempRoot, "missing-source-for-existing.json"),
+        });
+        throw new Error("expected existing config to fail");
+      } catch (error) {
+        existingConfigErrors.push(error instanceof Error ? error.message : String(error));
+      }
+    }
+    expect(existingConfigErrors[0]).toContain("A configuração da worktree já existe em");
+    expect(existingConfigErrors[1]).toContain("Worktree config already exists at");
+    expect(existingConfigErrors[0]).toContain(configPath);
+    expect(existingConfigErrors[1]).toContain(configPath);
+
+    const malformedSourcePath = path.join(tempRoot, "malformed-source.json");
+    fs.writeFileSync(malformedSourcePath, "{ invalid json\n");
+    const externalErrors: string[] = [];
+    for (const locale of ["pt-BR", "en"] as const) {
+      setCliLocale(locale);
+      try {
+        await worktreeInitCommand({ empty: true, fromConfig: malformedSourcePath, home: path.join(tempRoot, `malformed-home-${locale}`) });
+        throw new Error("expected malformed source config to fail");
+      } catch (error) {
+        externalErrors.push(error instanceof Error ? error.message : String(error));
+      }
+    }
+    expect(externalErrors[0]).toBe(externalErrors[1]);
+    expect(externalErrors[0]).toContain(`Failed to parse JSON at ${malformedSourcePath}`);
+    expect(stderrLogSpy).not.toHaveBeenCalled();
   });
 });

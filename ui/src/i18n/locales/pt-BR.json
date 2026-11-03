@@ -9736,6 +9736,23 @@
         "allowUnlinkedPeopleDescription": "Pessoas sem contas vinculadas podem iniciar tarefas isoladas. Elas não podem aprovar ações, gastar nem gerenciar acessos. As solicitações são recusadas quando o isolamento não está disponível.",
         "personalSlackSearch": "Busca pessoal do Slack"
       },
+      "conversations": {
+        "loading": "Carregando conversas…",
+        "loadFailed": "Não foi possível carregar as conversas.",
+        "listAria": "Conversas",
+        "emptyTitle": "Ainda não há conversas.",
+        "emptyAgentMail": "Envie um e-mail para o endereço deste agente para iniciar uma conversa.",
+        "emptyOtherProvider": "Mencione o agente em um destino habilitado para iniciar uma conversa.",
+        "paperclipTask": "Tarefa do Paperclip",
+        "waitingForTask": "Aguardando tarefa",
+        "states": {
+          "active": "Ativa",
+          "waiting": "Aguardando",
+          "completed": "Concluída",
+          "unavailable": "Indisponível",
+          "endpointRemoved": "Conexão removida"
+        }
+      },
       "lifecycle": {
         "reconnect": {
           "speko": "Verifique novamente esta persona de voz e atualize as ferramentas de sessão assinadas. As tarefas já atribuídas continuam vinculadas ao histórico.",

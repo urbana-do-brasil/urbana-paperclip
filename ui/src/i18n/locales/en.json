@@ -9520,6 +9520,23 @@
         "allowUnlinkedPeopleDescription": "People without linked accounts can start isolated tasks. They cannot approve actions, spend, or manage access. Requests are refused when isolation is unavailable.",
         "personalSlackSearch": "Personal Slack search"
       },
+      "conversations": {
+        "loading": "Loading conversations…",
+        "loadFailed": "Conversations could not be loaded.",
+        "listAria": "Conversations",
+        "emptyTitle": "No conversations yet",
+        "emptyAgentMail": "Send an email to this agent’s address to start one.",
+        "emptyOtherProvider": "Mention the agent in an enabled destination to start one.",
+        "paperclipTask": "Paperclip task",
+        "waitingForTask": "Waiting for task",
+        "states": {
+          "active": "Active",
+          "waiting": "Waiting",
+          "completed": "Completed",
+          "unavailable": "Unavailable",
+          "endpointRemoved": "Connection removed"
+        }
+      },
       "lifecycle": {
         "reconnect": {
           "speko": "Reverify this voice persona and update its signed session tools. Existing task assignments stay attached to their history.",

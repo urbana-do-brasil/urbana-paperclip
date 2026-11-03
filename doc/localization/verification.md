@@ -3699,3 +3699,12 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Matriz ACP Claude/Codex/Gemini PT-BR/en × auto/acp: 12/12 com FakeRuntime, execução nova e retomada; sem credenciais ou modelo real.
 - Rodada de sete arquivos: 166/167 passaram; o teste de restauração que depende de EACCES falhou ao executar como root, que ignora a proteção da pasta. Repetição excluindo somente esse caso: 166 passaram, um ignorado. Esse caso não foi qualificado nesta rodada.
 - Checkpoint: **406/425 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+- Reexecução isolada do teste de restauração que havia falhado como root: `setpriv --bounding-set=-dac_override,-dac_read_search --inh-caps=-all --ambient-caps=-all pnpm exec vitest run packages/adapters/claude-local/src/server/acp.test.ts -t test_claude_acp_teardown_restore_failure_sanitizes_the_run_log --testTimeout 15000` passou 1/1 (36 outros casos ignorados pelo filtro). A limitação de DAC foi aplicada apenas ao processo de teste; não houve mudança de permissões da VPS. Combinada à repetição anterior, todos os 167 casos da rodada foram executados com sucesso, em duas invocações.
+
+### Conversas, init vazio e envelopes Runner
+
+- Conversas de conectores: 47/47; títulos, IDs e URLs externos preservados. Settings e setup seguem pendentes.
+- `worktree init --empty`: mensagens/validações localizadas com fixtures Git descartáveis, preservando paths, portas, IDs e erros externos. Testes focados 14/14; typecheck CLI passou. Seed e demais operações mutáveis continuam abertos.
+- Builder/envelopes de OpenCode e ACPX/Claude no Runner: 4/4 em PT-BR/en, início e retomada; sem provider/modelo real.
+- Integração: **109/109 testes em seis arquivos**. Checkpoint: **409/428 tarefas**, 19 caixas abertas incluindo agregadoras.

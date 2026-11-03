@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ExecutionContinuationEnvelope, AskUserQuestionsInteraction } from "@paperclipai/shared";
+import { createCommunicationLocalePromptFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
 
 import { formatDurableQuestionResponseSummary } from "../question-response-delivery.js";
 import { nativeCompletionSource, buildNativeCompletionContract } from "./completion-contracts.js";
@@ -568,6 +569,101 @@ describe("native execution input external-chat framing", () => {
     expect(input.task.prompt).not.toContain("payload.questionSet");
   });
 
+});
+
+
+describe("native runner provider locale guidance", () => {
+  it.each([
+    { provider: "opencode", locale: "pt-BR" },
+    { provider: "opencode", locale: "en" },
+    { provider: "acpx", locale: "pt-BR" },
+    { provider: "acpx", locale: "en" },
+  ] as const)("carries $locale guidance to $provider on fresh and resumed turns", ({ provider, locale }) => {
+    const fixture = createCommunicationLocalePromptFixture(locale);
+    const directive = locale === "pt-BR"
+      ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+      : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+    const buildInput = (resumedSession: boolean) => buildNativeExecutionInput({
+      companyId: "10000000-0000-4000-8000-000000000001",
+      runId: "50000000-0000-4000-8000-000000000005",
+      agentId: "30000000-0000-4000-8000-000000000003",
+      issue: {
+        id: "issue-1",
+        identifier: "PAP-1",
+        title: "Keep the technical markers intact",
+        description: "Task description remains in its original language.",
+        workMode: "standard",
+      },
+      taskPrompt: fixture.paperclipTaskMarkdownAssignment,
+      initialCommunicationGuidance: "Saved agent instruction: keep `handoff_mode=SAFE` unchanged.",
+      wakePayload: fixture.paperclipWake,
+      resumedSession,
+      previousTurn: resumedSession ? {
+        runId: "prior-run",
+        task: { title: "Keep the technical markers intact", description: "Task description remains in its original language." },
+      } : null,
+      workspace: {
+        id: "50000000-0000-4000-8000-000000000005",
+        cwd: "/workspace",
+        repoUrl: null,
+        repoRef: null,
+        branchName: null,
+      },
+      normalizedSessionId: resumedSession ? "60000000-0000-4000-8000-000000000006" : null,
+      provider,
+      ...(provider === "acpx" ? { acpxAgent: "claude" as const } : {}),
+      model: provider === "acpx" ? "claude-sonnet-5" : "openai/gpt-5.5",
+      completionContract: {
+        id: "70000000-0000-4000-8000-000000000007",
+        sha256: `sha256:${"a".repeat(64)}`,
+        schemaVersion: "paperclip.run-result.v1",
+        contract: {
+          revision: "1",
+          objective: "Preserve the technical markers and follow the requested communication language.",
+          criteria: [{ id: "output", requirement: "Preserve the technical markers and requested communication language." }],
+        },
+      },
+      runtimeContext: nativeRuntimeContextFixture(),
+    });
+
+    const freshInput = buildInput(false);
+    const freshEnvelope = buildNativeModelEnvelope(freshInput);
+    expect(freshInput.provider).toMatchObject(provider === "opencode"
+      ? { kind: "opencode", model: "openai/gpt-5.5" }
+      : { kind: "acpx", agent: "claude", model: "claude-sonnet-5" });
+    expect(freshEnvelope.task.prompt).toContain(directive);
+    expect(freshEnvelope.task.prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+    expect(freshEnvelope.task.prompt).toContain("`X-Trace-Mode: RAW`");
+    expect(freshEnvelope.task.prompt).toContain("`WAITING_FOR_REVIEW`");
+    expect(freshEnvelope.task.prompt).toContain("Saved agent instruction: keep `handoff_mode=SAFE` unchanged.");
+    if (locale === "pt-BR") {
+      expect(freshEnvelope.task.prompt).toContain("Do not switch these interactions to English.");
+      expect(freshEnvelope.task.prompt).not.toContain("ASD-STE100 Simplified Technical English");
+    } else {
+      expect(freshEnvelope.task.prompt).toContain("ASD-STE100 Simplified Technical English");
+    }
+
+    const resumedInput = buildInput(true);
+    const resumedEnvelope = buildNativeModelEnvelope(resumedInput, { resumedSession: true });
+    expect(resumedInput.provider).toEqual(freshInput.provider);
+    expect(resumedInput.task.prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+    expect(resumedEnvelope.schema).toBe("paperclip.native-continuation.v1");
+    if (resumedEnvelope.schema !== "paperclip.native-continuation.v1") {
+      throw new Error("Expected a native continuation envelope");
+    }
+    expect(resumedEnvelope.communicationGuidance).toContain(directive);
+    expect(resumedEnvelope.communicationGuidance).not.toContain(locale === "pt-BR"
+      ? "Write human-facing replies, comments, questions, confirmations, and options in English."
+      : "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR).");
+    const resumedEvents = JSON.parse(resumedEnvelope.events) as { messages: unknown[] };
+    expect(resumedEvents.messages).toEqual(fixture.paperclipWake.executionContinuation.resumeDelta.messages);
+    if (locale === "pt-BR") {
+      expect(resumedEnvelope.communicationGuidance).toContain("keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR)");
+      expect(resumedEnvelope.communicationGuidance).not.toContain("ASD-STE100 Simplified Technical English");
+    } else {
+      expect(resumedEnvelope.communicationGuidance).toContain("ASD-STE100 Simplified Technical English");
+    }
+  });
 });
 
 

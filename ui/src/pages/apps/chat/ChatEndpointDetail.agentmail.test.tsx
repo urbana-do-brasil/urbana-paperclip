@@ -99,19 +99,52 @@ describe("AgentMail connection management tabs", () => {
     mocks.getConnection.mockResolvedValue({ id: "runtime", config: {} }); await render("access");
     expect(mocks.grants).toHaveBeenCalledWith("runtime");
   });
-  it("loads email conversations and links their tasks", async () => {
-    mocks.conversations.mockResolvedValue([{ id: "thread", externalLabel: "Customer question", issueId: "task", issueTitle: "Help customer", state: "active" }]);
-    await render("conversations"); expect(container.textContent).toContain("Customer question");
-    expect(container.querySelector('a[href="/issues/task"]')).not.toBeNull();
-    expect(container.textContent).not.toContain("Email settings"); expect(mocks.conversations).toHaveBeenCalledWith("inbox");
+  it.each([
+    ["en", "Customer thread <provider>", "Investigate <provider> webhook", "OPS-47", "Waiting", "Conversations"],
+    ["pt-BR", "Customer thread <provider>", "Investigate <provider> webhook", "OPS-47", "Aguardando", "Conversas"],
+  ])("localizes AgentMail conversations in %s and preserves external metadata", async (locale, externalLabel, taskTitle, identifier, stateLabel, listLabel) => {
+    await i18n.changeLanguage(locale);
+    const externalUrl = "https://mail.example.test/conversations/provider-thread-42?message=mail-msg-99&keep=%2F";
+    mocks.conversations.mockResolvedValue([{
+      id: "conversation-provider-row-42",
+      externalLabel,
+      externalUrl,
+      issueId: "task-external-42",
+      issueIdentifier: identifier,
+      issueTitle: taskTitle,
+      state: "waiting",
+      updatedAt: "2026-11-03T12:34:56.000Z",
+    }]);
+    await render("conversations");
+    await vi.waitFor(() => expect(container.textContent).toContain(externalLabel));
+
+    expect(container.textContent).toContain(taskTitle);
+    expect(container.textContent).toContain(identifier);
+    expect(container.textContent).toContain(stateLabel);
+    expect(container.querySelector("provider")).toBeNull();
+    expect(container.querySelector(`ul[aria-label="${listLabel}"]`)).not.toBeNull();
+    expect(container.querySelector('a[href="/issues/task-external-42"]')).not.toBeNull();
+    const providerLink = [...container.querySelectorAll("a")].find((anchor) => anchor.href === externalUrl);
+    expect(providerLink?.textContent).toBe(externalLabel);
+    expect(providerLink?.getAttribute("target")).toBe("_blank");
+    expect(providerLink?.getAttribute("rel")).toBe("noreferrer");
+    expect(mocks.conversations).toHaveBeenCalledWith("inbox");
   });
-  it("gives an email-specific empty state and reports conversation load errors", async () => {
-    await render("conversations"); expect(container.textContent).toContain("Send an email");
+  it.each([
+    ["en", "Send an email", "Conversations could not be loaded", "Try again", "No email conversations yet"],
+    ["pt-BR", "Envie um e-mail", "Não foi possível carregar as conversas", "Tentar novamente", "Ainda não há conversas por e-mail"],
+  ])("localizes the AgentMail conversation empty and error states in %s", async (locale, emptyMessage, errorMessage, retryLabel, obsoleteEmptyCopy) => {
+    await i18n.changeLanguage(locale);
+    await render("conversations");
+    await vi.waitFor(() => expect(container.textContent).toContain(emptyMessage));
     client.removeQueries({ queryKey: queryKeys.chatEndpoints.conversations("inbox") });
-    mocks.conversations.mockRejectedValue(new Error("Offline")); await render("conversations");
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Conversations could not be loaded");
-    expect(container.textContent).not.toContain("No email conversations yet");
-    mocks.conversations.mockResolvedValue([]); await click("Try again"); expect(container.textContent).toContain("Send an email");
+    mocks.conversations.mockRejectedValue(new Error("Offline"));
+    await render("conversations");
+    await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain(errorMessage));
+    expect(container.textContent).not.toContain(obsoleteEmptyCopy);
+    mocks.conversations.mockResolvedValue([]);
+    await click(retryLabel);
+    await vi.waitFor(() => expect(container.textContent).toContain(emptyMessage));
   });
   it("loads activity and routes pause through the email API without replacing cached chat detail with an email summary", async () => {
     mocks.activity.mockImplementation(async () => {

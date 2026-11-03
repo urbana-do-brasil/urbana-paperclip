@@ -2,9 +2,18 @@ import { MessageSquare } from "lucide-react";
 import type { ChatConversation, ChatProvider } from "@/api/chatEndpoints";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
+import { useTranslation } from "@/i18n";
 import { Link } from "@/lib/router";
 import { formatDateTime } from "@/lib/utils";
 import { AppLogo } from "../AppLogo";
+
+const conversationStateKeys: Record<ChatConversation["state"], string> = {
+  active: "apps.chatEndpointDetail.conversations.states.active",
+  waiting: "apps.chatEndpointDetail.conversations.states.waiting",
+  completed: "apps.chatEndpointDetail.conversations.states.completed",
+  unavailable: "apps.chatEndpointDetail.conversations.states.unavailable",
+  endpoint_removed: "apps.chatEndpointDetail.conversations.states.endpointRemoved",
+};
 
 export function conversationDestination(
   row: ChatConversation,
@@ -34,21 +43,22 @@ export function ChatConversationList({
   rows: ChatConversation[];
   provider: ChatProvider;
 }) {
+  const { t } = useTranslation();
   if (!rows.length)
     return (
       <EmptyState
         icon={MessageSquare}
-        message="No conversations yet"
+        message={t("apps.chatEndpointDetail.conversations.emptyTitle")}
         description={
           provider === "agentmail"
-            ? "Send an email to this agent’s address to start one."
-            : "Mention the agent in an enabled destination to start one."
+            ? t("apps.chatEndpointDetail.conversations.emptyAgentMail")
+            : t("apps.chatEndpointDetail.conversations.emptyOtherProvider")
         }
       />
     );
   return (
     <ul
-      aria-label="Conversations"
+      aria-label={t("apps.chatEndpointDetail.conversations.listAria")}
       className="divide-y divide-border border-y border-border"
     >
       {rows.map((row) => (
@@ -71,11 +81,11 @@ export function ChatConversationList({
                   className="break-words font-medium hover:underline"
                   to={`/issues/${row.issueId}`}
                 >
-                  {row.issueTitle ?? row.issueIdentifier ?? "Paperclip task"}
+                  {row.issueTitle ?? row.issueIdentifier ?? t("apps.chatEndpointDetail.conversations.paperclipTask")}
                 </Link>
               ) : (
                 <span className="font-medium">
-                  {row.issueTitle ?? "Waiting for task"}
+                  {row.issueTitle ?? t("apps.chatEndpointDetail.conversations.waitingForTask")}
                 </span>
               )}
             </div>
@@ -97,11 +107,11 @@ export function ChatConversationList({
                   {formatDateTime(row.updatedAt)}
                 </time>
               )}
-              {row.state === "completed" && <span>Completed</span>}
+              {row.state === "completed" && <span>{t(conversationStateKeys.completed)}</span>}
             </div>
           </div>
           {row.state !== "active" && row.state !== "completed" && (
-            <StatusBadge status={row.state} />
+            <StatusBadge status={row.state} label={t(conversationStateKeys[row.state])} />
           )}
         </li>
       ))}
