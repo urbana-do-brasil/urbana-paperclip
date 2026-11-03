@@ -9500,6 +9500,128 @@
         "connect": "Connect bot"
       }
     },
+    "githubChatSetup": {
+      "breadcrumbs": {
+        "connectors": "Connectors",
+        "title": "GitHub Code Review Bot"
+      },
+      "progressAria": "GitHub connection setup progress",
+      "steps": {
+        "chooseAgent": "Choose agent",
+        "connectGitHub": "Connect GitHub"
+      },
+      "headings": {
+        "chooseAgent": "Choose agent",
+        "connectAccount": "Connect your account",
+        "connectGitHub": "Connect GitHub"
+      },
+      "resume": {
+        "heading": "Resume GitHub setup",
+        "loadFailed": "Could not load this connection. Try again to resume your draft.",
+        "loading": "Loading your draft…"
+      },
+      "errors": {
+        "connectFallback": "Could not connect GitHub. Try again.",
+        "checkFallback": "Could not check GitHub setup. Try again.",
+        "cloudEnrollmentFailed": "Cloud enrollment could not be started."
+      },
+      "actions": {
+        "continue": "Continue",
+        "tryAgain": "Try again",
+        "continueToGitHub": "Continue to GitHub"
+      },
+      "existing": {
+        "reconnectDescription": "Leave these blank to reuse this App’s stored credentials, or enter both fields to repair them.",
+        "connectDescription": "Use the credentials from this App’s GitHub settings.",
+        "appId": "App ID",
+        "privateKey": "Private key",
+        "webhookSecret": "Webhook secret",
+        "reconnect": "Reconnect App",
+        "connect": "Connect existing App"
+      },
+      "identity": {
+        "linkedStatus": "GitHub account {{login}} connected. You can now mention this bot on GitHub.",
+        "confirmDescription": "Connect GitHub account {{login}} to your Paperclip account.",
+        "linkDescription": "Link your GitHub account so your mentions use your Paperclip permissions.",
+        "existingConnection": "Existing GitHub connection",
+        "chooseAccount": "Choose an account",
+        "currentAccount": "GitHub account: {{login}}",
+        "addPersonalConnection": "Add a personal GitHub connection, then return to this draft",
+        "confirm": "Confirm my account",
+        "check": "Check my account",
+        "connect": "Connect my GitHub account"
+      },
+      "installation": {
+        "waiting": "Waiting for GitHub installation or administrator approval…",
+        "continue": "Continue installation on GitHub"
+      },
+      "enrollment": {
+        "description": "Paperclip Cloud receives GitHub events and securely delivers them to this instance.",
+        "connect": "Connect Paperclip Cloud"
+      },
+      "recovery": {
+        "useExistingCredentials": "Use existing App credentials",
+        "appNotCreated": "I haven’t created this App on GitHub."
+      },
+      "verification": {
+        "deliveryVerified": "GitHub delivery verified. Checking App and repository access…",
+        "checking": "Checking GitHub access…",
+        "connectionSettings": "Connection settings"
+      },
+      "account": {
+        "label": "GitHub account",
+        "personal": "My account",
+        "anotherOrganization": "Another organization",
+        "lookupFailed": "Could not load some connected GitHub accounts. Choose Another organization to enter a name.",
+        "organization": "Organization",
+        "organizationPlaceholder": "GitHub organization name",
+        "appName": "App name",
+        "alreadyHaveApp": "I already have an App"
+      },
+      "trust": {
+        "title": "{{agent}} is not configured for low-trust review",
+        "description": "GitHub comments and pull requests can contain malicious instructions. We recommend a low-trust agent with a scoped work boundary and an isolated sandbox runtime.",
+        "continuingDescription": "Continuing keeps this agent’s current permissions. A restricted guest profile does not replace the agent’s trust and runtime settings.",
+        "changeAgent": "Change {{agent}} to a low trust agent",
+        "learnMore": "Learn about low-trust agents"
+      },
+      "complete": {
+        "heading": "GitHub connected",
+        "repositoryAccessUnavailable": "Repository access unavailable",
+        "repositoryAccess": "Repository access",
+        "noRepositoriesEnabled": "No repositories enabled",
+        "repository": "repository",
+        "repositories": "repositories",
+        "enabled": "enabled",
+        "beforeFirstReview": "Before your first review",
+        "tryBot": "Try your bot",
+        "enableRepository": "Enable a repository in Access to try your bot.",
+        "postOnPullRequest": "Post this on a pull request in an enabled repository.",
+        "copyMention": "Copy mention",
+        "copyGitHubMention": "Copy GitHub mention",
+        "mentionCopied": "Copied",
+        "mentionCopyFailed": "Copy failed",
+        "enabledRepositoryCount_one": "{{count}} repository enabled",
+        "enabledRepositoryCount_other": "{{count}} repositories enabled",
+        "done": "Done",
+        "brandingTitle": "GitHub App name and logo",
+        "brandingDescription": "Change the name or upload a logo in the App’s Display information settings on GitHub.",
+        "avatarAlt": "{{agent}}’s avatar for download",
+        "editBranding": "Edit App name and logo on GitHub",
+        "changeBrandingTitle": "Change the App name or upload its logo on GitHub",
+        "editApp": "Edit App",
+        "refreshIdentity": "Refresh GitHub App identity",
+        "refreshIdentityTitle": "Reconnect after renaming the App to refresh its @mention",
+        "editOnGitHub": "Edit on GitHub",
+        "renamingNote": "Renaming also changes its @mention.",
+        "reconnectAfterRename": "Reconnect afterward",
+        "toUpdateHere": "to update it here."
+      },
+      "avatar": {
+        "download": "Download avatar",
+        "downloadFailed": "Couldn’t download the avatar. Try downloading it again."
+      }
+    },
     "chatEndpointDetail": {
       "tabs": {
         "settings": "Settings",

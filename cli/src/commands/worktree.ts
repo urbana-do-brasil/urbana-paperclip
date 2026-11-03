@@ -683,7 +683,10 @@ function validateGitBranchName(cwd: string, branchName: string): string {
       stdio: ["ignore", "pipe", "pipe"],
     });
   } catch (error) {
-    throw new Error(`Invalid branch name "${branchName}": ${extractExecSyncErrorMessage(error) ?? String(error)}`);
+    throw new Error(worktreeOperationMessage("invalidGitBranchName", {
+      branchName,
+      detail: extractExecSyncErrorMessage(error) ?? String(error),
+    }));
   }
   return value;
 }
@@ -696,7 +699,7 @@ function isPrimaryGitWorktree(cwd: string): boolean {
 function resolvePrimaryGitRepoRoot(cwd: string): string {
   const workspace = detectGitWorkspaceInfo(cwd);
   if (!workspace) {
-    throw new Error("Current directory is not inside a git repository.");
+    throw new Error(worktreeOperationMessage("currentDirectoryNotGitRepo"));
   }
   if (workspace.gitDir === workspace.commonDir) {
     return workspace.root;
@@ -1004,13 +1007,13 @@ async function ensureRepairTargetWorktree(input: {
   );
 
   if (existsSync(targetPath)) {
-    throw new Error(`Target path already exists but is not a registered git worktree: ${targetPath}`);
+    throw new Error(worktreeOperationMessage("repairTargetExistsUnregistered", { targetPath }));
   }
 
   mkdirSync(path.dirname(targetPath), { recursive: true });
 
   const spinner = p.spinner();
-  spinner.start(`Creating git worktree for ${branchName}...`);
+  spinner.start(worktreeOperationMessage("worktreeMakeStarting", { targetPath }));
   try {
     execFileSync("git", resolveGitWorktreeAddArgs({
       branchName,
@@ -1020,9 +1023,9 @@ async function ensureRepairTargetWorktree(input: {
       cwd: repoRoot,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    spinner.stop(`Created git worktree at ${targetPath}.`);
+    spinner.stop(worktreeOperationMessage("worktreeMakeCreated", { targetPath }));
   } catch (error) {
-    spinner.stop(pc.red("Failed to create git worktree."));
+    spinner.stop(pc.red(worktreeOperationMessage("worktreeMakeFailed")));
     throw new Error(extractExecSyncErrorMessage(error) ?? String(error));
   }
 
@@ -4364,7 +4367,7 @@ export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promis
 
   const seedMode = opts.seedMode ?? "minimal";
   if (!isWorktreeSeedMode(seedMode)) {
-    throw new Error(`Unsupported seed mode "${seedMode}". Expected one of: minimal, full.`);
+    throw new Error(worktreeOperationMessage("invalidSeedMode", { seedMode }));
   }
 
   const target = await ensureRepairTargetWorktree({
@@ -4373,17 +4376,17 @@ export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promis
     opts,
   });
   if (!target) {
-    p.log.warn("Current checkout is the primary repo worktree. Pass --branch to create or repair a linked worktree.");
-    p.outro(pc.yellow("No worktree repaired."));
+    p.log.warn(worktreeOperationMessage("repairPrimaryCheckoutWarning"));
+    p.outro(pc.yellow(worktreeOperationMessage("repairNoWorktreeOutcome")));
     return;
   }
 
   const source = resolveWorktreeRepairSource(opts);
   if (!existsSync(source.configPath)) {
-    throw new Error(`Source config not found at ${source.configPath}.`);
+    throw new Error(worktreeOperationMessage("repairSourceConfigMissing", { sourceConfigPath: source.configPath }));
   }
   if (path.resolve(source.configPath) === path.resolve(target.configPath)) {
-    throw new Error("Source and target Paperclip configs are the same. Use --from-config/--from-instance to point repair at a different source.");
+    throw new Error(worktreeOperationMessage("repairSourceTargetSameConfig"));
   }
 
   const targetConfig = existsSync(target.configPath) ? readConfig(target.configPath) : null;
@@ -4393,8 +4396,8 @@ export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promis
   );
 
   if (targetConfig && targetHasWorktreeEnv && opts.noSeed) {
-    p.log.message(pc.dim(`Target ${target.label} already has worktree-local config/env. Skipping reseed because --no-seed was passed.`));
-    p.outro(pc.green(`Worktree metadata already looks healthy for ${target.label}.`));
+    p.log.message(pc.dim(worktreeOperationMessage("repairMetadataSkipReseed", { label: target.label })));
+    p.outro(pc.green(worktreeOperationMessage("repairMetadataHealthy", { label: target.label })));
     return;
   }
 
@@ -4418,12 +4421,13 @@ export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promis
   });
   const runningTargetPid = readRunningPostmasterPid(path.resolve(repairPaths.embeddedPostgresDataDir, "postmaster.pid"));
   if (runningTargetPid && !opts.allowLiveTarget) {
-    throw new Error(
-      `Target worktree database appears to be running (pid ${runningTargetPid}). Stop Paperclip in ${target.rootPath} before repairing, or re-run with --allow-live-target if you want to override this guard.`,
-    );
+    throw new Error(worktreeOperationMessage("repairTargetDatabaseRunning", {
+      pid: runningTargetPid,
+      rootPath: target.rootPath,
+    }));
   }
   if (runningTargetPid && opts.allowLiveTarget) {
-    p.log.warning(`Proceeding even though the target embedded PostgreSQL appears to be running (pid ${runningTargetPid}).`);
+    p.log.warning(worktreeOperationMessage("repairProceedLiveDatabase", { pid: runningTargetPid }));
   }
 
   const originalCwd = process.cwd();

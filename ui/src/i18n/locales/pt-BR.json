@@ -9716,6 +9716,129 @@
         "connect": "Conectar bot"
       }
     },
+    "githubChatSetup": {
+      "breadcrumbs": {
+        "connectors": "Conectores",
+        "title": "Bot de revisão de código do GitHub"
+      },
+      "progressAria": "Progresso da configuração da conexão do GitHub",
+      "steps": {
+        "chooseAgent": "Escolher agente",
+        "connectGitHub": "Conectar ao GitHub"
+      },
+      "headings": {
+        "chooseAgent": "Escolher agente",
+        "connectAccount": "Conectar sua conta",
+        "connectGitHub": "Conectar ao GitHub"
+      },
+      "resume": {
+        "heading": "Retomar configuração do GitHub",
+        "loadFailed": "Não foi possível carregar esta conexão. Tente novamente para retomar seu rascunho.",
+        "loading": "Carregando seu rascunho…"
+      },
+      "errors": {
+        "connectFallback": "Não foi possível conectar ao GitHub. Tente novamente.",
+        "checkFallback": "Não foi possível verificar a configuração do GitHub. Tente novamente.",
+        "cloudEnrollmentFailed": "Não foi possível iniciar o cadastro no Paperclip Cloud."
+      },
+      "actions": {
+        "continue": "Continuar",
+        "tryAgain": "Tentar novamente",
+        "continueToGitHub": "Continuar para o GitHub"
+      },
+      "existing": {
+        "reconnectDescription": "Deixe os campos em branco para reutilizar as credenciais salvas deste App ou informe os dois campos para substituí-las.",
+        "connectDescription": "Use as credenciais das configurações deste App no GitHub.",
+        "appId": "ID do App",
+        "privateKey": "Chave privada",
+        "webhookSecret": "Segredo do webhook",
+        "reconnect": "Reconectar App",
+        "connect": "Conectar App existente"
+      },
+      "identity": {
+        "linkedStatus": "Conta do GitHub {{login}} conectada. Agora você pode mencionar este bot no GitHub.",
+        "confirmDescription": "Conecte a conta do GitHub {{login}} à sua conta do Paperclip.",
+        "linkDescription": "Vincule sua conta do GitHub para que suas menções usem as permissões do Paperclip.",
+        "existingConnection": "Conexão existente do GitHub",
+        "chooseAccount": "Escolha uma conta",
+        "currentAccount": "Conta do GitHub: {{login}}",
+        "addPersonalConnection": "Adicione uma conexão pessoal do GitHub e retorne a este rascunho",
+        "confirm": "Confirmar minha conta",
+        "check": "Verificar minha conta",
+        "connect": "Conectar minha conta do GitHub"
+      },
+      "installation": {
+        "waiting": "Aguardando a instalação do GitHub ou a aprovação de um administrador…",
+        "continue": "Continuar a instalação no GitHub"
+      },
+      "enrollment": {
+        "description": "O Paperclip Cloud recebe os eventos do GitHub e os entrega com segurança a esta instância.",
+        "connect": "Conectar ao Paperclip Cloud"
+      },
+      "recovery": {
+        "useExistingCredentials": "Usar credenciais de App existente",
+        "appNotCreated": "Ainda não criei este App no GitHub."
+      },
+      "verification": {
+        "deliveryVerified": "Entrega do GitHub verificada. Verificando o App e o acesso aos repositórios…",
+        "checking": "Verificando o acesso ao GitHub…",
+        "connectionSettings": "Configurações da conexão"
+      },
+      "account": {
+        "label": "Conta do GitHub",
+        "personal": "Minha conta",
+        "anotherOrganization": "Outra organização",
+        "lookupFailed": "Não foi possível carregar algumas contas conectadas do GitHub. Escolha Outra organização para informar um nome.",
+        "organization": "Organização",
+        "organizationPlaceholder": "Nome da organização no GitHub",
+        "appName": "Nome do App",
+        "alreadyHaveApp": "Já tenho um App"
+      },
+      "trust": {
+        "title": "{{agent}} não está configurado para revisão com baixa confiança",
+        "description": "Comentários e pull requests do GitHub podem conter instruções maliciosas. Recomendamos um agente de baixa confiança, com limite de trabalho definido e um ambiente isolado.",
+        "continuingDescription": "Ao continuar, as permissões atuais deste agente serão mantidas. Um perfil restrito de convidado não substitui as configurações de confiança e de execução do agente.",
+        "changeAgent": "Alterar {{agent}} para um agente de baixa confiança",
+        "learnMore": "Saiba mais sobre agentes de baixa confiança"
+      },
+      "complete": {
+        "heading": "GitHub conectado",
+        "repositoryAccessUnavailable": "Acesso aos repositórios indisponível",
+        "repositoryAccess": "Acesso aos repositórios",
+        "noRepositoriesEnabled": "Nenhum repositório habilitado",
+        "repository": "repositório",
+        "repositories": "repositórios",
+        "enabled": "habilitados",
+        "beforeFirstReview": "Antes da primeira revisão",
+        "tryBot": "Experimente o bot",
+        "enableRepository": "Habilite um repositório em Acesso para experimentar o bot.",
+        "postOnPullRequest": "Publique isto em um pull request de um repositório habilitado.",
+        "copyMention": "Copiar menção",
+        "copyGitHubMention": "Copiar menção do GitHub",
+        "mentionCopied": "Copiado",
+        "mentionCopyFailed": "Falha ao copiar",
+        "enabledRepositoryCount_one": "{{count}} repositório habilitado",
+        "enabledRepositoryCount_many": "{{count}} repositórios habilitados",
+        "enabledRepositoryCount_other": "{{count}} repositórios habilitados",
+        "done": "Concluído",
+        "brandingTitle": "Nome e logo do GitHub App",
+        "brandingDescription": "Altere o nome ou envie um logo nas configurações de informações de exibição do App no GitHub.",
+        "avatarAlt": "Avatar de {{agent}} para download",
+        "editBranding": "Editar nome e logo do App no GitHub",
+        "changeBrandingTitle": "Altere o nome ou envie o logo do App no GitHub",
+        "editApp": "Editar App",
+        "refreshIdentity": "Atualizar identidade do GitHub App",
+        "refreshIdentityTitle": "Reconecte após renomear o App para atualizar sua @menção",
+        "editOnGitHub": "Editar no GitHub",
+        "renamingNote": "Renomear também altera sua @menção.",
+        "reconnectAfterRename": "Reconecte depois",
+        "toUpdateHere": "para atualizar aqui."
+      },
+      "avatar": {
+        "download": "Baixar avatar",
+        "downloadFailed": "Não foi possível baixar o avatar. Tente baixá-lo novamente."
+      }
+    },
     "chatEndpointDetail": {
       "tabs": {
         "settings": "Configurações",

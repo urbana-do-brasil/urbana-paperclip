@@ -3737,3 +3737,13 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Navegação do setup e Telegram — 3.9f6e
 
 - Shell de setup e configuração Telegram localizados; comandos, URL do BotFather, token e payload permanecem intactos. Testes focados 52/52; integração com auth/worktree e catálogo 78/78; typechecks UI/CLI passaram. Outros provedores e revisão de flags seguem pendentes em 3.9f6. Checkpoint: **418/437 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Contratos estruturados de workspaces — 4.4c
+
+- Fixtures determinísticas cobrem 24 operações de agent-config/workspace/environment/project-workspace, comparando JSON, método, rota e payload em PT-BR/en e erros em quatro famílias. Com auth e email: 6/6 testes; a fronteira HTTP é simulada e nenhum backend/provider real é qualificado. Checkpoint: **419/438 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Setup GitHub, worktree repair e contratos workspace
+
+- Setup GitHub e identidade localizados; testes PT-BR verificam seleção de agente, permissões, conclusão e menção original. A primeira rodada revelou chaves de contagem e cópia ausentes, corrigidas antes da repetição. Outros provedores e estados condicionais seguem pendentes.
+- `worktree repair --no-seed`: fixtures descartáveis verificam idempotência, proteção de diretório não registrado e preservação de erros externos; 20 testes direcionados e typecheck CLI passaram.
+- Integração GitHub, catálogos, repair e contratos workspace: **57/57 testes**; typechecks UI/CLI passaram. Checkpoint: **421/440 tarefas**, 19 caixas abertas incluindo agregadoras.

@@ -13,7 +13,9 @@ import {
   worktreeInitCommand,
   worktreeListCommand,
   worktreeMakeCommand,
+  worktreeRepairCommand,
 } from "../commands/worktree.js";
+import { paperclipConfigSchema } from "../config/schema.js";
 import { applyOperationHelpLocalization } from "../localization/operation-help.js";
 import { cliMessage, localizeHelpTitle, parseCliLocale, setCliCommandLineShape, setCliLocale } from "../localization/index.js";
 
@@ -725,6 +727,131 @@ describe("worktree CLI localization", () => {
       expect(invalidNameError).toBe(locale === "en"
         ? "Worktree name must contain only letters, numbers, dots, underscores, or dashes."
         : "O nome da worktree deve conter apenas letras, números, pontos, sublinhados ou hífens.");
+    }
+  });
+
+  it("localizes repair creation and healthy metadata while preserving unregistered target data", async () => {
+    let activeHome = "";
+    vi.spyOn(os, "homedir").mockImplementation(() => activeHome);
+    const sourceConfig = paperclipConfigSchema.parse({
+      $meta: {
+        version: 1,
+        updatedAt: "2026-03-09T00:00:00.000Z",
+        source: "configure",
+      },
+      database: { mode: "embedded-postgres" },
+      logging: { mode: "file" },
+      server: {},
+    });
+
+    for (const locale of ["pt-BR", "en"] as const) {
+      const repoRoot = path.join(tempRoot, "repair", locale, "repo");
+      activeHome = path.join(tempRoot, "repair", locale, "home");
+      const instanceHome = path.join(tempRoot, "repair", locale, "instances-home");
+      const sourceConfigPath = path.join(tempRoot, "repair", locale, "source-config.json");
+      const installerPath = path.join(tempRoot, `repair-fixture-pnpm-${locale.toLowerCase()}`);
+      const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", "feature-repair-me");
+      const orphanPath = path.join(repoRoot, ".paperclip", "worktrees", "orphan-branch");
+
+      fs.mkdirSync(repoRoot, { recursive: true });
+      fs.mkdirSync(activeHome, { recursive: true });
+      fs.writeFileSync(sourceConfigPath, JSON.stringify(sourceConfig, null, 2));
+      execFileSync("git", ["init", "--initial-branch=main"], { cwd: repoRoot, stdio: "ignore" });
+      execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: repoRoot });
+      execFileSync("git", ["config", "user.name", "Paperclip Test"], { cwd: repoRoot });
+      fs.writeFileSync(path.join(repoRoot, "README.md"), "repair fixture\n");
+      fs.writeFileSync(path.join(repoRoot, "package.json"), JSON.stringify({ name: "repair-fixture", version: "1.0.0" }, null, 2));
+      execFileSync("git", ["add", "README.md", "package.json"], { cwd: repoRoot });
+      execFileSync("git", ["commit", "-m", "fixture"], { cwd: repoRoot, stdio: "ignore" });
+      fs.writeFileSync(installerPath, "#!/usr/bin/env node\nprocess.stderr.write('repair installer failure\\n');\nprocess.exit(1);\n");
+      fs.chmodSync(installerPath, 0o755);
+      process.env.npm_execpath = installerPath;
+      process.chdir(repoRoot);
+      setCliLocale(locale);
+
+      const captureOutput = () => [
+        ...stdoutLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stderrLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stderrWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+      ].join("\n");
+
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      stderrLogSpy.mockClear();
+      stderrWriteSpy.mockClear();
+      await worktreeRepairCommand({ fromConfig: sourceConfigPath, home: instanceHome, noSeed: true });
+      const primaryOutput = captureOutput();
+      expect(primaryOutput).toContain(locale === "en"
+        ? "Current checkout is the primary repo worktree. Pass --branch to create or repair a linked worktree."
+        : "O checkout atual é a worktree principal do repositório. Informe --branch para criar ou reparar uma worktree vinculada.");
+      expect(primaryOutput).toContain(locale === "en" ? "No worktree repaired." : "Nenhuma worktree foi reparada.");
+      expect(fs.existsSync(path.join(repoRoot, ".paperclip", "config.json"))).toBe(false);
+
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      stderrLogSpy.mockClear();
+      stderrWriteSpy.mockClear();
+      await worktreeRepairCommand({
+        branch: "feature/repair-me",
+        fromConfig: sourceConfigPath,
+        home: instanceHome,
+        noSeed: true,
+      });
+      const repairOutput = captureOutput();
+      expect(repairOutput).toContain(locale === "en"
+        ? `Created git worktree at ${worktreePath}.`
+        : `Worktree do Git criada em ${worktreePath}.`);
+      expect(repairOutput).toContain(locale === "en"
+        ? "Failed to install dependencies (continuing anyway)."
+        : "Falha ao instalar dependências (continuando mesmo assim).");
+      expect(repairOutput).toContain("repair installer failure");
+      expect(repairOutput).toContain(locale === "en" ? "Worktree ready." : "Worktree pronta.");
+      const configPath = path.join(worktreePath, ".paperclip", "config.json");
+      const envPath = path.join(worktreePath, ".paperclip", ".env");
+      const configBeforeHealthyCheck = fs.readFileSync(configPath, "utf8");
+      const envBeforeHealthyCheck = fs.readFileSync(envPath, "utf8");
+      expect(fs.existsSync(worktreePath)).toBe(true);
+
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      stderrLogSpy.mockClear();
+      stderrWriteSpy.mockClear();
+      await worktreeRepairCommand({
+        branch: "feature/repair-me",
+        fromConfig: sourceConfigPath,
+        home: instanceHome,
+        noSeed: true,
+      });
+      const healthyOutput = captureOutput();
+      expect(healthyOutput).toContain(locale === "en"
+        ? "already has worktree-local config/env. Skipping reseed because --no-seed was passed."
+        : "já tem config/env local da worktree. A cópia será ignorada por causa de --no-seed.");
+      expect(healthyOutput).toContain(locale === "en"
+        ? "Worktree metadata already looks healthy for feature/repair-me."
+        : "Os metadados da worktree feature/repair-me já parecem corretos.");
+      expect(fs.readFileSync(configPath, "utf8")).toBe(configBeforeHealthyCheck);
+      expect(fs.readFileSync(envPath, "utf8")).toBe(envBeforeHealthyCheck);
+
+      fs.mkdirSync(orphanPath, { recursive: true });
+      const orphanMarker = path.join(orphanPath, "keep.txt");
+      fs.writeFileSync(orphanMarker, "preserve this unregistered directory\n");
+      let orphanError = "";
+      try {
+        await worktreeRepairCommand({
+          branch: "orphan/branch",
+          fromConfig: sourceConfigPath,
+          home: instanceHome,
+          noSeed: true,
+        });
+      } catch (error) {
+        orphanError = error instanceof Error ? error.message : String(error);
+      }
+      expect(orphanError).toBe(locale === "en"
+        ? `Target path already exists but is not a registered git worktree: ${orphanPath}`
+        : `O caminho de destino já existe, mas não é uma worktree Git registrada: ${orphanPath}`);
+      expect(fs.readFileSync(orphanMarker, "utf8")).toBe("preserve this unregistered directory\n");
+      expect(execFileSync("git", ["branch", "--list", "orphan/branch"], { cwd: repoRoot, encoding: "utf8" }).trim()).toBe("");
     }
   });
 });
