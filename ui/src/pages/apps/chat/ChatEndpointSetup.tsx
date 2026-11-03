@@ -906,36 +906,41 @@ function ProviderConnectStep({
   if (provider === "discord") {
     const applicationId = credentials.applicationId?.trim() ?? "";
     const guildId = credentials.guildId?.trim() ?? "";
+    const permissions = "View Channels, Send Messages, Create Public Threads, Send Messages in Threads, Read Message History, Add Reactions, Embed Links, and Attach Files";
     const installUrl = applicationId
       ? `https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(applicationId)}&permissions=309237763136&scope=bot${guildId ? `&guild_id=${encodeURIComponent(guildId)}&disable_guild_select=true` : ""}`
       : null;
     return (
       <div className="space-y-5">
         <div>
-          <h1 className="text-xl font-bold">Connect {agentName} to Discord</h1>
+          <h1 className="text-xl font-bold">{t("apps.chatEndpointSetup.discord.heading", { agent: agentName })}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {repairing
-              ? "Reconnect verifies this same Discord application and server installation. It does not add or remove the bot from the server. Leave fields blank to reuse saved credentials."
-              : "Create one dedicated Discord application and bot for this Paperclip agent."}
+              ? t("apps.chatEndpointSetup.discord.reconnectDescription")
+              : t("apps.chatEndpointSetup.discord.createDescription")}
           </p>
         </div>
-      <ol className="list-decimal space-y-2 pl-5 text-sm">
+        <ol className="list-decimal space-y-2 pl-5 text-sm">
           <li>
-            In Discord Developer Portal, create an application. Copy its
-            Application ID from General Information.
+            {t("apps.chatEndpointSetup.discord.instructions.application", {
+              portal: t("apps.chatEndpointSetup.discord.providerUi.portal"),
+              applicationId: t("apps.chatEndpointSetup.discord.providerUi.applicationId"),
+              generalInformation: t("apps.chatEndpointSetup.discord.providerUi.generalInformation"),
+            })}
           </li>
           <li>
-            Open Bot, create the bot, enable Message Content Intent, then reset
-            and copy its token.
+            {t("apps.chatEndpointSetup.discord.instructions.bot", {
+              bot: t("apps.chatEndpointSetup.discord.providerUi.bot"),
+              messageContentIntent: t("apps.chatEndpointSetup.discord.providerUi.messageContentIntent"),
+            })}
           </li>
           <li>
-            Enable Developer Mode in Discord, right-click the target server, and
-            copy its Server ID.
+            {t("apps.chatEndpointSetup.discord.instructions.server", {
+              developerMode: t("apps.chatEndpointSetup.discord.providerUi.developerMode"),
+              serverId: t("apps.chatEndpointSetup.discord.providerUi.serverId"),
+            })}
           </li>
-          <li>
-            Enter those values below, then use the generated install link to add
-            the bot to that server.
-          </li>
+          <li>{t("apps.chatEndpointSetup.discord.instructions.install")}</li>
         </ol>
         <Button
           variant="outline"
@@ -943,23 +948,22 @@ function ProviderConnectStep({
             openProviderSetup("https://discord.com/developers/applications")
           }
         >
-          Open Discord Developer Portal <ExternalLink />
+          {t("apps.chatEndpointSetup.discord.openDeveloperPortal", {
+            portal: t("apps.chatEndpointSetup.discord.providerUi.portal"),
+          })} <ExternalLink />
         </Button>
-        {field("applicationId", "Application ID", "text")}
-        {field("guildId", "Server ID", "text")}
-        {field("botToken", "Bot token")}
+        {field("applicationId", t("apps.chatEndpointSetup.discord.fields.applicationId"), "text")}
+        {field("guildId", t("apps.chatEndpointSetup.discord.fields.serverId"), "text")}
+        {field("botToken", t("apps.chatEndpointSetup.discord.fields.botToken"))}
         {installUrl && (
           <Button asChild variant="outline">
             <a href={installUrl} target="_blank" rel="noreferrer">
-              Install bot in this server <ExternalLink />
+              {t("apps.chatEndpointSetup.discord.installBot")} <ExternalLink />
             </a>
           </Button>
         )}
         <p className="text-sm text-muted-foreground">
-          The install link grants only View Channels, Send Messages, Create
-          Public Threads, Send Messages in Threads, Read Message History, Add
-          Reactions, Embed Links, and Attach Files. Paperclip still requires
-          each discovered channel to be enabled in Access.
+          {t("apps.chatEndpointSetup.discord.permissionsNotice", { permissions })}
         </p>
         <Button
           disabled={
@@ -974,7 +978,9 @@ function ProviderConnectStep({
           }
         >
           {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-          {repairing ? "Reconnect Discord bot" : "Connect Discord bot"}
+          {repairing
+            ? t("apps.chatEndpointSetup.discord.reconnectBot")
+            : t("apps.chatEndpointSetup.discord.connectBot")}
         </Button>
       </div>
     );

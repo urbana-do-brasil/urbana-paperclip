@@ -3063,6 +3063,9 @@
       "askForNoteOnChanges": "Solicitar uma observação ao pedir alterações",
       "askForNoteOnDecline": "Solicitar uma observação ao recusar",
       "chooseOutcomesBeforeSave": "Escolha para onde os itens aprovados e recusados devem ir antes de salvar.",
+      "approvedItemsMoveTo": "Itens aprovados vão para",
+      "declinedItemsMoveTo": "Itens rejeitados vão para",
+      "itemsNeedingChangesMoveTo": "Itens que precisam de alterações vão para",
       "noApproversFound": "Nenhum aprovador encontrado.",
       "outcomes": "Resultados da revisão",
       "searchApprovers": "Buscar aprovadores..."
@@ -9715,6 +9718,36 @@
         "httpsPrerequisite": "Configure uma URL HTTPS pública para esta instância do Paperclip antes de conectar o Telegram.",
         "reconnect": "Reconectar bot",
         "connect": "Conectar bot"
+      },
+      "discord": {
+        "heading": "Conectar {{agent}} ao Discord",
+        "createDescription": "Crie um aplicativo e bot exclusivos do Discord para este agente do Paperclip.",
+        "reconnectDescription": "A reconexão verifica este mesmo aplicativo do Discord e sua instalação no servidor. Ela não adiciona nem remove o bot do servidor. Deixe os campos em branco para reutilizar as credenciais salvas.",
+        "instructions": {
+          "application": "No {{portal}}, crie um aplicativo. Copie o {{applicationId}} em {{generalInformation}}.",
+          "bot": "Abra {{bot}}, crie o bot, ative {{messageContentIntent}}, redefina o token e copie-o.",
+          "server": "Ative {{developerMode}} no Discord, clique com o botão direito no servidor de destino e copie o {{serverId}}.",
+          "install": "Informe esses valores abaixo e use o link de instalação gerado para adicionar o bot a esse servidor."
+        },
+        "providerUi": {
+          "portal": "Discord Developer Portal",
+          "applicationId": "Application ID",
+          "generalInformation": "General Information",
+          "bot": "Bot",
+          "messageContentIntent": "Message Content Intent",
+          "developerMode": "Developer Mode",
+          "serverId": "Server ID"
+        },
+        "openDeveloperPortal": "Abrir {{portal}}",
+        "fields": {
+          "applicationId": "ID do aplicativo",
+          "serverId": "ID do servidor",
+          "botToken": "Token do bot"
+        },
+        "installBot": "Instalar bot neste servidor",
+        "permissionsNotice": "O link de instalação concede apenas {{permissions}}. O Paperclip ainda exige que cada canal encontrado seja habilitado em Access.",
+        "connectBot": "Conectar bot do Discord",
+        "reconnectBot": "Reconectar bot do Discord"
       },
       "slack": {
         "steps": {

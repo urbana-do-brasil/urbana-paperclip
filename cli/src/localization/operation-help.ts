@@ -48,6 +48,37 @@ const worktreeSeedOptions = {
 };
 
 const operationHelp: Record<string, CommandHelp> = {
+  "env-lab": {
+    description: { en: "Deterministic local environment fixtures", "pt-BR": "Fixtures determinísticos de ambiente local" },
+  },
+  "env-lab up": {
+    description: { en: "Start the default SSH env-lab fixture", "pt-BR": "Iniciar o fixture SSH padrão do env-lab" },
+    options: {
+      "--instance": { en: "Paperclip instance id (default: current/default)", "pt-BR": "ID da instância do Paperclip (padrão: atual/default)" },
+      "--json": { en: "Print machine-readable fixture details", "pt-BR": "Exibir detalhes do fixture em JSON para máquinas" },
+    },
+  },
+  "env-lab status": {
+    description: { en: "Show the current SSH env-lab fixture state", "pt-BR": "Exibir o estado atual do fixture SSH do env-lab" },
+    options: {
+      "--instance": { en: "Paperclip instance id (default: current/default)", "pt-BR": "ID da instância do Paperclip (padrão: atual/default)" },
+      "--json": { en: "Print machine-readable fixture details", "pt-BR": "Exibir detalhes do fixture em JSON para máquinas" },
+    },
+  },
+  "env-lab down": {
+    description: { en: "Stop the default SSH env-lab fixture", "pt-BR": "Parar o fixture SSH padrão do env-lab" },
+    options: {
+      "--instance": { en: "Paperclip instance id (default: current/default)", "pt-BR": "ID da instância do Paperclip (padrão: atual/default)" },
+      "--json": { en: "Print machine-readable stop details", "pt-BR": "Exibir detalhes da parada em JSON para máquinas" },
+    },
+  },
+  "env-lab doctor": {
+    description: { en: "Check SSH fixture prerequisites and current status", "pt-BR": "Verificar pré-requisitos e estado atual do fixture SSH" },
+    options: {
+      "--instance": { en: "Paperclip instance id (default: current/default)", "pt-BR": "ID da instância do Paperclip (padrão: atual/default)" },
+      "--json": { en: "Print machine-readable diagnostic details", "pt-BR": "Exibir detalhes do diagnóstico em JSON para máquinas" },
+    },
+  },
   worktree: {
     description: { en: "Worktree-local Paperclip instance helpers", "pt-BR": "Ferramentas para instâncias locais do Paperclip em worktrees" },
   },

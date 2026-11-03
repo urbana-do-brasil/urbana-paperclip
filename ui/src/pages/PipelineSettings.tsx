@@ -2931,7 +2931,7 @@ export function PipelineSettings() {
                               {([
                                 ["approvedItemsMoveTo", approveTarget, setApproveTarget, "chooseStage"],
                                 ["declinedItemsMoveTo", rejectTarget, setRejectTarget, "chooseStage"],
-                                ["itemsNeedingChangesMoveTo", requestChangesTarget, setRequestChangesTarget, "stayInReview"],
+                                ["itemsNeedingChangesMoveTo", requestChangesTarget, setRequestChangesTarget, "stayOnThisStep"],
                               ] as const).map(([labelKey, value, setValue, emptyLabelKey]) => (
                                 <div
                                   key={labelKey}

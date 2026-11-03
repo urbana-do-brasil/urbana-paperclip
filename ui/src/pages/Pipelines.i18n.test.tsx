@@ -548,6 +548,76 @@ describe("Pipelines localization", () => {
   });
 
   it.each([
+    {
+      language: "pt-BR",
+      labels: ["Itens aprovados vão para", "Itens rejeitados vão para", "Itens que precisam de alterações vão para"],
+      stayOnStep: "Permanecer nesta etapa",
+    },
+    {
+      language: "en",
+      labels: ["Approved items move to", "Declined items move to", "Items needing changes move to"],
+      stayOnStep: "Stay on this step",
+    },
+  ])("localizes dynamic review outcome controls in $language", async ({ language, labels, stayOnStep }) => {
+    await i18n.changeLanguage(language);
+    mocks.pipelineId = "pipeline-1";
+    mocks.pathname = "/pipelines/pipeline-1/settings";
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.detail("pipeline-1")), {
+      data: {
+        id: "pipeline-1",
+        companyId: "company-1",
+        key: "pipeline-key",
+        name: "USER PIPELINE",
+        description: null,
+        projectId: null,
+        enforceTransitions: false,
+        archivedAt: null,
+        stageCount: 2,
+        openCaseCount: 0,
+        createdAt: "2026-10-01T00:00:00.000Z",
+        updatedAt: "2026-10-01T00:00:00.000Z",
+        stages: [
+          {
+            id: "stage-review",
+            pipelineId: "pipeline-1",
+            key: "review",
+            name: "CUSTOM REVIEW STAGE",
+            kind: "review",
+            position: 0,
+            config: { approveToStageKey: "done", rejectToStageKey: "done" },
+          },
+          {
+            id: "stage-done",
+            pipelineId: "pipeline-1",
+            key: "done",
+            name: "CUSTOM DONE STAGE",
+            kind: "done",
+            position: 1,
+            config: {},
+          },
+        ],
+        transitions: [],
+      } satisfies PipelineDetail,
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    mountedRoots.push(root);
+    await act(async () => {
+      root.render(createElement(PipelineSettings));
+    });
+
+    for (const label of labels) expect(container.textContent).toContain(label);
+    expect(container.textContent).toContain(stayOnStep);
+  });
+
+  it.each([
     { language: "pt-BR", expected: "Não foi possível concluir a solicitação. Detalhes: Vendor: unavailable" },
     { language: "en", expected: "The request could not be completed. Details: Vendor: unavailable" },
   ])("preserves an unknown external load error in $language", async ({ language, expected }) => {

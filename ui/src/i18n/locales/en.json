@@ -2991,6 +2991,9 @@
       "askForNoteOnChanges": "Ask for a note when requesting changes",
       "askForNoteOnDecline": "Ask for a note when declining",
       "chooseOutcomesBeforeSave": "Pick where approved and declined items should go before saving.",
+      "approvedItemsMoveTo": "Approved items move to",
+      "declinedItemsMoveTo": "Declined items move to",
+      "itemsNeedingChangesMoveTo": "Items needing changes move to",
       "noApproversFound": "No approvers found.",
       "outcomes": "Review outcomes",
       "searchApprovers": "Search approvers..."
@@ -9499,6 +9502,36 @@
         "httpsPrerequisite": "Configure a public HTTPS URL for this Paperclip instance before connecting Telegram.",
         "reconnect": "Reconnect bot",
         "connect": "Connect bot"
+      },
+      "discord": {
+        "heading": "Connect {{agent}} to Discord",
+        "createDescription": "Create one dedicated Discord application and bot for this Paperclip agent.",
+        "reconnectDescription": "Reconnect verifies this same Discord application and server installation. It does not add or remove the bot from the server. Leave fields blank to reuse saved credentials.",
+        "instructions": {
+          "application": "In {{portal}}, create an application. Copy its {{applicationId}} from {{generalInformation}}.",
+          "bot": "Open {{bot}}, create the bot, enable {{messageContentIntent}}, then reset and copy its token.",
+          "server": "Enable {{developerMode}} in Discord, right-click the target server, and copy its {{serverId}}.",
+          "install": "Enter those values below, then use the generated install link to add the bot to that server."
+        },
+        "providerUi": {
+          "portal": "Discord Developer Portal",
+          "applicationId": "Application ID",
+          "generalInformation": "General Information",
+          "bot": "Bot",
+          "messageContentIntent": "Message Content Intent",
+          "developerMode": "Developer Mode",
+          "serverId": "Server ID"
+        },
+        "openDeveloperPortal": "Open {{portal}}",
+        "fields": {
+          "applicationId": "Application ID",
+          "serverId": "Server ID",
+          "botToken": "Bot token"
+        },
+        "installBot": "Install bot in this server",
+        "permissionsNotice": "The install link grants only {{permissions}}. Paperclip still requires each discovered channel to be enabled in Access.",
+        "connectBot": "Connect Discord bot",
+        "reconnectBot": "Reconnect Discord bot"
       },
       "slack": {
         "steps": {

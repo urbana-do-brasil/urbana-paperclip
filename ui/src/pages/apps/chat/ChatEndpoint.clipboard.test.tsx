@@ -239,6 +239,75 @@ describe("chat setup and identity-link clipboard actions", () => {
   });
 
   it.each([
+    [
+      "en",
+      "Connect Maya to Discord",
+      "Create one dedicated Discord application and bot for this Paperclip agent.",
+      "Open Discord Developer Portal",
+      "Application ID",
+      "Server ID",
+      "Bot token",
+      "Connect Discord bot",
+    ],
+    [
+      "pt-BR",
+      "Conectar Maya ao Discord",
+      "Crie um aplicativo e bot exclusivos do Discord para este agente do Paperclip.",
+      "Abrir Discord Developer Portal",
+      "ID do aplicativo",
+      "ID do servidor",
+      "Token do bot",
+      "Conectar bot do Discord",
+    ],
+  ])(
+    "localizes Discord setup in %s and preserves credentials, provider labels, and the install URL",
+    async (locale, heading, description, portalLabel, applicationIdLabel, serverIdLabel, botTokenLabel, connectLabel) => {
+      await i18n.changeLanguage(locale);
+      const endpoint = await render("discord");
+      expect(container.querySelector("h1")?.textContent).toBe(heading);
+      expect(container.textContent).toContain(description);
+      expect(container.textContent).toContain("General Information");
+      expect(container.textContent).toContain("Message Content Intent");
+      expect(container.textContent).toContain("Developer Mode");
+      expect(container.textContent).toContain("View Channels, Send Messages, Create Public Threads, Send Messages in Threads, Read Message History, Add Reactions, Embed Links, and Attach Files");
+
+      await click(portalLabel);
+      expect(window.open).toHaveBeenCalledWith(
+        "https://discord.com/developers/applications",
+        "_blank",
+        "noopener,noreferrer",
+      );
+
+      const inputFor = (name: string) => [...container.querySelectorAll("label")]
+        .find((label) => label.textContent?.trim() === name)
+        ?.querySelector("input") as HTMLInputElement;
+      const setValue = (input: HTMLInputElement, value: string) => flushSync(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      const applicationId = "  app id/2  ";
+      const serverId = " server#42 ";
+      const botToken = "  MTA-private-bot-token  ";
+      setValue(inputFor(applicationIdLabel), applicationId);
+      setValue(inputFor(serverIdLabel), serverId);
+      setValue(inputFor(botTokenLabel), botToken);
+
+      const installLink = container.querySelector<HTMLAnchorElement>('a[href^="https://discord.com/oauth2/authorize"]')!;
+      expect(installLink.href).toBe(
+        "https://discord.com/oauth2/authorize?client_id=app%20id%2F2&permissions=309237763136&scope=bot&guild_id=server%2342&disable_guild_select=true",
+      );
+      expect(installLink.href).not.toContain("MTA-private-bot-token");
+
+      mocks.setup.mockResolvedValueOnce({ ...endpoint, setup: { ...endpoint.setup, step: "test" } });
+      await click(connectLabel);
+      expect(mocks.setup).toHaveBeenCalledWith("endpoint-a", {
+        action: "configure",
+        credentials: { applicationId, guildId: serverId, botToken },
+      });
+    },
+  );
+
+  it.each([
     ["en", "App configuration access token", "Get your App configuration access token", "Select the workspace where you want to install your bot.", "Create Slack app", "App configuration access token", "Connection setup progress"],
     ["pt-BR", "Token de configuração do App", "Obter token de configuração do App", "Selecione o workspace no qual você quer instalar o bot.", "Criar app do Slack", "Token de configuração do App", "Progresso da configuração da conexão"],
   ])("renders the automatic Slack setup shell in %s and keeps Slack URLs and UI labels intact", async (locale, heading, tokenLink, workspaceInstruction, createLabel, activeStepLabel, progressAria) => {

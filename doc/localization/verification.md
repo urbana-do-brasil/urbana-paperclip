@@ -3758,3 +3758,10 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Setup automático Slack localizado em PT-BR/en; testes preservam token, URLs, escopos e payloads. Outros caminhos e flags seguem abertos.
 - Reseed: mensagens e validações localizadas; PID inválido interrompe, EPERM é conservador e apenas ENOENT/ESRCH indicam ausência. Fixtures verificam guards sem iniciar banco; seed real permanece pendente.
 - Contratos JSON/erro das três entradas de prompt comparados com fixtures, sem execução de backend/modelo. Rodada integrada: **112/112 testes em sete arquivos**. Checkpoint: **427/446 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Discord, revisão de pipelines e env-lab
+
+- Setup Discord e rótulos de transição da revisão localizados; payloads OAuth/credenciais e estados de pipeline preservados. Integração UI: 87/87 testes.
+- env-lab up/status/down/doctor e ajuda localizados; 30/30 testes focados com estado descartável e up simulado, sem iniciar sshd. JSON/flags preservados; demais grupos CLI seguem pendentes.
+- Checkpoint: **430/449 tarefas**, 19 caixas abertas incluindo agregadoras.
+- Integração final de Discord, revisão de pipelines e env-lab: **103/103 testes em quatro arquivos**, além dos typechecks CLI/UI, gates de tokens/fontes/catálogos e validação estrita OpenSpec.
