@@ -42,7 +42,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-describe("routine list/get CLI localization", () => {
+describe("routine read CLI localization", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
   let stdoutSpy: ReturnType<typeof vi.spyOn>;
   let stderrSpy: ReturnType<typeof vi.spyOn>;
@@ -80,6 +80,9 @@ describe("routine list/get CLI localization", () => {
       list: "Listar rotinas",
       projectId: "Filtrar pelo ID do projeto",
       get: "Consultar uma rotina",
+      revisions: "Listar revisões da rotina",
+      runs: "Listar execuções da rotina",
+      limit: "Número máximo de execuções retornadas",
       routineId: "ID da rotina",
       companyId: "ID da organização",
       json: "Exibir JSON bruto",
@@ -90,6 +93,9 @@ describe("routine list/get CLI localization", () => {
       list: "List routines",
       projectId: "Filter by project ID",
       get: "Get a routine",
+      revisions: "List routine revisions",
+      runs: "List routine runs",
+      limit: "Maximum runs to return",
       routineId: "Routine ID",
       companyId: "Company ID",
       json: "Output raw JSON",
@@ -100,6 +106,9 @@ describe("routine list/get CLI localization", () => {
     list,
     projectId,
     get,
+    revisions,
+    runs,
+    limit,
     routineId,
     companyId,
     json,
@@ -108,10 +117,14 @@ describe("routine list/get CLI localization", () => {
     const routine = program.commands.find((command) => command.name() === "routine");
     const listCommand = routine?.commands.find((command) => command.name() === "list");
     const getCommand = routine?.commands.find((command) => command.name() === "get");
+    const revisionsCommand = routine?.commands.find((command) => command.name() === "revisions");
+    const runsCommand = routine?.commands.find((command) => command.name() === "runs");
 
     expect(routine?.description()).toBe(group);
     expect(listCommand?.description()).toBe(list);
     expect(getCommand?.description()).toBe(get);
+    expect(revisionsCommand?.description()).toBe(revisions);
+    expect(runsCommand?.description()).toBe(runs);
 
     const listHelp = listCommand?.helpInformation().replace(/\s+/g, " ") ?? "";
     expect(listHelp).toContain("paperclipai routine list [options]");
@@ -127,6 +140,20 @@ describe("routine list/get CLI localization", () => {
     expect(getHelp).toContain(`id ${routineId}`);
     expect(getHelp).toContain("--json");
     expect(getHelp).toContain(json);
+
+    const revisionsHelp = revisionsCommand?.helpInformation().replace(/\s+/g, " ") ?? "";
+    expect(revisionsHelp).toContain("paperclipai routine revisions [options] <id>");
+    expect(revisionsHelp).toContain(`id ${routineId}`);
+    expect(revisionsHelp).toContain("--json");
+    expect(revisionsHelp).toContain(json);
+
+    const runsHelp = runsCommand?.helpInformation().replace(/\s+/g, " ") ?? "";
+    expect(runsHelp).toContain("paperclipai routine runs [options] <routineId>");
+    expect(runsHelp).toContain(`routineId ${routineId}`);
+    expect(runsHelp).toContain("--limit <n>");
+    expect(runsHelp).toContain(limit);
+    expect(runsHelp).toContain("--json");
+    expect(runsHelp).toContain(json);
   });
 
   it("preserves successful API data, routes, auth, and JSON in both locales", async () => {
@@ -140,6 +167,16 @@ describe("routine list/get CLI localization", () => {
         args: ["routine", "get", ROUTINE_ID],
         url: `http://paperclip.test/api/routines/routine%2Falpha`,
         result: ROUTINE_ROWS[0],
+      },
+      {
+        args: ["routine", "revisions", ROUTINE_ID],
+        url: `http://paperclip.test/api/routines/routine%2Falpha/revisions`,
+        result: ROUTINE_ROWS,
+      },
+      {
+        args: ["routine", "runs", ROUTINE_ID, "--limit", "5"],
+        url: `http://paperclip.test/api/routines/routine%2Falpha/runs?limit=5`,
+        result: ROUTINE_ROWS,
       },
     ];
 
@@ -186,6 +223,8 @@ describe("routine list/get CLI localization", () => {
     const operations = [
       ["routine", "list", "--company-id", COMPANY_ID],
       ["routine", "get", ROUTINE_ID],
+      ["routine", "revisions", ROUTINE_ID],
+      ["routine", "runs", ROUTINE_ID, "--limit", "5"],
     ];
     const structuredErrors: string[][] = operations.map(() => []);
 
@@ -205,10 +244,11 @@ describe("routine list/get CLI localization", () => {
       }
     }
 
-    expect(structuredErrors[0]?.[0]).toBe(structuredErrors[0]?.[1]);
-    expect(structuredErrors[1]?.[0]).toBe(structuredErrors[1]?.[1]);
-    expect(exitSpy.mock.calls).toEqual(Array(8).fill([1]));
-    expect(fetchMock).toHaveBeenCalledTimes(8);
+    for (const errors of structuredErrors) {
+      expect(errors[0]).toBe(errors[1]);
+    }
+    expect(exitSpy.mock.calls).toEqual(Array(16).fill([1]));
+    expect(fetchMock).toHaveBeenCalledTimes(16);
     expect(stdoutSpy).not.toHaveBeenCalled();
   });
 });

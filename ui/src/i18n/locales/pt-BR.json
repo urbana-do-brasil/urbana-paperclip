@@ -3963,6 +3963,56 @@
       }
     },
     "sandboxProviderConfigFields": {
+      "cloudflare": {
+        "bridgeBaseUrl": {
+          "name": "URL da ponte",
+          "description": "URL base da ponte Cloudflare Worker implantada pelo operador."
+        },
+        "bridgeAuthToken": {
+          "name": "Token de autenticação da ponte",
+          "description": "Token bearer usado pelo plugin provedor ao chamar a ponte Cloudflare. Valores colados são armazenados como segredos da organização."
+        },
+        "reuseLease": {
+          "name": "Reutilizar sandbox entre execuções",
+          "description": "Reutiliza um sandbox pelo ID do ambiente em vez de criar um por execução."
+        },
+        "keepAlive": {
+          "name": "Manter contêiner ativo",
+          "description": "Impede que o Cloudflare coloque o contêiner em modo ocioso entre requisições."
+        },
+        "sleepAfter": {
+          "name": "Timeout de inatividade",
+          "description": "Timeout de inatividade passado para getSandbox() ao criar o lease. O padrão é 1 hora para que um sandbox novo sobreviva a heartbeats normais do Claude/Codex. Ignorado quando keepAlive está ativo."
+        },
+        "normalizeId": {
+          "name": "Normalizar ID do sandbox",
+          "description": "Converte os IDs de sandbox para minúsculas e os normaliza para nomes fáceis de usar pelo operador."
+        },
+        "requestedCwd": {
+          "name": "Diretório de trabalho",
+          "description": "Diretório do workspace a ser criado no lease do sandbox."
+        },
+        "sessionStrategy": {
+          "name": "Estratégia da sessão",
+          "description": "Define se os comandos são executados em uma sessão nomeada estável ou na sessão padrão."
+        },
+        "sessionId": {
+          "name": "ID da sessão",
+          "description": "ID de sessão nomeada do Cloudflare usado quando sessionStrategy está como named."
+        },
+        "timeoutMs": {
+          "name": "Timeout do comando (ms)",
+          "description": "Timeout padrão de cada comando passado pela ponte."
+        },
+        "bridgeRequestTimeoutMs": {
+          "name": "Timeout da ponte (ms)",
+          "description": "Timeout HTTP para solicitações do plugin à ponte."
+        },
+        "previewHostname": {
+          "name": "Host de preview",
+          "description": "Nome de host opcional reservado para suporte futuro a URLs de preview."
+        }
+      },
       "modal": {
         "appName": {
           "name": "Nome do App do Modal",

@@ -249,6 +249,60 @@ const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
   key: string;
   fields: Record<string, { sourceDescription: string; key: string }>;
 }> = {
+  cloudflare: {
+    pluginId: "paperclip.cloudflare-sandbox-provider",
+    key: "cloudflare",
+    fields: {
+      bridgeBaseUrl: {
+        sourceDescription: "Base URL of the operator-deployed Cloudflare Worker bridge.",
+        key: "bridgeBaseUrl",
+      },
+      bridgeAuthToken: {
+        sourceDescription: "Bearer token used by the provider plugin when calling the Cloudflare bridge. Pasted values are stored as company secrets.",
+        key: "bridgeAuthToken",
+      },
+      reuseLease: {
+        sourceDescription: "Reuse a sandbox by environment ID instead of creating one per run.",
+        key: "reuseLease",
+      },
+      keepAlive: {
+        sourceDescription: "Prevent Cloudflare from idling the container between requests.",
+        key: "keepAlive",
+      },
+      sleepAfter: {
+        sourceDescription: "Idle timeout passed to getSandbox() on lease creation. Defaults to 1 hour so a fresh sandbox survives normal Claude/Codex heartbeats. Ignored when keepAlive is true.",
+        key: "sleepAfter",
+      },
+      normalizeId: {
+        sourceDescription: "Lowercase and normalize sandbox IDs for operator-friendly naming.",
+        key: "normalizeId",
+      },
+      requestedCwd: {
+        sourceDescription: "Workspace directory to create inside the sandbox lease.",
+        key: "requestedCwd",
+      },
+      sessionStrategy: {
+        sourceDescription: "Whether to run commands in a stable named session or the default session.",
+        key: "sessionStrategy",
+      },
+      sessionId: {
+        sourceDescription: "Named Cloudflare session ID used when sessionStrategy is named.",
+        key: "sessionId",
+      },
+      timeoutMs: {
+        sourceDescription: "Default per-command timeout passed through to the bridge.",
+        key: "timeoutMs",
+      },
+      bridgeRequestTimeoutMs: {
+        sourceDescription: "HTTP timeout for plugin-to-bridge requests.",
+        key: "bridgeRequestTimeoutMs",
+      },
+      previewHostname: {
+        sourceDescription: "Optional hostname reserved for future preview URL support.",
+        key: "previewHostname",
+      },
+    },
+  },
   modal: {
     pluginId: "paperclip.modal-sandbox-provider",
     key: "modal",

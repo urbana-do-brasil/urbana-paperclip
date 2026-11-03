@@ -3867,6 +3867,56 @@
       }
     },
     "sandboxProviderConfigFields": {
+      "cloudflare": {
+        "bridgeBaseUrl": {
+          "name": "Bridge URL",
+          "description": "Base URL of the operator-deployed Cloudflare Worker bridge."
+        },
+        "bridgeAuthToken": {
+          "name": "Bridge auth token",
+          "description": "Bearer token used by the provider plugin when calling the Cloudflare bridge. Pasted values are stored as company secrets."
+        },
+        "reuseLease": {
+          "name": "Reuse sandbox between runs",
+          "description": "Reuse a sandbox by environment ID instead of creating one per run."
+        },
+        "keepAlive": {
+          "name": "Keep container alive",
+          "description": "Prevent Cloudflare from idling the container between requests."
+        },
+        "sleepAfter": {
+          "name": "Idle timeout",
+          "description": "Idle timeout passed to getSandbox() on lease creation. Defaults to 1 hour so a fresh sandbox survives normal Claude/Codex heartbeats. Ignored when keepAlive is true."
+        },
+        "normalizeId": {
+          "name": "Normalize sandbox ID",
+          "description": "Lowercase and normalize sandbox IDs for operator-friendly naming."
+        },
+        "requestedCwd": {
+          "name": "Working directory",
+          "description": "Workspace directory to create inside the sandbox lease."
+        },
+        "sessionStrategy": {
+          "name": "Session strategy",
+          "description": "Whether to run commands in a stable named session or the default session."
+        },
+        "sessionId": {
+          "name": "Session ID",
+          "description": "Named Cloudflare session ID used when sessionStrategy is named."
+        },
+        "timeoutMs": {
+          "name": "Command timeout (ms)",
+          "description": "Default per-command timeout passed through to the bridge."
+        },
+        "bridgeRequestTimeoutMs": {
+          "name": "Bridge request timeout (ms)",
+          "description": "HTTP timeout for plugin-to-bridge requests."
+        },
+        "previewHostname": {
+          "name": "Preview hostname",
+          "description": "Optional hostname reserved for future preview URL support."
+        }
+      },
       "modal": {
         "appName": {
           "name": "Modal App name",

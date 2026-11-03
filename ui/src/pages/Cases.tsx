@@ -899,22 +899,28 @@ export function Cases() {
       let key: string;
       if (viewState.groupBy === "type") key = c.caseType;
       else if (viewState.groupBy === "status") key = c.status;
-      else key = c.projectId ? projectName.get(c.projectId) ?? "Unknown project" : "No project";
+      else key = c.projectId ? `project:${c.projectId}` : "__no_project__";
       const bucket = map.get(key);
       if (bucket) bucket.push(c);
       else map.set(key, [c]);
     }
-    return [...map.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([key, rows]) => {
-        const statusOption = viewState.groupBy === "status" ? STATUS_FILTER_OPTIONS.find((option) => option.value === key) : undefined;
-        const projectId = rows[0]?.projectId;
-        const label = statusOption ? t(statusOption.labelKey)
-          : viewState.groupBy === "project" && !projectId ? t("caseManagement.collection.filters.noProject")
-          : viewState.groupBy === "project" && projectId && !projectName.has(projectId) ? t("caseManagement.collection.unknownProject")
-          : key;
-        return { key, label, rows };
-      });
+    const groups = [...map.entries()].map(([key, rows]) => {
+      const statusOption = viewState.groupBy === "status" ? STATUS_FILTER_OPTIONS.find((option) => option.value === key) : undefined;
+      const projectId = rows[0]?.projectId;
+      const label = statusOption ? t(statusOption.labelKey)
+        : viewState.groupBy === "project" && !projectId ? t("caseManagement.collection.filters.noProject")
+        : viewState.groupBy === "project" && projectId ? projectName.get(projectId) ?? t("caseManagement.collection.unknownProject")
+        : key;
+      // Keep project ordering based on the existing English fallback labels,
+      // while using stable IDs as keys so names cannot merge different groups.
+      const sortLabel = viewState.groupBy === "project"
+        ? projectId ? projectName.get(projectId) ?? "Unknown project" : "No project"
+        : key;
+      return { key, label, rows, sortLabel };
+    });
+    return groups
+      .sort((a, b) => a.sortLabel.localeCompare(b.sortLabel) || a.key.localeCompare(b.key))
+      .map(({ key, label, rows }) => ({ key, label, rows }));
   }, [sorted, viewState.groupBy, projectName, t]);
 
   const treeRows = useMemo((): CaseTreeRow[] => {

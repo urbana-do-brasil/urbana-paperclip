@@ -795,6 +795,38 @@ describe("Cases list", () => {
     act(() => root.unmount());
   });
 
+  it.each([
+    { language: "en", emptyProjectLabel: "No project" },
+    { language: "pt-BR", emptyProjectLabel: "Sem projeto" },
+  ])("keeps an unassigned case separate from a project named like the empty-project group ($language)", async ({ language, emptyProjectLabel }) => {
+    window.localStorage.setItem("paperclip:cases:company-1:view", JSON.stringify({ groupBy: "project" }));
+    mockCasesApi.list.mockResolvedValue([
+      createCase({ id: "unassigned", identifier: "PAP-C1", title: "UNASSIGNED CASE", projectId: null }),
+      createCase({ id: "named-project", identifier: "PAP-C2", title: "NAMED PROJECT CASE", projectId: "project-1" }),
+    ]);
+    mockProjectsApi.list.mockResolvedValue([
+      { id: "project-1", name: emptyProjectLabel, archivedAt: null },
+    ]);
+    await i18n.changeLanguage(language);
+    const root = renderPage(container);
+
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("UNASSIGNED CASE");
+      expect(container.textContent).toContain("NAMED PROJECT CASE");
+    });
+
+    const matchingGroups = Array.from(container.querySelectorAll<HTMLButtonElement>('button[aria-expanded="true"]'))
+      .filter((button) => button.textContent?.trim() === emptyProjectLabel);
+    expect(matchingGroups).toHaveLength(2);
+    const groupContents = matchingGroups.map((button) =>
+      button.parentElement?.parentElement?.parentElement?.textContent ?? "",
+    );
+    expect(groupContents.some((text) => text.includes("UNASSIGNED CASE") && !text.includes("NAMED PROJECT CASE"))).toBe(true);
+    expect(groupContents.some((text) => text.includes("NAMED PROJECT CASE") && !text.includes("UNASSIGNED CASE"))).toBe(true);
+
+    act(() => root.unmount());
+  });
+
   it("localizes the onboarding and preserves the example's technical fields", async () => {
     mockCasesApi.list.mockResolvedValue([]);
     await i18n.changeLanguage("pt-BR");

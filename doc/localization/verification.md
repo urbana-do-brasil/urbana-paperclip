@@ -3612,3 +3612,9 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Popover de responsáveis nos dois modos: IssuesList + locale 69/69; preservados os IDs e corrigida a abertura do botão. Schema Modal: 33/33 e typecheck UI, com identidade e descrição exatas; outros providers permanecem pendentes.
 - CLI routine list/get: 5/5; alerta próprio de webhook localizado. Checkpoint: **372/390 tarefas**, 18 caixas abertas incluindo agregadoras.
 - Rodada integrada posterior: 100/100 em cinco arquivos; typechecks UI/CLI, gates de tokens e fontes e OpenSpec estrito passaram.
+
+### Cases, schema Cloudflare e CLI de rotinas — 3.10o, 3.11h14 e 4.3ai
+
+- Cases: 22/22 para agrupamento por projeto sem colisão com o rótulo localizado; typecheck UI passou. Schema Cloudflare: 22/22, locale 13/13 e typecheck UI, preservando schema e fallback externo.
+- CLI routine revisions/runs: 5/5 e typecheck CLI. Checkpoint: **375/393 tarefas**, 18 caixas abertas incluindo agregadoras.
+- Rodada integrada: 62/62 em quatro arquivos; gates de tokens e fontes e OpenSpec estrito passaram.

@@ -650,6 +650,185 @@ describe("owned plugin presentation localization", () => {
     expect(changedSourcePresentation.properties.apiKey).toEqual(changedSourceSchema.properties.apiKey);
   });
 
+  it.each(["pt-BR", "en"] as const)("localizes Cloudflare schema metadata only for the exact bundled source in %s", async (locale) => {
+    await i18n.changeLanguage(locale);
+    const pluginId = "paperclip.cloudflare-sandbox-provider";
+    const pluginRecordId = "bundled-cloudflare-plugin-id";
+    const packageName = "@paperclipai/plugin-cloudflare-sandbox";
+    const bundlePath = "/app/packages/plugins/sandbox-providers/cloudflare";
+    const installed = [{
+      id: pluginRecordId,
+      pluginKey: pluginId,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginId },
+    }];
+    const bundled = [{ pluginKey: pluginId, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledSandboxProvider({ pluginId: pluginRecordId, pluginKey: pluginId }, installed, bundled);
+    expect(trustedBundle).toBe(true);
+
+    const sourceDescriptions = {
+      bridgeBaseUrl: "Base URL of the operator-deployed Cloudflare Worker bridge.",
+      bridgeAuthToken: "Bearer token used by the provider plugin when calling the Cloudflare bridge. Pasted values are stored as company secrets.",
+      reuseLease: "Reuse a sandbox by environment ID instead of creating one per run.",
+      keepAlive: "Prevent Cloudflare from idling the container between requests.",
+      sleepAfter: "Idle timeout passed to getSandbox() on lease creation. Defaults to 1 hour so a fresh sandbox survives normal Claude/Codex heartbeats. Ignored when keepAlive is true.",
+      normalizeId: "Lowercase and normalize sandbox IDs for operator-friendly naming.",
+      requestedCwd: "Workspace directory to create inside the sandbox lease.",
+      sessionStrategy: "Whether to run commands in a stable named session or the default session.",
+      sessionId: "Named Cloudflare session ID used when sessionStrategy is named.",
+      timeoutMs: "Default per-command timeout passed through to the bridge.",
+      bridgeRequestTimeoutMs: "HTTP timeout for plugin-to-bridge requests.",
+      previewHostname: "Optional hostname reserved for future preview URL support.",
+    };
+    const ptBrDescriptions = {
+      bridgeBaseUrl: "URL base da ponte Cloudflare Worker implantada pelo operador.",
+      bridgeAuthToken: "Token bearer usado pelo plugin provedor ao chamar a ponte Cloudflare. Valores colados são armazenados como segredos da organização.",
+      reuseLease: "Reutiliza um sandbox pelo ID do ambiente em vez de criar um por execução.",
+      keepAlive: "Impede que o Cloudflare coloque o contêiner em modo ocioso entre requisições.",
+      sleepAfter: "Timeout de inatividade passado para getSandbox() ao criar o lease. O padrão é 1 hora para que um sandbox novo sobreviva a heartbeats normais do Claude/Codex. Ignorado quando keepAlive está ativo.",
+      normalizeId: "Converte os IDs de sandbox para minúsculas e os normaliza para nomes fáceis de usar pelo operador.",
+      requestedCwd: "Diretório do workspace a ser criado no lease do sandbox.",
+      sessionStrategy: "Define se os comandos são executados em uma sessão nomeada estável ou na sessão padrão.",
+      sessionId: "ID de sessão nomeada do Cloudflare usado quando sessionStrategy está como named.",
+      timeoutMs: "Timeout padrão de cada comando passado pela ponte.",
+      bridgeRequestTimeoutMs: "Timeout HTTP para solicitações do plugin à ponte.",
+      previewHostname: "Nome de host opcional reservado para suporte futuro a URLs de preview.",
+    };
+    const ptBrNames = {
+      bridgeBaseUrl: "URL da ponte",
+      bridgeAuthToken: "Token de autenticação da ponte",
+      reuseLease: "Reutilizar sandbox entre execuções",
+      keepAlive: "Manter contêiner ativo",
+      sleepAfter: "Timeout de inatividade",
+      normalizeId: "Normalizar ID do sandbox",
+      requestedCwd: "Diretório de trabalho",
+      sessionStrategy: "Estratégia da sessão",
+      sessionId: "ID da sessão",
+      timeoutMs: "Timeout do comando (ms)",
+      bridgeRequestTimeoutMs: "Timeout da ponte (ms)",
+      previewHostname: "Host de preview",
+    };
+    const enNames = {
+      bridgeBaseUrl: "Bridge URL",
+      bridgeAuthToken: "Bridge auth token",
+      reuseLease: "Reuse sandbox between runs",
+      keepAlive: "Keep container alive",
+      sleepAfter: "Idle timeout",
+      normalizeId: "Normalize sandbox ID",
+      requestedCwd: "Working directory",
+      sessionStrategy: "Session strategy",
+      sessionId: "Session ID",
+      timeoutMs: "Command timeout (ms)",
+      bridgeRequestTimeoutMs: "Bridge request timeout (ms)",
+      previewHostname: "Preview hostname",
+    };
+    const schema = {
+      type: "object",
+      required: ["bridgeBaseUrl", "bridgeAuthToken"],
+      properties: {
+        bridgeBaseUrl: { type: "string", format: "uri", description: sourceDescriptions.bridgeBaseUrl },
+        bridgeAuthToken: { type: "string", format: "secret-ref", description: sourceDescriptions.bridgeAuthToken },
+        reuseLease: { type: "boolean", default: false, description: sourceDescriptions.reuseLease },
+        keepAlive: { type: "boolean", default: false, description: sourceDescriptions.keepAlive },
+        sleepAfter: { type: "string", default: "1h", description: sourceDescriptions.sleepAfter },
+        normalizeId: { type: "boolean", default: true, description: sourceDescriptions.normalizeId },
+        requestedCwd: { type: "string", default: "/workspace/paperclip", description: sourceDescriptions.requestedCwd },
+        sessionStrategy: { type: "string", enum: ["named", "default"], default: "named", description: sourceDescriptions.sessionStrategy },
+        sessionId: { type: "string", default: "paperclip", description: sourceDescriptions.sessionId },
+        timeoutMs: { type: "number", default: 300_000, description: sourceDescriptions.timeoutMs },
+        bridgeRequestTimeoutMs: { type: "number", default: 30_000, description: sourceDescriptions.bridgeRequestTimeoutMs },
+        previewHostname: { type: "string", description: sourceDescriptions.previewHostname },
+        customField: { type: "string", title: "Provider-owned field", description: "Provider-owned help text." },
+      },
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configuration = {
+      bridgeBaseUrl: "https://bridge.example.test",
+      bridgeAuthToken: "company-secret-ref",
+      reuseLease: true,
+      keepAlive: true,
+      sleepAfter: "2h",
+      normalizeId: false,
+      requestedCwd: "/custom/workspace",
+      sessionStrategy: "default",
+      sessionId: "user-session",
+      timeoutMs: 600_000,
+      bridgeRequestTimeoutMs: 45_000,
+      previewHostname: "preview.example.test",
+      providerArbitraryValue: { preserve: true },
+    };
+    const configurationBefore = JSON.stringify(configuration);
+    const localized = localizeSandboxProviderConfigSchema("cloudflare", pluginId, schema, i18n.t, trustedBundle)!;
+    const expectedNames = locale === "pt-BR" ? ptBrNames : enNames;
+    const expectedDescriptions = locale === "pt-BR" ? ptBrDescriptions : sourceDescriptions;
+
+    for (const [fieldKey, sourceDescription] of Object.entries(sourceDescriptions)) {
+      const translationKey = `pluginPresentation.sandboxProviderConfigFields.cloudflare.${fieldKey}`;
+      expect(i18n.exists(`${translationKey}.name`, { lng: locale })).toBe(true);
+      expect(i18n.exists(`${translationKey}.description`, { lng: locale })).toBe(true);
+      const sourceField = schema.properties[fieldKey as keyof typeof schema.properties];
+      expect(localized.properties[fieldKey as keyof typeof localized.properties]).toEqual({
+        ...sourceField,
+        title: expectedNames[fieldKey as keyof typeof expectedNames],
+        description: expectedDescriptions[fieldKey as keyof typeof expectedDescriptions],
+      });
+      expect(sourceDescription).toBeTruthy();
+    }
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(localized.required).toEqual(["bridgeBaseUrl", "bridgeAuthToken"]);
+    expect(localized.properties.sessionStrategy).toMatchObject({ enum: ["named", "default"], default: "named" });
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configuration)).toBe(configurationBefore);
+
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/cloudflare/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    const packageJson = JSON.parse(readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/cloudflare/package.json", import.meta.url),
+      "utf8",
+    )) as { name: string };
+    expect(packageJson.name).toBe(packageName);
+    expect(manifestSource).toContain(`const PLUGIN_ID = "${pluginId}"`);
+    expect(manifestSource).toContain('driverKey: "cloudflare"');
+    for (const sourceDescription of Object.values(sourceDescriptions)) {
+      expect(manifestSource).toContain(sourceDescription);
+    }
+
+    const externalInstalled = [{
+      ...installed[0]!,
+      id: "vendor-cloudflare-id",
+      packageName: "vendor/cloudflare-compatible",
+      packagePath: "/custom/vendor/cloudflare-compatible",
+    }];
+    const externalTrustedBundle = isTrustedBundledSandboxProvider(
+      { pluginId: "vendor-cloudflare-id", pluginKey: pluginId },
+      externalInstalled,
+      bundled,
+    );
+    expect(externalTrustedBundle).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("cloudflare", pluginId, schema, i18n.t, externalTrustedBundle)).toBe(schema);
+
+    const wrongManifestIdentity = isTrustedBundledSandboxProvider(
+      { pluginId: pluginRecordId, pluginKey: pluginId },
+      [{ ...installed[0]!, manifestJson: { id: "paperclip.daytona-sandbox-provider" } }],
+      bundled,
+    );
+    expect(wrongManifestIdentity).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("cloudflare", pluginId, schema, i18n.t, wrongManifestIdentity)).toBe(schema);
+
+    const changedSourceSchema = {
+      ...schema,
+      properties: {
+        ...schema.properties,
+        bridgeAuthToken: { ...schema.properties.bridgeAuthToken, description: "Vendor-authored Cloudflare-compatible token help." },
+      },
+    };
+    const changedSourcePresentation = localizeSandboxProviderConfigSchema("cloudflare", pluginId, changedSourceSchema, i18n.t, true)!;
+    expect(changedSourcePresentation.properties.bridgeAuthToken).toEqual(changedSourceSchema.properties.bridgeAuthToken);
+  });
+
   it("localizes managed-resource plugin attribution only with matching installed and bundled identity", async () => {
     const attribution = {
       pluginId: "plugin-workspace",

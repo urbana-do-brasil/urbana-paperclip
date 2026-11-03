@@ -283,6 +283,19 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: { id: { en: "Routine ID", "pt-BR": "ID da rotina" } },
     options: commonClientOptions,
   },
+  "routine revisions": {
+    description: { en: "List routine revisions", "pt-BR": "Listar revisões da rotina" },
+    arguments: { id: { en: "Routine ID", "pt-BR": "ID da rotina" } },
+    options: commonClientOptions,
+  },
+  "routine runs": {
+    description: { en: "List routine runs", "pt-BR": "Listar execuções da rotina" },
+    arguments: { routineId: { en: "Routine ID", "pt-BR": "ID da rotina" } },
+    options: {
+      ...commonClientOptions,
+      "--limit": { en: "Maximum runs to return", "pt-BR": "Número máximo de execuções retornadas" },
+    },
+  },
   approval: {
     description: { en: "Approval operations", "pt-BR": "Operações de aprovação" },
   },
