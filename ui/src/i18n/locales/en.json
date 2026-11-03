@@ -9480,6 +9480,11 @@
       },
       "unsupportedProvider": "This chat provider is not supported.",
       "selectOrganization": "Select an organization to connect chat.",
+      "endpointUnavailable": "This endpoint is unavailable. Check the server's public URL.",
+      "copyFailure": {
+        "title": "Couldn't copy to clipboard",
+        "body": "Select and copy the value manually."
+      },
       "agent": {
         "heading": "Which agent do you want to chat with?",
         "description": "This agent is permanent for the connection. Connect another channel to represent a different agent.",
@@ -9532,6 +9537,50 @@
         "permissionsNotice": "The install link grants only {{permissions}}. Paperclip still requires each discovered channel to be enabled in Access.",
         "connectBot": "Connect Discord bot",
         "reconnectBot": "Reconnect Discord bot"
+      },
+      "microsoftTeams": {
+        "heading": "Connect {{agent}} to Microsoft Teams",
+        "createDescription": "Use your own Microsoft app credentials for this bot.",
+        "reconnectDescription": "Reconnect verifies this same Microsoft app, tenant, and bot identity. It does not upload or reinstall the Teams app. Leave fields blank to reuse saved credentials.",
+        "requirements": "This setup requires a Microsoft 365 work or school organization where you can register an Entra app, create an Azure Bot, and upload or install a Teams app. Personal or free Teams accounts at teams.live.com cannot complete this setup. This release supports Microsoft 365 commercial cloud tenants only; GCC, GCC High, DoD, and Microsoft 365 operated by 21Vianet are not supported yet.",
+        "instructions": {
+          "entra": "In Microsoft Entra, create a single-tenant app registration. Copy its Application (client) ID and Directory (tenant) ID, then create a client secret and copy its value.",
+          "azureBot": "In Azure, create an Azure Bot. Choose Single Tenant, use that Application ID, set its messaging endpoint to the Paperclip URL below, and add the Microsoft Teams channel.",
+          "teamsApp": "In Teams Developer Portal, create an app, add a bot with the same Application ID, then apply the manifest settings shown below. The block binds the Teams resource-specific consent permissions to that Entra app; these are not Microsoft Graph permissions in Entra. These permissions let the installed app receive every message in a team or group chat without an @mention, so describe that access to installers. Download the package and install it in the target team or group chat."
+        },
+        "links": {
+          "openEntra": "Open Microsoft Entra",
+          "createAzureBot": "Create Azure Bot",
+          "openTeamsPortal": "Open Teams Developer Portal"
+        },
+        "messagingEndpoint": "Paperclip messaging endpoint",
+        "fields": {
+          "clientId": "Application / Client ID",
+          "tenantId": "Directory / Tenant ID",
+          "clientSecret": "Client secret value"
+        },
+        "portalMap": {
+          "heading": "Microsoft portal field map",
+          "intro": "Use these exact portal sections and reuse the same Application ID in all three places.",
+          "steps": {
+            "entra": "Microsoft Entra admin center · App registrations: select New registration, choose Accounts in this organizational directory only (Single tenant), then select Register. Copy Application (client) ID and Directory (tenant) ID. Under Certificates & secrets · Client secrets, select New client secret and copy its Value, not its Secret ID.",
+            "azureBot": "Azure · Create Azure Bot: set Microsoft App ID to Single Tenant, set Creation type to Use existing app registration, and enter the Application ID and Tenant ID above. After creation, open Settings · Configuration and paste the Paperclip Messaging endpoint; then open Settings · Channels and enable Microsoft Teams.",
+            "teamsDeveloperPortal": "Teams Developer Portal · Apps: select New app. Under Configure · App features · Bot, add an existing bot using the same Application ID; enable Personal, Team, and Group chat scopes plus file support. Under Configure · Permissions, add the two RSC Application permissions shown below. Complete the required app details and icons, explain that the app can receive every message in an installed team or group chat, then download the app package.",
+            "install": "Microsoft Teams · Apps · Manage your apps: select Upload an app · Upload a custom app, choose the downloaded package, and install it in each intended personal chat, group chat, or team. One team install covers its standard channels. Private and shared channels require a separate app installation and are not supported by this release. If upload is unavailable, a Teams administrator must enable or approve custom apps."
+          }
+        },
+        "manifest": {
+          "label": "Required Teams app manifest block",
+          "copy": "Copy manifest settings",
+          "copied": "Manifest settings copied",
+          "clientIdNote": "Enter the Application / Client ID above before copying so the block contains the real bot identity. This block contains the Paperclip-specific fields to verify in Developer Portal or merge into a complete Teams app manifest. It is not a complete app package; Developer Portal supplies the remaining required metadata and packages the manifest with your app icons.",
+          "noSsoNote": "Paperclip does not use Teams single sign-on in this release. The copied webApplicationInfo entry only associates the RSC permissions with the same Entra Application ID. Its nonempty resource is an RSC placeholder; you do not need to register an Entra Application ID URI or add delegated Microsoft Graph permissions.",
+          "rscPermissionNote": "The two application RSC permissions let the bot receive every message, without an @mention, in each team or group chat where it is installed. Paperclip retains and acts only on messages admitted by your Paperclip reach and access rules. Make this provider access clear in the app description shown to installers.",
+          "supportedScopesNote": "This release supports personal chats, group chats, and standard team channels—not private channels. The supportsFiles: true setting enables native file receipt and consent-based sending in personal chats; channel and group-chat files need a separate Microsoft Graph connection and are not ingested here."
+        },
+        "httpsPrerequisite": "Configure a public HTTPS URL for this Paperclip instance before connecting Microsoft Teams.",
+        "reconnect": "Reconnect Microsoft app",
+        "verify": "Verify Microsoft credentials"
       },
       "slack": {
         "steps": {

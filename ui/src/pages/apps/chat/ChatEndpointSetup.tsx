@@ -738,8 +738,8 @@ function ProviderConnectStep({
     !slackBotToken && !credentials.signingSecret?.trim();
   const reportCopyFailure = () =>
     pushToast({
-      title: "Couldn't copy to clipboard",
-      body: "Select and copy the value manually.",
+      title: t("apps.chatEndpointSetup.copyFailure.title"),
+      body: t("apps.chatEndpointSetup.copyFailure.body"),
       tone: "error",
     });
   const field = (key: string, label: string, type = "password") => (
@@ -767,7 +767,7 @@ function ProviderConnectStep({
       <p className="text-sm font-medium">{label}</p>
       <div className="rounded-lg border border-border bg-muted p-3 font-mono text-xs break-all">
         {value ??
-          "This endpoint is unavailable. Check the server's public URL."}
+          t("apps.chatEndpointSetup.endpointUnavailable")}
       </div>
     </div>
   );
@@ -1042,43 +1042,21 @@ function ProviderConnectStep({
       <div className="space-y-5">
         <div>
           <h1 className="text-xl font-bold">
-            Connect {agentName} to Microsoft Teams
+            {t("apps.chatEndpointSetup.microsoftTeams.heading", { agent: agentName })}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {repairing
-              ? "Reconnect verifies this same Microsoft app, tenant, and bot identity. It does not upload or reinstall the Teams app. Leave fields blank to reuse saved credentials."
-              : "Use your own Microsoft app credentials for this bot."}
+              ? t("apps.chatEndpointSetup.microsoftTeams.reconnectDescription")
+              : t("apps.chatEndpointSetup.microsoftTeams.createDescription")}
           </p>
         </div>
         <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-          This setup requires a Microsoft 365 work or school organization where
-          you can register an Entra app, create an Azure Bot, and upload or
-          install a Teams app. Personal or free Teams accounts at teams.live.com
-          cannot complete this setup. This release supports Microsoft 365
-          commercial cloud tenants only; GCC, GCC High, DoD, and Microsoft 365
-          operated by 21Vianet are not supported yet.
+          {t("apps.chatEndpointSetup.microsoftTeams.requirements")}
         </p>
         <ol className="list-decimal space-y-2 pl-5 text-sm">
-          <li>
-            In Microsoft Entra, create a single-tenant app registration. Copy
-            its Application (client) ID and Directory (tenant) ID, then create a
-            client secret and copy its value.
-          </li>
-          <li>
-            In Azure, create an Azure Bot. Choose Single Tenant, use that
-            Application ID, set its messaging endpoint to the Paperclip URL
-            below, and add the Microsoft Teams channel.
-          </li>
-          <li>
-            In Teams Developer Portal, create an app, add a bot with the same
-            Application ID, then apply the manifest settings shown below. The
-            block binds the Teams resource-specific consent permissions to that
-            Entra app; these are not Microsoft Graph permissions in Entra. These
-            permissions let the installed app receive every message in a team or
-            group chat without an @mention, so describe that access to
-            installers. Download the package and install it in the target team
-            or group chat.
-          </li>
+          <li>{t("apps.chatEndpointSetup.microsoftTeams.instructions.entra")}</li>
+          <li>{t("apps.chatEndpointSetup.microsoftTeams.instructions.azureBot")}</li>
+          <li>{t("apps.chatEndpointSetup.microsoftTeams.instructions.teamsApp")}</li>
         </ol>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
@@ -1087,7 +1065,7 @@ function ProviderConnectStep({
               target="_blank"
               rel="noreferrer"
             >
-              Open Microsoft Entra <ExternalLink />
+              {t("apps.chatEndpointSetup.microsoftTeams.links.openEntra")} <ExternalLink />
             </a>
           </Button>
           <Button asChild variant="outline">
@@ -1096,7 +1074,7 @@ function ProviderConnectStep({
               target="_blank"
               rel="noreferrer"
             >
-              Create Azure Bot <ExternalLink />
+              {t("apps.chatEndpointSetup.microsoftTeams.links.createAzureBot")} <ExternalLink />
             </a>
           </Button>
           <Button asChild variant="outline">
@@ -1105,79 +1083,35 @@ function ProviderConnectStep({
               target="_blank"
               rel="noreferrer"
             >
-              Open Teams Developer Portal <ExternalLink />
+              {t("apps.chatEndpointSetup.microsoftTeams.links.openTeamsPortal")} <ExternalLink />
             </a>
           </Button>
         </div>
         {endpointValue(
-          "Paperclip messaging endpoint",
+          t("apps.chatEndpointSetup.microsoftTeams.messagingEndpoint"),
           endpoint.setup?.messagingEndpoint,
         )}
-        {field("clientId", "Application / Client ID", "text")}
-        {field("tenantId", "Directory / Tenant ID", "text")}
-        {field("clientSecret", "Client secret value")}
+        {field("clientId", t("apps.chatEndpointSetup.microsoftTeams.fields.clientId"), "text")}
+        {field("tenantId", t("apps.chatEndpointSetup.microsoftTeams.fields.tenantId"), "text")}
+        {field("clientSecret", t("apps.chatEndpointSetup.microsoftTeams.fields.clientSecret"))}
         <section className="space-y-3 rounded-lg border border-border p-4">
           <div>
             <h2 className="text-sm font-semibold">
-              Microsoft portal field map
+              {t("apps.chatEndpointSetup.microsoftTeams.portalMap.heading")}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Use these exact portal sections and reuse the same Application ID
-              in all three places.
+              {t("apps.chatEndpointSetup.microsoftTeams.portalMap.intro")}
             </p>
           </div>
           <ol className="list-decimal space-y-3 pl-5 text-sm">
-            <li>
-              <strong>Microsoft Entra admin center · App registrations</strong>:
-              select <strong>New registration</strong>, choose{" "}
-              <strong>
-                Accounts in this organizational directory only (Single tenant)
-              </strong>
-              , then select <strong>Register</strong>. Copy{" "}
-              <strong>Application (client) ID</strong> and{" "}
-              <strong>Directory (tenant) ID</strong>. Under{" "}
-              <strong>Certificates &amp; secrets · Client secrets</strong>,
-              select <strong>New client secret</strong> and copy its{" "}
-              <strong>Value</strong>, not its Secret ID.
-            </li>
-            <li>
-              <strong>Azure · Create Azure Bot</strong>: set{" "}
-              <strong>Microsoft App ID</strong> to{" "}
-              <strong>Single Tenant</strong>, set <strong>Creation type</strong>{" "}
-              to <strong>Use existing app registration</strong>, and enter the
-              Application ID and Tenant ID above. After creation, open{" "}
-              <strong>Settings · Configuration</strong> and paste the Paperclip{" "}
-              <strong>Messaging endpoint</strong>; then open{" "}
-              <strong>Settings · Channels</strong> and enable{" "}
-              <strong>Microsoft Teams</strong>.
-            </li>
-            <li>
-              <strong>Teams Developer Portal · Apps</strong>: select{" "}
-              <strong>New app</strong>. Under{" "}
-              <strong>Configure · App features · Bot</strong>, add an existing
-              bot using the same Application ID; enable{" "}
-              <strong>Personal</strong>, <strong>Team</strong>, and{" "}
-              <strong>Group chat</strong> scopes plus file support. Under{" "}
-              <strong>Configure · Permissions</strong>, add the two RSC{" "}
-              <strong>Application</strong> permissions shown below. Complete the
-              required app details and icons, explain that the app can receive
-              every message in an installed team or group chat, then download
-              the app package.
-            </li>
-            <li>
-              <strong>Microsoft Teams · Apps · Manage your apps</strong>: select{" "}
-              <strong>Upload an app · Upload a custom app</strong>, choose the
-              downloaded package, and install it in each intended personal chat,
-              group chat, or team. One team install covers its standard
-              channels. Private and shared channels require a separate app
-              installation and are not supported by this release. If upload is
-              unavailable, a Teams administrator must enable or approve custom
-              apps.
-            </li>
+            <li>{t("apps.chatEndpointSetup.microsoftTeams.portalMap.steps.entra")}</li>
+            <li>{t("apps.chatEndpointSetup.microsoftTeams.portalMap.steps.azureBot")}</li>
+            <li>{t("apps.chatEndpointSetup.microsoftTeams.portalMap.steps.teamsDeveloperPortal")}</li>
+            <li>{t("apps.chatEndpointSetup.microsoftTeams.portalMap.steps.install")}</li>
           </ol>
         </section>
         <label className="grid gap-2 text-sm font-medium">
-          Required Teams app manifest block
+          {t("apps.chatEndpointSetup.microsoftTeams.manifest.label")}
           <Textarea
             className="min-h-80 font-mono text-xs"
             readOnly
@@ -1196,43 +1130,25 @@ function ProviderConnectStep({
             }}
           >
             {manifestCopied
-              ? "Manifest settings copied"
-              : "Copy manifest settings"}
+              ? t("apps.chatEndpointSetup.microsoftTeams.manifest.copied")
+              : t("apps.chatEndpointSetup.microsoftTeams.manifest.copy")}
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Enter the Application / Client ID above before copying so the block
-          contains the real bot identity. This block contains the
-          Paperclip-specific fields to verify in Developer Portal or merge into
-          a complete Teams app manifest. It is not a complete app package;
-          Developer Portal supplies the remaining required metadata and packages
-          the manifest with your app icons.
+          {t("apps.chatEndpointSetup.microsoftTeams.manifest.clientIdNote")}
         </p>
         <p className="text-sm text-muted-foreground">
-          Paperclip does not use Teams single sign-on in this release. The
-          copied <code>webApplicationInfo</code> entry only associates the RSC
-          permissions with the same Entra Application ID. Its nonempty resource
-          is an RSC placeholder; you do not need to register an Entra
-          Application ID URI or add delegated Microsoft Graph permissions.
+          {t("apps.chatEndpointSetup.microsoftTeams.manifest.noSsoNote")}
         </p>
         <p className="text-sm text-muted-foreground">
-          The two application RSC permissions let the bot receive every message,
-          without an @mention, in each team or group chat where it is installed.
-          Paperclip retains and acts only on messages admitted by your Paperclip
-          reach and access rules. Make this provider access clear in the app
-          description shown to installers.
+          {t("apps.chatEndpointSetup.microsoftTeams.manifest.rscPermissionNote")}
         </p>
         <p className="text-sm text-muted-foreground">
-          This release supports personal chats, group chats, and standard team
-          channels—not private channels. <code>supportsFiles: true</code>{" "}
-          enables native file receipt and consent-based sending in personal
-          chats; channel and group-chat files need a separate Microsoft Graph
-          connection and are not ingested here.
+          {t("apps.chatEndpointSetup.microsoftTeams.manifest.supportedScopesNote")}
         </p>
         {!endpoint.setup?.messagingEndpoint && (
           <p className="text-sm text-destructive">
-            Configure a public HTTPS URL for this Paperclip instance before
-            connecting Microsoft Teams.
+            {t("apps.chatEndpointSetup.microsoftTeams.httpsPrerequisite")}
           </p>
         )}
         <Button
@@ -1250,8 +1166,8 @@ function ProviderConnectStep({
         >
           {pending && <Loader2 className="h-4 w-4 animate-spin" />}
           {repairing
-            ? "Reconnect Microsoft app"
-            : "Verify Microsoft credentials"}
+            ? t("apps.chatEndpointSetup.microsoftTeams.reconnect")
+            : t("apps.chatEndpointSetup.microsoftTeams.verify")}
         </Button>
       </div>
     );

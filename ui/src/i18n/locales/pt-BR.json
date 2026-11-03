@@ -9696,6 +9696,11 @@
       },
       "unsupportedProvider": "Este provedor de chat não é compatível.",
       "selectOrganization": "Selecione uma organização para conectar o chat.",
+      "endpointUnavailable": "Este endpoint não está disponível. Confira a URL pública do servidor.",
+      "copyFailure": {
+        "title": "Não foi possível copiar para a área de transferência",
+        "body": "Selecione e copie o valor manualmente."
+      },
       "agent": {
         "heading": "Com qual agente você quer conversar?",
         "description": "Este agente fica vinculado permanentemente à conexão. Conecte outro canal para representar um agente diferente.",
@@ -9748,6 +9753,50 @@
         "permissionsNotice": "O link de instalação concede apenas {{permissions}}. O Paperclip ainda exige que cada canal encontrado seja habilitado em Access.",
         "connectBot": "Conectar bot do Discord",
         "reconnectBot": "Reconectar bot do Discord"
+      },
+      "microsoftTeams": {
+        "heading": "Conectar {{agent}} ao Microsoft Teams",
+        "createDescription": "Use suas próprias credenciais de app Microsoft para este bot.",
+        "reconnectDescription": "A reconexão verifica este mesmo app Microsoft, tenant e identidade do bot. Ela não carrega nem reinstala o app do Teams. Deixe os campos em branco para reutilizar as credenciais salvas.",
+        "requirements": "Esta configuração exige uma organização de trabalho ou escolar do Microsoft 365 onde você possa registrar um app do Entra, criar um Azure Bot e carregar ou instalar um app do Teams. Contas pessoais ou gratuitas do Teams em teams.live.com não podem concluir esta configuração. Esta versão dá suporte apenas a tenants comerciais do Microsoft 365; GCC, GCC High, DoD e Microsoft 365 operado pela 21Vianet ainda não são compatíveis.",
+        "instructions": {
+          "entra": "No Microsoft Entra, crie um registro de aplicativo de locatário único. Copie o Application (client) ID e o Directory (tenant) ID, depois crie um segredo de cliente e copie o valor.",
+          "azureBot": "No Azure, crie um Azure Bot. Escolha Single Tenant, use esse Application ID, defina o endpoint de mensagens como a URL do Paperclip abaixo e adicione o canal Microsoft Teams.",
+          "teamsApp": "No Teams Developer Portal, crie um app, adicione um bot com o mesmo Application ID e aplique as configurações do manifesto exibidas abaixo. Este bloco vincula as permissões de consentimento específicas do recurso (RSC) do Teams a esse app do Entra; elas não são permissões do Microsoft Graph no Entra. Elas permitem que o app instalado receba todas as mensagens de uma equipe ou conversa em grupo sem uma menção com @, então informe esse acesso aos instaladores. Baixe o pacote e instale-o na equipe ou conversa em grupo de destino."
+        },
+        "links": {
+          "openEntra": "Abrir Microsoft Entra",
+          "createAzureBot": "Criar Azure Bot",
+          "openTeamsPortal": "Abrir Teams Developer Portal"
+        },
+        "messagingEndpoint": "Endpoint de mensagens do Paperclip",
+        "fields": {
+          "clientId": "ID do Aplicativo / cliente",
+          "tenantId": "ID do Diretório / tenant",
+          "clientSecret": "Valor do segredo do cliente"
+        },
+        "portalMap": {
+          "heading": "Mapa de campos dos portais Microsoft",
+          "intro": "Use estas seções exatas dos portais e reutilize o mesmo Application ID nos três locais.",
+          "steps": {
+            "entra": "Microsoft Entra admin center · App registrations: selecione New registration, escolha Accounts in this organizational directory only (Single tenant) e depois Register. Copie Application (client) ID e Directory (tenant) ID. Em Certificates & secrets · Client secrets, selecione New client secret e copie seu Value, não o Secret ID.",
+            "azureBot": "Azure · Create Azure Bot: defina Microsoft App ID como Single Tenant, defina Creation type como Use existing app registration e informe o Application ID e o Tenant ID acima. Depois de criar, abra Settings · Configuration e cole o endpoint de mensagens do Paperclip; então abra Settings · Channels e habilite Microsoft Teams.",
+            "teamsDeveloperPortal": "Teams Developer Portal · Apps: selecione New app. Em Configure · App features · Bot, adicione um bot existente usando o mesmo Application ID; habilite os escopos Personal, Team e Group chat e o suporte a arquivos. Em Configure · Permissions, adicione as duas permissões RSC Application exibidas abaixo. Preencha os detalhes e ícones obrigatórios do app, explique que ele pode receber todas as mensagens em uma equipe ou conversa em grupo instalada e baixe o pacote do app.",
+            "install": "Microsoft Teams · Apps · Manage your apps: selecione Upload an app · Upload a custom app, escolha o pacote baixado e instale-o em cada conversa pessoal, conversa em grupo ou equipe desejada. Uma instalação na equipe cobre os canais padrão. Canais privados e compartilhados exigem uma instalação separada do app e ainda não são compatíveis nesta versão. Se o envio não estiver disponível, um administrador do Teams precisa habilitar ou aprovar apps personalizados."
+          }
+        },
+        "manifest": {
+          "label": "Bloco obrigatório do manifesto do app Teams",
+          "copy": "Copiar configurações do manifesto",
+          "copied": "Configurações do manifesto copiadas",
+          "clientIdNote": "Informe o Application / Client ID acima antes de copiar para que o bloco contenha a identidade real do bot. Este bloco contém os campos específicos do Paperclip que devem ser verificados no Developer Portal ou mesclados a um manifesto completo do app Teams. Ele não é um pacote completo do app; o Developer Portal fornece os metadados restantes e empacota o manifesto com os ícones do app.",
+          "noSsoNote": "Nesta versão, o Paperclip não usa o logon único do Teams. A entrada webApplicationInfo copiada apenas associa as permissões RSC ao mesmo Application ID do Entra. O resource preenchido é um placeholder RSC; não é necessário registrar um URI de Application ID no Entra nem adicionar permissões delegadas do Microsoft Graph.",
+          "rscPermissionNote": "As duas permissões RSC do aplicativo permitem que o bot receba todas as mensagens, sem uma menção com @, em cada equipe ou conversa em grupo onde estiver instalado. O Paperclip mantém e processa apenas as mensagens permitidas pelas regras de alcance e acesso do Paperclip. Deixe esse acesso do provedor claro na descrição do app exibida aos instaladores.",
+          "supportedScopesNote": "Esta versão dá suporte a conversas pessoais, conversas em grupo e canais padrão de equipes — não a canais privados. A configuração supportsFiles: true habilita o recebimento nativo de arquivos e o envio mediante consentimento em conversas pessoais; arquivos de canais e conversas em grupo exigem uma conexão separada do Microsoft Graph e não são ingeridos aqui."
+        },
+        "httpsPrerequisite": "Configure uma URL HTTPS pública para esta instância do Paperclip antes de conectar o Microsoft Teams.",
+        "reconnect": "Reconectar app Microsoft",
+        "verify": "Verificar credenciais Microsoft"
       },
       "slack": {
         "steps": {

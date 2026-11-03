@@ -175,6 +175,9 @@ describe("chat setup and identity-link clipboard actions", () => {
         step: "provider_setup",
         webhookUrl: publicHttps ? "https://example.test/api/chat-webhooks/test" : null,
         webhookSecretConfigured: false,
+        ...(provider === "microsoft-teams" ? {
+          messagingEndpoint: "https://example.test/api/chat-webhooks/teams/endpoint-a",
+        } : {}),
         ...(automaticSlack ? {
           slackSetupMethod: "automatic" as const,
           slackOAuthCallbackUri: "https://example.test/api/chat-slack/oauth/callback",
@@ -303,6 +306,82 @@ describe("chat setup and identity-link clipboard actions", () => {
       expect(mocks.setup).toHaveBeenCalledWith("endpoint-a", {
         action: "configure",
         credentials: { applicationId, guildId: serverId, botToken },
+      });
+    },
+  );
+
+  it.each([
+    [
+      "en",
+      "Connect Maya to Microsoft Teams",
+      "Use your own Microsoft app credentials for this bot.",
+      "Application / Client ID",
+      "Directory / Tenant ID",
+      "Client secret value",
+      "Verify Microsoft credentials",
+    ],
+    [
+      "pt-BR",
+      "Conectar Maya ao Microsoft Teams",
+      "Use suas próprias credenciais de app Microsoft para este bot.",
+      "ID do Aplicativo / cliente",
+      "ID do Diretório / tenant",
+      "Valor do segredo do cliente",
+      "Verificar credenciais Microsoft",
+    ],
+  ])(
+    "localizes Microsoft Teams setup in %s and preserves portal URLs, manifest scopes, and credential payload",
+    async (locale, heading, description, clientIdLabel, tenantIdLabel, secretLabel, connectLabel) => {
+      await i18n.changeLanguage(locale);
+      const endpoint = await render("microsoft-teams");
+      expect(container.querySelector("h1")?.textContent).toBe(heading);
+      expect(container.textContent).toContain(description);
+      expect(container.textContent).toContain("teams.live.com");
+      expect(container.textContent).toContain("21Vianet");
+      expect(container.textContent).toContain("Application (client) ID");
+      expect(container.textContent).toContain("Single Tenant");
+      expect(container.textContent).toContain("Use existing app registration");
+      expect(container.textContent).toContain("Microsoft Graph");
+
+      expect(container.querySelector('a[href="https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade"]')).not.toBeNull();
+      expect(container.querySelector('a[href="https://portal.azure.com/#create/Microsoft.AzureBot"]')).not.toBeNull();
+      expect(container.querySelector('a[href="https://dev.teams.microsoft.com/apps"]')).not.toBeNull();
+      expect(container.textContent).toContain("https://example.test/api/chat-webhooks/teams/endpoint-a");
+
+      const inputFor = (name: string) => [...container.querySelectorAll("label")]
+        .find((label) => label.textContent?.trim() === name)
+        ?.querySelector("input") as HTMLInputElement;
+      const setValue = (input: HTMLInputElement, value: string) => flushSync(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      const clientId = "  11111111-1111-4111-8111-111111111111  ";
+      const tenantId = "22222222-2222-4222-8222-222222222222";
+      const clientSecret = "  synthetic-teams-client-secret  ";
+      setValue(inputFor(clientIdLabel), clientId);
+      setValue(inputFor(tenantIdLabel), tenantId);
+      setValue(inputFor(secretLabel), clientSecret);
+
+      const manifest = JSON.parse(container.querySelector("textarea")!.value);
+      expect(manifest.bots[0]).toMatchObject({
+        botId: "11111111-1111-4111-8111-111111111111",
+        scopes: ["personal", "team", "groupChat"],
+        supportsFiles: true,
+      });
+      expect(manifest.webApplicationInfo).toEqual({
+        id: "11111111-1111-4111-8111-111111111111",
+        resource: "https://paperclip.ing",
+      });
+      expect(manifest.authorization.permissions.resourceSpecific).toEqual([
+        { name: "ChannelMessage.Read.Group", type: "Application" },
+        { name: "ChatMessage.Read.Chat", type: "Application" },
+      ]);
+
+      mocks.setup.mockResolvedValueOnce({ ...endpoint, setup: { ...endpoint.setup, step: "test" } });
+      await click(connectLabel);
+      expect(mocks.setup).toHaveBeenCalledWith("endpoint-a", {
+        action: "configure",
+        credentials: { clientId, tenantId, clientSecret },
       });
     },
   );

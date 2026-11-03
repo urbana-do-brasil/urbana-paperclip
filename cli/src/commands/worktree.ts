@@ -103,6 +103,7 @@ import {
   type PlannedIssueDocumentInsert,
   type PlannedIssueDocumentMerge,
   type PlannedIssueInsert,
+  type WorktreeMergePlan,
 } from "./worktree-merge-history-lib.js";
 import { detectGitWorkspaceInfo } from "./git-workspace.js";
 import { worktreeListMarkerLabels, worktreeOperationMessage } from "../localization/worktree-operations.js";
@@ -3177,7 +3178,7 @@ async function resolveMergeCompany(input: {
   throw new Error(`Multiple shared companies found. Re-run with --company <id-or-prefix>. Options: ${options}`);
 }
 
-function renderMergePlan(plan: Awaited<ReturnType<typeof collectMergePlan>>["plan"], extras: {
+export function renderMergePlan(plan: WorktreeMergePlan, extras: {
   sourcePath: string;
   targetPath: string;
   unsupportedRunCount: number;
@@ -3190,26 +3191,32 @@ function renderMergePlan(plan: Awaited<ReturnType<typeof collectMergePlan>>["pla
     return `${value.slice(0, Math.max(0, maxWidth - 1)).trimEnd()}…`;
   };
   const lines = [
-    `Mode: preview`,
-    `Source: ${extras.sourcePath}`,
-    `Target: ${extras.targetPath}`,
-    `Company: ${plan.companyName} (${plan.issuePrefix})`,
+    worktreeOperationMessage("mergePlanModePreview"),
+    worktreeOperationMessage("mergePlanSource", { sourcePath: extras.sourcePath }),
+    worktreeOperationMessage("mergePlanTarget", { targetPath: extras.targetPath }),
+    worktreeOperationMessage("mergePlanCompany", { companyName: plan.companyName, issuePrefix: plan.issuePrefix }),
     "",
-    "Projects",
-    `- import: ${plan.counts.projectsToImport}`,
+    worktreeOperationMessage("mergePlanProjects"),
+    worktreeOperationMessage("mergePlanImport", { count: plan.counts.projectsToImport }),
     "",
-    "Issues",
-    `- insert: ${plan.counts.issuesToInsert}`,
-    `- already present: ${plan.counts.issuesExisting}`,
-    `- shared/imported issues with drift: ${plan.counts.issueDrift}`,
+    worktreeOperationMessage("mergePlanIssues"),
+    worktreeOperationMessage("mergePlanInsert", { count: plan.counts.issuesToInsert }),
+    worktreeOperationMessage("mergePlanAlreadyPresent", { count: plan.counts.issuesExisting }),
+    worktreeOperationMessage("mergePlanIssueDrift", { count: plan.counts.issueDrift }),
   ];
 
   if (plan.projectImports.length > 0) {
     lines.push("");
-    lines.push("Planned project imports");
+    lines.push(worktreeOperationMessage("mergePlanPlannedProjectImports"));
     for (const project of plan.projectImports) {
       lines.push(
-        `- ${project.source.name} (${project.workspaces.length} workspace${project.workspaces.length === 1 ? "" : "s"})`,
+        worktreeOperationMessage("mergePlanProjectImport", {
+          name: project.source.name,
+          count: project.workspaces.length,
+          workspaceLabel: worktreeOperationMessage(project.workspaces.length === 1
+            ? "mergePlanWorkspaceSingular"
+            : "mergePlanWorkspacePlural"),
+        }),
       );
     }
   }
@@ -3217,12 +3224,14 @@ function renderMergePlan(plan: Awaited<ReturnType<typeof collectMergePlan>>["pla
   const issueInserts = plan.issuePlans.filter((item): item is PlannedIssueInsert => item.action === "insert");
   if (issueInserts.length > 0) {
     lines.push("");
-    lines.push("Planned issue imports");
+    lines.push(worktreeOperationMessage("mergePlanPlannedIssueImports"));
     for (const issue of issueInserts) {
       const projectNote =
         (issue.projectResolution === "mapped" || issue.projectResolution === "imported")
         && issue.mappedProjectName
-          ? ` project->${issue.projectResolution === "imported" ? "import:" : ""}${issue.mappedProjectName}`
+          ? worktreeOperationMessage(issue.projectResolution === "imported"
+            ? "mergePlanProjectImported"
+            : "mergePlanProjectMapped", { projectName: issue.mappedProjectName })
           : "";
       const adjustments = issue.adjustments.length > 0 ? ` [${issue.adjustments.join(", ")}]` : "";
       const prefix = `- ${issue.source.identifier ?? issue.source.id} -> ${issue.previewIdentifier} (${issue.targetStatus}${projectNote})`;
@@ -3236,44 +3245,44 @@ function renderMergePlan(plan: Awaited<ReturnType<typeof collectMergePlan>>["pla
 
   if (plan.scopes.includes("comments")) {
     lines.push("");
-    lines.push("Comments");
-    lines.push(`- insert: ${plan.counts.commentsToInsert}`);
-    lines.push(`- already present: ${plan.counts.commentsExisting}`);
-    lines.push(`- skipped (missing parent): ${plan.counts.commentsMissingParent}`);
+    lines.push(worktreeOperationMessage("mergePlanComments"));
+    lines.push(worktreeOperationMessage("mergePlanInsert", { count: plan.counts.commentsToInsert }));
+    lines.push(worktreeOperationMessage("mergePlanAlreadyPresent", { count: plan.counts.commentsExisting }));
+    lines.push(worktreeOperationMessage("mergePlanSkippedMissingParent", { count: plan.counts.commentsMissingParent }));
   }
 
   lines.push("");
-  lines.push("Documents");
-  lines.push(`- insert: ${plan.counts.documentsToInsert}`);
-  lines.push(`- merge existing: ${plan.counts.documentsToMerge}`);
-  lines.push(`- already present: ${plan.counts.documentsExisting}`);
-  lines.push(`- skipped (conflicting key): ${plan.counts.documentsConflictingKey}`);
-  lines.push(`- skipped (missing parent): ${plan.counts.documentsMissingParent}`);
-  lines.push(`- revisions insert: ${plan.counts.documentRevisionsToInsert}`);
+  lines.push(worktreeOperationMessage("mergePlanDocuments"));
+  lines.push(worktreeOperationMessage("mergePlanInsert", { count: plan.counts.documentsToInsert }));
+  lines.push(worktreeOperationMessage("mergePlanMergeExisting", { count: plan.counts.documentsToMerge }));
+  lines.push(worktreeOperationMessage("mergePlanAlreadyPresent", { count: plan.counts.documentsExisting }));
+  lines.push(worktreeOperationMessage("mergePlanSkippedConflictingKey", { count: plan.counts.documentsConflictingKey }));
+  lines.push(worktreeOperationMessage("mergePlanSkippedMissingParent", { count: plan.counts.documentsMissingParent }));
+  lines.push(worktreeOperationMessage("mergePlanRevisionsInsert", { count: plan.counts.documentRevisionsToInsert }));
 
   lines.push("");
-  lines.push("Attachments");
-  lines.push(`- insert: ${plan.counts.attachmentsToInsert}`);
-  lines.push(`- already present: ${plan.counts.attachmentsExisting}`);
-  lines.push(`- skipped (missing parent): ${plan.counts.attachmentsMissingParent}`);
+  lines.push(worktreeOperationMessage("mergePlanAttachments"));
+  lines.push(worktreeOperationMessage("mergePlanInsert", { count: plan.counts.attachmentsToInsert }));
+  lines.push(worktreeOperationMessage("mergePlanAlreadyPresent", { count: plan.counts.attachmentsExisting }));
+  lines.push(worktreeOperationMessage("mergePlanSkippedMissingParent", { count: plan.counts.attachmentsMissingParent }));
 
   lines.push("");
-  lines.push("Adjustments");
-  lines.push(`- cleared assignee agents: ${plan.adjustments.clear_assignee_agent}`);
-  lines.push(`- cleared projects: ${plan.adjustments.clear_project}`);
-  lines.push(`- cleared project workspaces: ${plan.adjustments.clear_project_workspace}`);
-  lines.push(`- cleared goals: ${plan.adjustments.clear_goal}`);
-  lines.push(`- cleared comment author agents: ${plan.adjustments.clear_author_agent}`);
-  lines.push(`- cleared document agents: ${plan.adjustments.clear_document_agent}`);
-  lines.push(`- cleared document revision agents: ${plan.adjustments.clear_document_revision_agent}`);
-  lines.push(`- cleared attachment author agents: ${plan.adjustments.clear_attachment_agent}`);
-  lines.push(`- coerced in_progress to todo: ${plan.adjustments.coerce_in_progress_to_todo}`);
+  lines.push(worktreeOperationMessage("mergePlanAdjustments"));
+  lines.push(worktreeOperationMessage("mergePlanClearedAssigneeAgents", { count: plan.adjustments.clear_assignee_agent }));
+  lines.push(worktreeOperationMessage("mergePlanClearedProjects", { count: plan.adjustments.clear_project }));
+  lines.push(worktreeOperationMessage("mergePlanClearedProjectWorkspaces", { count: plan.adjustments.clear_project_workspace }));
+  lines.push(worktreeOperationMessage("mergePlanClearedGoals", { count: plan.adjustments.clear_goal }));
+  lines.push(worktreeOperationMessage("mergePlanClearedCommentAuthors", { count: plan.adjustments.clear_author_agent }));
+  lines.push(worktreeOperationMessage("mergePlanClearedDocumentAgents", { count: plan.adjustments.clear_document_agent }));
+  lines.push(worktreeOperationMessage("mergePlanClearedDocumentRevisionAgents", { count: plan.adjustments.clear_document_revision_agent }));
+  lines.push(worktreeOperationMessage("mergePlanClearedAttachmentAuthors", { count: plan.adjustments.clear_attachment_agent }));
+  lines.push(worktreeOperationMessage("mergePlanCoercedInProgressToTodo", { count: plan.adjustments.coerce_in_progress_to_todo }));
 
   lines.push("");
-  lines.push("Not imported in this phase");
-  lines.push(`- heartbeat runs: ${extras.unsupportedRunCount}`);
+  lines.push(worktreeOperationMessage("mergePlanNotImported"));
+  lines.push(worktreeOperationMessage("mergePlanHeartbeatRuns", { count: extras.unsupportedRunCount }));
   lines.push("");
-  lines.push("Identifiers shown above are provisional preview values. `--apply` reserves fresh issue numbers at write time.");
+  lines.push(worktreeOperationMessage("mergePlanIdentifiersDisclaimer"));
 
   return lines.join("\n");
 }
@@ -4194,11 +4203,16 @@ export async function worktreeMergeHistoryCommand(sourceArg: string | undefined,
     const confirmed = opts.yes
       ? true
       : await p.confirm({
-        message: `Import ${collected.plan.counts.issuesToInsert} issues and ${collected.plan.counts.commentsToInsert} comments from ${sourceEndpoint.label} into ${targetEndpoint.label}?`,
+        message: worktreeOperationMessage("mergeHistoryConfirmPrompt", {
+          issues: collected.plan.counts.issuesToInsert,
+          comments: collected.plan.counts.commentsToInsert,
+          source: sourceEndpoint.label,
+          target: targetEndpoint.label,
+        }),
         initialValue: false,
       });
     if (p.isCancel(confirmed) || !confirmed) {
-      p.log.warn("Import cancelled.");
+      p.log.warn(worktreeOperationMessage("mergeHistoryCancelled"));
       return;
     }
 
@@ -4210,13 +4224,23 @@ export async function worktreeMergeHistoryCommand(sourceArg: string | undefined,
       plan: collected.plan,
     });
     if (applied.skippedMissingAttachmentObjects > 0) {
-      p.log.warn(
-        `Skipped ${applied.skippedMissingAttachmentObjects} attachments whose source files were missing from storage.`,
-      );
+      p.log.warn(worktreeOperationMessage("mergeHistorySkippedAttachments", {
+        count: applied.skippedMissingAttachmentObjects,
+      }));
     }
     p.outro(
       pc.green(
-        `Imported ${applied.insertedProjects} projects (${applied.insertedProjectWorkspaces} workspaces), ${applied.insertedIssues} issues, ${applied.insertedComments} comments, ${applied.insertedDocuments} documents (${applied.insertedDocumentRevisions} revisions, ${applied.mergedDocuments} merged), and ${applied.insertedAttachments} attachments into ${company.issuePrefix}.`,
+        worktreeOperationMessage("mergeHistoryImported", {
+          projects: applied.insertedProjects,
+          workspaces: applied.insertedProjectWorkspaces,
+          issues: applied.insertedIssues,
+          comments: applied.insertedComments,
+          documents: applied.insertedDocuments,
+          revisions: applied.insertedDocumentRevisions,
+          merged: applied.mergedDocuments,
+          attachments: applied.insertedAttachments,
+          issuePrefix: company.issuePrefix,
+        }),
       ),
     );
   } finally {

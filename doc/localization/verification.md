@@ -3765,3 +3765,10 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - env-lab up/status/down/doctor e ajuda localizados; 30/30 testes focados com estado descartável e up simulado, sem iniciar sshd. JSON/flags preservados; demais grupos CLI seguem pendentes.
 - Checkpoint: **430/449 tarefas**, 19 caixas abertas incluindo agregadoras.
 - Integração final de Discord, revisão de pipelines e env-lab: **103/103 testes em quatro arquivos**, além dos typechecks CLI/UI, gates de tokens/fontes/catálogos e validação estrita OpenSpec.
+
+### Microsoft Teams e prévia de merge-history
+
+- Setup Teams em PT-BR/en com URLs, permissões, manifesto e credenciais preservados; testes focados Teams/Discord: 4/4.
+- Prévia e mensagens de `worktree:merge-history` localizadas; plano sintético preserva dados/flags, testes focados 32/32 e suíte merge-history 10/10. Import de banco real não foi executado.
+- Integração UI/worktree: 78/78 em três arquivos; typechecks CLI/UI, gates de tokens, catálogos e fontes, e validação OpenSpec passaram. Checkpoint: **432/451 tarefas**, 19 caixas abertas incluindo agregadoras.
+- Auditoria adicional de referências dinâmicas inspecionou domínios finitos em TeamCatalog, AuditHub, perfis, plugins, segredos, ferramentas/runs, rotinas, workspace, decisões e conexões de apps. Não encontrou novas ausências nos domínios inspecionados; `teamCatalog.sources.type.include` não é alcançado pelos renderizadores examinados. É inspeção estática parcial e não substitui a reconciliação 7.2 nem testes de cada estado.
