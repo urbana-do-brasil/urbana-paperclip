@@ -36,7 +36,7 @@ vice-versa.
 `paperclip_runner` é um único `adapterType`, mas executa providers distintos.
 O registry declara `provider=codex`, `opencode`, `claude_managed`,
 `aws_agentcore` e `acpx`. Para `provider=acpx`, registre separadamente
-`acpxAgent=claude`, `grok`, `cursor` ou `pi`, com modelo exato. Além do runner/Codex simulado, `server/src/services/native-runtime/native-execution-input.test.ts` verifica envelopes inicial e de retomada para `opencode` e `acpx`/`claude` em PT-BR/en. Isso não comprova handshake externo ou respostas reais de nenhum provider. `acpxAgent=copilot` é
+`acpxAgent=claude`, `grok`, `cursor` ou `pi`, com modelo exato. Além do runner/Codex simulado, `server/src/services/native-runtime/native-execution-input.test.ts` verifica envelopes inicial e de retomada para `opencode`, `acpx`/`claude`, `claude_managed` e `aws_agentcore` em PT-BR/en. Isso não comprova handshake externo ou respostas reais de nenhum provider. `acpxAgent=copilot` é
 apenas candidato aguardando qualificação local e Daytona, sem suporte de
 produção declarado. `provider=openai_dot` também aparece no resolver/runtime
 como caminho de bridge, embora não conste na lista padrão do seletor; sua

@@ -3712,3 +3712,8 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Arquivos novos no gate de fontes — 7.1b
 
 - O scanner agora inclui arquivos próprios não rastreados também quando compara com uma base Git. Teste negativo cria fonte temporária com rótulo em inglês, executa o gate com `--base HEAD`, verifica rejeição e remove a fixture; suíte Node 7/7. `PAPERCLIP_LOCALIZATION_BASE=origin/master` passou em 529 fontes no estado do teste. O scanner permanece heurístico e a CI remota não foi verificada. Checkpoint: **410/429 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Ensure-seeded e envelopes de provedores gerenciados
+
+- `worktree ensure-seeded` no caminho explicitamente vazio: status e validações localizados, com fixtures descartáveis; 15 testes focados e typecheck CLI passaram. Cópia de banco e adoção legada não foram exercitadas.
+- Builder de Claude Managed e AWS AgentCore em PT-BR/en: matriz ampliada de oito casos passou com perfis sintéticos; sem handshake ou modelo real. Suítes CLI/Runner completas: 46/46. Checkpoint: **412/431 tarefas**, 19 caixas abertas incluindo agregadoras.

@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   registerWorktreeCommands,
   worktreeEnvCommand,
+  worktreeEnsureSeededCommand,
   worktreeInitCommand,
   worktreeListCommand,
 } from "../commands/worktree.js";
@@ -270,6 +271,20 @@ describe("worktree CLI localization", () => {
       expect(fs.existsSync(path.join(repoRoot, ".paperclip", "seed-empty"))).toBe(true);
       expect(fs.existsSync(path.join(repoRoot, ".paperclip", "seed-manifest.json"))).toBe(false);
       expect(fs.existsSync(path.join(repoRoot, ".paperclip", "seed-pending"))).toBe(false);
+
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      await worktreeEnsureSeededCommand({ config: configPath });
+      const ensureOutput = [
+        ...stdoutLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+      ].join("\n");
+      expect(ensureOutput).toContain(locale === "en"
+        ? "Explicitly empty instance; automatic database copying is disabled."
+        : "Instância explicitamente vazia; a cópia automática do banco de dados está desativada.");
+      expect(ensureOutput).toContain(locale === "en" ? "Empty worktree ready." : "Worktree vazia pronta.");
+      expect(fs.existsSync(path.join(repoRoot, ".paperclip", "seed-empty"))).toBe(true);
+      expect(fs.existsSync(path.join(repoRoot, ".paperclip", "seed-manifest.json"))).toBe(false);
     }
     expect(outputs[0]).not.toBe(outputs[1]);
     expect(stderrLogSpy).not.toHaveBeenCalled();
@@ -332,6 +347,42 @@ describe("worktree CLI localization", () => {
     }
     expect(externalErrors[0]).toBe(externalErrors[1]);
     expect(externalErrors[0]).toContain(`Failed to parse JSON at ${malformedSourcePath}`);
+    expect(stderrLogSpy).not.toHaveBeenCalled();
+  });
+
+  it("localizes ensure-seeded registration errors and preserves malformed manifest diagnostics", async () => {
+    const configPath = path.join(tempRoot, "ensure-error", ".paperclip", "config.json");
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    const registrationErrors: string[] = [];
+    for (const locale of ["pt-BR", "en"] as const) {
+      setCliLocale(locale);
+      try {
+        await worktreeEnsureSeededCommand({
+          config: configPath,
+          registeredBaseWorkspaceCwd: "/registered/source/workspace",
+        });
+        throw new Error("expected incomplete seed registration to fail");
+      } catch (error) {
+        registrationErrors.push(error instanceof Error ? error.message : String(error));
+      }
+    }
+    expect(registrationErrors[0]).toContain("O registro da cópia da worktree está incompleto");
+    expect(registrationErrors[1]).toContain("Managed worktree seed registration is incomplete");
+
+    const manifestPath = path.join(path.dirname(configPath), "seed-manifest.json");
+    fs.writeFileSync(manifestPath, "{ invalid manifest\n");
+    const manifestErrors: string[] = [];
+    for (const locale of ["pt-BR", "en"] as const) {
+      setCliLocale(locale);
+      try {
+        await worktreeEnsureSeededCommand({ config: configPath });
+        throw new Error("expected malformed seed manifest to fail");
+      } catch (error) {
+        manifestErrors.push(error instanceof Error ? error.message : String(error));
+      }
+    }
+    expect(manifestErrors[0]).toBe(manifestErrors[1]);
+    expect(manifestErrors[0]).toContain(`Invalid worktree seed manifest at ${manifestPath}`);
     expect(stderrLogSpy).not.toHaveBeenCalled();
   });
 });

@@ -2264,9 +2264,7 @@ export async function ensureWorktreeSeeded(
     ?? nonEmpty(process.env.PAPERCLIP_COMPANY_ID)
     ?? undefined;
   if (!explicitSourceConfigPath && registeredBaseWorkspaceCwd && (!registeredProjectWorkspaceId || !expectedCompanyId)) {
-    throw new Error(
-      "Managed worktree seed registration is incomplete; project workspace and company bindings are required.",
-    );
+    throw new Error(worktreeOperationMessage("incompleteSeedRegistration"));
   }
 
   const targetRoot = path.dirname(path.dirname(configPath));
@@ -2279,7 +2277,7 @@ export async function ensureWorktreeSeeded(
   });
 
   if (initialManifest && initialManifest.targetInstanceId !== registeredSeedSource.targetInstanceId) {
-    throw new Error("Worktree seed manifest target instance does not match the registered target instance.");
+    throw new Error(worktreeOperationMessage("seedTargetInstanceMismatch"));
   }
 
   // Resolve all authority-bearing paths before creating the lock. The manifest is
@@ -2302,7 +2300,7 @@ export async function ensureWorktreeSeeded(
     if (!manifest && existsSync(markers.pending)) {
       const currentLegacyPending = readLegacyWorktreeSeedPendingMarker(markers.pending);
       if (currentLegacyPending.sourceConfigPath !== legacyPending?.sourceConfigPath) {
-        throw new Error("Worktree seed source diagnostics changed while waiting for the seed lock.");
+        throw new Error(worktreeOperationMessage("seedSourceChangedWhileWaiting"));
       }
       markWorktreeSeedPending({
         configPath,
@@ -2347,7 +2345,7 @@ export async function ensureWorktreeSeeded(
       });
       manifest = readWorktreeSeedManifest(configPath);
       if (!manifest) {
-        throw new Error("Failed to create a pending worktree seed manifest.");
+        throw new Error(worktreeOperationMessage("pendingSeedManifestCreateFailed"));
       }
     }
     if (
@@ -2613,17 +2611,17 @@ export async function worktreeEnsureSeededCommand(opts: WorktreeEnsureSeededOpti
   p.intro(pc.bgCyan(pc.black(" paperclipai worktree ensure-seeded ")));
 
   const spinner = p.spinner();
-  spinner.start("Checking isolated worktree database seed state...");
+  spinner.start(worktreeOperationMessage("checkingSeedState"));
   try {
     const result = await ensureWorktreeSeeded(opts);
     if (result.seeded) {
-      spinner.stop("Seeded isolated worktree database (minimal).");
+      spinner.stop(worktreeOperationMessage("seedComplete", { seedMode: "minimal" }));
     } else if (result.reason === "legacy_database") {
-      spinner.stop("Validated and adopted an existing legacy worktree database.");
+      spinner.stop(worktreeOperationMessage("adoptedLegacySeed"));
     } else if (result.reason === "explicitly_empty") {
-      spinner.stop("Explicitly empty instance; automatic database copying is disabled.");
+      spinner.stop(worktreeOperationMessage("explicitlyEmptySeed"));
     } else {
-      spinner.stop("Worktree database already has a verified seed manifest.");
+      spinner.stop(worktreeOperationMessage("verifiedSeedAlready"));
     }
     if (result.details) {
       p.log.message(pc.dim(`Seed snapshot: ${result.details.backupSummary}`));
@@ -2639,9 +2637,11 @@ export async function worktreeEnsureSeededCommand(opts: WorktreeEnsureSeededOpti
         );
       }
     }
-    p.outro(pc.green(result.reason === "explicitly_empty" ? "Empty worktree ready." : "Worktree database seed complete."));
+    p.outro(pc.green(result.reason === "explicitly_empty"
+      ? worktreeOperationMessage("emptyWorktreeReady")
+      : worktreeOperationMessage("seedOperationComplete")));
   } catch (error) {
-    spinner.stop(pc.red("Failed to seed worktree database."));
+    spinner.stop(pc.red(worktreeOperationMessage("seedFailed")));
     throw error;
   }
 }

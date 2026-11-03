@@ -578,11 +578,20 @@ describe("native runner provider locale guidance", () => {
     { provider: "opencode", locale: "en" },
     { provider: "acpx", locale: "pt-BR" },
     { provider: "acpx", locale: "en" },
+    { provider: "claude_managed", locale: "pt-BR" },
+    { provider: "claude_managed", locale: "en" },
+    { provider: "aws_agentcore", locale: "pt-BR" },
+    { provider: "aws_agentcore", locale: "en" },
   ] as const)("carries $locale guidance to $provider on fresh and resumed turns", ({ provider, locale }) => {
     const fixture = createCommunicationLocalePromptFixture(locale);
     const directive = locale === "pt-BR"
       ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
       : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+    const model = provider === "opencode"
+      ? "openai/gpt-5.5"
+      : provider === "aws_agentcore"
+        ? "anthropic.claude-sonnet-4-6-v1"
+        : "claude-sonnet-5";
     const buildInput = (resumedSession: boolean) => buildNativeExecutionInput({
       companyId: "10000000-0000-4000-8000-000000000001",
       runId: "50000000-0000-4000-8000-000000000005",
@@ -612,7 +621,39 @@ describe("native runner provider locale guidance", () => {
       normalizedSessionId: resumedSession ? "60000000-0000-4000-8000-000000000006" : null,
       provider,
       ...(provider === "acpx" ? { acpxAgent: "claude" as const } : {}),
-      model: provider === "acpx" ? "claude-sonnet-5" : "openai/gpt-5.5",
+      model,
+      ...(provider === "claude_managed" ? {
+        managedProfile: {
+          profileId: "managed-profile-fixture",
+          anthropicAgentId: "anthropic-agent-fixture",
+          agentVersion: "1",
+          environmentId: "managed-environment-fixture",
+          betaVersion: "managed-agents-2026-04-01" as const,
+        },
+        maxSessionListCostUsd: 1,
+      } : {}),
+      ...(provider === "aws_agentcore" ? {
+        agentCoreProfile: {
+          profileId: "agentcore-profile-fixture",
+          region: "us-east-1",
+          accountId: "000000000000",
+          harnessArn: "arn:aws:bedrock:us-east-1:000000000000:agentcore/harness-fixture",
+          harnessVersion: "1",
+          endpointArn: "arn:aws:bedrock:us-east-1:000000000000:agentcore/endpoint-fixture",
+          endpointQualifier: "DEFAULT",
+          agentRuntimeArn: "arn:aws:bedrock:us-east-1:000000000000:agentcore/runtime-fixture",
+          memoryArn: "arn:aws:bedrock:us-east-1:000000000000:memory/fixture",
+          memoryId: "memory-fixture",
+          invocationRoleArn: "arn:aws:iam::000000000000:role/fixture",
+          contextBucket: "paperclip-fixture",
+          contextPrefix: "test-only/",
+          contextKmsKeyArn: "arn:aws:kms:us-east-1:000000000000:key/fixture",
+          qualificationRevision: "fixture-revision",
+          eventExpiryDays: 90 as const,
+        },
+        maxEstimatedSessionCostUsd: 1,
+        invocationLimits: { maxIterations: 2, maxOutputTokens: 512, timeoutSeconds: 60 },
+      } : {}),
       completionContract: {
         id: "70000000-0000-4000-8000-000000000007",
         sha256: `sha256:${"a".repeat(64)}`,
@@ -628,9 +669,15 @@ describe("native runner provider locale guidance", () => {
 
     const freshInput = buildInput(false);
     const freshEnvelope = buildNativeModelEnvelope(freshInput);
-    expect(freshInput.provider).toMatchObject(provider === "opencode"
-      ? { kind: "opencode", model: "openai/gpt-5.5" }
-      : { kind: "acpx", agent: "claude", model: "claude-sonnet-5" });
+    expect(freshInput.provider).toMatchObject({ kind: provider, model });
+    expect(freshInput.session.driverKind).toBe(provider === "opencode"
+      ? "opencode_server"
+      : provider === "acpx"
+        ? "acpx_runtime"
+        : provider === "claude_managed"
+          ? "claude_managed_agents_api"
+          : "aws_agentcore_harness_api");
+    if (provider === "acpx") expect(freshInput.provider).toMatchObject({ agent: "claude" });
     expect(freshEnvelope.task.prompt).toContain(directive);
     expect(freshEnvelope.task.prompt).toContain("`curl --fail --silent https://example.invalid/health`");
     expect(freshEnvelope.task.prompt).toContain("`X-Trace-Mode: RAW`");
@@ -646,6 +693,7 @@ describe("native runner provider locale guidance", () => {
     const resumedInput = buildInput(true);
     const resumedEnvelope = buildNativeModelEnvelope(resumedInput, { resumedSession: true });
     expect(resumedInput.provider).toEqual(freshInput.provider);
+    expect(resumedInput.session.driverKind).toBe(freshInput.session.driverKind);
     expect(resumedInput.task.prompt).toContain("`curl --fail --silent https://example.invalid/health`");
     expect(resumedEnvelope.schema).toBe("paperclip.native-continuation.v1");
     if (resumedEnvelope.schema !== "paperclip.native-continuation.v1") {
