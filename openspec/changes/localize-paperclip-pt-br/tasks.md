@@ -317,6 +317,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 3.10m Localizar categorias de autocomplete e recuperação do MarkdownEditor e erro próprio de seleção de empresa ao criar segredos em rotinas, preservando conteúdo e identificadores. Rodada integrada com outros lotes: 93/93; typecheck UI passou. 3.10 continua aberta.
   - [x] 3.10n Localizar popover de responsáveis nas listas e erro próprio de configuração de webhook, preservando IDs e callbacks. IssuesList + locale: 69/69; revisão geral de 3.10 segue aberta.
   - [x] 3.10o Corrigir agrupamento de cases por identidade de projeto para não confundir nomes de projetos com o rótulo localizado de ausência. Cases: 22/22 e typecheck UI passaram; revisão geral de 3.10 segue aberta.
+  - [x] 3.10p Localizar apresentação de erros conhecidos em PipelineSettings preservando detalhes externos e payloads. Carga e mutations PT-BR/en: 24/24 em duas suítes; revisão geral de 3.10 permanece aberta.
 - [ ] 3.11 Migrar UI hospedeira de plugins e conteúdo humano de plugins distribuídos no produto, além das superfícies próprias adicionais encontradas no fechamento do mapa de rotas. Verificar cada superfície nos dois idiomas e documentar limites de plugins externos não controlados. Specs: `localized-web-interface`, `localization-quality`.
   - [x] 3.11a Propagar e documentar locale reativo pelo `PluginHostContext`, slots, overlays e launcher; conteúdo de plugins externos permanece original. Testes de bridge/slots/overlays e SDK: 29/29; typechecks do SDK/UI passaram sem remount.
   - [x] 3.11b Localizar a página host `PluginSettings`, incluindo placeholder, controles e rótulos de status/gatilhos conhecidos; preservar nomes, descrições, conteúdo e mensagens livres do plugin. Testes focados + locale-validation: 25/25; typecheck UI e token gates passaram.
@@ -348,6 +349,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.11h12 Localizar metadata conhecida do schema Novita bundled sob as mesmas verificações de identidade e descrição, sem alterar schema ou conteúdo externo. Rodada integrada 93/93 e typecheck UI passaram; outros providers permanecem em 3.11h.
     - [x] 3.11h13 Localizar metadata conhecida do schema Modal bundled sob verificação de identidade e descrição, preservando schema, valores e conteúdo externo. Testes focados + locale: 33/33; typecheck UI passou. Outros providers permanecem em 3.11h.
     - [x] 3.11h14 Localizar metadata conhecida do schema Cloudflare bundled com verificação de identidade e descrição, preservando schema e fallback externo. Testes focados 22/22, locale 13/13 e typecheck UI passaram; outros providers permanecem em 3.11h.
+    - [x] 3.11h15 Localizar metadata conhecida do schema Kubernetes bundled com identidade e descrição exatas, preservando schema, valores e fallback externo. Testes focados 24/24 e typecheck UI passaram; outros providers permanecem em 3.11h.
 
 ## 4. CLI bilíngue
 
@@ -389,6 +391,7 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3ag Localizar help e erro próprio de asset upload/content, preservando arquivos, respostas, erros externos e stderr em inglês no modo JSON. Rodada integrada 93/93 e typecheck CLI passaram; 4.3/4.4 seguem abertas.
   - [x] 4.3ah Localizar help de routine list/get, preservando dados, rotas, JSON e erros estruturados. Testes focados: 5/5; demais operações seguem em 4.3/4.4.
   - [x] 4.3ai Localizar help de routine revisions/runs, preservando dados, rotas, JSON e erros estruturados. Testes focados 5/5 e typecheck CLI passaram; demais operações seguem em 4.3/4.4.
+  - [x] 4.3aj Localizar help das cinco operações de gatilho de rotina, preservando flags, rotas, payloads, JSON e falhas. Testes focados 9/9 e typecheck CLI passaram; demais operações seguem em 4.3/4.4.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação

@@ -50,6 +50,7 @@ import { instanceSettingsApi } from "../api/instanceSettings";
 import { projectsApi } from "../api/projects";
 import { secretsApi } from "../api/secrets";
 import { ApiError } from "../api/client";
+import { formatUiError } from "../api/error-presentation";
 import type {
   PipelineCaseChildRow,
   PipelineCompanyCaseEvent,
@@ -1982,7 +1983,7 @@ export function PipelineSettings() {
     onError: async (error) => {
       pushToast({
         title: t("pipelineManagement.settings.errors.saveStageTitle"),
-        body: error instanceof Error ? error.message : t("pipelineManagement.settings.errors.saveStageFallback"),
+        body: error instanceof Error ? formatUiError(error) : t("pipelineManagement.settings.errors.saveStageFallback"),
         tone: "error",
       });
     },
@@ -2011,11 +2012,9 @@ export function PipelineSettings() {
     onError: async (error) => {
       pushToast({
         title: t("pipelineManagement.settings.errors.saveSecretsTitle"),
-        body: error instanceof ApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : t("pipelineManagement.settings.errors.saveSecretsFallback"),
+        body: error instanceof Error
+          ? formatUiError(error)
+          : t("pipelineManagement.settings.errors.saveSecretsFallback"),
         tone: "error",
       });
     },
@@ -2092,7 +2091,7 @@ export function PipelineSettings() {
     onError: (error) => {
       pushToast({
         title: t("pipelineManagement.settings.errors.deleteStageTitle"),
-        body: error instanceof Error ? error.message : t("pipelineManagement.settings.errors.deleteStageFallback"),
+        body: error instanceof Error ? formatUiError(error) : t("pipelineManagement.settings.errors.deleteStageFallback"),
         tone: "error",
       });
     },
@@ -2124,7 +2123,7 @@ export function PipelineSettings() {
       setStrictTransitionsEnabled(pipeline?.enforceTransitions ?? false);
       pushToast({
         title: t("pipelineManagement.settings.errors.updateTransitionRulesTitle"),
-        body: error instanceof Error ? error.message : t("pipelineManagement.settings.errors.updateTransitionRulesFallback"),
+        body: error instanceof Error ? formatUiError(error) : t("pipelineManagement.settings.errors.updateTransitionRulesFallback"),
         tone: "error",
       });
     },
@@ -2209,7 +2208,7 @@ export function PipelineSettings() {
   }
 
   if (pipelineQuery.error) {
-    return <p className="text-sm text-destructive">{pipelineQuery.error.message}</p>;
+    return <p className="text-sm text-destructive">{formatUiError(pipelineQuery.error)}</p>;
   }
 
   if (!pipeline) {
@@ -2695,7 +2694,7 @@ export function PipelineSettings() {
           ) : null}
         </div>
         {savePipelineDetails.error ? (
-          <p className="mt-3 text-sm text-destructive">{savePipelineDetails.error.message}</p>
+          <p className="mt-3 text-sm text-destructive">{formatUiError(savePipelineDetails.error)}</p>
         ) : null}
       </form>
 
@@ -3376,7 +3375,7 @@ export function PipelineSettings() {
                 </div>
               </div>
 
-              {saveStage.error ? <p className="text-sm text-destructive">{saveStage.error.message}</p> : null}
+              {saveStage.error ? <p className="text-sm text-destructive">{formatUiError(saveStage.error)}</p> : null}
 
               {stageDirty || saveStage.isPending ? (
                 <div className="sticky bottom-0 z-10 -mx-6 mt-6 flex items-center justify-between gap-3 border-t border-border bg-background/95 px-6 py-3 backdrop-blur motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2">
@@ -3431,7 +3430,7 @@ export function PipelineSettings() {
               </p>
             )}
             {deleteStage.error ? (
-              <p className="text-sm text-destructive">{deleteStage.error.message}</p>
+              <p className="text-sm text-destructive">{formatUiError(deleteStage.error)}</p>
             ) : null}
           </div>
           <DialogFooter>
@@ -3481,7 +3480,7 @@ export function PipelineSettings() {
               />
             </label>
             {archivePipeline.error ? (
-              <p className="text-sm text-destructive">{archivePipeline.error.message}</p>
+              <p className="text-sm text-destructive">{formatUiError(archivePipeline.error)}</p>
             ) : null}
           </div>
           <DialogFooter>

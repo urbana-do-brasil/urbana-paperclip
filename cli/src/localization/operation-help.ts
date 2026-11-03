@@ -296,6 +296,43 @@ const operationHelp: Record<string, CommandHelp> = {
       "--limit": { en: "Maximum runs to return", "pt-BR": "Número máximo de execuções retornadas" },
     },
   },
+  "routine trigger:create": {
+    description: { en: "Create a trigger for a routine", "pt-BR": "Criar um gatilho para uma rotina" },
+    arguments: { id: { en: "Routine ID", "pt-BR": "ID da rotina" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "routine trigger:update": {
+    description: { en: "Update a routine trigger", "pt-BR": "Atualizar um gatilho de rotina" },
+    arguments: { id: { en: "Trigger ID", "pt-BR": "ID do gatilho" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "routine trigger:delete": {
+    description: { en: "Delete a routine trigger", "pt-BR": "Excluir um gatilho de rotina" },
+    arguments: { id: { en: "Trigger ID", "pt-BR": "ID do gatilho" } },
+    options: commonClientOptions,
+  },
+  "routine trigger:rotate-secret": {
+    description: { en: "Rotate a routine trigger secret", "pt-BR": "Girar o segredo de um gatilho de rotina" },
+    arguments: { id: { en: "Trigger ID", "pt-BR": "ID do gatilho" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "routine trigger:fire": {
+    description: { en: "Fire a public routine trigger", "pt-BR": "Acionar um gatilho público de rotina" },
+    arguments: { publicId: { en: "Public trigger ID", "pt-BR": "ID público do gatilho" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "Public trigger payload", "pt-BR": "Payload público do gatilho" },
+    },
+  },
   approval: {
     description: { en: "Approval operations", "pt-BR": "Operações de aprovação" },
   },

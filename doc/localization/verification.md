@@ -3618,3 +3618,9 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Cases: 22/22 para agrupamento por projeto sem colisão com o rótulo localizado; typecheck UI passou. Schema Cloudflare: 22/22, locale 13/13 e typecheck UI, preservando schema e fallback externo.
 - CLI routine revisions/runs: 5/5 e typecheck CLI. Checkpoint: **375/393 tarefas**, 18 caixas abertas incluindo agregadoras.
 - Rodada integrada: 62/62 em quatro arquivos; gates de tokens e fontes e OpenSpec estrito passaram.
+
+### Erros de pipelines, schema Kubernetes e gatilhos da CLI — 3.10p, 3.11h15 e 4.3aj
+
+- Pipelines: 24/24 testes de carga/mutation, incluindo erro conhecido e detalhe externo. Schema Kubernetes: 24/24 e typecheck UI, com identidade e descrição exatas; isso localiza uma integração existente, sem implantar Kubernetes.
+- CLI de gatilhos de rotina: 9/9, typecheck CLI e gates de localização. Checkpoint: **378/396 tarefas**, 18 caixas abertas incluindo agregadoras.
+- Rodada integrada: 70/70 em seis arquivos; typecheck UI, gate de tokens, scanner de fontes e OpenSpec estrito passaram.

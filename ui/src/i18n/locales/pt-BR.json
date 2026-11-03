@@ -4192,6 +4192,72 @@
           "name": "Reutilizar sandbox",
           "description": "Pausa e depois retoma o sandbox entre execuções do Paperclip em vez de encerrá-lo ao liberar."
         }
+      },
+      "kubernetes": {
+        "inCluster": {
+          "name": "Usar credenciais do cluster",
+          "description": "Quando ativo, o plugin usa as credenciais da ServiceAccount dentro do pod. Requer que paperclip-server esteja em execução dentro do cluster de destino."
+        },
+        "kubeconfig": {
+          "name": "Kubeconfig YAML",
+          "description": "YAML inline do kubeconfig. Cole um kubeconfig ou uma referência existente a um segredo do Paperclip; valores colados são armazenados como segredos da organização."
+        },
+        "namespacePrefix": {
+          "name": "Prefixo do namespace",
+          "description": "Prefixo do namespace de tenant por organização (padrão: paperclip-)."
+        },
+        "companySlug": {
+          "name": "Slug da organização",
+          "description": "Substitui o slug da organização derivado automaticamente e usado no nome do namespace de tenant."
+        },
+        "imageRegistry": {
+          "name": "Registro de imagens",
+          "description": "Substitui o registro padrão para imagens de runtime de agentes (padrão: ghcr.io/paperclipai)."
+        },
+        "imageAllowList": {
+          "name": "Padrões de imagens permitidas",
+          "description": "Padrões glob dos valores `target.imageOverride` permitidos. Uma lista vazia = nenhuma substituição permitida."
+        },
+        "imagePullSecrets": {
+          "name": "Segredos de pull de imagem",
+          "description": "Nomes de segredos de pull de imagens Docker pré-criados no namespace de tenant."
+        },
+        "egressAllowFqdns": {
+          "name": "FQDNs de saída permitidos",
+          "description": "FQDNs adicionais para os quais os pods de agentes podem ter tráfego de saída. FQDNs padrão do adapter (por exemplo, api.anthropic.com) são adicionados automaticamente."
+        },
+        "egressAllowCidrs": {
+          "name": "CIDRs de saída permitidos",
+          "description": "CIDRs adicionais para os quais os pods de agentes podem ter tráfego de saída."
+        },
+        "egressMode": {
+          "name": "Modo da política de saída",
+          "description": "Modo da política de rede. `cilium` ativa a filtragem de tráfego de saída baseada em FQDN por meio de CiliumNetworkPolicy."
+        },
+        "runtimeClassName": {
+          "name": "RuntimeClass",
+          "description": "RuntimeClass opcional para isolamento de pods (por exemplo, `kata-fc` para microVMs com Firecracker). O cluster deve ter a RuntimeClass instalada."
+        },
+        "serviceAccountAnnotations": {
+          "name": "Anotações da ServiceAccount",
+          "description": "Anotações aplicadas à ServiceAccount por tenant (por exemplo, `eks.amazonaws.com/role-arn` para IRSA)."
+        },
+        "jobTtlSecondsAfterFinished": {
+          "name": "Tempo para limpeza do Job (s)",
+          "description": "Segundos após a conclusão de um Job antes de ele ser removido como lixo (padrão: 900)."
+        },
+        "podActivityDeadlineSec": {
+          "name": "Limite de execução (s)",
+          "description": "Limite rígido de tempo de parede para uma execução (padrão: 3600)."
+        },
+        "adapterType": {
+          "name": "Tipo de adapter",
+          "description": "Tipo de adapter que os Jobs deste ambiente executarão (por exemplo, `claude_local`, `codex_local`). O padrão é `claude_local`. Cada ambiente é vinculado a um adapter; crie vários ambientes para adapters diferentes."
+        },
+        "backend": {
+          "name": "Backend do Kubernetes",
+          "description": "sandbox-cr (padrão, alfa — requer kubernetes-sigs/agent-sandbox instalado) | job (fallback estável — Job batch/v1, entrypoint de execução única, sem exec de vários comandos)"
+        }
       }
     },
     "managedResources": {

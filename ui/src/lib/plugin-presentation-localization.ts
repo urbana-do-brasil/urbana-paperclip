@@ -499,6 +499,76 @@ const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
       },
     },
   },
+  kubernetes: {
+    pluginId: "paperclip.kubernetes-sandbox-provider",
+    key: "kubernetes",
+    fields: {
+      inCluster: {
+        sourceDescription: "When true, the plugin uses the in-pod ServiceAccount credentials. Requires paperclip-server to be running inside the target cluster.",
+        key: "inCluster",
+      },
+      kubeconfig: {
+        sourceDescription: "Inline kubeconfig YAML. Paste a kubeconfig or an existing Paperclip secret reference; pasted values are stored as company secrets.",
+        key: "kubeconfig",
+      },
+      namespacePrefix: {
+        sourceDescription: "Prefix for the per-company tenant namespace (default: paperclip-).",
+        key: "namespacePrefix",
+      },
+      companySlug: {
+        sourceDescription: "Override the auto-derived company slug used in the tenant namespace name.",
+        key: "companySlug",
+      },
+      imageRegistry: {
+        sourceDescription: "Override the default registry for agent runtime images (default: ghcr.io/paperclipai).",
+        key: "imageRegistry",
+      },
+      imageAllowList: {
+        sourceDescription: "Glob patterns of allowed `target.imageOverride` values. Empty list = no override permitted.",
+        key: "imageAllowList",
+      },
+      imagePullSecrets: {
+        sourceDescription: "Names of pre-created Docker image pull secrets in the tenant namespace.",
+        key: "imagePullSecrets",
+      },
+      egressAllowFqdns: {
+        sourceDescription: "Additional FQDNs to allow egress to from agent pods. Adapter-default FQDNs (e.g. api.anthropic.com) are added automatically.",
+        key: "egressAllowFqdns",
+      },
+      egressAllowCidrs: {
+        sourceDescription: "Additional CIDRs to allow egress to from agent pods.",
+        key: "egressAllowCidrs",
+      },
+      egressMode: {
+        sourceDescription: "Network policy mode. `cilium` enables FQDN-based egress filtering via CiliumNetworkPolicy.",
+        key: "egressMode",
+      },
+      runtimeClassName: {
+        sourceDescription: "Optional RuntimeClass for pod isolation (e.g. `kata-fc` for Firecracker-backed microVMs). Cluster must have the RuntimeClass installed.",
+        key: "runtimeClassName",
+      },
+      serviceAccountAnnotations: {
+        sourceDescription: "Annotations applied to the per-tenant ServiceAccount (e.g. `eks.amazonaws.com/role-arn` for IRSA).",
+        key: "serviceAccountAnnotations",
+      },
+      jobTtlSecondsAfterFinished: {
+        sourceDescription: "Seconds after a Job completes before it is garbage-collected (default: 900).",
+        key: "jobTtlSecondsAfterFinished",
+      },
+      podActivityDeadlineSec: {
+        sourceDescription: "Hard ceiling on a single run's wall-clock time (default: 3600).",
+        key: "podActivityDeadlineSec",
+      },
+      adapterType: {
+        sourceDescription: "The adapter type that Jobs in this environment will run (e.g. `claude_local`, `codex_local`). Defaults to `claude_local`. Each environment is bound to one adapter; create multiple environments for different adapters.",
+        key: "adapterType",
+      },
+      backend: {
+        sourceDescription: "sandbox-cr (default, alpha — requires kubernetes-sigs/agent-sandbox installed) | job (stable fallback — batch/v1 Job, one-shot entrypoint, no multi-command exec)",
+        key: "backend",
+      },
+    },
+  },
 };
 
 const OWN_LOCAL_FOLDER_PRESENTATION_KEYS: Record<string, { pluginKey: string; key: string }> = {

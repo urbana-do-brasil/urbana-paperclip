@@ -829,6 +829,211 @@ describe("owned plugin presentation localization", () => {
     expect(changedSourcePresentation.properties.bridgeAuthToken).toEqual(changedSourceSchema.properties.bridgeAuthToken);
   });
 
+  it.each(["pt-BR", "en"] as const)("localizes Kubernetes schema metadata only for the exact bundled source in %s", async (locale) => {
+    await i18n.changeLanguage(locale);
+    const pluginId = "paperclip.kubernetes-sandbox-provider";
+    const pluginRecordId = "bundled-kubernetes-plugin-id";
+    const packageName = "@paperclipai/plugin-kubernetes";
+    const bundlePath = "/app/packages/plugins/sandbox-providers/kubernetes";
+    const installed = [{
+      id: pluginRecordId,
+      pluginKey: pluginId,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginId },
+    }];
+    const bundled = [{ pluginKey: pluginId, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledSandboxProvider({ pluginId: pluginRecordId, pluginKey: pluginId }, installed, bundled);
+    expect(trustedBundle).toBe(true);
+
+    const sourceDescriptions = {
+      inCluster: "When true, the plugin uses the in-pod ServiceAccount credentials. Requires paperclip-server to be running inside the target cluster.",
+      kubeconfig: "Inline kubeconfig YAML. Paste a kubeconfig or an existing Paperclip secret reference; pasted values are stored as company secrets.",
+      namespacePrefix: "Prefix for the per-company tenant namespace (default: paperclip-).",
+      companySlug: "Override the auto-derived company slug used in the tenant namespace name.",
+      imageRegistry: "Override the default registry for agent runtime images (default: ghcr.io/paperclipai).",
+      imageAllowList: "Glob patterns of allowed `target.imageOverride` values. Empty list = no override permitted.",
+      imagePullSecrets: "Names of pre-created Docker image pull secrets in the tenant namespace.",
+      egressAllowFqdns: "Additional FQDNs to allow egress to from agent pods. Adapter-default FQDNs (e.g. api.anthropic.com) are added automatically.",
+      egressAllowCidrs: "Additional CIDRs to allow egress to from agent pods.",
+      egressMode: "Network policy mode. `cilium` enables FQDN-based egress filtering via CiliumNetworkPolicy.",
+      runtimeClassName: "Optional RuntimeClass for pod isolation (e.g. `kata-fc` for Firecracker-backed microVMs). Cluster must have the RuntimeClass installed.",
+      serviceAccountAnnotations: "Annotations applied to the per-tenant ServiceAccount (e.g. `eks.amazonaws.com/role-arn` for IRSA).",
+      jobTtlSecondsAfterFinished: "Seconds after a Job completes before it is garbage-collected (default: 900).",
+      podActivityDeadlineSec: "Hard ceiling on a single run's wall-clock time (default: 3600).",
+      adapterType: "The adapter type that Jobs in this environment will run (e.g. `claude_local`, `codex_local`). Defaults to `claude_local`. Each environment is bound to one adapter; create multiple environments for different adapters.",
+      backend: "sandbox-cr (default, alpha — requires kubernetes-sigs/agent-sandbox installed) | job (stable fallback — batch/v1 Job, one-shot entrypoint, no multi-command exec)",
+    };
+    const ptBrDescriptions = {
+      inCluster: "Quando ativo, o plugin usa as credenciais da ServiceAccount dentro do pod. Requer que paperclip-server esteja em execução dentro do cluster de destino.",
+      kubeconfig: "YAML inline do kubeconfig. Cole um kubeconfig ou uma referência existente a um segredo do Paperclip; valores colados são armazenados como segredos da organização.",
+      namespacePrefix: "Prefixo do namespace de tenant por organização (padrão: paperclip-).",
+      companySlug: "Substitui o slug da organização derivado automaticamente e usado no nome do namespace de tenant.",
+      imageRegistry: "Substitui o registro padrão para imagens de runtime de agentes (padrão: ghcr.io/paperclipai).",
+      imageAllowList: "Padrões glob dos valores `target.imageOverride` permitidos. Uma lista vazia = nenhuma substituição permitida.",
+      imagePullSecrets: "Nomes de segredos de pull de imagens Docker pré-criados no namespace de tenant.",
+      egressAllowFqdns: "FQDNs adicionais para os quais os pods de agentes podem ter tráfego de saída. FQDNs padrão do adapter (por exemplo, api.anthropic.com) são adicionados automaticamente.",
+      egressAllowCidrs: "CIDRs adicionais para os quais os pods de agentes podem ter tráfego de saída.",
+      egressMode: "Modo da política de rede. `cilium` ativa a filtragem de tráfego de saída baseada em FQDN por meio de CiliumNetworkPolicy.",
+      runtimeClassName: "RuntimeClass opcional para isolamento de pods (por exemplo, `kata-fc` para microVMs com Firecracker). O cluster deve ter a RuntimeClass instalada.",
+      serviceAccountAnnotations: "Anotações aplicadas à ServiceAccount por tenant (por exemplo, `eks.amazonaws.com/role-arn` para IRSA).",
+      jobTtlSecondsAfterFinished: "Segundos após a conclusão de um Job antes de ele ser removido como lixo (padrão: 900).",
+      podActivityDeadlineSec: "Limite rígido de tempo de parede para uma execução (padrão: 3600).",
+      adapterType: "Tipo de adapter que os Jobs deste ambiente executarão (por exemplo, `claude_local`, `codex_local`). O padrão é `claude_local`. Cada ambiente é vinculado a um adapter; crie vários ambientes para adapters diferentes.",
+      backend: "sandbox-cr (padrão, alfa — requer kubernetes-sigs/agent-sandbox instalado) | job (fallback estável — Job batch/v1, entrypoint de execução única, sem exec de vários comandos)",
+    };
+    const ptBrNames = {
+      inCluster: "Usar credenciais do cluster",
+      kubeconfig: "Kubeconfig YAML",
+      namespacePrefix: "Prefixo do namespace",
+      companySlug: "Slug da organização",
+      imageRegistry: "Registro de imagens",
+      imageAllowList: "Padrões de imagens permitidas",
+      imagePullSecrets: "Segredos de pull de imagem",
+      egressAllowFqdns: "FQDNs de saída permitidos",
+      egressAllowCidrs: "CIDRs de saída permitidos",
+      egressMode: "Modo da política de saída",
+      runtimeClassName: "RuntimeClass",
+      serviceAccountAnnotations: "Anotações da ServiceAccount",
+      jobTtlSecondsAfterFinished: "Tempo para limpeza do Job (s)",
+      podActivityDeadlineSec: "Limite de execução (s)",
+      adapterType: "Tipo de adapter",
+      backend: "Backend do Kubernetes",
+    };
+    const enNames = {
+      inCluster: "Use in-cluster credentials",
+      kubeconfig: "Kubeconfig YAML",
+      namespacePrefix: "Namespace prefix",
+      companySlug: "Company slug override",
+      imageRegistry: "Image registry",
+      imageAllowList: "Allowed image patterns",
+      imagePullSecrets: "Image pull secrets",
+      egressAllowFqdns: "Allowed egress FQDNs",
+      egressAllowCidrs: "Allowed egress CIDRs",
+      egressMode: "Egress policy mode",
+      runtimeClassName: "RuntimeClass",
+      serviceAccountAnnotations: "ServiceAccount annotations",
+      jobTtlSecondsAfterFinished: "Job cleanup delay (s)",
+      podActivityDeadlineSec: "Run time limit (s)",
+      adapterType: "Adapter type",
+      backend: "Kubernetes backend",
+    };
+    const schema = {
+      type: "object",
+      properties: {
+        inCluster: { type: "boolean", description: sourceDescriptions.inCluster },
+        kubeconfig: { type: "string", format: "secret-ref", description: sourceDescriptions.kubeconfig },
+        namespacePrefix: { type: "string", description: sourceDescriptions.namespacePrefix },
+        companySlug: { type: "string", description: sourceDescriptions.companySlug },
+        imageRegistry: { type: "string", description: sourceDescriptions.imageRegistry },
+        imageAllowList: { type: "array", items: { type: "string" }, description: sourceDescriptions.imageAllowList },
+        imagePullSecrets: { type: "array", items: { type: "string" }, description: sourceDescriptions.imagePullSecrets },
+        egressAllowFqdns: { type: "array", items: { type: "string" }, description: sourceDescriptions.egressAllowFqdns },
+        egressAllowCidrs: { type: "array", items: { type: "string" }, description: sourceDescriptions.egressAllowCidrs },
+        egressMode: { type: "string", enum: ["standard", "cilium"], description: sourceDescriptions.egressMode },
+        runtimeClassName: { type: "string", description: sourceDescriptions.runtimeClassName },
+        serviceAccountAnnotations: { type: "object", additionalProperties: { type: "string" }, description: sourceDescriptions.serviceAccountAnnotations },
+        jobTtlSecondsAfterFinished: { type: "integer", minimum: 0, description: sourceDescriptions.jobTtlSecondsAfterFinished },
+        podActivityDeadlineSec: { type: "integer", minimum: 1, description: sourceDescriptions.podActivityDeadlineSec },
+        adapterType: { type: "string", description: sourceDescriptions.adapterType },
+        backend: { type: "string", enum: ["sandbox-cr", "job"], description: sourceDescriptions.backend },
+        customField: { type: "string", title: "Provider-owned field", description: "Provider-owned help text." },
+      },
+      anyOf: [{ required: ["inCluster"] }, { required: ["kubeconfig"] }],
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configuration = {
+      inCluster: false,
+      kubeconfig: "company-secret-ref",
+      namespacePrefix: "tenant-",
+      companySlug: "my-company",
+      imageRegistry: "registry.example.test/agents",
+      imageAllowList: ["ghcr.io/example/*"],
+      imagePullSecrets: ["registry-credentials"],
+      egressAllowFqdns: ["api.example.test"],
+      egressAllowCidrs: ["192.0.2.0/24"],
+      egressMode: "cilium",
+      runtimeClassName: "kata-fc",
+      serviceAccountAnnotations: { "example.com/role": "agent" },
+      jobTtlSecondsAfterFinished: 1200,
+      podActivityDeadlineSec: 7200,
+      adapterType: "codex_local",
+      backend: "job",
+      arbitraryValue: { keep: true },
+    };
+    const configurationBefore = JSON.stringify(configuration);
+    const localized = localizeSandboxProviderConfigSchema("kubernetes", pluginId, schema, i18n.t, trustedBundle)!;
+    const expectedNames = locale === "pt-BR" ? ptBrNames : enNames;
+    const expectedDescriptions = locale === "pt-BR" ? ptBrDescriptions : sourceDescriptions;
+
+    for (const [fieldKey, sourceDescription] of Object.entries(sourceDescriptions)) {
+      const translationKey = `pluginPresentation.sandboxProviderConfigFields.kubernetes.${fieldKey}`;
+      expect(i18n.exists(`${translationKey}.name`, { lng: locale })).toBe(true);
+      expect(i18n.exists(`${translationKey}.description`, { lng: locale })).toBe(true);
+      const sourceField = schema.properties[fieldKey as keyof typeof schema.properties];
+      expect(localized.properties[fieldKey as keyof typeof localized.properties]).toEqual({
+        ...sourceField,
+        title: expectedNames[fieldKey as keyof typeof expectedNames],
+        description: expectedDescriptions[fieldKey as keyof typeof expectedDescriptions],
+      });
+      expect(sourceDescription).toBeTruthy();
+    }
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(localized.anyOf).toEqual([{ required: ["inCluster"] }, { required: ["kubeconfig"] }]);
+    expect(localized.properties.egressMode).toMatchObject({ enum: ["standard", "cilium"] });
+    expect(localized.properties.jobTtlSecondsAfterFinished).toMatchObject({ minimum: 0 });
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configuration)).toBe(configurationBefore);
+
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/kubernetes/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    const packageJson = JSON.parse(readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/kubernetes/package.json", import.meta.url),
+      "utf8",
+    )) as { name: string };
+    expect(packageJson.name).toBe(packageName);
+    expect(manifestSource).toContain(`const PLUGIN_ID = "${pluginId}"`);
+    expect(manifestSource).toContain('driverKey: "kubernetes"');
+    for (const sourceDescription of Object.values(sourceDescriptions)) {
+      expect(manifestSource).toContain(sourceDescription);
+    }
+
+    const externalInstalled = [{
+      ...installed[0]!,
+      id: "vendor-kubernetes-id",
+      packageName: "vendor/kubernetes-compatible",
+      packagePath: "/custom/vendor/kubernetes-compatible",
+    }];
+    const externalTrustedBundle = isTrustedBundledSandboxProvider(
+      { pluginId: "vendor-kubernetes-id", pluginKey: pluginId },
+      externalInstalled,
+      bundled,
+    );
+    expect(externalTrustedBundle).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("kubernetes", pluginId, schema, i18n.t, externalTrustedBundle)).toBe(schema);
+
+    const wrongManifestIdentity = isTrustedBundledSandboxProvider(
+      { pluginId: pluginRecordId, pluginKey: pluginId },
+      [{ ...installed[0]!, manifestJson: { id: "paperclip.daytona-sandbox-provider" } }],
+      bundled,
+    );
+    expect(wrongManifestIdentity).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("kubernetes", pluginId, schema, i18n.t, wrongManifestIdentity)).toBe(schema);
+    expect(localizeSandboxProviderConfigSchema("kubernetes", "paperclip.fake-sandbox-provider", schema, i18n.t, true)).toBe(schema);
+
+    const changedSourceSchema = {
+      ...schema,
+      properties: {
+        ...schema.properties,
+        kubeconfig: { ...schema.properties.kubeconfig, description: "Vendor-authored Kubernetes-compatible kubeconfig help." },
+      },
+    };
+    const changedSourcePresentation = localizeSandboxProviderConfigSchema("kubernetes", pluginId, changedSourceSchema, i18n.t, true)!;
+    expect(changedSourcePresentation.properties.kubeconfig).toEqual(changedSourceSchema.properties.kubeconfig);
+  });
+
   it("localizes managed-resource plugin attribution only with matching installed and bundled identity", async () => {
     const attribution = {
       pluginId: "plugin-workspace",

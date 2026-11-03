@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { i18n } from "@/i18n";
+import { ApiError } from "../api/client";
 import type {
   PipelineAttentionFeed,
   PipelineCaseDetail,
@@ -25,6 +26,7 @@ import {
   ReviewQueueDetailDialog,
   type ReviewQueueRow,
 } from "./Pipelines";
+import { PipelineSettings } from "./PipelineSettings";
 
 // Radix menu interaction in jsdom needs PointerEvent, which older jsdom builds
 // do not expose. Keep the fallback local to this UI integration test.
@@ -40,6 +42,8 @@ const mocks = vi.hoisted(() => ({
   companyId: "company-1" as string | null,
   pathname: "/pipelines/pipeline-1/items/item-1",
   pipelineId: "",
+  mutationCallCount: 0,
+  mutationErrors: new Map<number, unknown>(),
   setBreadcrumbs: vi.fn(),
 }));
 
@@ -52,14 +56,17 @@ vi.mock("@tanstack/react-query", () => ({
     error: null,
     refetch: vi.fn(),
   }),
-  useMutation: () => ({
-    mutate: vi.fn(),
-    mutateAsync: vi.fn(),
-    isPending: false,
-    variables: undefined,
-    error: null,
-    reset: vi.fn(),
-  }),
+  useMutation: () => {
+    const callIndex = mocks.mutationCallCount++;
+    return {
+      mutate: vi.fn(),
+      mutateAsync: vi.fn(),
+      isPending: false,
+      variables: undefined,
+      error: mocks.mutationErrors.get(callIndex) ?? null,
+      reset: vi.fn(),
+    };
+  },
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
@@ -76,13 +83,18 @@ vi.mock("@/lib/router", () => ({
   useLocation: () => ({ pathname: mocks.pathname, hash: "" }),
   useNavigate: () => vi.fn(),
   useParams: () => ({ pipelineId: mocks.pipelineId }),
+  useSearchParams: () => [new URLSearchParams()],
 }));
 vi.mock("../hooks/useStandardMarkdownMentionOptions", () => ({ useStandardMarkdownMentionOptions: () => [] }));
 vi.mock("../hooks/useProjectOrder", () => ({ useProjectOrder: () => ({ orderedProjects: [] }) }));
+vi.mock("@/hooks/useWorkspaceIsolationControls", () => ({ useWorkspaceIsolationControls: () => ({ visible: false }) }));
 vi.mock("../components/PipelineItemBodyDocument", () => ({ PipelineItemBodyDocument: () => null }));
 vi.mock("../components/PipelineLivenessBanner", () => ({ PipelineLivenessBanner: () => null }));
 vi.mock("../components/PipelineWorkReferences", () => ({ PipelineWorkReferences: () => null }));
-vi.mock("../components/PipelineHealthWarnings", () => ({ PipelineHealthBar: () => null }));
+vi.mock("../components/PipelineHealthWarnings", () => ({
+  PipelineHealthBar: () => null,
+  StageHealthWarnings: () => null,
+}));
 vi.mock("../components/IssueChatThread", () => ({ IssueChatThread: () => null }));
 vi.mock("@/components/ui/select", () => ({
   Select: ({ children }: { children: ReactNode }) => createElement("div", null, children),
@@ -453,6 +465,8 @@ describe("Pipelines localization", () => {
     mocks.companyId = "company-1";
     mocks.pathname = "/pipelines/pipeline-1/items/item-1";
     mocks.pipelineId = "";
+    mocks.mutationCallCount = 0;
+    mocks.mutationErrors.clear();
     mocks.setBreadcrumbs.mockClear();
     await useTestPortugueseResources();
   });
@@ -464,7 +478,89 @@ describe("Pipelines localization", () => {
     vi.useRealTimers();
     document.body.replaceChildren();
     mocks.queryData.clear();
+    mocks.mutationErrors.clear();
     await restoreI18n();
+  });
+
+  it.each([
+    { language: "pt-BR", expected: "Os dados enviados são inválidos. Revise os campos e tente novamente." },
+    { language: "en", expected: "The submitted data is invalid. Check the fields and try again." },
+  ])("localizes a known pipeline settings load error in $language", async ({ language, expected }) => {
+    await i18n.changeLanguage(language);
+    mocks.pipelineId = "pipeline-1";
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.detail("pipeline-1")), {
+      data: undefined,
+      isLoading: false,
+      isFetching: false,
+      isError: true,
+      error: new ApiError("Validation error", 400, { error: "Validation error", messageKey: "validation" }),
+      refetch: vi.fn(),
+    });
+
+    const markup = renderToStaticMarkup(createElement(PipelineSettings));
+
+    expect(markup).toContain(expected);
+    expect(markup).not.toContain("Validation error");
+  });
+
+  it.each([
+    { language: "pt-BR", expected: "Os dados enviados são inválidos. Revise os campos e tente novamente." },
+    { language: "en", expected: "The submitted data is invalid. Check the fields and try again." },
+  ])("localizes a known save-stage mutation failure in $language", async ({ language, expected }) => {
+    await i18n.changeLanguage(language);
+    mocks.pipelineId = "pipeline-1";
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.detail("pipeline-1")), {
+      data: {
+        id: "pipeline-1",
+        companyId: "company-1",
+        key: "pipeline-key",
+        name: "USER PIPELINE",
+        description: null,
+        projectId: null,
+        enforceTransitions: false,
+        archivedAt: null,
+        stageCount: 1,
+        openCaseCount: 0,
+        createdAt: "2026-10-01T00:00:00.000Z",
+        updatedAt: "2026-10-01T00:00:00.000Z",
+        stages: [{ id: "stage-1", pipelineId: "pipeline-1", key: "working", name: "USER STAGE", kind: "working", position: 1, config: {} }],
+        transitions: [],
+      } satisfies PipelineDetail,
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    // PipelineSettings creates its secret mutation first and saveStage second.
+    mocks.mutationErrors.set(1, new ApiError("Validation error", 400, { error: "Validation error", messageKey: "validation" }));
+
+    const markup = renderToStaticMarkup(createElement(PipelineSettings));
+
+    expect(markup).toContain(expected);
+    expect(markup).not.toContain("Validation error");
+    expect(mocks.mutationCallCount).toBeGreaterThan(1);
+  });
+
+  it.each([
+    { language: "pt-BR", expected: "Não foi possível concluir a solicitação. Detalhes: Vendor: unavailable" },
+    { language: "en", expected: "The request could not be completed. Details: Vendor: unavailable" },
+  ])("preserves an unknown external load error in $language", async ({ language, expected }) => {
+    await i18n.changeLanguage(language);
+    mocks.pipelineId = "pipeline-1";
+    mocks.queryData.set(JSON.stringify(queryKeys.pipelines.detail("pipeline-1")), {
+      data: undefined,
+      isLoading: false,
+      isFetching: false,
+      isError: true,
+      error: new ApiError("Vendor: unavailable", 502, { error: "Vendor: unavailable", code: "provider_failure" }),
+      refetch: vi.fn(),
+    });
+
+    const markup = renderToStaticMarkup(createElement(PipelineSettings));
+
+    expect(markup).toContain(expected);
+    expect(markup).toContain("Vendor: unavailable");
   });
 
   it("renders translated catalog controls while keeping pipeline data unchanged", () => {
