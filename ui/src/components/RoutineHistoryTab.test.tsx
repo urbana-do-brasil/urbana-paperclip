@@ -13,6 +13,7 @@ import type {
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { i18n } from "@/i18n";
+import { ApiError } from "@/api/client";
 import { RoutineHistoryTab } from "./RoutineHistoryTab";
 
 const mockRoutinesApi = vi.hoisted(() => ({
@@ -278,8 +279,13 @@ describe("RoutineHistoryTab", () => {
     mockRoutinesApi.listRevisions.mockRejectedValue(new Error("dynamic history error"));
     await render();
     expect(container.textContent).toContain("Não foi possível carregar as revisões");
-    expect(container.textContent).toContain("dynamic history error");
+    expect(container.textContent).toContain("Não foi possível concluir a solicitação. Detalhes: dynamic history error");
     expect(container.textContent).toContain("Tentar novamente");
+
+    await act(async () => i18n.changeLanguage("en"));
+    await flush();
+    expect(container.textContent).toContain("Could not load revisions");
+    expect(container.textContent).toContain("The request could not be completed. Details: dynamic history error");
   });
 
   it("renders the revision list with current and historical pills", async () => {
@@ -510,9 +516,57 @@ describe("RoutineHistoryTab", () => {
 
     expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({
       title: "Não foi possível restaurar a revisão",
-      body: "restore service unavailable",
+      body: "Não foi possível concluir a solicitação. Detalhes: restore service unavailable",
       tone: "error",
     }));
+  });
+
+  it("localizes recognized restore errors in Portuguese and English without exposing API details", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const current = createRevision({ id: "revision-2", revisionNumber: 2 });
+    const old = createRevision({ id: "revision-1", revisionNumber: 1 });
+    mockRoutinesApi.listRevisions.mockResolvedValue([current, old]);
+    mockRoutinesApi.restoreRevision.mockRejectedValue(new ApiError("Validation error", 422, {
+      error: "Validation error",
+      messageKey: "validation",
+      details: { credential: "signing-secret-123" },
+    }));
+    await render();
+
+    const oldRow = container.querySelector("[data-testid='revision-row-1']") as HTMLButtonElement | null;
+    await act(async () => oldRow?.click());
+    await flush();
+    const restoreButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Restaurar como nova revisão",
+    );
+    await act(async () => restoreButton?.click());
+    await flush();
+    const confirmRestore = async (label: string) => {
+      const confirmButton = Array.from(container.querySelectorAll("button")).find(
+        (button) => button.textContent?.includes(label),
+      );
+      await act(async () => confirmButton?.click());
+      await flush();
+    };
+
+    await confirmRestore("Restaurar como revisão 3");
+    expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Não foi possível restaurar a revisão",
+      body: "Os dados enviados são inválidos. Revise os campos e tente novamente.",
+      tone: "error",
+    }));
+    expect(JSON.stringify(toastSpy.mock.calls)).not.toContain("signing-secret-123");
+
+    toastSpy.mockClear();
+    await act(async () => i18n.changeLanguage("en"));
+    await flush();
+    await confirmRestore("Restore as revision 3");
+    expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Failed to restore revision",
+      body: "The submitted data is invalid. Check the fields and try again.",
+      tone: "error",
+    }));
+    expect(JSON.stringify(toastSpy.mock.calls)).not.toContain("signing-secret-123");
   });
 
   it("shows env summary on the revision preview and routes counts into restore dialog", async () => {

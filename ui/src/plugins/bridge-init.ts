@@ -60,6 +60,7 @@ import {
 } from "@/lib/recent-assignees";
 import { getRecentProjectIds, trackRecentProject } from "@/lib/recent-projects";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { useTranslation } from "@/i18n";
 
 // ---------------------------------------------------------------------------
 // Global bridge registry
@@ -579,9 +580,10 @@ type PluginDataTableProps = {
   emptyMessage?: string;
 };
 
-function PluginSdkDataTable({ columns, rows, loading, emptyMessage = "No rows." }: PluginDataTableProps) {
-  if (loading) return createElement("div", { className: "text-sm text-muted-foreground" }, "Loading...");
-  if (!rows.length) return createElement("div", { className: "text-sm text-muted-foreground" }, emptyMessage);
+function PluginSdkDataTable({ columns, rows, loading, emptyMessage }: PluginDataTableProps) {
+  const { t } = useTranslation();
+  if (loading) return createElement("div", { className: "text-sm text-muted-foreground" }, t("pluginSdkUi.dataTable.loading"));
+  if (!rows.length) return createElement("div", { className: "text-sm text-muted-foreground" }, emptyMessage ?? t("pluginSdkUi.dataTable.empty"));
   const gridColumns = columns.map((column) => column.width ?? "minmax(0, 1fr)").join(" ");
   return createElement(
     "div",
@@ -643,15 +645,27 @@ function PluginSdkJsonTree({ data }: { data: unknown }) {
   return createElement("pre", { className: "max-h-80 overflow-auto rounded-md border bg-muted/30 p-2 text-xs" }, JSON.stringify(data, null, 2));
 }
 
-function PluginSdkSpinner({ label = "Loading" }: { size?: "sm" | "md" | "lg"; label?: string }) {
+function PluginSdkSpinner({ label }: { size?: "sm" | "md" | "lg"; label?: string }) {
+  const { t } = useTranslation();
   return createElement("span", {
     className: "inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground align-middle",
     role: "status",
-    "aria-label": label,
+    "aria-label": label ?? t("pluginSdkUi.spinner.loading"),
   });
 }
 
-class PluginSdkErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, { hasError: boolean }> {
+type PluginSdkErrorBoundaryProps = { children: ReactNode; fallback?: ReactNode };
+
+function PluginSdkErrorBoundary({ children, fallback }: PluginSdkErrorBoundaryProps) {
+  const { t } = useTranslation();
+  return createElement(PluginSdkErrorBoundaryClass, {
+    children,
+    fallback,
+    localizedFallback: t("pluginSdkUi.errorBoundary.failedToRender"),
+  });
+}
+
+class PluginSdkErrorBoundaryClass extends Component<PluginSdkErrorBoundaryProps & { localizedFallback: string }, { hasError: boolean }> {
   override state = { hasError: false };
 
   static getDerivedStateFromError() {
@@ -660,7 +674,7 @@ class PluginSdkErrorBoundary extends Component<{ children: ReactNode; fallback?:
 
   override render() {
     if (this.state.hasError) {
-      return this.props.fallback ?? createElement("div", { className: "rounded-md border border-destructive/30 p-3 text-sm text-destructive" }, "Plugin UI failed to render.");
+      return this.props.fallback ?? createElement("div", { className: "rounded-md border border-destructive/30 p-3 text-sm text-destructive" }, this.props.localizedFallback);
     }
     return this.props.children;
   }

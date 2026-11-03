@@ -3635,3 +3635,8 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Quatro eventos próprios de rotina: 14/14 com locale. Fake-plugin é alcançável no Docker quando instalado; File Browser usa clone de apresentação do schema e mantém original para defaults/validação. Testes de apresentação 33/33, PluginSettings 20/20, locale 13/13 e typecheck UI passaram.
 - CLI org get/svg/png: 4/4 e typecheck CLI; bytes, rotas e stderr JSON foram preservados. Checkpoint: **385/403 tarefas**, com 18 caixas abertas incluindo agregadoras.
 - Rodada integrada posterior: 71/71 em cinco arquivos; gate de tokens, scanner de fontes e OpenSpec estrito passaram. CI remota e regressão integrada final continuam pendentes.
+
+### Histórico de rotinas, bridge de plugins e feedback CLI — 3.10r, 3.11i e 4.3am
+
+- Erros no histórico de rotinas: 16/16; detalhes externos preservados e credenciais em detalhes não exibidas. Bridge de plugins: 17/17, com fallbacks PT/en e props de plugins preservadas; typecheck UI passou.
+- CLI feedback report: 18/18 e typecheck CLI. Rodada integrada dos lotes: 64/64 em seis arquivos. Checkpoint: **388/406 tarefas**, 18 caixas abertas incluindo agregadoras.

@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
+import { i18n } from "@/i18n";
 import { useHostContext as useSdkHostContext } from "../../../packages/plugins/sdk/src/ui/hooks";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -14,6 +15,9 @@ import {
   ManagedRoutinesList as SdkManagedRoutinesList,
   MarkdownBlock as SdkMarkdownBlock,
   MarkdownEditor as SdkMarkdownEditor,
+  DataTable as SdkDataTable,
+  ErrorBoundary as SdkErrorBoundary,
+  Spinner as SdkSpinner,
   type FileTreeNode as SdkFileTreeNode,
 } from "../../../packages/plugins/sdk/src/ui/components";
 import type { ManagedRoutinesListProps as SdkManagedRoutinesListProps } from "../../../packages/plugins/sdk/src/ui/index";
@@ -45,8 +49,9 @@ function clickEvent(
   } as ReactMouseEvent<HTMLAnchorElement>;
 }
 
-afterEach(() => {
+afterEach(async () => {
   delete globalThis.__paperclipPluginBridge__;
+  await i18n.changeLanguage("en");
 });
 
 function act(callback: () => void) {
@@ -406,6 +411,72 @@ describe("plugin SDK markdown component bridge", () => {
     expect(markup).toContain("É possível reparar os padrões.");
     expect(markup).toContain('data-schedule-label="Agendamento"');
     expect(markup).toContain("plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint");
+  });
+});
+
+describe("plugin SDK host-owned fallback labels", () => {
+  it("localizes table and spinner defaults while preserving plugin-provided text and data", async () => {
+    initPluginBridge(React, ReactDOM);
+    const tableProps = {
+      columns: [
+        { key: "id", header: "Provider ID" },
+        { key: "name", header: "Provider column" },
+      ],
+      rows: [{ id: "provider-row-id", name: "Provider value" }],
+    };
+
+    await i18n.changeLanguage("en");
+    expect(renderToStaticMarkup(React.createElement(SdkDataTable, { columns: [], rows: [] }))).toContain("No rows.");
+    expect(renderToStaticMarkup(React.createElement(SdkDataTable, { ...tableProps, loading: true }))).toContain("Loading...");
+    expect(renderToStaticMarkup(React.createElement(SdkSpinner))).toContain('aria-label="Loading"');
+
+    await i18n.changeLanguage("pt-BR");
+    expect(renderToStaticMarkup(React.createElement(SdkDataTable, { columns: [], rows: [] }))).toContain("Nenhuma linha.");
+    expect(renderToStaticMarkup(React.createElement(SdkDataTable, { ...tableProps, loading: true }))).toContain("Carregando...");
+    expect(renderToStaticMarkup(React.createElement(SdkSpinner))).toContain('aria-label="Carregando"');
+
+    const customEmpty = renderToStaticMarkup(React.createElement(SdkDataTable, {
+      columns: [],
+      rows: [],
+      emptyMessage: "Plugin-provided empty state",
+    }));
+    const customSpinner = renderToStaticMarkup(React.createElement(SdkSpinner, { label: "Plugin-provided loading label" }));
+    const providerData = renderToStaticMarkup(React.createElement(SdkDataTable, tableProps));
+    expect(customEmpty).toContain("Plugin-provided empty state");
+    expect(customSpinner).toContain('aria-label="Plugin-provided loading label"');
+    expect(providerData).toContain("Provider column");
+    expect(providerData).toContain("Provider ID");
+    expect(providerData).toContain("Provider value");
+    expect(providerData).toContain("provider-row-id");
+  });
+
+  it("localizes the host error-boundary fallback and preserves a plugin fallback", async () => {
+    initPluginBridge(React, ReactDOM);
+    await i18n.changeLanguage("en");
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    function BrokenPluginUi(): React.ReactNode {
+      throw new Error("provider-owned diagnostic");
+    }
+    const broken = React.createElement(BrokenPluginUi);
+
+    try {
+      act(() => root.render(React.createElement(SdkErrorBoundary, { children: broken })));
+      expect(container.textContent).toBe("Plugin UI failed to render.");
+
+      await i18n.changeLanguage("pt-BR");
+      act(() => root.render(React.createElement(SdkErrorBoundary, { children: broken })));
+      expect(container.textContent).toBe("Falha ao renderizar a interface do plugin.");
+
+      act(() => root.render(React.createElement(SdkErrorBoundary, { children: broken, fallback: "Plugin-provided fallback" })));
+      expect(container.textContent).toBe("Plugin-provided fallback");
+    } finally {
+      act(() => root.unmount());
+      consoleError.mockRestore();
+      container.remove();
+    }
   });
 });
 

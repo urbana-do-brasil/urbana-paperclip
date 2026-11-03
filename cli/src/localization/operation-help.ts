@@ -162,6 +162,25 @@ const operationHelp: Record<string, CommandHelp> = {
       "--out": { en: "Write content to a file instead of stdout", "pt-BR": "Gravar o conteúdo em um arquivo em vez de stdout" },
     },
   },
+  "feedback report": {
+    description: {
+      en: "Render a terminal report for company feedback traces",
+      "pt-BR": "Gerar um relatório de traces de feedback no terminal",
+    },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID (overrides context default)", "pt-BR": "ID da organização (substitui o padrão do contexto)" },
+      "--target-type": { en: "Filter by target type", "pt-BR": "Filtrar pelo tipo de destino" },
+      "--vote": { en: "Filter by vote value", "pt-BR": "Filtrar pelo valor do voto" },
+      "--status": { en: "Filter by trace status", "pt-BR": "Filtrar pelo status do trace" },
+      "--project-id": { en: "Filter by project ID", "pt-BR": "Filtrar pelo ID do projeto" },
+      "--issue-id": { en: "Filter by issue ID", "pt-BR": "Filtrar pelo ID da tarefa" },
+      "--from": { en: "Only include traces created at or after this timestamp", "pt-BR": "Incluir apenas traces criados neste horário ou depois" },
+      "--to": { en: "Only include traces created at or before this timestamp", "pt-BR": "Incluir apenas traces criados neste horário ou antes" },
+      "--shared-only": { en: "Only include traces eligible for sharing/export", "pt-BR": "Incluir apenas traces elegíveis para compartilhamento/exportação" },
+      "--payloads": { en: "Include raw payload dumps in the terminal report", "pt-BR": "Incluir dumps dos payloads brutos no relatório do terminal" },
+    },
+  },
   health: {
     description: { en: "Check API health", "pt-BR": "Verificar a integridade da API" },
     options: commonClientOptions,

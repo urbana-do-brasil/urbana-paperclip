@@ -3765,6 +3765,18 @@
     "multipleSettingsRoute": "Multiple plugins declare the company settings route",
     "multipleSettingsRouteSuffix": "Disable one plugin or change its route."
   },
+  "pluginSdkUi": {
+    "dataTable": {
+      "loading": "Loading...",
+      "empty": "No rows."
+    },
+    "spinner": {
+      "loading": "Loading"
+    },
+    "errorBoundary": {
+      "failedToRender": "Plugin UI failed to render."
+    }
+  },
   "pluginPresentation": {
     "plugins": {
       "llmWiki": {

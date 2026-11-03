@@ -3861,6 +3861,18 @@
     "multipleSettingsRoute": "Vários plugins declaram a rota de configurações da organização",
     "multipleSettingsRouteSuffix": "Desative um plugin ou altere sua rota."
   },
+  "pluginSdkUi": {
+    "dataTable": {
+      "loading": "Carregando...",
+      "empty": "Nenhuma linha."
+    },
+    "spinner": {
+      "loading": "Carregando"
+    },
+    "errorBoundary": {
+      "failedToRender": "Falha ao renderizar a interface do plugin."
+    }
+  },
   "pluginPresentation": {
     "plugins": {
       "llmWiki": {

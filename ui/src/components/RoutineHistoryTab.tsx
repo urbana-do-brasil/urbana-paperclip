@@ -17,6 +17,7 @@ import {
   type RestoreRoutineRevisionResponse,
 } from "../api/routines";
 import { ApiError } from "../api/client";
+import { formatUiError } from "../api/error-presentation";
 import { queryKeys } from "../lib/queryKeys";
 import { buildLineDiff, type DiffRow } from "../lib/line-diff";
 import { relativeTime } from "../lib/utils";
@@ -161,7 +162,7 @@ export function RoutineHistoryTab({
     onError: (error) => {
       pushToast({
         title: t("routines.detail.history.restoreFailedTitle"),
-        body: error instanceof Error ? error.message : t("routines.detail.history.restoreFailedFallback"),
+        body: error instanceof Error ? formatUiError(error) : t("routines.detail.history.restoreFailedFallback"),
         tone: "error",
       });
     },
@@ -211,7 +212,7 @@ export function RoutineHistoryTab({
           <p className="text-sm font-medium">{t("routines.detail.history.loadFailed")}</p>
           <p className="text-xs text-muted-foreground">
             {revisionsQuery.error instanceof Error
-              ? revisionsQuery.error.message
+              ? formatUiError(revisionsQuery.error)
               : t("routines.detail.history.unknownLoadError")}
           </p>
         </div>

@@ -117,11 +117,12 @@ describe("renderFeedbackReport", () => {
       traces,
       summary: summarizeFeedbackTraces(traces),
       includePayloads: false,
+      locale: "en",
     });
 
     expect(report).toContain("Paperclip Feedback Report");
-    expect(report).toContain("thumbs up");
-    expect(report).toContain("thumbs down");
+    expect(report).toContain("positive votes");
+    expect(report).toContain("negative votes");
     expect(report).toContain("Needed more detail");
   });
 });
