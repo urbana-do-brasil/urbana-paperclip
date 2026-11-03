@@ -3717,3 +3717,9 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - `worktree ensure-seeded` no caminho explicitamente vazio: status e validações localizados, com fixtures descartáveis; 15 testes focados e typecheck CLI passaram. Cópia de banco e adoção legada não foram exercitadas.
 - Builder de Claude Managed e AWS AgentCore em PT-BR/en: matriz ampliada de oito casos passou com perfis sintéticos; sem handshake ou modelo real. Suítes CLI/Runner completas: 46/46. Checkpoint: **412/431 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Settings de conectores e contrato JSON de email
+
+- Settings e subpainéis de instruções, avatar e Slack traduzidos preservando credenciais e os nomes exatos de controles na UI externa. Testes focados 43/43; setup e revisão de flags seguem pendentes.
+- Cinco operações email tiveram JSON, métodos, rotas, payloads e erro de API comparados em PT-BR/en com fixtures; dois testes passaram e foram incluídos no comando `check:localization`. Auth e workspace ainda precisam de verificação mais ampla; o contrato geral 4.4 permanece aberto.
+- Rodada integrada: **58/58 testes em quatro arquivos**. Checkpoint: **414/433 tarefas**, 19 caixas abertas incluindo agregadoras.

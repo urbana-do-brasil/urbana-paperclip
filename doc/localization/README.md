@@ -88,7 +88,7 @@ configuração de pipelines) foi concluída em PT-BR/en. 3.10d foi dividida em d
 e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
-em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checkpoint após as fatias 3.8m, 3.9f3j/f6a–c, 3.10t, 3.11a–f3/g1–g3/h1–h18/i–j, 4.3au, 6.2h, 6.3g e 7.1a–b é **412/431 tarefas** no checklist
+em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checkpoint após as fatias 3.8m, 3.9f3j/f6a–d, 3.10t, 3.11a–f3/g1–g3/h1–h18/i–j, 4.3au, 6.2h, 6.3g e 7.1a–b é **414/433 tarefas** no checklist
 do OpenSpec. 3.10f–g estão concluídas; 4.3f cobre a exportação de organizações,
 e 5.2a/5.3a adicionam dois guias públicos traduzidos. Próximas: metadata restante de 3.11h e operações da CLI; outras operações de 4.3 e 5.2/5.3 continuam parciais.
 

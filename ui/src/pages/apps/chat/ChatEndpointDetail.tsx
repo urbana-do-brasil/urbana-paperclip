@@ -430,6 +430,7 @@ function Settings({
   endpointId: string;
   endpoint: Awaited<ReturnType<typeof chatEndpointsApi.get>>;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { pushToast } = useToast();
   const [messageCopied, setMessageCopied] = useState(false);
@@ -438,7 +439,9 @@ function Settings({
     queryFn: () => agentsApi.get(endpoint.assignedAgentId, endpoint.companyId),
     enabled: endpoint.provider === "slack",
   });
-  const mentionMessage = `@${(endpoint.botUsername ?? endpoint.botLabel ?? endpoint.assignedAgentName).replace(/^@/, "")} you there?`;
+  const mentionMessage = t("apps.chatEndpointDetail.settings.messageExample", {
+    mention: `@${(endpoint.botUsername ?? endpoint.botLabel ?? endpoint.assignedAgentName).replace(/^@/, "")}`,
+  });
   const resourcesQuery = useQuery({
     queryKey: queryKeys.chatEndpoints.resources(endpointId),
     queryFn: () => chatEndpointsApi.listResources(endpointId),
@@ -454,8 +457,8 @@ function Settings({
       ),
     onError: (error) =>
       pushToast({
-        title: "Couldn't update destination",
-        body: error instanceof Error ? error.message : "Try again.",
+        title: t("apps.chatEndpointDetail.settings.updateDestinationFailed"),
+        body: error instanceof Error ? error.message : t("apps.chatEndpointDetail.settings.tryAgainFallback"),
         tone: "error",
       }),
   });
@@ -468,8 +471,8 @@ function Settings({
       ),
     onError: (error) =>
       pushToast({
-        title: "Couldn't update settings",
-        body: error instanceof Error ? error.message : "Try again.",
+        title: t("apps.chatEndpointDetail.settings.updateSettingsFailed"),
+        body: error instanceof Error ? error.message : t("apps.chatEndpointDetail.settings.tryAgainFallback"),
         tone: "error",
       }),
   });
@@ -482,10 +485,10 @@ function Settings({
     saveResources.mutate({ id: resource.id, enabled });
   return (
     <section className="max-w-3xl space-y-7">
-      {endpoint.provider === "imessage-photon" && <p className="text-sm text-muted-foreground">{endpoint.photonAllocation === "shared" ? "Shared Photon project · direct messages only. Enroll senders in Photon and link their Messages identities in Access. Groups cannot be enabled." : "Enable each group individually. Agent replies are visible to everyone in that group; only authorized senders can start work."}</p>}
+      {endpoint.provider === "imessage-photon" && <p className="text-sm text-muted-foreground">{endpoint.photonAllocation === "shared" ? t("apps.chatEndpointDetail.settings.imessageSharedGuidance") : t("apps.chatEndpointDetail.settings.imessageDedicatedGuidance")}</p>}
       {endpoint.provider === "telegram" && (
         <div className="space-y-2">
-          <h2 className="text-lg font-semibold">Telegram group command</h2>
+          <h2 className="text-lg font-semibold">{t("apps.chatEndpointDetail.settings.telegramGroupCommand")}</h2>
           <div className="rounded-lg border border-border p-3 text-sm">
             <code>
               /task@
@@ -493,20 +496,18 @@ function Settings({
               &lt;request&gt;
             </code>
             <p className="mt-2 text-muted-foreground">
-              Telegram&apos;s default privacy mode does not deliver ordinary
-              mentions to bots. Use this command to start or continue group
-              work, or reply directly to a message from the bot.
+              {t("apps.chatEndpointDetail.settings.telegramCommandGuidance")}
             </p>
           </div>
         </div>
       )}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold">{endpoint.provider === "slack" ? "Allowed Channels" : "Destinations"}</h3>
-        {resourcesQuery.isError ? <p role="alert" className="text-sm text-destructive">Couldn't load channels. <button className="underline" onClick={() => void resourcesQuery.refetch()}>Try again</button></p> : resourcesQuery.isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading destinations…</p>
+        <h3 className="text-sm font-semibold">{t(endpoint.provider === "slack" ? "apps.chatEndpointDetail.settings.allowedChannels" : "apps.chatEndpointDetail.settings.destinations")}</h3>
+        {resourcesQuery.isError ? <p role="alert" className="text-sm text-destructive">{t(endpoint.provider === "slack" ? "apps.chatEndpointDetail.settings.loadChannelsFailed" : "apps.chatEndpointDetail.settings.loadDestinationsFailed")} <button className="underline" onClick={() => void resourcesQuery.refetch()}>{t("apps.chatEndpointDetail.tryAgain")}</button></p> : resourcesQuery.isLoading ? (
+          <p className="text-sm text-muted-foreground">{t("apps.chatEndpointDetail.settings.loadingDestinations")}</p>
         ) : destinationResources.length === 0 && endpoint.provider !== "slack" ? (
           <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-            No destinations yet.
+            {t("apps.chatEndpointDetail.settings.noDestinations")}
           </p>
         ) : (
           <div className="divide-y divide-border border-y border-border">
@@ -519,12 +520,12 @@ function Settings({
                   {(resource.availability !== "available" || resource.detail) && <p className="text-xs text-muted-foreground">
                     {resource.availability === "available"
                       ? resource.detail
-                      : "Unavailable at the provider"}
+                      : t("apps.chatEndpointDetail.settings.unavailableAtProvider")}
                   </p>}
-                  {resource.participants?.length ? <p className="mt-1 break-words text-xs text-muted-foreground">Participants: {resource.participants.join(", ")}</p> : null}
+                  {resource.participants?.length ? <p className="mt-1 break-words text-xs text-muted-foreground">{t("apps.chatEndpointDetail.settings.participants", { participants: resource.participants.join(", ") })}</p> : null}
                 </div>
                 <ToggleSwitch
-                  aria-label={`Enable ${resource.label}`}
+                  aria-label={t("apps.chatEndpointDetail.settings.enableDestination", { destination: resource.label })}
                   checked={resource.enabled}
                   disabled={
                     endpoint.photonAllocation === "shared" ||
@@ -539,7 +540,7 @@ function Settings({
             ))}
             {endpoint.provider === "slack" && (
               <p className="py-3 text-sm text-muted-foreground">
-                Invite {endpoint.assignedAgentName} to a channel to add it
+                {t("apps.chatEndpointDetail.settings.inviteAgentToChannel", { agent: endpoint.assignedAgentName })}
               </p>
             )}
           </div>
@@ -548,10 +549,10 @@ function Settings({
       {endpoint.provider !== "github" && (
         <div className="space-y-3">
           <SettingToggle
-            label="Allow direct messages"
+            label={t("apps.chatEndpointDetail.settings.allowDirectMessages")}
             detail={
               endpoint.provider === "discord"
-                ? "People must also enable Direct Messages in their shared Discord server’s Privacy Settings."
+                ? t("apps.chatEndpointDetail.settings.discordDirectMessagesDetail")
                 : undefined
             }
             checked={endpoint.allowDirectMessages ?? false}
@@ -562,8 +563,8 @@ function Settings({
           />
           {endpoint.provider === "slack" && (
             <SettingToggle
-              label="Require at-mention"
-              detail="Only respond to messages that @mention this bot, including thread replies and direct messages. Direct messages must also be allowed above."
+              label={t("apps.chatEndpointDetail.settings.requireAtMention")}
+              detail={t("apps.chatEndpointDetail.settings.requireAtMentionDetail")}
               checked={endpoint.requireAtMention ?? false}
               pending={updateEndpoint.isPending}
               onChange={(requireAtMention) =>
@@ -573,8 +574,8 @@ function Settings({
           )}
           {endpoint.provider === "microsoft-teams" && (
             <SettingToggle
-              label="Allow group chats"
-              detail="The bot may participate in group chats where it is installed."
+              label={t("apps.chatEndpointDetail.settings.allowGroupChats")}
+              detail={t("apps.chatEndpointDetail.settings.allowGroupChatsDetail")}
               checked={endpoint.allowGroupChats ?? false}
               pending={updateEndpoint.isPending}
               onChange={(allowGroupChats) =>
@@ -593,26 +594,26 @@ function Settings({
         }}
       />}
       {endpoint.provider === "slack" && (
-        <SlackSetupAdvanced label="Message in a channel"><div className="space-y-2 text-sm">
-          <p>Invite the bot to a channel, then mention it to start a conversation.</p>
+        <SlackSetupAdvanced label={t("apps.chatEndpointDetail.settings.messageInChannel")}><div className="space-y-2 text-sm">
+          <p>{t("apps.chatEndpointDetail.settings.inviteBotToChannel")}</p>
           <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
             <code>{mentionMessage}</code>
-            <Button size="icon" variant="ghost" aria-label={messageCopied ? "Message copied" : "Copy message"} onClick={() => {
-              void copyTextToClipboard(mentionMessage).then(() => setMessageCopied(true), () => pushToast({ title: "Couldn’t copy the message", body: "Select and copy it manually.", tone: "error" }));
+            <Button size="icon" variant="ghost" aria-label={messageCopied ? t("apps.chatEndpointDetail.settings.messageCopied") : t("apps.chatEndpointDetail.settings.copyMessage")} onClick={() => {
+              void copyTextToClipboard(mentionMessage).then(() => setMessageCopied(true), () => pushToast({ title: t("apps.chatEndpointDetail.settings.copyMessageFailed"), body: t("apps.chatEndpointDetail.settings.copyManually"), tone: "error" }));
             }}>{messageCopied ? <Check className="size-4" /> : <Copy className="size-4" />}</Button>
           </div>
         </div></SlackSetupAdvanced>
       )}
-      {endpoint.provider === "slack" && <SlackSetupAdvanced label="Agent avatar">
-        {avatarAgent.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading agent avatar…</p>
-          : avatarAgent.isError ? <p role="alert" className="text-sm text-destructive">Couldn’t load the agent’s avatar. <button className="underline" onClick={() => void avatarAgent.refetch()}>Try again</button></p>
+      {endpoint.provider === "slack" && <SlackSetupAdvanced label={t("apps.chatEndpointDetail.settings.agentAvatar")}>
+        {avatarAgent.isPending ? <p role="status" className="text-sm text-muted-foreground">{t("apps.chatEndpointDetail.settings.loadingAgentAvatar")}</p>
+          : avatarAgent.isError ? <p role="alert" className="text-sm text-destructive">{t("apps.chatEndpointDetail.settings.agentAvatarLoadFailed")} <button className="underline" onClick={() => void avatarAgent.refetch()}>{t("apps.chatEndpointDetail.tryAgain")}</button></p>
           : <SlackAvatarSettings
               agentName={avatarAgent.data?.name ?? endpoint.assignedAgentName}
               appName={endpoint.setup?.slackApp?.appName ?? defaultSlackAppName(avatarAgent.data?.name ?? endpoint.assignedAgentName)}
               avatarUrl={agentAvatarUrl(resolveAgentAppearance(avatarAgent.data?.appearance, endpoint.assignedAgentId), 512, 1, "rest", false, "paperclip-dark")}
             />}
       </SlackSetupAdvanced>}
-      {endpoint.provider === "slack" && <SlackSetupAdvanced label="Slack tools"><SlackToolsSettings companyId={endpoint.companyId} endpointId={endpointId} connectionId={endpoint.connectionId} /></SlackSetupAdvanced>}
+      {endpoint.provider === "slack" && <SlackSetupAdvanced label={t("apps.chatEndpointDetail.settings.slackTools.title")}><SlackToolsSettings companyId={endpoint.companyId} endpointId={endpointId} connectionId={endpoint.connectionId} /></SlackSetupAdvanced>}
     </section>
   );
 }

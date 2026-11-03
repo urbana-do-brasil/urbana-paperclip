@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { SlackAvatarContent } from "./SlackAvatarStep";
 
 const containers: Array<{ root: ReturnType<typeof createRoot>; node: HTMLDivElement }> = [];
@@ -22,6 +23,7 @@ afterEach(() => {
 async function settle() { await new Promise(resolve => setTimeout(resolve, 0)); flushSync(() => {}); }
 
 describe("Slack avatar download", () => {
+  beforeEach(async () => { await i18n.changeLanguage("en"); });
   it("rejects error responses and downloads the PNG on retry", async () => {
     const fetch = vi.fn().mockResolvedValueOnce({ ok: false, headers: new Headers() })
       .mockResolvedValueOnce({ ok: true, headers: new Headers({ "content-type": "image/png" }), blob: async () => new Blob(["png"], { type: "image/png" }) });

@@ -23,6 +23,12 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   createSlackApp: vi.fn(),
   update: vi.fn(),
+  updateResources: vi.fn(),
+  slackCapabilities: vi.fn(),
+  slackSearch: vi.fn(),
+  slackConfigure: vi.fn(),
+  slackConnect: vi.fn(),
+  slackDisconnect: vi.fn(),
   setup: vi.fn(),
   setupTestStatus: vi.fn(),
   finishSlackSetup: vi.fn(),
@@ -37,10 +43,13 @@ const mocks = vi.hoisted(() => ({
   setParams: vi.fn(),
 }));
 vi.mock("@/api/chatEndpoints", () => ({ chatEndpointsApi: mocks }));
-vi.mock("./SlackToolSettings", () => ({
-  SlackSearchAccess: () => null,
-  SlackToolsSettings: () => null,
-}));
+vi.mock("@/api/slackTools", () => ({ slackToolsApi: {
+  capabilities: mocks.slackCapabilities,
+  search: mocks.slackSearch,
+  configure: mocks.slackConfigure,
+  connect: mocks.slackConnect,
+  disconnect: mocks.slackDisconnect,
+} }));
 vi.mock("@/api/githubChat", () => ({ githubChatApi: {
   configuration: async () => ({ revision: 0, configuration: {} }),
   progress: async () => mocks.get(),
@@ -89,6 +98,11 @@ describe("chat setup and identity-link clipboard actions", () => {
     mocks.listAgents.mockResolvedValue([{ id: "agent-a", name: "Maya", status: "idle" }]);
     mocks.getAgent.mockResolvedValue({ id: "agent-a", name: "Maya", appearance: { schemaVersion: 1, characterVersion: "cap-v1", paletteId: "cherry-pop" } });
     mocks.listResources.mockResolvedValue([]);
+    mocks.slackCapabilities.mockResolvedValue({ grantedScopes: [], missingScopes: [], tools: [] });
+    mocks.slackSearch.mockResolvedValue({ configured: false, clientId: null, redirectUri: null, connected: false, nativeSearchAvailable: true, limitation: "Personal search is unavailable on this provider host.", canConfigure: false });
+    mocks.slackConfigure.mockResolvedValue({ configured: true, clientId: "client-id-external", redirectUri: "https://example.test/slack/oauth/callback?client=original", connected: false, nativeSearchAvailable: true, limitation: "", canConfigure: true });
+    mocks.slackConnect.mockResolvedValue({ url: "https://slack.example.test/oauth" });
+    mocks.slackDisconnect.mockResolvedValue({ configured: false, clientId: null, redirectUri: null, connected: false, nativeSearchAvailable: true, limitation: "", canConfigure: false });
     mocks.tab = "access";
     mocks.listActivityPage.mockReset();
     container = document.createElement("div");
@@ -306,6 +320,137 @@ describe("chat setup and identity-link clipboard actions", () => {
       expect(copied[1]).toContain("Maya");
       expect(copied[1]).toContain("https://app.slack.com/");
       expect(copied[1]).toContain("/paperclip connect");
+    },
+  );
+
+  it.each([
+    ["en", "Allowed Channels", "Enable Channel <provider-42>", "Participants: Dana <external>, Sam provider", "Allow direct messages", "Additional communication instructions", "Save instructions", "Message in a channel", "Copy message", "Slack tools", "Read, search, and act in Slack. Some actions require approval.", "Agent avatar", "Download avatar", "@Maya you there?"],
+    ["pt-BR", "Canais permitidos", "Ativar Channel <provider-42>", "Participantes: Dana <external>, Sam provider", "Permitir mensagens diretas", "Instruções adicionais de comunicação", "Salvar instruções", "Enviar mensagem em um canal", "Copiar mensagem", "Ferramentas do Slack", "Leia, pesquise e execute ações no Slack. Algumas ações exigem aprovação.", "Avatar do agente", "Baixar avatar", "@Maya você está aí?"],
+  ])(
+    "localizes Slack settings in %s while preserving destinations, message text, and credentials",
+    async (locale, channelsHeading, destinationAria, participantsLabel, directMessagesLabel, instructionsLabel, saveInstructionsLabel, messageSectionLabel, copyMessageLabel, slackToolsTitle, capabilitiesDescription, avatarTitle, avatarDownloadLabel, messageExample) => {
+      await i18n.changeLanguage(locale);
+      mocks.tab = "settings";
+      const destination = {
+        id: "slack-channel-provider-42",
+        type: "channel",
+        label: "Channel <provider-42>",
+        availability: "available",
+        detail: "Provider detail: keep external-tenant-7",
+        participants: ["Dana <external>", "Sam provider"],
+        enabled: false,
+      };
+      mocks.listResources.mockResolvedValue([destination]);
+      mocks.updateResources.mockResolvedValue([{ ...destination, enabled: true }]);
+      mocks.slackCapabilities.mockResolvedValue({
+        grantedScopes: [],
+        missingScopes: ["chat:write.public"],
+        tools: [],
+      });
+      const endpoint = await render("slack", true);
+      mocks.update.mockImplementation(async (_id, input) => ({ ...endpoint, ...input }));
+
+      expect(container.textContent).toContain(channelsHeading);
+      expect(container.textContent).toContain(destination.label);
+      expect(container.textContent).toContain(destination.detail);
+      expect(container.textContent).toContain(participantsLabel);
+      expect(container.textContent).toContain("Maya");
+      expect(container.textContent).toContain(avatarTitle);
+      expect(container.textContent).toContain(avatarDownloadLabel);
+      expect(container.textContent).toContain(messageExample);
+      expect(container.querySelector("provider-42")).toBeNull();
+      const resourceSwitch = [...container.querySelectorAll<HTMLButtonElement>('button[role="switch"]')]
+        .find((button) => button.getAttribute("aria-label") === destinationAria);
+      expect(resourceSwitch).toBeDefined();
+      flushSync(() => resourceSwitch!.click());
+      await settle();
+      expect(mocks.updateResources).toHaveBeenCalledWith("endpoint-a", [{ id: destination.id, enabled: true }]);
+
+      const directMessagesSwitch = [...container.querySelectorAll<HTMLButtonElement>('button[role="switch"]')]
+        .find((button) => button.getAttribute("aria-label") === directMessagesLabel);
+      expect(directMessagesSwitch).toBeDefined();
+      flushSync(() => directMessagesSwitch!.click());
+      await settle();
+      expect(mocks.update.mock.calls[0]?.slice(0, 2)).toEqual(["endpoint-a", { allowDirectMessages: true }]);
+
+      const instructionsTextarea = container.querySelector("textarea")!;
+      const customInstructions = "Preserve provider phrase <external> exactly";
+      flushSync(() => {
+        Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(instructionsTextarea, `  ${customInstructions}  `);
+        instructionsTextarea.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      expect(container.textContent).toContain(instructionsLabel);
+      await click(saveInstructionsLabel);
+      expect(mocks.update).toHaveBeenLastCalledWith("endpoint-a", { communicationInstructions: customInstructions });
+
+      const messageDetails = [...container.querySelectorAll("details")]
+        .find((details) => details.querySelector("summary")?.textContent?.trim() === messageSectionLabel)!;
+      messageDetails.open = true;
+      const copyMessageButton = [...container.querySelectorAll("button")]
+        .find((button) => button.getAttribute("aria-label") === copyMessageLabel)!;
+      flushSync(() => copyMessageButton.click());
+      await settle();
+      expect(copied).toContain(messageExample);
+
+      const toolsDetails = [...container.querySelectorAll("details")]
+        .find((details) => details.querySelector("summary")?.textContent?.trim() === slackToolsTitle)!;
+      toolsDetails.open = true;
+      expect(container.textContent).toContain(capabilitiesDescription);
+      expect(container.textContent).toContain("chat:write.public");
+    },
+  );
+
+  it.each([
+    ["en", "Personal Slack search", "OAuth app configuration for connection managers", "Your Slack search access", "Client ID", "Client Secret", "Save OAuth configuration"],
+    ["pt-BR", "Busca pessoal do Slack", "Configuração do app OAuth para administradores de conexões", "Seu acesso à busca do Slack", "Client ID", "Client Secret", "Salvar configuração OAuth"],
+  ])(
+    "localizes Slack search configuration in %s without changing credential values",
+    async (locale, searchSection, oauthSummary, searchHeading, clientIdLabel, clientSecretLabel, saveLabel) => {
+      await i18n.changeLanguage(locale);
+      mocks.tab = "access";
+      const oauthStatus = {
+        configured: false,
+        clientId: "client-id-provider-value",
+        redirectUri: "https://slack.example.test/oauth/callback?provider=ext-42&keep=%2F",
+        connected: false,
+        nativeSearchAvailable: false,
+        limitation: "Provider limitation: external tenant requires admin approval",
+        canConfigure: true,
+      };
+      mocks.slackSearch.mockResolvedValue(oauthStatus);
+      mocks.slackConfigure.mockResolvedValue({ ...oauthStatus, configured: true });
+      await render("slack", true);
+
+      const searchDetails = [...container.querySelectorAll("details")]
+        .find((details) => details.querySelector("summary")?.textContent?.trim() === searchSection)!;
+      expect(searchDetails).toBeDefined();
+      searchDetails.open = true;
+      expect(container.textContent).toContain(searchHeading);
+      expect(container.textContent).toContain(oauthStatus.redirectUri);
+      expect(container.textContent).toContain(oauthStatus.limitation);
+      expect(container.textContent).toContain("search:read.public");
+
+      const oauthDetails = [...searchDetails.querySelectorAll("details")]
+        .find((details) => details.querySelector("summary")?.textContent?.trim() === oauthSummary)!;
+      expect(oauthDetails).toBeDefined();
+      oauthDetails.open = true;
+      const clientInputId = [...container.querySelectorAll("label")]
+        .find((label) => label.textContent === clientIdLabel)!.htmlFor;
+      expect((document.getElementById(clientInputId) as HTMLInputElement).value).toBe(oauthStatus.clientId);
+      const secretInputId = [...container.querySelectorAll("label")]
+        .find((label) => label.textContent === clientSecretLabel)!.htmlFor;
+      const secretField = document.getElementById(secretInputId) as HTMLInputElement;
+      const clientSecret = "synthetic-provider-client-secret";
+      flushSync(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(secretField, clientSecret);
+        secretField.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      await click(saveLabel);
+      expect(mocks.slackConfigure).toHaveBeenCalledWith("company-a", "endpoint-a", {
+        clientId: "client-id-provider-value",
+        clientSecret,
+      });
+      expect((document.getElementById(secretInputId) as HTMLInputElement).value).toBe("");
     },
   );
 
