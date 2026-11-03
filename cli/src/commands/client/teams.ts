@@ -20,6 +20,7 @@ import {
   type ResolvedClientContext,
 } from "./common.js";
 import { ApiRequestError } from "../../client/http.js";
+import { teamListColumnLabels } from "../../localization/team-operations.js";
 
 interface TeamBrowseOptions extends BaseClientOptions {
   kind?: string;
@@ -555,7 +556,7 @@ function printCatalogTeamRows(rows: CatalogTeam[]): void {
     trust: row.trustLevel,
     agents: row.counts.agents,
     projects: row.counts.projects,
-  })));
+  })), teamListColumnLabels());
 }
 
 function buildCatalogTeamStatusRow(
@@ -689,19 +690,19 @@ function printInstallApprovalRequested(result: TeamInstallApprovalFallbackResult
   console.log("Install was not performed. The board must approve the request and rerun the install with an authorized token.");
 }
 
-function printTable(rows: Array<Record<string, unknown>>): void {
+function printTable(rows: Array<Record<string, unknown>>, columnLabels: Record<string, string> = {}): void {
   if (rows.length === 0) {
     printOutput([], { json: false });
     return;
   }
   const columns = Object.keys(rows[0] ?? {});
-  const widths = new Map(columns.map((column) => [column, column.length]));
+  const widths = new Map(columns.map((column) => [column, Math.max(column.length, columnLabels[column]?.length ?? 0)]));
   for (const row of rows) {
     for (const column of columns) {
       widths.set(column, Math.max(widths.get(column) ?? 0, renderTableValue(row[column]).length));
     }
   }
-  console.log(columns.map((column) => column.padEnd(widths.get(column) ?? column.length)).join("  "));
+  console.log(columns.map((column) => (columnLabels[column] ?? column).padEnd(widths.get(column) ?? column.length)).join("  "));
   console.log(columns.map((column) => "-".repeat(widths.get(column) ?? column.length)).join("  "));
   for (const row of rows) {
     console.log(

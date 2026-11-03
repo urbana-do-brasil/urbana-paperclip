@@ -26,6 +26,10 @@ const companySkillOptions = {
   ...commonClientOptions,
   "--company-id": { en: "Company ID (overrides context default)", "pt-BR": "ID da organização (substitui o padrão do contexto)" },
 };
+const companyOptions = {
+  ...commonClientOptions,
+  "--company-id": { en: "Company ID (overrides context default)", "pt-BR": "ID da organização (substitui o padrão do contexto)" },
+};
 const skillReferenceArgument = { skillRef: { en: "Company skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill da organização" } };
 const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
@@ -1209,6 +1213,34 @@ const operationHelp: Record<string, CommandHelp> = {
     description: { en: "Clear an agent's desired company skills and sync runtime state", "pt-BR": "Limpar as skills desejadas da organização para um agente e sincronizar o estado do runtime" },
     arguments: { agentRef: { en: "Agent ID or shortname/url-key", "pt-BR": "ID ou nome curto/chave de URL do agente" } },
     options: { ...companySkillOptions, "--yes": { en: "Confirm clear without prompting", "pt-BR": "Confirmar a limpeza sem perguntar" } },
+  },
+  teams: {
+    description: { en: "App-shipped team catalog operations", "pt-BR": "Operações do catálogo de equipes incluídas no Paperclip" },
+  },
+  "teams browse": {
+    description: { en: "Browse app-shipped catalog teams without installing them", "pt-BR": "Explorar equipes incluídas no catálogo sem instalá-las" },
+    options: {
+      "--kind": { en: "Catalog kind filter (bundled or optional)", "pt-BR": "Filtrar pelo tipo do catálogo (bundled ou optional)" },
+      "--category": { en: "Catalog category filter", "pt-BR": "Filtrar pela categoria do catálogo" },
+      "--query": { en: "Search catalog text", "pt-BR": "Buscar texto no catálogo" },
+      ...commonClientOptions,
+    },
+  },
+  "teams search": {
+    description: { en: "Search app-shipped catalog teams without installing them", "pt-BR": "Buscar equipes incluídas no catálogo sem instalá-las" },
+    arguments: { query: { en: "Search text", "pt-BR": "Texto da busca" } },
+    options: {
+      "--kind": { en: "Catalog kind filter (bundled or optional)", "pt-BR": "Filtrar pelo tipo do catálogo (bundled ou optional)" },
+      "--category": { en: "Catalog category filter", "pt-BR": "Filtrar pela categoria do catálogo" },
+      ...commonClientOptions,
+    },
+  },
+  pipelines: {
+    description: { en: "Pipeline and case operations", "pt-BR": "Operações de pipelines e casos" },
+  },
+  "pipelines list": {
+    description: { en: "List pipelines", "pt-BR": "Listar pipelines" },
+    options: companyOptions,
   },
   "agent me": {
     description: {

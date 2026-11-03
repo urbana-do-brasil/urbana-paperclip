@@ -3640,3 +3640,13 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - Erros no histórico de rotinas: 16/16; detalhes externos preservados e credenciais em detalhes não exibidas. Bridge de plugins: 17/17, com fallbacks PT/en e props de plugins preservadas; typecheck UI passou.
 - CLI feedback report: 18/18 e typecheck CLI. Rodada integrada dos lotes: 64/64 em seis arquivos. Checkpoint: **388/406 tarefas**, 18 caixas abertas incluindo agregadoras.
+
+### Continuação — pipeline, seletores de plugins e catálogo de equipes
+
+- Pipeline: código estruturado `automation_not_configured` localizado na apresentação; textos históricos livres permanecem originais. Testes de pipeline e catálogos: 15/15; typecheck UI passou.
+- Bridge: valores padrão dos seletores de responsável e projeto acompanham o idioma; valores de plugins têm precedência. Typecheck UI passou.
+- CLI: ajuda e cabeçalhos de `teams browse/search` localizados, sem alterar dados e JSON; testes focados 15/15 e typecheck CLI passaram.
+- Checkpoint: **393/411 tarefas**, com 18 caixas abertas, incluindo tarefas agregadoras.
+
+- Aviso estruturado de caso bloqueado e `pipelines list`: testes focados 17/17 e 7/7, respectivamente; typecheck UI passou. Typecheck CLI da segunda rodada foi encerrado com 137 durante concorrência; verificação sequencial permanece necessária.
+- Integração destes cinco lotes: 56/56 testes em sete arquivos; gates de tokens e literais, validação estrita OpenSpec e `git diff --check` passaram.

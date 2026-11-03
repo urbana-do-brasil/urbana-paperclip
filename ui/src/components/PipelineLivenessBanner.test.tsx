@@ -51,6 +51,26 @@ describe("PipelineLivenessBanner localization", () => {
     expect(portugueseMarkup).toContain("A divisão está incompleta");
   });
 
+  it("localizes the structured case blocker sentence and preserves its title and payload", async () => {
+    const liveness: PipelineCaseLiveness = {
+      state: "blocked",
+      reason: "case_blocked",
+      message: 'Pipeline item is blocked by "User-authored title".',
+      blocker: { caseId: "case-1", title: "User-authored title" },
+    };
+
+    const englishMarkup = renderToStaticMarkup(<PipelineLivenessBanner liveness={liveness} />);
+    expect(englishMarkup).toContain("This item is blocked by &quot;User-authored title&quot;.");
+    expect(englishMarkup).not.toContain("Pipeline item is blocked by");
+
+    await i18n.changeLanguage("pt-BR");
+    const portugueseMarkup = renderToStaticMarkup(<PipelineLivenessBanner liveness={liveness} />);
+    expect(portugueseMarkup).toContain("Este item está bloqueado por &quot;User-authored title&quot;.");
+    expect(portugueseMarkup).not.toContain("Pipeline item is blocked by");
+    expect(liveness.message).toBe('Pipeline item is blocked by "User-authored title".');
+    expect(liveness.blocker?.title).toBe("User-authored title");
+  });
+
   it("localizes permission preflight failures and keeps the retry action unavailable", async () => {
     const liveness: PipelineCaseLiveness = {
       state: "blocked",

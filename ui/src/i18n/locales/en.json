@@ -2301,6 +2301,7 @@
       },
       "bodies": {
         "noActionPath": "Paperclip can't see anything to work on next here — no automation, retry, blocker, or review. Re-run the stage to nudge it, or use the ⋯ menu to move it by hand.",
+        "caseBlocked": "This item is blocked by \"{{blockerTitle}}\".",
         "breakdownMissingSingular": "{{count}} expected piece is still missing.",
         "breakdownMissingPlural": "{{count}} expected pieces are still missing."
       },
@@ -2442,6 +2443,9 @@
       "automationFallbackName": "the automation",
       "automationCompletedWithIssue": "Automation completed — ran {{routineName}} → {{issueLabel}}.",
       "automationCompleted": "Automation completed — ran {{routineName}}.",
+      "automationFailureReasons": {
+        "notConfigured": "stage automation is not configured"
+      },
       "automationNeedsAttentionWithReason": "Automation needs attention — {{reason}}.",
       "automationNeedsAttention": "Automation needs attention.",
       "workStarted": "Work started.",
@@ -3766,6 +3770,12 @@
     "multipleSettingsRouteSuffix": "Disable one plugin or change its route."
   },
   "pluginSdkUi": {
+    "assigneePicker": {
+      "placeholder": "Responsible",
+      "none": "No responsible",
+      "search": "Search responsible...",
+      "empty": "No responsible found."
+    },
     "dataTable": {
       "loading": "Loading...",
       "empty": "No rows."
@@ -3775,6 +3785,12 @@
     },
     "errorBoundary": {
       "failedToRender": "Plugin UI failed to render."
+    },
+    "projectPicker": {
+      "placeholder": "Project",
+      "none": "No project",
+      "search": "Search projects...",
+      "empty": "No projects found."
     }
   },
   "pluginPresentation": {

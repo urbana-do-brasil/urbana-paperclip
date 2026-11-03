@@ -2358,6 +2358,7 @@
       },
       "bodies": {
         "noActionPath": "O Paperclip não consegue identificar o próximo trabalho neste item — não há automação, nova tentativa, bloqueio ou revisão. Execute a automação da etapa novamente para orientá-lo ou use o menu ⋯ para mover o item manualmente.",
+        "caseBlocked": "Este item está bloqueado por \"{{blockerTitle}}\".",
         "breakdownMissingSingular": "{{count}} parte esperada ainda está faltando.",
         "breakdownMissingPlural": "{{count}} peças esperadas ainda estão faltando."
       },
@@ -2504,6 +2505,9 @@
       "automationFallbackName": "a automação",
       "automationCompletedWithIssue": "Automação concluída — executou {{routineName}} → {{issueLabel}}.",
       "automationCompleted": "Automação concluída — executou {{routineName}}.",
+      "automationFailureReasons": {
+        "notConfigured": "a automação da etapa não está configurada"
+      },
       "automationNeedsAttentionWithReason": "A automação precisa de atenção — {{reason}}.",
       "automationNeedsAttention": "A automação precisa de atenção.",
       "workStarted": "Trabalho iniciado.",
@@ -3862,6 +3866,12 @@
     "multipleSettingsRouteSuffix": "Desative um plugin ou altere sua rota."
   },
   "pluginSdkUi": {
+    "assigneePicker": {
+      "placeholder": "Responsável",
+      "none": "Sem responsável",
+      "search": "Buscar responsáveis...",
+      "empty": "Nenhum responsável encontrado."
+    },
     "dataTable": {
       "loading": "Carregando...",
       "empty": "Nenhuma linha."
@@ -3871,6 +3881,12 @@
     },
     "errorBoundary": {
       "failedToRender": "Falha ao renderizar a interface do plugin."
+    },
+    "projectPicker": {
+      "placeholder": "Projeto",
+      "none": "Sem projeto",
+      "search": "Buscar projetos...",
+      "empty": "Nenhum projeto encontrado."
     }
   },
   "pluginPresentation": {

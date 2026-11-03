@@ -348,15 +348,20 @@ function PluginSdkAssigneePicker({
   companyId,
   value,
   onChange,
-  placeholder = "Responsible",
-  noneLabel = "No responsible",
-  searchPlaceholder = "Search responsible...",
-  emptyMessage = "No responsible found.",
+  placeholder,
+  noneLabel,
+  searchPlaceholder,
+  emptyMessage,
   includeUsers = true,
   includeTerminatedAgents = false,
   className,
   onConfirm,
 }: PluginAssigneePickerProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("pluginSdkUi.assigneePicker.placeholder");
+  const resolvedNoneLabel = noneLabel ?? t("pluginSdkUi.assigneePicker.none");
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t("pluginSdkUi.assigneePicker.search");
+  const resolvedEmptyMessage = emptyMessage ?? t("pluginSdkUi.assigneePicker.empty");
   const hostContext = useHostContext();
   const resolvedCompanyId = companyId ?? hostContext.companyId ?? null;
   const { data: session } = useQuery({
@@ -412,10 +417,10 @@ function PluginSdkAssigneePicker({
     value,
     options,
     recentOptionIds: recentAssigneeSelectionIds,
-    placeholder,
-    noneLabel,
-    searchPlaceholder,
-    emptyMessage,
+    placeholder: resolvedPlaceholder,
+    noneLabel: resolvedNoneLabel,
+    searchPlaceholder: resolvedSearchPlaceholder,
+    emptyMessage: resolvedEmptyMessage,
     className,
     onConfirm,
     onChange: (nextValue: string) => {
@@ -425,7 +430,7 @@ function PluginSdkAssigneePicker({
       onChange(nextValue, selection);
     },
     renderTriggerValue: (option: InlineEntityOption | null) => {
-      if (!option) return createElement("span", { className: "text-muted-foreground" }, placeholder);
+      if (!option) return createElement("span", { className: "text-muted-foreground" }, resolvedPlaceholder);
       if (selectedAgent) {
         return createElement(
           FragmentSafe,
@@ -458,14 +463,19 @@ function PluginSdkProjectPicker({
   companyId,
   value,
   onChange,
-  placeholder = "Project",
-  noneLabel = "No project",
-  searchPlaceholder = "Search projects...",
-  emptyMessage = "No projects found.",
+  placeholder,
+  noneLabel,
+  searchPlaceholder,
+  emptyMessage,
   includeArchived = false,
   className,
   onConfirm,
 }: PluginProjectPickerProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("pluginSdkUi.projectPicker.placeholder");
+  const resolvedNoneLabel = noneLabel ?? t("pluginSdkUi.projectPicker.none");
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t("pluginSdkUi.projectPicker.search");
+  const resolvedEmptyMessage = emptyMessage ?? t("pluginSdkUi.projectPicker.empty");
   const hostContext = useHostContext();
   const resolvedCompanyId = companyId ?? hostContext.companyId ?? null;
   const { data: session } = useQuery({
@@ -502,10 +512,10 @@ function PluginSdkProjectPicker({
     value,
     options,
     recentOptionIds: recentProjectIds,
-    placeholder,
-    noneLabel,
-    searchPlaceholder,
-    emptyMessage,
+    placeholder: resolvedPlaceholder,
+    noneLabel: resolvedNoneLabel,
+    searchPlaceholder: resolvedSearchPlaceholder,
+    emptyMessage: resolvedEmptyMessage,
     className,
     onConfirm,
     onChange: (nextProjectId: string) => {
@@ -514,7 +524,7 @@ function PluginSdkProjectPicker({
     },
     renderTriggerValue: (option: InlineEntityOption | null) => {
       if (!option || !selectedProject) {
-        return createElement("span", { className: "text-muted-foreground" }, placeholder);
+        return createElement("span", { className: "text-muted-foreground" }, resolvedPlaceholder);
       }
       return createElement(
         FragmentSafe,

@@ -103,6 +103,11 @@ export function PipelineLivenessBanner({
     if (view.reason === "no_action_path") {
       return t("pipelineManagement.detail.liveness.bodies.noActionPath");
     }
+    if (view.reason === "case_blocked" && liveness?.blocker?.title) {
+      return t("pipelineManagement.detail.liveness.bodies.caseBlocked", {
+        blockerTitle: liveness.blocker.title,
+      });
+    }
     if (view.reason === "breakdown_incomplete") {
       const missingCount = liveness?.breakdown?.missingRequestKeys?.length ?? 0;
       if (missingCount > 0) {
@@ -112,7 +117,7 @@ export function PipelineLivenessBanner({
         return `${liveness?.message ?? view.body} ${t(suffixKey, { count: missingCount })}`;
       }
     }
-    // Server messages and other source content remain verbatim.
+    // Unmapped server messages and other source content remain verbatim.
     return view.body;
   })();
   const helperNote = view.helperNote

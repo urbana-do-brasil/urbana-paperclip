@@ -326,6 +326,13 @@ function humanizeReason(reason: string) {
   return humanizeKey(reason).replace(/^./, (char) => char.toLowerCase());
 }
 
+function formatAutomationFailureReason(reason: string) {
+  if (reason === "automation_not_configured") {
+    return t("pipelineManagement.detail.events.automationFailureReasons.notConfigured");
+  }
+  return humanizeReason(reason);
+}
+
 export function formatPipelineItemEvent(event: PipelineCaseEvent, stages?: StageLookup) {
   const kind = event.type.startsWith("case.") ? event.type.slice("case.".length) : event.type;
   const payload = event.payload ?? {};
@@ -397,7 +404,7 @@ export function formatPipelineItemEvent(event: PipelineCaseEvent, stages?: Stage
   if (kind === "automation_failed") {
     const reason = readString(payload.error);
     return reason
-      ? t(`${eventsKey}.automationNeedsAttentionWithReason`, { reason: humanizeReason(reason) })
+      ? t(`${eventsKey}.automationNeedsAttentionWithReason`, { reason: formatAutomationFailureReason(reason) })
       : t(`${eventsKey}.automationNeedsAttention`);
   }
   if (kind === "claimed") return t(`${eventsKey}.workStarted`);

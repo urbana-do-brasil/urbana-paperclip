@@ -11,6 +11,8 @@ import {
   type BaseClientOptions,
   type ResolvedClientContext,
 } from "./client/common.js";
+import { cliMessage, isCliJsonRequested } from "../localization/index.js";
+import { pipelineListColumnLabels } from "../localization/pipeline-operations.js";
 
 type JsonObject = Record<string, unknown>;
 
@@ -232,7 +234,7 @@ export function registerPipelineCommands(program: Command): void {
         const rows = await ctx.api.get<PipelineSummary[]>(apiPath`/api/companies/${ctx.companyId}/pipelines`) ?? [];
         if (ctx.json) return printOutput(rows, { json: true });
         if (rows.length === 0) return printOutput([]);
-        rows.forEach((row) => console.log(formatPipeline(row)));
+        rows.forEach((row) => console.log(formatPipeline(row, pipelineListColumnLabels())));
       })),
   );
 
@@ -761,7 +763,7 @@ function printPipeline(row: PipelineDetail | PipelineSummary | null, ctx: Resolv
   }
 }
 
-function formatPipeline(row: PipelineSummary): string {
+function formatPipeline(row: PipelineSummary, labels?: Readonly<Record<string, string>>): string {
   return formatInlineRecord({
     id: row.id,
     key: row.key,
@@ -769,7 +771,7 @@ function formatPipeline(row: PipelineSummary): string {
     enforceTransitions: row.enforceTransitions,
     stageCount: row.stageCount,
     openCaseCount: row.openCaseCount,
-  });
+  }, { labels });
 }
 
 function printCases(rows: CaseListRow[], ctx: ResolvedClientContext): void {
@@ -820,7 +822,8 @@ function handlePipelineError(error: unknown): never {
     const code = stringValue(details?.code) ?? stringValue(body?.code);
     const stage = details?.stage ?? details?.currentStage ?? details?.currentStageKey ?? details?.stageKey;
     const version = details?.version ?? details?.currentVersion;
-    const parts = [`API error ${error.status}: ${error.message}`];
+    const label = isCliJsonRequested() ? "API error" : cliMessage("apiError");
+    const parts = [`${label} ${error.status}: ${error.message}`];
     if (code) parts.push(`code=${code}`);
     if (version !== undefined) parts.push(`currentVersion=${String(version)}`);
     if (stage !== undefined) parts.push(`currentStage=${formatStageForError(stage)}`);

@@ -321,6 +321,8 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 3.10p Localizar apresentação de erros conhecidos em PipelineSettings preservando detalhes externos e payloads. Carga e mutations PT-BR/en: 24/24 em duas suítes; revisão geral de 3.10 permanece aberta.
   - [x] 3.10q Localizar quatro eventos próprios no feed de rotinas, preservando IDs e payloads. Testes focados + locale: 14/14; typecheck UI passou. 3.10 permanece aberta.
   - [x] 3.10r Localizar apresentação de erros conhecidos no histórico de rotinas, preservando detalhes externos e evitando exposição de credenciais. Suíte focada 16/16; 3.10 permanece aberta.
+  - [x] 3.10s Localizar o código estruturado de falha de automação em eventos de pipeline em PT-BR/en; preservar payload e manter texto livre legado sem tradução automática. Testes focados com validação de catálogo: 15/15; typecheck UI passou. A auditoria geral de 3.10 permanece aberta.
+  - [x] 3.10t Localizar aviso de caso bloqueado a partir de reason e título estruturados, preservando título livre, mensagens armazenadas e payload. Testes de banner e catálogo: 17/17; typecheck UI passou. 3.10 permanece aberta.
 - [ ] 3.11 Migrar UI hospedeira de plugins e conteúdo humano de plugins distribuídos no produto, além das superfícies próprias adicionais encontradas no fechamento do mapa de rotas. Verificar cada superfície nos dois idiomas e documentar limites de plugins externos não controlados. Specs: `localized-web-interface`, `localization-quality`.
   - [x] 3.11a Propagar e documentar locale reativo pelo `PluginHostContext`, slots, overlays e launcher; conteúdo de plugins externos permanece original. Testes de bridge/slots/overlays e SDK: 29/29; typechecks do SDK/UI passaram sem remount.
   - [x] 3.11b Localizar a página host `PluginSettings`, incluindo placeholder, controles e rótulos de status/gatilhos conhecidos; preservar nomes, descrições, conteúdo e mensagens livres do plugin. Testes focados + locale-validation: 25/25; typecheck UI e token gates passaram.
@@ -357,6 +359,8 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
     - [x] 3.11h17 Localizar schema de fake-plugin quando o bundle experimental é instalado no Docker, mediante identidade e fonte exatas. Localização 33/33 e typecheck UI; schema e fallback externo preservados.
     - [x] 3.11h18 Localizar schema de configuração File Browser bundled somente na apresentação, preservando schema de validação, valores e metadata externa. PluginSettings 20/20, locale 13/13 e typecheck UI passaram; revisão geral 3.11h segue aberta.
   - [x] 3.11i Localizar fallbacks host-owned de DataTable, Spinner e ErrorBoundary do bridge de UI, preservando props e conteúdo de plugins. Suíte bridge 17/17 e typecheck UI passaram; pickers e revisão geral permanecem pendentes em 3.11.
+
+  - [x] 3.11j Localizar rótulos padrão dos seletores de responsável e projeto do bridge, preservando props e conteúdo fornecidos por plugins e atualização reativa de idioma. Typecheck UI passou; revisão geral de 3.11 permanece aberta.
 
 ## 4. CLI bilíngue
 
@@ -402,6 +406,8 @@ Em cada item: extrair textos próprios e acessíveis, mapear erros próprios, in
   - [x] 4.3ak Localizar help de 13 comandos de adapter, preservando JSON, rotas, dados, payloads e stderr. Testes focados 4/4; rodada integrada 59/59 e typecheck CLI passaram. Demais operações seguem em 4.3/4.4.
   - [x] 4.3al Localizar help e erros humanos HTTP de org get/svg/png, preservando rotas, bytes e stderr estruturado. Testes focados 4/4 e typecheck CLI passaram; 4.3/4.4 seguem abertas.
   - [x] 4.3am Localizar help e relatório humano de feedback report, preservando flags, dados, JSON e stderr estruturado. Suítes focadas 18/18 e typecheck CLI passaram; 4.3/4.4 seguem abertas.
+  - [x] 4.3an Localizar ajuda e cabeçalhos humanos de teams browse/search em PT-BR/en; preservar valores, dados, JSON e erros. Suítes focadas: 15/15; typecheck CLI passou. Demais operações e regressão integrada seguem abertas.
+  - [x] 4.3ao Localizar help, rótulos humanos e prefixo de erro de pipelines list, preservando dados, rota, JSON e detalhes de erro. Testes focados 7/7; typecheck CLI encerrado por recursos (137) durante execução paralela. Demais operações e regressão integrada seguem abertas.
 - [ ] 4.4 Acrescentar regressão da saída estruturada e da separação stdout/stderr, preservação de subprocessos e exemplos documentados nos dois idiomas. Verificar equivalência dos contratos JSON/códigos de saída com dados determinísticos e execução dos exemplos contra fixtures. Specs: `localized-cli`, `localization-quality`.
 
 ## 5. Documentação acessível pela aplicação

@@ -4,6 +4,7 @@ import * as ReactDOM from "react-dom";
 import * as ReactJsxRuntime from "react/jsx-runtime";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
@@ -18,6 +19,8 @@ import {
   DataTable as SdkDataTable,
   ErrorBoundary as SdkErrorBoundary,
   Spinner as SdkSpinner,
+  AssigneePicker as SdkAssigneePicker,
+  ProjectPicker as SdkProjectPicker,
   type FileTreeNode as SdkFileTreeNode,
 } from "../../../packages/plugins/sdk/src/ui/components";
 import type { ManagedRoutinesListProps as SdkManagedRoutinesListProps } from "../../../packages/plugins/sdk/src/ui/index";
@@ -31,6 +34,7 @@ import {
 } from "./bridge";
 import { initPluginBridge } from "./bridge-init";
 import { _createReactShimSourceForTests } from "./slots";
+import { queryKeys } from "@/lib/queryKeys";
 
 function clickEvent(
   overrides: Partial<ReactMouseEvent<HTMLAnchorElement>> = {},
@@ -476,6 +480,126 @@ describe("plugin SDK host-owned fallback labels", () => {
       act(() => root.unmount());
       consoleError.mockRestore();
       container.remove();
+    }
+  });
+
+  it("localizes picker defaults on language changes while preserving plugin labels", async () => {
+    initPluginBridge(React, ReactDOM);
+    const hostContext = {
+      companyId: null,
+      companyPrefix: null,
+      projectId: null,
+      entityId: null,
+      entityType: null,
+      userId: "user-1",
+      locale: "en",
+    } satisfies PluginBridgeContextValue["hostContext"];
+    const pickerCases = [
+      {
+        name: "assignee",
+        className: "sdk-assignee-picker",
+        english: { placeholder: "Responsible", none: "No responsible", search: "Search responsible...", empty: "No responsible found." },
+        portuguese: { placeholder: "Responsável", none: "Sem responsável", search: "Buscar responsáveis...", empty: "Nenhum responsável encontrado." },
+        external: { placeholder: "External assignee label", none: "External no-assignee label", search: "External assignee search", empty: "External assignee empty state" },
+        create: (custom: boolean) => React.createElement(SdkAssigneePicker, {
+          className: "sdk-assignee-picker",
+          value: "",
+          includeUsers: false,
+          ...(custom ? {
+            placeholder: "External assignee label",
+            noneLabel: "External no-assignee label",
+            searchPlaceholder: "External assignee search",
+            emptyMessage: "External assignee empty state",
+          } : {}),
+          onChange: () => undefined,
+        }),
+      },
+      {
+        name: "project",
+        className: "sdk-project-picker",
+        english: { placeholder: "Project", none: "No project", search: "Search projects...", empty: "No projects found." },
+        portuguese: { placeholder: "Projeto", none: "Sem projeto", search: "Buscar projetos...", empty: "Nenhum projeto encontrado." },
+        external: { placeholder: "External project label", none: "External no-project label", search: "External project search", empty: "External project empty state" },
+        create: (custom: boolean) => React.createElement(SdkProjectPicker, {
+          className: "sdk-project-picker",
+          value: "",
+          ...(custom ? {
+            placeholder: "External project label",
+            noneLabel: "External no-project label",
+            searchPlaceholder: "External project search",
+            emptyMessage: "External project empty state",
+          } : {}),
+          onChange: () => undefined,
+        }),
+      },
+    ];
+
+    for (const pickerCase of pickerCases) {
+      await React.act(async () => {
+        await i18n.changeLanguage("en");
+      });
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+      });
+      queryClient.setQueryData(queryKeys.auth.session, {
+        user: { id: "user-1" },
+        session: { userId: "user-1" },
+      });
+      const container = document.createElement("div");
+      document.body.appendChild(container);
+      const root = createRoot(container);
+      const renderPicker = (custom: boolean) => React.createElement(QueryClientProvider, { client: queryClient },
+        React.createElement(PluginBridgeContext.Provider, {
+          value: { pluginId: "picker-test", hostContext },
+        }, pickerCase.create(custom)),
+      );
+
+      try {
+        await React.act(() => root.render(renderPicker(false)));
+        const trigger = container.querySelector<HTMLButtonElement>(`.${pickerCase.className}`)!;
+        expect(trigger.textContent).toBe(pickerCase.english.placeholder);
+        await React.act(async () => {
+          trigger.focus();
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        const input = document.querySelector<HTMLInputElement>(`input[placeholder="${pickerCase.english.search}"]`)!;
+        expect(input).not.toBeNull();
+        expect(document.body.textContent).toContain(pickerCase.english.none);
+
+        const setSearch = async (value: string) => React.act(() => {
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        await setSearch("no matching value");
+        expect(document.body.textContent).toContain(pickerCase.english.empty);
+
+        await React.act(async () => {
+          await i18n.changeLanguage("pt-BR");
+        });
+        expect(trigger.textContent).toBe(pickerCase.portuguese.placeholder);
+        expect(input.placeholder).toBe(pickerCase.portuguese.search);
+        expect(document.body.textContent).toContain(pickerCase.portuguese.empty);
+        await setSearch("");
+        expect(document.body.textContent).toContain(pickerCase.portuguese.none);
+        await setSearch("no matching value");
+        expect(document.body.textContent).toContain(pickerCase.portuguese.empty);
+
+        await React.act(() => root.render(renderPicker(true)));
+        expect(trigger.textContent).toBe(pickerCase.external.placeholder);
+        expect(input.placeholder).toBe(pickerCase.external.search);
+        expect(document.body.textContent).toContain(pickerCase.external.empty);
+        await setSearch("");
+        expect(document.body.textContent).toContain(pickerCase.external.none);
+        await React.act(async () => {
+          await i18n.changeLanguage("en");
+        });
+        expect(trigger.textContent).toBe(pickerCase.external.placeholder);
+        expect(input.placeholder).toBe(pickerCase.external.search);
+      } finally {
+        await React.act(() => root.unmount());
+        queryClient.clear();
+        container.remove();
+      }
     }
   });
 });
