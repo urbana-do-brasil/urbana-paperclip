@@ -7,6 +7,7 @@ import type { SupportedLocale } from "@paperclipai/shared/localization";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   registerWorktreeCommands,
+  worktreeCleanupCommand,
   worktreeEnvCommand,
   worktreeEnsureSeededCommand,
   worktreeInitCommand,
@@ -384,5 +385,264 @@ describe("worktree CLI localization", () => {
     expect(manifestErrors[0]).toBe(manifestErrors[1]);
     expect(manifestErrors[0]).toContain(`Invalid worktree seed manifest at ${manifestPath}`);
     expect(stderrLogSpy).not.toHaveBeenCalled();
+  });
+
+  it("localizes worktree cleanup safety and completion while preserving Git changes until forced", async () => {
+    let activeHome = "";
+    vi.spyOn(os, "homedir").mockImplementation(() => activeHome);
+
+    for (const locale of ["pt-BR", "en"] as const) {
+      const repoRoot = path.join(tempRoot, "cleanup", locale, "repo");
+      activeHome = path.join(tempRoot, "cleanup", locale, "home");
+      const instanceHome = path.join(tempRoot, "cleanup", locale, "instances-home");
+      const branchName = "paperclip-cleanup-fixture";
+      const targetPath = path.join(activeHome, branchName);
+      const instanceId = `cleanup-${locale.toLowerCase()}`;
+      const instanceRoot = path.join(instanceHome, "instances", instanceId);
+
+      fs.mkdirSync(repoRoot, { recursive: true });
+      fs.mkdirSync(activeHome, { recursive: true });
+      execFileSync("git", ["init", "--initial-branch=main"], { cwd: repoRoot, stdio: "ignore" });
+      execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: repoRoot });
+      execFileSync("git", ["config", "user.name", "Paperclip Test"], { cwd: repoRoot });
+      fs.writeFileSync(path.join(repoRoot, "README.md"), "base branch\n");
+      execFileSync("git", ["add", "README.md"], { cwd: repoRoot });
+      execFileSync("git", ["commit", "-m", "base"], { cwd: repoRoot, stdio: "ignore" });
+      execFileSync("git", ["worktree", "add", "--quiet", "-b", branchName, targetPath, "HEAD"], { cwd: repoRoot });
+      fs.writeFileSync(path.join(targetPath, "README.md"), "unique feature commit\n");
+      execFileSync("git", ["add", "README.md"], { cwd: targetPath });
+      execFileSync("git", ["commit", "-m", "unique feature"], { cwd: targetPath, stdio: "ignore" });
+      execFileSync("git", ["update-ref", `refs/remotes/origin/${branchName}`, "main"], { cwd: repoRoot });
+      fs.writeFileSync(path.join(targetPath, "README.md"), "uncommitted change\n");
+      fs.mkdirSync(instanceRoot, { recursive: true });
+      process.chdir(repoRoot);
+      setCliLocale(locale);
+
+      const captureOutput = () => [
+        ...stdoutLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stderrLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stderrWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+      ].join("\n");
+
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      stderrLogSpy.mockClear();
+      stderrWriteSpy.mockClear();
+      let safetyError = "";
+      try {
+        await worktreeCleanupCommand("cleanup-fixture", {
+          home: instanceHome,
+          instance: instanceId,
+        });
+      } catch (error) {
+        safetyError = error instanceof Error ? error.message : String(error);
+      }
+      const safetyOutput = captureOutput();
+      expect(safetyError).toBe(locale === "en"
+        ? "Safety checks failed. Resolve the issues above or re-run with --force."
+        : "As verificações de segurança falharam. Resolva os problemas acima ou execute novamente com --force.");
+      expect(safetyOutput).toContain(locale === "en"
+        ? `Branch "${branchName}" has commits not found on any other branch or remote.`
+        : `O branch "${branchName}" tem commits que não existem em nenhum outro branch ou remoto.`);
+      expect(safetyOutput).toContain(locale === "en"
+        ? `Worktree directory ${targetPath} has uncommitted changes.`
+        : `O diretório da worktree ${targetPath} tem alterações sem commit.`);
+      expect(fs.existsSync(targetPath)).toBe(true);
+      expect(fs.existsSync(instanceRoot)).toBe(true);
+      expect(execFileSync("git", ["branch", "--list", branchName], { cwd: repoRoot, encoding: "utf8" }).trim()).toBe(`+ ${branchName}`);
+
+      execFileSync("git", ["checkout", "--", "README.md"], { cwd: targetPath });
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      stderrLogSpy.mockClear();
+      stderrWriteSpy.mockClear();
+      let staleRemoteSafetyError = "";
+      try {
+        await worktreeCleanupCommand("cleanup-fixture", {
+          home: instanceHome,
+          instance: instanceId,
+        });
+      } catch (error) {
+        staleRemoteSafetyError = error instanceof Error ? error.message : String(error);
+      }
+      const staleRemoteOutput = captureOutput();
+      expect(staleRemoteSafetyError).toBe(safetyError);
+      expect(staleRemoteOutput).toContain(locale === "en"
+        ? `Branch "${branchName}" has commits not found on any other branch or remote.`
+        : `O branch "${branchName}" tem commits que não existem em nenhum outro branch ou remoto.`);
+      expect(staleRemoteOutput).not.toContain(locale === "en"
+        ? "uncommitted changes"
+        : "alterações sem commit");
+      expect(fs.existsSync(targetPath)).toBe(true);
+      expect(fs.existsSync(instanceRoot)).toBe(true);
+
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      stderrLogSpy.mockClear();
+      stderrWriteSpy.mockClear();
+      await worktreeCleanupCommand("cleanup-fixture", {
+        home: instanceHome,
+        instance: instanceId,
+        force: true,
+      });
+      const forcedOutput = captureOutput();
+      expect(forcedOutput).toContain(locale === "en" ? "Overridden by --force:" : "Ignorado por --force:");
+      expect(forcedOutput).toContain(locale === "en" ? "Cleanup complete." : "Limpeza concluída.");
+      expect(fs.existsSync(targetPath)).toBe(false);
+      expect(fs.existsSync(instanceRoot)).toBe(false);
+      expect(execFileSync("git", ["branch", "--list", branchName], { cwd: repoRoot, encoding: "utf8" }).trim()).toBe("");
+    }
+  });
+
+  it("blocks cleanup and preserves Git diagnostics when a safety check cannot be completed", async () => {
+    let activeHome = "";
+    vi.spyOn(os, "homedir").mockImplementation(() => activeHome);
+
+    for (const locale of ["pt-BR", "en"] as const) {
+      for (const failureMode of ["branch-log", "worktree-status"] as const) {
+        const repoRoot = path.join(tempRoot, "cleanup-check-error", locale, failureMode, "repo");
+        activeHome = path.join(tempRoot, "cleanup-check-error", locale, failureMode, "home");
+        const instanceHome = path.join(tempRoot, "cleanup-check-error", locale, failureMode, "instances-home");
+        const branchName = "paperclip-cleanup-check-error";
+        const targetPath = path.join(activeHome, branchName);
+        const instanceId = `cleanup-check-${locale.toLowerCase()}-${failureMode}`;
+        const instanceRoot = path.join(instanceHome, "instances", instanceId);
+
+        fs.mkdirSync(repoRoot, { recursive: true });
+        fs.mkdirSync(activeHome, { recursive: true });
+        execFileSync("git", ["init", "--initial-branch=main"], { cwd: repoRoot, stdio: "ignore" });
+        execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: repoRoot });
+        execFileSync("git", ["config", "user.name", "Paperclip Test"], { cwd: repoRoot });
+        fs.writeFileSync(path.join(repoRoot, "README.md"), "base branch\n");
+        execFileSync("git", ["add", "README.md"], { cwd: repoRoot });
+        execFileSync("git", ["commit", "-m", "base"], { cwd: repoRoot, stdio: "ignore" });
+        execFileSync("git", ["worktree", "add", "--quiet", "-b", branchName, targetPath, "HEAD"], { cwd: repoRoot });
+
+        let expectedGitDiagnostic = "";
+        if (failureMode === "branch-log") {
+          fs.writeFileSync(path.join(targetPath, "README.md"), "unique commit\n");
+          execFileSync("git", ["add", "README.md"], { cwd: targetPath });
+          execFileSync("git", ["commit", "-m", "unique feature"], { cwd: targetPath, stdio: "ignore" });
+          const commitHash = execFileSync("git", ["rev-parse", "HEAD"], { cwd: targetPath, encoding: "utf8" }).trim();
+          const commonGitDir = path.resolve(repoRoot, execFileSync("git", ["rev-parse", "--git-common-dir"], { cwd: repoRoot, encoding: "utf8" }).trim());
+          const commitObjectPath = path.join(commonGitDir, "objects", commitHash.slice(0, 2), commitHash.slice(2));
+          expectedGitDiagnostic = "fatal: bad object";
+          expect(fs.existsSync(commitObjectPath)).toBe(true);
+          fs.unlinkSync(commitObjectPath);
+        } else {
+          const indexPath = execFileSync("git", ["rev-parse", "--git-path", "index"], { cwd: targetPath, encoding: "utf8" }).trim();
+          fs.writeFileSync(path.resolve(targetPath, indexPath), "invalid git index\n");
+          expectedGitDiagnostic = "index file smaller than expected";
+        }
+
+        fs.mkdirSync(instanceRoot, { recursive: true });
+        process.chdir(repoRoot);
+        setCliLocale(locale);
+        stdoutLogSpy.mockClear();
+        stdoutWriteSpy.mockClear();
+        stderrLogSpy.mockClear();
+        stderrWriteSpy.mockClear();
+        let safetyError = "";
+        try {
+          await worktreeCleanupCommand("cleanup-check-error", {
+            home: instanceHome,
+            instance: instanceId,
+          });
+        } catch (error) {
+          safetyError = error instanceof Error ? error.message : String(error);
+        }
+        const output = [
+          ...stdoutLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+          ...stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+          ...stderrLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+          ...stderrWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ].join("\n");
+
+        expect(safetyError).toBe(locale === "en"
+          ? "Safety checks failed. Resolve the issues above or re-run with --force."
+          : "As verificações de segurança falharam. Resolva os problemas acima ou execute novamente com --force.");
+        expect(output).toContain(locale === "en"
+          ? "Could not verify cleanup safety:"
+          : "Não foi possível verificar a segurança da limpeza:");
+        expect(output).toContain(expectedGitDiagnostic);
+        expect(fs.existsSync(targetPath)).toBe(true);
+        expect(fs.existsSync(instanceRoot)).toBe(true);
+        expect(execFileSync("git", ["branch", "--list", branchName], { cwd: repoRoot, encoding: "utf8" }).trim()).toContain(branchName);
+      }
+    }
+  });
+
+  it("stops cleanup when Git refuses to remove a locked worktree and preserves stderr", async () => {
+    let activeHome = "";
+    vi.spyOn(os, "homedir").mockImplementation(() => activeHome);
+
+    for (const locale of ["pt-BR", "en"] as const) {
+      const repoRoot = path.join(tempRoot, "cleanup-locked", locale, "repo");
+      activeHome = path.join(tempRoot, "cleanup-locked", locale, "home");
+      const instanceHome = path.join(tempRoot, "cleanup-locked", locale, "instances-home");
+      const branchName = "paperclip-locked-fixture";
+      const targetPath = path.join(activeHome, branchName);
+      const instanceId = `locked-${locale.toLowerCase()}`;
+      const instanceRoot = path.join(instanceHome, "instances", instanceId);
+      const lockReason = "fixture lock";
+
+      fs.mkdirSync(repoRoot, { recursive: true });
+      fs.mkdirSync(activeHome, { recursive: true });
+      execFileSync("git", ["init", "--initial-branch=main"], { cwd: repoRoot, stdio: "ignore" });
+      execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: repoRoot });
+      execFileSync("git", ["config", "user.name", "Paperclip Test"], { cwd: repoRoot });
+      fs.writeFileSync(path.join(repoRoot, "README.md"), "base branch\n");
+      execFileSync("git", ["add", "README.md"], { cwd: repoRoot });
+      execFileSync("git", ["commit", "-m", "base"], { cwd: repoRoot, stdio: "ignore" });
+      execFileSync("git", ["worktree", "add", "--quiet", "-b", branchName, targetPath, "HEAD"], { cwd: repoRoot });
+      execFileSync("git", ["worktree", "lock", targetPath, "--reason", lockReason], { cwd: repoRoot });
+      fs.mkdirSync(instanceRoot, { recursive: true });
+
+      let expectedGitStderr = "";
+      try {
+        execFileSync("git", ["worktree", "remove", targetPath], {
+          cwd: repoRoot,
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+      } catch (error) {
+        const stderr = error && typeof error === "object" && "stderr" in error ? error.stderr : undefined;
+        expectedGitStderr = Buffer.isBuffer(stderr) ? stderr.toString("utf8").trim() : String(stderr ?? "").trim();
+      }
+      expect(expectedGitStderr).toContain("fatal: cannot remove a locked working tree");
+      expect(expectedGitStderr).toContain(lockReason);
+
+      process.chdir(repoRoot);
+      setCliLocale(locale);
+      stdoutLogSpy.mockClear();
+      stdoutWriteSpy.mockClear();
+      stderrLogSpy.mockClear();
+      stderrWriteSpy.mockClear();
+      let cleanupError = "";
+      try {
+        await worktreeCleanupCommand("locked-fixture", {
+          home: instanceHome,
+          instance: instanceId,
+        });
+      } catch (error) {
+        cleanupError = error instanceof Error ? error.message : String(error);
+      }
+      const output = [
+        ...stdoutLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stderrLogSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+        ...stderrWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])),
+      ].join("\n");
+
+      expect(cleanupError).toBe(expectedGitStderr);
+      expect(output).toContain(locale === "en"
+        ? "Could not remove worktree cleanly, will prune instead."
+        : "Não foi possível remover a worktree normalmente; ela será removida do registro.");
+      expect(output).not.toContain(locale === "en" ? "Cleanup complete." : "Limpeza concluída.");
+      expect(fs.existsSync(targetPath)).toBe(true);
+      expect(fs.existsSync(instanceRoot)).toBe(true);
+      expect(execFileSync("git", ["branch", "--list", branchName], { cwd: repoRoot, encoding: "utf8" }).trim()).toContain(branchName);
+      expect(execFileSync("git", ["worktree", "list", "--porcelain"], { cwd: repoRoot, encoding: "utf8" })).toContain(targetPath);
+    }
   });
 });

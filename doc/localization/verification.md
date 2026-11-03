@@ -3723,3 +3723,8 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Settings e subpainéis de instruções, avatar e Slack traduzidos preservando credenciais e os nomes exatos de controles na UI externa. Testes focados 43/43; setup e revisão de flags seguem pendentes.
 - Cinco operações email tiveram JSON, métodos, rotas, payloads e erro de API comparados em PT-BR/en com fixtures; dois testes passaram e foram incluídos no comando `check:localization`. Auth e workspace ainda precisam de verificação mais ampla; o contrato geral 4.4 permanece aberto.
 - Rodada integrada: **58/58 testes em quatro arquivos**. Checkpoint: **414/433 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Cleanup de worktree — 4.3av
+
+- Mensagens próprias localizadas; correção da detecção de commits exclusivos e de remoto homônimo desatualizado. Erros nas verificações Git bloqueiam cleanup sem --force; falha de `git worktree remove` interrompe antes de remover diretório, branch ou instância. Testes com fixtures Git descartáveis preservam stderr externo, dados e contratos; 18 testes direcionados, typecheck CLI e integração worktree/email 12/12 passaram.
+- Checkpoint: **415/434 tarefas**, 19 caixas abertas incluindo agregadoras.

@@ -2841,42 +2841,21 @@ function toMergeSourceChoices(cwd: string): MergeSourceChoice[] {
 }
 
 function branchHasUniqueCommits(cwd: string, branchName: string): boolean {
-  try {
-    const output = execFileSync(
-      "git",
-      ["log", "--oneline", branchName, "--not", "--remotes", "--exclude", `refs/heads/${branchName}`, "--branches"],
-      { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-    ).trim();
-    return output.length > 0;
-  } catch {
-    return false;
-  }
-}
-
-function branchExistsOnAnyRemote(cwd: string, branchName: string): boolean {
-  try {
-    const output = execFileSync(
-      "git",
-      ["branch", "-r", "--list", `*/${branchName}`],
-      { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-    ).trim();
-    return output.length > 0;
-  } catch {
-    return false;
-  }
+  const output = execFileSync(
+    "git",
+    ["log", "--oneline", branchName, "--not", "--remotes", "--exclude", branchName, "--branches"],
+    { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+  ).trim();
+  return output.length > 0;
 }
 
 function worktreePathHasUncommittedChanges(worktreePath: string): boolean {
-  try {
-    const output = execFileSync(
-      "git",
-      ["status", "--porcelain"],
-      { cwd: worktreePath, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-    ).trim();
-    return output.length > 0;
-  } catch {
-    return false;
-  }
+  const output = execFileSync(
+    "git",
+    ["status", "--porcelain"],
+    { cwd: worktreePath, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+  ).trim();
+  return output.length > 0;
 }
 
 export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeCleanupOptions): Promise<void> {
@@ -2902,8 +2881,8 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
   );
 
   if (!hasBranch && !hasTargetDir && !hasInstanceData && !linkedWorktree) {
-    p.log.info("Nothing to clean up — no branch, worktree directory, or instance data found.");
-    p.outro(pc.green("Already clean."));
+    p.log.info(worktreeOperationMessage("cleanupNothingFound"));
+    p.outro(pc.green(worktreeOperationMessage("cleanupAlreadyClean")));
     return;
   }
 
@@ -2911,35 +2890,39 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
 
   const problems: string[] = [];
 
-  if (hasBranch && branchHasUniqueCommits(sourceCwd, name)) {
-    const onRemote = branchExistsOnAnyRemote(sourceCwd, name);
-    if (onRemote) {
-      p.log.info(
-        `Branch "${name}" has unique local commits, but the branch also exists on a remote — safe to delete locally.`,
-      );
-    } else {
-      problems.push(
-        `Branch "${name}" has commits not found on any other branch or remote. ` +
-          `Deleting it will lose work. Push it first, or use --force.`,
-      );
+  if (hasBranch) {
+    try {
+      if (branchHasUniqueCommits(sourceCwd, name)) {
+        problems.push(worktreeOperationMessage("cleanupBranchUniqueCommits", { branchName: name }));
+      }
+    } catch (error) {
+      problems.push(worktreeOperationMessage("cleanupSafetyVerificationFailed", {
+        detail: extractExecSyncErrorMessage(error) ?? String(error),
+      }));
     }
   }
 
-  if (hasTargetDir && worktreePathHasUncommittedChanges(targetPath)) {
-    problems.push(
-      `Worktree directory ${targetPath} has uncommitted changes. Commit or stash first, or use --force.`,
-    );
+  if (hasTargetDir) {
+    try {
+      if (worktreePathHasUncommittedChanges(targetPath)) {
+        problems.push(worktreeOperationMessage("cleanupUncommittedWorktree", { targetPath }));
+      }
+    } catch (error) {
+      problems.push(worktreeOperationMessage("cleanupSafetyVerificationFailed", {
+        detail: extractExecSyncErrorMessage(error) ?? String(error),
+      }));
+    }
   }
 
   if (problems.length > 0 && !opts.force) {
     for (const problem of problems) {
       p.log.error(problem);
     }
-    throw new Error("Safety checks failed. Resolve the issues above or re-run with --force.");
+    throw new Error(worktreeOperationMessage("cleanupSafetyFailed"));
   }
   if (problems.length > 0 && opts.force) {
     for (const problem of problems) {
-      p.log.warning(`Overridden by --force: ${problem}`);
+      p.log.warning(worktreeOperationMessage("cleanupForceOverride", { problem }));
     }
   }
 
@@ -2950,7 +2933,7 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
     const worktreeDirExists = existsSync(linkedWorktree.worktree);
     const spinner = p.spinner();
     if (worktreeDirExists) {
-      spinner.start(`Removing git worktree at ${linkedWorktree.worktree}...`);
+      spinner.start(worktreeOperationMessage("cleanupRemoveWorktreeStarting", { worktreePath: linkedWorktree.worktree }));
       try {
         const removeArgs = ["worktree", "remove", linkedWorktree.worktree];
         if (opts.force) removeArgs.push("--force");
@@ -2958,18 +2941,18 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
           cwd: sourceCwd,
           stdio: ["ignore", "pipe", "pipe"],
         });
-        spinner.stop(`Removed git worktree at ${linkedWorktree.worktree}.`);
+        spinner.stop(worktreeOperationMessage("cleanupWorktreeRemoved", { worktreePath: linkedWorktree.worktree }));
       } catch (error) {
-        spinner.stop(pc.yellow(`Could not remove worktree cleanly, will prune instead.`));
-        p.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
+        spinner.stop(pc.yellow(worktreeOperationMessage("cleanupWorktreeRemoveFailed")));
+        throw new Error(extractExecSyncErrorMessage(error) ?? String(error));
       }
     } else {
-      spinner.start("Pruning stale worktree entry...");
+      spinner.start(worktreeOperationMessage("cleanupPruningStaleWorktree"));
       execFileSync("git", ["worktree", "prune"], {
         cwd: sourceCwd,
         stdio: ["ignore", "pipe", "pipe"],
       });
-      spinner.stop("Pruned stale worktree entry.");
+      spinner.stop(worktreeOperationMessage("cleanupPrunedStaleWorktree"));
     }
   } else {
     // Even without a linked worktree, prune to clean up any orphaned entries
@@ -2982,24 +2965,24 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
   // 3b. Remove the worktree directory if it still exists (e.g. partial creation)
   if (existsSync(targetPath)) {
     const spinner = p.spinner();
-    spinner.start(`Removing worktree directory ${targetPath}...`);
+    spinner.start(worktreeOperationMessage("cleanupRemoveDirectoryStarting", { targetPath }));
     rmSync(targetPath, { recursive: true, force: true });
-    spinner.stop(`Removed worktree directory ${targetPath}.`);
+    spinner.stop(worktreeOperationMessage("cleanupDirectoryRemoved", { targetPath }));
   }
 
   // 3c. Delete the local branch (now safe — worktree is gone)
   if (localBranchExists(sourceCwd, name)) {
     const spinner = p.spinner();
-    spinner.start(`Deleting local branch "${name}"...`);
+    spinner.start(worktreeOperationMessage("cleanupDeleteBranchStarting", { branchName: name }));
     try {
       const deleteFlag = opts.force ? "-D" : "-d";
       execFileSync("git", ["branch", deleteFlag, name], {
         cwd: sourceCwd,
         stdio: ["ignore", "pipe", "pipe"],
       });
-      spinner.stop(`Deleted local branch "${name}".`);
+      spinner.stop(worktreeOperationMessage("cleanupBranchDeleted", { branchName: name }));
     } catch (error) {
-      spinner.stop(pc.yellow(`Could not delete branch "${name}".`));
+      spinner.stop(pc.yellow(worktreeOperationMessage("cleanupBranchDeleteFailed", { branchName: name })));
       p.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
     }
   }
@@ -3007,12 +2990,12 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
   // 3d. Remove instance data
   if (existsSync(instanceRoot)) {
     const spinner = p.spinner();
-    spinner.start(`Removing instance data at ${instanceRoot}...`);
+    spinner.start(worktreeOperationMessage("cleanupRemoveInstanceStarting", { instanceRoot }));
     rmSync(instanceRoot, { recursive: true, force: true });
-    spinner.stop(`Removed instance data at ${instanceRoot}.`);
+    spinner.stop(worktreeOperationMessage("cleanupInstanceRemoved", { instanceRoot }));
   }
 
-  p.outro(pc.green("Cleanup complete."));
+  p.outro(pc.green(worktreeOperationMessage("cleanupCompleted")));
 }
 
 export async function worktreeEnvCommand(opts: WorktreeEnvOptions): Promise<void> {
