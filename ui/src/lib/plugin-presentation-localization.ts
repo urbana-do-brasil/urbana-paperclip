@@ -168,6 +168,27 @@ const OWN_PLUGIN_PRESENTATION_KEYS: Record<string, string> = {
   "paperclipai.plugin-orchestration-smoke-example": "pluginOrchestrationSmokeExample",
 };
 
+const OWN_PLUGIN_CONFIG_FIELD_PRESENTATION: Record<string, {
+  key: string;
+  fields: Record<string, { sourceTitle: string; sourceDescription: string; key: string }>;
+}> = {
+  "paperclip-file-browser-example": {
+    key: "fileBrowser",
+    fields: {
+      showFilesInSidebar: {
+        sourceTitle: "Show Files in Sidebar",
+        sourceDescription: "Adds the Files link under each project in the sidebar.",
+        key: "showFilesInSidebar",
+      },
+      commentAnnotationMode: {
+        sourceTitle: "Comment File Links",
+        sourceDescription: "Controls which comment extensions are active: 'annotation' shows file links below each comment, 'contextMenu' adds an \"Open in Files\" action to the comment menu, 'both' enables both, 'none' disables comment features.",
+        key: "commentAnnotationMode",
+      },
+    },
+  },
+};
+
 const OWN_PLUGIN_CATEGORY_KEYS: Record<string, string> = {
   connector: "connector",
   workspace: "workspace",
@@ -250,6 +271,24 @@ const OWN_SANDBOX_PROVIDER_CONFIG_FIELD_PRESENTATION: Record<string, {
   fields: Record<string, { sourceDescription: string; sourceTitle?: string; key: string }>;
   groups?: Record<string, string>;
 }> = {
+  "fake-plugin": {
+    pluginId: "paperclip.fake-sandbox-provider",
+    key: "fake",
+    fields: {
+      image: {
+        sourceDescription: "Deterministic fake image label for metadata and matching.",
+        key: "image",
+      },
+      timeoutMs: {
+        sourceDescription: "Command timeout in milliseconds.",
+        key: "timeoutMs",
+      },
+      reuseLease: {
+        sourceDescription: "Whether to reuse fake leases by environment id.",
+        key: "reuseLease",
+      },
+    },
+  },
   cloudflare: {
     pluginId: "paperclip.cloudflare-sandbox-provider",
     key: "cloudflare",
@@ -945,6 +984,44 @@ export function localizeSandboxProviderConfigSchema<T extends PluginConfigSchema
       changed = true;
     }
   }
+  return (changed ? { ...schema, properties } : schema) as T;
+}
+
+/**
+ * Translate only allowlisted labels from an exactly identified first-party
+ * plugin instance-config schema. Field titles and descriptions must still
+ * match their bundled source text; all other schema metadata and values stay
+ * untouched.
+ */
+export function localizeBundledPluginInstanceConfigSchema<T extends PluginConfigSchemaPresentationNode | null>(
+  pluginKey: string,
+  schema: T,
+  t: TFunction,
+  isTrustedBundle = false,
+): T {
+  const ownedPlugin = OWN_PLUGIN_CONFIG_FIELD_PRESENTATION[pluginKey];
+  if (!schema || !isTrustedBundle || !ownedPlugin || !schema.properties) return schema;
+
+  let changed = false;
+  const properties = { ...schema.properties };
+  for (const [fieldKey, fieldSchema] of Object.entries(properties)) {
+    const presentation = ownedPlugin.fields[fieldKey];
+    if (
+      !presentation
+      || fieldSchema.title !== presentation.sourceTitle
+      || fieldSchema.description !== presentation.sourceDescription
+    ) {
+      continue;
+    }
+
+    properties[fieldKey] = {
+      ...fieldSchema,
+      title: translate(t, `pluginPresentation.pluginConfigFields.${ownedPlugin.key}.${presentation.key}.name`, presentation.sourceTitle),
+      description: translate(t, `pluginPresentation.pluginConfigFields.${ownedPlugin.key}.${presentation.key}.description`, presentation.sourceDescription),
+    };
+    changed = true;
+  }
+
   return (changed ? { ...schema, properties } : schema) as T;
 }
 

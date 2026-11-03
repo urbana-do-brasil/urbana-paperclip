@@ -5,6 +5,7 @@ import { DEFAULT_LOCALE } from "@/i18n/locales";
 import {
   isBundledPluginRecord,
   isTrustedBundledSandboxProvider,
+  localizeBundledPluginInstanceConfigSchema,
   localizePluginLocalFolderPresentation,
   localizePluginPresentation,
   localizeManagedPluginDisplayName,
@@ -168,6 +169,145 @@ describe("owned plugin presentation localization", () => {
     expect(isBundledPluginRecord({ ...installed, packageName: "vendor/workspace-diff" }, bundled)).toBe(false);
   });
 
+  it.each([
+    ["pt-BR", "Mostrar Arquivos na barra lateral", "Adiciona o link Arquivos abaixo de cada projeto na barra lateral.", "Links de arquivos em comentários", "Controla quais extensões de comentários ficam ativas: 'annotation' exibe links de arquivos abaixo de cada comentário, 'contextMenu' adiciona a ação \"Abrir em Arquivos\" ao menu do comentário, 'both' ativa ambas e 'none' desativa os recursos de comentário."],
+    ["en", "Show Files in Sidebar", "Adds the Files link under each project in the sidebar.", "Comment File Links", "Controls which comment extensions are active: 'annotation' shows file links below each comment, 'contextMenu' adds an \"Open in Files\" action to the comment menu, 'both' enables both, 'none' disables comment features."],
+  ] as const)("localizes the bundled File Browser config presentation in %s without changing schema or values", async (
+    locale,
+    sidebarTitle,
+    sidebarDescription,
+    commentTitle,
+    commentDescription,
+  ) => {
+    await i18n.changeLanguage(locale);
+    const pluginKey = "paperclip-file-browser-example";
+    const packageName = "@paperclipai/plugin-file-browser-example";
+    const bundlePath = "/app/packages/plugins/examples/plugin-file-browser-example";
+    const installed = {
+      id: "file-browser-plugin-id",
+      pluginKey,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginKey },
+    };
+    const bundled = [{ pluginKey, packageName, localPath: bundlePath }];
+    const trustedBundle = installed.manifestJson.id === installed.pluginKey
+      && isBundledPluginRecord(installed, bundled);
+    expect(trustedBundle).toBe(true);
+
+    const schema = {
+      type: "object",
+      required: ["commentAnnotationMode"],
+      properties: {
+        showFilesInSidebar: {
+          type: "boolean",
+          title: "Show Files in Sidebar",
+          default: false,
+          description: "Adds the Files link under each project in the sidebar.",
+        },
+        commentAnnotationMode: {
+          type: "string",
+          title: "Comment File Links",
+          enum: ["annotation", "contextMenu", "both", "none"],
+          default: "both",
+          description: "Controls which comment extensions are active: 'annotation' shows file links below each comment, 'contextMenu' adds an \"Open in Files\" action to the comment menu, 'both' enables both, 'none' disables comment features.",
+        },
+        customField: {
+          type: "string",
+          title: "Plugin-owned field",
+          description: "Plugin-owned help text.",
+        },
+      },
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configValues = {
+      showFilesInSidebar: true,
+      commentAnnotationMode: "contextMenu",
+      vendorValue: "leave unchanged",
+    };
+    const configValuesBefore = JSON.stringify(configValues);
+    const localized = localizeBundledPluginInstanceConfigSchema(pluginKey, schema, i18n.t, trustedBundle)!;
+
+    expect(localized.properties.showFilesInSidebar).toEqual({
+      ...schema.properties.showFilesInSidebar,
+      title: sidebarTitle,
+      description: sidebarDescription,
+    });
+    expect(localized.properties.commentAnnotationMode).toEqual({
+      ...schema.properties.commentAnnotationMode,
+      title: commentTitle,
+      description: commentDescription,
+    });
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(localized.required).toEqual(["commentAnnotationMode"]);
+    expect(localized.properties.commentAnnotationMode.enum).toEqual(["annotation", "contextMenu", "both", "none"]);
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configValues)).toBe(configValuesBefore);
+
+    for (const fieldKey of ["showFilesInSidebar", "commentAnnotationMode"] as const) {
+      expect(i18n.exists(`pluginPresentation.pluginConfigFields.fileBrowser.${fieldKey}.name`, { lng: locale })).toBe(true);
+      expect(i18n.exists(`pluginPresentation.pluginConfigFields.fileBrowser.${fieldKey}.description`, { lng: locale })).toBe(true);
+    }
+
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/examples/plugin-file-browser-example/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    const packageJson = JSON.parse(readFileSync(
+      new URL("../../../packages/plugins/examples/plugin-file-browser-example/package.json", import.meta.url),
+      "utf8",
+    )) as { name: string };
+    expect(packageJson.name).toBe(packageName);
+    expect(manifestSource).toContain(`const PLUGIN_ID = "${pluginKey}"`);
+    expect(manifestSource).toContain('type: "projectSidebarItem"');
+    expect(manifestSource).not.toContain('type: "settingsPage"');
+    for (const sourceField of Object.values(schema.properties).slice(0, 2)) {
+      expect(manifestSource).toContain(sourceField.title!);
+      expect(manifestSource).toContain(JSON.stringify(sourceField.description!).slice(1, -1));
+    }
+  });
+
+  it("keeps File Browser schema text unchanged for external collisions and metadata drift", () => {
+    const pluginKey = "paperclip-file-browser-example";
+    const schema = {
+      type: "object",
+      properties: {
+        showFilesInSidebar: {
+          type: "boolean",
+          title: "Show Files in Sidebar",
+          description: "Adds the Files link under each project in the sidebar.",
+        },
+        commentAnnotationMode: {
+          type: "string",
+          title: "Comment File Links",
+          description: "Controls which comment extensions are active: 'annotation' shows file links below each comment, 'contextMenu' adds an \"Open in Files\" action to the comment menu, 'both' enables both, 'none' disables comment features.",
+        },
+      },
+    };
+    const bundled = [{
+      pluginKey,
+      packageName: "@paperclipai/plugin-file-browser-example",
+      localPath: "/app/packages/plugins/examples/plugin-file-browser-example",
+    }];
+    const externalInstalled = {
+      pluginKey,
+      packageName: "vendor/file-browser-compatible",
+      packagePath: "/custom/vendor/file-browser-compatible",
+    };
+    expect(isBundledPluginRecord(externalInstalled, bundled)).toBe(false);
+    expect(localizeBundledPluginInstanceConfigSchema(pluginKey, schema, i18n.t, false)).toBe(schema);
+
+    const driftedSchema = {
+      ...schema,
+      properties: {
+        showFilesInSidebar: { ...schema.properties.showFilesInSidebar, title: "Operator label" },
+        commentAnnotationMode: { ...schema.properties.commentAnnotationMode, description: "Operator-authored help text." },
+      },
+    };
+    expect(localizeBundledPluginInstanceConfigSchema(pluginKey, driftedSchema, i18n.t, true)).toBe(driftedSchema);
+    expect(localizeBundledPluginInstanceConfigSchema("vendor.file-browser-compatible", schema, i18n.t, true)).toBe(schema);
+  });
+
   it("requires a sandbox capability key and manifest id to match the bundled installed plugin id", () => {
     const installed = [{
       id: "bundled-e2b-plugin-id",
@@ -194,6 +334,138 @@ describe("owned plugin presentation localization", () => {
       pluginId: "bundled-e2b-plugin-id",
       pluginKey: "paperclip.e2b-sandbox-provider",
     }, [{ ...installed[0]!, manifestJson: { id: "paperclip.daytona-sandbox-provider" } }], bundled)).toBe(false);
+  });
+
+  it.each([
+    ["pt-BR", "Imagem", "Rótulo determinístico de imagem simulada para metadados e correspondência.", "Timeout do comando (ms)", "Reutilizar leases simulados"],
+    ["en", "Image", "Deterministic fake image label for metadata and matching.", "Command timeout (ms)", "Reuse fake leases"],
+  ] as const)("localizes fake sandbox schema metadata only for the exact bundled source in %s without changing schema or values", async (
+    locale,
+    imageName,
+    imageDescription,
+    timeoutName,
+    reuseLeaseName,
+  ) => {
+    await i18n.changeLanguage(locale);
+    const pluginId = "paperclip.fake-sandbox-provider";
+    const pluginRecordId = "bundled-fake-sandbox-plugin-id";
+    const packageName = "@paperclipai/plugin-fake-sandbox";
+    const bundlePath = "/app/packages/plugins/paperclip-plugin-fake-sandbox";
+    const installed = [{
+      id: pluginRecordId,
+      pluginKey: pluginId,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginId },
+    }];
+    const bundled = [{ pluginKey: pluginId, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledSandboxProvider({ pluginId: pluginRecordId, pluginKey: pluginId }, installed, bundled);
+    expect(trustedBundle).toBe(true);
+
+    const schema = {
+      type: "object",
+      properties: {
+        image: {
+          type: "string",
+          description: "Deterministic fake image label for metadata and matching.",
+          default: "fake:latest",
+        },
+        timeoutMs: {
+          type: "number",
+          description: "Command timeout in milliseconds.",
+          default: 300000,
+        },
+        reuseLease: {
+          type: "boolean",
+          description: "Whether to reuse fake leases by environment id.",
+          default: false,
+        },
+        customField: {
+          type: "string",
+          title: "Provider-owned field",
+          description: "Provider-owned help text.",
+        },
+      },
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configuration = {
+      image: "team-image:2026-11",
+      timeoutMs: 125000,
+      reuseLease: true,
+      customValue: "preserve this value",
+    };
+    const configurationBefore = JSON.stringify(configuration);
+    const localized = localizeSandboxProviderConfigSchema("fake-plugin", pluginId, schema, i18n.t, trustedBundle)!;
+
+    expect(localized.properties.image).toEqual({
+      ...schema.properties.image,
+      title: imageName,
+      description: imageDescription,
+    });
+    expect(localized.properties.timeoutMs).toMatchObject({
+      title: timeoutName,
+      default: 300000,
+      description: locale === "pt-BR" ? "Timeout do comando em milissegundos." : schema.properties.timeoutMs.description,
+    });
+    expect(localized.properties.reuseLease).toMatchObject({
+      title: reuseLeaseName,
+      default: false,
+      description: locale === "pt-BR"
+        ? "Define se os leases simulados devem ser reutilizados por ID do ambiente."
+        : schema.properties.reuseLease.description,
+    });
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configuration)).toBe(configurationBefore);
+
+    for (const fieldKey of ["image", "timeoutMs", "reuseLease"] as const) {
+      expect(i18n.exists(`pluginPresentation.sandboxProviderConfigFields.fake.${fieldKey}.name`, { lng: locale })).toBe(true);
+      expect(i18n.exists(`pluginPresentation.sandboxProviderConfigFields.fake.${fieldKey}.description`, { lng: locale })).toBe(true);
+    }
+
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/paperclip-plugin-fake-sandbox/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    const packageJson = JSON.parse(readFileSync(
+      new URL("../../../packages/plugins/paperclip-plugin-fake-sandbox/package.json", import.meta.url),
+      "utf8",
+    )) as { name: string };
+    expect(packageJson.name).toBe(packageName);
+    expect(manifestSource).toContain(`const PLUGIN_ID = "${pluginId}"`);
+    expect(manifestSource).toContain('driverKey: "fake-plugin"');
+    for (const sourceDescription of [
+      schema.properties.image.description,
+      schema.properties.timeoutMs.description,
+      schema.properties.reuseLease.description,
+    ]) {
+      expect(manifestSource).toContain(sourceDescription);
+    }
+
+    const externalInstalled = [{
+      ...installed[0]!,
+      id: "vendor-fake-sandbox-id",
+      packageName: "vendor/fake-sandbox-compatible",
+      packagePath: "/custom/vendor/fake-sandbox-compatible",
+    }];
+    const externalTrustedBundle = isTrustedBundledSandboxProvider(
+      { pluginId: "vendor-fake-sandbox-id", pluginKey: pluginId },
+      externalInstalled,
+      bundled,
+    );
+    expect(externalTrustedBundle).toBe(false);
+    expect(localizeSandboxProviderConfigSchema("fake-plugin", pluginId, schema, i18n.t, externalTrustedBundle)).toBe(schema);
+    expect(localizeSandboxProviderConfigSchema("fake-plugin", "paperclip.exe-dev-sandbox-provider", schema, i18n.t, true)).toBe(schema);
+
+    const changedSourceSchema = {
+      ...schema,
+      properties: {
+        ...schema.properties,
+        image: { ...schema.properties.image, description: "Vendor-authored compatible provider image description." },
+      },
+    };
+    const changedSourcePresentation = localizeSandboxProviderConfigSchema("fake-plugin", pluginId, changedSourceSchema, i18n.t, true)!;
+    expect(changedSourcePresentation.properties.image).toEqual(changedSourceSchema.properties.image);
   });
 
   it.each([

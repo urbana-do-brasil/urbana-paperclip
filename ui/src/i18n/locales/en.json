@@ -868,6 +868,10 @@
       "documentAnnotationRemapped": "Document annotation remapped",
       "documentAnnotationThreadCreated": "Annotation thread created",
       "documentAnnotationCommentAdded": "Annotation comment added",
+      "documentAnnotationThreadResolved": "Annotation thread resolved",
+      "documentAnnotationThreadReopened": "Annotation thread reopened",
+      "originStamped": "Routine linked to pipeline automation",
+      "originCleared": "Routine unlinked from pipeline automation",
       "triggerCreated": "Trigger added",
       "triggerUpdated": "Trigger updated",
       "triggerDeleted": "Trigger removed",
@@ -3828,6 +3832,18 @@
         "description": "First-party smoke plugin that exercises Paperclip orchestration-grade plugin APIs."
       }
     },
+    "pluginConfigFields": {
+      "fileBrowser": {
+        "showFilesInSidebar": {
+          "name": "Show Files in Sidebar",
+          "description": "Adds the Files link under each project in the sidebar."
+        },
+        "commentAnnotationMode": {
+          "name": "Comment File Links",
+          "description": "Controls which comment extensions are active: 'annotation' shows file links below each comment, 'contextMenu' adds an \"Open in Files\" action to the comment menu, 'both' enables both, 'none' disables comment features."
+        }
+      }
+    },
     "sandboxProviders": {
       "fake": {
         "name": "Fake Sandbox Provider",
@@ -3867,6 +3883,20 @@
       }
     },
     "sandboxProviderConfigFields": {
+      "fake": {
+        "image": {
+          "name": "Image",
+          "description": "Deterministic fake image label for metadata and matching."
+        },
+        "timeoutMs": {
+          "name": "Command timeout (ms)",
+          "description": "Command timeout in milliseconds."
+        },
+        "reuseLease": {
+          "name": "Reuse fake leases",
+          "description": "Whether to reuse fake leases by environment id."
+        }
+      },
       "cloudflare": {
         "bridgeBaseUrl": {
           "name": "Bridge URL",

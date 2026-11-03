@@ -899,6 +899,10 @@
       "documentAnnotationRemapped": "Anotação do documento remapeada",
       "documentAnnotationThreadCreated": "Tópico de anotação criado",
       "documentAnnotationCommentAdded": "Comentário adicionado à anotação",
+      "documentAnnotationThreadResolved": "Tópico de anotação resolvido",
+      "documentAnnotationThreadReopened": "Tópico de anotação reaberto",
+      "originStamped": "Rotina vinculada à automação do pipeline",
+      "originCleared": "Rotina desvinculada da automação do pipeline",
       "triggerCreated": "Gatilho adicionado",
       "triggerUpdated": "Gatilho atualizado",
       "triggerDeleted": "Gatilho removido",
@@ -3924,6 +3928,18 @@
         "description": "Plugin próprio de teste que exercita as APIs de orquestração do Paperclip."
       }
     },
+    "pluginConfigFields": {
+      "fileBrowser": {
+        "showFilesInSidebar": {
+          "name": "Mostrar Arquivos na barra lateral",
+          "description": "Adiciona o link Arquivos abaixo de cada projeto na barra lateral."
+        },
+        "commentAnnotationMode": {
+          "name": "Links de arquivos em comentários",
+          "description": "Controla quais extensões de comentários ficam ativas: 'annotation' exibe links de arquivos abaixo de cada comentário, 'contextMenu' adiciona a ação \"Abrir em Arquivos\" ao menu do comentário, 'both' ativa ambas e 'none' desativa os recursos de comentário."
+        }
+      }
+    },
     "sandboxProviders": {
       "fake": {
         "name": "Provedor de sandbox simulado",
@@ -3963,6 +3979,20 @@
       }
     },
     "sandboxProviderConfigFields": {
+      "fake": {
+        "image": {
+          "name": "Imagem",
+          "description": "Rótulo determinístico de imagem simulada para metadados e correspondência."
+        },
+        "timeoutMs": {
+          "name": "Timeout do comando (ms)",
+          "description": "Timeout do comando em milissegundos."
+        },
+        "reuseLease": {
+          "name": "Reutilizar leases simulados",
+          "description": "Define se os leases simulados devem ser reutilizados por ID do ambiente."
+        }
+      },
       "cloudflare": {
         "bridgeBaseUrl": {
           "name": "URL da ponte",

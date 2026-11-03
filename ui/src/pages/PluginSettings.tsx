@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Puzzle, ArrowLeft, ShieldAlert, ActivitySquare, CheckCircle, XCircle, Loader2, Clock, Cpu, Webhook, CalendarClock, AlertTriangle, FolderOpen, Save } from "lucide-react";
 import type { PluginLocalFolderDeclaration } from "@paperclipai/shared";
@@ -25,6 +25,7 @@ import { PageTabBar } from "@/components/PageTabBar";
 import { useTranslation } from "@/i18n";
 import {
   isBundledPluginRecord,
+  localizeBundledPluginInstanceConfigSchema,
   localizePluginCategory,
   localizePluginPresentation,
   localizePluginLocalFolderPresentation,
@@ -129,6 +130,15 @@ export function PluginSettings() {
   // Fetch existing config for the plugin
   const configSchema = plugin?.manifestJson?.instanceConfigSchema as JsonSchemaNode | undefined;
   const hasConfigSchema = configSchema && configSchema.properties && Object.keys(configSchema.properties).length > 0;
+  const configPresentationSchema = useMemo(
+    () => localizeBundledPluginInstanceConfigSchema(
+      plugin?.pluginKey ?? "",
+      configSchema ?? null,
+      t,
+      trustedBundle,
+    ),
+    [configSchema, plugin?.pluginKey, t, trustedBundle],
+  );
 
   const configQueryKey = pluginId && selectedCompanyId
     ? queryKeys.plugins.config(pluginId, selectedCompanyId)
@@ -302,6 +312,7 @@ export function PluginSettings() {
                   pluginId={pluginId!}
                   companyId={selectedCompanyId}
                   schema={configSchema!}
+                  presentationSchema={configPresentationSchema ?? configSchema!}
                   initialValues={configData?.configJson}
                   isLoading={configLoading}
                   pluginStatus={plugin.status}
@@ -1010,7 +1021,9 @@ function isLikelyAbsolutePath(pathValue: string) {
 interface PluginConfigFormProps {
   pluginId: string;
   companyId: string | null;
+  /** Presentation-only clone; the original schema continues to drive defaults and validation. */
   schema: JsonSchemaNode;
+  presentationSchema: JsonSchemaNode;
   initialValues?: Record<string, unknown>;
   isLoading?: boolean;
   /** Current plugin lifecycle status — "Test Configuration" only available when `ready`. */
@@ -1026,7 +1039,7 @@ interface PluginConfigFormProps {
  * Separated from PluginSettings to isolate re-render scope — only the form
  * re-renders on field changes, not the entire page.
  */
-function PluginConfigForm({ pluginId, companyId, schema, initialValues, isLoading, pluginStatus, supportsConfigTest }: PluginConfigFormProps) {
+function PluginConfigForm({ pluginId, companyId, schema, presentationSchema, initialValues, isLoading, pluginStatus, supportsConfigTest }: PluginConfigFormProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -1145,7 +1158,7 @@ function PluginConfigForm({ pluginId, companyId, schema, initialValues, isLoadin
   return (
     <div className="space-y-4">
       <JsonSchemaForm
-        schema={schema}
+        schema={presentationSchema}
         values={values}
         onChange={handleChange}
         errors={errors}

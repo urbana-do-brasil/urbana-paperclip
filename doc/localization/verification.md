@@ -3629,3 +3629,9 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - Acesso de e-mail: 117/117 testes de consumidores, incluindo preservação de payload e bloqueio de edição. Schemas exe.dev/CreateOS: 4/4 com identidade/fallback e schema preservado. CLI adapter: 4/4.
 - Rodada integrada posterior: 59/59 em cinco arquivos; typechecks UI e CLI passaram sequencialmente. Checkpoint: **381/399 tarefas**, 18 caixas abertas incluindo agregadoras.
+
+### Eventos de rotina, schemas host e CLI org — 3.10q, 3.11h17–h18 e 4.3al
+
+- Quatro eventos próprios de rotina: 14/14 com locale. Fake-plugin é alcançável no Docker quando instalado; File Browser usa clone de apresentação do schema e mantém original para defaults/validação. Testes de apresentação 33/33, PluginSettings 20/20, locale 13/13 e typecheck UI passaram.
+- CLI org get/svg/png: 4/4 e typecheck CLI; bytes, rotas e stderr JSON foram preservados. Checkpoint: **385/403 tarefas**, com 18 caixas abertas incluindo agregadoras.
+- Rodada integrada posterior: 71/71 em cinco arquivos; gate de tokens, scanner de fontes e OpenSpec estrito passaram. CI remota e regressão integrada final continuam pendentes.

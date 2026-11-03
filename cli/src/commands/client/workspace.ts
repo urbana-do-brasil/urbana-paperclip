@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { ApiRequestError } from "../../client/http.js";
 import {
   addCommonClientOptions,
   apiPath,
@@ -137,7 +138,7 @@ function addBinaryCompanyGet(parent: Command, name: string, description: string,
             headers: ctx.api.apiKey ? { authorization: `Bearer ${ctx.api.apiKey}` } : undefined,
           });
           const bytes = Buffer.from(await response.arrayBuffer());
-          if (!response.ok) throw new Error(`API error ${response.status}: ${bytes.toString("utf8")}`);
+          if (!response.ok) throw new ApiRequestError(response.status, bytes.toString("utf8"));
           if (opts.out) {
             const { writeFile } = await import("node:fs/promises");
             await writeFile(opts.out, bytes);

@@ -31,6 +31,32 @@ const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
 
 const operationHelp: Record<string, CommandHelp> = {
+  org: {
+    description: { en: "Organization chart operations", "pt-BR": "Operações do organograma" },
+  },
+  "org get": {
+    description: { en: "Get org chart data", "pt-BR": "Consultar dados do organograma" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "org svg": {
+    description: { en: "Download org chart SVG", "pt-BR": "Baixar SVG do organograma" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--out": { en: "Write output to file", "pt-BR": "Gravar a saída em um arquivo" },
+    },
+  },
+  "org png": {
+    description: { en: "Download org chart PNG", "pt-BR": "Baixar PNG do organograma" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--out": { en: "Write output to file", "pt-BR": "Gravar a saída em um arquivo" },
+    },
+  },
   adapter: {
     description: { en: "Adapter management operations", "pt-BR": "Operações de gerenciamento de adapters" },
   },

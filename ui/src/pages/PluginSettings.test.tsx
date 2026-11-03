@@ -659,6 +659,80 @@ describe("PluginSettings", () => {
   });
 
   it.each([
+    ["pt-BR", "Mostrar Arquivos na barra lateral", "Adiciona o link Arquivos abaixo de cada projeto na barra lateral.", "Links de arquivos em comentários"],
+    ["en", "Show Files in Sidebar", "Adds the Files link under each project in the sidebar.", "Comment File Links"],
+  ] as const)("localizes the verified bundled File Browser config form in %s", async (
+    locale,
+    sidebarTitle,
+    sidebarDescription,
+    commentTitle,
+  ) => {
+    await i18n.changeLanguage(locale);
+    const pluginKey = "paperclip-file-browser-example";
+    const packageName = "@paperclipai/plugin-file-browser-example";
+    const bundlePath = "/app/packages/plugins/examples/plugin-file-browser-example";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: {
+        id: pluginKey,
+        displayName: "File Browser (Example)",
+        version: "0.2.0",
+        description: "Example plugin that adds a Files link under each project in the sidebar.",
+        author: "Paperclip",
+        capabilities: ["ui.sidebar.register"],
+        instanceConfigSchema: {
+          type: "object",
+          properties: {
+            showFilesInSidebar: {
+              type: "boolean",
+              title: "Show Files in Sidebar",
+              default: false,
+              description: "Adds the Files link under each project in the sidebar.",
+            },
+            commentAnnotationMode: {
+              type: "string",
+              title: "Comment File Links",
+              enum: ["annotation", "contextMenu", "both", "none"],
+              default: "both",
+              description: "Controls which comment extensions are active: 'annotation' shows file links below each comment, 'contextMenu' adds an \"Open in Files\" action to the comment menu, 'both' enables both, 'none' disables comment features.",
+            },
+          },
+        },
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      pluginKey,
+      packageName,
+      localPath: bundlePath,
+      displayName: "File Browser (Example)",
+      description: "Example plugin that adds a Files link under each project in the sidebar.",
+      tag: "example",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    mockPluginsApi.getConfig.mockResolvedValue({
+      configJson: { showFilesInSidebar: true, commentAnnotationMode: "contextMenu" },
+    });
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain(sidebarTitle);
+    expect(container.textContent).toContain(sidebarDescription);
+    expect(container.textContent).toContain(commentTitle);
+    expect(container.textContent).toContain(locale === "pt-BR"
+      ? "Controla quais extensões de comentários ficam ativas"
+      : "Controls which comment extensions are active");
+    expect(mockPluginsApi.listBundled).toHaveBeenCalled();
+    expect(mockPluginsApi.getConfig).toHaveBeenCalledWith("plugin-1", "company-1");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
     ["pt-BR", "Pastas locais", "Requer atenção", "Pastas ausentes", "Arquivos ausentes", "/caminho/absoluto/da/pasta"],
     ["en", "Local folders", "Needs attention", "Missing directories", "Missing files", "/absolute/path/to/folder"],
   ])("localizes host-owned folder controls in %s and preserves external diagnostics", async (locale, folderTitle, attention, missingDirectories, missingFiles, pathPlaceholder) => {
