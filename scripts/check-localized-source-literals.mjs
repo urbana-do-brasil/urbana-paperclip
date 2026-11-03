@@ -219,6 +219,13 @@ function untrackedSourcePaths() {
   }).split(/\r?\n/).filter((file) => isSourcePath(file));
 }
 
+export function includeUntrackedSources(changed, paths) {
+  for (const file of paths) {
+    if (isSourcePath(file)) changed.set(file, null);
+  }
+  return changed;
+}
+
 function main() {
   const baseIndex = process.argv.indexOf("--base");
   const base = baseIndex >= 0 ? process.argv[baseIndex + 1] : process.env.PAPERCLIP_LOCALIZATION_BASE;
@@ -229,10 +236,9 @@ function main() {
   }
 
   try {
-    const changed = addedLinesFromDiff(gitDiff(base));
-    if (!base) {
-      for (const file of untrackedSourcePaths()) changed.set(file, null);
-    }
+    // A base comparison includes committed and tracked worktree changes, but
+    // git diff never includes untracked files. Scan those in either mode.
+    const changed = includeUntrackedSources(addedLinesFromDiff(gitDiff(base)), untrackedSourcePaths());
     const findings = [];
     for (const [file, addedLines] of changed) {
       const fullPath = path.join(root, file);

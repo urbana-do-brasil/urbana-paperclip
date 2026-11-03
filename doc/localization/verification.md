@@ -3708,3 +3708,7 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - `worktree init --empty`: mensagens/validações localizadas com fixtures Git descartáveis, preservando paths, portas, IDs e erros externos. Testes focados 14/14; typecheck CLI passou. Seed e demais operações mutáveis continuam abertos.
 - Builder/envelopes de OpenCode e ACPX/Claude no Runner: 4/4 em PT-BR/en, início e retomada; sem provider/modelo real.
 - Integração: **109/109 testes em seis arquivos**. Checkpoint: **409/428 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Arquivos novos no gate de fontes — 7.1b
+
+- O scanner agora inclui arquivos próprios não rastreados também quando compara com uma base Git. Teste negativo cria fonte temporária com rótulo em inglês, executa o gate com `--base HEAD`, verifica rejeição e remove a fixture; suíte Node 7/7. `PAPERCLIP_LOCALIZATION_BASE=origin/master` passou em 529 fontes no estado do teste. O scanner permanece heurístico e a CI remota não foi verificada. Checkpoint: **410/429 tarefas**, 19 caixas abertas incluindo agregadoras.

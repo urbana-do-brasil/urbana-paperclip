@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addedLinesFromDiff, findHardcodedUserFacingLiterals } from "../check-localized-source-literals.mjs";
+import fs from "node:fs";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { addedLinesFromDiff, findHardcodedUserFacingLiterals, includeUntrackedSources } from "../check-localized-source-literals.mjs";
 
 test("source gate detects added own labels and direct CLI output literals", () => {
   const ui = `
@@ -76,4 +79,34 @@ test("diff parser scopes findings to added lines in owned source trees", () => {
   ].join("\n"));
 
   assert.deepEqual([...changed], [["ui/src/components/example.tsx", new Set([5])]]);
+});
+
+test("base comparisons also scan all lines of untracked owned sources", () => {
+  const changed = includeUntrackedSources(new Map([["ui/src/existing.tsx", new Set([3])]]), [
+    "ui/src/new.tsx",
+    "cli/src/commands/new.ts",
+    "ui/src/new.test.tsx",
+    "docs/new.ts",
+  ]);
+  assert.deepEqual([...changed], [
+    ["ui/src/existing.tsx", new Set([3])],
+    ["ui/src/new.tsx", null],
+    ["cli/src/commands/new.ts", null],
+  ]);
+  assert.equal(findHardcodedUserFacingLiterals('<button>Delete</button>', "ui/src/new.tsx", changed.get("ui/src/new.tsx")).length, 1);
+});
+
+test("source gate with a base rejects an untracked own label", () => {
+  const fixture = fileURLToPath(new URL(`../../ui/src/__localization_gate_${process.pid}.tsx`, import.meta.url));
+  const script = fileURLToPath(new URL("../check-localized-source-literals.mjs", import.meta.url));
+  let created = false;
+  try {
+    fs.writeFileSync(fixture, '<button>Untranslated fixture</button>\n', { flag: "wx" });
+    created = true;
+    const result = spawnSync(process.execPath, [script, "--base", "HEAD"], { encoding: "utf8" });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Untranslated fixture/);
+  } finally {
+    if (created) fs.rmSync(fixture, { force: true });
+  }
 });
