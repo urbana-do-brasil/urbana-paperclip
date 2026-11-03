@@ -151,6 +151,11 @@ export const adminOperationMessageCatalog = {
     doctorVersionName: "Service version",
     doctorStorageName: "Storage",
     doctorReadConfigHint: "Run `paperclipai configure --section database` or `paperclipai onboard`",
+    allowedHostnameConfigMissing: "No config found at {path}. Run {command} first.",
+    allowedHostnameAlreadyAllowed: "Hostname {hostname} is already allowed.",
+    allowedHostnameAdded: "Added allowed hostname: {hostname}",
+    allowedHostnameRestart: "Restart the Paperclip server for this change to take effect.",
+    allowedHostnameModeNote: "Note: allowed hostnames are enforced only in authenticated/private mode.",
   },
   "pt-BR": {
     installPathManual: "Adicione o Paperclip ao PATH deste shell:\n  {command}",
@@ -301,6 +306,11 @@ export const adminOperationMessageCatalog = {
     doctorVersionName: "Versão do serviço",
     doctorStorageName: "Armazenamento",
     doctorReadConfigHint: "Execute `paperclipai configure --section database` ou `paperclipai onboard`",
+    allowedHostnameConfigMissing: "Configuração não encontrada em {path}. Execute {command} primeiro.",
+    allowedHostnameAlreadyAllowed: "O hostname {hostname} já está permitido.",
+    allowedHostnameAdded: "Hostname permitido adicionado: {hostname}",
+    allowedHostnameRestart: "Reinicie o servidor do Paperclip para que essa alteração entre em vigor.",
+    allowedHostnameModeNote: "Observação: os hostnames permitidos só são aplicados no modo autenticado/privado.",
   },
 } as const;
 

@@ -3772,3 +3772,9 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Prévia e mensagens de `worktree:merge-history` localizadas; plano sintético preserva dados/flags, testes focados 32/32 e suíte merge-history 10/10. Import de banco real não foi executado.
 - Integração UI/worktree: 78/78 em três arquivos; typechecks CLI/UI, gates de tokens, catálogos e fontes, e validação OpenSpec passaram. Checkpoint: **432/451 tarefas**, 19 caixas abertas incluindo agregadoras.
 - Auditoria adicional de referências dinâmicas inspecionou domínios finitos em TeamCatalog, AuditHub, perfis, plugins, segredos, ferramentas/runs, rotinas, workspace, decisões e conexões de apps. Não encontrou novas ausências nos domínios inspecionados; `teamCatalog.sources.type.include` não é alcançado pelos renderizadores examinados. É inspeção estática parcial e não substitui a reconciliação 7.2 nem testes de cada estado.
+
+### Photon, allowed-hostname e contratos de skills
+
+- Setup iMessage Photon localizado; testes confirmam segredo intacto, ID aparado conforme o comportamento anterior, URL e payload. Quatro testes focados.
+- allowed-hostname localizado com configuração temporária e preservação de campos: 20/20. Skills list/install/show têm paridade JSON/erro verificada com fetch simulado: 3/3; sem backend real.
+- Integração: **83/83 testes em cinco arquivos**. Checkpoint: **435/454 tarefas**, 19 caixas abertas incluindo agregadoras.

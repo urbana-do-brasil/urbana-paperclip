@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => ({
   createSlackApp: vi.fn(),
   installSlackApp: vi.fn(),
   resumeSlackInstallation: vi.fn(),
+  inspectPhoton: vi.fn(),
   setup: vi.fn(),
   setupTestStatus: vi.fn(),
   finishSlackSetup: vi.fn(),
@@ -382,6 +383,103 @@ describe("chat setup and identity-link clipboard actions", () => {
       expect(mocks.setup).toHaveBeenCalledWith("endpoint-a", {
         action: "configure",
         credentials: { clientId, tenantId, clientSecret },
+      });
+    },
+  );
+
+  it.each([
+    ["en", "Connect iMessage Photon", "Connect Maya to Photon Cloud.", "Photon dashboard", "Photon line setup", "Project ID", "Project secret", "Inspect Photon project", "Connect selected number"],
+    ["pt-BR", "Conectar iMessage Photon", "Conecte Maya ao Photon Cloud.", "Painel do Photon", "Configuração de linha do Photon", "ID do projeto", "Segredo do projeto", "Inspecionar projeto Photon", "Conectar número selecionado"],
+  ])(
+    "localizes the dedicated iMessage Photon setup in %s and preserves provider URLs and credentials",
+    async (locale, heading, description, dashboardLabel, lineSetupLabel, projectIdLabel, projectSecretLabel, inspectLabel, connectLabel) => {
+      await i18n.changeLanguage(locale);
+      const endpoint = await render("imessage-photon");
+      expect(container.querySelector("h1")?.textContent).toBe(heading);
+      expect(container.textContent).toContain(description);
+      expect(container.querySelector('a[href="https://app.photon.codes/"]')?.textContent).toContain(dashboardLabel);
+      expect(container.querySelector('a[href="https://photon.codes/docs/spectrum-ts/providers/imessage/connection-and-routing"]')?.textContent).toContain(lineSetupLabel);
+
+      const inputFor = (name: string) => [...container.querySelectorAll("label")]
+        .find((label) => label.textContent?.trim() === name)
+        ?.querySelector("input") as HTMLInputElement;
+      const setValue = (input: HTMLInputElement, value: string) => flushSync(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      const projectId = "  photon-project-external-id  ";
+      const projectSecret = "  photon-private-project-secret  ";
+      setValue(inputFor(projectIdLabel), projectId);
+      setValue(inputFor(projectSecretLabel), projectSecret);
+
+      mocks.inspectPhoton.mockResolvedValueOnce({
+        projectId: "photon-project-external-id",
+        projectName: "External Photon Project",
+        allocation: "dedicated",
+        eligible: true,
+        lines: [{ lineId: "external-line-id-42", phoneNumber: "+15555550142", eligible: true }],
+      });
+      await click(inspectLabel);
+      expect(mocks.inspectPhoton).toHaveBeenCalledWith("endpoint-a", {
+        projectId: "photon-project-external-id",
+        projectSecret,
+      });
+      expect(container.textContent).toContain("External Photon Project");
+      expect(container.textContent).toContain("+15555550142");
+      expect(container.textContent).not.toContain(projectSecret.trim());
+
+      mocks.setup.mockResolvedValueOnce({ ...endpoint, setup: { ...endpoint.setup, step: "test" } });
+      await click(connectLabel);
+      expect(mocks.setup).toHaveBeenCalledWith("endpoint-a", {
+        action: "configure",
+        credentials: { projectSecret },
+        photon: {
+          projectId: "photon-project-external-id",
+          lineId: "external-line-id-42",
+          allocation: "dedicated",
+        },
+      });
+    },
+  );
+
+  it.each([
+    ["en", "Inspect Photon project", "Connect shared DMs", "Direct messages only."],
+    ["pt-BR", "Inspecionar projeto Photon", "Conectar mensagens diretas compartilhadas", "Somente mensagens diretas."],
+  ])(
+    "keeps the shared iMessage Photon allocation and payload in %s",
+    async (locale, inspectLabel, connectLabel, sharedGuidance) => {
+      await i18n.changeLanguage(locale);
+      const endpoint = await render("imessage-photon");
+      const projectId = "shared-project-id";
+      const projectSecret = "shared-project-secret";
+      const projectInput = [...container.querySelectorAll("label")]
+        .find((label) => label.textContent?.trim() === (locale === "en" ? "Project ID" : "ID do projeto"))
+        ?.querySelector("input") as HTMLInputElement;
+      const secretInput = [...container.querySelectorAll("label")]
+        .find((label) => label.textContent?.trim() === (locale === "en" ? "Project secret" : "Segredo do projeto"))
+        ?.querySelector("input") as HTMLInputElement;
+      const setValue = (input: HTMLInputElement, value: string) => flushSync(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      setValue(projectInput, projectId);
+      setValue(secretInput, projectSecret);
+
+      mocks.inspectPhoton.mockResolvedValueOnce({
+        projectId,
+        projectName: "Shared Photon Project",
+        allocation: "shared",
+        eligible: true,
+        lines: [],
+      });
+      await click(inspectLabel);
+      expect(container.textContent).toContain(sharedGuidance);
+      mocks.setup.mockResolvedValueOnce({ ...endpoint, setup: { ...endpoint.setup, step: "test" } });
+      await click(connectLabel);
+      expect(mocks.setup).toHaveBeenCalledWith("endpoint-a", {
+        action: "configure",
+        credentials: { projectSecret },
+        photon: { projectId, allocation: "shared" },
       });
     },
   );

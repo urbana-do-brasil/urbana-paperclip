@@ -79,6 +79,14 @@ const operationHelp: Record<string, CommandHelp> = {
       "--json": { en: "Print machine-readable diagnostic details", "pt-BR": "Exibir detalhes do diagnóstico em JSON para máquinas" },
     },
   },
+  "allowed-hostname": {
+    description: { en: "Allow a hostname for authenticated/private mode access", "pt-BR": "Permitir o acesso de um hostname no modo autenticado/privado" },
+    arguments: { host: { en: "Hostname to allow (for example dotta-macbook-pro)", "pt-BR": "Hostname a permitir (por exemplo dotta-macbook-pro)" } },
+    options: {
+      "--config": { en: "Path to config file", "pt-BR": "Caminho do arquivo de configuração" },
+      "--data-dir": { en: "Paperclip data directory root (isolates state from ~/.paperclip)", "pt-BR": "Diretório raiz dos dados do Paperclip (isola o estado de ~/.paperclip)" },
+    },
+  },
   worktree: {
     description: { en: "Worktree-local Paperclip instance helpers", "pt-BR": "Ferramentas para instâncias locais do Paperclip em worktrees" },
   },

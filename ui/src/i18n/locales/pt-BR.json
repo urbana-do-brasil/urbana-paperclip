@@ -9798,6 +9798,28 @@
         "reconnect": "Reconectar app Microsoft",
         "verify": "Verificar credenciais Microsoft"
       },
+      "photon": {
+        "heading": "Conectar iMessage Photon",
+        "description": "Conecte {{agent}} ao Photon Cloud. O Pro oferece suporte a mensagens diretas por uma linha compartilhada. Números dedicados também permitem habilitar grupos individualmente.",
+        "dashboard": "Painel do Photon",
+        "lineSetup": "Configuração de linha do Photon",
+        "reconnectDescription": "A reconexão mantém este projeto e {{target}}. Deixe o segredo em branco para reutilizar a conexão salva.",
+        "sharedDmAllocation": "alocação compartilhada de mensagens diretas",
+        "dedicatedNumber": "número dedicado",
+        "projectId": "ID do projeto",
+        "projectSecret": "Segredo do projeto",
+        "inspect": "Inspecionar projeto Photon",
+        "inspecting": "Inspecionando Photon…",
+        "sharedDms": "Mensagens diretas compartilhadas",
+        "dedicatedNumbers": "Números dedicados",
+        "sharedProjectUnavailable": "Este projeto compartilhado já pertence a outro canal. Use um projeto Photon separado para cada agente.",
+        "dedicatedNumberUnavailable": "Nenhum número dedicado elegível está disponível. Confira a alocação de linhas no Photon e os canais existentes no Paperclip.",
+        "sharedProjectGuidance": "Somente mensagens diretas. Cadastre cada remetente de teste na página Users do projeto Photon e use o número que o Photon atribuir a esse remetente. Ainda é necessário vincular a identidade no Paperclip. Não é possível habilitar grupos neste canal.",
+        "connecting": "Conectando…",
+        "reconnect": "Reconectar Photon",
+        "connectSharedDms": "Conectar mensagens diretas compartilhadas",
+        "connectSelectedNumber": "Conectar número selecionado"
+      },
       "slack": {
         "steps": {
           "chooseAgent": "Escolher agente",

@@ -98,6 +98,13 @@ describe("setup command localization", () => {
       flag: "--config <path>",
       flagPortuguese: "Caminho do arquivo de configuração",
     },
+    {
+      command: "allowed-hostname",
+      portuguese: "Permitir o acesso de um hostname no modo autenticado/privado",
+      english: "Allow a hostname for authenticated/private mode access",
+      flag: "--config <path>",
+      flagPortuguese: "Caminho do arquivo de configuração",
+    },
   ])("localizes actual $command help in both supported languages", ({ command, portuguese, english, flag, flagPortuguese }) => {
     const root = temporaryRoot();
     const pt = run(root, [command, "--help", "--lang", "pt-BR"]);

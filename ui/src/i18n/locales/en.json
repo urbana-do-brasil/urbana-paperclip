@@ -9582,6 +9582,28 @@
         "reconnect": "Reconnect Microsoft app",
         "verify": "Verify Microsoft credentials"
       },
+      "photon": {
+        "heading": "Connect iMessage Photon",
+        "description": "Connect {{agent}} to Photon Cloud. Pro supports direct messages through a shared line. Dedicated numbers also support individually enabled groups.",
+        "dashboard": "Photon dashboard",
+        "lineSetup": "Photon line setup",
+        "reconnectDescription": "Reconnect keeps this project and {{target}}. Leave the secret blank to reuse the saved connection.",
+        "sharedDmAllocation": "shared DM allocation",
+        "dedicatedNumber": "dedicated number",
+        "projectId": "Project ID",
+        "projectSecret": "Project secret",
+        "inspect": "Inspect Photon project",
+        "inspecting": "Inspecting Photon…",
+        "sharedDms": "Shared DMs",
+        "dedicatedNumbers": "Dedicated numbers",
+        "sharedProjectUnavailable": "This shared project already belongs to another channel. Use a separate Photon project for each agent.",
+        "dedicatedNumberUnavailable": "No eligible dedicated number is available. Check the line allocation in Photon and existing Paperclip channels.",
+        "sharedProjectGuidance": "Direct messages only. Enroll each test sender in your Photon project's Users page, then use the number Photon assigns to that sender. Paperclip identity linking is still required. Groups cannot be enabled on this channel.",
+        "connecting": "Connecting…",
+        "reconnect": "Reconnect Photon",
+        "connectSharedDms": "Connect shared DMs",
+        "connectSelectedNumber": "Connect selected number"
+      },
       "slack": {
         "steps": {
           "chooseAgent": "Choose agent",
