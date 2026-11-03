@@ -76,7 +76,7 @@ export function TaskChatInteractionCard({
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <AppLogo name={action.appDisplayName || action.toolDisplayName} size={36} />
             <div className="min-w-0 flex-1"><MarkdownBody>{action.previewMarkdown.split(/\n\s*\n/)[0] || action.toolDisplayName}</MarkdownBody></div>
-            <Button className="ml-auto" size="sm" variant="outline" disabled={!onReviewRequest} onClick={() => onReviewRequest?.(interaction.id)}>Review request</Button>
+            <Button className="ml-auto" size="sm" variant="outline" disabled={!onReviewRequest} onClick={() => onReviewRequest?.(interaction.id)}>{t("taskDetail.interactionConfirmations.compact.reviewRequest")}</Button>
           </div>
         ) : (
           <IssueThreadInteractionCard interaction={interaction} {...cardProps} />

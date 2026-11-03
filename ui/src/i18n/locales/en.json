@@ -12829,6 +12829,30 @@
         "confirmationRequested": "Confirmation requested"
       },
       "details": "Details",
+      "compact": {
+        "noOptionsSelected": "No options selected",
+        "connectionIntentRequest": "{{agent}} requested access to {{service}}.",
+        "reason": "Reason:",
+        "originalRequestAndResolution": "View original request and resolution",
+        "acceptPlanQuestion": "Do you accept this plan?",
+        "openTarget": "Open {{target}}",
+        "planRevision": "plan revision {{revision}}",
+        "risk": "Risk: {{risk}}",
+        "argumentsAndAuditHash": "Arguments and audit hash",
+        "whatShouldChange": "What should change?",
+        "optional": "optional",
+        "describeWhatShouldChange": "Describe what should change",
+        "filterOptions": "Filter options",
+        "selectedCount_one": "{{count}} selected",
+        "selectedCount_other": "{{count}} selected",
+        "chooseBetween": "{{selected}} · choose {{minimum}}–{{maximum}}",
+        "chooseAtLeast": "{{selected}} · at least {{minimum}}",
+        "confirmSelection": "Confirm selection",
+        "approve": "Approve",
+        "reject": "Reject",
+        "reviewRequest": "Review request",
+        "addressedUser": "the addressed user"
+      },
       "itemVerdicts": {
         "verdict": {
           "approve": "Approve",

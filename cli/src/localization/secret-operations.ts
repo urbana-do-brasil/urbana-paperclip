@@ -27,3 +27,24 @@ const secretListLabels = {
 export function secretListColumnLabels(locale: SupportedLocale = getCliLocale()): Record<string, string> {
   return secretListLabels[locale];
 }
+
+const secretHealthLabels = {
+  en: {
+    id: "Provider",
+    status: "Status",
+    message: "Message",
+    warning: "Warning",
+    backup: "Backup guidance",
+  },
+  "pt-BR": {
+    id: "Provedor",
+    status: "Status",
+    message: "Mensagem",
+    warning: "Aviso",
+    backup: "Orientação de backup",
+  },
+} satisfies Record<SupportedLocale, Record<string, string>>;
+
+export function secretProviderHealthLabels(locale: SupportedLocale = getCliLocale()): Record<string, string> {
+  return secretHealthLabels[locale];
+}

@@ -13114,6 +13114,31 @@
         "confirmationRequested": "Confirmação solicitada"
       },
       "details": "Detalhes",
+      "compact": {
+        "noOptionsSelected": "Nenhuma opção selecionada",
+        "connectionIntentRequest": "{{agent}} solicitou acesso a {{service}}.",
+        "reason": "Motivo:",
+        "originalRequestAndResolution": "Ver solicitação e resolução originais",
+        "acceptPlanQuestion": "Você aceita este plano?",
+        "openTarget": "Abrir {{target}}",
+        "planRevision": "revisão do plano {{revision}}",
+        "risk": "Risco: {{risk}}",
+        "argumentsAndAuditHash": "Argumentos e hash de auditoria",
+        "whatShouldChange": "O que deve mudar?",
+        "optional": "opcional",
+        "describeWhatShouldChange": "Descreva o que deve mudar",
+        "filterOptions": "Filtrar opções",
+        "selectedCount_one": "{{count}} opção selecionada",
+        "selectedCount_many": "{{count}} opções selecionadas",
+        "selectedCount_other": "{{count}} opções selecionadas",
+        "chooseBetween": "{{selected}} · escolha de {{minimum}} a {{maximum}}",
+        "chooseAtLeast": "{{selected}} · pelo menos {{minimum}}",
+        "confirmSelection": "Confirmar seleção",
+        "approve": "Aprovar",
+        "reject": "Recusar",
+        "reviewRequest": "Revisar solicitação",
+        "addressedUser": "a pessoa destinatária"
+      },
       "itemVerdicts": {
         "verdict": {
           "approve": "Aprovar",

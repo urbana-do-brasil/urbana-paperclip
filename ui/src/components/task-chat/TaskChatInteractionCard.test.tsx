@@ -10,17 +10,23 @@ import type {
   IssueThreadInteraction,
   RequestConfirmationInteraction,
 } from "@/lib/issue-thread-interactions";
+import { formatDateTime } from "@/lib/utils";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   acceptedSuggestedTasksInteraction,
+  boundedRequestCheckboxConfirmationInteraction,
   expiredSecretProposalInteraction,
+  expiredToolActionInteraction,
   pendingAskUserQuestionsInteraction,
   pendingRequestCheckboxConfirmationInteraction,
   pendingRequestItemVerdictsInteraction,
   completeRequestItemVerdictsInteraction,
+  pendingSecretProposalInteraction,
   pendingSuggestedTasksInteraction,
+  pendingToolActionWriteInteraction,
 } from "@/fixtures/issueThreadInteractionFixtures";
+import { TaskChatCompactInteractionCard } from "./TaskChatCompactInteractionCard";
 import { TaskChatInteractionCard } from "./TaskChatInteractionCard";
 import { TaskChatThreadView } from "./TaskChatThreadView";
 import type { TaskChatInteractionItem } from "./task-chat-model";
@@ -256,6 +262,227 @@ describe("TaskChatInteractionCard", () => {
     const receipt = container.querySelector('[data-testid="task-chat-interaction-receipt"]');
     expect(receipt?.querySelector("summary")?.textContent).toContain("4 tarefas aceitas");
     expect(receipt?.textContent).toContain("Prototype issue-thread interaction cards");
+  });
+
+  it("localizes compact tool and secret confirmation labels in English and Portuguese while preserving supplied values", async () => {
+    const expectedByLanguage = {
+      en: {
+        risk: "Risk: write",
+        expires: "Expires",
+        argumentsAndHash: "Arguments and audit hash",
+        sourceSecret: "Source secret",
+        secretBinding: "Secret binding",
+        justification: "Reason given by the agent",
+      },
+      "pt-BR": {
+        risk: "Risco: escrita",
+        expires: "Expira em",
+        argumentsAndHash: "Argumentos e hash de auditoria",
+        sourceSecret: "Segredo de origem",
+        secretBinding: "Vínculo de segredo",
+        justification: "Motivo informado pelo agente",
+      },
+    } as const;
+
+    for (const language of ["en", "pt-BR"] as const) {
+      await i18n.changeLanguage(language);
+      flushSync(() => {
+        root.render(
+          <TooltipProvider>
+            <ThemeProvider>
+              <>
+                <TaskChatCompactInteractionCard
+                  interaction={pendingToolActionWriteInteraction}
+                  presentation="takeover"
+                />
+                <TaskChatCompactInteractionCard
+                  interaction={pendingSecretProposalInteraction}
+                  presentation="takeover"
+                />
+              </>
+            </ThemeProvider>
+          </TooltipProvider>,
+        );
+      });
+
+      const expected = expectedByLanguage[language];
+      expect(container.textContent).toContain(expected.risk);
+      expect(container.textContent).toContain(expected.expires);
+      expect(container.textContent).toContain(expected.argumentsAndHash);
+      expect(container.textContent).toContain(expected.sourceSecret);
+      expect(container.textContent).toContain(expected.secretBinding);
+      expect(container.textContent).toContain(expected.justification);
+      expect(container.textContent).toContain("Append row to spreadsheet");
+      expect(container.textContent).toContain("OpenAI API key");
+      expect(container.textContent).toContain("access.evals_openai_api_key");
+      expect(container.textContent).toContain(
+        "The evaluation runner needs the existing credential under its canonical config name.",
+      );
+      // Labels supplied by the server stay verbatim, even in Portuguese.
+      expect(container.textContent).toContain("Approve & run");
+      expect(container.textContent).toContain("Approve & bind");
+    }
+  });
+
+  it("localizes the compact tool review action in English and Portuguese", async () => {
+    for (const [language, reviewLabel] of [
+      ["en", "Review request"],
+      ["pt-BR", "Revisar solicitação"],
+    ] as const) {
+      await i18n.changeLanguage(language);
+      flushSync(() => {
+        root.render(
+          <TooltipProvider>
+            <ThemeProvider>
+              <TaskChatInteractionCard
+                item={interactionItem(pendingToolActionWriteInteraction)}
+                onReviewRequest={vi.fn()}
+              />
+            </ThemeProvider>
+          </TooltipProvider>,
+        );
+      });
+
+      expect(
+        [...container.querySelectorAll("button")].some(
+          (button) => button.textContent?.trim() === reviewLabel,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("localizes the compact checkbox selection hint in English and Portuguese", async () => {
+    for (const [language, selectionHint] of [
+      ["en", "2 selected · choose 2–3"],
+      ["pt-BR", "2 opções selecionadas · escolha de 2 a 3"],
+    ] as const) {
+      await i18n.changeLanguage(language);
+      flushSync(() => {
+        root.render(
+          <TooltipProvider>
+            <ThemeProvider>
+              <TaskChatCompactInteractionCard
+                interaction={boundedRequestCheckboxConfirmationInteraction}
+                presentation="takeover"
+              />
+            </ThemeProvider>
+          </TooltipProvider>,
+        );
+      });
+
+      expect(container.textContent).toContain(selectionHint);
+      expect(container.textContent).toContain("Confirm regions");
+    }
+  });
+
+  it("localizes tool and secret receipt details in English and Portuguese", async () => {
+    const expectedByLanguage = {
+      en: ["Risk: write", "Source secret", "Secret binding", "Reason given by the agent", "Expires"],
+      "pt-BR": ["Risco: escrita", "Segredo de origem", "Vínculo de segredo", "Motivo informado pelo agente", "Expira em"],
+    } as const;
+
+    for (const language of ["en", "pt-BR"] as const) {
+      await i18n.changeLanguage(language);
+      flushSync(() => {
+        root.render(
+          <TooltipProvider>
+            <ThemeProvider>
+              <>
+                <TaskChatCompactInteractionCard
+                  interaction={expiredToolActionInteraction}
+                />
+                <TaskChatCompactInteractionCard
+                  interaction={expiredSecretProposalInteraction}
+                />
+              </>
+            </ThemeProvider>
+          </TooltipProvider>,
+        );
+      });
+
+      for (const label of expectedByLanguage[language]) {
+        expect(container.textContent).toContain(label);
+      }
+      expect(container.textContent).toContain("OpenAI API key");
+      expect(container.textContent).toContain("EvalsEngineer");
+      expect(container.textContent).toContain("sha256:9f2c1a7be4d0c8a3");
+      expect(container.textContent).not.toContain("Asked by:");
+      expect(container.textContent).not.toContain("Resolved by:");
+    }
+  });
+
+  it("formats tool and secret expiration dates using the selected locale with seconds", async () => {
+    const expiresAt = "2026-04-20T15:01:23.000Z";
+    const pendingTool = structuredClone(pendingToolActionWriteInteraction);
+    pendingTool.payload.toolAction!.expiresAt = expiresAt;
+    const pendingSecret = structuredClone(pendingSecretProposalInteraction);
+    pendingSecret.payload.secretProposal!.expiresAt = expiresAt;
+    const expiredTool = structuredClone(expiredToolActionInteraction);
+    expiredTool.payload.toolAction!.expiresAt = expiresAt;
+    const expiredSecret = structuredClone(expiredSecretProposalInteraction);
+    expiredSecret.payload.secretProposal!.expiresAt = expiresAt;
+    const formattedByLanguage: Record<string, string> = {};
+
+    for (const language of ["en", "pt-BR"] as const) {
+      await i18n.changeLanguage(language);
+      flushSync(() => {
+        root.render(
+          <TooltipProvider>
+            <ThemeProvider>
+              <>
+                <TaskChatCompactInteractionCard
+                  interaction={pendingTool}
+                  presentation="takeover"
+                />
+                <TaskChatCompactInteractionCard
+                  interaction={pendingSecret}
+                  presentation="takeover"
+                />
+                <TaskChatCompactInteractionCard interaction={expiredTool} />
+                <TaskChatCompactInteractionCard interaction={expiredSecret} />
+              </>
+            </ThemeProvider>
+          </TooltipProvider>,
+        );
+      });
+
+      const formatted = formatDateTime(expiresAt, { includeSeconds: true });
+      formattedByLanguage[language] = formatted;
+      expect(formatted.match(/:/g)).toHaveLength(2);
+      expect(container.textContent?.split(formatted)).toHaveLength(5);
+    }
+
+    expect(formattedByLanguage.en).not.toBe(formattedByLanguage["pt-BR"]);
+  });
+
+  it("localizes the checkbox receipt answer while preserving the original prompt", async () => {
+    const accepted = structuredClone(pendingRequestCheckboxConfirmationInteraction);
+    accepted.status = "accepted";
+    accepted.result = {
+      version: 1,
+      outcome: "accepted",
+      selectedOptionIds: [],
+    };
+    const expectedByLanguage = {
+      en: "Answer: No options selected",
+      "pt-BR": "Resposta: Nenhuma opção selecionada",
+    } as const;
+
+    for (const language of ["en", "pt-BR"] as const) {
+      await i18n.changeLanguage(language);
+      flushSync(() => {
+        root.render(
+          <TooltipProvider>
+            <ThemeProvider>
+              <TaskChatCompactInteractionCard interaction={accepted} />
+            </ThemeProvider>
+          </TooltipProvider>,
+        );
+      });
+
+      expect(container.textContent).toContain(expectedByLanguage[language]);
+      expect(container.textContent).toContain(accepted.payload.prompt);
+    }
   });
 
   it("localizes the unanswered-question prompt while preserving its provider text", async () => {

@@ -1252,6 +1252,135 @@ const operationHelp: Record<string, CommandHelp> = {
       "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
     },
   },
+  "secrets declarations": {
+    description: { en: "List portable env declarations emitted by company export", "pt-BR": "Listar declarações portáteis de variáveis de ambiente geradas pela exportação da organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--include": { en: "Comma-separated include set: company,agents,projects,issues,tasks,skills", "pt-BR": "Itens a incluir, separados por vírgulas: company,agents,projects,issues,tasks,skills" },
+      "--kind": { en: "Filter declarations: all | secret | plain", "pt-BR": "Filtrar declarações: all | secret | plain" },
+    },
+  },
+  "secrets create": {
+    description: { en: "Create a Paperclip-managed secret", "pt-BR": "Criar um segredo gerenciado pelo Paperclip" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--name": { en: "Secret display name", "pt-BR": "Nome de exibição do segredo" },
+      "--key": { en: "Portable secret key", "pt-BR": "Chave portátil do segredo" },
+      "--provider": { en: "Secret provider id", "pt-BR": "ID do provedor de segredos" },
+      "--value": { en: "Secret value", "pt-BR": "Valor do segredo" },
+      "--value-env": { en: "Read secret value from an environment variable", "pt-BR": "Ler o valor do segredo de uma variável de ambiente" },
+      "--description": { en: "Description", "pt-BR": "Descrição" },
+    },
+  },
+  "secrets link": {
+    description: { en: "Link an external provider-owned secret without storing its value in Paperclip", "pt-BR": "Vincular um segredo de provedor externo sem armazenar seu valor no Paperclip" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--name": { en: "Secret display name", "pt-BR": "Nome de exibição do segredo" },
+      "--provider": { en: "Secret provider id", "pt-BR": "ID do provedor de segredos" },
+      "--external-ref": { en: "Provider secret ARN/name/path/reference", "pt-BR": "ARN/nome/caminho/referência do segredo no provedor" },
+      "--key": { en: "Portable secret key", "pt-BR": "Chave portátil do segredo" },
+      "--provider-version-ref": { en: "Provider version id or label", "pt-BR": "ID ou rótulo da versão no provedor" },
+      "--description": { en: "Description", "pt-BR": "Descrição" },
+    },
+  },
+  "secrets update": {
+    description: { en: "Update secret metadata", "pt-BR": "Atualizar metadados do segredo" },
+    arguments: { secretId: { en: "Secret ID", "pt-BR": "ID do segredo" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "UpdateSecret JSON payload", "pt-BR": "Payload JSON de UpdateSecret" } },
+  },
+  "secrets rotate": {
+    description: { en: "Rotate a Paperclip-managed secret value", "pt-BR": "Girar o valor de um segredo gerenciado pelo Paperclip" },
+    arguments: { secretId: { en: "Secret ID", "pt-BR": "ID do segredo" } },
+    options: {
+      ...commonClientOptions,
+      "--value": { en: "New secret value", "pt-BR": "Novo valor do segredo" },
+      "--value-env": { en: "Read new secret value from an environment variable", "pt-BR": "Ler o novo valor do segredo de uma variável de ambiente" },
+    },
+  },
+  "secrets usage": {
+    description: { en: "Show where a secret is referenced", "pt-BR": "Mostrar onde um segredo é usado" },
+    arguments: { secretId: { en: "Secret ID", "pt-BR": "ID do segredo" } },
+    options: commonClientOptions,
+  },
+  "secrets access-events": {
+    description: { en: "List secret access events", "pt-BR": "Listar eventos de acesso ao segredo" },
+    arguments: { secretId: { en: "Secret ID", "pt-BR": "ID do segredo" } },
+    options: commonClientOptions,
+  },
+  "secrets delete": {
+    description: { en: "Delete a secret", "pt-BR": "Excluir um segredo" },
+    arguments: { secretId: { en: "Secret ID", "pt-BR": "ID do segredo" } },
+    options: {
+      ...commonClientOptions,
+      "--yes": { en: "Required safety flag to confirm destructive action", "pt-BR": "Flag obrigatória para confirmar a ação destrutiva" },
+      "--confirm": { en: "Repeat the secret ID to confirm deletion", "pt-BR": "Repita o ID do segredo para confirmar a exclusão" },
+    },
+  },
+  "secrets doctor": {
+    description: { en: "Run secret provider health checks through the Paperclip API", "pt-BR": "Verificar a integridade dos provedores de segredos pela API do Paperclip" },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" } },
+  },
+  "secrets providers": {
+    description: { en: "List configured secret provider descriptors", "pt-BR": "Listar as descrições dos provedores de segredos configurados" },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" } },
+  },
+  "secrets provider-configs": {
+    description: { en: "List company secret provider vault configs", "pt-BR": "Listar configurações de cofres de provedores de segredos da organização" },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" } },
+  },
+  "secrets provider-config:create": {
+    description: { en: "Create a secret provider vault config", "pt-BR": "Criar uma configuração de cofre de provedor de segredos" },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" }, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "secrets provider-config:discovery-preview": {
+    description: { en: "Preview provider vault secret discovery", "pt-BR": "Pré-visualizar a descoberta de segredos no cofre do provedor" },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" }, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "secrets provider-config:get": {
+    description: { en: "Get a secret provider vault config", "pt-BR": "Consultar uma configuração de cofre de provedor de segredos" },
+    arguments: { configId: { en: "Provider config ID", "pt-BR": "ID da configuração do provedor" } },
+    options: commonClientOptions,
+  },
+  "secrets provider-config:update": {
+    description: { en: "Update a secret provider vault config", "pt-BR": "Atualizar uma configuração de cofre de provedor de segredos" },
+    arguments: { configId: { en: "Provider config ID", "pt-BR": "ID da configuração do provedor" } },
+    options: { ...commonClientOptions, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "secrets provider-config:default": {
+    description: { en: "Set the default provider vault config", "pt-BR": "Definir a configuração de cofre padrão do provedor" },
+    arguments: { configId: { en: "Provider config ID", "pt-BR": "ID da configuração do provedor" } },
+    options: commonClientOptions,
+  },
+  "secrets provider-config:health": {
+    description: { en: "Check provider vault health", "pt-BR": "Verificar a integridade do cofre do provedor" },
+    arguments: { configId: { en: "Provider config ID", "pt-BR": "ID da configuração do provedor" } },
+    options: commonClientOptions,
+  },
+  "secrets provider-config:delete": {
+    description: { en: "Delete a secret provider vault config", "pt-BR": "Excluir uma configuração de cofre de provedor de segredos" },
+    arguments: { configId: { en: "Provider config ID", "pt-BR": "ID da configuração do provedor" } },
+    options: commonClientOptions,
+  },
+  "secrets remote-import:preview": {
+    description: { en: "Preview remote secret import", "pt-BR": "Pré-visualizar a importação remota de segredos" },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" }, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "secrets remote-import": {
+    description: { en: "Import selected remote secrets", "pt-BR": "Importar os segredos remotos selecionados" },
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" }, "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" } },
+  },
+  "secrets migrate-inline-env": {
+    description: { en: "Migrate inline sensitive agent env values into secret references", "pt-BR": "Migrar valores sensíveis inline do ambiente dos agentes para referências a segredos" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--apply": { en: "Persist changes; default is a dry run", "pt-BR": "Persistir as alterações; por padrão, apenas simula" },
+    },
+  },
   "agent me": {
     description: {
       en: "Show the current agent identity",

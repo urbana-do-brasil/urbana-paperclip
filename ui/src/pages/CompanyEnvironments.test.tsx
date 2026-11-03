@@ -811,6 +811,8 @@ describe("CompanyEnvironments — test provider button", () => {
         editLabel: "Edit",
         sshFallback: "SSH host · user",
         providerSummary: "e2b sandbox provider",
+        sshDriverLabel: "Remote · SSH",
+        sandboxOptionLabel: "Alpha · Sandbox",
       },
       {
         locale: "pt-BR",
@@ -822,6 +824,8 @@ describe("CompanyEnvironments — test provider button", () => {
         editLabel: "Editar",
         sshFallback: "Host SSH · usuário",
         providerSummary: "Provedor de sandbox e2b",
+        sshDriverLabel: "Remote · SSH",
+        sandboxOptionLabel: "Alpha · Sandbox",
       },
     ];
 
@@ -840,7 +844,15 @@ describe("CompanyEnvironments — test provider button", () => {
       });
 
       expect(container.textContent).toContain(testCase.defaultLabel);
+      expect(container.textContent).toContain(testCase.sshDriverLabel);
       expect(container.querySelector("select")?.getAttribute("aria-label")).toBe(testCase.ariaLabel);
+      const defaultEnvironmentSelect = container.querySelector("select") as HTMLSelectElement;
+      expect(
+        Array.from(defaultEnvironmentSelect.querySelectorAll("option")).map((option) => option.textContent?.trim()),
+      ).toContain(testCase.sandboxOptionLabel);
+      expect(
+        Array.from(defaultEnvironmentSelect.querySelectorAll("option")).find((option) => option.value === "env-2")?.textContent?.trim(),
+      ).toBe(testCase.sandboxOptionLabel);
       expect(container.querySelector("a[aria-label]")?.getAttribute("aria-label")).toBe(testCase.addLabel);
       expect(container.textContent).toContain(testCase.sshFallback);
       expect(Array.from(container.querySelectorAll("button")).map((button) => button.textContent?.trim())).toContain(
@@ -851,7 +863,6 @@ describe("CompanyEnvironments — test provider button", () => {
         testCase.editLabel,
       ]);
 
-      const defaultEnvironmentSelect = container.querySelector("select") as HTMLSelectElement;
       await act(async () => {
         setSelectValue(defaultEnvironmentSelect, "env-2");
         await flushReact();
@@ -1775,6 +1786,44 @@ describe("CompanyEnvironments — test provider button", () => {
     );
   });
 
+  it.each([
+    { locale: "en", editLabel: "Edit", expectedDate: "Jun 25, 2026, 8:00:00 PM" },
+    { locale: "pt-BR", editLabel: "Editar", expectedDate: "25 de jun. de 2026, 20:00:00" },
+  ])("formats custom image dates in $locale while preserving provider metadata", async ({
+    locale,
+    editLabel,
+    expectedDate,
+  }) => {
+    await i18n.changeLanguage(locale);
+    mockEnvironmentsApi.list.mockResolvedValue([
+      { id: "env-1", name: "Daytona", driver: "sandbox", description: null, config: { provider: "daytona" } },
+    ]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue(supportedDaytonaCapabilities());
+    mockEnvironmentsApi.customImageTemplate.mockResolvedValue({
+      activeTemplate: createTemplate(),
+      activeSession: null,
+      latestSession: null,
+    });
+
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root!.render(renderCompanyEnvironments(queryClient));
+    });
+    await waitForAssertion(() => {
+      expect(editButtons(container, editLabel)[0]).toBeTruthy();
+    });
+    await act(async () => click(editButtons(container, editLabel)[0]));
+    await waitForAssertion(() => {
+      expect(getEnvironmentFormPage()?.textContent).toContain(expectedDate);
+    });
+
+    const page = getEnvironmentFormPage()!;
+    expect(page.textContent).toContain("Daytona");
+    expect(page.textContent).toContain("redacted-template-ref");
+    expect(page.querySelector("[title*='template-1']")?.getAttribute("title")).toContain("template-1");
+  });
+
   it("shows an out-of-sync warning when the active template no longer matches the saved config", async () => {
     root = createRoot(container);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -2145,7 +2194,7 @@ describe("CompanyEnvironments — test provider button", () => {
     const optionLabels = Array.from(reassignSelect.querySelectorAll("option")).map((option) =>
       option.textContent?.trim(),
     );
-    expect(optionLabels).toEqual(["Default: Local", "Beta · sandbox"]);
+    expect(optionLabels).toEqual(["Default: Local", "Beta · Sandbox"]);
     await act(async () => setSelectValue(reassignSelect, "env-2"));
 
     await act(async () =>
@@ -2370,7 +2419,7 @@ describe("CompanyEnvironments — test provider button", () => {
     expect(reassignSelect.getAttribute("aria-label")).toBe("Transferir agentes para outro ambiente");
     expect(Array.from(reassignSelect.querySelectorAll("option")).map((option) => option.textContent?.trim())).toEqual([
       "Padrão: Local",
-      "Beta · sandbox",
+      "Beta · Sandbox",
     ]);
     expect(dialog.textContent).toContain("Afetados: Iris");
 

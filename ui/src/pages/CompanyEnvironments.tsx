@@ -57,7 +57,8 @@ import { useBreadcrumbs } from "@/context/BreadcrumbContext";
 import { useCompany } from "@/context/CompanyContext";
 import { useToast } from "@/context/ToastContext";
 import { t as translate, useTranslation } from "@/i18n";
-import { environmentDisplayLabel, isPlatformManagedEnvironment } from "@/lib/managed-sandbox-environment";
+import { isPlatformManagedEnvironment } from "@/lib/managed-sandbox-environment";
+import { formatDateTime as formatLocalizedDateTime } from "@/lib/utils";
 import {
   isTrustedBundledSandboxProvider,
   localizeSandboxProviderConfigSchema,
@@ -170,6 +171,24 @@ function createEmptyEnvironmentForm(): EnvironmentFormState {
 
 function isLocalEnvironment(environment: Environment | null | undefined) {
   return environment?.driver === "local";
+}
+
+function environmentDriverLabel(driver: Environment["driver"]): string {
+  switch (driver) {
+    case "local":
+      return translate("agentDirectory.environment.local");
+    case "sandbox":
+      return translate("agentDirectory.environment.sandbox");
+    case "ssh":
+      return "SSH";
+    default:
+      return driver;
+  }
+}
+
+function companyEnvironmentDisplayLabel(environment: Environment): string {
+  if (isPlatformManagedEnvironment(environment)) return environment.name;
+  return `${environment.name} · ${environmentDriverLabel(environment.driver)}`;
 }
 
 function normalizeNonLocalEnvironmentId(
@@ -319,7 +338,7 @@ function readEnvironmentSandboxProvider(environment: Environment): string | null
 function formatDateTime(value: string | Date | null | undefined): string | null {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? null : formatLocalizedDateTime(date, { includeSeconds: true });
 }
 
 function formatShortId(value: string): string {
@@ -1963,7 +1982,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
         t,
         isTrustedBundledSandboxProvider(editingSandboxCapability ?? {}, installedPlugins, bundledPlugins),
       ).displayName
-    : "sandbox";
+    : translate("agentDirectory.environment.sandbox");
   const nonLocalEnvironments = savedEnvironments.filter((environment) => !isLocalEnvironment(environment));
   const instanceDefaultEnvironmentId = normalizeNonLocalEnvironmentId(
     instanceSettings?.defaultEnvironmentId ?? null,
@@ -2096,11 +2115,11 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
                     </option>
                   ) : null
                 ) : (
-                  <option value="">Local</option>
+                  <option value="">{t("companyEnvironments.form.delete.local")}</option>
                 )}
                 {nonLocalEnvironments.map((environment) => (
                   <option key={environment.id} value={environment.id}>
-                    {environmentDisplayLabel(environment)}
+                    {companyEnvironmentDisplayLabel(environment)}
                   </option>
                 ))}
               </select>
@@ -2134,7 +2153,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
                     t,
                     isTrustedBundledSandboxProvider(sandboxProviderCapability ?? {}, installedPlugins, bundledPlugins),
                   ).displayName
-                : "sandbox";
+                : t("agentDirectory.environment.sandbox");
             return (
               <div
                 key={environment.id}
@@ -2146,7 +2165,7 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
                       <span>
                         {environment.name}
                         {isPlatformManagedEnvironment(environment) ? null : (
-                          <span className="text-muted-foreground"> · {environment.driver}</span>
+                          <span className="text-muted-foreground"> · {environmentDriverLabel(environment.driver)}</span>
                         )}
                       </span>
                       {isPlatformManagedEnvironment(environment) ? (
@@ -2412,11 +2431,11 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
                     }))}
                 >
                   {sandboxCreationEnabled || environmentForm.driver === "sandbox" ? (
-                    <option value="sandbox">Sandbox</option>
+                    <option value="sandbox">{t("agentDirectory.environment.sandbox")}</option>
                   ) : null}
                   <option value="ssh">SSH</option>
                   {environmentForm.driver === "local" ? (
-                    <option value="local">Local</option>
+                    <option value="local">{t("companyEnvironments.form.delete.local")}</option>
                   ) : null}
                 </select>
               </Field>
@@ -2758,13 +2777,13 @@ export function CompanyEnvironments({ mode = "list" }: CompanyEnvironmentsProps)
                           <option value="">
                             {t("companyEnvironments.form.delete.defaultOption", {
                               environment: instanceDefaultEnvironment
-                                ? `${instanceDefaultEnvironment.name} · ${instanceDefaultEnvironment.driver}`
+                                ? companyEnvironmentDisplayLabel(instanceDefaultEnvironment)
                                 : t("companyEnvironments.form.delete.local"),
                             })}
                           </option>
                           {reassignTargetEnvironments.map((environment) => (
                             <option key={environment.id} value={environment.id}>
-                              {environment.name} · {environment.driver}
+                              {companyEnvironmentDisplayLabel(environment)}
                             </option>
                           ))}
                         </select>

@@ -3655,3 +3655,15 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - Títulos e status de confirmações compactas e ajuda/saída humana de `secrets list` localizados; conteúdo livre, metadados e JSON preservados. Rodada integrada com validação de catálogos: 54/54 testes. Outras variantes de interações e operações de secrets continuam pendentes.
 - A [matriz de runtimes](runtime-qualification.md) separa testes de transporte de respostas reais ainda não qualificadas. Gate de ajuda: 68 tópicos. Checkpoint: **395/413 tarefas**, 18 caixas abertas incluindo agregadoras.
+
+### Comparação estática dos exemplos shell — 5.3b
+
+- Foram comparados 133 blocos `bash`, `sh`, `shell` e `console`, pareados por posição nos 68 tópicos públicos EN/PT-BR. Não houve divergência após remoção heurística de linhas vazias e comentários; todos os tópicos tinham o mesmo número de blocos cercados. O procedimento não é parser de shell, não analisa blocos de outras linguagens e não executa comandos. Revisão humana e validação em ambiente descartável permanecem abertas em 5.3.
+- Checkpoint: **396/414 tarefas**, 18 caixas abertas incluindo agregadoras.
+
+### Continuação — ambientes, interações compactas e CLI de segredos
+
+- Rótulos de drivers e datas da gestão de ambientes acompanham o idioma, mantendo segundos e dados de providers. Suíte focada: 42/42.
+- Confirmações tool/secret, recibos e datas localizados; prompts, respostas e demais dados externos preservados. Cartões: 35/35.
+- Família secrets: ajuda e mensagens próprias, saídas humanas de create/link e saúde do provedor. Contratos API/JSON, incluindo resposta vazia, e erros externos preservados. Testes focados: 20/20; typecheck CLI passou.
+- Integração: **110/110 testes em seis arquivos**; gate da ajuda e 11 testes Node passaram; typecheck UI e gates de tokens/literais passaram. Checkpoint: **399/417 tarefas**, com 18 caixas abertas incluindo agregadoras.
