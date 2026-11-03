@@ -15,6 +15,8 @@ import {
 import { eq, inArray } from "drizzle-orm";
 import { loadPaperclipEnvFile } from "../config/env.js";
 import { readConfig, resolveConfigPath } from "../config/store.js";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
+import { routineOperationMessage } from "../localization/routine-operations.js";
 
 type RoutinesDisableAllOptions = {
   config?: string;
@@ -23,7 +25,7 @@ type RoutinesDisableAllOptions = {
   json?: boolean;
 };
 
-type DisableAllRoutinesResult = {
+export type DisableAllRoutinesResult = {
   companyId: string;
   totalRoutines: number;
   pausedCount: number;
@@ -316,20 +318,24 @@ export async function disableAllRoutinesInConfig(
 export async function disableAllRoutinesCommand(options: RoutinesDisableAllOptions): Promise<void> {
   const result = await disableAllRoutinesInConfig(options);
 
-  if (options.json) {
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
+  console.log(formatDisableAllRoutinesResult(result, { json: options.json }));
+}
 
+export function formatDisableAllRoutinesResult(
+  result: DisableAllRoutinesResult,
+  options: { json?: boolean; locale?: SupportedLocale } = {},
+): string {
+  if (options.json) return JSON.stringify(result, null, 2);
   if (result.totalRoutines === 0) {
-    console.log(pc.dim(`No routines found for company ${result.companyId}.`));
-    return;
+    return pc.dim(routineOperationMessage("noRoutines", { companyId: result.companyId }, options.locale));
   }
 
-  console.log(
-    `Paused ${result.pausedCount} routine(s) for company ${result.companyId} ` +
-      `(${result.alreadyPausedCount} already paused, ${result.archivedCount} archived).`,
-  );
+  return routineOperationMessage("pausedSummary", {
+    pausedCount: result.pausedCount,
+    companyId: result.companyId,
+    alreadyPausedCount: result.alreadyPausedCount,
+    archivedCount: result.archivedCount,
+  }, options.locale);
 }
 
 export function registerRoutineCommands(program: Command): void {

@@ -9,6 +9,7 @@ import { feedbackOperationMessageCatalog } from "../localization/feedback-operat
 import { pluginOperationMessageCatalog } from "../localization/plugin-operations.js";
 import { worktreeOperationMessageCatalog } from "../localization/worktree-operations.js";
 import { envLabMessageCatalog } from "../localization/env-lab-operations.js";
+import { routineOperationMessageCatalog } from "../localization/routine-operations.js";
 import { validateMessageCatalogPair } from "../localization/catalog-validation.js";
 
 const catalogs = [
@@ -20,6 +21,7 @@ const catalogs = [
   ["plugin operations", pluginOperationMessageCatalog],
   ["worktree operations", worktreeOperationMessageCatalog],
   ["env-lab operations", envLabMessageCatalog],
+  ["routine operations", routineOperationMessageCatalog],
 ] as const;
 
 // These six company-import messages accept locale-specific grammar atoms from

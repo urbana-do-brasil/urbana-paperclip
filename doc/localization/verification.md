@@ -3778,3 +3778,11 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Setup iMessage Photon localizado; testes confirmam segredo intacto, ID aparado conforme o comportamento anterior, URL e payload. Quatro testes focados.
 - allowed-hostname localizado com configuração temporária e preservação de campos: 20/20. Skills list/install/show têm paridade JSON/erro verificada com fetch simulado: 3/3; sem backend real.
 - Integração: **83/83 testes em cinco arquivos**. Checkpoint: **435/454 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Auditoria CompanyImport — 3.8n
+
+- A rota de importação de organização mantém vários textos próprios em inglês, incluindo instruções de ZIP e estados/falhas de importação. Registrada como tarefa aberta 3.8n; tradução da CLI ou breadcrumb isolado não prova a jornada web. Checkpoint: **435/455 tarefas**, 20 caixas abertas incluindo agregadoras.
+
+### CLI routines disable-all — 4.3bc
+
+- Ajuda, resumo humano e estado vazio localizados; JSON preservado byte a byte em fixture sintética. Duas suítes: 13/13; nenhum banco foi aberto nem rotina pausada. Checkpoint: **436/456 tarefas**, 20 caixas abertas incluindo agregadoras.

@@ -464,6 +464,7 @@
         "ui/src/pages/CompanyAccess.tsx",
         "ui/src/pages/Secrets.tsx",
         "ui/src/pages/CompanySettings.tsx",
+        "ui/src/pages/CompanyImport.tsx",
         "ui/src/pages/InstanceAccess.tsx",
         "ui/src/pages/JoinRequestQueue.tsx",
         "ui/src/pages/apps/PaperclipCloudOAuthHandoff.tsx",
@@ -568,7 +569,7 @@
         "Reauditoria de CompanyEnvironments: rótulos de drivers internos e datas do setup seguem o locale escolhido; `CompanyEnvironments.test.tsx` passou 42/42 em PT-BR/en, preservando IDs, valores e metadados externos.",
         "3.8l verificada: controles e estados de acesso à conexão de e-mail; suítes consumidoras 117/117, preservando escopo, permissões e payloads; rodada integrada posterior 59/59 e typecheck UI passaram. A cobertura aqui é a área EmailConnectionAccess em AppDetail e ChatEndpointDetail, sem atribuir o restante dessas páginas à 3.8."
       ],
-      "limits": "3.8a–f e 3.8h–l têm evidências funcionais; 3.8e1–e5 reexecutadas passaram 285/285 testes UI e 3.8f2–f3 passaram 97/97 testes MCP em PostgreSQL descartável. A matriz browser 3.8g cobriu oito combinações de idioma, tema e viewport para jornadas representativas com APIs simuladas e teclado; não cobre todas as jornadas, papéis ou tablet. As evidências 3.8h–l não substituem a reconciliação de fontes/rotas/flags em 7.2 nem a regressão integrada descartável em 7.3; a revisão final independente de 7.4 também está pendente."
+      "limits": "3.8a–f e 3.8h–l têm evidências funcionais; 3.8e1–e5 reexecutadas passaram 285/285 testes UI e 3.8f2–f3 passaram 97/97 testes MCP em PostgreSQL descartável. A matriz browser 3.8g cobriu oito combinações de idioma, tema e viewport para jornadas representativas com APIs simuladas e teclado; não cobre todas as jornadas, papéis ou tablet. A jornada CompanyImport permanece parcialmente em inglês e está aberta em 3.8n. As evidências 3.8h–l não substituem a reconciliação de fontes/rotas/flags em 7.2 nem a regressão integrada descartável em 7.3; a revisão final independente de 7.4 também está pendente."
     },
     {
       "id": "catalogs",

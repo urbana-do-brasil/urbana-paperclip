@@ -728,6 +728,18 @@ const operationHelp: Record<string, CommandHelp> = {
   routine: {
     description: { en: "Routine API operations", "pt-BR": "Operações da API de rotinas" },
   },
+  routines: {
+    description: { en: "Local routine maintenance commands", "pt-BR": "Comandos locais para manutenção de rotinas" },
+  },
+  "routines disable-all": {
+    description: { en: "Pause all non-archived routines in the configured local instance for one company", "pt-BR": "Pausar todas as rotinas não arquivadas de uma organização na instância local configurada" },
+    options: {
+      "--config": { en: "Path to config file", "pt-BR": "Caminho do arquivo de configuração" },
+      "--data-dir": { en: "Paperclip data directory root (isolates state from ~/.paperclip)", "pt-BR": "Diretório raiz dos dados do Paperclip (isola o estado de ~/.paperclip)" },
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--json": { en: "Output raw JSON", "pt-BR": "Exibir JSON bruto" },
+    },
+  },
   "routine list": {
     description: { en: "List routines", "pt-BR": "Listar rotinas" },
     options: {
