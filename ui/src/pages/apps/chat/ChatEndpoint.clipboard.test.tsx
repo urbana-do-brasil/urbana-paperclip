@@ -21,7 +21,6 @@ const mocks = vi.hoisted(() => ({
   listActivityPage: vi.fn(),
   replayDelivery: vi.fn(),
   create: vi.fn(),
-  createSlackApp: vi.fn(),
   update: vi.fn(),
   updateResources: vi.fn(),
   slackCapabilities: vi.fn(),
@@ -29,6 +28,9 @@ const mocks = vi.hoisted(() => ({
   slackConfigure: vi.fn(),
   slackConnect: vi.fn(),
   slackDisconnect: vi.fn(),
+  createSlackApp: vi.fn(),
+  installSlackApp: vi.fn(),
+  resumeSlackInstallation: vi.fn(),
   setup: vi.fn(),
   setupTestStatus: vi.fn(),
   finishSlackSetup: vi.fn(),
@@ -160,7 +162,7 @@ describe("chat setup and identity-link clipboard actions", () => {
     flushSync(() => button!.click());
     await settle();
   }
-  async function render(provider: ChatProvider, detail = false, publicHttps = true) {
+  async function render(provider: ChatProvider, detail = false, publicHttps = true, automaticSlack = false) {
     const endpoint: ChatEndpoint = {
       id: "endpoint-a",
       companyId: "company-a",
@@ -173,6 +175,10 @@ describe("chat setup and identity-link clipboard actions", () => {
         step: "provider_setup",
         webhookUrl: publicHttps ? "https://example.test/api/chat-webhooks/test" : null,
         webhookSecretConfigured: false,
+        ...(automaticSlack ? {
+          slackSetupMethod: "automatic" as const,
+          slackOAuthCallbackUri: "https://example.test/api/chat-slack/oauth/callback",
+        } : {}),
       },
     };
     mocks.get.mockResolvedValue(endpoint);
@@ -230,6 +236,58 @@ describe("chat setup and identity-link clipboard actions", () => {
       action: "configure",
       credentials: { botToken: token },
     });
+  });
+
+  it.each([
+    ["en", "App configuration access token", "Get your App configuration access token", "Select the workspace where you want to install your bot.", "Create Slack app", "App configuration access token", "Connection setup progress"],
+    ["pt-BR", "Token de configuração do App", "Obter token de configuração do App", "Selecione o workspace no qual você quer instalar o bot.", "Criar app do Slack", "Token de configuração do App", "Progresso da configuração da conexão"],
+  ])("renders the automatic Slack setup shell in %s and keeps Slack URLs and UI labels intact", async (locale, heading, tokenLink, workspaceInstruction, createLabel, activeStepLabel, progressAria) => {
+    await i18n.changeLanguage(locale);
+    await render("slack", false, true, true);
+    expect(container.querySelector("h1")?.textContent).toBe(heading);
+    expect(container.textContent).toContain(tokenLink);
+    expect(container.textContent).toContain("Your App Configuration Tokens");
+    expect(container.textContent).toContain("Generate Token");
+    expect(container.textContent).toContain(workspaceInstruction);
+    expect(container.querySelector('a[href="https://api.slack.com/apps"]')).not.toBeNull();
+    expect(container.querySelector("aside nav")?.getAttribute("aria-label")).toBe(progressAria);
+    expect(container.querySelector('aside button[aria-current="step"]')?.textContent).toContain(activeStepLabel);
+    expect([...container.querySelectorAll("button")].some(button => button.textContent?.trim() === createLabel)).toBe(true);
+    expect(container.querySelector<HTMLInputElement>("#slack-configuration-token")?.type).toBe("password");
+  });
+
+  it.each([
+    ["en", "1Choose agent", "Advanced", "Slack app name", "Bot display name", "Slash command"],
+    ["pt-BR", "1Escolher agente", "Avançado", "Nome do app Slack", "Nome de exibição do bot", "Comando slash"],
+  ])("localizes Slack App details in %s while preserving the name and slash-command values", async (locale, agentStep, advancedLabel, appNameLabel, botNameLabel, commandLabel) => {
+    await i18n.changeLanguage(locale);
+    const endpoint = await render("slack", false, true, true);
+    mocks.update.mockImplementation(async (_id, input) => ({
+      ...endpoint,
+      setup: { ...endpoint.setup, slackApp: input.slackApp, command: input.slackApp.command },
+    }));
+    await click(agentStep);
+    const advanced = container.querySelector("details")!;
+    expect(advanced.querySelector("summary")?.textContent).toContain(advancedLabel);
+    advanced.open = true;
+    const edited = { appName: 'Research & "Ops"', botName: "research-ops", command: "/research" };
+    for (const [id, label, value] of [
+      ["slack-appName", appNameLabel, edited.appName],
+      ["slack-botName", botNameLabel, edited.botName],
+      ["slack-command", commandLabel, edited.command],
+    ]) {
+      const fieldLabel = [...container.querySelectorAll("label")].find(node => node.textContent === label)!;
+      expect(fieldLabel.htmlFor).toBe(id);
+      const input = document.getElementById(id) as HTMLInputElement;
+      flushSync(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      flushSync(() => input.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+      await settle();
+    }
+    expect(mocks.update).toHaveBeenLastCalledWith("endpoint-a", { slackApp: edited });
+    expect((document.getElementById("slack-command") as HTMLInputElement).value).toBe("/research");
   });
 
   it("pages older activity and lets users return after a page fails", async () => {
@@ -954,7 +1012,7 @@ describe("chat setup and identity-link clipboard actions", () => {
 
   it("resumes an assigned GitHub draft in the two-screen wizard without creating a connection", async () => {
     await render("github");
-    const steps = [...container.querySelectorAll('nav[aria-label="Setup progress"] button')];
+    const steps = [...container.querySelectorAll('nav[aria-label="GitHub connection setup progress"] button')];
     expect(steps).toHaveLength(2);
     expect(steps[1].getAttribute("aria-current")).toBe("step");
     expect(container.querySelector("h1")?.textContent).toBe("Connect GitHub");

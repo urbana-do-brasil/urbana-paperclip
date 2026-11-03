@@ -2062,18 +2062,30 @@ describe("worktree helpers", () => {
   });
 
   it("requires an explicit reseed source", () => {
-    expect(() => resolveWorktreeReseedSource({})).toThrow(
-      "Pass --from <worktree> or --from-config/--from-instance explicitly so the reseed source is unambiguous.",
-    );
+    const previousLocale = getCliLocale();
+    setCliLocale("en");
+    try {
+      expect(() => resolveWorktreeReseedSource({})).toThrow(
+        "Pass --from <worktree> or --from-config/--from-instance explicitly so the reseed source is unambiguous.",
+      );
+    } finally {
+      setCliLocale(previousLocale);
+    }
   });
 
   it("rejects mixed reseed source selectors", () => {
-    expect(() => resolveWorktreeReseedSource({
-      from: "current",
-      fromInstance: "default",
-    })).toThrow(
-      "Use either --from <worktree> or --from-config/--from-data-dir/--from-instance, not both.",
-    );
+    const previousLocale = getCliLocale();
+    setCliLocale("en");
+    try {
+      expect(() => resolveWorktreeReseedSource({
+        from: "current",
+        fromInstance: "default",
+      })).toThrow(
+        "Use either --from <worktree> or --from-config/--from-data-dir/--from-instance, not both.",
+      );
+    } finally {
+      setCliLocale(previousLocale);
+    }
   });
 
   it("derives worktree reseed target paths from the adjacent env file", () => {
@@ -2112,8 +2124,10 @@ describe("worktree helpers", () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-worktree-reseed-target-missing-"));
     const worktreeRoot = path.join(tempRoot, "repo");
     const configPath = path.join(worktreeRoot, ".paperclip", "config.json");
+    const previousLocale = getCliLocale();
 
     try {
+      setCliLocale("en");
       fs.mkdirSync(path.dirname(configPath), { recursive: true });
       fs.writeFileSync(configPath, JSON.stringify(buildSourceConfig()), "utf8");
       fs.writeFileSync(path.join(worktreeRoot, ".paperclip", ".env"), "", "utf8");
@@ -2124,6 +2138,7 @@ describe("worktree helpers", () => {
           rootPath: worktreeRoot,
         })).toThrow("does not look like a worktree-local Paperclip instance");
     } finally {
+      setCliLocale(previousLocale);
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
   });

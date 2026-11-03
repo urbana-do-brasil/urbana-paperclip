@@ -4680,9 +4680,9 @@ export interface ReviewQueueRow {
 }
 
 const REVIEW_QUEUE_SECTION_KEYS: Record<ReviewQueueKind, string> = {
-  suggestion: "pipelineManagement.reviewQueue.sections.suggestions",
-  review: "pipelineManagement.reviewQueue.sections.finalCalls",
-  headsUp: "pipelineManagement.reviewQueue.sections.headsUp",
+  suggestion: "pipelineManagement.detail.reviewQueue.sections.suggestions",
+  review: "pipelineManagement.detail.reviewQueue.sections.finalCalls",
+  headsUp: "pipelineManagement.detail.reviewQueue.sections.headsUp",
 };
 
 const REVIEW_QUEUE_SECTION_ORDER: ReviewQueueKind[] = ["suggestion", "review", "headsUp"];
@@ -4720,7 +4720,7 @@ export function buildReviewQueueRows({
       title: entry.case.title,
       prompt:
         entry.suggestion.rationale?.trim() ||
-        t("pipelineManagement.reviewQueue.prompts.suggestionReady", {
+        t("pipelineManagement.detail.reviewQueue.prompts.suggestionReady", {
           pipelineName: entry.case.pipeline.name,
           itemTitle: entry.case.title,
         }),
@@ -4744,7 +4744,7 @@ export function buildReviewQueueRows({
       title: entry.case.title,
       prompt:
         entry.case.summary?.trim() ||
-        t("pipelineManagement.reviewQueue.prompts.reviewDecision", { itemTitle: entry.case.title }),
+        t("pipelineManagement.detail.reviewQueue.prompts.reviewDecision", { itemTitle: entry.case.title }),
       kind: "review",
       createdAt: entry.case.updatedAt ?? entry.case.createdAt ?? null,
       expectedVersion: entry.review.expectedVersion ?? entry.case.version ?? null,
@@ -4765,8 +4765,8 @@ export function buildReviewQueueRows({
       pipelineName: entry.case.pipeline.name,
       title: entry.case.title,
       prompt: upstreamTitle
-        ? t("pipelineManagement.reviewQueue.prompts.upstreamChanged", { upstreamTitle })
-        : t("pipelineManagement.reviewQueue.prompts.needsQuickLook", { itemTitle: entry.case.title }),
+        ? t("pipelineManagement.detail.reviewQueue.prompts.upstreamChanged", { upstreamTitle })
+        : t("pipelineManagement.detail.reviewQueue.prompts.needsQuickLook", { itemTitle: entry.case.title }),
       kind: "headsUp",
       createdAt: entry.drift.createdAt ?? entry.case.updatedAt ?? null,
       expectedVersion: entry.case.version ?? null,
@@ -4797,7 +4797,7 @@ export function buildReviewQueueRows({
       prompt:
         pendingSuggestion?.rationale?.trim() ||
         entry.case.summary?.trim() ||
-        t("pipelineManagement.reviewQueue.prompts.reviewDecision", { itemTitle: entry.case.title }),
+        t("pipelineManagement.detail.reviewQueue.prompts.reviewDecision", { itemTitle: entry.case.title }),
       kind: "review",
       createdAt: entry.case.updatedAt ?? entry.case.createdAt ?? null,
       expectedVersion: typeof entry.case.version === "number" ? entry.case.version : null,
@@ -4821,7 +4821,7 @@ function ReviewQueueStatusChip({ failed }: { failed: boolean }) {
   return (
     <Badge variant="outline" className="border-amber-200 bg-amber-50 font-semibold text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-300">
       <AlertTriangle className="h-3 w-3" />
-      {t("pipelineManagement.reviewQueue.status.needsAttention")}
+      {t("pipelineManagement.detail.reviewQueue.status.needsAttention")}
     </Badge>
   );
 }
@@ -4862,27 +4862,27 @@ export function ReviewQueueDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl" closeLabel={t("pipelineManagement.reviewQueue.close")}>
+      <DialogContent className="sm:max-w-2xl" closeLabel={t("pipelineManagement.detail.reviewQueue.close")}>
         <DialogHeader>
-          <DialogTitle>{row?.title ?? t("pipelineManagement.reviewQueue.dialog.titleFallback")}</DialogTitle>
+          <DialogTitle>{row?.title ?? t("pipelineManagement.detail.reviewQueue.dialog.titleFallback")}</DialogTitle>
           <DialogDescription>
             {row
-              ? t("pipelineManagement.reviewQueue.dialog.pipelineWaiting", { pipelineName: row.pipelineName })
-              : t("pipelineManagement.reviewQueue.dialog.fallbackDescription")}
+              ? t("pipelineManagement.detail.reviewQueue.dialog.pipelineWaiting", { pipelineName: row.pipelineName })
+              : t("pipelineManagement.detail.reviewQueue.dialog.fallbackDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5">
           <section className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              {t("pipelineManagement.reviewQueue.dialog.whatIsBeingDecided")}
+              {t("pipelineManagement.detail.reviewQueue.dialog.whatIsBeingDecided")}
             </p>
             <p className="text-sm text-foreground">{row?.prompt}</p>
           </section>
 
           <section className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              {t("pipelineManagement.reviewQueue.dialog.itemPreview")}
+              {t("pipelineManagement.detail.reviewQueue.dialog.itemPreview")}
             </p>
             {fields.length > 0 ? (
               <div className="divide-y divide-border rounded-md border border-border">
@@ -4895,7 +4895,7 @@ export function ReviewQueueDetailDialog({
               </div>
             ) : (
               <p className="rounded-md border border-border px-3 py-3 text-sm text-muted-foreground">
-                {t("pipelineManagement.reviewQueue.dialog.noPreviewDetails")}
+                {t("pipelineManagement.detail.reviewQueue.dialog.noPreviewDetails")}
               </p>
             )}
           </section>
@@ -4906,20 +4906,20 @@ export function ReviewQueueDetailDialog({
               className="inline-block text-sm font-medium text-primary hover:underline"
               onClick={() => onOpenChange(false)}
             >
-              {t("pipelineManagement.reviewQueue.dialog.openFullItem")}
+              {t("pipelineManagement.detail.reviewQueue.dialog.openFullItem")}
             </Link>
           ) : null}
 
           {canDecide ? (
             <label className="block space-y-1.5 text-sm font-medium">
-              <span>{t("pipelineManagement.reviewQueue.dialog.note")}</span>
+              <span>{t("pipelineManagement.detail.reviewQueue.dialog.note")}</span>
               <Textarea
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 rows={3}
                 placeholder={requestChangesRequiresNote
-                  ? t("pipelineManagement.reviewQueue.dialog.requiredNote")
-                  : t("pipelineManagement.reviewQueue.dialog.optionalNote")}
+                  ? t("pipelineManagement.detail.reviewQueue.dialog.requiredNote")
+                  : t("pipelineManagement.detail.reviewQueue.dialog.optionalNote")}
               />
             </label>
           ) : null}
@@ -4927,7 +4927,7 @@ export function ReviewQueueDetailDialog({
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            {t("pipelineManagement.reviewQueue.cancel")}
+            {t("pipelineManagement.detail.reviewQueue.cancel")}
           </Button>
           {canDecide ? (
             <>
@@ -4938,12 +4938,12 @@ export function ReviewQueueDetailDialog({
                 disabled={pending || (requestChangesRequiresNote && !trimmedNote)}
               >
                 {row?.kind === "suggestion"
-                  ? t("pipelineManagement.reviewQueue.actions.notYet")
-                  : t("pipelineManagement.reviewQueue.actions.requestChanges")}
+                  ? t("pipelineManagement.detail.reviewQueue.actions.notYet")
+                  : t("pipelineManagement.detail.reviewQueue.actions.requestChanges")}
               </Button>
               <Button type="button" onClick={() => onApprove(trimmedNote)} disabled={pending}>
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                {t("pipelineManagement.reviewQueue.actions.approve")}
+                {t("pipelineManagement.detail.reviewQueue.actions.approve")}
               </Button>
             </>
           ) : null}
@@ -4990,7 +4990,7 @@ function ReviewQueueSection({
       <div className="flex items-baseline justify-between border-b border-border pb-2">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         <span className="text-xs text-muted-foreground">
-          {t("pipelineManagement.reviewQueue.itemCount", {
+          {t("pipelineManagement.detail.reviewQueue.itemCount", {
             count: rows.length,
             formattedCount: formatNumber(rows.length),
           })}
@@ -5030,7 +5030,7 @@ function ReviewQueueSection({
                 {showSelection ? (
                   <input
                     type="checkbox"
-                    aria-label={t("pipelineManagement.reviewQueue.selectItem", { itemTitle: row.title })}
+                    aria-label={t("pipelineManagement.detail.reviewQueue.selectItem", { itemTitle: row.title })}
                     checked={selected}
                     disabled={!selectable || pending}
                     onClick={(event) => event.stopPropagation()}
@@ -5052,7 +5052,7 @@ function ReviewQueueSection({
 
               <div className="flex items-center gap-2">
                 <span className="hidden whitespace-nowrap text-xs text-muted-foreground sm:inline">
-                  {row.createdAt ? relativeTime(row.createdAt) : t("pipelineManagement.reviewQueue.recently")}
+                  {row.createdAt ? relativeTime(row.createdAt) : t("pipelineManagement.detail.reviewQueue.recently")}
                 </span>
                 {row.kind === "suggestion" ? (
                   <>
@@ -5060,13 +5060,13 @@ function ReviewQueueSection({
                       event.stopPropagation();
                       onApprove(row);
                     }}>
-                      {t("pipelineManagement.reviewQueue.actions.approve")}
+                      {t("pipelineManagement.detail.reviewQueue.actions.approve")}
                     </Button>
                     <Button type="button" size="sm" variant="outline" disabled={pending} onClick={(event) => {
                       event.stopPropagation();
                       onDecline(row);
                     }}>
-                      {t("pipelineManagement.reviewQueue.actions.notYet")}
+                      {t("pipelineManagement.detail.reviewQueue.actions.notYet")}
                     </Button>
                   </>
                 ) : row.kind === "review" ? (
@@ -5075,13 +5075,13 @@ function ReviewQueueSection({
                       event.stopPropagation();
                       onApprove(row);
                     }}>
-                      {t("pipelineManagement.reviewQueue.actions.approve")}
+                      {t("pipelineManagement.detail.reviewQueue.actions.approve")}
                     </Button>
                     <Button type="button" size="sm" variant="outline" disabled={pending} onClick={(event) => {
                       event.stopPropagation();
                       onRequestChanges(row);
                     }}>
-                      {t("pipelineManagement.reviewQueue.actions.requestChanges")}
+                      {t("pipelineManagement.detail.reviewQueue.actions.requestChanges")}
                     </Button>
                   </>
                 ) : null}
@@ -5108,7 +5108,7 @@ export function ReviewQueue() {
   const [detailRow, setDetailRow] = useState<ReviewQueueRow | null>(null);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: t("pipelineManagement.reviewQueue.title") }]);
+    setBreadcrumbs([{ label: t("pipelineManagement.detail.reviewQueue.title") }]);
   }, [setBreadcrumbs, t]);
 
   const attentionQuery = useQuery({
@@ -5321,7 +5321,7 @@ export function ReviewQueue() {
   }, [activeRowId, decideRow, openItem, visibleRows]);
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={Hexagon} message={t("pipelineManagement.reviewQueue.selectOrganization")} />;
+    return <EmptyState icon={Hexagon} message={t("pipelineManagement.detail.reviewQueue.selectOrganization")} />;
   }
 
   if (attentionQuery.isLoading || reviewCasesQuery.isLoading) {
@@ -5334,9 +5334,9 @@ export function ReviewQueue() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-normal text-foreground">{t("pipelineManagement.reviewQueue.title")}</h1>
+          <h1 className="text-2xl font-semibold tracking-normal text-foreground">{t("pipelineManagement.detail.reviewQueue.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {t("pipelineManagement.reviewQueue.needsAttention", { formattedCount: formatNumber(visibleRows.length) })}
+            {t("pipelineManagement.detail.reviewQueue.needsAttention", { formattedCount: formatNumber(visibleRows.length) })}
           </p>
         </div>
         <Button
@@ -5345,7 +5345,7 @@ export function ReviewQueue() {
           onClick={() => bulkApprove.mutate(selectedRows)}
         >
           {bulkApprove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          {t("pipelineManagement.reviewQueue.bulkApprove", {
+          {t("pipelineManagement.detail.reviewQueue.bulkApprove", {
             count: selectedCount,
             formattedCount: formatNumber(selectedCount),
           })}
@@ -5353,11 +5353,11 @@ export function ReviewQueue() {
       </div>
 
       {attentionQuery.error || reviewCasesQuery.error ? (
-        <p className="text-sm text-amber-700 dark:text-amber-300">{t("pipelineManagement.reviewQueue.loadError")}</p>
+        <p className="text-sm text-amber-700 dark:text-amber-300">{t("pipelineManagement.detail.reviewQueue.loadError")}</p>
       ) : null}
 
       {visibleRows.length === 0 ? (
-        <EmptyState icon={Check} message={t("pipelineManagement.reviewQueue.empty")} />
+        <EmptyState icon={Check} message={t("pipelineManagement.detail.reviewQueue.empty")} />
       ) : (
         <div className="space-y-6">
           {groupedRows.map((group) => (
@@ -5389,13 +5389,13 @@ export function ReviewQueue() {
       )}
 
       <p className="text-xs text-muted-foreground">
-        {t("pipelineManagement.reviewQueue.shortcuts.label")}{" "}
+        {t("pipelineManagement.detail.reviewQueue.shortcuts.label")}{" "}
         <span className="font-semibold">j</span>/<span className="font-semibold">k</span>{" "}
-        {t("pipelineManagement.reviewQueue.shortcuts.move")}, {" "}
+        {t("pipelineManagement.detail.reviewQueue.shortcuts.move")}, {" "}
         <span className="font-semibold">Enter</span>{" "}
-        {t("pipelineManagement.reviewQueue.shortcuts.openItem")}, {" "}
+        {t("pipelineManagement.detail.reviewQueue.shortcuts.openItem")}, {" "}
         <span className="font-semibold">a</span>{" "}
-        {t("pipelineManagement.reviewQueue.shortcuts.approve")}.
+        {t("pipelineManagement.detail.reviewQueue.shortcuts.approve")}.
       </p>
 
       <ReviewQueueDetailDialog
@@ -5438,7 +5438,7 @@ export function Learnings() {
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
-    setBreadcrumbs([{ label: t("pipelineManagement.learnings.title") }]);
+    setBreadcrumbs([{ label: t("pipelineManagement.detail.learnings.title") }]);
   }, [setBreadcrumbs, t]);
 
   const learningsQuery = useQuery({
@@ -5455,7 +5455,7 @@ export function Learnings() {
   });
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={BookOpenText} message={t("pipelineManagement.learnings.selectOrganization")} />;
+    return <EmptyState icon={BookOpenText} message={t("pipelineManagement.detail.learnings.selectOrganization")} />;
   }
 
   if (learningsQuery.isLoading && !learningsQuery.data) {
@@ -5473,29 +5473,29 @@ export function Learnings() {
   return (
     <div className="space-y-6">
       <div className="border-b border-border pb-5">
-        <h1 className="text-2xl font-semibold tracking-normal text-foreground">{t("pipelineManagement.learnings.title")}</h1>
+        <h1 className="text-2xl font-semibold tracking-normal text-foreground">{t("pipelineManagement.detail.learnings.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t("pipelineManagement.learnings.description")}
+          {t("pipelineManagement.detail.learnings.description")}
         </p>
       </div>
 
       <div className="flex items-center justify-end">
         <p className="text-sm text-muted-foreground">
           {learningsQuery.isFetching
-            ? t("pipelineManagement.learnings.refreshing")
+            ? t("pipelineManagement.detail.learnings.refreshing")
             : events.length > 0
-              ? t("pipelineManagement.learnings.rowRange", {
+              ? t("pipelineManagement.detail.learnings.rowRange", {
                   first: formatNumber(firstVisible),
                   last: formatNumber(lastVisible),
                 })
-              : t("pipelineManagement.learnings.noRows")}
+              : t("pipelineManagement.detail.learnings.noRows")}
         </p>
       </div>
 
       {learningsQuery.error ? (
-        <p className="text-sm text-destructive">{t("pipelineManagement.learnings.loadError")}</p>
+        <p className="text-sm text-destructive">{t("pipelineManagement.detail.learnings.loadError")}</p>
       ) : groups.length === 0 ? (
-        <EmptyState icon={BookOpenText} message={t("pipelineManagement.learnings.empty")} />
+        <EmptyState icon={BookOpenText} message={t("pipelineManagement.detail.learnings.empty")} />
       ) : (
         <div className="space-y-6">
           {groups.map((group) => (
@@ -5546,15 +5546,15 @@ export function Learnings() {
           disabled={!canGoPrevious}
           onClick={() => setOffset((current) => Math.max(0, current - LEARNINGS_PAGE_SIZE))}
         >
-          {t("pipelineManagement.learnings.previous")}
+          {t("pipelineManagement.detail.learnings.previous")}
         </Button>
         <span className="text-sm text-muted-foreground">
           {events.length > 0
-            ? t("pipelineManagement.learnings.rowRange", {
+            ? t("pipelineManagement.detail.learnings.rowRange", {
                 first: formatNumber(firstVisible),
                 last: formatNumber(lastVisible),
               })
-            : t("pipelineManagement.learnings.noRows")}
+            : t("pipelineManagement.detail.learnings.noRows")}
         </span>
         <Button
           type="button"
@@ -5562,7 +5562,7 @@ export function Learnings() {
           disabled={!canGoNext}
           onClick={() => setOffset((current) => pagination?.nextOffset ?? current + LEARNINGS_PAGE_SIZE)}
         >
-          {t("pipelineManagement.learnings.next")}
+          {t("pipelineManagement.detail.learnings.next")}
         </Button>
       </div>
     </div>

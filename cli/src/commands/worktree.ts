@@ -557,14 +557,30 @@ function readPidFilePort(postmasterPidFile: string): number | null {
 }
 
 function readRunningPostmasterPid(postmasterPidFile: string): number | null {
-  if (!existsSync(postmasterPidFile)) return null;
+  let contents: string;
   try {
-    const pid = Number(readFileSync(postmasterPidFile, "utf8").split("\n")[0]?.trim());
-    if (!Number.isInteger(pid) || pid <= 0) return null;
+    contents = readFileSync(postmasterPidFile, "utf8");
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
+
+  const pid = Number(contents.split("\n")[0]?.trim());
+  if (!Number.isInteger(pid) || pid <= 0) {
+    throw new Error(worktreeOperationMessage("invalidPostmasterPidFile", { pidFile: postmasterPidFile }));
+  }
+
+  try {
     process.kill(pid, 0);
     return pid;
-  } catch {
-    return null;
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error) {
+      if (error.code === "ESRCH") return null;
+      if (error.code === "EPERM") return pid;
+    }
+    throw error;
   }
 }
 
@@ -875,9 +891,7 @@ export function resolveWorktreeReseedSource(input: WorktreeReseedOptions): Resol
   const hasExplicitConfigSource = Boolean(fromConfig || fromDataDir || fromInstance);
 
   if (fromSelector && hasExplicitConfigSource) {
-    throw new Error(
-      "Use either --from <worktree> or --from-config/--from-data-dir/--from-instance, not both.",
-    );
+    throw new Error(worktreeOperationMessage("reseedSourceSelectorsConflict"));
   }
 
   if (fromSelector) {
@@ -900,9 +914,7 @@ export function resolveWorktreeReseedSource(input: WorktreeReseedOptions): Resol
     };
   }
 
-  throw new Error(
-    "Pass --from <worktree> or --from-config/--from-instance explicitly so the reseed source is unambiguous.",
-  );
+  throw new Error(worktreeOperationMessage("reseedSourceRequired"));
 }
 
 function resolveWorktreeRepairSource(input: WorktreeRepairOptions): ResolvedWorktreeReseedSource {
@@ -929,9 +941,7 @@ export function resolveWorktreeReseedTargetPaths(input: {
   const instanceId = nonEmpty(envEntries.PAPERCLIP_INSTANCE_ID);
 
   if (!homeDir || !instanceId) {
-    throw new Error(
-      `Target config ${input.configPath} does not look like a worktree-local Paperclip instance. Expected PAPERCLIP_HOME and PAPERCLIP_INSTANCE_ID in the adjacent .env.`,
-    );
+    throw new Error(worktreeOperationMessage("reseedTargetEnvMissing", { configPath: input.configPath }));
   }
 
   return resolveWorktreeLocalPaths({
@@ -3646,7 +3656,7 @@ function resolveWorktreeEndpointFromSelector(
   const trimmed = selector.trim();
   const allowCurrent = opts?.allowCurrent !== false;
   if (trimmed.length === 0) {
-    throw new Error("Worktree selector cannot be empty.");
+    throw new Error(worktreeOperationMessage("worktreeSelectorEmpty"));
   }
 
   const currentEndpoint = resolveCurrentWorktreeEndpoint();
@@ -3662,7 +3672,7 @@ function resolveWorktreeEndpointFromSelector(
     }
     const configPath = path.resolve(directPath, ".paperclip", "config.json");
     if (!existsSync(configPath)) {
-      throw new Error(`Resolved worktree path ${directPath} does not contain .paperclip/config.json.`);
+      throw new Error(worktreeOperationMessage("worktreeSelectorPathMissingConfig", { worktreePath: directPath }));
     }
     return {
       rootPath: directPath,
@@ -3679,12 +3689,10 @@ function resolveWorktreeEndpointFromSelector(
       || choice.branchLabel === trimmed),
   );
   if (!matched) {
-    throw new Error(
-      `Could not resolve worktree "${selector}". Use a path, a listed worktree directory name, branch name, or "current".`,
-    );
+    throw new Error(worktreeOperationMessage("worktreeSelectorNotFound", { selector }));
   }
   if (!matched.hasPaperclipConfig && !matched.isCurrent) {
-    throw new Error(`Resolved worktree "${selector}" does not look like a Paperclip worktree.`);
+    throw new Error(worktreeOperationMessage("worktreeSelectorNotPaperclip", { selector }));
   }
   return resolveEndpointFromChoice(matched);
 }
@@ -4248,7 +4256,7 @@ async function backupWorktreeReseedTarget(input: {
 async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
   const seedMode = opts.seedMode ?? "full";
   if (!isWorktreeSeedMode(seedMode)) {
-    throw new Error(`Unsupported seed mode "${seedMode}". Expected one of: minimal, full.`);
+    throw new Error(worktreeOperationMessage("invalidSeedMode", { seedMode }));
   }
 
   const targetEndpoint = opts.to
@@ -4257,19 +4265,19 @@ async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
   const source = resolveWorktreeReseedSource(opts);
 
   if (path.resolve(source.configPath) === path.resolve(targetEndpoint.configPath)) {
-    throw new Error("Source and target Paperclip configs are the same. Choose different --from/--to values.");
+    throw new Error(worktreeOperationMessage("reseedSameConfig"));
   }
   if (!existsSync(source.configPath)) {
-    throw new Error(`Source config not found at ${source.configPath}.`);
+    throw new Error(worktreeOperationMessage("reseedSourceConfigMissing", { configPath: source.configPath }));
   }
 
   const targetConfig = readConfig(targetEndpoint.configPath);
   if (!targetConfig) {
-    throw new Error(`Target config not found at ${targetEndpoint.configPath}.`);
+    throw new Error(worktreeOperationMessage("reseedTargetConfigMissing", { configPath: targetEndpoint.configPath }));
   }
   const sourceConfig = readConfig(source.configPath);
   if (!sourceConfig) {
-    throw new Error(`Source config not found at ${source.configPath}.`);
+    throw new Error(worktreeOperationMessage("reseedSourceConfigMissing", { configPath: source.configPath }));
   }
 
   const targetPaths = resolveWorktreeReseedTargetPaths({
@@ -4278,28 +4286,37 @@ async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
   });
   const runningTargetPid = resolveRunningEmbeddedPostgresPid(targetConfig);
   if (runningTargetPid && !opts.allowLiveTarget) {
-    throw new Error(
-      `Target worktree database appears to be running (pid ${runningTargetPid}). Stop Paperclip in ${targetEndpoint.rootPath} before reseeding, or re-run with --allow-live-target if you want to override this guard.`,
-    );
+    throw new Error(worktreeOperationMessage("reseedTargetDatabaseRunning", {
+      pid: runningTargetPid,
+      rootPath: targetEndpoint.rootPath,
+    }));
   }
 
   const confirmed = opts.yes
     ? true
     : await p.confirm({
-      message: `Overwrite the isolated Paperclip DB for ${targetEndpoint.label} from ${source.label} using ${seedMode} seed mode?`,
+      message: worktreeOperationMessage("reseedConfirm", {
+        targetLabel: targetEndpoint.label,
+        sourceLabel: source.label,
+        seedMode,
+      }),
       initialValue: false,
     });
   if (p.isCancel(confirmed) || !confirmed) {
-    p.log.warn("Reseed cancelled.");
+    p.log.warn(worktreeOperationMessage("reseedCancelled"));
     return;
   }
 
   if (runningTargetPid && opts.allowLiveTarget) {
-    p.log.warning(`Proceeding even though the target embedded PostgreSQL appears to be running (pid ${runningTargetPid}).`);
+    p.log.warning(worktreeOperationMessage("reseedProceedLiveTarget", { pid: runningTargetPid }));
   }
 
   const spinner = p.spinner();
-  spinner.start(`Reseeding ${targetEndpoint.label} from ${source.label} (${seedMode})...`);
+  spinner.start(worktreeOperationMessage("reseedStarting", {
+    targetLabel: targetEndpoint.label,
+    sourceLabel: source.label,
+    seedMode,
+  }));
   const markers = resolveWorktreeSeedMarkerPaths(targetEndpoint.configPath);
   mkdirSync(path.dirname(markers.lock), { recursive: true });
   const releaseSeedLock = await acquireWorktreeSeedLock(markers.lock);
@@ -4307,7 +4324,7 @@ async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
     let targetBackupSummary: string | null = null;
     if (opts.backupTarget) {
       targetBackupSummary = await backupWorktreeReseedTarget({ targetConfig, targetPaths });
-      p.log.message(pc.dim(`Recoverable pre-repair backup: ${targetBackupSummary}`));
+      p.log.message(pc.dim(worktreeOperationMessage("reseedBackupSummary", { backupSummary: targetBackupSummary })));
     }
     markWorktreeSeedPending({
       configPath: targetEndpoint.configPath,
@@ -4329,26 +4346,29 @@ async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
     });
     // An operator-confirmed successful reseed replaces the earlier empty-instance choice.
     rmSync(markers.empty, { force: true });
-    spinner.stop(`Reseeded ${targetEndpoint.label} (${seedMode}).`);
-    p.log.message(pc.dim(`Source: ${source.configPath}`));
-    p.log.message(pc.dim(`Target: ${targetEndpoint.configPath}`));
-    p.log.message(pc.dim(`Seed snapshot: ${seeded.backupSummary}`));
+    spinner.stop(worktreeOperationMessage("reseedCompleteStatus", {
+      targetLabel: targetEndpoint.label,
+      seedMode,
+    }));
+    p.log.message(pc.dim(worktreeOperationMessage("reseedSourceLabel", { configPath: source.configPath })));
+    p.log.message(pc.dim(worktreeOperationMessage("reseedTargetLabel", { configPath: targetEndpoint.configPath })));
+    p.log.message(pc.dim(`${worktreeOperationMessage("seedSnapshot")} ${seeded.backupSummary}`));
     if (opts.preserveLiveWork) {
-      p.log.warning("Preserved copied live work; this worktree instance may auto-run source-instance assignments.");
+      p.log.warning(worktreeOperationMessage("preservedLiveWork"));
     } else {
       p.log.message(
-        pc.dim(`Seed execution quarantine: ${formatSeededWorktreeExecutionQuarantineSummary(seeded.executionQuarantine)}`),
+        pc.dim(`${worktreeOperationMessage("seedExecutionQuarantine")} ${formatSeededWorktreeExecutionQuarantineSummary(seeded.executionQuarantine)}`),
       );
     }
-    p.log.message(pc.dim(`Paused scheduled routines: ${seeded.pausedScheduledRoutines}`));
+    p.log.message(pc.dim(`${worktreeOperationMessage("pausedScheduledRoutines")} ${seeded.pausedScheduledRoutines}`));
     for (const rebound of seeded.reboundWorkspaces) {
       p.log.message(
-        pc.dim(`Rebound workspace ${rebound.name}: ${rebound.fromCwd} -> ${rebound.toCwd}`),
+        pc.dim(worktreeOperationMessage("reboundWorkspace", rebound)),
       );
     }
-    p.outro(pc.green(`Reseed complete for ${targetEndpoint.label}.`));
+    p.outro(pc.green(worktreeOperationMessage("reseedOutro", { targetLabel: targetEndpoint.label })));
   } catch (error) {
-    spinner.stop(pc.red("Failed to reseed worktree database."));
+    spinner.stop(pc.red(worktreeOperationMessage("reseedFailed")));
     throw error;
   } finally {
     await releaseSeedLock();

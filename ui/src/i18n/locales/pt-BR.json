@@ -7874,6 +7874,7 @@
     },
     "breadcrumbConnectors": "Conectores",
     "selectOrganization": "Selecione uma organização para conectar um assistente.",
+    "chooseOrganization": "Escolha {{organization}} ao conectar seu assistente.",
     "organizationDescription": "Conecte seu assistente ao Paperclip. Consulte o trabalho, crie tarefas e acompanhe atividades usando o acesso da sua conta a esta organização.",
     "loadingSetup": "Carregando a configuração do assistente…",
     "setupError": {
@@ -9714,6 +9715,121 @@
         "httpsPrerequisite": "Configure uma URL HTTPS pública para esta instância do Paperclip antes de conectar o Telegram.",
         "reconnect": "Reconectar bot",
         "connect": "Conectar bot"
+      },
+      "slack": {
+        "steps": {
+          "chooseAgent": "Escolher agente",
+          "configurationToken": "Token de configuração do App",
+          "installApp": "Instalar app do Slack",
+          "sendMessage": "Enviar uma mensagem"
+        },
+        "appDetails": {
+          "advanced": "Avançado",
+          "appName": "Nome do app Slack",
+          "appNameHelp": "O nome do app no diretório e nas configurações do Slack.",
+          "appNameHelpAria": "Ajuda sobre o nome do app Slack",
+          "botName": "Nome de exibição do bot",
+          "botNameHelp": "O nome que as pessoas veem quando o bot envia uma mensagem.",
+          "botNameHelpAria": "Ajuda sobre o nome de exibição do bot",
+          "command": "Comando slash",
+          "commandHelp": "O comando que as pessoas digitam no Slack para conversar com este agente.",
+          "commandHelpAria": "Ajuda sobre o comando slash",
+          "saveFailed": "Não foi possível salvar os detalhes do app Slack. Tente novamente antes de continuar.",
+          "validation": {
+            "appNameRequired": "Informe um nome para o app Slack.",
+            "appNameTooLong": "Use no máximo 35 caracteres no nome do app Slack.",
+            "botNameRequired": "Informe um nome de exibição para o bot.",
+            "botNameTooLong": "Use no máximo 80 caracteres no nome de exibição do bot.",
+            "botNameFormat": "Use letras minúsculas, números, pontos, hífens ou sublinhados no nome do bot.",
+            "commandRequired": "Informe um comando slash.",
+            "commandTooLong": "Use no máximo 32 caracteres no comando slash.",
+            "commandFormat": "Comece o comando com / e use letras minúsculas, números, hífens ou sublinhados."
+          }
+        },
+        "automatic": {
+          "setupErrorFallback": "Confira os valores obrigatórios e o acesso ao Slack e tente novamente.",
+          "preparingWindowTitle": "Preparando a instalação no Slack",
+          "preparingWindowBody": "Preparando sua instalação no Slack…",
+          "popupBlockedCreate": "Selecione Instalar no Slack para abrir a página de instalação.",
+          "popupBlockedReopen": "Selecione Instalar no Slack para reabrir a página de instalação.",
+          "openAppSettings": "Abrir configurações do app Slack",
+          "confirmNoAppCreated": "Verifiquei no Slack e nenhum app foi criado. Criar um app novo.",
+          "getConfigurationToken": "Obter token de configuração do App",
+          "tokenInstructions": {
+            "slackTokenSection": "Your App Configuration Tokens",
+            "slackGenerateToken": "Generate Token",
+            "slackAccessToken": "Access Token",
+            "findTokenSection": "Nas configurações do app Slack, encontre",
+            "andChoose": "e escolha",
+            "selectWorkspace": "Selecione o workspace no qual você quer instalar o bot.",
+            "copyToken": "Copie o",
+            "andPaste": "e cole abaixo.",
+            "usage": "O Paperclip usa este token para criar seu app"
+          },
+          "configurationTokenLabel": "Token de configuração do App",
+          "creatingStatus": "Criando seu app Slack. Você pode voltar a esta configuração salva.",
+          "yourApp": "Seu app Slack",
+          "createdStatus": "foi criado.",
+          "approveInstallationDescription": "Aprove a instalação com sua conta do Slack. O Paperclip vai vinculá-la à sua conta conectada do Paperclip e enviar uma mensagem de boas-vindas.",
+          "credentialsSavedDescription": "As credenciais da instalação foram salvas. Tente conectar novamente para concluir a configuração. Se o acesso ao Slack mudou, autorize o mesmo app outra vez.",
+          "authorizeAgain": "Autorizar no Slack novamente",
+          "createManually": "Criar manualmente",
+          "useExistingApp": "Usar um app existente",
+          "retryConfiguration": "Tentar configurar o app novamente",
+          "continueToInstallation": "Continuar para a instalação",
+          "createApp": "Criar app do Slack",
+          "retryConnecting": "Tentar conectar novamente",
+          "installInSlack": "Instalar no Slack",
+          "registrationErrors": {
+            "generic": "Não foi possível concluir a configuração do Slack. Retome a configuração e tente novamente.",
+            "slack_configuration_token_invalid": "O Slack rejeitou o token de configuração do app. Gere um novo token de acesso e tente novamente.",
+            "slack_manifest_invalid": "O Slack rejeitou esta configuração do app. Confira os detalhes do app ou use a configuração manual.",
+            "slack_manifest_update_pending": "Seu app Slack foi salvo, mas as configurações de eventos ainda precisam ser aplicadas. Informe um token de configuração do app para tentar configurar o mesmo app novamente.",
+            "slack_setup_rate_limited": "O Slack está limitando as solicitações de configuração. Aguarde um minuto e tente novamente.",
+            "slack_setup_permission_denied": "O Slack exige permissão para criar ou instalar este app. Peça ajuda ao administrador do workspace.",
+            "slack_creation_uncertain": "Talvez o Slack tenha criado o app. Confira as configurações de apps no Slack antes de tentar de novo ou conecte manualmente o app existente.",
+            "slack_install_declined": "A instalação não foi aprovada. Você pode instalar o mesmo app quando quiser.",
+            "slack_install_expired": "A autorização do Slack expirou. Instale o mesmo app novamente para continuar.",
+            "slack_install_failed": "Não foi possível concluir a instalação no Slack. Autorize o mesmo app novamente.",
+            "slack_install_identity_mismatch": "O Slack retornou outro app, workspace ou bot. Instale o app criado para esta conexão.",
+            "slack_install_scopes_missing": "O Slack não concedeu todas as permissões necessárias ao bot. Instale o app novamente e aprove as permissões solicitadas.",
+            "slack_bot_already_connected": "Este bot do Slack já está conectado ao Paperclip. Retome a conexão existente ou use outro app.",
+            "slack_configuration_incomplete": "O app foi instalado, mas o Paperclip não conseguiu concluir a conexão. Tente conectar novamente a instalação salva.",
+            "slack_install_account_missing": "O Slack não identificou sua conta. Autorize o mesmo app novamente para conectar sua conta do Slack.",
+            "slack_install_account_conflict": "Esta conta do Slack já tem um vínculo existente. Gerencie os vínculos nas configurações da conexão ou autorize com sua própria conta do Slack."
+          }
+        },
+        "errors": {
+          "finishSetup": "Não foi possível concluir a configuração",
+          "tryFinishAgain": "Tente concluir a configuração novamente.",
+          "connectionFailed": "Falha na conexão"
+        },
+        "success": {
+          "heading": "Sucesso",
+          "description": "Agora você pode conversar com {{agent}} no Slack",
+          "done": "Concluído"
+        },
+        "verification": {
+          "openAppSettings": "Abrir configurações do app Slack",
+          "andChooseApp": "e escolher",
+          "chooseProviderSection": "Escolha {{section}}.",
+          "requestUrlInstructions": "Ao lado de {{requestUrl}} preenchida, clique em {{retry}} se ela não estiver verificada. Salve as alterações se o Slack pedir.",
+          "sendMessageHeading": "Envie uma mensagem para seu agente",
+          "openSlack": "Abrir Slack",
+          "connectionWorking": "Sua conexão com o Slack está funcionando.",
+          "finishingSetup": "Concluindo a configuração…",
+          "checkFailed": "Não foi possível verificar a conexão. Vamos continuar tentando; confira sua conexão se isso persistir.",
+          "waitingForMessage": "Aguardando sua mensagem…",
+          "didntWork": "Não funcionou?",
+          "troubleshooting": "Se a URL de solicitação estiver ausente ou diferente, cole esta URL em Event Subscriptions. Se a verificação falhar, confirme que seu servidor HTTPS público está acessível e que o Signing Secret está correto.",
+          "webhookUrl": "URL do webhook do Paperclip",
+          "continue": "Continuar"
+        },
+        "publicHttps": {
+          "title": "É necessária uma URL HTTPS pública",
+          "body": "O Slack precisa de uma URL HTTPS pública para enviar mensagens ao Paperclip. Configure uma para esta instância antes de criar ou conectar seu app Slack.",
+          "guide": "Saiba como configurar HTTPS"
+        }
       }
     },
     "githubChatSetup": {
@@ -9956,7 +10072,6 @@
         "agentAvatar": "Avatar do agente",
         "loadingAgentAvatar": "Carregando avatar do agente…",
         "agentAvatarLoadFailed": "Não foi possível carregar o avatar do agente.",
-        "slackTools": "Ferramentas do Slack",
         "instructions": {
           "saveFailedFallback": "Não foi possível salvar as instruções. Tente novamente.",
           "title": "Instruções adicionais de comunicação",
@@ -10660,6 +10775,7 @@
       "actionCount": "{{count}} habilitadas",
       "deleteLabel": "Excluir conexão {{name}}",
       "availabilityHint": "Os apps conectados ficam disponíveis para todos os agentes, a menos que você altere “Quem pode usar”.",
+      "deleteCurrentTitle": "Excluir conexão?",
       "deleteTitle": "Excluir a conexão {{name}}?",
       "deleteWithOthers_one": "As credenciais salvas desta conexão serão excluídas, e os agentes perderão o acesso por ela imediatamente. Eles ainda poderão usar {{appName}} por meio de {{count}} outra conexão ativa.",
       "deleteWithOthers_other": "As credenciais salvas desta conexão serão excluídas, e os agentes perderão o acesso por ela imediatamente. Eles ainda poderão usar {{appName}} por meio de {{count}} outras conexões ativas.",

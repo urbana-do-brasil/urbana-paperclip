@@ -8,6 +8,21 @@ import ptBR from "./locales/pt-BR.json";
 import { isSupportedLocale } from "@paperclipai/shared/localization";
 
 describe("locale validation", () => {
+  it("resolves the pipeline and connection labels used by active screens", () => {
+    for (const lng of ["en", "pt-BR"] as const) {
+      for (const key of [
+        "pipelineManagement.detail.reviewQueue.title",
+        "pipelineManagement.detail.learnings.title",
+        "pipelineManagement.detail.learnings.events.forcedMove",
+        "routines.detail.fields.variables",
+        "apps.connections.deleteCurrentTitle",
+        "assistantConnection.chooseOrganization",
+        "apps.chatEndpointDetail.settings.slackTools.title",
+      ]) {
+        expect(t(key, { lng, organization: "Fixture", itemTitle: "Fixture", fromStageCopy: "", toStageCopy: "", reasonCopy: "" }), `${lng}: ${key}`).not.toBe(key);
+      }
+    }
+  });
   it("uses locale-aware plural forms for restored webhook trigger feedback", () => {
     expect(t("routines.feedback.webhookRestored", { lng: "pt-BR", count: 1 })).toBe("Gatilho de webhook restaurado");
     expect(t("routines.feedback.webhookRestored", { lng: "pt-BR", count: 2 })).toBe("2 gatilhos de webhook restaurados");

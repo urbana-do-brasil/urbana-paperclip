@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { Command } from "commander";
 import type { SupportedLocale } from "@paperclipai/shared/localization";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as prompts from "@clack/prompts";
 import {
   registerWorktreeCommands,
   worktreeCleanupCommand,
@@ -14,10 +15,16 @@ import {
   worktreeListCommand,
   worktreeMakeCommand,
   worktreeRepairCommand,
+  worktreeReseedCommand,
 } from "../commands/worktree.js";
 import { paperclipConfigSchema } from "../config/schema.js";
 import { applyOperationHelpLocalization } from "../localization/operation-help.js";
 import { cliMessage, localizeHelpTitle, parseCliLocale, setCliCommandLineShape, setCliLocale } from "../localization/index.js";
+
+vi.mock("@clack/prompts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@clack/prompts")>();
+  return { ...actual, confirm: vi.fn() };
+});
 
 const ORIGINAL_ARGV = process.argv;
 const ORIGINAL_CWD = process.cwd();
@@ -69,6 +76,7 @@ describe("worktree CLI localization", () => {
     stdoutWriteSpy = vi.spyOn(process.stdout, "write").mockImplementation((() => true) as never);
     stderrLogSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation((() => true) as never);
+    vi.mocked(prompts.confirm).mockReset().mockResolvedValue(false);
   });
 
   afterEach(() => {
@@ -852,6 +860,161 @@ describe("worktree CLI localization", () => {
         : `O caminho de destino já existe, mas não é uma worktree Git registrada: ${orphanPath}`);
       expect(fs.readFileSync(orphanMarker, "utf8")).toBe("preserve this unregistered directory\n");
       expect(execFileSync("git", ["branch", "--list", "orphan/branch"], { cwd: repoRoot, encoding: "utf8" }).trim()).toBe("");
+    }
+  });
+
+  it("localizes reseed preflight guards before prompts or database writes", async () => {
+    const sourceConfig = paperclipConfigSchema.parse({
+      $meta: {
+        version: 1,
+        updatedAt: "2026-03-09T00:00:00.000Z",
+        source: "configure",
+      },
+      database: { mode: "embedded-postgres" },
+      logging: { mode: "file" },
+      server: {},
+    });
+
+    for (const locale of ["pt-BR", "en"] as const) {
+      const repoRoot = path.join(tempRoot, "reseed", locale, "repo");
+      const targetPath = path.join(repoRoot, ".paperclip", "worktrees", "reseed-target");
+      const targetConfigPath = path.join(targetPath, ".paperclip", "config.json");
+      const targetEnvPath = path.join(targetPath, ".paperclip", ".env");
+      const targetHome = path.join(tempRoot, "reseed", locale, "target-home");
+      const targetInstanceId = `reseed-${locale.toLowerCase()}`;
+      const targetInstanceRoot = path.join(targetHome, "instances", targetInstanceId);
+      const targetDatabaseDir = path.join(targetInstanceRoot, "embedded-postgres");
+      const postmasterPidPath = path.join(targetDatabaseDir, "postmaster.pid");
+      const sourceConfigPath = path.join(tempRoot, "reseed", locale, "source-config.json");
+      const missingConfigPath = path.join(tempRoot, "reseed", locale, "missing-source.json");
+      const preservedMarker = path.join(targetInstanceRoot, "preserve.txt");
+
+      fs.mkdirSync(repoRoot, { recursive: true });
+      fs.mkdirSync(targetHome, { recursive: true });
+      execFileSync("git", ["init", "--initial-branch=main"], { cwd: repoRoot, stdio: "ignore" });
+      execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: repoRoot });
+      execFileSync("git", ["config", "user.name", "Paperclip Test"], { cwd: repoRoot });
+      fs.writeFileSync(path.join(repoRoot, "README.md"), "reseed fixture\n");
+      execFileSync("git", ["add", "README.md"], { cwd: repoRoot });
+      execFileSync("git", ["commit", "-m", "fixture"], { cwd: repoRoot, stdio: "ignore" });
+      execFileSync("git", ["worktree", "add", "--quiet", "-b", "reseed-target", targetPath, "HEAD"], { cwd: repoRoot });
+
+      const targetConfig = JSON.parse(JSON.stringify(sourceConfig)) as Record<string, any>;
+      targetConfig.database.embeddedPostgresDataDir = targetDatabaseDir;
+      targetConfig.database.embeddedPostgresPort = locale === "en" ? 54481 : 54482;
+      fs.mkdirSync(path.dirname(targetConfigPath), { recursive: true });
+      fs.writeFileSync(sourceConfigPath, JSON.stringify(sourceConfig, null, 2));
+      fs.writeFileSync(targetConfigPath, JSON.stringify(paperclipConfigSchema.parse(targetConfig), null, 2));
+      fs.writeFileSync(targetEnvPath, `PAPERCLIP_HOME=${targetHome}\nPAPERCLIP_INSTANCE_ID=${targetInstanceId}\n`);
+      fs.mkdirSync(targetDatabaseDir, { recursive: true });
+      fs.writeFileSync(postmasterPidPath, `${process.pid}\n${targetDatabaseDir}\n5432\n5432\n`);
+      fs.writeFileSync(preservedMarker, "keep target data\n");
+      process.chdir(repoRoot);
+      setCliLocale(locale);
+
+      const before = {
+        config: fs.readFileSync(targetConfigPath, "utf8"),
+        env: fs.readFileSync(targetEnvPath, "utf8"),
+        pid: fs.readFileSync(postmasterPidPath, "utf8"),
+        marker: fs.readFileSync(preservedMarker, "utf8"),
+      };
+      const expectErrorAndPreservedData = async (
+        options: Parameters<typeof worktreeReseedCommand>[0],
+        expected: string,
+      ) => {
+        let actual = "";
+        try {
+          await worktreeReseedCommand(options);
+        } catch (error) {
+          actual = error instanceof Error ? error.message : String(error);
+        }
+        expect(actual).toBe(expected);
+        expect(fs.readFileSync(targetConfigPath, "utf8")).toBe(before.config);
+        expect(fs.readFileSync(targetEnvPath, "utf8")).toBe(before.env);
+        expect(fs.readFileSync(postmasterPidPath, "utf8")).toBe(before.pid);
+        expect(fs.readFileSync(preservedMarker, "utf8")).toBe(before.marker);
+        expect(fs.existsSync(path.join(targetPath, ".paperclip", "seed-pending"))).toBe(false);
+        expect(fs.existsSync(path.join(targetPath, ".paperclip", "seed-manifest.json"))).toBe(false);
+      };
+
+      await expectErrorAndPreservedData({
+        fromConfig: sourceConfigPath,
+        to: targetPath,
+        seedMode: "fast",
+        yes: true,
+      }, locale === "en"
+        ? 'Unsupported seed mode "fast". Expected one of: minimal, full.'
+        : 'Modo de cópia não suportado "fast". Opções válidas: minimal, full.');
+
+      await expectErrorAndPreservedData({
+        fromConfig: targetConfigPath,
+        to: targetPath,
+        yes: true,
+      }, locale === "en"
+        ? "Source and target Paperclip configs are the same. Choose different --from/--to values."
+        : "As configurações de origem e destino do Paperclip são iguais. Escolha valores diferentes para --from/--to.");
+
+      await expectErrorAndPreservedData({
+        fromConfig: missingConfigPath,
+        to: targetPath,
+        yes: true,
+      }, locale === "en"
+        ? `Source config not found at ${missingConfigPath}.`
+        : `Configuração de origem não encontrada em ${missingConfigPath}.`);
+
+      await expectErrorAndPreservedData({
+        from: "current",
+        fromConfig: sourceConfigPath,
+        to: targetPath,
+        yes: true,
+      }, locale === "en"
+        ? "Use either --from <worktree> or --from-config/--from-data-dir/--from-instance, not both."
+        : "Use --from <worktree> ou --from-config/--from-data-dir/--from-instance, não as duas opções.");
+
+      await expectErrorAndPreservedData({ to: targetPath, yes: true }, locale === "en"
+        ? "Pass --from <worktree> or --from-config/--from-instance explicitly so the reseed source is unambiguous."
+        : "Informe --from <worktree> ou --from-config/--from-instance para indicar a origem da cópia.");
+
+      await expectErrorAndPreservedData({
+        fromConfig: sourceConfigPath,
+        to: targetPath,
+        yes: true,
+      }, locale === "en"
+        ? `Target worktree database appears to be running (pid ${process.pid}). Stop Paperclip in ${targetPath} before reseeding, or re-run with --allow-live-target if you want to override this guard.`
+        : `O banco da worktree de destino parece estar em execução (pid ${process.pid}). Pare o Paperclip em ${targetPath} antes de copiar novamente ou use --allow-live-target para ignorar esta proteção.`);
+
+      const validPidFile = before.pid;
+      const invalidPidFile = "not-a-pid\n";
+      fs.writeFileSync(postmasterPidPath, invalidPidFile);
+      before.pid = invalidPidFile;
+      await expectErrorAndPreservedData({
+        fromConfig: sourceConfigPath,
+        to: targetPath,
+        yes: true,
+      }, locale === "en"
+        ? `Invalid PostgreSQL postmaster PID file at ${postmasterPidPath}.`
+        : `Arquivo de PID postmaster do PostgreSQL inválido em ${postmasterPidPath}.`);
+
+      fs.writeFileSync(postmasterPidPath, validPidFile);
+      before.pid = validPidFile;
+      const killSpy = vi.spyOn(process, "kill");
+      killSpy.mockImplementation((() => {
+        const error = new Error("permission denied") as NodeJS.ErrnoException;
+        error.code = "EPERM";
+        throw error;
+      }) as typeof process.kill);
+      vi.mocked(prompts.confirm).mockClear();
+      try {
+        await expectErrorAndPreservedData({
+          fromConfig: sourceConfigPath,
+          to: targetPath,
+        }, locale === "en"
+          ? `Target worktree database appears to be running (pid ${process.pid}). Stop Paperclip in ${targetPath} before reseeding, or re-run with --allow-live-target if you want to override this guard.`
+          : `O banco da worktree de destino parece estar em execução (pid ${process.pid}). Pare o Paperclip em ${targetPath} antes de copiar novamente ou use --allow-live-target para ignorar esta proteção.`);
+        expect(prompts.confirm).not.toHaveBeenCalled();
+      } finally {
+        killSpy.mockRestore();
+      }
     }
   });
 });

@@ -7710,6 +7710,7 @@
     },
     "breadcrumbConnectors": "Connectors",
     "selectOrganization": "Select an organization to connect an assistant.",
+    "chooseOrganization": "Choose {{organization}} when connecting your assistant.",
     "organizationDescription": "Connect your assistant to Paperclip. Review work, create tasks, and follow up using your account’s access to this organization.",
     "loadingSetup": "Loading assistant setup…",
     "setupError": {
@@ -9498,6 +9499,121 @@
         "httpsPrerequisite": "Configure a public HTTPS URL for this Paperclip instance before connecting Telegram.",
         "reconnect": "Reconnect bot",
         "connect": "Connect bot"
+      },
+      "slack": {
+        "steps": {
+          "chooseAgent": "Choose agent",
+          "configurationToken": "App configuration access token",
+          "installApp": "Install Slack app",
+          "sendMessage": "Send a message"
+        },
+        "appDetails": {
+          "advanced": "Advanced",
+          "appName": "Slack app name",
+          "appNameHelp": "The name of your app in Slack’s app directory and settings.",
+          "appNameHelpAria": "Help with Slack app name",
+          "botName": "Bot display name",
+          "botNameHelp": "The name people see when your bot sends a message.",
+          "botNameHelpAria": "Help with bot display name",
+          "command": "Slash command",
+          "commandHelp": "The command people type in Slack to talk to this agent.",
+          "commandHelpAria": "Help with slash command",
+          "saveFailed": "Couldn’t save the Slack app details. Try again before continuing.",
+          "validation": {
+            "appNameRequired": "Enter a Slack app name.",
+            "appNameTooLong": "Use 35 characters or fewer for the Slack app name.",
+            "botNameRequired": "Enter a bot display name.",
+            "botNameTooLong": "Use 80 characters or fewer for the bot display name.",
+            "botNameFormat": "Use lowercase letters, numbers, dots, hyphens, or underscores for the bot name.",
+            "commandRequired": "Enter a slash command.",
+            "commandTooLong": "Use 32 characters or fewer for the slash command.",
+            "commandFormat": "Start the command with / and use lowercase letters, numbers, hyphens, or underscores."
+          }
+        },
+        "automatic": {
+          "setupErrorFallback": "Check the required values and Slack access, then try again.",
+          "preparingWindowTitle": "Preparing Slack installation",
+          "preparingWindowBody": "Preparing your Slack installation…",
+          "popupBlockedCreate": "Select Install in Slack to open the installation page.",
+          "popupBlockedReopen": "Select Install in Slack to reopen the installation page.",
+          "openAppSettings": "Open Slack app settings",
+          "confirmNoAppCreated": "I checked Slack and no app was created. Create a new app.",
+          "getConfigurationToken": "Get your App configuration access token",
+          "tokenInstructions": {
+            "slackTokenSection": "Your App Configuration Tokens",
+            "slackGenerateToken": "Generate Token",
+            "slackAccessToken": "Access Token",
+            "findTokenSection": "In Slack app settings, find",
+            "andChoose": "and choose",
+            "selectWorkspace": "Select the workspace where you want to install your bot.",
+            "copyToken": "Copy the",
+            "andPaste": "and paste it below.",
+            "usage": "Paperclip uses this token to create your app"
+          },
+          "configurationTokenLabel": "App configuration access token",
+          "creatingStatus": "Creating your Slack app. You can return to this saved setup.",
+          "yourApp": "Your Slack app",
+          "createdStatus": "is created.",
+          "approveInstallationDescription": "Approve installation with your Slack account. Paperclip will link it to your signed-in Paperclip account and send you a welcome DM.",
+          "credentialsSavedDescription": "Your installation credentials are saved. Retry connecting to finish setup. If Slack access has changed, authorize the same app again.",
+          "authorizeAgain": "Authorize in Slack again",
+          "createManually": "Create manually",
+          "useExistingApp": "Use an existing app",
+          "retryConfiguration": "Retry app configuration",
+          "continueToInstallation": "Continue to installation",
+          "createApp": "Create Slack app",
+          "retryConnecting": "Retry connecting",
+          "installInSlack": "Install in Slack",
+          "registrationErrors": {
+            "generic": "Slack setup could not be completed. Resume setup and try again.",
+            "slack_configuration_token_invalid": "Slack rejected the app configuration access token. Generate a new access token and try again.",
+            "slack_manifest_invalid": "Slack rejected this app configuration. Check the app details or use manual setup.",
+            "slack_manifest_update_pending": "Your Slack app is saved, but its event settings still need to be applied. Enter an app configuration access token to retry configuring the same app.",
+            "slack_setup_rate_limited": "Slack is limiting setup requests. Wait a minute and try again.",
+            "slack_setup_permission_denied": "Slack requires permission to create or install this app. Ask your workspace administrator.",
+            "slack_creation_uncertain": "Slack may have created the app. Check your Slack app settings before trying again, or connect the existing app manually.",
+            "slack_install_declined": "Installation was not approved. You can install the same app when you are ready.",
+            "slack_install_expired": "Slack authorization expired. Install the same app again to continue.",
+            "slack_install_failed": "Slack installation could not be completed. Authorize the same app again.",
+            "slack_install_identity_mismatch": "Slack returned a different app, workspace, or bot. Install the app created for this connection.",
+            "slack_install_scopes_missing": "Slack did not grant all required bot permissions. Install the app again and approve its requested permissions.",
+            "slack_bot_already_connected": "This Slack bot is already connected to Paperclip. Resume its existing connection or use a different app.",
+            "slack_configuration_incomplete": "The app is installed, but Paperclip could not finish connecting it. Retry connecting the saved installation.",
+            "slack_install_account_missing": "Slack did not identify your account. Authorize the same app again to connect your Slack account.",
+            "slack_install_account_conflict": "This Slack account already has an existing link. Manage account links in connection settings, or authorize with your own Slack account."
+          }
+        },
+        "errors": {
+          "finishSetup": "Couldn’t finish setup",
+          "tryFinishAgain": "Try finishing setup again.",
+          "connectionFailed": "Connection failed"
+        },
+        "success": {
+          "heading": "Success",
+          "description": "You can now talk to {{agent}} in Slack",
+          "done": "Done"
+        },
+        "verification": {
+          "openAppSettings": "Open Slack app Settings",
+          "andChooseApp": "and choose",
+          "chooseProviderSection": "Choose {{section}}.",
+          "requestUrlInstructions": "Beside the prefilled {{requestUrl}}, click {{retry}} if it isn’t verified. Save changes if Slack asks.",
+          "sendMessageHeading": "Send a message to your agent",
+          "openSlack": "Open Slack",
+          "connectionWorking": "Your Slack connection is working.",
+          "finishingSetup": "Finishing setup…",
+          "checkFailed": "Couldn’t check verification. We’ll keep trying; check your connection if this continues.",
+          "waitingForMessage": "Waiting for your message…",
+          "didntWork": "Didn’t work?",
+          "troubleshooting": "If the Request URL is missing or different, paste this URL into Event Subscriptions. If verification fails, check that your public HTTPS server is reachable and your Signing Secret is correct.",
+          "webhookUrl": "Paperclip webhook URL",
+          "continue": "Continue"
+        },
+        "publicHttps": {
+          "title": "Public HTTPS URL required",
+          "body": "Slack needs a public HTTPS URL to send messages to Paperclip. Configure one for this instance before creating or connecting your Slack app.",
+          "guide": "Learn how to set up HTTPS"
+        }
       }
     },
     "githubChatSetup": {
@@ -9739,7 +9855,6 @@
         "agentAvatar": "Agent avatar",
         "loadingAgentAvatar": "Loading agent avatar…",
         "agentAvatarLoadFailed": "Couldn’t load the agent’s avatar.",
-        "slackTools": "Slack tools",
         "instructions": {
           "saveFailedFallback": "Couldn’t save instructions. Try again.",
           "title": "Additional communication instructions",
@@ -10292,7 +10407,6 @@
       "stepConnections": "Connections",
       "stepOrder": "Order",
       "connections": "Connections",
-      "connectionOrder": "Connection order",
       "managePool": "Manage connection pool",
       "removing": "Removing…",
       "loadingError": "Could not load connection pool data.",
@@ -10438,6 +10552,7 @@
       "actionCount": "{{count}} on",
       "deleteLabel": "Delete {{name}} connection",
       "availabilityHint": "Apps you connect become available to every agent unless you change “Who can use it”.",
+      "deleteCurrentTitle": "Delete connection?",
       "deleteTitle": "Delete {{name}} connection?",
       "deleteWithOthers_one": "This connection’s saved credentials are deleted and agents lose access through it immediately. Agents can still use {{appName}} through {{count}} other active connection.",
       "deleteWithOthers_other": "This connection’s saved credentials are deleted and agents lose access through it immediately. Agents can still use {{appName}} through {{count}} other active connections.",

@@ -3747,3 +3747,14 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Setup GitHub e identidade localizados; testes PT-BR verificam seleção de agente, permissões, conclusão e menção original. A primeira rodada revelou chaves de contagem e cópia ausentes, corrigidas antes da repetição. Outros provedores e estados condicionais seguem pendentes.
 - `worktree repair --no-seed`: fixtures descartáveis verificam idempotência, proteção de diretório não registrado e preservação de erros externos; 20 testes direcionados e typecheck CLI passaram.
 - Integração GitHub, catálogos, repair e contratos workspace: **57/57 testes**; typechecks UI/CLI passaram. Checkpoint: **421/440 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Referências e duplicatas de catálogo — 3.9f3k/3.10u/7.1c
+
+- Auditoria de referências revelou que fila de revisão e learnings usavam `pipelineManagement.*` enquanto os catálogos os mantêm em `pipelineManagement.detail.*`; referências e fixtures foram corrigidas. Corrigidos também rótulo de variáveis de rotina e duas mensagens ausentes de conexões. Seis suítes: 76/76; verificação inclui resolução real de chaves nos dois idiomas.
+- Duas colisões de nome em inglês e uma em PT-BR foram removidas. Novo gate rejeita chaves duplicadas no JSON antes do parse; testes negativos incluem nomes escapados, objetos aninhados e arrays. O scanner literal não prova chaves dinâmicas ou toda a interface. Checkpoint: **424/443 tarefas**, 19 caixas abertas incluindo agregadoras.
+
+### Setup Slack, reseed e contratos de prompt
+
+- Setup automático Slack localizado em PT-BR/en; testes preservam token, URLs, escopos e payloads. Outros caminhos e flags seguem abertos.
+- Reseed: mensagens e validações localizadas; PID inválido interrompe, EPERM é conservador e apenas ENOENT/ESRCH indicam ausência. Fixtures verificam guards sem iniciar banco; seed real permanece pendente.
+- Contratos JSON/erro das três entradas de prompt comparados com fixtures, sem execução de backend/modelo. Rodada integrada: **112/112 testes em sete arquivos**. Checkpoint: **427/446 tarefas**, 19 caixas abertas incluindo agregadoras.

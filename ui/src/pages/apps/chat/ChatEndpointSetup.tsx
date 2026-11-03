@@ -122,7 +122,12 @@ export function ChatConnectionPurpose({ provider, onChat, onTools }: {
   }, [setBreadcrumbs, t]);
   return (
       <div className="max-w-2xl space-y-6">
-        <ChatSetupNavigation labels={provider === "slack" ? ["Choose agent", "App configuration access token", "Install Slack app", "Send a message"] : undefined} step={0} availableStep={0} onSelect={onChat} />
+        <ChatSetupNavigation labels={provider === "slack" ? [
+          t("apps.chatEndpointSetup.slack.steps.chooseAgent"),
+          t("apps.chatEndpointSetup.slack.steps.configurationToken"),
+          t("apps.chatEndpointSetup.slack.steps.installApp"),
+          t("apps.chatEndpointSetup.slack.steps.sendMessage"),
+        ] : undefined} step={0} availableStep={0} onSelect={onChat} />
         <div>
           <h1 className="text-xl font-bold">{t("apps.chatEndpointSetup.purpose.heading")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -443,11 +448,11 @@ function ChatSdkEndpointSetup() {
     },
     onError: (error) =>
       pushToast({
-        title: provider === "slack" ? "Couldn't finish setup" : "Test not complete",
+        title: provider === "slack" ? t("apps.chatEndpointSetup.slack.errors.finishSetup") : "Test not complete",
         body:
           error instanceof Error
             ? error.message
-            : provider === "slack" ? "Try finishing setup again." : "Send the provider message, then try again.",
+            : provider === "slack" ? t("apps.chatEndpointSetup.slack.errors.tryFinishAgain") : "Send the provider message, then try again.",
         tone: "error",
       }),
   });
@@ -517,7 +522,12 @@ function ChatSdkEndpointSetup() {
   return (
     <div className={automaticSlackComplete && step === tryStep ? "mx-auto w-full max-w-2xl space-y-6" : "max-w-2xl space-y-6"}>
       <ChatSetupNavigation
-        labels={isSlack ? automaticSlack ? ["Choose agent", "App configuration access token", "Install Slack app", "Send a message"] : ["Choose agent", "Create Slack app", "Add credentials", "Verify Slack connection", "Connect your Slack account", "Try it"] : undefined}
+        labels={isSlack ? automaticSlack ? [
+          t("apps.chatEndpointSetup.slack.steps.chooseAgent"),
+          t("apps.chatEndpointSetup.slack.steps.configurationToken"),
+          t("apps.chatEndpointSetup.slack.steps.installApp"),
+          t("apps.chatEndpointSetup.slack.steps.sendMessage"),
+        ] : ["Choose agent", "Create Slack app", "Add credentials", "Verify Slack connection", "Connect your Slack account", "Try it"] : undefined}
         step={step}
         availableStep={availableStep}
         disabled={automaticBusy || createEndpoint.isPending || saveSlackDetails.isPending || setupAction.isPending || generateSetupSecret.isPending || testConnection.isPending}
@@ -547,7 +557,7 @@ function ChatSdkEndpointSetup() {
               <SlackAppDetails value={slackDetails} readOnly={!slackDetailsEditable || createEndpoint.isPending}
                 onChange={app => setSlackDraft({ agentId, app })}
                 onBlur={() => void persistSlackDetails().catch(() => {})} />
-              {saveSlackDetails.isError && <p role="alert" className="text-sm text-destructive">Couldn&apos;t save the Slack app details. Try again before continuing.</p>}
+              {saveSlackDetails.isError && <p role="alert" className="text-sm text-destructive">{t("apps.chatEndpointSetup.slack.appDetails.saveFailed")}</p>}
             </SlackSetupAdvanced>}
             {provider === "github" && <GitHubAgentTrustWarning agent={selectedAgent} />}
             <SetupWizardFooter disabled={createEndpoint.isPending || saveSlackDetails.isPending} onSaveExit={() => void continueFromAgent(true)}>
@@ -570,7 +580,7 @@ function ChatSdkEndpointSetup() {
                 role="alert"
                 className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
               >
-                <p className="font-medium">Connection failed</p>
+                <p className="font-medium">{isSlack ? t("apps.chatEndpointSetup.slack.errors.connectionFailed") : "Connection failed"}</p>
                 <p className="mt-1">{setupError}</p>
               </div>
             ) : null}
@@ -628,15 +638,15 @@ function ChatSdkEndpointSetup() {
             <div className="flex flex-col items-center gap-3">
               <h1 className="flex items-center gap-2 text-2xl font-bold">
                 <CheckCircle2 aria-hidden="true" className="size-6 text-(--status-task-done)" />
-                Success
+                {t("apps.chatEndpointSetup.slack.success.heading")}
               </h1>
               <p className="flex flex-wrap items-center justify-center gap-2 text-base text-muted-foreground">
-                <span>You can now talk to {selectedAgent?.name ?? endpoint.assignedAgentName} in Slack</span>
+                <span>{t("apps.chatEndpointSetup.slack.success.description", { agent: selectedAgent?.name ?? endpoint.assignedAgentName })}</span>
                 <img src="/brands/apps/slack.svg" alt="" aria-hidden="true" className="size-6" />
               </p>
             </div>
             <Button disabled={testConnection.isPending} onClick={() => testConnection.mutate()}>
-              {testConnection.isPending && <Loader2 className="size-4 animate-spin" />}Done
+              {testConnection.isPending && <Loader2 className="size-4 animate-spin" />}{t("apps.chatEndpointSetup.slack.success.done")}
             </Button>
           </div> : <TryStep
             endpointId={endpoint.id}
@@ -1490,42 +1500,42 @@ function ProviderConnectStep({
       </div>
     );
   const slackRequestUrlInstructions = <ol className="list-decimal space-y-2 pl-5 text-sm">
-      <li><a className="underline underline-offset-4" href={endpoint.setup?.slackRegistration?.appId ? `https://api.slack.com/apps/${encodeURIComponent(endpoint.setup.slackRegistration.appId)}/event-subscriptions` : "https://api.slack.com/apps"} target="_blank" rel="noopener noreferrer">Open Slack app Settings <ExternalLink className="inline size-3" /></a> and choose <strong>{slackApp.appName}</strong>.</li>
-      <li>Choose <strong>Event Subscriptions</strong>.</li>
-      <li>Beside the prefilled <strong>Request URL</strong>, click <strong>Retry</strong> if it isn&apos;t verified. Save changes if Slack asks.</li>
+      <li><a className="underline underline-offset-4" href={endpoint.setup?.slackRegistration?.appId ? `https://api.slack.com/apps/${encodeURIComponent(endpoint.setup.slackRegistration.appId)}/event-subscriptions` : "https://api.slack.com/apps"} target="_blank" rel="noopener noreferrer">{t("apps.chatEndpointSetup.slack.verification.openAppSettings")} <ExternalLink className="inline size-3" /></a>{" "}{t("apps.chatEndpointSetup.slack.verification.andChooseApp")} <strong>{slackApp.appName}</strong>.</li>
+      <li>{t("apps.chatEndpointSetup.slack.verification.chooseProviderSection", { section: "Event Subscriptions" })}</li>
+      <li>{t("apps.chatEndpointSetup.slack.verification.requestUrlInstructions", { requestUrl: "Request URL", retry: "Retry" })}</li>
     </ol>;
   if (slackStage === "finish")
     return (
       <div className="space-y-5">
         <div>
-          <h1 className="text-xl font-bold">{automaticSlack ? "Send a message to your agent" : "Verify Slack connection"}</h1>
+          <h1 className="text-xl font-bold">{automaticSlack ? t("apps.chatEndpointSetup.slack.verification.sendMessageHeading") : "Verify Slack connection"}</h1>
           {!automaticSlack && <p className="mt-1 text-sm text-muted-foreground">Slack needs to confirm that it can reach your Paperclip instance.</p>}
         </div>
-        {automaticSlack ? <Button asChild variant="outline"><a href={endpoint.setup?.slackAccount?.dmChannelId && endpoint.providerAccountId ? `https://app.slack.com/client/${encodeURIComponent(endpoint.providerAccountId)}/${encodeURIComponent(endpoint.setup.slackAccount.dmChannelId)}` : endpoint.setup?.providerUrl ?? "https://app.slack.com"} target="_blank" rel="noopener noreferrer">Open Slack <ExternalLink className="size-4" /></a></Button> : slackRequestUrlInstructions}
+        {automaticSlack ? <Button asChild variant="outline"><a href={endpoint.setup?.slackAccount?.dmChannelId && endpoint.providerAccountId ? `https://app.slack.com/client/${encodeURIComponent(endpoint.providerAccountId)}/${encodeURIComponent(endpoint.setup.slackAccount.dmChannelId)}` : endpoint.setup?.providerUrl ?? "https://app.slack.com"} target="_blank" rel="noopener noreferrer">{t("apps.chatEndpointSetup.slack.verification.openSlack")} <ExternalLink className="size-4" /></a></Button> : slackRequestUrlInstructions}
         {endpoint.setup?.webhookVerifiedAt ? (
           <p role="status" className="flex items-center gap-2 text-sm">
             <CheckCircle2 className="size-4 text-(--status-task-done)" />
-            Your Slack connection is working.{pending ? automaticSlack ? " Finishing setup…" : " Opening the message test…" : ""}
+            {automaticSlack ? t("apps.chatEndpointSetup.slack.verification.connectionWorking") : "Your Slack connection is working."}{pending ? automaticSlack ? ` ${t("apps.chatEndpointSetup.slack.verification.finishingSetup")}` : " Opening the message test…" : ""}
           </p>
         ) : slackVerificationError ? (
-          <p role="alert" className="text-sm text-destructive">Couldn&apos;t check verification. We&apos;ll keep trying; check your connection if this continues.</p>
+          <p role="alert" className="text-sm text-destructive">{automaticSlack ? t("apps.chatEndpointSetup.slack.verification.checkFailed") : "Couldn&apos;t check verification. We&apos;ll keep trying; check your connection if this continues."}</p>
         ) : (
           <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> {automaticSlack ? "Waiting for your message…" : "Waiting for Slack. We’ll continue automatically."}
+            <Loader2 className="size-4 animate-spin" /> {automaticSlack ? t("apps.chatEndpointSetup.slack.verification.waitingForMessage") : "Waiting for Slack. We’ll continue automatically."}
           </p>
         )}
-        <SlackSetupAdvanced label={automaticSlack ? "Didn’t work?" : "Troubleshooting"}>
+        <SlackSetupAdvanced label={automaticSlack ? t("apps.chatEndpointSetup.slack.verification.didntWork") : "Troubleshooting"}>
           {automaticSlack && slackRequestUrlInstructions}
-          <p className="text-muted-foreground">If the Request URL is missing or different, paste this URL into Event Subscriptions. If verification fails, check that your public HTTPS server is reachable and your Signing Secret is correct.</p>
-          {endpointValue("Paperclip webhook URL", endpoint.setup?.webhookUrl)}
+          <p className="text-muted-foreground">{automaticSlack ? t("apps.chatEndpointSetup.slack.verification.troubleshooting") : "If the Request URL is missing or different, paste this URL into Event Subscriptions. If verification fails, check that your public HTTPS server is reachable and your Signing Secret is correct."}</p>
+          {endpointValue(automaticSlack ? t("apps.chatEndpointSetup.slack.verification.webhookUrl") : "Paperclip webhook URL", endpoint.setup?.webhookUrl)}
         </SlackSetupAdvanced>
         <div className="flex items-center justify-between gap-3">
-          <Button variant="ghost" className="text-muted-foreground" onClick={() => navigate("/apps")}>Save &amp; exit</Button>
+          <Button variant="ghost" className="text-muted-foreground" onClick={() => navigate("/apps")}>{t("common.saveAndExit")}</Button>
           {(!automaticSlack || endpoint.setup?.webhookVerifiedAt) && <Button disabled={pending || !endpoint.setup?.webhookVerifiedAt} onClick={() =>
             endpoint.setup?.step === "provider_setup" ? onAction("verify") : onSlackVerificationContinue()
           }>
             {pending && <Loader2 className="size-4 animate-spin" />}
-            Continue
+            {t("apps.chatEndpointSetup.slack.verification.continue")}
           </Button>}
         </div>
       </div>
@@ -1537,10 +1547,12 @@ function ProviderConnectStep({
         <div role="alert" className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
           <AlertTriangle className="size-5 shrink-0 text-destructive" />
           <div className="space-y-1">
-            <p className="text-sm font-semibold">Public HTTPS URL required</p>
+            <p className="text-sm font-semibold">{automaticSlack ? t("apps.chatEndpointSetup.slack.publicHttps.title") : "Public HTTPS URL required"}</p>
             <p className="text-sm">
+              {automaticSlack ? t("apps.chatEndpointSetup.slack.publicHttps.body") : <>
               Slack needs a public HTTPS URL to send messages to Paperclip.
               Configure one for this instance before creating or connecting your Slack app.
+              </>}
             </p>
             <a
               href="https://docs.paperclip.ing/reference/deploy/https/"
@@ -1548,13 +1560,15 @@ function ProviderConnectStep({
               rel="noopener noreferrer"
               className="text-sm underline underline-offset-4"
             >
-              Learn how to set up HTTPS
+              {automaticSlack ? t("apps.chatEndpointSetup.slack.publicHttps.guide") : "Learn how to set up HTTPS"}
             </a>
           </div>
         </div>
       )}
       <div>
-        <h1 className="text-xl font-bold">{slackStage === "app" ? automaticSlack ? "App configuration access token" : "Create a Slack app" : automaticSlack ? "Install Slack app" : "Add Slack credentials"}</h1>
+        <h1 className="text-xl font-bold">{automaticSlack
+          ? t(slackStage === "app" ? "apps.chatEndpointSetup.slack.steps.configurationToken" : "apps.chatEndpointSetup.slack.steps.installApp")
+          : slackStage === "app" ? "Create a Slack app" : "Add Slack credentials"}</h1>
         {repairing && !automaticSlack && (
           <p className="mt-1 text-sm text-muted-foreground">
             Reconnect verifies or replaces credentials for this same Slack app. It does not reinstall the app or change its workspace or channel membership. Leave credentials blank to reuse the saved values.

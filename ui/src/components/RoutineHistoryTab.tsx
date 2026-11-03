@@ -1161,7 +1161,7 @@ function computeFieldChanges(
   );
   if (JSON.stringify(oldRoutine.variables) !== JSON.stringify(newRoutine.variables)) {
     changes.push({
-      field: t("routines.detail.history.fields.variables"),
+      field: t("routines.detail.fields.variables"),
       oldValue: summarizeVariables(oldRoutine.variables, t("routines.detail.history.diff.none")),
       newValue: summarizeVariables(newRoutine.variables, t("routines.detail.history.diff.none")),
     });

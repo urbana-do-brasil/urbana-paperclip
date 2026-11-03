@@ -70,8 +70,8 @@ beforeAll(() => {
 });
 
 beforeEach(async () => {
-  i18n.addResourceBundle("pt-BR", "translation", portugueseMessages, true, true);
-  i18n.addResourceBundle("en", "translation", englishMessages, true, true);
+  i18n.addResourceBundle("pt-BR", "translation", { pipelineManagement: { detail: portugueseMessages.pipelineManagement } }, true, true);
+  i18n.addResourceBundle("en", "translation", { pipelineManagement: { detail: englishMessages.pipelineManagement } }, true, true);
   await i18n.changeLanguage("pt-BR");
 });
 

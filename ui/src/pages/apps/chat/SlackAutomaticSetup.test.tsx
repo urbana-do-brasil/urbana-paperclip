@@ -3,6 +3,7 @@ import { act } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import type { ChatEndpoint } from "@/api/chatEndpoints";
 import { SlackAutomaticSetup } from "./SlackAutomaticSetup";
 
@@ -20,6 +21,7 @@ describe("automatic Slack installation handoff", () => {
   const onContinue = vi.fn();
   beforeEach(async () => {
     vi.resetAllMocks();
+    await i18n.changeLanguage("en");
     popup = { opener: window, closed: false, document: { title: "", body: { textContent: "" } }, location: { replace: vi.fn() }, close: vi.fn() };
     vi.spyOn(window, "open").mockReturnValue(popup as unknown as Window);
     api.createSlackApp.mockResolvedValue(created);
@@ -110,8 +112,9 @@ describe("automatic Slack setup actions", () => {
   const endpoint: ChatEndpoint = { id: "endpoint", companyId: "company", provider: "slack", status: "draft", assignedAgentId: "agent", assignedAgentName: "Maya", allowUnlinkedPeople: false, setup: { step: "provider_setup", slackSetupMethod: "automatic" } };
   const saved: ChatEndpoint = { ...endpoint, setup: { ...endpoint.setup!, slackRegistration: { status: "install", appId: "AEXAMPLE" } } };
   const onSaved = vi.fn(), onContinue = vi.fn(), onManual = vi.fn(), saveDetails = vi.fn(), onBusy = vi.fn();
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetAllMocks();
+    await i18n.changeLanguage("en");
     vi.spyOn(window, "open").mockReturnValue(null);
     localStorage.clear(); sessionStorage.clear();
     container = document.createElement("div"); document.body.append(container); root = createRoot(container);
@@ -134,6 +137,31 @@ describe("automatic Slack setup actions", () => {
     const button = [...container.querySelectorAll("button")].find(node => node.textContent?.trim() === label)!;
     expect(button).toBeDefined(); flushSync(() => button.click());
   }
+  it.each([
+    ["en", "Get your App configuration access token", "In Slack app settings, find", "Paperclip uses this token to create your app", "Create Slack app", "Select Install in Slack to open the installation page."],
+    ["pt-BR", "Obter token de configuração do App", "Nas configurações do app Slack, encontre", "O Paperclip usa este token para criar seu app", "Criar app do Slack", "Selecione Instalar no Slack para abrir a página de instalação."],
+  ])("localizes automatic Slack setup in %s and preserves the registration payload", async (locale, tokenButton, tokenInstructions, tokenUse, createButton, popupBlockedMessage) => {
+    await i18n.changeLanguage(locale);
+    render();
+    expect(container.textContent).toContain(tokenButton);
+    expect(container.textContent).toContain(tokenInstructions);
+    expect(container.textContent).toContain("Your App Configuration Tokens");
+    expect(container.textContent).toContain("Generate Token");
+    expect(container.textContent).toContain(tokenUse);
+    expect(container.querySelector('a[href="https://api.slack.com/apps"]')).not.toBeNull();
+    expect(container.querySelector("input[type=password]")?.getAttribute("aria-describedby")).toBe("slack-configuration-token-help");
+
+    enter("  config-token-synthetic  ");
+    click(createButton);
+    await settle();
+    expect(api.createSlackApp).toHaveBeenCalledWith("endpoint", expect.objectContaining({
+      requestId: expect.any(String),
+      credentials: { configurationToken: "config-token-synthetic" },
+    }));
+    expect(container.textContent).toContain(popupBlockedMessage);
+    expect(onContinue).toHaveBeenCalledOnce();
+    expect(api.installSlackApp).not.toHaveBeenCalled();
+  });
   it("clears the token, prevents duplicate clicks, and advances only from saved app identity", async () => {
     let complete!: (value: ChatEndpoint) => void;
     api.createSlackApp.mockImplementation(() => new Promise(resolve => { complete = resolve; }));

@@ -427,7 +427,10 @@ async function useTestPortugueseResources() {
   previousLanguage = i18n.language;
   previousPortugueseTranslation = i18n.getResourceBundle("pt-BR", "translation");
   previousEnglishTranslation = i18n.getResourceBundle("en", "translation");
-  i18n.addResourceBundle("pt-BR", "translation", pageMessages, true, true);
+  const { reviewQueue, learnings, ...other } = pageMessages.pipelineManagement;
+  i18n.addResourceBundle("pt-BR", "translation", {
+    pipelineManagement: { ...other, detail: { ...other.detail, reviewQueue, learnings } },
+  }, true, true);
   await i18n.changeLanguage("pt-BR");
 }
 
@@ -444,7 +447,9 @@ async function restoreI18n() {
 }
 
 async function useTestEnglishReviewQueueResources() {
-  i18n.addResourceBundle("en", "translation", englishReviewQueueMessages, true, true);
+  i18n.addResourceBundle("en", "translation", {
+    pipelineManagement: { detail: englishReviewQueueMessages.pipelineManagement },
+  }, true, true);
   await i18n.changeLanguage("en");
 }
 
