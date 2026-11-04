@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { i18n } from "../i18n";
 import { DEFAULT_LOCALE } from "../i18n/locales";
-import type { Agent, Environment, UserSecretDefinition } from "@paperclipai/shared";
+import type { Agent, CodexAccountBindingClaim, Environment, UserSecretDefinition } from "@paperclipai/shared";
 import { getEnvironmentCapabilities } from "@paperclipai/shared";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ToastProvider } from "../context/ToastContext";
@@ -376,6 +376,41 @@ async function renderCreateForm(
 
   await flushReact();
   return { container, root, onChange };
+}
+
+async function renderAdapterLoginPanel(
+  adapterType: string,
+  onAccountBinding?: (claim: CodexAccountBindingClaim) => void | Promise<void>,
+) {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root = createRoot(container);
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  await act(async () => {
+    root.render(
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <TooltipProvider>
+            <AdapterLoginPanel
+              companyId="company-1"
+              adapterType={adapterType}
+              environmentId="sandbox-1"
+              onAccountBinding={onAccountBinding}
+            />
+          </TooltipProvider>
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+  });
+
+  await flushReact();
+  return { container, root };
 }
 
 const AUTH_MISSING_RESULT = {
@@ -801,6 +836,87 @@ describe("AgentConfigForm environment selector", () => {
     expect(result.container.textContent).toContain(extraArgsLabel);
     expect(result.container.querySelector<HTMLInputElement>('input[placeholder="codex"]')?.value).toBe("/usr/local/bin/codex");
     expect(result.container.querySelector<HTMLInputElement>(`input[placeholder="${extraArgsPlaceholder}"]`)?.value).toBe("--verbose,--foo=bar");
+  });
+
+  it.each([
+    {
+      locale: "en",
+      title: "Sign in to OpenAI",
+      signIn: "Sign in",
+      cancel: "Cancel",
+      instruction: "Copy the code, then open the authentication page.",
+      codeLabel: "1. Code",
+      urlLabel: "2. Authentication URL",
+      copyCode: "Copy code",
+      copyUrl: "Copy URL",
+      openUrl: "Open the authentication page",
+    },
+    {
+      locale: "pt-BR",
+      title: "Entrar na conta OpenAI",
+      signIn: "Entrar",
+      cancel: "Cancelar",
+      instruction: "Copie o código e abra a página de autenticação.",
+      codeLabel: "1. Código",
+      urlLabel: "2. URL de autenticação",
+      copyCode: "Copiar código",
+      copyUrl: "Copiar URL",
+      openUrl: "Abrir a página de autenticação",
+    },
+  ])("localizes the Codex sign-in prompt and accessible actions in $locale", async (copy) => {
+    await i18n.changeLanguage(copy.locale);
+    const result = await renderAdapterLoginPanel("codex_local");
+    roots.push(result.root);
+
+    expect(result.container.textContent).toContain(copy.title);
+    expect(findButton(result.container, copy.signIn)).toBeTruthy();
+    await clickByText(result.container, copy.signIn);
+    await flushUntil(() => (result.container.textContent ?? "").includes("https://auth.example.test/device"));
+
+    expect(result.container.textContent).toContain(copy.instruction);
+    expect(result.container.textContent).toContain(copy.codeLabel);
+    expect(result.container.textContent).toContain(copy.urlLabel);
+    expect(findByAriaLabel(result.container, copy.copyCode)).toBeTruthy();
+    expect(findByAriaLabel(result.container, copy.copyUrl)).toBeTruthy();
+    expect(findByAriaLabel(result.container, copy.openUrl)).toBeTruthy();
+    expect(result.container.querySelector('a[href="https://auth.example.test/device"]')?.getAttribute("rel"))
+      .toBe("noreferrer noopener");
+
+    await clickElement(findByAriaLabel(result.container, copy.copyCode));
+    await clickElement(findByAriaLabel(result.container, copy.copyUrl));
+    expect(mockClipboard.copyTextToClipboard).toHaveBeenCalledWith("WXYZ-1234");
+    expect(mockClipboard.copyTextToClipboard).toHaveBeenCalledWith("https://auth.example.test/device");
+
+    await clickByText(result.container, copy.cancel);
+    await flushUntil(() => findButton(result.container, copy.signIn)?.disabled === false);
+    expect(mockAgentsApi.cancelAdapterAuthLogin).toHaveBeenCalledWith(
+      "company-1",
+      "codex_local",
+      "session-1",
+    );
+  });
+
+  it.each([
+    ["en", "Login failed"],
+    ["pt-BR", "Falha no login"],
+  ])("localizes Codex terminal state in %s and preserves the external failure message", async (locale, label) => {
+    await i18n.changeLanguage(locale);
+    mockAgentsApi.getAdapterAuthLoginStatus.mockResolvedValue({
+      sessionId: "session-1",
+      environmentId: "sandbox-1",
+      status: "failed",
+      expiresAt: null,
+      failure: { reason: "device_rejected", message: "The device rejected this code (trace DEV-42)." },
+      prompt: null,
+    });
+    const result = await renderAdapterLoginPanel("codex_local");
+    roots.push(result.root);
+
+    await clickByText(result.container, locale === "pt-BR" ? "Entrar" : "Sign in");
+    await flushUntil(() => (result.container.textContent ?? "").includes(label));
+
+    expect(result.container.textContent).toContain(label);
+    expect(result.container.textContent).toContain("The device rejected this code (trace DEV-42).");
   });
 
   it("promotes environment drafts through the page Save action and discards them through the page Discard action", async () => {

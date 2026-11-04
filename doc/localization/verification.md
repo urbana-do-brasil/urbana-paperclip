@@ -3844,3 +3844,7 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Help channels e db:backup — 4.3bd5
 
 - Opções dos dois comandos localizadas; dois casos de help executado PT-BR/en passaram (55 outros filtrados), preservando assinaturas e flags. Typecheck CLI passou; outras opções seguem em 4.3bd. Checkpoint: **450/474 tarefas**, 24 caixas abertas incluindo agregadoras.
+
+### Login Codex no formulário — 3.6g2
+
+- Estados, ações, título e controles acessíveis do login Codex localizados; testes PT-BR/en confirmam código/URL originais, cancelamento e mensagem externa de falha. Suítes UI/locale 123/123 e typecheck UI passaram. O fluxo Claude e outros textos continuam abertos em 3.6g. Checkpoint: **450/474 tarefas**, 24 caixas abertas incluindo agregadoras.
