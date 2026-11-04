@@ -102,6 +102,8 @@ describe("registered CLI operation help", () => {
   }, 15_000);
 
   it.each([
+    { name: "channels", command: ["channels"] },
+    { name: "db:backup", command: ["db:backup"] },
     { name: "issue list", command: ["issue", "list"] },
     { name: "issue get", command: ["issue", "get"] },
     { name: "issue create", command: ["issue", "create"] },

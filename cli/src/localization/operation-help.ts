@@ -119,11 +119,21 @@ const operationHelp: Record<string, CommandHelp> = {
     },
     arguments: { provider: { en: "Runtime provider (pi or cursor)", "pt-BR": "Provedor de runtime (pi ou cursor)" } },
   },
-  channels: descriptionOnly(
-    "Show the release channels and which one this install follows",
-    "Exibir os canais de lançamento e qual deles esta instalação acompanha",
-  ),
-  "db:backup": descriptionOnly("Create a one-off database backup using current config", "Criar um backup pontual do banco de dados usando a configuração atual"),
+  channels: {
+    description: { en: "Show the release channels and which one this install follows", "pt-BR": "Exibir os canais de lançamento e qual deles esta instalação acompanha" },
+    options: { "--json": { en: "Machine-readable output", "pt-BR": "Saída legível por máquina" } },
+  },
+  "db:backup": {
+    description: { en: "Create a one-off database backup using current config", "pt-BR": "Criar um backup pontual do banco de dados usando a configuração atual" },
+    options: {
+      "--config": { en: "Path to config file", "pt-BR": "Caminho do arquivo de configuração" },
+      "--data-dir": commonClientOptions["--data-dir"],
+      "--dir": { en: "Backup output directory (overrides config)", "pt-BR": "Diretório de saída do backup (sobrescreve a configuração)" },
+      "--retention-days": { en: "Retention window used for pruning", "pt-BR": "Período de retenção usado para limpeza" },
+      "--filename-prefix": { en: "Backup filename prefix", "pt-BR": "Prefixo do nome do arquivo de backup" },
+      "--json": { en: "Print backup metadata as JSON", "pt-BR": "Exibir metadados do backup em JSON" },
+    },
+  },
   run: descriptionOnly("Bootstrap local setup (onboard + doctor) and run Paperclip", "Preparar a instalação local (onboard + doctor) e executar o Paperclip"),
   heartbeat: descriptionOnly("Heartbeat utilities", "Utilitários de heartbeat"),
   "heartbeat run": {

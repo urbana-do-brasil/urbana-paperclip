@@ -3840,3 +3840,7 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Backup na CLI — 4.3bf
 
 - Mensagens de `db:backup` localizadas em PT-BR/en; backup simulado confirma argumentos, validação anterior à operação, JSON igual e ausência de credencial na saída. Dois testes e typecheck CLI passaram; nenhum banco ou backup real foi acessado. Checkpoint: **449/473 tarefas**, 24 caixas abertas incluindo agregadoras.
+
+### Help channels e db:backup — 4.3bd5
+
+- Opções dos dois comandos localizadas; dois casos de help executado PT-BR/en passaram (55 outros filtrados), preservando assinaturas e flags. Typecheck CLI passou; outras opções seguem em 4.3bd. Checkpoint: **450/474 tarefas**, 24 caixas abertas incluindo agregadoras.
