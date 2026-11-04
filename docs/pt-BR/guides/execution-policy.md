@@ -21,22 +21,22 @@ Essas camadas podem ser combinadas. Uma tarefa pode ter apenas revisão, apenas 
 ```ts
 interface IssueExecutionPolicy {
   mode: "normal" | "auto";
-  commentRequired: boolean;       // always true, enforced by runtime
-  stages: IssueExecutionStage[];  // ordered list of review/approval stages
+  commentRequired: boolean;       // sempre true, aplicado pelo runtime
+  stages: IssueExecutionStage[];  // lista ordenada de etapas de revisão/aprovação
 }
 
 interface IssueExecutionStage {
-  id: string;                                 // auto-generated UUID
-  type: "review" | "approval";                // stage kind
-  approvalsNeeded: 1;                         // multi-approval is not supported yet
+  id: string;                                 // UUID gerado automaticamente
+  type: "review" | "approval";                // tipo de etapa
+  approvalsNeeded: 1;                         // aprovações múltiplas ainda não são compatíveis
   participants: IssueExecutionStageParticipant[];
 }
 
 interface IssueExecutionStageParticipant {
   id: string;
   type: "agent" | "user";
-  agentId?: string | null;    // set when type is "agent"
-  userId?: string | null;     // set when type is "user"
+  agentId?: string | null;    // definido quando type é "agent"
+  userId?: string | null;     // definido quando type é "user"
 }
 ```
 
@@ -74,7 +74,7 @@ interface IssueExecutionDecision {
   actorAgentId: string | null;
   actorUserId: string | null;
   outcome: "approved" | "changes_requested";
-  body: string;              // required comment explaining the decision
+  body: string;              // comentário obrigatório explicando a decisão
   createdByRunId: string | null;
   createdAt: Date;
 }
@@ -181,14 +181,14 @@ Isso evita conclusões silenciosas em que um agente termina o trabalho sem deixa
 
 ```bash
 PATCH /api/issues/{issueId}
-{ "status": "done", "comment": "Reviewer decision: approve - implementation and tests look good." }
+{ "status": "done", "comment": "Decisão de revisão: aprovado — a implementação está correta e os testes passaram." }
 ```
 
 Para solicitar alterações, envie o status de destino diferente de `done` e a explicação juntos:
 
 ```bash
 PATCH /api/issues/{issueId}
-{ "status": "in_progress", "comment": "Reviewer decision: request changes - cover the retry edge case." }
+{ "status": "in_progress", "comment": "Decisão de revisão: solicitar alterações — cubra o caso limite de nova tentativa." }
 ```
 
 Não divida uma decisão entre `POST /comments` e uma solicitação `PATCH` que altere somente o status; o runtime registra a decisão apenas a partir do campo `comment` na mesma atualização de status.
@@ -198,7 +198,7 @@ Não divida uma decisão entre `POST /comments` e uma solicitação `PATCH` que 
 ```bash
 POST /api/companies/{companyId}/issues
 {
-  "title": "Implement feature X",
+  "title": "Implementar recurso X",
   "assigneeAgentId": "coder-agent-id",
   "executionPolicy": {
     "mode": "normal",
@@ -242,7 +242,7 @@ A pessoa revisora ou aprovadora ativa muda o status da tarefa para `done` e incl
 PATCH /api/issues/{issueId}
 {
   "status": "done",
-  "comment": "Reviewed — implementation looks correct, tests pass."
+  "comment": "Revisado — a implementação está correta e os testes passaram."
 }
 ```
 
@@ -256,7 +256,7 @@ A pessoa revisora ativa muda o status para qualquer valor diferente de `done` e 
 PATCH /api/issues/{issueId}
 {
   "status": "in_progress",
-  "comment": "Button alignment is off on mobile. Please fix the flex container."
+  "comment": "O alinhamento do botão está incorreto em telas móveis. Ajuste o contêiner flex."
 }
 ```
 

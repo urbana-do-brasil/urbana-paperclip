@@ -1322,7 +1322,11 @@ const operationHelp: Record<string, CommandHelp> = {
       "--payload-json": { en: "CreateChildIssue JSON payload", "pt-BR": "Payload JSON de CreateChildIssue" },
     },
   },
-  "issue force-release": descriptionOnly("Force-release an issue from an agent checkout", "Liberar à força uma tarefa de um checkout de agente"),
+  "issue force-release": {
+    ...descriptionOnly("Force-release an issue from an agent checkout", "Liberar à força uma tarefa de um checkout de agente"),
+    arguments: issueIdArgument,
+    options: commonClientOptions,
+  },
   "issue work-products": {
     ...descriptionOnly("List issue work products", "Listar entregáveis da tarefa"),
     arguments: issueIdArgument,

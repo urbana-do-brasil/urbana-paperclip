@@ -107,7 +107,7 @@ feedback-export-20260331T120000Z/
   full-traces/
     PAP-123-e5f6g7h8/
       bundle.json              # manifesto completo de exportação do rastreamento
-      ...raw adapter files     # artefatos de sessão codex / claude / opencode, quando disponíveis
+      ...arquivos brutos dos adapters # artefatos de sessão do Codex / Claude / OpenCode, quando disponíveis
 feedback-export-20260331T120000Z.zip
 ```
 

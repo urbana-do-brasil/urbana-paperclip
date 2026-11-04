@@ -3958,3 +3958,111 @@ agregadores. A aplicação não foi implantada.
 CI remota, execução real do smoke, validação browser/build final e revisão
 humana das traduções continuam pendentes. Nenhum serviço ou dado real foi
 acessado nesta rodada.
+
+### Continuação — auditoria dos agregadores 3.8, 3.10 e gate 7.1
+
+O checklist está em **476/491 tarefas**, com 15 itens abertos incluindo os
+agregadores. A aplicação não foi implantada.
+
+- 3.8 foi fechada após auditoria independente confirmar que 3.8a–n não têm
+  subtarefas abertas e cobrem as jornadas definidas. Reexecutei
+  `CompanyAccess.test.tsx`, `InstanceAccess.test.tsx` e
+  `Secrets.render.test.tsx`: **64/64**. Os casos verificam a negação de acesso,
+  preservação de papéis/payloads e não exposição de valores de segredos. A
+  matriz browser previamente registrada em 3.8g passou 8/8 combinações
+  representativas com APIs simuladas; não cobre todos os papéis nem tablet.
+- 3.10 permanece aberta. A auditoria independente confirmou pendências de
+  qualificação de mutações de gatilhos, revisão de textos compartilhados,
+  clipboard real/leitor de tela e homologação visual; os itens estão anotados
+  nos subtasks e em 7.2/7.3.
+- 7.1 tem os cinco casos negativos requeridos cobertos localmente e integrados
+  a `pnpm check:localization`: chave ausente, placeholder inválido, literal
+  hardcoded, campo JSON mutado e tópico PT-BR ausente. O workflow executa o gate
+  em `full_ci`; ainda falta evidência de uma execução remota aprovada.
+- O smoke de pipelines não pode rodar nesta execução: `jq` e variáveis de API
+  estão ausentes, e não há servidor local nas portas 3100/5432. Docker existe,
+  mas isso não fornece uma empresa/token de API descartáveis.
+
+### Continuação — interações e reconciliação de fontes — 2026-11-04
+
+O checklist está em **480/494 tarefas**, com 14 itens abertos incluindo os
+agregadores. A aplicação não foi implantada.
+
+- 6.3 foi fechada após auditoria independente dos subtasks 6.3a–h. O fluxo
+  Chromium 1/1 em `tests/e2e/multi-user-authenticated.spec.ts` usa duas contas
+  no mesmo trabalho (solicitante PT-BR e respondente inglês), preserva a
+  interação após erro 422, aceita resposta válida e mantém pergunta/resposta e
+  comentário original após reload. A fixture de servidor/PostgreSQL é
+  descartável e o cenário é opt-in. As suítes de histórico passaram 131/131 e
+  o typecheck UI passou.
+- A matriz de help agora cobre **71/71** tópicos do manifesto em
+  `sourceIndexes.documentation`, com slug e caminhos EN/PT-BR idênticos. A
+  reconciliação revelou e corrigiu cinco entradas ausentes; o novo gate foi
+  integrado em `pnpm check:localization`, e as fixtures de paridade/falha
+  passaram **2/2**.
+- A ajuda real da CLI ganhou 8 casos de subprocesso bilíngue para comandos
+  `agent` (**8/8**) e corrigiu o argumento `Issue ID` de `issue force-release`
+  para PT-BR (**1/1**). A auditoria geral de comandos leaf segue aberta em
+  4.3bd.
+- 7.1 agora compara o índice da ajuda com o manifesto, além dos cinco cenários
+  negativos previamente cobertos. A CI remota ainda não foi executada; 7.1
+  permanece aberta até haver evidência do lane `full_ci`.
+- 3.10 permanece aberta por lacunas de qualificação descritas no checkpoint
+  anterior; 6.2 e 6.4 continuam abertas para auditoria de carriers e respostas
+  reais por runtime/modelo.
+
+### Help de comandos agent — 4.3bd10 — 2026-11-04
+
+- Inventário executado da ajuda PT-BR/en cobriu oito rotas `agent` que ainda
+  não tinham regressão no subprocesso: `me`, `inbox`, `inbox-mine`, `pause`,
+  `resume`, `approve`, `terminate` e `permissions:update`. As assinaturas de
+  argumentos e opções foram fixadas e a localização das descrições/argumentos/
+  opções comparada nos dois idiomas.
+- `pnpm exec vitest run cli/src/__tests__/operation-help-localization.test.ts
+  -t 'agent (me|inbox|inbox-mine|pause|resume|approve|terminate|permissions:update)'
+  --testTimeout 15000`: **8/8** aprovados; 88 casos não relacionados filtrados.
+- Checklist após o lote: **477/492** tarefas concluídas; 15 abertas incluindo
+  agregadores. A auditoria dos demais comandos leaf continua pendente em 4.3bd.
+
+### Help de issue force-release — 4.3bd11 — 2026-11-04
+
+- A execução do help PT-BR/en revelou que `issue force-release` mantinha o
+  argumento `<issueId>` como `Issue ID` em português, apesar da descrição já
+  estar localizada. `operation-help.ts` agora localiza o argumento como
+  `ID da tarefa` e mapeia as opções comuns, preservando a sintaxe/flags.
+- A regressão fixa as assinaturas do argumento e das opções e compara os
+  help reais dos dois idiomas. `pnpm exec vitest run
+  cli/src/__tests__/operation-help-localization.test.ts -t 'issue force-release'
+  --testTimeout 15000`: **1/1** aprovado; 96 casos filtrados.
+- Checklist após o lote: **478/493** tarefas concluídas; 15 abertas incluindo
+  agregadores. A auditoria dos demais comandos leaf continua pendente em 4.3bd.
+
+### Help dos comandos agent (continuação) — 4.3bd12 — 2026-11-04
+
+- A matriz real PT-BR/en agora cobre mais oito leafs `agent`: `heartbeat:invoke`,
+  `claude-login`, `configuration`, `config-revisions`, `config-revision:get`,
+  `config-revision:rollback`, `runtime-state` e `runtime-state:reset-session`.
+  Descrições, argumentos e opções passaram nos dois idiomas, e as assinaturas
+  foram fixadas no teste; não apareceu texto próprio não localizado.
+- `pnpm exec vitest run cli/src/__tests__/operation-help-localization.test.ts
+  -t 'agent (heartbeat:invoke|claude-login|configuration|config-revisions|config-revision:get|config-revision:rollback|runtime-state|runtime-state:reset-session)'
+  --testTimeout 15000`: **8/8** aprovados; 97 casos não relacionados filtrados.
+- Checklist no momento do registro: **481/495** tarefas concluídas; 14 abertas
+  incluindo agregadores. Ainda restam leafs `agent` sem essa matriz e a auditoria
+  geral de 4.3bd permanece aberta.
+
+### Revisão editorial dos guias públicos — 5.2d — 2026-11-04
+
+O checklist está em **482/496 tarefas**, com 14 itens abertos incluindo
+agregadores. A aplicação não foi implantada.
+
+- Os exemplos do guia de política de execução agora traduzem o título e os
+  comentários livres de criação/decisão, além dos comentários explicativos em
+  TypeScript. O guia de votos de feedback também traduz o rótulo e a nota da
+  árvore de exportação. Campos, estados, IDs, caminhos, comandos e estrutura dos
+  payloads foram preservados.
+- `pnpm exec vitest run ui/src/help/content.test.ts --testTimeout 15000` passou
+  **7/7**. O teste compara os exemplos normalizando apenas texto humanizado e
+  verifica as traduções; a validação do índice confirmou os 71 tópicos.
+- A auditoria foi editorial automatizada, não revisão humana final. A revisão
+  humana de semântica e glossário continua pendente em 5.2/7.4.

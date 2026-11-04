@@ -48,9 +48,20 @@ describe("public help mapping", () => {
       const withoutFences = markdown.replace(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm, "");
       return [...new Set([...withoutFences.matchAll(/`([^`\n]+)`/g)].map((match) => match[1]))].sort();
     };
-    const exampleBlocks = (markdown: string) =>
+    const exampleBlocks = (markdown: string, slug: string) =>
       [...markdown.matchAll(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm)].map((match) => {
-        const block = match[0].replace(/^\s*#.*$/gm, "").replace(/\s+#.*$/gm, "");
+        let block = match[0].replace(/^\s*#.*$/gm, "").replace(/\s+#.*$/gm, "");
+        if (slug === "guides/execution-policy") {
+          // Example titles/comments are human prose, not API fields or protocol
+          // values, so the PT-BR guide may localize their contents.
+          block = block
+            .replace(/("title":\s*")[^"]*(")/g, '$1<localized example>$2')
+            .replace(/("comment":\s*")[^"]*(")/g, '$1<localized example>$2')
+            .replace(/(\s+\/\/).*$/gm, '$1<localized comment>');
+        }
+        if (slug === "feedback-voting") {
+          block = block.replace(/\.\.\.(?:raw adapter files|arquivos brutos dos adapters)/g, "...<localized description>");
+        }
         if (!block.includes("┌")) return { kind: "code", source: block };
 
         // Presentational ASCII workflows may translate their labels while the
@@ -85,9 +96,28 @@ describe("public help mapping", () => {
       expect(portuguese.content).not.toBe(english.content);
       expect(portuguese.content).toContain(translatedHeadings[slug]);
       expect(technicalTokens(portuguese.content)).toEqual(technicalTokens(english.content));
-      expect(exampleBlocks(portuguese.content)).toEqual(exampleBlocks(english.content));
+      expect(exampleBlocks(portuguese.content, slug)).toEqual(exampleBlocks(english.content, slug));
       expect(linkTargets(portuguese.content)).toEqual(linkTargets(english.content));
       if (slug === "guides/execution-policy") {
+        expect(portuguese.content).toContain('"title": "Implementar recurso X"');
+        expect(portuguese.content).toContain("Decisão de revisão: aprovado — a implementação está correta e os testes passaram.");
+        expect(portuguese.content).toContain("Decisão de revisão: solicitar alterações — cubra o caso limite de nova tentativa.");
+        expect(portuguese.content).toContain("Revisado — a implementação está correta e os testes passaram.");
+        expect(portuguese.content).toContain("O alinhamento do botão está incorreto em telas móveis. Ajuste o contêiner flex.");
+        expect(portuguese.content).toContain("// sempre true, aplicado pelo runtime");
+        expect(portuguese.content).toContain("// lista ordenada de etapas de revisão/aprovação");
+        expect(portuguese.content).toContain("// UUID gerado automaticamente");
+        expect(portuguese.content).toContain("// tipo de etapa");
+        expect(portuguese.content).toContain("// aprovações múltiplas ainda não são compatíveis");
+        expect(portuguese.content).toContain('// definido quando type é "agent"');
+        expect(portuguese.content).toContain('// definido quando type é "user"');
+        expect(portuguese.content).toContain("// comentário obrigatório explicando a decisão");
+        expect(portuguese.content).not.toContain("Implement feature X");
+        expect(portuguese.content).not.toContain("Reviewer decision");
+        expect(portuguese.content).not.toContain("Button alignment");
+        expect(portuguese.content).not.toContain("auto-generated UUID");
+        expect(portuguese.content).not.toContain("stage kind");
+        expect(portuguese.content).not.toContain("multi-approval is not supported yet");
         const workflowDiagrams = [...portuguese.content.matchAll(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm)]
           .map((match) => match[0])
           .filter((block) => block.includes("┌"));
@@ -95,6 +125,11 @@ describe("public help mapping", () => {
         expect(workflowDiagrams.join("\n")).toContain("solicita ajustes");
         expect(workflowDiagrams.join("\n")).toContain("aprovadora");
         expect(workflowDiagrams.join("\n")).not.toMatch(/\b(?:executor|reviewer|approver|completes|approves|changes|resubmits)\b/i);
+      }
+      if (slug === "feedback-voting") {
+        expect(portuguese.content).toContain("...arquivos brutos dos adapters");
+        expect(portuguese.content).not.toContain("...raw adapter files");
+        expect(portuguese.content).not.toContain("session artifacts when available");
       }
     }
   });
