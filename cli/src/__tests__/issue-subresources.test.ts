@@ -239,6 +239,15 @@ describe("issue subresource commands", () => {
     expect(JSON.parse(String(fetchMock.mock.calls[4]?.[1]?.body))).toEqual({
       selectedOptionIds: ["file-a", "file-b"],
     });
+    expect(JSON.parse(String(fetchMock.mock.calls[19]?.[1]?.body))).toEqual({
+      name: "bug",
+      color: "#ff0000",
+    });
+    expect(JSON.parse(String(fetchMock.mock.calls[22]?.[1]?.body))).toEqual({
+      targetType: "issue_comment",
+      targetId: COMMENT_ID,
+      vote: "up",
+    });
   });
 
   it("forwards the agent run-id header and inferred content-type on attachment:upload", async () => {

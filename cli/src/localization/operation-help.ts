@@ -1496,14 +1496,57 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: issueIdArgument,
     options: commonClientOptions,
   },
-  "issue attachment:upload": descriptionOnly("Upload an issue attachment", "Enviar um anexo da tarefa"),
-  "issue attachment:download": descriptionOnly("Download an attachment", "Baixar um anexo"),
-  "issue attachment:delete": descriptionOnly("Delete an attachment", "Excluir um anexo"),
-  "issue label:list": descriptionOnly("List issue labels in a company", "Listar etiquetas de tarefas em uma organização"),
-  "issue label:create": descriptionOnly("Create an issue label", "Criar uma etiqueta de tarefa"),
-  "issue label:delete": descriptionOnly("Delete an issue label", "Excluir uma etiqueta de tarefa"),
-  "issue feedback:votes": descriptionOnly("List feedback votes for an issue", "Listar votos de feedback de uma tarefa"),
-  "issue feedback:vote": descriptionOnly("Create or update a feedback vote", "Criar ou atualizar um voto de feedback"),
+  "issue attachment:upload": {
+    ...descriptionOnly("Upload an issue attachment", "Enviar um anexo da tarefa"),
+    arguments: issueIdArgument,
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--file": { en: "File to upload", "pt-BR": "Arquivo para enviar" },
+      "--comment-id": { en: "Attach to an issue comment", "pt-BR": "Anexar a um comentário da tarefa" },
+    },
+  },
+  "issue attachment:download": {
+    ...descriptionOnly("Download an attachment", "Baixar um anexo"),
+    arguments: attachmentIdArgument,
+    options: { ...commonClientOptions, "--out": { en: "Output file path; prints to stdout when omitted", "pt-BR": "Caminho do arquivo de saída; exibe no stdout quando omitido" } },
+  },
+  "issue attachment:delete": {
+    ...descriptionOnly("Delete an attachment", "Excluir um anexo"),
+    arguments: attachmentIdArgument,
+    options: commonClientOptions,
+  },
+  "issue label:list": {
+    ...descriptionOnly("List issue labels in a company", "Listar etiquetas de tarefas em uma organização"),
+    options: { ...commonClientOptions, "--company-id": { en: "Company ID", "pt-BR": "ID da organização" } },
+  },
+  "issue label:create": {
+    ...descriptionOnly("Create an issue label", "Criar uma etiqueta de tarefa"),
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--name": { en: "Label name", "pt-BR": "Nome da etiqueta" },
+      "--color": { en: "Label color, e.g. #4f46e5", "pt-BR": "Cor da etiqueta, por exemplo #4f46e5" },
+    },
+  },
+  "issue label:delete": {
+    ...descriptionOnly("Delete an issue label", "Excluir uma etiqueta de tarefa"),
+    arguments: { labelId: { en: "Label ID", "pt-BR": "ID da etiqueta" } },
+    options: commonClientOptions,
+  },
+  "issue feedback:votes": {
+    ...descriptionOnly("List feedback votes for an issue", "Listar votos de feedback de uma tarefa"),
+    arguments: issueIdArgument,
+    options: commonClientOptions,
+  },
+  "issue feedback:vote": {
+    ...descriptionOnly("Create or update a feedback vote", "Criar ou atualizar um voto de feedback"),
+    arguments: issueIdArgument,
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "UpsertIssueFeedbackVote JSON payload", "pt-BR": "Payload JSON de UpsertIssueFeedbackVote" },
+    },
+  },
   "issue feedback:list": {
     ...descriptionOnly("List feedback traces for an issue", "Listar traces de feedback de uma tarefa"),
     arguments: issueIdArgument,
@@ -1533,7 +1576,22 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: issueIdOrIdentifierArgument,
     options: commonClientOptions,
   },
-  "issue feedback:export": descriptionOnly("Export feedback traces for an issue", "Exportar traces de feedback de uma tarefa"),
+  "issue feedback:export": {
+    ...descriptionOnly("Export feedback traces for an issue", "Exportar traces de feedback de uma tarefa"),
+    arguments: issueIdArgument,
+    options: {
+      ...commonClientOptions,
+      "--target-type": { en: "Filter by target type", "pt-BR": "Filtrar pelo tipo de destino" },
+      "--vote": { en: "Filter by vote value", "pt-BR": "Filtrar pelo valor do voto" },
+      "--status": { en: "Filter by trace status", "pt-BR": "Filtrar pelo status do trace" },
+      "--from": { en: "Only include traces created at or after this timestamp", "pt-BR": "Incluir somente traces criados neste instante ou depois" },
+      "--to": { en: "Only include traces created at or before this timestamp", "pt-BR": "Incluir somente traces criados neste instante ou antes" },
+      "--shared-only": { en: "Only include traces eligible for sharing/export", "pt-BR": "Incluir somente traces elegíveis para compartilhamento ou exportação" },
+      "--include-payload": { en: "Include stored payload snapshots in the export", "pt-BR": "Incluir snapshots dos payloads armazenados na exportação" },
+      "--out": { en: "Write export to a file path instead of stdout", "pt-BR": "Gravar a exportação em um arquivo em vez de exibi-la no stdout" },
+      "--format": { en: "Export format: json or ndjson", "pt-BR": "Formato da exportação: json ou ndjson" },
+    },
+  },
   "issue checkout": descriptionOnly("Checkout issue for an agent", "Fazer checkout da tarefa para um agente"),
   "issue release": descriptionOnly(
     "Release issue execution locks; clear the assignee only for unfinished issues",
@@ -1884,7 +1942,14 @@ const operationHelp: Record<string, CommandHelp> = {
       },
     },
   },
-  "agent instructions-bundle:update": descriptionOnly("Update an agent instructions bundle", "Atualizar o pacote de instruções do agente"),
+  "agent instructions-bundle:update": {
+    ...descriptionOnly("Update an agent instructions bundle", "Atualizar o pacote de instruções do agente"),
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "UpdateAgentInstructionsBundle JSON payload", "pt-BR": "Payload JSON de UpdateAgentInstructionsBundle" },
+    },
+  },
   "agent wake": {
     ...descriptionOnly("Request a heartbeat wakeup for an agent", "Solicitar o acionamento de um heartbeat do agente"),
     arguments: { agentRef: { en: "Agent ID or shortname/url-key", "pt-BR": "ID do agente ou nome curto/chave da URL" } },

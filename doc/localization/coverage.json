@@ -377,10 +377,17 @@
       "sources": [
         "ui/src/pages/Agents.tsx",
         "ui/src/pages/AgentDetail.tsx",
-        "ui/src/pages/AgentDetail.production.tsx"
+        "ui/src/pages/AgentDetail.production.tsx",
+        "ui/src/components/AgentConfigForm.tsx"
       ],
-      "status": "pending",
-      "evidence": []
+      "status": "partial",
+      "evidence": [
+        "3.6g3: erros próprios de criação de segredos e envio de imagens sem organização verificados em PT-BR/en; suíte de renderização do AgentConfigForm passou 121/121, typecheck UI e gates de tokens passaram.",
+        "3.6g4: descrição de acesso a segredos, exemplo do modelo de prompt e controles do diretório legado verificados em PT-BR/en; conteúdo salvo do agente e valores técnicos preservados; casos focados passaram 8/8.",
+        "ui/src/components/AgentConfigForm.render.test.tsx",
+        "ui/src/i18n/locales/en.json",
+        "ui/src/i18n/locales/pt-BR.json"
+      ]
     },
     {
       "id": "reporting",
@@ -939,9 +946,12 @@
         "cli/src/__tests__/activity-localization.test.ts",
         "cli/src/__tests__/activity-parity.test.ts",
         "4.3bd6: 19 rotas de help de issue recovery/child/work-product/document/interaction/tree e agent wake/local-cli comparadas em PT-BR/en; assinaturas e defaults preservados; matriz completa de help: 66/66. Typecheck direcionado da CLI passou.",
+        "4.3bd7: opções e argumentos PT-BR/en para upload/download/exclusão de anexos, etiquetas, votos/exportação de feedback e atualização do pacote de instruções; dez subprocessos selecionados, contratos de payload e typecheck CLI passaram.",
+        "cli/src/__tests__/issue-subresources.test.ts",
+        "cli/src/__tests__/agent-lifecycle.test.ts",
         "cli/src/__tests__/operation-help-localization.test.ts"
       ],
-      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e família activity têm verificação parcial. O help avançou em lotes leaf, inclusive 11 rotas em 4.3bd6; outras opções de help, operações e regressão 4.4 permanecem pendentes. Typechecks direcionados passaram nos lotes reportados; o typecheck integral da CLI terminou com exit 137 por memória."
+      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e família activity têm verificação parcial. O help avançou em lotes leaf, incluindo 4.3bd6 e 4.3bd7; outras opções de help, operações e regressão 4.4 permanecem pendentes. Typechecks direcionados passaram nos lotes reportados; o typecheck integral da CLI terminou com exit 137 por memória."
     },
     {
       "id": "help-start",

@@ -6837,10 +6837,12 @@
       "missingManager": "Saved manager is missing from this organization. Choose a new manager or clear.",
       "promptTemplate": "Prompt template",
       "promptTemplateHint": "Sent on every heartbeat. Keep it compact and dynamic. Use it for current-task framing, not long static instructions.",
+      "promptTemplatePlaceholder": "You are agent {{ agent.name }}. Your role is {{ agent.role }}...",
       "promptTemplateNotice": "The prompt template is replayed on every heartbeat. Keep it compact and dynamic to avoid recurring token cost and cache churn."
     },
     "secretAccess": {
       "title": "Secret access",
+      "description": "Secrets this agent can reach. Env-var bindings are injected at run start; API-access bindings are fetched on demand via the run-bound agent API and never written to the environment.",
       "organizationRequiredForCreate": "Select an organization to create secrets",
       "organizationRequiredForImageUpload": "Select an organization to upload images"
     },
@@ -6849,6 +6851,11 @@
       "hint": "Only sent when Paperclip starts a fresh session. Use this for stable setup guidance that should not be repeated on every heartbeat.",
       "placeholder": "Optional initial setup prompt for the first run",
       "legacyNotice": "Bootstrap prompt is legacy and will be removed in a future release. Consider moving this content into the agent's prompt template or instructions file instead."
+    },
+    "workingDirectory": {
+      "deprecatedLabel": "Working directory (deprecated)",
+      "deprecatedHint": "Deprecated legacy working directory fallback for local adapters. Existing agents may still carry this value, but new configurations should use project workspaces instead.",
+      "placeholder": "/path/to/project"
     },
     "providerTrace": {
       "heading": "Debugging",

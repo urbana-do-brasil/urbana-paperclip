@@ -75,7 +75,6 @@ import {
   CollapsibleSection,
   DraftInput,
   DraftNumberInput,
-  help,
   adapterLabels,
 } from "./agent-config-primitives";
 import { defaultCreateValues } from "./agent-config-defaults";
@@ -1449,7 +1448,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
             : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("agentConfiguration.secretAccess.title")}</div>
           }
           <div className={cn(cards ? "space-y-3 rounded-lg border border-border p-4" : "space-y-3 px-4 pb-3")}>
-            <p className="text-xs text-muted-foreground">{help.secretAccess}</p>
+            <p className="text-xs text-muted-foreground">{t("agentConfiguration.secretAccess.description")}</p>
             <AgentSecretAccessEditor
               config={{ ...config, ...overlay.adapterConfig }}
               secrets={availableSecrets}
@@ -1529,7 +1528,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                       String(config.promptTemplate ?? ""),
                     )}
                     onChange={(v) => mark("adapterConfig", "promptTemplate", v ?? "")}
-                    placeholder="You are agent {{ agent.name }}. Your role is {{ agent.role }}..."
+                    placeholder={t("agentConfiguration.identity.promptTemplatePlaceholder")}
                     contentClassName="min-h-(--sz-88px) text-sm font-mono"
                     imageUploadHandler={async (file) => {
                       const namespace = `agents/${props.agent.id}/prompt-template`;
@@ -1739,7 +1738,10 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
 
           {/* Working directory */}
           {showLegacyWorkingDirectoryField && (
-            <Field label="Working directory (deprecated)" hint={help.cwd}>
+            <Field
+              label={t("agentConfiguration.workingDirectory.deprecatedLabel")}
+              hint={t("agentConfiguration.workingDirectory.deprecatedHint")}
+            >
               <div className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5">
                 <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <DraftInput
@@ -1755,7 +1757,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                   }
                   immediate
                   className="w-full bg-transparent outline-none text-sm font-mono placeholder:text-muted-foreground/40"
-                  placeholder="/path/to/project"
+                  placeholder={t("agentConfiguration.workingDirectory.placeholder")}
                 />
                 <ChoosePathButton />
               </div>

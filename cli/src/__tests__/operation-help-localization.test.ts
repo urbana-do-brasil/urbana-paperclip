@@ -63,6 +63,56 @@ function expectLocalizedRows(routeName: string, ptRows: HelpRow[], enRows: HelpR
   }
 }
 
+const commonClientOptionSignatures = [
+  "-c, --config <path>",
+  "-d, --data-dir <path>",
+  "--context <path>",
+  "--profile <name>",
+  "--api-base <url>",
+  "--api-key <token>",
+  "--run-id <id>",
+  "--json",
+  "--lang <locale>",
+  "-h, --help",
+];
+
+const expectedLeafHelpSignatures: Record<string, { arguments: string[]; options: string[] }> = {
+  "issue attachment:upload": {
+    arguments: ["issueId"],
+    options: ["-C, --company-id <id>", "--file <path>", "--comment-id <id>", ...commonClientOptionSignatures],
+  },
+  "issue attachment:download": {
+    arguments: ["attachmentId"],
+    options: ["--out <path>", ...commonClientOptionSignatures],
+  },
+  "issue attachment:delete": { arguments: ["attachmentId"], options: commonClientOptionSignatures },
+  "issue label:list": {
+    arguments: [],
+    options: ["-C, --company-id <id>", ...commonClientOptionSignatures],
+  },
+  "issue label:create": {
+    arguments: [],
+    options: ["-C, --company-id <id>", "--name <name>", "--color <hex>", ...commonClientOptionSignatures],
+  },
+  "issue label:delete": { arguments: ["labelId"], options: commonClientOptionSignatures },
+  "issue feedback:votes": { arguments: ["issueId"], options: commonClientOptionSignatures },
+  "issue feedback:vote": {
+    arguments: ["issueId"],
+    options: ["--payload-json <json>", ...commonClientOptionSignatures],
+  },
+  "issue feedback:export": {
+    arguments: ["issueId"],
+    options: [
+      "--target-type <type>", "--vote <vote>", "--status <status>", "--from <iso8601>", "--to <iso8601>",
+      "--shared-only", "--include-payload", "--out <path>", "--format <format>", ...commonClientOptionSignatures,
+    ],
+  },
+  "agent instructions-bundle:update": {
+    arguments: ["agentId"],
+    options: ["--payload-json <json>", ...commonClientOptionSignatures],
+  },
+};
+
 afterEach(() => {
   for (const home of homes.splice(0)) rmSync(home, { recursive: true, force: true });
 });
@@ -176,7 +226,17 @@ describe("registered CLI operation help", () => {
     { name: "issue tree-hold:get", command: ["issue", "tree-hold:get"] },
     { name: "issue tree-hold:release", command: ["issue", "tree-hold:release"] },
     { name: "issue attachments", command: ["issue", "attachments"] },
+    { name: "issue attachment:upload", command: ["issue", "attachment:upload"] },
+    { name: "issue attachment:download", command: ["issue", "attachment:download"] },
+    { name: "issue attachment:delete", command: ["issue", "attachment:delete"] },
+    { name: "issue label:list", command: ["issue", "label:list"] },
+    { name: "issue label:create", command: ["issue", "label:create"] },
+    { name: "issue label:delete", command: ["issue", "label:delete"] },
+    { name: "issue feedback:votes", command: ["issue", "feedback:votes"] },
+    { name: "issue feedback:vote", command: ["issue", "feedback:vote"] },
     { name: "issue feedback:list", command: ["issue", "feedback:list"] },
+    { name: "issue feedback:export", command: ["issue", "feedback:export"] },
+    { name: "agent instructions-bundle:update", command: ["agent", "instructions-bundle:update"] },
     { name: "issue runs", command: ["issue", "runs"] },
     { name: "issue live-runs", command: ["issue", "live-runs"] },
     { name: "issue active-run", command: ["issue", "active-run"] },
@@ -201,6 +261,33 @@ describe("registered CLI operation help", () => {
     const enOptions = helpRows(en, "Options");
     expect(ptOptions.length).toBeGreaterThan(0);
     expectLocalizedRows(`${name} options`, ptOptions, enOptions);
+
+    const expected = expectedLeafHelpSignatures[name];
+    if (expected) {
+      expect(helpRows(pt, "Argumentos").map((row) => row.signature), `${name} PT-BR arguments`).toEqual(expected.arguments);
+      expect(enArguments.map((row) => row.signature), `${name} English arguments`).toEqual(expected.arguments);
+      expect(ptOptions.map((row) => row.signature), `${name} PT-BR options`).toEqual(expected.options);
+      expect(enOptions.map((row) => row.signature), `${name} English options`).toEqual(expected.options);
+    }
+
+    if (name === "issue feedback:export") {
+      const ptOutput = pt.replace(/\s+/g, " ");
+      const enOutput = en.replace(/\s+/g, " ");
+      expect(ptOutput).toMatch(/Formato da exportação: json ou ndjson \(default: "ndjson"\)/);
+      expect(enOutput).toMatch(/Export format: json or ndjson \(default: "ndjson"\)/);
+    }
+    if (name === "issue feedback:vote") {
+      expect(pt).toContain("UpsertIssueFeedbackVote");
+      expect(en).toContain("UpsertIssueFeedbackVote");
+    }
+    if (name === "issue label:create") {
+      expect(pt).toContain("#4f46e5");
+      expect(en).toContain("#4f46e5");
+    }
+    if (name === "agent instructions-bundle:update") {
+      expect(pt).toContain("UpdateAgentInstructionsBundle");
+      expect(en).toContain("UpdateAgentInstructionsBundle");
+    }
 
     if (name === "issue document:put") {
       expect(pt.replace(/\s+/g, " ")).toContain('default: "markdown"');

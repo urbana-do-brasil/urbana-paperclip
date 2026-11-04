@@ -67,8 +67,17 @@ const mockInstanceSettingsApi = vi.hoisted(() => ({
 
 const mockSecretsApi = vi.hoisted(() => ({
   list: vi.fn(),
+  create: vi.fn(),
   listProposals: vi.fn(),
   listUserSecretDefinitions: vi.fn(async () => [] as unknown[]),
+}));
+
+const mockAssetsApi = vi.hoisted(() => ({
+  uploadImage: vi.fn(),
+}));
+
+const mockCompanyContext = vi.hoisted(() => ({
+  selectedCompanyId: "company-1" as string | null,
 }));
 
 vi.mock("../api/agents", () => ({
@@ -87,6 +96,10 @@ vi.mock("../api/secrets", () => ({
   secretsApi: mockSecretsApi,
 }));
 
+vi.mock("../api/assets", () => ({
+  assetsApi: mockAssetsApi,
+}));
+
 vi.mock("../lib/clipboard", () => ({
   copyTextToClipboard: mockClipboard.copyTextToClipboard,
 }));
@@ -94,8 +107,10 @@ vi.mock("../lib/clipboard", () => ({
 vi.mock("../context/CompanyContext", () => ({
   useCompany: () => ({
     companies: [{ id: "company-1", name: "Paperclip" }],
-    selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompanyId: mockCompanyContext.selectedCompanyId,
+    selectedCompany: mockCompanyContext.selectedCompanyId
+      ? { id: mockCompanyContext.selectedCompanyId, name: "Paperclip" }
+      : null,
     selectionSource: "bootstrap",
     loading: false,
     error: null,
@@ -182,21 +197,72 @@ vi.mock("./MarkdownEditor", () => ({
     value,
     onChange,
     placeholder,
+    imageUploadHandler,
   }: {
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
+    imageUploadHandler?: (file: File) => Promise<string>;
   }) => (
-    <textarea
-      aria-label={placeholder ?? "Markdown"}
+    <MockMarkdownEditor
       value={value}
-      onChange={(event) => onChange(event.currentTarget.value)}
+      onChange={onChange}
+      placeholder={placeholder}
+      imageUploadHandler={imageUploadHandler}
     />
   ),
 }));
 
+function MockMarkdownEditor({
+  value,
+  onChange,
+  placeholder,
+  imageUploadHandler,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  imageUploadHandler?: (file: File) => Promise<string>;
+}) {
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  return (
+    <>
+      <textarea
+        aria-label={placeholder ?? "Markdown"}
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value)}
+      />
+      {imageUploadHandler ? (
+        <button
+          type="button"
+          data-testid="markdown-image-upload"
+          onClick={async () => {
+            try {
+              await imageUploadHandler(new File(["image"], "prompt.png", { type: "image/png" }));
+              setUploadError(null);
+            } catch (error) {
+              setUploadError(error instanceof Error ? error.message : "Image upload failed");
+            }
+          }}
+        >
+          Trigger image upload
+        </button>
+      ) : null}
+      {uploadError ? <p data-testid="markdown-upload-error">{uploadError}</p> : null}
+    </>
+  );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+}
 
 async function act(callback: () => void | Promise<void>) {
   let result: void | Promise<void> = undefined;
@@ -710,6 +776,7 @@ describe("AgentConfigForm environment selector", () => {
 
   beforeEach(async () => {
     await i18n.changeLanguage("en");
+    mockCompanyContext.selectedCompanyId = "company-1";
     mockAgentsApi.adapterModels.mockResolvedValue([]);
     mockAgentsApi.detectModel.mockResolvedValue(null);
     mockAgentsApi.list.mockResolvedValue([]);
@@ -796,8 +863,78 @@ describe("AgentConfigForm environment selector", () => {
     }
     roots = [];
     document.body.innerHTML = "";
+    mockCompanyContext.selectedCompanyId = "company-1";
     vi.clearAllMocks();
     await i18n.changeLanguage(DEFAULT_LOCALE);
+  });
+
+  it.each([
+    {
+      locale: "en",
+      createError: "Select an organization to create secrets",
+      imageUploadError: "Select an organization to upload images",
+    },
+    {
+      locale: "pt-BR",
+      createError: "Selecione uma organização para criar segredos",
+      imageUploadError: "Selecione uma organização para enviar imagens",
+    },
+  ])("localizes secret creation and prompt image upload errors without an organization in $locale", async (copy) => {
+    await i18n.changeLanguage(copy.locale);
+    mockCompanyContext.selectedCompanyId = null;
+
+    const result = await renderForm(
+      [makeEnvironment({ id: "local-1", name: "Local", driver: "local" })],
+      {
+        adapterConfig: {
+          env: { GH_API_KEY: { type: "plain", value: "a-sensitive-token-value" } },
+          promptTemplate: "Use the attached image when useful.",
+        },
+      },
+      { hidePromptTemplate: false },
+    );
+    roots.push(result.root);
+
+    const storeAsSecretButton = result.container.querySelector<HTMLButtonElement>(
+      `button[title="${i18n.t("secrets.environmentVariables.sensitiveTitle")}"]`,
+    );
+    expect(storeAsSecretButton).toBeTruthy();
+    await clickElement(storeAsSecretButton);
+
+    const secretName = document.querySelector<HTMLInputElement>(
+      `input[aria-label="${i18n.t("secrets.environmentVariables.secretPopover.nameAriaLabel")}"]`,
+    );
+    const secretValue = document.querySelector<HTMLInputElement>(
+      `input[aria-label="${i18n.t("secrets.environmentVariables.secretPopover.valueAriaLabel")}"]`,
+    );
+    expect(secretName).toBeTruthy();
+    expect(secretValue).toBeTruthy();
+    await act(async () => {
+      setInputValue(secretName!, "test_secret");
+      setInputValue(secretValue!, "secret-value");
+    });
+    await flushReact();
+    await clickElement(
+      findButton(
+        document.body,
+        i18n.t("secrets.environmentVariables.secretPopover.storeAndBind"),
+      ),
+    );
+    await flushReact();
+
+    expect(document.body.textContent).toContain(copy.createError);
+    expect(mockSecretsApi.create).not.toHaveBeenCalled();
+
+    const uploadButton = result.container.querySelector<HTMLButtonElement>(
+      '[data-testid="markdown-image-upload"]',
+    );
+    expect(uploadButton).toBeTruthy();
+    await clickElement(uploadButton);
+    await flushReact();
+
+    expect(result.container.querySelector('[data-testid="markdown-upload-error"]')?.textContent)
+      .toBe(copy.imageUploadError);
+    expect(mockAssetsApi.uploadImage).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -1394,9 +1531,19 @@ describe("AgentConfigForm environment selector", () => {
   });
 
   it.each([
-    { locale: "en", secretAccessTitle: "Secret access", noBindings: "No secrets are bound to this agent yet." },
-    { locale: "pt-BR", secretAccessTitle: "Acesso a segredos", noBindings: "Ainda não há segredos vinculados a este agente." },
-  ])("localizes secret access as dedicated form content in $locale", async ({ locale, secretAccessTitle, noBindings }) => {
+    {
+      locale: "en",
+      secretAccessTitle: "Secret access",
+      secretAccessDescription: "Secrets this agent can reach. Env-var bindings are injected at run start; API-access bindings are fetched on demand via the run-bound agent API and never written to the environment.",
+      noBindings: "No secrets are bound to this agent yet.",
+    },
+    {
+      locale: "pt-BR",
+      secretAccessTitle: "Acesso a segredos",
+      secretAccessDescription: "Segredos que este agente pode acessar. As associações de variáveis de ambiente são injetadas no início da execução; as associações de acesso à API são obtidas sob demanda pela API do agente vinculada à execução e nunca são gravadas no ambiente.",
+      noBindings: "Ainda não há segredos vinculados a este agente.",
+    },
+  ])("localizes secret access as dedicated form content in $locale", async ({ locale, secretAccessTitle, secretAccessDescription, noBindings }) => {
     await i18n.changeLanguage(locale);
     const result = await renderForm(
       [makeEnvironment({ id: "local-1", name: "Local", driver: "local" })],
@@ -1406,8 +1553,35 @@ describe("AgentConfigForm environment selector", () => {
     roots.push(result.root);
 
     expect(result.container.textContent).toContain(secretAccessTitle);
+    expect(result.container.textContent).toContain(secretAccessDescription);
     expect(result.container.textContent).toContain(noBindings);
     expect(result.container.textContent).not.toContain("Environment variables");
+  });
+
+  it.each([
+    {
+      locale: "en",
+      placeholder: "You are agent {{ agent.name }}. Your role is {{ agent.role }}...",
+      savedPrompt: "Keep the saved prompt unchanged: {{ agent.name }}",
+    },
+    {
+      locale: "pt-BR",
+      placeholder: "Você é o agente {{ agent.name }}. Sua função é {{ agent.role }}...",
+      savedPrompt: "Mantenha o prompt salvo sem alterações: {{ agent.name }}",
+    },
+  ])("localizes the prompt template example without changing saved content in $locale", async ({ locale, placeholder, savedPrompt }) => {
+    await i18n.changeLanguage(locale);
+    const result = await renderForm(
+      [makeEnvironment({ id: "local-1", name: "Local", driver: "local" })],
+      { adapterConfig: { promptTemplate: savedPrompt } },
+      { hidePromptTemplate: false },
+    );
+    roots.push(result.root);
+
+    const promptField = result.container.querySelector<HTMLTextAreaElement>(
+      `textarea[aria-label="${placeholder}"]`,
+    );
+    expect(promptField?.value).toBe(savedPrompt);
   });
 
   it.each([
@@ -4326,7 +4500,21 @@ describe("AgentConfigForm managed-sandbox-only host surfaces", () => {
     await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
-  it("shows the host path and execution-engine fields when the policy is off", async () => {
+  it.each([
+    {
+      locale: "en",
+      cwdLabel: "Working directory (deprecated)",
+      cwdHint: "Deprecated legacy working directory fallback for local adapters. Existing agents may still carry this value, but new configurations should use project workspaces instead.",
+      cwdPlaceholder: "/path/to/project",
+    },
+    {
+      locale: "pt-BR",
+      cwdLabel: "Diretório de trabalho (obsoleto)",
+      cwdHint: "Alternativa legada e obsoleta de diretório de trabalho para adaptadores locais. Agentes existentes podem continuar usando esse valor, mas novas configurações devem usar espaços de trabalho de projeto.",
+      cwdPlaceholder: "/caminho/do/projeto",
+    },
+  ])("localizes the legacy host path controls when the policy is off in $locale", async (copy) => {
+    await i18n.changeLanguage(copy.locale);
     const result = await renderForm(
       [makeEnvironment({ id: "local-1", name: "Local", driver: "local" })],
       { adapterType: "claude_local", adapterConfig: MANAGED_AGENT_CONFIG },
@@ -4340,12 +4528,22 @@ describe("AgentConfigForm managed-sandbox-only host surfaces", () => {
     });
     await flushReact();
     const labels = fieldLabels(result.container);
-    expect(labels).toContain("Working directory (deprecated)");
-    expect(labels).toContain("Command");
-    expect(labels).toContain("Execution engine");
-    expect(labels).toContain("ACP server command");
-    expect(labels).toContain("ACP state directory");
-    expect(choosePathButtons(result.container).length).toBeGreaterThan(0);
+    expect(labels).toContain(copy.cwdLabel);
+
+    const cwdInput = result.container.querySelector<HTMLInputElement>(
+      `input[placeholder="${copy.cwdPlaceholder}"]`,
+    );
+    expect(cwdInput?.value).toBe("/srv/agents/cody");
+    const cwdLabel = Array.from(result.container.querySelectorAll("label")).find(
+      (label) => label.textContent?.trim() === copy.cwdLabel,
+    );
+    const hintTrigger = cwdLabel?.parentElement?.querySelector<HTMLButtonElement>(
+      '[data-slot="tooltip-trigger"]',
+    );
+    expect(hintTrigger).toBeTruthy();
+    await act(async () => hintTrigger?.focus());
+    await flushReact();
+    expect(document.body.textContent).toContain(copy.cwdHint);
 
     const adapterFields = result.container.querySelector('[data-testid="adapter-config-fields"]');
     expect(adapterFields?.getAttribute("data-managed-sandbox-only")).toBe("false");

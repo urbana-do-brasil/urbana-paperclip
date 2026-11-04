@@ -6990,10 +6990,12 @@
       "missingManager": "O gerente salvo não está mais nesta organização. Escolha outro gerente ou remova a relação.",
       "promptTemplate": "Modelo de prompt",
       "promptTemplateHint": "Enviado em cada heartbeat. Mantenha-o curto e dinâmico. Use-o para contextualizar a tarefa atual, não para instruções estáticas extensas.",
+      "promptTemplatePlaceholder": "Você é o agente {{ agent.name }}. Sua função é {{ agent.role }}...",
       "promptTemplateNotice": "O modelo de prompt é reaplicado a cada heartbeat. Mantenha-o curto e dinâmico para evitar custo recorrente de tokens e alterações desnecessárias no cache."
     },
     "secretAccess": {
       "title": "Acesso a segredos",
+      "description": "Segredos que este agente pode acessar. As associações de variáveis de ambiente são injetadas no início da execução; as associações de acesso à API são obtidas sob demanda pela API do agente vinculada à execução e nunca são gravadas no ambiente.",
       "organizationRequiredForCreate": "Selecione uma organização para criar segredos",
       "organizationRequiredForImageUpload": "Selecione uma organização para enviar imagens"
     },
@@ -7002,6 +7004,11 @@
       "hint": "Só é enviado quando o Paperclip inicia uma sessão nova. Use-o para orientações estáveis de configuração que não devem ser repetidas a cada heartbeat.",
       "placeholder": "Instrução inicial opcional para a primeira execução",
       "legacyNotice": "O prompt de inicialização é legado e será removido em uma versão futura. Considere mover esse conteúdo para o modelo de prompt do agente ou para o arquivo de instruções."
+    },
+    "workingDirectory": {
+      "deprecatedLabel": "Diretório de trabalho (obsoleto)",
+      "deprecatedHint": "Alternativa legada e obsoleta de diretório de trabalho para adaptadores locais. Agentes existentes podem continuar usando esse valor, mas novas configurações devem usar espaços de trabalho de projeto.",
+      "placeholder": "/caminho/do/projeto"
     },
     "providerTrace": {
       "heading": "Depuração",

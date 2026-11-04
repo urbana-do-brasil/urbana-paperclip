@@ -117,6 +117,10 @@ describe("agent lifecycle commands", () => {
       ["PUT", `http://localhost:3100/api/agents/${AGENT_ID}/instructions-bundle/file`],
       ["DELETE", `http://localhost:3100/api/agents/${AGENT_ID}/instructions-bundle/file?path=AGENTS.md`],
     ]);
+    expect(JSON.parse(String(fetchMock.mock.calls[12]?.[1]?.body))).toEqual({
+      mode: "managed",
+      clearLegacyPromptTemplate: false,
+    });
   });
 });
 
