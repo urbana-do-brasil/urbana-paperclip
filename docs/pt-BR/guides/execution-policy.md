@@ -85,9 +85,9 @@ interface IssueExecutionDecision {
 ### Fluxo esperado: revisão + aprovação
 
 ```
-┌──────────┐    executor     ┌───────────┐   reviewer    ┌───────────┐   approver    ┌──────┐
-│  todo     │───completes───▶│ in_review  │───approves───▶│ in_review │───approves───▶│ done │
-│ (Coder)  │    work         │ (QA)      │               │ (CTO)     │               │      │
+┌──────────┐     agente      ┌───────────┐   revisora    ┌───────────┐  aprovadora   ┌──────┐
+│  todo     │───conclui─────▶│ in_review  │───aprova──────▶│ in_review │───aprova──────▶│ done │
+│ (Agente) │    trabalho     │ (QA)      │               │ (CTO)     │               │      │
 └──────────┘                 └───────────┘               └───────────┘               └──────┘
 ```
 
@@ -109,9 +109,9 @@ interface IssueExecutionDecision {
 ### Fluxo de solicitação de alterações
 
 ```
-┌───────────┐   reviewer requests   ┌─────────────┐   executor    ┌───────────┐
-│ in_review  │───changes────────────▶│ in_progress  │───resubmits──▶│ in_review │
-│ (QA)      │                       │ (Coder)      │               │ (QA)      │
+┌───────────┐ solicita ajustes ┌─────────────┐    agente     ┌───────────┐
+│ in_review  │───solicita ajustes───▶│ in_progress  │───reenvia─────▶│ in_review │
+│ (QA)      │                       │ (Agente)     │               │ (QA)      │
 └───────────┘                       └──────────────┘               └───────────┘
 ```
 

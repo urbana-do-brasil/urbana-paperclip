@@ -635,11 +635,14 @@ Procure `children_terminal`, seguido pelo evento automático `transitioned`.
 Execute o mesmo fluxo de ponta a ponta:
 
 ```sh
+PAPERCLIP_SMOKE_DISPOSABLE=1 \
 PAPERCLIP_API_URL=http://localhost:3100 \
 PAPERCLIP_COMPANY_ID=<company-id> \
 PAPERCLIP_API_KEY=<token> \
 pnpm smoke:pipelines-tutorial
 ```
+
+Execute somente em uma instância e empresa descartáveis. O smoke cria pipelines, casos, uma rotina e uma issue; a API não oferece um endpoint para excluir esses registros. A variável explícita de instância descartável faz o script recusar a execução por padrão. Não a defina em uma instância compartilhada ou de produção.
 
 O smoke verifica se:
 

@@ -3931,3 +3931,30 @@ agregadores. A aplicação não foi implantada.
   iniciado sem privilégios de root. O acesso ao banco recusou execução como
   root; nenhum serviço ou credencial de negócio foi criado. CI remota, build e
   browser integrados e revisão humana dos guias continuam pendentes.
+
+### Checkpoint — ajuda, CLI e segurança do smoke — 2026-11-04
+
+O checklist está em **475/491 tarefas**, com 16 itens abertos incluindo os
+agregadores. A aplicação não foi implantada.
+
+- 6.3 corrigiu o fallback do histórico de chat para timestamps inválidos; o
+  rótulo de data é omitido para valores inválidos. As suítes de chat passaram
+  **131/131** e o typecheck da UI passou.
+- 5.2c traduziu os rótulos humanos restantes dos diagramas PT-BR, mantendo
+  topologia/estados e os exemplos técnicos pareados. `ui/src/help/content.test.ts`
+  passou **7/7**; o manifesto continuou com 71 tópicos.
+- 4.3bd9 fixou a tabela de ajuda raiz em **75 comandos** e verifica no
+  subprocesso real a paridade de assinaturas e descrições localizadas. O caso
+  focado passou; a execução integrada também concluiu abaixo.
+- 5.3d3 tornou o smoke do tutorial de pipelines mais seguro: exige
+  `PAPERCLIP_SMOKE_DISPOSABLE=1` e gera chaves únicas por execução. Testes Node
+  **2/2**, `bash -n`, gate de tópicos e `git diff --check` passaram. A execução
+  contra API descartável segue pendente; os registros de smoke persistem e não
+  há endpoint de limpeza.
+- `pnpm check:localization` passou: 71 tópicos, scanner de fontes, **17/17**
+  testes Node e **422/422** testes Vitest em 59 arquivos. `pnpm
+  check:token-gates`, typecheck UI e validação OpenSpec estrita também passaram.
+
+CI remota, execução real do smoke, validação browser/build final e revisão
+humana das traduções continuam pendentes. Nenhum serviço ou dado real foi
+acessado nesta rodada.

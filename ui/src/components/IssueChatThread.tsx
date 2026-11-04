@@ -1073,9 +1073,11 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function commentDateLabel(date: Date | string | undefined): string {
   if (!date) return "";
-  const then = new Date(date).getTime();
-  if (Date.now() - then < WEEK_MS) return timeAgo(date);
-  return formatShortDate(date);
+  const validDate = toValidIsoString(date);
+  if (!validDate) return "";
+  const then = new Date(validDate).getTime();
+  if (Date.now() - then < WEEK_MS) return timeAgo(validDate);
+  return formatShortDate(validDate);
 }
 
 const IssueChatTextPart = memo(function IssueChatTextPart({

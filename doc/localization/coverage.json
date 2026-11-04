@@ -963,11 +963,12 @@
         "4.3bd6: 19 rotas de help de issue recovery/child/work-product/document/interaction/tree e agent wake/local-cli comparadas em PT-BR/en; assinaturas e defaults preservados; matriz completa de help: 66/66. Typecheck direcionado da CLI passou.",
         "4.3bd7: opções e argumentos PT-BR/en para upload/download/exclusão de anexos, etiquetas, votos/exportação de feedback e atualização do pacote de instruções; dez subprocessos selecionados, contratos de payload e typecheck CLI passaram.",
         "4.3bd8: help de issue checkout/release comparado em subprocessos PT-BR/en: 2/2; assinaturas e flags preservadas, typecheck CLI e gate de tópicos passaram.",
+        "4.3bd9: `paperclipai --help` executado em PT-BR/en; 75/75 assinaturas pareadas e 75/75 descrições localizadas. Teste fixa a contagem da tabela raiz e exige paridade bilíngue.",
         "cli/src/__tests__/issue-subresources.test.ts",
         "cli/src/__tests__/agent-lifecycle.test.ts",
         "cli/src/__tests__/operation-help-localization.test.ts"
       ],
-      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e família activity têm verificação parcial. O help avançou em lotes leaf, incluindo 4.3bd6–bd8; outras opções de help, operações e regressão 4.4 permanecem pendentes. Typechecks direcionados passaram nos lotes reportados; o typecheck integral da CLI terminou com exit 137 por memória."
+      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e família activity têm verificação parcial. A tabela de primeiro nível (75 comandos) está coberta em PT-BR/en; a auditoria de todos os comandos folha continua em 4.3bd. Outras operações e regressão 4.4 permanecem pendentes. Typechecks direcionados passaram nos lotes reportados; o typecheck integral da CLI terminou com exit 137 por memória."
     },
     {
       "id": "help-start",
@@ -985,9 +986,11 @@
         "ui/src/help/topics.json",
         "scripts/check-localized-help.mjs",
         "docs/pt-BR/guides/execution-policy.md",
-        "docs/pt-BR/feedback-voting.md"
+        "docs/pt-BR/feedback-voting.md",
+        "ui/src/help/content.test.ts",
+        "5.2c: rótulos humanos dos diagramas de fluxo em PT-BR; topologia/estados preservados e exemplos técnicos mantidos idênticos. Conteúdo/HelpPage: 7/7; gate de 71 tópicos passou."
       ],
-      "limits": "O guia de votos de feedback entrou no mapa público com par em PT-BR; os tópicos mapeados desta área têm as duas versões. Revisão humana da semântica, glossário e exemplos continua pendente."
+      "limits": "O guia de votos de feedback entrou no mapa público com par em PT-BR; os tópicos mapeados desta área têm as duas versões. A auditoria editorial corrigiu rótulos de diagramas que ainda estavam em inglês. Revisão independente da semântica, glossário e exemplos continua pendente."
     },
     {
       "id": "help-admin",
@@ -1011,9 +1014,11 @@
         "ui/src/help/content.test.ts",
         "docs/pt-BR/guides/openclaw-docker-setup.md",
         "docs/pt-BR/agents-runtime.md",
-        "docs/pt-BR/pipelines-tutorial.md"
+        "docs/pt-BR/pipelines-tutorial.md",
+        "scripts/smoke/pipelines-tutorial-smoke.sh",
+        "scripts/__tests__/pipeline-tutorial-smoke.test.mjs"
       ],
-      "limits": "O mapa contém 71 tópicos com pares em inglês/PT-BR. A paridade de estrutura, links e trechos técnicos é verificada pelos gates; revisão humana e smoke operacional do guia OpenClaw continuam pendentes. Os exemplos executáveis do tutorial de pipelines ainda precisam ser validados em fixture descartável e divergências da documentação de origem devem ser registradas."
+      "limits": "O mapa contém 71 tópicos com pares em inglês/PT-BR. A paridade de estrutura, links e trechos técnicos é verificada pelos gates; revisão humana e smoke operacional do guia OpenClaw continuam pendentes. O script de smoke de pipelines exige opt-in para API descartável e usa chaves únicas; teste de segurança e sintaxe passaram, mas os exemplos ainda precisam ser executados em fixture descartável e divergências da documentação de origem devem ser registradas. Os registros criados persistem, pois a API não oferece endpoint de limpeza."
     },
     {
       "id": "help-delivery",
@@ -1046,7 +1051,8 @@
         "server/src/services/heartbeat/run-preparation.ts",
         "server/src/adapters/registry.ts",
         "packages/adapter-utils/src/server-utils.ts",
-        "packages/adapters/"
+        "packages/adapters/",
+        "ui/src/components/IssueChatThread.tsx"
       ],
       "status": "interaction-snapshot-verified",
       "evidence": [
@@ -1055,9 +1061,12 @@
         "server/src/__tests__/question-response-delivery.test.ts",
         "server/src/__tests__/durable-chat-wakeup.test.ts",
         "server/src/services/heartbeat/queue.test.ts",
-        "6.2d: 138/138 testes em 9 suítes de carriers; 87/87 testes DB em seis suítes sem skips; lote ampliado 494/495 sob concorrência com timeout repetido isoladamente em 9/9; typechecks de adapter-utils/11 adapters e teste HTTP focal passaram."
+        "6.2d: 138/138 testes em 9 suítes de carriers; 87/87 testes DB em seis suítes sem skips; lote ampliado 494/495 sob concorrência com timeout repetido isoladamente em 9/9; typechecks de adapter-utils/11 adapters e teste HTTP focal passaram.",
+        "ui/src/components/IssueChatThread.test.tsx",
+        "ui/src/components/IssueChatThreadSystemNotice.test.tsx",
+        "6.3h: fallback de histórico preserva comentário e omite data inválida; timestamps ISO continuam formatados no locale. 131/131 testes focados e typecheck UI passaram."
       ],
-      "limits": "6.1 verificada com snapshots por requester, entrega de interação, associação de mensagens adiadas, replay idempotente, retry, delegação e recuperação; typecheck do servidor passou. 6.2–6.4 ainda não foram implementadas nem qualificadas com modelos reais. 6.2d amplia transporte determinístico PT-BR/en; server typecheck integral terminou SIGKILL/137. Consumo de HTTP/process externos e respostas reais não foram qualificados."
+      "limits": "6.1 verificada com snapshots por requester, entrega de interação, associação de mensagens adiadas, replay idempotente, retry, delegação e recuperação; typecheck do servidor passou. 6.2–6.4 permanecem parciais: há transporte determinístico em adaptadores suportados, mas a matriz de respostas reais por runtime/modelo ainda não foi qualificada. 6.2d amplia transporte determinístico PT-BR/en; server typecheck integral terminou SIGKILL/137. Consumo de HTTP/process externos e respostas reais não foram qualificados."
     },
     {
       "id": "integration",

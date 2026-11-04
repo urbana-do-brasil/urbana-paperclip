@@ -149,6 +149,12 @@ describe("registered CLI operation help", () => {
     const enCommands = helpRows(en, "Commands");
     expectLocalizedRows(name, ptCommands, enCommands);
     expect(ptCommands.length).toBeGreaterThan(0);
+    if (name === "root") {
+      // Pin the current top-level help inventory so a newly registered command
+      // cannot silently bypass the bilingual description check.
+      expect(ptCommands).toHaveLength(75);
+      expect(enCommands).toHaveLength(75);
+    }
 
     const ptOptions = helpRows(pt, "Opções");
     const enOptions = helpRows(en, "Options");

@@ -49,8 +49,24 @@ describe("public help mapping", () => {
       return [...new Set([...withoutFences.matchAll(/`([^`\n]+)`/g)].map((match) => match[1]))].sort();
     };
     const exampleBlocks = (markdown: string) =>
-      [...markdown.matchAll(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm)].map((match) =>
-        match[0].replace(/^\s*#.*$/gm, "").replace(/\s+#.*$/gm, ""));
+      [...markdown.matchAll(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm)].map((match) => {
+        const block = match[0].replace(/^\s*#.*$/gm, "").replace(/\s+#.*$/gm, "");
+        if (!block.includes("┌")) return { kind: "code", source: block };
+
+        // Presentational ASCII workflows may translate their labels while the
+        // status values and graph shape must remain identical between guides.
+        const drawingRows = block.split("\n").filter((line) => /[┌└│]/.test(line));
+        return {
+          kind: "workflow-diagram",
+          rows: drawingRows.map((line) => ({
+            topBoxes: (line.match(/┌/g) ?? []).length,
+            bottomBoxes: (line.match(/└/g) ?? []).length,
+            verticalEdges: (line.match(/│/g) ?? []).length,
+            transitions: (line.match(/▶/g) ?? []).length,
+            states: [...line.matchAll(/\b(?:todo|in_review|in_progress|done)\b/g)].map(([state]) => state),
+          })),
+        };
+      });
     const linkTargets = (markdown: string) => [...markdown.matchAll(/\]\(([^)]+)\)/g)].map((match) => match[1]);
 
     const translatedHeadings: Record<string, string> = {
@@ -71,6 +87,15 @@ describe("public help mapping", () => {
       expect(technicalTokens(portuguese.content)).toEqual(technicalTokens(english.content));
       expect(exampleBlocks(portuguese.content)).toEqual(exampleBlocks(english.content));
       expect(linkTargets(portuguese.content)).toEqual(linkTargets(english.content));
+      if (slug === "guides/execution-policy") {
+        const workflowDiagrams = [...portuguese.content.matchAll(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm)]
+          .map((match) => match[0])
+          .filter((block) => block.includes("┌"));
+        expect(workflowDiagrams).toHaveLength(2);
+        expect(workflowDiagrams.join("\n")).toContain("solicita ajustes");
+        expect(workflowDiagrams.join("\n")).toContain("aprovadora");
+        expect(workflowDiagrams.join("\n")).not.toMatch(/\b(?:executor|reviewer|approver|completes|approves|changes|resubmits)\b/i);
+      }
     }
   });
 

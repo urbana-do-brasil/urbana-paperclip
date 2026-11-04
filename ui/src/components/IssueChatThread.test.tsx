@@ -16,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { i18n } from "@/i18n";
 import type { Agent } from "@paperclipai/shared";
 import { CommentSubmissionUnknownError } from "../lib/comment-submit-result";
+import { formatShortDate } from "../lib/utils";
 import { loadDraft, preserveDraftInTab, settleDraftSubmission } from "../lib/composer-draft";
 import {
   IssueAssigneePausedNotice,
@@ -588,6 +589,76 @@ describe("IssueChatThread", () => {
       expect(container.textContent).toContain("Ocorreu um erro interno ao exibir a conversa.");
       expect(container.textContent).toContain("Diagnóstico original do sistema");
       expect(container.textContent).not.toContain("Chat renderer hit an internal state error");
+    } finally {
+      act(() => root.unmount());
+      markdownBodyRenderMock.mockReset();
+      consoleError.mockRestore();
+    }
+  });
+
+  it("omits malformed history timestamps in the safe transcript fallback", async () => {
+    await i18n.changeLanguage("pt-BR");
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-04T12:00:00.000Z"));
+    const validCreatedAt = "2026-10-01T12:00:00.000Z";
+    markdownBodyRenderMock.mockImplementation(({ className }: { className?: string }) => {
+      if (className === "text-sm leading-6") {
+        throw new Error("test-only renderer failure");
+      }
+    });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const root = createRoot(container);
+
+    try {
+      act(() => {
+        root.render(
+          <MemoryRouter>
+            <IssueChatThread
+              comments={[
+                {
+                  id: "system-comment-invalid-date",
+                  companyId: "company-1",
+                  issueId: "issue-1",
+                  authorAgentId: null,
+                  authorUserId: null,
+                  authorType: "system",
+                  body: "Histórico com data inválida preserva o conteúdo",
+                  presentation: null,
+                  metadata: null,
+                  createdAt: {} as unknown as Date,
+                  updatedAt: {} as unknown as Date,
+                },
+                {
+                  id: "system-comment-valid-date",
+                  companyId: "company-1",
+                  issueId: "issue-1",
+                  authorAgentId: null,
+                  authorUserId: null,
+                  authorType: "system",
+                  body: "Histórico com data válida preserva o rótulo",
+                  presentation: null,
+                  metadata: null,
+                  // The comments API serializes valid Date values as ISO strings.
+                  createdAt: validCreatedAt as unknown as Date,
+                  updatedAt: validCreatedAt as unknown as Date,
+                },
+              ]}
+              linkedRuns={[]}
+              timelineEvents={[]}
+              liveRuns={[]}
+              onAdd={async () => {}}
+              showComposer={false}
+              enableLiveTranscriptPolling={false}
+            />
+          </MemoryRouter>,
+        );
+      });
+
+      expect(container.textContent).toContain("Ocorreu um erro interno ao exibir a conversa.");
+      expect(container.textContent).toContain("Histórico com data inválida preserva o conteúdo");
+      expect(container.textContent).toContain("Histórico com data válida preserva o rótulo");
+      expect(container.textContent).toContain(formatShortDate(validCreatedAt));
+      expect(container.textContent).not.toContain("Invalid Date");
     } finally {
       act(() => root.unmount());
       markdownBodyRenderMock.mockReset();
