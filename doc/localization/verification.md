@@ -3887,3 +3887,47 @@ O guia de pipelines exige `PAPERCLIP_API_URL`, `PAPERCLIP_API_KEY` e uma empresa
 de desenvolvimento para executar o smoke, portanto nenhum serviço ou dado
 real foi acessado nesta rodada. CI remota, build/browser final e revisão humana
 dos guias continuam pendentes.
+
+### Checkpoint — AgentConfig, CompanyImport, catálogos e CLI — 2026-11-04
+
+O checklist está em **471/487 tarefas**, com 16 itens abertos incluindo os
+agregadores. A aplicação não foi implantada.
+
+- O commit `7b8132649` foi enviado para
+  `origin/codex/localize-paperclip-pt-br`. Inclui a conclusão de 3.6g3/g4
+  (121/121 testes de renderização, 8/8 casos focados, typecheck UI e gates de
+  tokens) e 4.3bd7 (help de 10 subcomandos, contratos de payload, typecheck CLI
+  e gate de ajuda). A auditoria final de AgentConfigForm não encontrou outros
+  textos próprios visíveis sem tradução; 3.6 foi fechada no checklist local.
+- 3.8n foi fechada após CompanyImport + locale-validation **50/50**, Chromium
+  EN/PT-BR **2/2** e typecheck UI. A importação de serviço preservou tarefas,
+  comentários e documentos; GitHub externo não foi acessado.
+- 3.9 foi fechada: após as evidências dos subitens f1–f5, a regressão integrada
+  de chat passou **18 arquivos e 310/310 testes**, incluindo flags/rotas do
+  `ChatConnectorsExperimentalGate`, setup, acesso, detalhe, atividade e
+  lifecycle. Os contratos de cópia verificam chaves resolvidas em EN/PT-BR;
+  typecheck UI passou.
+- 4.3bd8 localizou help de `issue checkout` e `issue release`; subprocessos
+  PT-BR/en passaram 2/2, e typecheck CLI e gate de tópicos passaram.
+- 3.11h foi fechada após localizar os 11 campos do schema Kitchen Sink e auditar
+  os metadados dos 16 pacotes próprios contra manifests, `package.json` e os
+  catálogos EN/PT-BR. O contrato Daytona cobre 18 campos; plugin + locale
+  passaram 38/38 e 14/14, com typecheck UI e token gates aprovados. Schemas e
+  valores configurados permanecem intactos. 3.11 foi fechada; a homologação
+  integrada em browser segue pendente em 7.3.
+- Na auditoria de interações 6.3, os catálogos EN/PT-BR não têm chaves de
+  interação ausentes ou vazias; dois testes agora verificam os textos nos dois
+  idiomas. Typecheck UI passou. A bateria focada teve 715 testes aprovados e
+  uma falha no fixture PAP-16607: `createdAt: {}` causa `RangeError` no fallback
+  do histórico. O comportamento do renderer não foi alterado; 6.3 continua
+  aberta até a falha ser resolvida ou separada formalmente da aceitação.
+- As mudanças de fechamento de 3.8n/3.9, 4.3bd8 e a atualização deste status
+  ainda não foram commitadas nem enviadas. `git diff --check`, validação JSON
+  da cobertura e OpenSpec estrito passaram.
+- O subgrupo Vitest mais amplo de `pnpm check:localization` foi interrompido
+  após as verificações de catálogo/fontes e 17/17 testes Node. A regressão de
+  chat acima passou separadamente; não há resultado final para esse subgrupo.
+- `5.3d2` continua pendente: o smoke precisa de `jq` e servidor descartável
+  iniciado sem privilégios de root. O acesso ao banco recusou execução como
+  root; nenhum serviço ou credencial de negócio foi criado. CI remota, build e
+  browser integrados e revisão humana dos guias continuam pendentes.

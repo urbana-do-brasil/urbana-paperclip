@@ -2514,7 +2514,7 @@ describe("IssueChatThread", () => {
 
     expect(container.textContent).toContain("Sistema");
     expect(container.textContent).toContain("solicitou acompanhamento");
-    expect(container.textContent).toContain("há ");
+    expect(container.textContent).toContain("semana passada");
     expect(container.textContent).toContain("A fazer");
     expect(container.textContent).toContain("Em andamento");
     expect(container.textContent).toContain("Responsável");

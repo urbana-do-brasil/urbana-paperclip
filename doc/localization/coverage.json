@@ -380,10 +380,11 @@
         "ui/src/pages/AgentDetail.production.tsx",
         "ui/src/components/AgentConfigForm.tsx"
       ],
-      "status": "partial",
+      "status": "journey-verified",
       "evidence": [
+        "3.6a–f: roster, gráfico organizacional, onboarding, ficha, instruções, configuração de runtime, histórico e detalhes de execução, transcrições/logs e Runner Inspector concluídos e verificados nas subtarefas; dados externos, prompts técnicos, valores, IDs, permissões e logs brutos preservados.",
         "3.6g3: erros próprios de criação de segredos e envio de imagens sem organização verificados em PT-BR/en; suíte de renderização do AgentConfigForm passou 121/121, typecheck UI e gates de tokens passaram.",
-        "3.6g4: descrição de acesso a segredos, exemplo do modelo de prompt e controles do diretório legado verificados em PT-BR/en; conteúdo salvo do agente e valores técnicos preservados; casos focados passaram 8/8.",
+        "3.6g4: descrição de acesso a segredos, exemplo do modelo de prompt e controles do diretório legado verificados em PT-BR/en; conteúdo salvo do agente e valores técnicos preservados; casos focados passaram 8/8. Auditoria final não encontrou outros textos próprios visíveis sem tradução.",
         "ui/src/components/AgentConfigForm.render.test.tsx",
         "ui/src/i18n/locales/en.json",
         "ui/src/i18n/locales/pt-BR.json"
@@ -574,9 +575,12 @@
         "3.8j verificada: exclusão e configuração de imagem customizada, impacto, plurais e preservação de IDs/payloads/segredos/diagnósticos externos; ambientes + catálogos 49/49 e rodada integrada 371/371, typecheck UI passou.",
         "3.8k verificada: alerta de descarte e erros próprios da seleção de ambiente, incluindo troca de idioma antes da confirmação; ambientes + locale 49/49.",
         "Reauditoria de CompanyEnvironments: rótulos de drivers internos e datas do setup seguem o locale escolhido; `CompanyEnvironments.test.tsx` passou 42/42 em PT-BR/en, preservando IDs, valores e metadados externos.",
-        "3.8l verificada: controles e estados de acesso à conexão de e-mail; suítes consumidoras 117/117, preservando escopo, permissões e payloads; rodada integrada posterior 59/59 e typecheck UI passaram. A cobertura aqui é a área EmailConnectionAccess em AppDetail e ChatEndpointDetail, sem atribuir o restante dessas páginas à 3.8."
+        "3.8l verificada: controles e estados de acesso à conexão de e-mail; suítes consumidoras 117/117, preservando escopo, permissões e payloads; rodada integrada posterior 59/59 e typecheck UI passaram. A cobertura aqui é a área EmailConnectionAccess em AppDetail e ChatEndpointDetail, sem atribuir o restante dessas páginas à 3.8.",
+        "3.8n verificada: CompanyImport e locale-validation passaram 50/50; Chromium PT-BR/en passou 2/2; typecheck UI passou. Fonte/ZIP, prévia, conflitos, flags, teclado, acessibilidade, payload e conteúdo do ZIP foram cobertos; a importação direta pelo serviço preservou tarefas, comentários e documentos. GitHub externo não foi acessado.",
+        "ui/src/pages/CompanyImport.test.tsx",
+        "tests/localization-browser/company-import.spec.ts"
       ],
-      "limits": "3.8a–f e 3.8h–l têm evidências funcionais; 3.8e1–e5 reexecutadas passaram 285/285 testes UI e 3.8f2–f3 passaram 97/97 testes MCP em PostgreSQL descartável. A matriz browser 3.8g cobriu oito combinações de idioma, tema e viewport para jornadas representativas com APIs simuladas e teclado; não cobre todas as jornadas, papéis ou tablet. A jornada CompanyImport permanece parcialmente em inglês e está aberta em 3.8n. As evidências 3.8h–l não substituem a reconciliação de fontes/rotas/flags em 7.2 nem a regressão integrada descartável em 7.3; a revisão final independente de 7.4 também está pendente."
+      "limits": "3.8a–f, 3.8h–l e 3.8n têm evidências funcionais; 3.8e1–e5 reexecutadas passaram 285/285 testes UI e 3.8f2–f3 passaram 97/97 testes MCP em PostgreSQL descartável. A matriz browser 3.8g cobriu oito combinações de idioma, tema e viewport para jornadas representativas com APIs simuladas e teclado; não cobre todas as jornadas, papéis ou tablet. CompanyImport foi verificada em fixture/browser e serviço local; nenhum GitHub externo ou HTTP de importação remoto foi acessado. As evidências não substituem a reconciliação de fontes/rotas/flags em 7.2 nem a regressão integrada descartável em 7.3; a revisão final independente de 7.4 também está pendente."
     },
     {
       "id": "catalogs",
@@ -624,7 +628,7 @@
         "ui/src/pages/apps/gateways/panels/GatewayActivityPanel.tsx",
         "ui/src/pages/apps/gateways/panels/GatewayAdvancedPanel.tsx"
       ],
-      "status": "partial",
+      "status": "journey-verified",
       "evidence": [
         "ui/src/pages/SkillSources.test.tsx",
         "ui/src/pages/skills/SkillSourceTree.test.tsx",
@@ -650,6 +654,11 @@
         "ui/src/pages/apps/generic-mcp-connect.test.ts",
         "ui/src/components/routine-triggers/TriggerWizard.test.tsx",
         "ui/src/pages/apps/chat/GitHubChatSetup.test.tsx",
+        "ui/src/pages/apps/chat/GitHubBotManagement.test.tsx",
+        "ui/src/pages/apps/chat/ChatEndpointDetail.activity.test.ts",
+        "ui/src/pages/apps/chat/chat-ui-contract.test.ts",
+        "ui/src/components/ChatConnectorsExperimentalGate.test.tsx",
+        "3.9f6o: regressão integrada dos conectores sob gate, incluindo flags, rotas condicionais, setup GitHub, histórico/atividade e contratos de cópia EN/PT-BR: 18 arquivos, 310/310 testes; typecheck UI passou.",
         "ui/src/pages/apps/chat/ChatEndpoint.clipboard.test.tsx",
         "ui/src/pages/apps/app-detail/ActionTestDialog.test.tsx",
         "ui/src/components/JsonSchemaForm.test.tsx",
@@ -670,7 +679,7 @@
         "ui/src/pages/apps/gateways/panels/TokensPanel.test.tsx",
         "ui/src/pages/apps/gateways/panels/GatewayActivityPanel.test.tsx"
       ],
-      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia), 3.9b1–b2c (descoberta/cartões, árvore e gestão de pastas, detalhes/arquivos e operações da biblioteca), 3.9c (Skill Studio), 3.9d (catálogo e instalação/configuração de equipes), 3.9e1–e3 (perfis, acesso, gateways MCP, tokens e configuração colada), 3.9f1 (descoberta e catálogo de apps), 3.9f2 (inventário/saúde de conexões, contas inline, revisão de ações e remoção), 3.9f3a (shell, navegação, cabeçalho e estados do detalhe), 3.9f3b (setup/ciclo de vida) e 3.9f3c (permissões/acesso dos agentes) e 3.9f3d (identidades/contas associadas) foram verificadas em PT-BR/en. O assistente genérico foi decomposto em b2a (shell/seleção, verificado por AppsConnect e locale: 214/214), b2b (MCP personalizado/Zapier, verificado por AppsConnect, generic-mcp-connect, locale, TriggerWizard e GitHubChatSetup: 277/277) e b2c (credenciais/método, estados OAuth e conclusão, dividido em c1–c3; concluído); teste manual de ações: 3.9f3e1 (diálogo, seleção, badges e argumentos) verificada em PT-BR/en com 51/51 testes; e2 (execução, cancelamento, resultados e falhas) verificada com 55/55; e3 (aprovações Ask-first, hand-off, retomada, recusa/cancelamento e expiração do provider) verificada em PT-BR/en com 62/62 testes; 3.9f3f localizou o painel legado de atividade/histórico em PT-BR/en com 27/27 testes. A aba atual redireciona ao feed geral de auditoria e o painel não tem import ativo; o redirecionamento foi mantido. 3.9f3g localizou os detalhes técnicos e as ações de reconexão/revogação; o wrapper avançado não tem import ativo, mas foi verificado junto às ações usadas no fluxo atual. 3.9f4 (configurações de provedores e gestores de contas) foi verificada em PT-BR/en com 101/101 testes; 3.9f5 (gestão de gateways MCP de apps) foi verificada em PT-BR/en com 43/43 testes focados; URLs, caminhos, nomes fornecidos, IDs, transportes, versão do protocolo, ações MCP, tokens mascarados, JSON, erros dinâmicos e payloads foram preservados. As rotas de conectores de chat sob ChatConnectorsExperimentalGate foram identificadas em 3.9f6: shell e aba de atividade têm teste focado 33/33, mas setup e demais abas seguem pendentes, assim como verificação integral das flags e permissões. Biblioteca e catálogo de skills foram conferidos nas variantes streamlined e production; a superfície do catálogo de equipes compartilha sua implementação entre as variantes. Nomes e descrições de pacotes, apps, perfis e ferramentas fornecidos, conteúdo externo, compatibilidade, permissões, IDs, referências e payloads foram preservados."
+      "limits": "3.9a (fontes GitHub, descoberta, seleção e prévia), 3.9b1–b2c (descoberta/cartões, árvore e gestão de pastas, detalhes/arquivos e operações da biblioteca), 3.9c (Skill Studio), 3.9d (catálogo e instalação/configuração de equipes), 3.9e1–e3 (perfis, acesso, gateways MCP, tokens e configuração colada), 3.9f1 (descoberta e catálogo de apps), 3.9f2 (inventário/saúde de conexões, contas inline, revisão de ações e remoção), 3.9f3a (shell, navegação, cabeçalho e estados do detalhe), 3.9f3b (setup/ciclo de vida) e 3.9f3c (permissões/acesso dos agentes) e 3.9f3d (identidades/contas associadas) foram verificadas em PT-BR/en. O assistente genérico foi decomposto em b2a (shell/seleção, verificado por AppsConnect e locale: 214/214), b2b (MCP personalizado/Zapier, verificado por AppsConnect, generic-mcp-connect, locale, TriggerWizard e GitHubChatSetup: 277/277) e b2c (credenciais/método, estados OAuth e conclusão, dividido em c1–c3; concluído); teste manual de ações: 3.9f3e1 (diálogo, seleção, badges e argumentos) verificada em PT-BR/en com 51/51 testes; e2 (execução, cancelamento, resultados e falhas) verificada com 55/55; e3 (aprovações Ask-first, hand-off, retomada, recusa/cancelamento e expiração do provider) verificada em PT-BR/en com 62/62 testes; 3.9f3f localizou o painel legado de atividade/histórico em PT-BR/en com 27/27 testes. A aba atual redireciona ao feed geral de auditoria e o painel não tem import ativo; o redirecionamento foi mantido. 3.9f3g localizou os detalhes técnicos e as ações de reconexão/revogação; o wrapper avançado não tem import ativo, mas foi verificado junto às ações usadas no fluxo atual. 3.9f4 (configurações de provedores e gestores de contas) foi verificada em PT-BR/en com 101/101 testes; 3.9f5 (gestão de gateways MCP de apps) foi verificada em PT-BR/en com 43/43 testes focados. 3.9f6 foi fechada após regressão integrada de 18 arquivos, 310/310 testes, incluindo ChatConnectorsExperimentalGate com flags/rotas condicionais, acesso, setup, detalhe, atividade e lifecycle; helper estático agora exige keys resolvidas em EN/PT-BR e preserva IDs, URLs, payloads e nomes externos. Biblioteca e catálogo de skills foram conferidos nas variantes streamlined e production; a superfície do catálogo de equipes compartilha sua implementação entre as variantes. Nomes e descrições de pacotes, apps, perfis e ferramentas fornecidos, conteúdo externo, compatibilidade, permissões, IDs, referências e payloads foram preservados."
     },
     {
       "id": "experimental",
@@ -838,7 +847,7 @@
         "doc/plugins/PLUGIN_SPEC.md",
         "packages/plugins/sdk/README.md"
       ],
-      "status": "partial",
+      "status": "journey-verified",
       "evidence": [
         "OpenSpec 3.11 decomposta em 12 lotes revisáveis",
         "PluginHostContext sem locale identificado na auditoria",
@@ -863,9 +872,15 @@
         "3.11h4 27 slots próprios e um launcher: inventário e locale 36/36; typecheck UI, token gates e forbidden-token check passaram.",
         "3.11f3d: lint, eventos, autosave e fallbacks da Wiki; 151/151 testes, typecheck e build passaram.",
         "3.11h5–h6: bundles e atribuições de plugins em projetos/rotinas; 26/26 e 25/25 testes, typecheck UI e token gates.",
-        "3.11h7: nomes próprios de recursos gerenciados da Wiki preservam valores editados; 155/155 testes, typecheck e build passaram."
+        "3.11h7: nomes próprios de recursos gerenciados da Wiki preservam valores editados; 155/155 testes, typecheck e build passaram.",
+        "3.11h8–h9: categorias de plugins e nomes de sandbox providers bundled verificados com fallback externo; testes 18/18, 14/14 e Agents 23/23; typecheck UI passou.",
+        "3.11h10–h18: schemas Daytona, E2B, Novita, Modal, Cloudflare, Kubernetes, exe.dev, CreateOS, fake-plugin e File Browser localizados somente na apresentação, preservando schemas/valores e fallback externo; evidências por subitem no OpenSpec.",
+        "3.11h19: 11 campos do schema Kitchen Sink localizados; inventário dos 16 IDs/pacotes próprios reconciliado com manifests, package.json e catálogos EN/PT-BR. Daytona verificado em todos os 18 campos; plugin + locale 38/38 e 14/14, typecheck UI e token gates passaram.",
+        "ui/src/lib/plugin-presentation-localization.test.ts",
+        "ui/src/i18n/locales/en.json",
+        "ui/src/i18n/locales/pt-BR.json"
       ],
-      "limits": "3.11f3 e f3a–d cobrem as seções ativas de configurações da Wiki em PT-BR/en; interação foi verificada em jsdom, com homologação integrada em navegador ainda pendente em 7.3. 3.11h1–h7 cobrem bundles, slots e algumas superfícies de recursos gerenciados; metadados de outras superfícies host continuam pendentes. Valores externos, nomes editados e schemas permanecem originais. Kitchen Sink foi testado por markup; fixture de orquestração depende de instalação local para typecheck completo."
+      "limits": "3.11f3 e f3a–d cobrem as seções ativas de configurações da Wiki em PT-BR/en; interação foi verificada em jsdom, com homologação integrada em navegador ainda pendente em 7.3. 3.11h auditou os 16 pacotes próprios e suas superfícies de metadata; os schemas Daytona, E2B, Novita, Modal, Cloudflare, Kubernetes, exe.dev, CreateOS, fake-plugin, File Browser e Kitchen Sink são localizados somente na apresentação. Fallbacks, nomes externos, valores editados/configurados e schemas de validação permanecem originais. A interação browser do Kitchen Sink não foi executada; fixture de orquestração depende de instalação local para typecheck completo."
     },
     {
       "id": "cli-admin",
@@ -947,11 +962,12 @@
         "cli/src/__tests__/activity-parity.test.ts",
         "4.3bd6: 19 rotas de help de issue recovery/child/work-product/document/interaction/tree e agent wake/local-cli comparadas em PT-BR/en; assinaturas e defaults preservados; matriz completa de help: 66/66. Typecheck direcionado da CLI passou.",
         "4.3bd7: opções e argumentos PT-BR/en para upload/download/exclusão de anexos, etiquetas, votos/exportação de feedback e atualização do pacote de instruções; dez subprocessos selecionados, contratos de payload e typecheck CLI passaram.",
+        "4.3bd8: help de issue checkout/release comparado em subprocessos PT-BR/en: 2/2; assinaturas e flags preservadas, typecheck CLI e gate de tópicos passaram.",
         "cli/src/__tests__/issue-subresources.test.ts",
         "cli/src/__tests__/agent-lifecycle.test.ts",
         "cli/src/__tests__/operation-help-localization.test.ts"
       ],
-      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e família activity têm verificação parcial. O help avançou em lotes leaf, incluindo 4.3bd6 e 4.3bd7; outras opções de help, operações e regressão 4.4 permanecem pendentes. Typechecks direcionados passaram nos lotes reportados; o typecheck integral da CLI terminou com exit 137 por memória."
+      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e família activity têm verificação parcial. O help avançou em lotes leaf, incluindo 4.3bd6–bd8; outras opções de help, operações e regressão 4.4 permanecem pendentes. Typechecks direcionados passaram nos lotes reportados; o typecheck integral da CLI terminou com exit 137 por memória."
     },
     {
       "id": "help-start",

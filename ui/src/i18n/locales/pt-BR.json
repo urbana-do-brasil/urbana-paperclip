@@ -3969,6 +3969,22 @@
           "name": "Links de arquivos em comentários",
           "description": "Controla quais extensões de comentários ficam ativas: 'annotation' exibe links de arquivos abaixo de cada comentário, 'contextMenu' adiciona a ação \"Abrir em Arquivos\" ao menu do comentário, 'both' ativa ambas e 'none' desativa os recursos de comentário."
         }
+      },
+      "kitchenSink": {
+        "showSidebarEntry": { "name": "Mostrar item na barra lateral" },
+        "showSidebarPanel": { "name": "Mostrar painel na barra lateral" },
+        "showProjectSidebarItem": { "name": "Mostrar item de projeto na barra lateral" },
+        "showCommentAnnotation": { "name": "Mostrar anotação de comentário" },
+        "showCommentContextMenuItem": { "name": "Mostrar ação no comentário" },
+        "enableWorkspaceDemos": { "name": "Habilitar demonstrações de workspace" },
+        "enableProcessDemos": {
+          "name": "Habilitar demonstrações de processos",
+          "description": "Permite demonstrações locais selecionadas de processos filhos nos workspaces de projetos."
+        },
+        "secretRefExample": { "name": "Exemplo de referência a segredo" },
+        "httpDemoUrl": { "name": "URL da demonstração HTTP" },
+        "allowedCommands": { "name": "Comandos de processo permitidos" },
+        "workspaceScratchFile": { "name": "Arquivo temporário do workspace" }
       }
     },
     "sandboxProviders": {
@@ -10483,6 +10499,9 @@
       "steps": {
         "chooseAgent": "Escolher agente",
         "connectGitHub": "Conectar ao GitHub"
+      },
+      "progress": {
+        "checkingConnection": "Verificando a conexão com o GitHub…"
       },
       "headings": {
         "chooseAgent": "Escolher agente",

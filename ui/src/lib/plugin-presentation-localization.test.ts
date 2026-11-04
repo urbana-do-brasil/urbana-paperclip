@@ -3,6 +3,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { i18n } from "@/i18n";
 import { DEFAULT_LOCALE } from "@/i18n/locales";
 import {
+  OWN_PLUGIN_PRESENTATION_KEYS,
   isBundledPluginRecord,
   isTrustedBundledSandboxProvider,
   localizeBundledPluginInstanceConfigSchema,
@@ -107,6 +108,191 @@ const ownUiSlotManifestSources: Record<string, string[]> = {
   "paperclipai.plugin-authoring-smoke-example": ["../../../packages/plugins/examples/plugin-authoring-smoke-example/src/manifest.ts"],
 };
 
+const ownPluginMetadataInventory = [
+  {
+    pluginId: "paperclipai.plugin-llm-wiki",
+    messageKey: "llmWiki",
+    packageName: "@paperclipai/plugin-llm-wiki",
+    manifestPath: "../../../packages/plugins/plugin-llm-wiki/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'export const PLUGIN_ID = "paperclipai.plugin-llm-wiki"',
+    sourceDisplayName: "LLM Wiki",
+    sourceDescription: "Local-file LLM Wiki plugin for source ingestion, wiki browsing, query, lint, and maintenance workflows.",
+  },
+  {
+    pluginId: "paperclip.workspace-diff",
+    messageKey: "workspaceChanges",
+    packageName: "@paperclipai/plugin-workspace-diff",
+    manifestPath: "../../../packages/plugins/plugin-workspace-diff/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.workspace-diff"',
+    sourceDisplayName: "Workspace Changes",
+    sourceDescription: "Adds a Changes tab to execution and project workspaces using plugin-local Git diff computation and @pierre/diffs.",
+  },
+  {
+    pluginId: "paperclip.fake-sandbox-provider",
+    messageKey: "fakeSandboxProvider",
+    packageName: "@paperclipai/plugin-fake-sandbox",
+    manifestPath: "../../../packages/plugins/paperclip-plugin-fake-sandbox/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.fake-sandbox-provider"',
+    sourceDisplayName: "Fake Sandbox Provider",
+    sourceDescription: "First-party deterministic sandbox provider plugin for exercising Paperclip provider-plugin integration without external infrastructure.",
+  },
+  {
+    pluginId: "paperclip.cloudflare-sandbox-provider",
+    messageKey: "cloudflareSandboxProvider",
+    packageName: "@paperclipai/plugin-cloudflare-sandbox",
+    manifestPath: "../../../packages/plugins/sandbox-providers/cloudflare/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.cloudflare-sandbox-provider"',
+    sourceDisplayName: "Cloudflare Sandbox Provider",
+    sourceDescription: "First-party sandbox provider plugin that provisions Cloudflare sandboxes through an operator-deployed Worker bridge.",
+  },
+  {
+    pluginId: "paperclip.modal-sandbox-provider",
+    messageKey: "modalSandboxProvider",
+    packageName: "@paperclipai/plugin-modal",
+    manifestPath: "../../../packages/plugins/sandbox-providers/modal/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.modal-sandbox-provider"',
+    sourceDisplayName: "Modal Sandbox Provider",
+    sourceDescription: "First-party sandbox provider plugin that provisions Modal sandboxes as Paperclip execution environments.",
+  },
+  {
+    pluginId: "paperclip.daytona-sandbox-provider",
+    messageKey: "daytonaSandboxProvider",
+    packageName: "@paperclipai/plugin-daytona",
+    manifestPath: "../../../packages/plugins/sandbox-providers/daytona/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.daytona-sandbox-provider"',
+    sourceDisplayName: "Daytona Sandbox Provider",
+    sourceDescription: "First-party sandbox provider plugin that provisions Daytona sandboxes as Paperclip execution environments.",
+  },
+  {
+    pluginId: "paperclip.novita-sandbox-provider",
+    messageKey: "novitaSandboxProvider",
+    packageName: "@paperclipai/plugin-novita-sandbox",
+    manifestPath: "../../../packages/plugins/sandbox-providers/novita/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.novita-sandbox-provider"',
+    sourceDisplayName: "Novita Sandbox Provider",
+    sourceDescription: "Sandbox provider plugin that provisions Novita Agent Sandbox environments for Paperclip agent runs.",
+  },
+  {
+    pluginId: "paperclip.kubernetes-sandbox-provider",
+    messageKey: "kubernetesSandboxProvider",
+    packageName: "@paperclipai/plugin-kubernetes",
+    manifestPath: "../../../packages/plugins/sandbox-providers/kubernetes/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.kubernetes-sandbox-provider"',
+    sourceDisplayName: "Kubernetes Sandbox (alpha)",
+    sourceDescription: "Built on kubernetes-sigs/agent-sandbox (v1alpha1). ALPHA — expect breaking changes as the upstream CRD evolves. Falls back to stable batch/v1 Job mode for clusters without agent-sandbox installed. First-party Paperclip sandbox-provider plugin for Kubernetes.",
+  },
+  {
+    pluginId: "paperclip.e2b-sandbox-provider",
+    messageKey: "e2bSandboxProvider",
+    packageName: "@paperclipai/plugin-e2b",
+    manifestPath: "../../../packages/plugins/sandbox-providers/e2b/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.e2b-sandbox-provider"',
+    sourceDisplayName: "E2B Sandbox Provider",
+    sourceDescription: "First-party sandbox provider plugin that provisions E2B cloud sandboxes as Paperclip execution environments.",
+  },
+  {
+    pluginId: "paperclip.exe-dev-sandbox-provider",
+    messageKey: "exeDevSandboxProvider",
+    packageName: "@paperclipai/plugin-exe-dev",
+    manifestPath: "../../../packages/plugins/sandbox-providers/exe-dev/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.exe-dev-sandbox-provider"',
+    sourceDisplayName: "exe.dev Sandbox Provider",
+    sourceDescription: "Sandbox provider plugin that provisions exe.dev VMs as Paperclip execution environments.",
+  },
+  {
+    pluginId: "paperclip.createos-sandbox-provider",
+    messageKey: "createosSandboxProvider",
+    packageName: "@paperclipai/plugin-createos",
+    manifestPath: "../../../packages/plugins/sandbox-providers/createos/src/manifest.ts",
+    manifestIdReference: 'id: "paperclip.createos-sandbox-provider"',
+    idDeclaration: 'id: "paperclip.createos-sandbox-provider"',
+    sourceDisplayName: "CreateOS Sandbox Provider",
+    sourceDescription: "Runs Paperclip agents in CreateOS sandboxes.",
+  },
+  {
+    pluginId: "paperclip-kitchen-sink-example",
+    messageKey: "kitchenSinkExample",
+    packageName: "@paperclipai/plugin-kitchen-sink-example",
+    manifestPath: "../../../packages/plugins/examples/plugin-kitchen-sink-example/src/manifest.ts",
+    identityPath: "../../../packages/plugins/examples/plugin-kitchen-sink-example/src/constants.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'export const PLUGIN_ID = "paperclip-kitchen-sink-example"',
+    sourceDisplayName: "Kitchen Sink (Example)",
+    sourceDescription: "Reference plugin that demonstrates the current Paperclip plugin API surface, UI surfaces, bridge actions, events, jobs, webhooks, tools, local workspace access, and runtime diagnostics in one place.",
+  },
+  {
+    pluginId: "paperclip.hello-world-example",
+    messageKey: "helloWorldExample",
+    packageName: "@paperclipai/plugin-hello-world-example",
+    manifestPath: "../../../packages/plugins/examples/plugin-hello-world-example/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip.hello-world-example"',
+    sourceDisplayName: "Hello World Widget (Example)",
+    sourceDescription: "Reference UI plugin that adds a simple Hello World widget to the Paperclip dashboard.",
+  },
+  {
+    pluginId: "paperclip-file-browser-example",
+    messageKey: "fileBrowserExample",
+    packageName: "@paperclipai/plugin-file-browser-example",
+    manifestPath: "../../../packages/plugins/examples/plugin-file-browser-example/src/manifest.ts",
+    manifestIdReference: "id: PLUGIN_ID",
+    idDeclaration: 'const PLUGIN_ID = "paperclip-file-browser-example"',
+    sourceDisplayName: "File Browser (Example)",
+    sourceDescription: "Example plugin that adds a Files link under each project in the sidebar, a file browser + editor tab on the project detail page, and per-comment file link annotations with a context menu action to open referenced files.",
+  },
+  {
+    pluginId: "paperclipai.plugin-authoring-smoke-example",
+    messageKey: "pluginAuthoringSmokeExample",
+    packageName: "@paperclipai/plugin-authoring-smoke-example",
+    manifestPath: "../../../packages/plugins/examples/plugin-authoring-smoke-example/src/manifest.ts",
+    manifestIdReference: 'id: "paperclipai.plugin-authoring-smoke-example"',
+    idDeclaration: 'id: "paperclipai.plugin-authoring-smoke-example"',
+    sourceDisplayName: "Plugin Authoring Smoke Example",
+    sourceDescription: "A Paperclip plugin",
+  },
+  {
+    pluginId: "paperclipai.plugin-orchestration-smoke-example",
+    messageKey: "pluginOrchestrationSmokeExample",
+    packageName: "@paperclipai/plugin-orchestration-smoke-example",
+    manifestPath: "../../../packages/plugins/examples/plugin-orchestration-smoke-example/src/manifest.ts",
+    manifestIdReference: 'id: "paperclipai.plugin-orchestration-smoke-example"',
+    idDeclaration: 'id: "paperclipai.plugin-orchestration-smoke-example"',
+    sourceDisplayName: "Plugin Orchestration Smoke Example",
+    sourceDescription: "First-party smoke plugin that exercises Paperclip orchestration-grade plugin APIs.",
+  },
+] as const;
+
+const daytonaSchemaSourceFields = [
+  ["apiKey", "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted."],
+  ["apiUrl", "Optional Daytona API base URL. If omitted, the Daytona SDK uses its configured default endpoint."],
+  ["target", "Optional Daytona target/region identifier."],
+  ["snapshot", "Optional Daytona snapshot name to start from."],
+  ["image", "Optional base image or Daytona Image reference. If set, the sandbox is created from this image instead of a snapshot."],
+  ["language", "Optional Daytona language hint for direct code execution. If omitted, Daytona uses its default runtime."],
+  ["cpu", "Optional CPU allocation in cores."],
+  ["memory", "Optional memory allocation in GiB. Supported sandbox sizes are 1, 2, 4, and 8 GiB."],
+  ["disk", "Optional disk allocation in GiB."],
+  ["gpu", "Optional GPU allocation in units."],
+  ["timeoutMs", "Timeout for Daytona operations in milliseconds. Fresh lease acquisition shares one budget across creation, setup, and inline cleanup."],
+  ["livenessTimeoutMs", "Per-call timeout in milliseconds for the sandbox liveness read (refreshData). A silently unresponsive sandbox connection surfaces as a fast error instead of stalling until the outer RPC ceiling. The start and recovery calls derive their own deadline from timeoutMs, not this bound. `0` or less disables the bound. Defaults to 30000 when unset."],
+  ["autoStopInterval", "Daytona auto-stop interval in minutes. `0` disables auto-stop. Defaults to 15 when unset."],
+  ["autoArchiveInterval", "Daytona auto-archive interval in minutes. Stopped sandboxes still count against the storage quota until archived, so this defaults to 60 when unset. `0` uses Daytona's max interval."],
+  ["autoDeleteInterval", "Daytona auto-delete interval in minutes. Backstop reaper for sandboxes nobody resumes; defaults to 10080 (7 days) when unset. `-1` disables auto-delete and `0` deletes immediately after stop."],
+  ["reuseLease", "Whether to stop and later resume the sandbox across runs instead of deleting it on release."],
+  ["runnerLifecycleMode", "paperclip_runner lifecycle for this environment. Inherit uses the agent setting; warm keeps runnerd and the sandbox available between turns."],
+  ["runnerIdleTimeoutMs", "How long an idle warm paperclip_runner stays alive before it checkpoints and suspends."],
+] as const;
+
 describe("owned plugin presentation localization", () => {
   it("keeps the host translation allowlist aligned with all first-party slot IDs and labels", async () => {
     for (const locale of ["pt-BR", "en"] as const) {
@@ -148,6 +334,48 @@ describe("owned plugin presentation localization", () => {
           .toEqual(owner.slots.map((slot) => slot.sourceDisplayName));
         expect(contribution.launchers.map((launcher) => launcher.displayName))
           .toEqual(owner.launchers.map((launcher) => launcher.sourceDisplayName));
+      }
+    }
+  });
+
+  it("keeps every first-party plugin metadata key aligned with its package, manifest source, and locales", async () => {
+    expect(OWN_PLUGIN_PRESENTATION_KEYS).toEqual(Object.fromEntries(
+      ownPluginMetadataInventory.map((plugin) => [plugin.pluginId, plugin.messageKey]),
+    ));
+
+    for (const locale of ["pt-BR", "en"] as const) {
+      await i18n.changeLanguage(locale);
+      for (const plugin of ownPluginMetadataInventory) {
+        const manifestSource = readFileSync(new URL(plugin.manifestPath, import.meta.url), "utf8");
+        const identitySource = readFileSync(
+          new URL(("identityPath" in plugin ? plugin.identityPath : plugin.manifestPath), import.meta.url),
+          "utf8",
+        );
+        const packageJsonPath = plugin.manifestPath.replace("/src/manifest.ts", "/package.json");
+        const packageJson = JSON.parse(readFileSync(new URL(packageJsonPath, import.meta.url), "utf8")) as { name: string };
+        const nameKey = `pluginPresentation.plugins.${plugin.messageKey}.name`;
+        const descriptionKey = `pluginPresentation.plugins.${plugin.messageKey}.description`;
+
+        expect(packageJson.name).toBe(plugin.packageName);
+        expect(identitySource).toContain(plugin.idDeclaration);
+        expect(manifestSource).toContain(plugin.manifestIdReference);
+        expect(manifestSource).toContain(`displayName: ${JSON.stringify(plugin.sourceDisplayName)}`);
+        expect(manifestSource).toContain(JSON.stringify(plugin.sourceDescription));
+        expect(i18n.exists(nameKey, { lng: locale })).toBe(true);
+        expect(i18n.exists(descriptionKey, { lng: locale })).toBe(true);
+        expect(i18n.t(nameKey, { lng: "en" })).toBe(plugin.sourceDisplayName);
+        expect(i18n.t(descriptionKey, { lng: "en" })).toBe(plugin.sourceDescription);
+
+        expect(localizePluginPresentation(
+          plugin.pluginId,
+          plugin.sourceDisplayName,
+          plugin.sourceDescription,
+          i18n.t,
+          true,
+        )).toEqual({
+          displayName: i18n.t(nameKey, { lng: locale }),
+          description: i18n.t(descriptionKey, { lng: locale }),
+        });
       }
     }
   });
@@ -264,6 +492,100 @@ describe("owned plugin presentation localization", () => {
     for (const sourceField of Object.values(schema.properties).slice(0, 2)) {
       expect(manifestSource).toContain(sourceField.title!);
       expect(manifestSource).toContain(JSON.stringify(sourceField.description!).slice(1, -1));
+    }
+  });
+
+  it.each(["pt-BR", "en"] as const)("localizes all bundled Kitchen Sink config fields only from their exact source in %s", async (locale) => {
+    await i18n.changeLanguage(locale);
+    const pluginKey = "paperclip-kitchen-sink-example";
+    const packageName = "@paperclipai/plugin-kitchen-sink-example";
+    const bundlePath = "/app/packages/plugins/examples/plugin-kitchen-sink-example";
+    const fields = [
+      ["showSidebarEntry", "Show Sidebar Entry"],
+      ["showSidebarPanel", "Show Sidebar Panel"],
+      ["showProjectSidebarItem", "Show Project Sidebar Item"],
+      ["showCommentAnnotation", "Show Comment Annotation"],
+      ["showCommentContextMenuItem", "Show Comment Action"],
+      ["enableWorkspaceDemos", "Enable Workspace Demos"],
+      ["enableProcessDemos", "Enable Process Demos", "Allows curated local child-process demos in project workspaces."],
+      ["secretRefExample", "Secret Reference Example"],
+      ["httpDemoUrl", "HTTP Demo URL"],
+      ["allowedCommands", "Allowed Process Commands"],
+      ["workspaceScratchFile", "Workspace Scratch File"],
+    ] as const;
+    const installed = [{
+      id: "kitchen-sink-plugin-record",
+      pluginKey,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginKey },
+    }];
+    const bundled = [{ pluginKey, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledPluginContribution(
+      { pluginId: installed[0]!.id, pluginKey },
+      installed,
+      bundled,
+    );
+    expect(trustedBundle).toBe(true);
+
+    const schema = {
+      type: "object",
+      properties: Object.fromEntries(fields.map(([fieldKey, sourceTitle, sourceDescription]) => [
+        fieldKey,
+        {
+          type: "string",
+          title: sourceTitle,
+          ...(sourceDescription === undefined ? {} : { description: sourceDescription }),
+          default: `keep-${fieldKey}`,
+        },
+      ])),
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configValues = Object.fromEntries(fields.map(([fieldKey]) => [fieldKey, `custom-${fieldKey}`]));
+    const configValuesBefore = JSON.stringify(configValues);
+    const localized = localizeBundledPluginInstanceConfigSchema(pluginKey, schema, i18n.t, trustedBundle)!;
+
+    for (const [fieldKey, sourceTitle, sourceDescription] of fields) {
+      const messageBase = `pluginPresentation.pluginConfigFields.kitchenSink.${fieldKey}`;
+      expect(i18n.exists(`${messageBase}.name`, { lng: locale })).toBe(true);
+      expect(localized.properties[fieldKey]).toMatchObject({
+        title: i18n.t(`${messageBase}.name`, { lng: locale }),
+        default: `keep-${fieldKey}`,
+      });
+      if (sourceDescription !== undefined) {
+        expect(i18n.exists(`${messageBase}.description`, { lng: locale })).toBe(true);
+        expect(localized.properties[fieldKey]?.description).toBe(
+          i18n.t(`${messageBase}.description`, { lng: locale }),
+        );
+      } else {
+        expect(localized.properties[fieldKey]).not.toHaveProperty("description");
+      }
+      if (locale === "pt-BR") {
+        expect(localized.properties[fieldKey]?.title).not.toBe(sourceTitle);
+      }
+    }
+
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configValues)).toBe(configValuesBefore);
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/examples/plugin-kitchen-sink-example/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    const constantsSource = readFileSync(
+      new URL("../../../packages/plugins/examples/plugin-kitchen-sink-example/src/constants.ts", import.meta.url),
+      "utf8",
+    );
+    const packageJson = JSON.parse(readFileSync(
+      new URL("../../../packages/plugins/examples/plugin-kitchen-sink-example/package.json", import.meta.url),
+      "utf8",
+    )) as { name: string };
+    expect(packageJson.name).toBe(packageName);
+    expect(constantsSource).toContain(`PLUGIN_ID = "${pluginKey}"`);
+    for (const [fieldKey, sourceTitle, sourceDescription] of fields) {
+      const sourceField = manifestSource.match(new RegExp(`${fieldKey}:\\s*\\{[^}]*\\}`))?.[0];
+      expect(sourceField).toBeDefined();
+      expect(sourceField).toContain(`title: "${sourceTitle}"`);
+      if (sourceDescription !== undefined) expect(sourceField).toContain(`description: "${sourceDescription}"`);
     }
   });
 
@@ -604,6 +926,96 @@ describe("owned plugin presentation localization", () => {
     };
     const changedSourcePresentation = localizeSandboxProviderConfigSchema("e2b", pluginId, changedSourceSchema, i18n.t, true)!;
     expect(changedSourcePresentation.properties.apiKey).toEqual(changedSourceSchema.properties.apiKey);
+  });
+
+  it.each(["pt-BR", "en"] as const)("localizes all 18 Daytona schema fields from the exact bundled source in %s", async (locale) => {
+    await i18n.changeLanguage(locale);
+    const pluginId = "paperclip.daytona-sandbox-provider";
+    const packageName = "@paperclipai/plugin-daytona";
+    const bundlePath = "/app/packages/plugins/sandbox-providers/daytona";
+    const installed = [{
+      id: "daytona-plugin-record",
+      pluginKey: pluginId,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: { id: pluginId },
+    }];
+    const bundled = [{ pluginKey: pluginId, packageName, localPath: bundlePath }];
+    const trustedBundle = isTrustedBundledSandboxProvider(
+      { pluginId: installed[0]!.id, pluginKey: pluginId },
+      installed,
+      bundled,
+    );
+    expect(trustedBundle).toBe(true);
+
+    type DaytonaSchemaField = { type: string; description: string; default?: string; title?: string };
+    const daytonaProperties: Record<string, DaytonaSchemaField> =
+      Object.fromEntries(daytonaSchemaSourceFields.map(([fieldKey, sourceDescription]) => [
+        fieldKey,
+        { type: "string", description: sourceDescription, default: `keep-${fieldKey}` },
+      ]));
+    const schema: { type: string; required: string[]; properties: Record<string, DaytonaSchemaField> } = {
+      type: "object",
+      required: ["apiKey", "runnerLifecycleMode"],
+      properties: {
+        ...daytonaProperties,
+        customField: { type: "string", title: "Provider-owned field", description: "Vendor-owned help text." },
+        changedSourceField: { type: "string", description: "Vendor-authored Daytona compatible field." },
+      },
+    };
+    const schemaBefore = JSON.stringify(schema);
+    const configuration = Object.fromEntries(daytonaSchemaSourceFields.map(([fieldKey]) => [fieldKey, `value-${fieldKey}`]));
+    const configurationBefore = JSON.stringify(configuration);
+    const localized = localizeSandboxProviderConfigSchema("daytona", pluginId, schema, i18n.t, trustedBundle)!;
+    const manifestSource = readFileSync(
+      new URL("../../../packages/plugins/sandbox-providers/daytona/src/manifest.ts", import.meta.url),
+      "utf8",
+    );
+    expect(daytonaSchemaSourceFields).toHaveLength(18);
+
+    for (const [fieldKey, sourceDescription] of daytonaSchemaSourceFields) {
+      const sourceField = manifestSource.match(new RegExp(`${fieldKey}:\\s*\\{[^}]*\\}`))?.[0];
+      expect(sourceField).toBeDefined();
+      expect(sourceField).toContain(JSON.stringify(sourceDescription));
+      expect(sourceField).not.toContain("title:");
+
+      const nameKey = `pluginPresentation.sandboxProviderConfigFields.daytona.${fieldKey}.name`;
+      const descriptionKey = `pluginPresentation.sandboxProviderConfigFields.daytona.${fieldKey}.description`;
+      expect(i18n.exists(nameKey, { lng: locale })).toBe(true);
+      expect(i18n.exists(descriptionKey, { lng: locale })).toBe(true);
+      expect(i18n.t(descriptionKey, { lng: "en" })).toBe(sourceDescription);
+      expect(localized.properties[fieldKey]).toMatchObject({
+        title: i18n.t(nameKey, { lng: locale }),
+        description: i18n.t(descriptionKey, { lng: locale }),
+        default: `keep-${fieldKey}`,
+      });
+    }
+
+    expect(localized.properties.customField).toEqual(schema.properties.customField);
+    expect(localized.properties.changedSourceField).toEqual(schema.properties.changedSourceField);
+    expect(localized.required).toEqual(schema.required);
+    expect(JSON.stringify(schema)).toBe(schemaBefore);
+    expect(JSON.stringify(configuration)).toBe(configurationBefore);
+    expect(localizeSandboxProviderConfigSchema("daytona", pluginId, schema, i18n.t, false)).toBe(schema);
+
+    const changedSourceSchema: typeof schema = {
+      ...schema,
+      properties: {
+        ...schema.properties,
+        apiKey: { ...schema.properties.apiKey!, description: "Vendor-authored Daytona API help." },
+      },
+    };
+    const changedSourcePresentation = localizeSandboxProviderConfigSchema(
+      "daytona",
+      pluginId,
+      changedSourceSchema,
+      i18n.t,
+      true,
+    )!;
+    expect(changedSourcePresentation.properties.apiKey).toEqual(changedSourceSchema.properties.apiKey);
+    expect(changedSourcePresentation.properties.apiUrl?.description).toBe(
+      i18n.t("pluginPresentation.sandboxProviderConfigFields.daytona.apiUrl.description", { lng: locale }),
+    );
   });
 
   it.each(["pt-BR", "en"] as const)("localizes Modal schema metadata only for the exact bundled source in %s", async (locale) => {

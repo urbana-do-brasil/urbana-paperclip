@@ -3873,6 +3873,22 @@
           "name": "Comment File Links",
           "description": "Controls which comment extensions are active: 'annotation' shows file links below each comment, 'contextMenu' adds an \"Open in Files\" action to the comment menu, 'both' enables both, 'none' disables comment features."
         }
+      },
+      "kitchenSink": {
+        "showSidebarEntry": { "name": "Show Sidebar Entry" },
+        "showSidebarPanel": { "name": "Show Sidebar Panel" },
+        "showProjectSidebarItem": { "name": "Show Project Sidebar Item" },
+        "showCommentAnnotation": { "name": "Show Comment Annotation" },
+        "showCommentContextMenuItem": { "name": "Show Comment Action" },
+        "enableWorkspaceDemos": { "name": "Enable Workspace Demos" },
+        "enableProcessDemos": {
+          "name": "Enable Process Demos",
+          "description": "Allows curated local child-process demos in project workspaces."
+        },
+        "secretRefExample": { "name": "Secret Reference Example" },
+        "httpDemoUrl": { "name": "HTTP Demo URL" },
+        "allowedCommands": { "name": "Allowed Process Commands" },
+        "workspaceScratchFile": { "name": "Workspace Scratch File" }
       }
     },
     "sandboxProviders": {
@@ -10250,6 +10266,9 @@
       "steps": {
         "chooseAgent": "Choose agent",
         "connectGitHub": "Connect GitHub"
+      },
+      "progress": {
+        "checkingConnection": "Checking your GitHub connection…"
       },
       "headings": {
         "chooseAgent": "Choose agent",

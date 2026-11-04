@@ -149,7 +149,8 @@ export function localizeManagedPluginDisplayName(
  * Configuration schemas and their values intentionally do not pass through
  * this presentation layer.
  */
-const OWN_PLUGIN_PRESENTATION_KEYS: Record<string, string> = {
+/** @internal Exported so source-inventory tests can require coverage for every bundled package. */
+export const OWN_PLUGIN_PRESENTATION_KEYS: Record<string, string> = {
   "paperclipai.plugin-llm-wiki": "llmWiki",
   "paperclip.workspace-diff": "workspaceChanges",
   "paperclip.fake-sandbox-provider": "fakeSandboxProvider",
@@ -170,7 +171,7 @@ const OWN_PLUGIN_PRESENTATION_KEYS: Record<string, string> = {
 
 const OWN_PLUGIN_CONFIG_FIELD_PRESENTATION: Record<string, {
   key: string;
-  fields: Record<string, { sourceTitle: string; sourceDescription: string; key: string }>;
+  fields: Record<string, { sourceTitle: string; sourceDescription?: string; key: string }>;
 }> = {
   "paperclip-file-browser-example": {
     key: "fileBrowser",
@@ -185,6 +186,26 @@ const OWN_PLUGIN_CONFIG_FIELD_PRESENTATION: Record<string, {
         sourceDescription: "Controls which comment extensions are active: 'annotation' shows file links below each comment, 'contextMenu' adds an \"Open in Files\" action to the comment menu, 'both' enables both, 'none' disables comment features.",
         key: "commentAnnotationMode",
       },
+    },
+  },
+  "paperclip-kitchen-sink-example": {
+    key: "kitchenSink",
+    fields: {
+      showSidebarEntry: { sourceTitle: "Show Sidebar Entry", key: "showSidebarEntry" },
+      showSidebarPanel: { sourceTitle: "Show Sidebar Panel", key: "showSidebarPanel" },
+      showProjectSidebarItem: { sourceTitle: "Show Project Sidebar Item", key: "showProjectSidebarItem" },
+      showCommentAnnotation: { sourceTitle: "Show Comment Annotation", key: "showCommentAnnotation" },
+      showCommentContextMenuItem: { sourceTitle: "Show Comment Action", key: "showCommentContextMenuItem" },
+      enableWorkspaceDemos: { sourceTitle: "Enable Workspace Demos", key: "enableWorkspaceDemos" },
+      enableProcessDemos: {
+        sourceTitle: "Enable Process Demos",
+        sourceDescription: "Allows curated local child-process demos in project workspaces.",
+        key: "enableProcessDemos",
+      },
+      secretRefExample: { sourceTitle: "Secret Reference Example", key: "secretRefExample" },
+      httpDemoUrl: { sourceTitle: "HTTP Demo URL", key: "httpDemoUrl" },
+      allowedCommands: { sourceTitle: "Allowed Process Commands", key: "allowedCommands" },
+      workspaceScratchFile: { sourceTitle: "Workspace Scratch File", key: "workspaceScratchFile" },
     },
   },
 };
@@ -1014,11 +1035,18 @@ export function localizeBundledPluginInstanceConfigSchema<T extends PluginConfig
       continue;
     }
 
-    properties[fieldKey] = {
+    const localizedField = {
       ...fieldSchema,
       title: translate(t, `pluginPresentation.pluginConfigFields.${ownedPlugin.key}.${presentation.key}.name`, presentation.sourceTitle),
-      description: translate(t, `pluginPresentation.pluginConfigFields.${ownedPlugin.key}.${presentation.key}.description`, presentation.sourceDescription),
     };
+    if (presentation.sourceDescription !== undefined) {
+      localizedField.description = translate(
+        t,
+        `pluginPresentation.pluginConfigFields.${ownedPlugin.key}.${presentation.key}.description`,
+        presentation.sourceDescription,
+      );
+    }
+    properties[fieldKey] = localizedField;
     changed = true;
   }
 

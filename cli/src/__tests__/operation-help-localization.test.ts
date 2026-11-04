@@ -100,6 +100,11 @@ const expectedLeafHelpSignatures: Record<string, { arguments: string[]; options:
     arguments: ["issueId"],
     options: ["--payload-json <json>", ...commonClientOptionSignatures],
   },
+  "issue checkout": {
+    arguments: ["issueId"],
+    options: ["--agent-id <id>", "--expected-statuses <csv>", ...commonClientOptionSignatures],
+  },
+  "issue release": { arguments: ["issueId"], options: commonClientOptionSignatures },
   "issue feedback:export": {
     arguments: ["issueId"],
     options: [
@@ -236,6 +241,8 @@ describe("registered CLI operation help", () => {
     { name: "issue feedback:vote", command: ["issue", "feedback:vote"] },
     { name: "issue feedback:list", command: ["issue", "feedback:list"] },
     { name: "issue feedback:export", command: ["issue", "feedback:export"] },
+    { name: "issue checkout", command: ["issue", "checkout"] },
+    { name: "issue release", command: ["issue", "release"] },
     { name: "agent instructions-bundle:update", command: ["agent", "instructions-bundle:update"] },
     { name: "issue runs", command: ["issue", "runs"] },
     { name: "issue live-runs", command: ["issue", "live-runs"] },
@@ -275,6 +282,12 @@ describe("registered CLI operation help", () => {
       const enOutput = en.replace(/\s+/g, " ");
       expect(ptOutput).toMatch(/Formato da exportação: json ou ndjson \(default: "ndjson"\)/);
       expect(enOutput).toMatch(/Export format: json or ndjson \(default: "ndjson"\)/);
+    }
+    if (name === "issue checkout") {
+      const ptOutput = pt.replace(/\s+/g, " ");
+      const enOutput = en.replace(/\s+/g, " ");
+      expect(ptOutput).toMatch(/Status atuais esperados \(default: "todo,backlog,blocked"\)/);
+      expect(enOutput).toMatch(/Expected current statuses \(default: "todo,backlog,blocked"\)/);
     }
     if (name === "issue feedback:vote") {
       expect(pt).toContain("UpsertIssueFeedbackVote");

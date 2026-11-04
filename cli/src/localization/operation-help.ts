@@ -1592,11 +1592,26 @@ const operationHelp: Record<string, CommandHelp> = {
       "--format": { en: "Export format: json or ndjson", "pt-BR": "Formato da exportação: json ou ndjson" },
     },
   },
-  "issue checkout": descriptionOnly("Checkout issue for an agent", "Fazer checkout da tarefa para um agente"),
-  "issue release": descriptionOnly(
-    "Release issue execution locks; clear the assignee only for unfinished issues",
-    "Liberar os bloqueios de execução da tarefa; remover o responsável somente se ela não estiver concluída",
-  ),
+  "issue checkout": {
+    ...descriptionOnly("Checkout issue for an agent", "Fazer checkout da tarefa para um agente"),
+    arguments: issueIdArgument,
+    options: {
+      ...commonClientOptions,
+      "--agent-id": { en: "Agent ID", "pt-BR": "ID do agente" },
+      "--expected-statuses": {
+        en: "Expected current statuses",
+        "pt-BR": "Status atuais esperados",
+      },
+    },
+  },
+  "issue release": {
+    ...descriptionOnly(
+      "Release issue execution locks; clear the assignee only for unfinished issues",
+      "Liberar os bloqueios de execução da tarefa; remover o responsável somente se ela não estiver concluída",
+    ),
+    arguments: issueIdArgument,
+    options: commonClientOptions,
+  },
   company: {
     description: {
       en: "Company operations",

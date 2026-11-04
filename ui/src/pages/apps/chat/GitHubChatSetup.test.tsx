@@ -768,11 +768,15 @@ describe("GitHub App wizard", () => {
     expect(document.querySelector('[role="dialog"] a[href="/apps/chat/draft-1/access"]')).not.toBeNull();
   });
 
-  it("does not flash App creation controls while checking a resumed connection", async () => {
+  it.each([
+    { locale: "en", checking: "Checking your GitHub connection…" },
+    { locale: "pt-BR", checking: "Verificando a conexão com o GitHub…" },
+  ])("localizes the pending connection status and hides App creation controls in $locale", async ({ locale, checking }) => {
+    await i18n.changeLanguage(locale);
     fixture.endpoint = { ...fixture.endpoint, status: "active", setup: { step: "complete" }, botUsername: "actual-agent[bot]" };
     vi.mocked(githubChatApi.advance).mockReturnValue(new Promise(() => {}));
     await render("resume=draft-1");
-    expect(container.textContent).toContain("Checking your GitHub connection");
+    expect(container.querySelector('[role="status"]')?.textContent).toBe(checking);
     expect(container.querySelector("#github-app-name")).toBeNull();
     expect(container.textContent).not.toContain("I already have an App");
     expect(container.textContent).not.toContain("GitHub connected");

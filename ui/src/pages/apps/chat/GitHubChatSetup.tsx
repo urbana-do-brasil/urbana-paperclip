@@ -378,7 +378,7 @@ export function GitHubChatSetup() {
       ) : !identityOnly && !existing && progress.isPending ? (
         <>
           <p role="status" className="text-sm text-muted-foreground">
-            Checking your GitHub connection…
+            {t("apps.githubChatSetup.progress.checkingConnection")}
           </p>
           {footer()}
         </>
