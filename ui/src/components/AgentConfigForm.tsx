@@ -279,7 +279,7 @@ function formatArgList(value: unknown): string {
 }
 
 const openCodeThinkingEffortOptions = [
-  { id: "", label: "Auto" },
+  { id: "", label: "" },
   { id: "minimal", label: "Minimal" },
   { id: "low", label: "Low" },
   { id: "medium", label: "Medium" },
@@ -289,13 +289,13 @@ const openCodeThinkingEffortOptions = [
 ] as const;
 
 const cursorModeOptions = [
-  { id: "", label: "Auto" },
+  { id: "", label: "" },
   { id: "plan", label: "Plan" },
   { id: "ask", label: "Ask" },
 ] as const;
 
 const claudeThinkingEffortOptions = [
-  { id: "", label: "Auto" },
+  { id: "", label: "" },
   { id: "low", label: "Low" },
   { id: "medium", label: "Medium" },
   { id: "high", label: "High" },
@@ -304,7 +304,7 @@ const claudeThinkingEffortOptions = [
 // Kimi exposes low/high/max (no "medium") via each model's support_efforts;
 // the kimi_local adapter maps a legacy "medium" onto "high" at runtime.
 const kimiThinkingEffortOptions = [
-  { id: "", label: "Auto" },
+  { id: "", label: "" },
   { id: "low", label: "Low" },
   { id: "high", label: "High" },
   { id: "max", label: "Max" },
@@ -460,7 +460,9 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
   );
   const createSecret = useMutation({
     mutationFn: (input: { name: string; value: string }) => {
-      if (!selectedCompanyId) throw new Error("Select an organization to create secrets");
+      if (!selectedCompanyId) {
+        throw new Error(t("agentConfiguration.secretAccess.organizationRequiredForCreate"));
+      }
       return secretsApi.create(selectedCompanyId, input);
     },
     onSuccess: () => {
@@ -471,7 +473,9 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
 
   const uploadMarkdownImage = useMutation({
     mutationFn: async ({ file, namespace }: { file: File; namespace: string }) => {
-      if (!selectedCompanyId) throw new Error("Select an organization to upload images");
+      if (!selectedCompanyId) {
+        throw new Error(t("agentConfiguration.secretAccess.organizationRequiredForImageUpload"));
+      }
       return assetsApi.uploadImage(selectedCompanyId, file, namespace);
     },
   });
@@ -1243,7 +1247,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
         ?? (testEnvironment.error instanceof Error
           ? testEnvironment.error.message
           : testEnvironment.error
-            ? "Environment test failed"
+            ? t("agentConfiguration.adapter.environmentTestFailed")
             : null),
       result: testEnvironment.data ?? null,
       // `showAdapterLogin` already requires a selected company and a non-empty
@@ -1258,6 +1262,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     };
   }, [
     props.onTestFeedbackChange,
+    t,
     testActionError,
     testEnvironment.data,
     testEnvironment.error,
@@ -1298,7 +1303,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
           : adapterType === "pi_local" ? "thinking" : "effort";
   const thinkingEffortOptions =
     adapterType === "codex_local"
-      ? codexReasoningEffortOptions(currentModelId, "Auto").map((option) => ({
+      ? codexReasoningEffortOptions(currentModelId, "").map((option) => ({
           id: option.value,
           label: option.label,
         }))
@@ -1309,20 +1314,22 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
           : adapterType === "kimi_local"
             ? kimiThinkingEffortOptions
             : adapterType === "pi_local"
-              ? [{ id: "", label: "Auto" }, ...["off", "minimal", "low", "medium", "high", "xhigh"].map(id => ({ id, label: id }))]
+              ? [{ id: "", label: "" }, ...["off", "minimal", "low", "medium", "high", "xhigh"].map(id => ({ id, label: id }))]
               : adapterType === "claude_local" || adapterType === "grok_local"
-                ? [{ id: "", label: "Auto" }, ...setupEfforts(adapterType, currentModelId).map((id) => ({
+                ? [{ id: "", label: "" }, ...setupEfforts(adapterType, currentModelId).map((id) => ({
                     id,
                     label: id === "xhigh" ? "X-High" : id[0].toUpperCase() + id.slice(1),
                   }))]
                 : claudeThinkingEffortOptions;
   const localizedThinkingEffortOptions = thinkingEffortOptions.map((option) => ({
     ...option,
-    label: i18n.resolvedLanguage === "en"
-      ? option.label
-      : t(`agentConfiguration.effort.options.${option.id || "auto"}`, {
-          defaultValue: option.label,
-        }),
+    label: !option.id
+      ? t("agentConfiguration.effort.options.auto")
+      : i18n.resolvedLanguage === "en"
+        ? option.label
+        : t(`agentConfiguration.effort.options.${option.id}`, {
+            defaultValue: option.label,
+          }),
   }));
   const currentThinkingEffort = isCreate
     ? val!.thinkingEffort
@@ -1438,8 +1445,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
 
         <div data-config-section="secrets" className={cn(!cards && "border-b border-border")}>
           {cards
-            ? <h3 className="mb-3 text-sm font-medium">Secret access</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">Secret access</div>
+            ? <h3 className="mb-3 text-sm font-medium">{t("agentConfiguration.secretAccess.title")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("agentConfiguration.secretAccess.title")}</div>
           }
           <div className={cn(cards ? "space-y-3 rounded-lg border border-border p-4" : "space-y-3 px-4 pb-3")}>
             <p className="text-xs text-muted-foreground">{help.secretAccess}</p>
@@ -1856,7 +1863,10 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
               {!isCreate && typeof config.bootstrapPromptTemplate === "string" && config.bootstrapPromptTemplate && (
                 <>
-                  <Field label="Bootstrap prompt (legacy)" hint={help.bootstrapPrompt}>
+                  <Field
+                    label={t("agentConfiguration.bootstrapPrompt.label")}
+                    hint={t("agentConfiguration.bootstrapPrompt.hint")}
+                  >
                     <MarkdownEditor
                       value={eff(
                         "adapterConfig",
@@ -1866,7 +1876,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                       onChange={(v) =>
                         mark("adapterConfig", "bootstrapPromptTemplate", v || undefined)
                       }
-                      placeholder="Optional initial setup prompt for the first run"
+                      placeholder={t("agentConfiguration.bootstrapPrompt.placeholder")}
                       contentClassName="min-h-(--sz-44px) text-sm font-mono"
                       imageUploadHandler={async (file) => {
                         const namespace = `agents/${props.agent.id}/bootstrap-prompt`;
@@ -1876,7 +1886,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                     />
                   </Field>
                   <div className="rounded-md border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
-                    Bootstrap prompt is legacy and will be removed in a future release. Consider moving this content into the agent&apos;s prompt template or instructions file instead.
+                    {t("agentConfiguration.bootstrapPrompt.legacyNotice")}
                   </div>
                 </>
               )}
@@ -2142,11 +2152,11 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
         <div className={cn(!cards && "border-b border-border")}>
           {cards ? (
             <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
-              <Bug className="h-3 w-3" /> Debugging
+              <Bug className="h-3 w-3" /> {t("agentConfiguration.providerTrace.heading")}
             </h3>
           ) : (
             <div className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-muted-foreground">
-              <Bug className="h-3 w-3" /> Debugging
+              <Bug className="h-3 w-3" /> {t("agentConfiguration.providerTrace.heading")}
             </div>
           )}
           <div
@@ -2158,8 +2168,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
             )}
           >
             <ToggleField
-              label="Capture raw provider traces"
-              hint="Stores exact provider traffic for every future run until disabled. Traces may contain sensitive prompts and tool arguments, are administrator-only, and expire after 24 hours."
+              label={t("agentConfiguration.providerTrace.captureRaw")}
+              hint={t("agentConfiguration.providerTrace.captureRawHint")}
               checked={eff<unknown>("debug", "providerTrace", debug.providerTrace) === "raw"}
               onChange={(enabled) =>
                 mark("debug", "providerTrace", enabled ? "raw" : undefined)
@@ -2169,7 +2179,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
               <div className="mt-3 flex items-start gap-2 rounded-md border border-border bg-background/60 px-3 py-2 text-xs text-foreground">
                 <Bug className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
-                  Raw tracing is on for future runs. Paperclip keeps at most 64 MiB per run and automatically deletes it after 24 hours.
+                  {t("agentConfiguration.providerTrace.rawCaptureEnabled")}
                 </span>
               </div>
             ) : null}
@@ -2437,7 +2447,9 @@ function DisplayedCodeLoginPanel({
       setSessionId(session.sessionId);
     },
     onError: (error) => {
-      setStartError(error instanceof Error ? error.message : t("agentConfiguration.login.couldNotStart"));
+      setStartError(
+        error instanceof Error ? error.message : t("agentConfiguration.login.couldNotStart"),
+      );
     },
   });
 
@@ -2454,7 +2466,9 @@ function DisplayedCodeLoginPanel({
     mutationFn: () => agentsApi.cancelAdapterAuthLogin(companyId, adapterType, sessionId!),
     onSuccess: clearActiveSession,
     onError: (error) => {
-      setStartError(error instanceof Error ? error.message : t("agentConfiguration.login.couldNotCancel"));
+      setStartError(
+        error instanceof Error ? error.message : t("agentConfiguration.login.couldNotCancel"),
+      );
     },
   });
 
@@ -2868,11 +2882,6 @@ const CLAUDE_LOGIN_FAILURE_STATUSES = new Set<AdapterAuthSessionStatus>([
   "cancelled",
 ]);
 
-// The fixed, non-secret message for a failed Claude login. The panel shows this
-// text and returns to its start state. It never shows a provider message that
-// could carry a secret.
-const CLAUDE_LOGIN_FAILED_MESSAGE = "The login did not finish. Start the login again.";
-
 // The client wall-clock cap for one active login. The panel polls the status
 // route and the prompt route every two seconds. The server can leave a session
 // short of a terminal status, and the prompt route returns 404 until the URL is
@@ -2885,10 +2894,6 @@ const CLAUDE_LOGIN_FAILED_MESSAGE = "The login did not finish. Start the login a
 // value is far longer than the server budget, so it never cuts a normal login
 // short (the earlier fixed 60-second cutoff did, which drove this fix).
 const CLAUDE_LOGIN_FAILSAFE_TIMEOUT_MS = 15 * 60_000;
-
-// The fixed, non-secret message for a timed-out Claude login. The panel shows
-// this text, stops both polls, and returns to its start state.
-const CLAUDE_LOGIN_TIMED_OUT_MESSAGE = "The login timed out. Start the login again.";
 
 // The submitted-browser-code login panel for the Claude adapter. It starts a
 // setup-token login, polls the status route, and reads the authorization URL
@@ -3014,7 +3019,7 @@ function SubmittedBrowserCodeLoginPanel({
       setSessionId(session.sessionId);
     },
     onError: (error) => {
-      setStartError(error instanceof Error ? error.message : "Could not start the login.");
+      setStartError(error instanceof Error ? error.message : t("agentConfiguration.login.couldNotStart"));
     },
   });
 
@@ -3041,7 +3046,7 @@ function SubmittedBrowserCodeLoginPanel({
         clearActiveSession();
         return;
       }
-      setStartError(error instanceof Error ? error.message : "Could not cancel the login.");
+      setStartError(error instanceof Error ? error.message : t("agentConfiguration.login.couldNotCancel"));
     },
   });
 
@@ -3075,7 +3080,20 @@ function SubmittedBrowserCodeLoginPanel({
       try {
         const active = await agentsApi.getActiveClaudeSetupTokenLoginSession(companyId);
         if (!active) return null;
-        if ((aiConnection && active.environmentId !== environmentId) || Boolean(active.aiConnection) !== Boolean(aiConnection) || (aiConnection && (active.aiConnection?.provider !== aiConnection.provider || active.aiConnection?.method !== aiConnection.method || active.aiConnection?.connectionId !== aiConnection.connectionId || active.aiConnection?.ownership !== aiConnection.ownership || active.aiConnection?.allAgents !== aiConnection.allAgents || JSON.stringify(active.aiConnection?.agentIds) !== JSON.stringify(aiConnection.agentIds)))) throw new Error("Another sign-in attempt is active. Finish or cancel it in its original account setup before starting this one.");
+        const connectionMismatch = Boolean(aiConnection) !== Boolean(active.aiConnection) || (
+          aiConnection && (
+            active.environmentId !== environmentId ||
+            active.aiConnection?.provider !== aiConnection.provider ||
+            active.aiConnection?.method !== aiConnection.method ||
+            active.aiConnection?.connectionId !== aiConnection.connectionId ||
+            active.aiConnection?.ownership !== aiConnection.ownership ||
+            active.aiConnection?.allAgents !== aiConnection.allAgents ||
+            JSON.stringify(active.aiConnection?.agentIds) !== JSON.stringify(aiConnection.agentIds)
+          )
+        );
+        if (connectionMismatch) {
+          throw new Error(t("agentConfiguration.login.claudeSetupToken.activeSessionConflict"));
+        }
         return active;
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) return null;
@@ -3205,7 +3223,11 @@ function SubmittedBrowserCodeLoginPanel({
     mutationFn: (code: string) =>
       agentsApi.submitClaudeSetupTokenBrowserCode(companyId, sessionId!, code),
     onError: (error) => {
-      setStartError(error instanceof Error ? error.message : "Could not submit the browser code.");
+      setStartError(
+        error instanceof Error
+          ? error.message
+          : t("agentConfiguration.login.claudeSetupToken.couldNotSubmitBrowserCode"),
+      );
     },
   });
 
@@ -3338,7 +3360,7 @@ function SubmittedBrowserCodeLoginPanel({
       setStartError(
         activeSessionQuery.error instanceof Error
           ? activeSessionQuery.error.message
-          : "Could not check for an active login.",
+          : t("agentConfiguration.login.couldNotCheckActive"),
       );
       return;
     }
@@ -3433,8 +3455,7 @@ function SubmittedBrowserCodeLoginPanel({
         {transportInsecure && (
           <p className="flex items-start gap-2 pl-2 text-xs text-amber-700 dark:text-amber-200">
             <TriangleAlert className="mt-0.5 size-3 shrink-0" />
-            This connection is not encrypted. The login code travels in clear text on this
-            network. Continue only on a network you trust.
+            {t("agentConfiguration.login.claudeSetupToken.transportWarning")}
           </p>
         )}
         {startError ? (
@@ -3443,7 +3464,9 @@ function SubmittedBrowserCodeLoginPanel({
           </p>
         ) : failedNow ? (
           <p role="alert" className="pl-2 text-xs text-destructive">
-            {timedOut && !isFailure ? CLAUDE_LOGIN_TIMED_OUT_MESSAGE : CLAUDE_LOGIN_FAILED_MESSAGE}
+            {timedOut && !isFailure
+              ? t("agentConfiguration.login.claudeSetupToken.loginTimedOut")
+              : t("agentConfiguration.login.claudeSetupToken.loginDidNotFinish")}
           </p>
         ) : (
           <OnboardingCardField
@@ -3483,7 +3506,7 @@ function SubmittedBrowserCodeLoginPanel({
               disabled={cancelLogin.isPending}
               onClick={() => cancelLogin.mutate()}
             >
-              Cancel
+              {t("agentConfiguration.login.cancel")}
             </Button>
           )}
           {/* Apply the existing stored login with no new login round trip. The
@@ -3500,7 +3523,7 @@ function SubmittedBrowserCodeLoginPanel({
                 setAppliedStored(true);
               }}
             >
-              Use saved login
+              {t("agentConfiguration.login.claudeSetupToken.useSavedLogin")}
             </Button>
           )}
           <Button
@@ -3511,7 +3534,9 @@ function SubmittedBrowserCodeLoginPanel({
             disabled={startDisabled}
             onClick={() => startLogin.mutate()}
           >
-            {storedToken && !isActive && !isStored ? "Sign in to replace" : "Sign in"}
+            {storedToken && !isActive && !isStored
+              ? t("agentConfiguration.login.claudeSetupToken.signInToReplace")
+              : t("agentConfiguration.login.signIn")}
           </Button>
         </div>
       </div>
@@ -3521,15 +3546,14 @@ function SubmittedBrowserCodeLoginPanel({
           token; a replacement login rotates it under the captured version. */}
       {storedToken && !isActive && !isStored && !appliedStored && (
         <div className="text-(length:--text-micro) text-muted-foreground">
-          You have a saved Claude login. Use it to bind this agent, or log in again to replace the
-          stored token.
+          {t("agentConfiguration.login.claudeSetupToken.savedLoginHint")}
         </div>
       )}
 
       {appliedStored && (
         <div className="flex items-center gap-2 text-(length:--text-micro) text-foreground">
           <Check className="size-3 shrink-0" />
-          <span>The saved Claude login is bound to this agent now.</span>
+          <span>{t("agentConfiguration.login.claudeSetupToken.savedLoginBound")}</span>
         </div>
       )}
 
@@ -3545,7 +3569,7 @@ function SubmittedBrowserCodeLoginPanel({
         {isActive && !authorizationUrl && !isCompleting && (
           <div className="flex items-center gap-2 text-(length:--text-micro) text-muted-foreground">
             <Loader2 className="size-3 animate-spin shrink-0" />
-            <span>Preparing...</span>
+            <span>{t("agentConfiguration.login.preparing")}</span>
           </div>
         )}
 
@@ -3557,30 +3581,32 @@ function SubmittedBrowserCodeLoginPanel({
               >
                 <TriangleAlert className="size-3 shrink-0 mt-0.5" />
                 <span>
-                  This connection is not encrypted. The login code travels in clear text on this
-                  network. Continue only on a network you trust.
+                  {t("agentConfiguration.login.claudeSetupToken.transportWarning")}
                 </span>
               </div>
             )}
             <div className="text-(length:--text-micro) text-muted-foreground">
-              Open the authorization page, then enter the browser code it shows.
+              {t("agentConfiguration.login.claudeSetupToken.enterBrowserCodeInstruction")}
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="text-(length:--text-micro) uppercase tracking-wide text-muted-foreground">
-                  1. Authorization URL
+                  1. {t("agentConfiguration.login.claudeSetupToken.authorizationUrl")}
                 </div>
                 <span className="font-mono text-xs text-foreground break-all">{authorizationUrl}</span>
               </div>
               <div className="flex items-center">
-                <AdapterLoginCopyButton value={authorizationUrl} label="Copy URL" />
+                <AdapterLoginCopyButton
+                  value={authorizationUrl}
+                  label={t("agentConfiguration.login.copyUrl")}
+                />
                 <Button
                   asChild
                   type="button"
                   variant="ghost"
                   size="icon-xs"
-                  aria-label="Open the authorization page"
-                  title="Open the authorization page"
+                  aria-label={t("agentConfiguration.login.claudeSetupToken.openAuthorizationPage")}
+                  title={t("agentConfiguration.login.claudeSetupToken.openAuthorizationPage")}
                   className="text-muted-foreground hover:text-foreground"
                 >
                   <a href={authorizationUrl} target="_blank" rel="noreferrer noopener">
@@ -3591,11 +3617,11 @@ function SubmittedBrowserCodeLoginPanel({
             </div>
             <div className="space-y-1">
               <div className="text-(length:--text-micro) uppercase tracking-wide text-muted-foreground">
-                2. Browser code
+                2. {t("agentConfiguration.login.claudeSetupToken.browserCode")}
               </div>
               <div className="flex items-center gap-2">
                 <input
-                  aria-label="Browser code"
+                  aria-label={t("agentConfiguration.login.claudeSetupToken.browserCode")}
                   type="text"
                   autoComplete="off"
                   spellCheck={false}
@@ -3617,7 +3643,7 @@ function SubmittedBrowserCodeLoginPanel({
                   disabled={!canSubmit}
                   onClick={handleSubmit}
                 >
-                  Submit
+                  {t("agentConfiguration.login.claudeSetupToken.submitBrowserCode")}
                 </Button>
               </div>
             </div>
@@ -3627,28 +3653,28 @@ function SubmittedBrowserCodeLoginPanel({
         {isCompleting && (
           <div className="flex items-center gap-2 text-(length:--text-micro) text-muted-foreground">
             <Loader2 className="size-3 animate-spin shrink-0" />
-            <span>Completing the login…</span>
+            <span>{t("agentConfiguration.login.claudeSetupToken.completing")}</span>
           </div>
         )}
 
         {isStored && (
           <div className="flex items-center gap-2 text-(length:--text-micro) text-foreground">
             <Check className="size-3 shrink-0" />
-            <span>Authenticated. The environment has credentials now.</span>
+            <span>{t("agentConfiguration.login.authenticated")}</span>
           </div>
         )}
 
         {isFailure && (
           <div className="flex items-start gap-2 text-(length:--text-micro) text-destructive">
             <TriangleAlert className="size-3 shrink-0" />
-            <span>{CLAUDE_LOGIN_FAILED_MESSAGE}</span>
+            <span>{t("agentConfiguration.login.claudeSetupToken.loginDidNotFinish")}</span>
           </div>
         )}
 
         {timedOut && !isFailure && !isStored && (
           <div className="flex items-start gap-2 text-(length:--text-micro) text-destructive">
             <TriangleAlert className="size-3 shrink-0" />
-            <span>{CLAUDE_LOGIN_TIMED_OUT_MESSAGE}</span>
+            <span>{t("agentConfiguration.login.claudeSetupToken.loginTimedOut")}</span>
           </div>
         )}
       </div>
@@ -3657,8 +3683,12 @@ function SubmittedBrowserCodeLoginPanel({
 }
 
 export function AdapterEnvironmentResult({ result }: { result: AdapterEnvironmentTestResult }) {
-  const statusLabel =
-    result.status === "pass" ? "Passed" : result.status === "warn" ? "Warnings" : "Failed";
+  const { t } = useTranslation();
+  const statusLabel = result.status === "pass"
+    ? t("onboarding.environment.passed")
+    : result.status === "warn"
+      ? t("onboarding.environment.warnings")
+      : t("onboarding.environment.failed");
   const statusClass =
     result.status === "pass"
       ? "text-green-700 dark:text-green-300 border-green-300 dark:border-green-500/40 bg-green-50 dark:bg-green-500/10"
@@ -3683,7 +3713,11 @@ export function AdapterEnvironmentResult({ result }: { result: AdapterEnvironmen
             <span className="mx-1 opacity-60">·</span>
             <span>{check.message}</span>
             {check.detail && <span className="block opacity-75 break-all">({check.detail})</span>}
-            {check.hint && <span className="block opacity-90 break-words">Hint: {check.hint}</span>}
+            {check.hint && (
+              <span className="block opacity-90 break-words">
+                {t("onboarding.environment.hint")}: {check.hint}
+              </span>
+            )}
           </div>
         ))}
       </div>
@@ -4169,7 +4203,9 @@ function ThinkingEffortDropdown({
       <Popover open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
           <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">
-            <span className={cn(!value && "text-muted-foreground")}>{selected?.label ?? "Auto"}</span>
+            <span className={cn(!value && "text-muted-foreground")}>
+              {selected?.label ?? t("agentConfiguration.effort.options.auto")}
+            </span>
             <ChevronDown className="h-3 w-3 text-muted-foreground" />
           </button>
         </PopoverTrigger>

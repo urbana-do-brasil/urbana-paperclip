@@ -6509,7 +6509,24 @@
       "bindingSaving": "Binding this agent to the signed-in account...",
       "bindingSucceeded": "Agent bound to the signed-in account.",
       "bindingFailed": "Could not bind this agent to the signed-in account.",
-      "retry": "Retry"
+      "retry": "Retry",
+      "claudeSetupToken": {
+        "activeSessionConflict": "Another sign-in attempt is active. Finish or cancel it in its original account setup before starting this one.",
+        "couldNotSubmitBrowserCode": "Could not submit the browser code.",
+        "loginDidNotFinish": "The login did not finish. Start the login again.",
+        "loginTimedOut": "The login timed out. Start the login again.",
+        "transportWarning": "This connection is not encrypted. The login code travels in clear text on this network. Continue only on a network you trust.",
+        "useSavedLogin": "Use saved login",
+        "signInToReplace": "Sign in to replace",
+        "savedLoginHint": "You have a saved Claude login. Use it to bind this agent, or log in again to replace the stored token.",
+        "savedLoginBound": "The saved Claude login is bound to this agent now.",
+        "enterBrowserCodeInstruction": "Open the authorization page, then enter the browser code it shows.",
+        "authorizationUrl": "Authorization URL",
+        "openAuthorizationPage": "Open the authorization page",
+        "browserCode": "Browser code",
+        "submitBrowserCode": "Submit",
+        "completing": "Completing the login…"
+      }
     },
     "codex": {
       "executionEngine": "Execution engine",
@@ -6821,6 +6838,23 @@
       "promptTemplate": "Prompt template",
       "promptTemplateHint": "Sent on every heartbeat. Keep it compact and dynamic. Use it for current-task framing, not long static instructions.",
       "promptTemplateNotice": "The prompt template is replayed on every heartbeat. Keep it compact and dynamic to avoid recurring token cost and cache churn."
+    },
+    "secretAccess": {
+      "title": "Secret access",
+      "organizationRequiredForCreate": "Select an organization to create secrets",
+      "organizationRequiredForImageUpload": "Select an organization to upload images"
+    },
+    "bootstrapPrompt": {
+      "label": "Bootstrap prompt (legacy)",
+      "hint": "Only sent when Paperclip starts a fresh session. Use this for stable setup guidance that should not be repeated on every heartbeat.",
+      "placeholder": "Optional initial setup prompt for the first run",
+      "legacyNotice": "Bootstrap prompt is legacy and will be removed in a future release. Consider moving this content into the agent's prompt template or instructions file instead."
+    },
+    "providerTrace": {
+      "heading": "Debugging",
+      "captureRaw": "Capture raw provider traces",
+      "captureRawHint": "Stores exact provider traffic for every future run until disabled. Traces may contain sensitive prompts and tool arguments, are administrator-only, and expire after 24 hours.",
+      "rawCaptureEnabled": "Raw tracing is on for future runs. Paperclip keeps at most 64 MiB per run and automatically deletes it after 24 hours."
     },
     "environment": {
       "heading": "Environment",

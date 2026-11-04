@@ -1,3 +1,8 @@
+---
+title: "Pipelines Tutorial: Release to Published Content"
+summary: "CLI/API walkthrough of a 12-step release-to-content flow"
+---
+
 # Pipelines Tutorial: Release to Published Content
 
 This walkthrough is the CLI/API version of the 12-step release-to-content worked example. It uses three linked pipelines:

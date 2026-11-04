@@ -46,15 +46,18 @@ describe("public help mapping", () => {
   it("loads the newly mapped root-level guides in PT-BR without changing technical examples or URLs", async () => {
     const technicalTokens = (markdown: string) => {
       const withoutFences = markdown.replace(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm, "");
-      return [...withoutFences.matchAll(/`([^`\n]+)`/g)].map((match) => match[1]);
+      return [...new Set([...withoutFences.matchAll(/`([^`\n]+)`/g)].map((match) => match[1]))].sort();
     };
     const exampleBlocks = (markdown: string) =>
-      [...markdown.matchAll(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm)].map((match) => match[0]);
+      [...markdown.matchAll(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm)].map((match) =>
+        match[0].replace(/^\s*#.*$/gm, "").replace(/\s+#.*$/gm, ""));
     const linkTargets = (markdown: string) => [...markdown.matchAll(/\]\(([^)]+)\)/g)].map((match) => match[1]);
 
     const translatedHeadings: Record<string, string> = {
       "guides/execution-policy": "## Visão geral",
       "guides/openclaw-docker-setup": "## Teste automatizado de entrada (recomendado para começar)",
+      "agents/runtime": "## 1. O que este sistema faz",
+      "feedback-voting": "## Como funciona a votação",
     };
     for (const slug of Object.keys(translatedHeadings)) {
       const topic = findHelpTopic(slug)!;
@@ -69,6 +72,17 @@ describe("public help mapping", () => {
       expect(exampleBlocks(portuguese.content)).toEqual(exampleBlocks(english.content));
       expect(linkTargets(portuguese.content)).toEqual(linkTargets(english.content));
     }
+  });
+
+  it("loads the translated public pipelines tutorial", async () => {
+    const topic = findHelpTopic("pipelines/tutorial")!;
+    const english = await loadHelpTopic(topic, "en");
+    const portuguese = await loadHelpTopic(topic, "pt-BR");
+    expect(portuguese.language).toBe("pt-BR");
+    expect(portuguese.fallback).toBe(false);
+    expect(portuguese.content).not.toBe(english.content);
+    expect(portuguese.content).toContain("## Pré-requisitos");
+    expect(portuguese.content).toContain("## Etapa 12: Feed de reflexão");
   });
 
   it("preserves technical code, converts known cards safely, and never routes unknown or unsafe links", () => {

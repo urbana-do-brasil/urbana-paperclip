@@ -54,6 +54,10 @@ const issueDocumentArguments = {
   issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" },
   key: { en: "Document key", "pt-BR": "Chave do documento" },
 };
+const issueDocumentRevisionArguments = {
+  ...issueDocumentArguments,
+  revisionId: { en: "Revision ID", "pt-BR": "ID da revisão" },
+};
 const issueInteractionArguments = {
   issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" },
   interactionId: { en: "Interaction ID", "pt-BR": "ID da interação" },
@@ -1299,16 +1303,47 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: issueIdArgument,
     options: commonClientOptions,
   },
-  "issue recovery:resolve": descriptionOnly("Resolve an issue recovery action", "Resolver uma ação de recuperação de tarefa"),
-  "issue child:create": descriptionOnly("Create a child issue from a JSON payload", "Criar uma tarefa filha a partir de um payload JSON"),
+  "issue recovery:resolve": {
+    ...descriptionOnly("Resolve an issue recovery action", "Resolver uma ação de recuperação de tarefa"),
+    arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
+    options: {
+      ...companyOptions,
+      "--outcome": { en: "restored, false_positive, blocked, or cancelled", "pt-BR": "restored, false_positive, blocked ou cancelled" },
+      "--source-issue-status": { en: "todo, done, or in_review for restored outcomes; blocked is only valid for blocked outcomes", "pt-BR": "todo, done ou in_review para resultados restored; blocked só é válido para resultados blocked" },
+      "--action-id": { en: "Specific recovery action ID", "pt-BR": "ID da ação de recuperação específica" },
+      "--resolution-note": { en: "Resolution note", "pt-BR": "Nota de resolução" },
+    },
+  },
+  "issue child:create": {
+    ...descriptionOnly("Create a child issue from a JSON payload", "Criar uma tarefa filha a partir de um payload JSON"),
+    arguments: { issueId: { en: "Parent issue ID", "pt-BR": "ID da tarefa pai" } },
+    options: {
+      ...companyOptions,
+      "--payload-json": { en: "CreateChildIssue JSON payload", "pt-BR": "Payload JSON de CreateChildIssue" },
+    },
+  },
   "issue force-release": descriptionOnly("Force-release an issue from an agent checkout", "Liberar à força uma tarefa de um checkout de agente"),
   "issue work-products": {
     ...descriptionOnly("List issue work products", "Listar entregáveis da tarefa"),
     arguments: issueIdArgument,
     options: commonClientOptions,
   },
-  "issue work-product:create": descriptionOnly("Create an issue work product from JSON", "Criar um entregável da tarefa a partir de JSON"),
-  "issue work-product:update": descriptionOnly("Update a work product from JSON", "Atualizar um entregável a partir de JSON"),
+  "issue work-product:create": {
+    ...descriptionOnly("Create an issue work product from JSON", "Criar um entregável da tarefa a partir de JSON"),
+    arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
+    options: {
+      ...companyOptions,
+      "--payload-json": { en: "CreateIssueWorkProduct JSON payload", "pt-BR": "Payload JSON de CreateIssueWorkProduct" },
+    },
+  },
+  "issue work-product:update": {
+    ...descriptionOnly("Update a work product from JSON", "Atualizar um entregável a partir de JSON"),
+    arguments: { workProductId: { en: "Work product ID", "pt-BR": "ID do entregável" } },
+    options: {
+      ...companyOptions,
+      "--payload-json": { en: "UpdateIssueWorkProduct JSON payload", "pt-BR": "Payload JSON de UpdateIssueWorkProduct" },
+    },
+  },
   "issue work-product:delete": {
     ...descriptionOnly("Delete a work product", "Excluir um entregável"),
     arguments: workProductIdArgument,
@@ -1327,23 +1362,107 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: issueDocumentArguments,
     options: commonClientOptions,
   },
-  "issue document:put": descriptionOnly("Create or update an issue document", "Criar ou atualizar um documento da tarefa"),
+  "issue document:put": {
+    ...descriptionOnly("Create or update an issue document", "Criar ou atualizar um documento da tarefa"),
+    arguments: issueDocumentArguments,
+    options: {
+      ...commonClientOptions,
+      "--title": { en: "Document title", "pt-BR": "Título do documento" },
+      "--format": { en: "Document format", "pt-BR": "Formato do documento" },
+      "--body": { en: "Document body", "pt-BR": "Conteúdo do documento" },
+      "--body-file": { en: "Read document body from a file", "pt-BR": "Ler o conteúdo do documento de um arquivo" },
+      "--change-summary": { en: "Change summary", "pt-BR": "Resumo da alteração" },
+      "--base-revision-id": { en: "Expected base revision ID", "pt-BR": "ID esperado da revisão base" },
+    },
+  },
+  "issue document:delete": {
+    ...descriptionOnly("Delete an issue document", "Excluir um documento da tarefa"),
+    arguments: issueDocumentArguments,
+    options: commonClientOptions,
+  },
+  "issue document:lock": {
+    ...descriptionOnly("Lock an issue document", "Bloquear um documento da tarefa"),
+    arguments: issueDocumentArguments,
+    options: commonClientOptions,
+  },
+  "issue document:unlock": {
+    ...descriptionOnly("Unlock an issue document", "Desbloquear um documento da tarefa"),
+    arguments: issueDocumentArguments,
+    options: commonClientOptions,
+  },
+  "issue document:revisions": {
+    ...descriptionOnly("List issue document revisions", "Listar revisões do documento da tarefa"),
+    arguments: issueDocumentArguments,
+    options: commonClientOptions,
+  },
+  "issue document:restore": {
+    ...descriptionOnly("Restore an issue document revision", "Restaurar uma revisão do documento da tarefa"),
+    arguments: issueDocumentRevisionArguments,
+    options: commonClientOptions,
+  },
   "issue interactions": {
     ...descriptionOnly("List issue thread interactions", "Listar interações do thread da tarefa"),
     arguments: issueIdArgument,
     options: commonClientOptions,
   },
-  "issue interaction:create": descriptionOnly("Create an issue thread interaction from JSON", "Criar uma interação do thread da tarefa a partir de JSON"),
-  "issue interaction:accept": descriptionOnly("Accept an issue thread interaction", "Aceitar uma interação do thread da tarefa"),
-  "issue interaction:reject": descriptionOnly("Reject an issue thread interaction", "Rejeitar uma interação do thread da tarefa"),
-  "issue interaction:cancel": descriptionOnly("Cancel an issue thread interaction", "Cancelar uma interação do thread da tarefa"),
-  "issue interaction:respond": descriptionOnly("Respond to an issue question interaction", "Responder a uma interação de pergunta da tarefa"),
+  "issue interaction:create": {
+    ...descriptionOnly("Create an issue thread interaction from JSON", "Criar uma interação do thread da tarefa a partir de JSON"),
+    arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
+    options: {
+      ...companyOptions,
+      "--payload-json": { en: "CreateIssueThreadInteraction JSON payload", "pt-BR": "Payload JSON de CreateIssueThreadInteraction" },
+    },
+  },
+  "issue interaction:accept": {
+    ...descriptionOnly("Accept an issue thread interaction", "Aceitar uma interação do thread da tarefa"),
+    arguments: {
+      issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" },
+      interactionId: { en: "Interaction ID", "pt-BR": "ID da interação" },
+    },
+    options: {
+      ...companyOptions,
+      "--selected-client-keys": { en: "Client keys to accept", "pt-BR": "Chaves de cliente a aceitar" },
+      "--selected-option-ids": { en: "Checkbox option IDs to accept", "pt-BR": "IDs das opções de caixa de seleção a aceitar" },
+    },
+  },
+  "issue interaction:reject": {
+    ...descriptionOnly("Reject an issue thread interaction", "Rejeitar uma interação do thread da tarefa"),
+    arguments: issueInteractionArguments,
+    options: {
+      ...companyOptions,
+      "--reason": { en: "Reason", "pt-BR": "Motivo" },
+    },
+  },
+  "issue interaction:cancel": {
+    ...descriptionOnly("Cancel an issue thread interaction", "Cancelar uma interação do thread da tarefa"),
+    arguments: issueInteractionArguments,
+    options: {
+      ...companyOptions,
+      "--reason": { en: "Reason", "pt-BR": "Motivo" },
+    },
+  },
+  "issue interaction:respond": {
+    ...descriptionOnly("Respond to an issue question interaction", "Responder a uma interação de pergunta da tarefa"),
+    arguments: issueInteractionArguments,
+    options: {
+      ...companyOptions,
+      "--answers-json": { en: "Answers array JSON", "pt-BR": "JSON do conjunto de respostas" },
+      "--summary-markdown": { en: "Optional response summary", "pt-BR": "Resumo opcional da resposta em Markdown" },
+    },
+  },
   "issue tree-state": {
     ...descriptionOnly("Get issue tree control state", "Consultar o estado de controle da árvore da tarefa"),
     arguments: rootIssueIdArgument,
     options: commonClientOptions,
   },
-  "issue tree-preview": descriptionOnly("Preview issue tree control changes", "Pré-visualizar alterações de controle da árvore da tarefa"),
+  "issue tree-preview": {
+    ...descriptionOnly("Preview issue tree control changes", "Pré-visualizar alterações de controle da árvore da tarefa"),
+    arguments: rootIssueIdArgument,
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "PreviewIssueTreeControl JSON payload", "pt-BR": "Payload JSON de PreviewIssueTreeControl" },
+    },
+  },
   "issue tree-holds": {
     ...descriptionOnly("List issue tree holds", "Listar retenções da árvore da tarefa"),
     arguments: rootIssueIdArgument,
@@ -1354,7 +1473,14 @@ const operationHelp: Record<string, CommandHelp> = {
       "--include-members": { en: "Include hold members", "pt-BR": "Incluir os membros da retenção" },
     },
   },
-  "issue tree-hold:create": descriptionOnly("Create an issue tree hold from JSON", "Criar uma retenção da árvore da tarefa a partir de JSON"),
+  "issue tree-hold:create": {
+    ...descriptionOnly("Create an issue tree hold from JSON", "Criar uma retenção da árvore da tarefa a partir de JSON"),
+    arguments: rootIssueIdArgument,
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "CreateIssueTreeHold JSON payload", "pt-BR": "Payload JSON de CreateIssueTreeHold" },
+    },
+  },
   "issue tree-hold:get": {
     ...descriptionOnly("Get an issue tree hold", "Consultar uma retenção da árvore da tarefa"),
     arguments: treeHoldArguments,
@@ -1378,11 +1504,6 @@ const operationHelp: Record<string, CommandHelp> = {
   "issue label:delete": descriptionOnly("Delete an issue label", "Excluir uma etiqueta de tarefa"),
   "issue feedback:votes": descriptionOnly("List feedback votes for an issue", "Listar votos de feedback de uma tarefa"),
   "issue feedback:vote": descriptionOnly("Create or update a feedback vote", "Criar ou atualizar um voto de feedback"),
-  "issue document:delete": descriptionOnly("Delete an issue document", "Excluir um documento da tarefa"),
-  "issue document:lock": descriptionOnly("Lock an issue document", "Bloquear um documento da tarefa"),
-  "issue document:unlock": descriptionOnly("Unlock an issue document", "Desbloquear um documento da tarefa"),
-  "issue document:revisions": descriptionOnly("List issue document revisions", "Listar revisões do documento da tarefa"),
-  "issue document:restore": descriptionOnly("Restore an issue document revision", "Restaurar uma revisão do documento da tarefa"),
   "issue feedback:list": {
     ...descriptionOnly("List feedback traces for an issue", "Listar traces de feedback de uma tarefa"),
     arguments: issueIdArgument,
@@ -1764,11 +1885,36 @@ const operationHelp: Record<string, CommandHelp> = {
     },
   },
   "agent instructions-bundle:update": descriptionOnly("Update an agent instructions bundle", "Atualizar o pacote de instruções do agente"),
-  "agent wake": descriptionOnly("Request a heartbeat wakeup for an agent", "Solicitar o acionamento de um heartbeat do agente"),
-  "agent local-cli": descriptionOnly(
-    "Create an agent API key, install local Paperclip skills for Codex/Claude, and print shell exports",
-    "Criar uma chave de API do agente, instalar skills locais do Paperclip para Codex/Claude e exibir exportações de shell",
-  ),
+  "agent wake": {
+    ...descriptionOnly("Request a heartbeat wakeup for an agent", "Solicitar o acionamento de um heartbeat do agente"),
+    arguments: { agentRef: { en: "Agent ID or shortname/url-key", "pt-BR": "ID do agente ou nome curto/chave da URL" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID for shortname/url-key lookup", "pt-BR": "ID da organização para localizar por nome curto/chave da URL" },
+      "--source": { en: "Invocation source (timer, assignment, on_demand, automation)", "pt-BR": "Origem da invocação (timer, assignment, on_demand, automation)" },
+      "--trigger": { en: "Trigger detail (manual, ping, callback, system)", "pt-BR": "Detalhe do acionador (manual, ping, callback, system)" },
+      "--reason": { en: "Wakeup reason", "pt-BR": "Motivo do acionamento" },
+      "--payload": { en: "JSON object payload", "pt-BR": "Objeto JSON com o payload" },
+      "--idempotency-key": { en: "Wakeup idempotency key", "pt-BR": "Chave de idempotência do acionamento" },
+      "--force-fresh-session": { en: "Request a fresh adapter session", "pt-BR": "Solicitar uma nova sessão do adapter" },
+    },
+  },
+  "agent local-cli": {
+    ...descriptionOnly(
+      "Create an agent API key, install local Paperclip skills for Codex/Claude, and print shell exports",
+      "Criar uma chave de API do agente, instalar skills locais do Paperclip para Codex/Claude e exibir exportações de shell",
+    ),
+    arguments: { agentRef: { en: "Agent ID or shortname/url-key", "pt-BR": "ID do agente ou nome curto/chave da URL" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--key-name": { en: "API key label", "pt-BR": "Rótulo da chave de API" },
+      "--no-install-skills": {
+        en: "Skip installing Paperclip skills into ~/.codex/skills, ~/.claude/skills, and ~/.kimi-code/skills",
+        "pt-BR": "Pular a instalação das skills do Paperclip em ~/.codex/skills, ~/.claude/skills e ~/.kimi-code/skills",
+      },
+    },
+  },
   "agent prompt": descriptionOnly("Create/update Paperclip work using an agent persona", "Criar ou atualizar trabalho no Paperclip usando a persona de um agente"),
   skill: {
     description: { en: "Company skill operations", "pt-BR": "Operações de skills da organização" },

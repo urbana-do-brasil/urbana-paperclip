@@ -6662,7 +6662,24 @@
       "bindingSaving": "Vinculando este agente à conta conectada...",
       "bindingSucceeded": "Agente vinculado à conta conectada.",
       "bindingFailed": "Não foi possível vincular este agente à conta conectada.",
-      "retry": "Tentar novamente"
+      "retry": "Tentar novamente",
+      "claudeSetupToken": {
+        "activeSessionConflict": "Há outra tentativa de login ativa. Conclua ou cancele essa tentativa na configuração original da conta antes de iniciar esta.",
+        "couldNotSubmitBrowserCode": "Não foi possível enviar o código do navegador.",
+        "loginDidNotFinish": "O login não foi concluído. Inicie o login novamente.",
+        "loginTimedOut": "O login expirou. Inicie o login novamente.",
+        "transportWarning": "Esta conexão não é criptografada. O código de login trafega em texto simples nesta rede. Continue apenas em uma rede confiável.",
+        "useSavedLogin": "Usar login salvo",
+        "signInToReplace": "Entrar para substituir",
+        "savedLoginHint": "Você tem um login Claude salvo. Use-o para vincular este agente ou entre novamente para substituir o token salvo.",
+        "savedLoginBound": "O login Claude salvo agora está vinculado a este agente.",
+        "enterBrowserCodeInstruction": "Abra a página de autorização e insira o código do navegador exibido nela.",
+        "authorizationUrl": "URL de autorização",
+        "openAuthorizationPage": "Abrir a página de autorização",
+        "browserCode": "Código do navegador",
+        "submitBrowserCode": "Enviar",
+        "completing": "Concluindo o login…"
+      }
     },
     "codex": {
       "executionEngine": "Mecanismo de execução",
@@ -6974,6 +6991,23 @@
       "promptTemplate": "Modelo de prompt",
       "promptTemplateHint": "Enviado em cada heartbeat. Mantenha-o curto e dinâmico. Use-o para contextualizar a tarefa atual, não para instruções estáticas extensas.",
       "promptTemplateNotice": "O modelo de prompt é reaplicado a cada heartbeat. Mantenha-o curto e dinâmico para evitar custo recorrente de tokens e alterações desnecessárias no cache."
+    },
+    "secretAccess": {
+      "title": "Acesso a segredos",
+      "organizationRequiredForCreate": "Selecione uma organização para criar segredos",
+      "organizationRequiredForImageUpload": "Selecione uma organização para enviar imagens"
+    },
+    "bootstrapPrompt": {
+      "label": "Prompt de inicialização (legado)",
+      "hint": "Só é enviado quando o Paperclip inicia uma sessão nova. Use-o para orientações estáveis de configuração que não devem ser repetidas a cada heartbeat.",
+      "placeholder": "Instrução inicial opcional para a primeira execução",
+      "legacyNotice": "O prompt de inicialização é legado e será removido em uma versão futura. Considere mover esse conteúdo para o modelo de prompt do agente ou para o arquivo de instruções."
+    },
+    "providerTrace": {
+      "heading": "Depuração",
+      "captureRaw": "Capturar traces brutos do provedor",
+      "captureRawHint": "Armazena o tráfego exato do provedor em todas as execuções futuras até ser desativado. Os traces podem conter prompts e argumentos de ferramentas sensíveis, são acessíveis apenas a administradores e expiram após 24 horas.",
+      "rawCaptureEnabled": "A captura de traces brutos está ativada para as próximas execuções. O Paperclip mantém no máximo 64 MiB por execução e os exclui automaticamente após 24 horas."
     },
     "environment": {
       "heading": "Ambiente",

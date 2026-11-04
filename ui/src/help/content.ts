@@ -10,11 +10,13 @@ export const HELP_TOPICS: readonly HelpTopic[] = topics;
 // lazy-loaded into the shipped Vite bundle; internal plans and screenshots are
 // deliberately absent. Missing Portuguese files stay visible as coverage gaps.
 const rawDocuments = import.meta.glob<string>([
+  "../../../docs/*.md",
   "../../../docs/start/*.md", "../../../docs/guides/*.md", "../../../docs/guides/board-operator/*.md",
   "../../../docs/guides/agent-developer/*.md", "../../../docs/deploy/*.md",
   "../../../docs/adapters/*.md", "../../../docs/cli/*.md", "../../../docs/api/*.md",
   "../../../docs/companies/companies-spec.md",
   "../../../docs/built-in-agents.md",
+  "../../../docs/pt-BR/*.md",
   "../../../docs/pt-BR/start/*.md", "../../../docs/pt-BR/guides/*.md", "../../../docs/pt-BR/guides/board-operator/*.md",
   "../../../docs/pt-BR/guides/agent-developer/*.md", "../../../docs/pt-BR/deploy/*.md",
   "../../../docs/pt-BR/adapters/*.md", "../../../docs/pt-BR/cli/*.md", "../../../docs/pt-BR/api/*.md",

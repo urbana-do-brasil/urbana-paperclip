@@ -3848,3 +3848,42 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Login Codex no formulário — 3.6g2
 
 - Estados, ações, título e controles acessíveis do login Codex localizados; testes PT-BR/en confirmam código/URL originais, cancelamento e mensagem externa de falha. Suítes UI/locale 123/123 e typecheck UI passaram. O fluxo Claude e outros textos continuam abertos em 3.6g. Checkpoint: **450/474 tarefas**, 24 caixas abertas incluindo agregadoras.
+
+### Checkpoint — configuração, CLI e guias públicos — 2026-11-04
+
+O checklist está em **455/482 tarefas**, com 27 itens abertos incluindo os
+agregadores. O estado permanece parcial e não foi implantado.
+
+- AgentConfigForm avançou em segredos, erros dependentes de organização,
+  prompt legado, traces do provider e rótulos automáticos. Foram aprovados 116
+  testes focados, typecheck UI e gates de catálogos/fontes/tokens. O subitem
+  3.6g3 permanece aberto até adicionar teste dedicado dos caminhos de erro sem
+  organização. O placeholder do prompt inicial e `Working directory
+  (deprecated)`/tooltip também seguem como lacunas observadas.
+- A ajuda CLI localizou opções em 19 rotas de `issue` (recovery, child,
+  work-product, document, interaction e tree) e `agent` (wake/local-cli),
+  preservando assinaturas, flags e defaults. A matriz real PT-BR/en cobriu
+  66/66 rotas; o typecheck direcionado da CLI passou. A bateria focada reportou
+  14 casos aprovados e 62 filtrados; a execução integrada abaixo executou a
+  matriz completa.
+- Guias de runtime de agentes e votos de feedback ganharam pares em PT-BR e
+  entraram no bundle público; `5.2b` e `5.3c` foram marcadas. A auditoria do
+  guia de feedback corrigiu a descrição de atualizações de voto, consentimento
+  configurável, envio assíncrono e dados `local_only`. O tutorial de pipelines
+  também foi traduzido e mapeado, elevando o manifesto a 71 tópicos. `5.3d1`
+  está concluída; o smoke dos exemplos em fixture descartável ainda não foi
+  executado, então `5.3d2` permanece aberto.
+- `pnpm check:localization`: aprovado; catálogo JSON sem duplicatas, 71 tópicos
+  com ambos os arquivos, scanner de literais aprovado, 17/17 testes Node e
+  410/410 testes em 59 arquivos Vitest.
+- `pnpm exec vitest run ui/src/help/content.test.ts
+  ui/src/components/AgentConfigForm.render.test.tsx --testTimeout 15000`:
+  **123/123**. A verificação compara o conjunto de identificadores inline, os
+  blocos de exemplo e os destinos de links entre guias EN/PT-BR.
+- `pnpm exec openspec validate localize-paperclip-pt-br --strict` e
+  `git diff --check`: aprovados.
+
+O guia de pipelines exige `PAPERCLIP_API_URL`, `PAPERCLIP_API_KEY` e uma empresa
+de desenvolvimento para executar o smoke, portanto nenhum serviço ou dado
+real foi acessado nesta rodada. CI remota, build/browser final e revisão humana
+dos guias continuam pendentes.

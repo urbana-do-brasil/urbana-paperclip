@@ -31,6 +31,36 @@
     "portugueseSource": "docs/pt-BR/built-in-agents.md"
   },
   {
+    "slug": "agents/runtime",
+    "group": "agents",
+    "title": {
+      "en": "Agent Runtime Guide",
+      "pt-BR": "Guia do runtime de agentes"
+    },
+    "source": "docs/agents-runtime.md",
+    "portugueseSource": "docs/pt-BR/agents-runtime.md"
+  },
+  {
+    "slug": "feedback-voting",
+    "group": "operator",
+    "title": {
+      "en": "Feedback Voting — Local Data Guide",
+      "pt-BR": "Votos de feedback — guia de dados locais"
+    },
+    "source": "docs/feedback-voting.md",
+    "portugueseSource": "docs/pt-BR/feedback-voting.md"
+  },
+  {
+    "slug": "pipelines/tutorial",
+    "group": "operator",
+    "title": {
+      "en": "Pipelines Tutorial: Release to Published Content",
+      "pt-BR": "Tutorial de pipelines: da versão ao conteúdo publicado"
+    },
+    "source": "docs/pipelines-tutorial.md",
+    "portugueseSource": "docs/pt-BR/pipelines-tutorial.md"
+  },
+  {
     "slug": "adapters/adapter-ui-parser",
     "group": "adapters",
     "title": {

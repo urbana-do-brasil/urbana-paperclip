@@ -44,6 +44,48 @@ test("coverage gate accepts root-level public guides", () => {
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });
 
+test("coverage gate rejects bundled Markdown files missing from the topic manifest", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-help-unmapped-gate-"));
+  try {
+    const sources = [
+      "docs/guides/example.md",
+      "docs/pt-BR/guides/example.md",
+      "docs/agents-runtime.md",
+      "docs/pt-BR/agents-runtime.md",
+    ];
+    for (const source of sources) {
+      fs.mkdirSync(path.dirname(path.join(tmp, source)), { recursive: true });
+      fs.writeFileSync(path.join(tmp, source), "# Fixture\n");
+    }
+    const manifest = path.join(tmp, "topics.json");
+    const example = {
+      slug: "guides/example",
+      group: "operator",
+      source: "docs/guides/example.md",
+      portugueseSource: "docs/pt-BR/guides/example.md",
+    };
+    fs.writeFileSync(manifest, JSON.stringify([example]));
+
+    const check = () => spawnSync(process.execPath, [checker, "--manifest", manifest, "--root", tmp], { encoding: "utf8" });
+    const missingEntry = check();
+    assert.equal(missingEntry.status, 1);
+    assert.match(missingEntry.stderr, /docs\/agents-runtime\.md: public help source is not referenced by the topic manifest/);
+    assert.match(missingEntry.stderr, /docs\/pt-BR\/agents-runtime\.md: public help source is not referenced by the topic manifest/);
+
+    fs.writeFileSync(manifest, JSON.stringify([
+      example,
+      {
+        slug: "agents/runtime",
+        group: "agents",
+        source: "docs/agents-runtime.md",
+        portugueseSource: "docs/pt-BR/agents-runtime.md",
+      },
+    ]));
+    const covered = check();
+    assert.equal(covered.status, 0, covered.stderr);
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
 test("coverage gate rejects an existing source outside the public help bundle", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-help-gate-outside-"));
   try {

@@ -99,6 +99,15 @@ describe("registered CLI operation help", () => {
     const enOptions = helpRows(en, "Options");
     expectLocalizedRows(`${name} options`, ptOptions, enOptions);
     expect(ptOptions.length).toBeGreaterThan(0);
+
+    if (name === "agent wake") {
+      const ptOutput = pt.replace(/\s+/g, " ");
+      const enOutput = en.replace(/\s+/g, " ");
+      expect(ptOutput.match(/default: "on_demand"/g)).toHaveLength(1);
+      expect(ptOutput.match(/default: "manual"/g)).toHaveLength(1);
+      expect(enOutput.match(/default: "on_demand"/g)).toHaveLength(1);
+      expect(enOutput.match(/default: "manual"/g)).toHaveLength(1);
+    }
   }, 15_000);
 
   it.each([
@@ -117,6 +126,8 @@ describe("registered CLI operation help", () => {
     { name: "agent hire", command: ["agent", "hire"] },
     { name: "agent update", command: ["agent", "update"] },
     { name: "agent delete", command: ["agent", "delete"] },
+    { name: "agent wake", command: ["agent", "wake"] },
+    { name: "agent local-cli", command: ["agent", "local-cli"] },
     { name: "mcp login", command: ["mcp", "login"] },
     { name: "mcp proxy", command: ["mcp", "proxy"] },
     { name: "connect", command: ["connect"] },
@@ -138,13 +149,30 @@ describe("registered CLI operation help", () => {
     { name: "issue archive", command: ["issue", "archive"] },
     { name: "issue unarchive", command: ["issue", "unarchive"] },
     { name: "issue recovery-actions", command: ["issue", "recovery-actions"] },
+    { name: "issue recovery:resolve", command: ["issue", "recovery:resolve"] },
+    { name: "issue child:create", command: ["issue", "child:create"] },
     { name: "issue work-products", command: ["issue", "work-products"] },
+    { name: "issue work-product:create", command: ["issue", "work-product:create"] },
+    { name: "issue work-product:update", command: ["issue", "work-product:update"] },
     { name: "issue work-product:delete", command: ["issue", "work-product:delete"] },
     { name: "issue documents", command: ["issue", "documents"] },
     { name: "issue document:get", command: ["issue", "document:get"] },
+    { name: "issue document:put", command: ["issue", "document:put"] },
+    { name: "issue document:delete", command: ["issue", "document:delete"] },
+    { name: "issue document:lock", command: ["issue", "document:lock"] },
+    { name: "issue document:unlock", command: ["issue", "document:unlock"] },
+    { name: "issue document:revisions", command: ["issue", "document:revisions"] },
+    { name: "issue document:restore", command: ["issue", "document:restore"] },
     { name: "issue interactions", command: ["issue", "interactions"] },
+    { name: "issue interaction:create", command: ["issue", "interaction:create"] },
+    { name: "issue interaction:accept", command: ["issue", "interaction:accept"] },
+    { name: "issue interaction:reject", command: ["issue", "interaction:reject"] },
+    { name: "issue interaction:cancel", command: ["issue", "interaction:cancel"] },
+    { name: "issue interaction:respond", command: ["issue", "interaction:respond"] },
     { name: "issue tree-state", command: ["issue", "tree-state"] },
+    { name: "issue tree-preview", command: ["issue", "tree-preview"] },
     { name: "issue tree-holds", command: ["issue", "tree-holds"] },
+    { name: "issue tree-hold:create", command: ["issue", "tree-hold:create"] },
     { name: "issue tree-hold:get", command: ["issue", "tree-hold:get"] },
     { name: "issue tree-hold:release", command: ["issue", "tree-hold:release"] },
     { name: "issue attachments", command: ["issue", "attachments"] },
@@ -173,5 +201,10 @@ describe("registered CLI operation help", () => {
     const enOptions = helpRows(en, "Options");
     expect(ptOptions.length).toBeGreaterThan(0);
     expectLocalizedRows(`${name} options`, ptOptions, enOptions);
+
+    if (name === "issue document:put") {
+      expect(pt.replace(/\s+/g, " ")).toContain('default: "markdown"');
+      expect(en.replace(/\s+/g, " ")).toContain('default: "markdown"');
+    }
   }, 15_000);
 });

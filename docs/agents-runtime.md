@@ -1,4 +1,7 @@
-# Agent Runtime Guide
+---
+title: Agent Runtime Guide
+summary: Configure, monitor, and troubleshoot agents in Paperclip
+---
 
 Status: User-facing guide
 Last updated: 2026-03-26

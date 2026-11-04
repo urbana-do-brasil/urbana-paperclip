@@ -11,10 +11,12 @@ const args = process.argv.slice(2);
 // aligned with ui/src/help/content.ts and fail closed if that bundle contract
 // changes without the coverage gate being updated too.
 const publicHelpGlobPatterns = [
+  "../../../docs/*.md",
   "../../../docs/start/*.md", "../../../docs/guides/*.md", "../../../docs/guides/board-operator/*.md",
   "../../../docs/guides/agent-developer/*.md", "../../../docs/deploy/*.md",
   "../../../docs/adapters/*.md", "../../../docs/cli/*.md", "../../../docs/api/*.md",
   "../../../docs/companies/companies-spec.md", "../../../docs/built-in-agents.md",
+  "../../../docs/pt-BR/*.md",
   "../../../docs/pt-BR/start/*.md", "../../../docs/pt-BR/guides/*.md", "../../../docs/pt-BR/guides/board-operator/*.md",
   "../../../docs/pt-BR/guides/agent-developer/*.md", "../../../docs/pt-BR/deploy/*.md",
   "../../../docs/pt-BR/adapters/*.md", "../../../docs/pt-BR/cli/*.md", "../../../docs/pt-BR/api/*.md",
@@ -43,6 +45,25 @@ try {
   const publicSlugs = new Set(manifest.map((topic) => topic?.slug).filter((slug) => typeof slug === "string"));
   const seen = new Set();
   const errors = [];
+
+  // The manifest is the public-help inventory, so every Markdown file shipped
+  // by the bundle globs must be represented there. Checking only manifest
+  // entries misses newly added docs that were never registered.
+  const mappedSources = new Set();
+  for (const topic of manifest) {
+    for (const source of [topic?.source, topic?.portugueseSource]) {
+      if (typeof source !== "string" || !source) continue;
+      const normalized = source.replaceAll("\\", "/");
+      if (path.posix.isAbsolute(normalized) || normalized.split("/").includes("..")) continue;
+      const absolute = path.resolve(contentRoot, normalized);
+      if (absolute !== contentRoot && !absolute.startsWith(`${contentRoot}${path.sep}`)) continue;
+      mappedSources.add(path.relative(contentRoot, absolute).replaceAll("\\", "/"));
+    }
+  }
+  for (const source of bundledMarkdownSources(contentRoot)) {
+    if (!mappedSources.has(source)) errors.push(`${source}: public help source is not referenced by the topic manifest`);
+  }
+
   for (const topic of selected) {
     if (!topic || typeof topic.slug !== "string" || !/^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\/[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)*$/.test(topic.slug)) {
       errors.push("Invalid topic slug"); continue;
@@ -100,6 +121,31 @@ function isBundledHelpSource(source) {
 function globMatches(pattern, value) {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("*", "[^/]*");
   return new RegExp(`^${escaped}$`).test(value);
+}
+
+function bundledMarkdownSources(contentRoot) {
+  const docsRoot = path.join(contentRoot, "docs");
+  const files = [];
+  const visit = (directory) => {
+    if (!fs.existsSync(directory) || !fs.statSync(directory).isDirectory()) return;
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const absolute = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(absolute);
+      else if (entry.isFile() && entry.name.endsWith(".md")) {
+        files.push(path.relative(contentRoot, absolute).replaceAll("\\", "/"));
+      }
+    }
+  };
+  visit(docsRoot);
+
+  const includedPatterns = publicHelpGlobPatterns.filter((pattern) => !pattern.startsWith("!"));
+  const excludedPatterns = publicHelpGlobPatterns.filter((pattern) => pattern.startsWith("!"));
+  return files.filter((source) => {
+    const bundledPath = `../../../${source}`;
+    const included = includedPatterns.some((pattern) => globMatches(pattern, bundledPath));
+    const excluded = excludedPatterns.some((pattern) => globMatches(pattern.slice(1), bundledPath));
+    return included && !excluded;
+  });
 }
 
 function assertBundlePatternsMatch(contentPath) {

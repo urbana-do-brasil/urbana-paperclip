@@ -275,6 +275,7 @@ async function renderForm(
     isSaving?: boolean;
     hidePromptTemplate?: boolean;
     showAdapterTypeField?: boolean;
+    canConfigureProviderTrace?: boolean;
     onDirtyChange?: (dirty: boolean) => void;
     onSaveActionChange?: (save: (() => void) | null) => void;
     onCancelActionChange?: (cancel: (() => void) | null) => void;
@@ -312,6 +313,7 @@ async function renderForm(
               onCancelActionChange={options.onCancelActionChange}
               showAdapterTypeField={options.showAdapterTypeField ?? false}
               showAdapterTestEnvironmentButton={options.showAdapterTestEnvironmentButton ?? false}
+              canConfigureProviderTrace={options.canConfigureProviderTrace}
             />
           </TooltipProvider>
         </ToastProvider>
@@ -381,6 +383,7 @@ async function renderCreateForm(
 async function renderAdapterLoginPanel(
   adapterType: string,
   onAccountBinding?: (claim: CodexAccountBindingClaim) => void | Promise<void>,
+  onApplyStored?: () => void,
 ) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -402,6 +405,7 @@ async function renderAdapterLoginPanel(
               adapterType={adapterType}
               environmentId="sandbox-1"
               onAccountBinding={onAccountBinding}
+              onApplyStored={onApplyStored}
             />
           </TooltipProvider>
         </ToastProvider>
@@ -684,7 +688,7 @@ async function runTest(container: HTMLElement) {
 }
 
 async function startLogin(container: HTMLElement) {
-  await clickByText(container, "Sign in");
+  await clickByText(container, i18n.t("agentConfiguration.login.signIn"));
   await flushReact();
 }
 
@@ -797,9 +801,9 @@ describe("AgentConfigForm environment selector", () => {
   });
 
   it.each([
-    ["en", "Thinking effort", "Minimal", "Advanced", "Command", "Extra args (comma-separated)", "Environment variables", "e.g. --verbose, --foo=bar", "Codex may reject `minimal` thinking when search is enabled."],
-    ["pt-BR", "Nível de raciocínio", "Mínimo", "Avançado", "Comando", "Argumentos extras (separados por vírgula)", "Variáveis de ambiente", "Ex.: --verbose, --foo=bar", "O Codex pode rejeitar o nível de raciocínio `minimal` quando a busca está ativada."],
-  ])("localizes import-style agent configuration controls in %s", async (locale, effortLabel, minimalLabel, advancedLabel, commandLabel, extraArgsLabel, environmentVariablesLabel, extraArgsPlaceholder, warning) => {
+    ["en", "Thinking effort", "Minimal", "Advanced", "Command", "Extra args (comma-separated)", "Environment variables", "e.g. --verbose, --foo=bar", "Codex may reject `minimal` thinking when search is enabled.", "Auto"],
+    ["pt-BR", "Nível de raciocínio", "Mínimo", "Avançado", "Comando", "Argumentos extras (separados por vírgula)", "Variáveis de ambiente", "Ex.: --verbose, --foo=bar", "O Codex pode rejeitar o nível de raciocínio `minimal` quando a busca está ativada.", "Automático"],
+  ])("localizes import-style agent configuration controls in %s", async (locale, effortLabel, minimalLabel, advancedLabel, commandLabel, extraArgsLabel, environmentVariablesLabel, extraArgsPlaceholder, warning, autoLabel) => {
     await i18n.changeLanguage(locale);
     const result = await renderCreateForm(
       [],
@@ -824,6 +828,7 @@ describe("AgentConfigForm environment selector", () => {
     expect(result.container.textContent).toContain(warning);
     expect(result.container.textContent).toContain(environmentVariablesLabel);
     await clickByText(result.container, minimalLabel);
+    expect(findButton(document.body, autoLabel)).toBeTruthy();
     const rawMinimalOption = [...document.querySelectorAll("button")].find((button) =>
       [...button.querySelectorAll(".font-mono")].some((span) => span.textContent?.trim() === "minimal"),
     );
@@ -917,6 +922,114 @@ describe("AgentConfigForm environment selector", () => {
 
     expect(result.container.textContent).toContain(label);
     expect(result.container.textContent).toContain("The device rejected this code (trace DEV-42).");
+  });
+
+  it.each([
+    {
+      locale: "en",
+      title: "Sign in to Anthropic",
+      replace: "Sign in to replace",
+      useSavedLogin: "Use saved login",
+      savedLoginHint: "You have a saved Claude login. Use it to bind this agent, or log in again to replace the stored token.",
+      savedLoginBound: "The saved Claude login is bound to this agent now.",
+      transportWarning: "This connection is not encrypted. The login code travels in clear text on this network. Continue only on a network you trust.",
+      instruction: "Open the authorization page, then enter the browser code it shows.",
+      authorizationUrl: "1. Authorization URL",
+      browserCode: "Browser code",
+      openAuthorizationPage: "Open the authorization page",
+      copyUrl: "Copy URL",
+      submit: "Submit",
+    },
+    {
+      locale: "pt-BR",
+      title: "Entrar na conta Anthropic",
+      replace: "Entrar para substituir",
+      useSavedLogin: "Usar login salvo",
+      savedLoginHint: "Você tem um login Claude salvo. Use-o para vincular este agente ou entre novamente para substituir o token salvo.",
+      savedLoginBound: "O login Claude salvo agora está vinculado a este agente.",
+      transportWarning: "Esta conexão não é criptografada. O código de login trafega em texto simples nesta rede. Continue apenas em uma rede confiável.",
+      instruction: "Abra a página de autorização e insira o código do navegador exibido nela.",
+      authorizationUrl: "1. URL de autorização",
+      browserCode: "Código do navegador",
+      openAuthorizationPage: "Abrir a página de autorização",
+      copyUrl: "Copiar URL",
+      submit: "Enviar",
+    },
+  ])("localizes Claude code login and saved-login actions in $locale", async (copy) => {
+    await i18n.changeLanguage(copy.locale);
+    mockAgentsApi.getClaudeOAuthTokenStatus.mockResolvedValue({
+      secretId: "secret-1",
+      latestVersion: 2,
+    });
+    mockAgentsApi.getClaudeSetupTokenLoginPrompt.mockResolvedValue({
+      authorizationUrl: "https://claude.example.test/authorize",
+      transportAdvisory: { code: "insecure_transport" },
+    });
+    const onApplyStored = vi.fn();
+    const result = await renderAdapterLoginPanel("claude_local", undefined, onApplyStored);
+    roots.push(result.root);
+
+    expect(result.container.textContent).toContain(copy.title);
+    expect(result.container.textContent).toContain(copy.savedLoginHint);
+    expect(findButton(result.container, copy.useSavedLogin)).toBeTruthy();
+    expect(findButton(result.container, copy.replace)).toBeTruthy();
+
+    await clickByText(result.container, copy.useSavedLogin);
+    await flushUntil(() => (result.container.textContent ?? "").includes(copy.savedLoginBound));
+    expect(onApplyStored).toHaveBeenCalledTimes(1);
+    expect(findButton(result.container, copy.useSavedLogin)).toBeFalsy();
+
+    await clickByText(result.container, copy.replace);
+    await flushUntil(() => (result.container.textContent ?? "").includes("https://claude.example.test/authorize"));
+    expect(result.container.textContent).toContain(copy.transportWarning);
+    expect(result.container.textContent).toContain(copy.instruction);
+    expect(result.container.textContent).toContain(copy.authorizationUrl);
+    expect(findByAriaLabel(result.container, copy.openAuthorizationPage)).toBeTruthy();
+    expect(result.container.querySelector(`input[aria-label="${copy.browserCode}"]`)).toBeTruthy();
+    expect(findButton(result.container, copy.submit)).toBeTruthy();
+    expect(result.container.querySelector('a[href="https://claude.example.test/authorize"]')?.getAttribute("rel"))
+      .toBe("noreferrer noopener");
+
+    await clickElement(findByAriaLabel(result.container, copy.copyUrl));
+    expect(mockClipboard.copyTextToClipboard).toHaveBeenCalledWith("https://claude.example.test/authorize");
+    const codeInput = result.container.querySelector<HTMLInputElement>(`input[aria-label="${copy.browserCode}"]`)!;
+    setInputValue(codeInput, "BROWSER-CODE-42");
+    await flushReact();
+    await clickByText(result.container, copy.submit);
+    expect(mockAgentsApi.submitClaudeSetupTokenBrowserCode).toHaveBeenCalledWith(
+      "company-1",
+      "claude-session-1",
+      "BROWSER-CODE-42",
+    );
+  });
+
+  it.each([
+    { locale: "en", status: "Warnings", hintLabel: "Hint:" },
+    { locale: "pt-BR", status: "Avisos", hintLabel: "Dica:" },
+  ])("localizes environment-test labels in $locale and preserves provider feedback", async (copy) => {
+    await i18n.changeLanguage(copy.locale);
+    mockAgentsApi.testEnvironment.mockResolvedValue({
+      adapterType: "claude_local",
+      status: "warn",
+      checks: [{
+        code: "provider_probe",
+        level: "warn",
+        message: "Provider supplied message (trace AUTH-42).",
+        detail: "raw-provider-detail",
+        hint: "Provider supplied next step.",
+      }],
+      testedAt: new Date(0).toISOString(),
+    });
+    const result = await renderClaudeSandbox();
+    roots.push(result.root);
+    await runTest(result.container);
+
+    expect(result.container.textContent).toContain(copy.status);
+    expect(result.container.textContent).toContain("warn");
+    expect(result.container.textContent).toContain("Provider supplied message (trace AUTH-42).");
+    expect(result.container.textContent).toContain("(raw-provider-detail)");
+    expect(result.container.textContent).toContain(`${copy.hintLabel} Provider supplied next step.`);
+    if (copy.locale === "pt-BR") expect(result.container.textContent).not.toContain("Hint:");
   });
 
   it("promotes environment drafts through the page Save action and discards them through the page Discard action", async () => {
@@ -1280,7 +1393,11 @@ describe("AgentConfigForm environment selector", () => {
     expect(result.container.textContent).not.toContain("Secret access");
   });
 
-  it("renders secret access as dedicated form content", async () => {
+  it.each([
+    { locale: "en", secretAccessTitle: "Secret access", noBindings: "No secrets are bound to this agent yet." },
+    { locale: "pt-BR", secretAccessTitle: "Acesso a segredos", noBindings: "Ainda não há segredos vinculados a este agente." },
+  ])("localizes secret access as dedicated form content in $locale", async ({ locale, secretAccessTitle, noBindings }) => {
+    await i18n.changeLanguage(locale);
     const result = await renderForm(
       [makeEnvironment({ id: "local-1", name: "Local", driver: "local" })],
       {},
@@ -1288,9 +1405,55 @@ describe("AgentConfigForm environment selector", () => {
     );
     roots.push(result.root);
 
-    expect(result.container.textContent).toContain("Secret access");
-    expect(result.container.textContent).toContain("No secrets are bound to this agent yet.");
+    expect(result.container.textContent).toContain(secretAccessTitle);
+    expect(result.container.textContent).toContain(noBindings);
     expect(result.container.textContent).not.toContain("Environment variables");
+  });
+
+  it.each([
+    {
+      locale: "en",
+      promptLabel: "Bootstrap prompt (legacy)",
+      promptPlaceholder: "Optional initial setup prompt for the first run",
+      legacyNotice: "Bootstrap prompt is legacy and will be removed in a future release.",
+      debugHeading: "Debugging",
+      traceLabel: "Capture raw provider traces",
+      traceNotice: "Raw tracing is on for future runs. Paperclip keeps at most 64 MiB per run and automatically deletes it after 24 hours.",
+    },
+    {
+      locale: "pt-BR",
+      promptLabel: "Prompt de inicialização (legado)",
+      promptPlaceholder: "Instrução inicial opcional para a primeira execução",
+      legacyNotice: "O prompt de inicialização é legado e será removido em uma versão futura.",
+      debugHeading: "Depuração",
+      traceLabel: "Capturar traces brutos do provedor",
+      traceNotice: "A captura de traces brutos está ativada para as próximas execuções. O Paperclip mantém no máximo 64 MiB por execução e os exclui automaticamente após 24 horas.",
+    },
+  ])("localizes legacy prompt and provider trace controls in $locale without changing their values", async (copy) => {
+    await i18n.changeLanguage(copy.locale);
+    const savedPrompt = "Keep this exact bootstrap prompt: {{agent.name}}";
+    const result = await renderForm(
+      [makeEnvironment({ id: "local-1", name: "Local", driver: "local" })],
+      {
+        adapterConfig: { bootstrapPromptTemplate: savedPrompt },
+        runtimeConfig: { debug: { providerTrace: "raw" } },
+      },
+      { canConfigureProviderTrace: true },
+    );
+    roots.push(result.root);
+
+    expect(result.container.textContent).toContain(copy.promptLabel);
+    expect(result.container.textContent).toContain(copy.legacyNotice);
+    expect(result.container.textContent).toContain(copy.debugHeading);
+    expect(result.container.textContent).toContain(copy.traceLabel);
+    expect(result.container.textContent).toContain(copy.traceNotice);
+    expect(result.container.querySelector<HTMLTextAreaElement>(`textarea[aria-label="${copy.promptPlaceholder}"]`)?.value)
+      .toBe(savedPrompt);
+    const traceSwitch = [...result.container.querySelectorAll('[role="switch"]')].find((element) =>
+      element.parentElement?.textContent?.includes(copy.traceLabel),
+    );
+    expect(traceSwitch?.getAttribute("aria-checked")).toBe("true");
+    expect(result.onSave).not.toHaveBeenCalled();
   });
 
   it("shows concise Environment copy when one runnable non-local environment exists", async () => {
@@ -3807,7 +3970,8 @@ function mergedCreateValues(
 describe("AgentConfigForm create-mode Claude OAuth binding", () => {
   let roots: Root[] = [];
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     mockAgentsApi.adapterModels.mockResolvedValue([]);
     mockAgentsApi.detectModel.mockResolvedValue(null);
     mockAgentsApi.list.mockResolvedValue([]);
@@ -3857,6 +4021,7 @@ describe("AgentConfigForm create-mode Claude OAuth binding", () => {
     roots = [];
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("adds the fixed CLAUDE_CODE_OAUTH_TOKEN binding after the server stored state", async () => {
@@ -4007,7 +4172,8 @@ async function renderEditClaudeSandbox(agentOverrides: Partial<Agent> = {}) {
 describe("AgentConfigForm edit-mode Claude OAuth binding", () => {
   let roots: Root[] = [];
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     mockAgentsApi.adapterModels.mockResolvedValue([]);
     mockAgentsApi.detectModel.mockResolvedValue(null);
     mockAgentsApi.list.mockResolvedValue([]);
@@ -4057,6 +4223,7 @@ describe("AgentConfigForm edit-mode Claude OAuth binding", () => {
     roots = [];
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("adds the fixed CLAUDE_CODE_OAUTH_TOKEN binding to the agent and persists it", async () => {

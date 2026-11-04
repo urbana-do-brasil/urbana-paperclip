@@ -937,9 +937,11 @@
         "4.3t permissions:update/heartbeat:invoke/claude-login: 24/24 regressões combinadas, typecheck direcionado e gate de fontes passaram.",
         "activity list/create/issue: help e rótulos humanos PT-BR/en; sucesso/falha por operação, valores e JSON preservados; testes focados 5/5 e typecheck da CLI passaram.",
         "cli/src/__tests__/activity-localization.test.ts",
-        "cli/src/__tests__/activity-parity.test.ts"
+        "cli/src/__tests__/activity-parity.test.ts",
+        "4.3bd6: 19 rotas de help de issue recovery/child/work-product/document/interaction/tree e agent wake/local-cli comparadas em PT-BR/en; assinaturas e defaults preservados; matriz completa de help: 66/66. Typecheck direcionado da CLI passou.",
+        "cli/src/__tests__/operation-help-localization.test.ts"
       ],
-      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e a família activity foram verificadas parcialmente em PT-BR/en. Outros grupos operacionais e a regressão 4.4 permanecem pendentes. Typecheck da CLI passou no lote activity; rodadas anteriores registraram exit 137 por memória."
+      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e família activity têm verificação parcial. O help avançou em lotes leaf, inclusive 11 rotas em 4.3bd6; outras opções de help, operações e regressão 4.4 permanecem pendentes. Typechecks direcionados passaram nos lotes reportados; o typecheck integral da CLI terminou com exit 137 por memória."
     },
     {
       "id": "help-start",
@@ -948,15 +950,18 @@
       "sources": [
         "docs/start/",
         "docs/guides/board-operator/",
-        "docs/guides/execution-policy.md"
+        "docs/guides/execution-policy.md",
+        "docs/feedback-voting.md",
+        "docs/pt-BR/feedback-voting.md"
       ],
       "status": "source-pairs-present-review-pending",
       "evidence": [
         "ui/src/help/topics.json",
         "scripts/check-localized-help.mjs",
-        "docs/pt-BR/guides/execution-policy.md"
+        "docs/pt-BR/guides/execution-policy.md",
+        "docs/pt-BR/feedback-voting.md"
       ],
-      "limits": "68 fontes pareadas e empacotadas; paridade estrutural/código verificada, mas revisão humana da semântica, glossário e exemplos continua pendente."
+      "limits": "O guia de votos de feedback entrou no mapa público com par em PT-BR; os tópicos mapeados desta área têm as duas versões. Revisão humana da semântica, glossário e exemplos continua pendente."
     },
     {
       "id": "help-admin",
@@ -966,16 +971,23 @@
         "docs/deploy/",
         "docs/cli/",
         "docs/adapters/",
+        "docs/agents-runtime.md",
+        "docs/pt-BR/agents-runtime.md",
         "docs/built-in-agents.md",
-        "docs/guides/openclaw-docker-setup.md"
+        "docs/guides/openclaw-docker-setup.md",
+        "docs/pipelines-tutorial.md",
+        "docs/pt-BR/pipelines-tutorial.md"
       ],
       "status": "source-pairs-present-review-pending",
       "evidence": [
         "ui/src/help/topics.json",
         "scripts/check-localized-help.mjs",
-        "docs/pt-BR/guides/openclaw-docker-setup.md"
+        "ui/src/help/content.test.ts",
+        "docs/pt-BR/guides/openclaw-docker-setup.md",
+        "docs/pt-BR/agents-runtime.md",
+        "docs/pt-BR/pipelines-tutorial.md"
       ],
-      "limits": "68 fontes pareadas e empacotadas; blocos de código e links estruturais verificados, mas revisão humana e smoke operacional do guia OpenClaw continuam pendentes."
+      "limits": "O mapa contém 71 tópicos com pares em inglês/PT-BR. A paridade de estrutura, links e trechos técnicos é verificada pelos gates; revisão humana e smoke operacional do guia OpenClaw continuam pendentes. Os exemplos executáveis do tutorial de pipelines ainda precisam ser validados em fixture descartável e divergências da documentação de origem devem ser registradas."
     },
     {
       "id": "help-delivery",

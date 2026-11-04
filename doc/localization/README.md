@@ -5,7 +5,7 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **334 de 352 tarefas**.
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **455 de 482 tarefas**.
 A contagem inclui lotes menores por jornada; subtarefas concluídas não encerram
 automaticamente seu grupo. Os checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -88,17 +88,19 @@ configuração de pipelines) foi concluída em PT-BR/en. 3.10d foi dividida em d
 e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
-em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checkpoint após as fatias 3.8n1–n4, 3.9f3k/f6a–n, 3.10v, 3.11a–f3/g1–g3/h1–h18/i–j, 4.3bf, 6.2h, 6.3g e 7.1a–c é **450/474 tarefas** no checklist
-do OpenSpec. 3.10f–g estão concluídas; 4.3f cobre a exportação de organizações,
-e 5.2a/5.3a adicionam dois guias públicos traduzidos. Próximas: metadata restante de 3.11h e operações da CLI; outras operações de 4.3 e 5.2/5.3 continuam parciais.
+em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checklist do
+OpenSpec está em **455/482 tarefas**, com 27 itens abertos incluindo tarefas
+agregadoras. Os lotes recentes avançaram a configuração de agentes (3.6g), help
+da CLI (4.3bd) e guias públicos (5.2/5.3). O fluxo ainda tem trabalho em UI,
+CLI, comunicação de agentes, reconciliação e regressão integrada.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
 | 3. Interface web por jornadas | Metadados de erros (3.1), jornada de entrada completa (3.2a–c), navegação/controles compartilhados (3.3), Tasks (3.4a–3.4f), organizações/projetos/agentes (3.5–3.6), dashboard/custos/atividade (3.7a–f), aprovações, acesso, configurações, segredos e conexões OAuth/MCP (3.8a–f) verificados. Jornadas de catálogo 3.9a–d, perfis/ferramentas (3.9e1–e3), descoberta/inventário de conexões (3.9f1–f2), detalhe de apps (3.9f3a–g), configurações de provedores/gestores de contas (3.9f4), gateways MCP de apps (3.9f5), coleção/criação de rotinas (3.10a), operações de rotinas (3.10b1–b5), pipelines (3.10c1–c3), fila/learnings (3.10d1–d2), casos (3.10e1–e5) e lista, cartões, criação e políticas de status cards (3.10f1–f3) verificadas. 3.10b–e estão concluídas; f3 foi dividida em f3a/f3b. f4 foi dividida em cinco partes; f4a–f4e e f5 concluídas. 3.10g concluída; 3.11 está dividida em lotes: 3.11a (contexto de locale), 3.11b (PluginSettings) e 3.11c (PluginManager), 3.11d (molduras e fallbacks), 3.11e (Workspace Changes), 3.11f1–f2 (navegação, leitura, ingestão, consulta e histórico do LLM Wiki), 3.11g1–g3 (exemplos) e 3.11h1–h7 cobrem metadata própria com identidade comprovada; 3.11f3a–d cobrem as configurações da Wiki. O grupo 3.11h continua parcial nas demais superfícies host. |
-| 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; operações de organização (4.3a–g), listagem, consulta, identidade atual e inbox e ciclo de vida, criação, configuração e estado, skills e instruções de agentes (4.3h–t) verificadas em PT-BR/en. Demais comandos operacionais e regressão estruturada (4.3/4.4) pendentes. Os dois erros de tipo identificados foram corrigidos; o typecheck completo da CLI terminou com exit 137 por memória e os checks direcionados passaram. |
-| 5. Ajuda e documentação pública bilíngue | 5.1 e 5.4 verificadas: gate, bundle com 132 fontes e browser PT-BR/en sem chamadas a API privada; 68 tópicos públicos agora têm fonte PT-BR no mapa; revisão humana e validação operacional dos guias (5.2/5.3) continuam pendentes. |
+| 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; operações de organização (4.3a–g), grupos de agentes/skills (4.3h–t), activity e lotes de help executado (até 4.3bd6) têm cobertura parcial em PT-BR/en. Outros comandos operacionais e contratos estruturados (4.3/4.4) permanecem pendentes; o typecheck completo da CLI já encerrou com exit 137 por memória em rodadas anteriores, enquanto typechecks direcionados passaram nos lotes recentes. |
+| 5. Ajuda e documentação pública bilíngue | 71 tópicos públicos têm fontes EN/PT-BR e passam pelo gate de cobertura. 5.2b e 5.3c foram incluídas; o tutorial de pipelines também está mapeado, com smoke dos exemplos ainda pendente. Revisão humana e validação operacional continuam abertas. |
 | 6. Comunicação dos agentes | 6.1 e 6.2a–d concluídas: locale segue ao prompt e à continuação nativa; testes determinísticos cobrem parte dos transportes. Adapters CLI individuais, comportamento HTTP externo, consumo pelo processo personalizado, interações integradas e qualificação real 6.2–6.4 pendentes. |
 | 7. Integração, regressão e revisão final | Pendente; inclui os checks globais e a revisão independente. |
 
@@ -450,7 +452,7 @@ catálogos. A aceitação integral depende das demais tarefas OpenSpec.
 
 ## Entrega da ajuda pública
 
-O manifesto é `ui/src/help/topics.json`, com 66 tópicos e pares em `docs/` e
+O manifesto é `ui/src/help/topics.json`, com 71 tópicos e pares em `docs/` e
 `docs/pt-BR/`. As rotas `/help/pt-BR/...` e `/help/en/...` usam o idioma da URL,
 sem alterar a preferência da conta, e abrem sem login. O link Documentação
 nos dois menus usa o idioma efetivo da interface.
