@@ -3836,3 +3836,7 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Configuração de agentes — 3.6g1
 
 - Controles de esforço, warning Codex, seção avançada, comando, argumentos e variáveis acompanham o idioma; valores técnicos e apresentação inglesa original preservados. UI/locale 119/119; integração com CompanyImport 155/155; typecheck UI e gates passaram. Login e outros textos ainda estão abertos em 3.6g. Checkpoint: **448/472 tarefas**, 24 caixas abertas incluindo agregadoras.
+
+### Backup na CLI — 4.3bf
+
+- Mensagens de `db:backup` localizadas em PT-BR/en; backup simulado confirma argumentos, validação anterior à operação, JSON igual e ausência de credencial na saída. Dois testes e typecheck CLI passaram; nenhum banco ou backup real foi acessado. Checkpoint: **449/473 tarefas**, 24 caixas abertas incluindo agregadoras.
