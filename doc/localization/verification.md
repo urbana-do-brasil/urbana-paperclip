@@ -3828,3 +3828,7 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Canais de lançamento na CLI — 4.3be
 
 - Descrições, estados e resumo humanos localizados em PT-BR/en. Fixture de registry inclui versão indisponível e verifica comandos e JSON idêntico byte a byte, inclusive campos cadence/audience originais; testes 6/6 e typecheck CLI passaram. Checkpoint: **449/470 tarefas**, 21 caixas abertas incluindo agregadoras.
+
+### Reabertura da configuração de agentes — 3.6g
+
+- Auditoria encontrou textos próprios ainda em inglês em AgentConfigForm, incluindo configuração avançada, variáveis e fluxos de login. Os agregadores 3.6/3.6d foram reabertos e o trabalho registrado em 3.6g; uma busca heurística detectou 38 ocorrências potenciais, sujeitas a distinguir conteúdo técnico de texto de interface. Checkpoint: **447/471 tarefas**, 24 caixas abertas incluindo agregadoras.
