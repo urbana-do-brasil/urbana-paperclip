@@ -3786,3 +3786,14 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### CLI routines disable-all — 4.3bc
 
 - Ajuda, resumo humano e estado vazio localizados; JSON preservado byte a byte em fixture sintética. Duas suítes: 13/13; nenhum banco foi aberto nem rotina pausada. Checkpoint: **436/456 tarefas**, 20 caixas abertas incluindo agregadoras.
+
+### Auditoria da ajuda CLI — 4.3bd
+
+- Help real PT-BR mostrou 38 descrições em inglês no topo (incluindo help padrão), além de subcomandos issue, três de agent e mcp proxy. A auditoria verificou ausência de entradas em `operation-help` para os casos examinados; o mecanismo Commander aplica as entradas existentes. Registrado em 4.3bd, ainda aberto. Checkpoint: **436/457 tarefas**, 21 caixas abertas incluindo agregadoras.
+
+### Importação web, Slack manual e ajuda CLI
+
+- CompanyImport: textos próprios e acessibilidade localizados; testes PT-BR/en cobrem fonte/ZIP, prévia, conflitos, payload, resultado, ativação e erro externo. O ID de adapter foi preservado após regressão corrigida; foram acrescentadas 13 formas plurais `_many`. Browser e revisão integral de flags permanecem pendentes.
+- Slack manual: 61/61 testes focados, preservando manifesto, credenciais e URLs.
+- Help CLI: índices raiz/issue/agent/mcp localizados; regressão executa oito subprocessos sequenciais em ambos idiomas e compara assinaturas. Help de opções/argumentos folha ainda requer auditoria.
+- Integração: **112/112 testes em quatro arquivos**. Checkpoint: **439/460 tarefas**, 21 caixas abertas incluindo agregadoras.

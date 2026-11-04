@@ -8,6 +8,10 @@ type CommandHelp = {
   options?: Record<string, LocaleText>;
 };
 
+const descriptionOnly = (en: string, ptBR: string): CommandHelp => ({
+  description: { en, "pt-BR": ptBR },
+});
+
 const commonClientOptions: Record<string, LocaleText> = {
   "--config": { en: "Path to Paperclip config file", "pt-BR": "Caminho para o arquivo de configuração do Paperclip" },
   "--data-dir": { en: "Paperclip data directory root (isolates state from ~/.paperclip)", "pt-BR": "Diretório raiz dos dados do Paperclip (isola o estado de ~/.paperclip)" },
@@ -48,6 +52,59 @@ const worktreeSeedOptions = {
 };
 
 const operationHelp: Record<string, CommandHelp> = {
+  "test-drive": descriptionOnly(
+    "Start an isolated, initialized Paperclip instance for manual testing",
+    "Iniciar uma instância isolada e inicializada do Paperclip para testes manuais",
+  ),
+  runtime: descriptionOnly("Manage explicitly installed agent runtimes", "Gerenciar runtimes de agentes instalados explicitamente"),
+  channels: descriptionOnly(
+    "Show the release channels and which one this install follows",
+    "Exibir os canais de lançamento e qual deles esta instalação acompanha",
+  ),
+  "db:backup": descriptionOnly("Create a one-off database backup using current config", "Criar um backup pontual do banco de dados usando a configuração atual"),
+  run: descriptionOnly("Bootstrap local setup (onboard + doctor) and run Paperclip", "Preparar a instalação local (onboard + doctor) e executar o Paperclip"),
+  heartbeat: descriptionOnly("Heartbeat utilities", "Utilitários de heartbeat"),
+  context: descriptionOnly("Manage CLI client context profiles", "Gerenciar perfis de contexto do cliente CLI"),
+  connect: descriptionOnly("Interactively connect the CLI as a board operator or agent", "Conectar a CLI de forma interativa como operador do board ou agente"),
+  email: descriptionOnly("Explicitly send and inspect task-bound AgentMail conversations", "Enviar e inspecionar conversas AgentMail vinculadas a tarefas"),
+  issue: descriptionOnly("Issue operations", "Operações de tarefas"),
+  agent: descriptionOnly("Agent operations", "Operações de agentes"),
+  project: descriptionOnly("Project operations", "Operações de projetos"),
+  "agent-prompt": descriptionOnly(
+    "Create/update Paperclip work for an agent using an agent API key",
+    "Criar ou atualizar trabalho no Paperclip para um agente usando uma chave de API de agente",
+  ),
+  board: descriptionOnly("Board operator operations", "Operações de operador do board"),
+  finance: descriptionOnly("Finance event and summary operations", "Operações de eventos e resumos financeiros"),
+  budget: descriptionOnly("Budget policy and incident operations", "Operações de políticas orçamentárias e incidentes"),
+  "agent-config": descriptionOnly("Agent configuration summaries", "Resumos de configuração de agentes"),
+  workspace: descriptionOnly("Execution workspace operations", "Operações de espaços de trabalho de execução"),
+  environment: descriptionOnly("Environment operations", "Operações de ambiente"),
+  "project-workspace": descriptionOnly("Project workspace operations", "Operações de espaços de trabalho de projetos"),
+  whoami: descriptionOnly("Show current CLI auth identity", "Exibir a identidade de autenticação atual da CLI"),
+  access: descriptionOnly("Access and auth inspection operations", "Operações de inspeção de acesso e autenticação"),
+  openapi: descriptionOnly("Print the OpenAPI document", "Exibir o documento OpenAPI"),
+  invite: descriptionOnly("Invite operations", "Operações de convites"),
+  join: descriptionOnly("Join request operations", "Operações de solicitações de entrada"),
+  member: descriptionOnly("Company member operations", "Operações de membros da organização"),
+  admin: descriptionOnly("Instance admin operations", "Operações administrativas da instância"),
+  instance: descriptionOnly("Instance operations", "Operações da instância"),
+  sidebar: descriptionOnly("Sidebar preference and badge operations", "Operações de preferências e indicadores da barra lateral"),
+  inbox: descriptionOnly("Board inbox operations", "Operações da caixa de entrada do board"),
+  openclaw: descriptionOnly("OpenClaw integration helpers", "Ferramentas de integração com OpenClaw"),
+  "available-skill": descriptionOnly("Public skill catalog operations", "Operações do catálogo público de skills"),
+  llm: descriptionOnly("LLM prompt documentation", "Documentação de prompts de LLM"),
+  "managed-agent": descriptionOnly(
+    "Provision and qualify remote managed-agent providers",
+    "Provisionar e qualificar provedores remotos de agentes gerenciados",
+  ),
+  feedback: descriptionOnly("Inspect and export local feedback traces", "Inspecionar e exportar traces de feedback locais"),
+  auth: descriptionOnly("Authentication and bootstrap utilities", "Utilitários de autenticação e inicialização"),
+  mcp: descriptionOnly(
+    "Connect an assistant to Paperclip as a consenting human",
+    "Conectar um assistente ao Paperclip como uma pessoa que concedeu consentimento",
+  ),
+  "mcp proxy": descriptionOnly("Expose the authorized Paperclip tools over local MCP stdio", "Disponibilizar as ferramentas autorizadas do Paperclip por MCP stdio local"),
   "env-lab": {
     description: { en: "Deterministic local environment fixtures", "pt-BR": "Fixtures determinísticos de ambiente local" },
   },
@@ -1055,6 +1112,65 @@ const operationHelp: Record<string, CommandHelp> = {
       "--yes": { en: "Confirm deletion", "pt-BR": "Confirmar exclusão" },
     },
   },
+  "issue heartbeat-context": descriptionOnly("Get heartbeat context for an issue", "Consultar o contexto de heartbeat de uma tarefa"),
+  "issue comment": descriptionOnly("Add comment to issue", "Adicionar um comentário à tarefa"),
+  "issue comments": descriptionOnly("List issue comments", "Listar comentários da tarefa"),
+  "issue comment:get": descriptionOnly("Get one issue comment", "Consultar um comentário da tarefa"),
+  "issue comment:delete": descriptionOnly("Delete or cancel one issue comment", "Excluir ou cancelar um comentário da tarefa"),
+  "issue approvals": descriptionOnly("List approvals linked to an issue", "Listar aprovações vinculadas a uma tarefa"),
+  "issue approval:link": descriptionOnly("Link an approval to an issue", "Vincular uma aprovação a uma tarefa"),
+  "issue approval:unlink": descriptionOnly("Unlink an approval from an issue", "Desvincular uma aprovação de uma tarefa"),
+  "issue read": descriptionOnly("Mark an issue as read", "Marcar uma tarefa como lida"),
+  "issue unread": descriptionOnly("Mark an issue as unread", "Marcar uma tarefa como não lida"),
+  "issue archive": descriptionOnly("Archive an issue from the inbox", "Arquivar uma tarefa da caixa de entrada"),
+  "issue unarchive": descriptionOnly("Unarchive an issue from the inbox", "Desarquivar uma tarefa da caixa de entrada"),
+  "issue recovery-actions": descriptionOnly("List active recovery actions for an issue", "Listar ações de recuperação ativas de uma tarefa"),
+  "issue recovery:resolve": descriptionOnly("Resolve an issue recovery action", "Resolver uma ação de recuperação de tarefa"),
+  "issue child:create": descriptionOnly("Create a child issue from a JSON payload", "Criar uma tarefa filha a partir de um payload JSON"),
+  "issue force-release": descriptionOnly("Force-release an issue from an agent checkout", "Liberar à força uma tarefa de um checkout de agente"),
+  "issue work-products": descriptionOnly("List issue work products", "Listar entregáveis da tarefa"),
+  "issue work-product:create": descriptionOnly("Create an issue work product from JSON", "Criar um entregável da tarefa a partir de JSON"),
+  "issue work-product:update": descriptionOnly("Update a work product from JSON", "Atualizar um entregável a partir de JSON"),
+  "issue work-product:delete": descriptionOnly("Delete a work product", "Excluir um entregável"),
+  "issue documents": descriptionOnly("List issue documents", "Listar documentos da tarefa"),
+  "issue document:get": descriptionOnly("Get an issue document", "Consultar um documento da tarefa"),
+  "issue document:put": descriptionOnly("Create or update an issue document", "Criar ou atualizar um documento da tarefa"),
+  "issue interactions": descriptionOnly("List issue thread interactions", "Listar interações do thread da tarefa"),
+  "issue interaction:create": descriptionOnly("Create an issue thread interaction from JSON", "Criar uma interação do thread da tarefa a partir de JSON"),
+  "issue interaction:accept": descriptionOnly("Accept an issue thread interaction", "Aceitar uma interação do thread da tarefa"),
+  "issue interaction:reject": descriptionOnly("Reject an issue thread interaction", "Rejeitar uma interação do thread da tarefa"),
+  "issue interaction:cancel": descriptionOnly("Cancel an issue thread interaction", "Cancelar uma interação do thread da tarefa"),
+  "issue interaction:respond": descriptionOnly("Respond to an issue question interaction", "Responder a uma interação de pergunta da tarefa"),
+  "issue tree-state": descriptionOnly("Get issue tree control state", "Consultar o estado de controle da árvore da tarefa"),
+  "issue tree-preview": descriptionOnly("Preview issue tree control changes", "Pré-visualizar alterações de controle da árvore da tarefa"),
+  "issue tree-holds": descriptionOnly("List issue tree holds", "Listar retenções da árvore da tarefa"),
+  "issue tree-hold:create": descriptionOnly("Create an issue tree hold from JSON", "Criar uma retenção da árvore da tarefa a partir de JSON"),
+  "issue tree-hold:get": descriptionOnly("Get an issue tree hold", "Consultar uma retenção da árvore da tarefa"),
+  "issue tree-hold:release": descriptionOnly("Release an issue tree hold", "Liberar uma retenção da árvore da tarefa"),
+  "issue attachments": descriptionOnly("List issue attachments", "Listar anexos da tarefa"),
+  "issue attachment:upload": descriptionOnly("Upload an issue attachment", "Enviar um anexo da tarefa"),
+  "issue attachment:download": descriptionOnly("Download an attachment", "Baixar um anexo"),
+  "issue attachment:delete": descriptionOnly("Delete an attachment", "Excluir um anexo"),
+  "issue label:list": descriptionOnly("List issue labels in a company", "Listar etiquetas de tarefas em uma organização"),
+  "issue label:create": descriptionOnly("Create an issue label", "Criar uma etiqueta de tarefa"),
+  "issue label:delete": descriptionOnly("Delete an issue label", "Excluir uma etiqueta de tarefa"),
+  "issue feedback:votes": descriptionOnly("List feedback votes for an issue", "Listar votos de feedback de uma tarefa"),
+  "issue feedback:vote": descriptionOnly("Create or update a feedback vote", "Criar ou atualizar um voto de feedback"),
+  "issue document:delete": descriptionOnly("Delete an issue document", "Excluir um documento da tarefa"),
+  "issue document:lock": descriptionOnly("Lock an issue document", "Bloquear um documento da tarefa"),
+  "issue document:unlock": descriptionOnly("Unlock an issue document", "Desbloquear um documento da tarefa"),
+  "issue document:revisions": descriptionOnly("List issue document revisions", "Listar revisões do documento da tarefa"),
+  "issue document:restore": descriptionOnly("Restore an issue document revision", "Restaurar uma revisão do documento da tarefa"),
+  "issue feedback:list": descriptionOnly("List feedback traces for an issue", "Listar traces de feedback de uma tarefa"),
+  "issue runs": descriptionOnly("List heartbeat runs associated with an issue", "Listar execuções de heartbeat associadas a uma tarefa"),
+  "issue live-runs": descriptionOnly("List queued and running heartbeat runs associated with an issue", "Listar execuções de heartbeat na fila ou em andamento associadas a uma tarefa"),
+  "issue active-run": descriptionOnly("Show the active heartbeat run associated with an issue", "Exibir a execução de heartbeat ativa associada a uma tarefa"),
+  "issue feedback:export": descriptionOnly("Export feedback traces for an issue", "Exportar traces de feedback de uma tarefa"),
+  "issue checkout": descriptionOnly("Checkout issue for an agent", "Fazer checkout da tarefa para um agente"),
+  "issue release": descriptionOnly(
+    "Release issue execution locks; clear the assignee only for unfinished issues",
+    "Liberar os bloqueios de execução da tarefa; remover o responsável somente se ela não estiver concluída",
+  ),
   company: {
     description: {
       en: "Company operations",
@@ -1400,6 +1516,13 @@ const operationHelp: Record<string, CommandHelp> = {
       },
     },
   },
+  "agent instructions-bundle:update": descriptionOnly("Update an agent instructions bundle", "Atualizar o pacote de instruções do agente"),
+  "agent wake": descriptionOnly("Request a heartbeat wakeup for an agent", "Solicitar o acionamento de um heartbeat do agente"),
+  "agent local-cli": descriptionOnly(
+    "Create an agent API key, install local Paperclip skills for Codex/Claude, and print shell exports",
+    "Criar uma chave de API do agente, instalar skills locais do Paperclip para Codex/Claude e exibir exportações de shell",
+  ),
+  "agent prompt": descriptionOnly("Create/update Paperclip work using an agent persona", "Criar ou atualizar trabalho no Paperclip usando a persona de um agente"),
   skill: {
     description: { en: "Company skill operations", "pt-BR": "Operações de skills da organização" },
   },
@@ -1945,9 +2068,19 @@ const operationHelp: Record<string, CommandHelp> = {
 };
 
 export function applyOperationHelpLocalization(root: Command, locale: SupportedLocale): void {
+  const helpCommandDescription: LocaleText = {
+    en: "display help for command",
+    "pt-BR": "Exibir ajuda de um comando",
+  };
   const visit = (command: Command, parents: string[]) => {
     const parts = command === root ? [] : [...parents, command.name()];
-    const help = operationHelp[parts.join(" ")];
+    const path = parts.join(" ");
+    // Commander creates help subcommands lazily, outside `commands`, so localize
+    // the generated descriptions on the root and the audited command groups.
+    if (command === root || path === "issue" || path === "agent" || path === "mcp") {
+      command.helpCommand("help [command]", helpCommandDescription[locale]);
+    }
+    const help = operationHelp[path];
     if (help) {
       command.description(help.description[locale]);
       for (const option of command.options) {

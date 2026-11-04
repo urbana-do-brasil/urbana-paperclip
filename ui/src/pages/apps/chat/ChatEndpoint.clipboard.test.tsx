@@ -155,6 +155,10 @@ describe("chat setup and identity-link clipboard actions", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     flushSync(() => {});
   }
+  function visibleHeading() {
+    return [...container.querySelectorAll("h1")]
+      .find((heading) => !heading.closest("[hidden]"))?.textContent;
+  }
   async function click(text: string) {
     const button = [...document.body.querySelectorAll("button")].find(
       (node) => node.textContent?.trim() === text,
@@ -903,6 +907,130 @@ describe("chat setup and identity-link clipboard actions", () => {
 
   });
 
+  it.each([
+    [
+      "en",
+      "Create a Slack app",
+      "View Slack App Manifest",
+      "Create Slack app",
+      "Add Slack credentials",
+      "Now you need to find two secrets.",
+      "Connect Slack app",
+    ],
+    [
+      "pt-BR",
+      "Criar um app do Slack",
+      "Ver manifesto do app Slack",
+      "Criar app do Slack",
+      "Adicionar credenciais do Slack",
+      "Agora você precisa encontrar dois segredos.",
+      "Conectar app Slack",
+    ],
+  ])(
+    "localizes manual Slack app setup in %s while preserving the manifest URL and credential payload",
+    async (locale, appHeading, viewManifestLabel, createAppLabel, credentialsHeading, credentialInstructions, connectLabel) => {
+      await i18n.changeLanguage(locale);
+      const endpoint = await render("slack");
+      expect(container.querySelector("h1")?.textContent).toBe(appHeading);
+      expect(container.querySelector("aside nav")?.textContent).toContain(locale === "en" ? "Add credentials" : "Adicionar credenciais");
+      expect(container.querySelector("aside nav")?.textContent).toContain(locale === "en" ? "Verify Slack connection" : "Verificar conexão do Slack");
+      expect(container.querySelector("aside nav")?.textContent).toContain(locale === "en" ? "Connect your Slack account" : "Conectar sua conta do Slack");
+
+      await click(viewManifestLabel);
+      expect(document.querySelector("[role=dialog]")).not.toBeNull();
+      const manifest = document.querySelector("textarea")!.value;
+      const manifestData = JSON.parse(manifest);
+      expect(manifestData.features.slash_commands[0]).toMatchObject({
+        command: "/maya",
+        url: "https://example.test/api/chat-webhooks/test",
+      });
+      expect(manifestData.settings.event_subscriptions.request_url).toBe("https://example.test/api/chat-webhooks/test");
+      expect(manifestData.oauth_config.scopes.bot).toContain("app_mentions:read");
+      await click("Close");
+
+      const open = vi.spyOn(window, "open").mockReturnValue(null);
+      vi.useFakeTimers();
+      const createButton = [...container.querySelectorAll("button")]
+        .find(button => button.textContent?.trim() === createAppLabel)!;
+      flushSync(() => createButton.click());
+      const createUrl = new URL(open.mock.calls[0][0] as string);
+      expect(createUrl.origin + createUrl.pathname).toBe("https://api.slack.com/apps");
+      expect(createUrl.searchParams.get("new_app")).toBe("1");
+      expect(createUrl.searchParams.get("manifest_json")).toBe(manifest);
+      expect(open.mock.calls[0].slice(1)).toEqual(["_blank", "noopener,noreferrer"]);
+      flushSync(() => vi.advanceTimersByTime(1000));
+      vi.useRealTimers();
+      await settle();
+
+      expect(container.querySelector("h1")?.textContent).toBe(credentialsHeading);
+      expect(container.textContent).toContain(credentialInstructions);
+      expect(container.textContent).toContain("OAuth & Permissions");
+      expect(container.textContent).toContain("Basic Information");
+      expect(container.querySelector('a[href="https://api.slack.com/apps"]')).not.toBeNull();
+
+      const botToken = "  xoxb-synthetic-manual-token  ";
+      const signingSecret = "  synthetic-signing-secret  ";
+      const botInput = container.querySelector<HTMLInputElement>("#slack-bot-token")!;
+      const signingInput = container.querySelector<HTMLInputElement>("#slack-signing-secret")!;
+      const setValue = (input: HTMLInputElement, value: string) => flushSync(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      const connectButton = [...container.querySelectorAll("button")]
+        .find(button => button.textContent?.trim() === connectLabel)!;
+      setValue(botInput, "xapp-invalid-bot-token");
+      expect(document.getElementById("slack-bot-token-warning")?.textContent)
+        .toContain(locale === "en"
+          ? "Your Bot User OAuth Token must start with xoxb-."
+          : "O Bot User OAuth Token precisa começar com xoxb-.");
+      expect(connectButton.disabled).toBe(true);
+      setValue(botInput, botToken);
+      setValue(signingInput, "xapp-invalid-signing-secret");
+      expect(document.getElementById("slack-signing-secret-warning")?.textContent)
+        .toContain(locale === "en"
+          ? "Use the Signing Secret, NOT an app or bot token."
+          : "Use o Signing Secret, NÃO um token de app ou de bot.");
+      expect(connectButton.disabled).toBe(true);
+      setValue(signingInput, signingSecret);
+      expect(connectButton.disabled).toBe(false);
+      expect(botInput.type).toBe("password");
+      expect(signingInput.type).toBe("password");
+      expect(container.textContent).not.toContain(botToken.trim());
+      expect(container.textContent).not.toContain(signingSecret.trim());
+
+      mocks.setup.mockResolvedValueOnce({ ...endpoint, setup: { ...endpoint.setup, step: "provider_setup" } });
+      await click(connectLabel);
+      expect(mocks.setup).toHaveBeenCalledWith("endpoint-a", {
+        action: "configure",
+        credentials: { botToken, signingSecret },
+      });
+    },
+  );
+
+  it.each([
+    ["en", "Verify Slack connection", "Slack needs to confirm that it can reach your Paperclip instance.", "Waiting for Slack. We’ll continue automatically.", "Troubleshooting"],
+    ["pt-BR", "Verificar conexão do Slack", "O Slack precisa confirmar que consegue acessar sua instância do Paperclip.", "Aguardando o Slack. Vamos continuar automaticamente.", "Solução de problemas"],
+  ])("localizes manual Slack verification in %s and preserves the webhook URL and Slack setup link", async (locale, heading, description, waiting, troubleshooting) => {
+    await i18n.changeLanguage(locale);
+    const endpoint = await render("slack");
+    const verifying: ChatEndpoint = {
+      ...endpoint,
+      status: "verifying",
+      providerAccountId: "workspace-a",
+      setup: { ...endpoint.setup!, slackSetupMethod: "existing", webhookVerifiedAt: null },
+    };
+    mocks.get.mockResolvedValue(verifying);
+    flushSync(() => client.setQueryData(["chat-endpoint-setup-resume", endpoint.id], verifying));
+    await settle();
+
+    expect(visibleHeading()).toBe(heading);
+    expect(container.textContent).toContain(description);
+    expect(container.textContent).toContain(waiting);
+    expect(container.querySelector('a[href="https://api.slack.com/apps"]')).not.toBeNull();
+    expect(container.textContent).toContain("https://example.test/api/chat-webhooks/test");
+    expect(container.textContent).toContain(troubleshooting);
+    expect(container.textContent).toContain("Request URL");
+  });
 
   it.each(["xapp-", "xoxb-", "xoxp-"])("warns about a %s token in the Slack signing secret field and clears after correction", async (prefix) => {
     await render("slack");
@@ -1045,6 +1173,59 @@ describe("chat setup and identity-link clipboard actions", () => {
     await settle();
     return endpoint;
   }
+
+  it.each([
+    ["en", "Connect your Slack account", "Copy command", "Open Slack", "This is my Slack account", "Continue to message test", "Try Maya in Slack", "Copy message"],
+    ["pt-BR", "Conectar sua conta do Slack", "Copiar comando", "Abrir Slack", "Esta é minha conta do Slack", "Continuar para o teste de mensagem", "Testar Maya no Slack", "Copiar mensagem"],
+  ])(
+    "localizes manual Slack identity and message-test steps in %s without changing commands or copied messages",
+    async (locale, identityHeading, copyCommandLabel, openSlackLabel, linkAccountLabel, continueLabel, testHeading, copyMessageLabel) => {
+      await i18n.changeLanguage(locale);
+      const externalLabel = "Slack account <external-42>";
+      const externalDetail = "@provider-user-42";
+      const identity = {
+        id: "link-external-42",
+        principalId: "provider-principal-42",
+        externalLabel,
+        externalDetail,
+        status: "pending",
+        lastConnectAt: "2026-09-18T20:01:00Z",
+      };
+      await renderSlackIdentityStep();
+      expect(visibleHeading()).toBe(identityHeading);
+      expect(container.textContent).toContain("/maya-test connect");
+      expect(container.querySelector('a[href="https://app.slack.com/"]')?.textContent).toContain(openSlackLabel);
+      expect(container.textContent).not.toContain("synthetic-private-confirmation-token");
+      await click(copyCommandLabel);
+      expect(copied).toContain("/maya-test connect");
+
+      mocks.listPrincipals.mockResolvedValue([identity]);
+      client.setQueryData(queryKeys.chatEndpoints.principals("endpoint-a"), [identity]);
+      await settle();
+      expect(container.textContent).toContain(externalLabel);
+      expect(container.textContent).toContain(externalDetail);
+      expect(container.textContent).toContain("Owner");
+      mocks.confirmIdentityLink.mockImplementationOnce(async () => {
+        mocks.listPrincipals.mockResolvedValue([{
+          ...identity,
+          status: "linked",
+          paperclipUserId: "owner-user",
+        }]);
+        return { ok: true };
+      });
+      await click(linkAccountLabel);
+      expect(mocks.createLinkIntent).toHaveBeenCalledWith("endpoint-a", "provider-principal-42");
+      expect(mocks.confirmIdentityLink).toHaveBeenCalledWith("synthetic-private-confirmation-token");
+      await click(continueLabel);
+      expect(visibleHeading()).toBe(testHeading);
+      expect(container.textContent).toContain(locale === "en"
+        ? "Continue the conversation in the thread."
+        : "Continue a conversa na thread.");
+      expect(container.textContent).toContain("@Maya you there?");
+      await click(copyMessageLabel);
+      expect(copied).toContain("@Maya you there?");
+    },
+  );
 
   it("resumes event configuration on the saved app and clears the retry token", async () => {
     const endpoint = await render("slack");
@@ -1192,7 +1373,7 @@ describe("chat setup and identity-link clipboard actions", () => {
     mocks.confirmIdentityLink.mockRejectedValueOnce(new Error("Expired"));
     await renderSlackIdentityStep();
     await click("This is my Slack account");
-    expect(container.textContent).toContain("Couldn't link");
+    expect(container.textContent).toContain(i18n.t("apps.chatEndpointSetup.slack.manual.identity.linkFailed"));
     expect(container.textContent).not.toContain("Continue to message test");
     expect([...container.querySelectorAll("button")].find((button) => button.textContent === "This is my Slack account")!.disabled).toBe(false);
   });
