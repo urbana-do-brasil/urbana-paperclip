@@ -73,6 +73,9 @@ describe("registered CLI operation help", () => {
     { name: "issue", command: ["issue"] },
     { name: "agent", command: ["agent"] },
     { name: "mcp", command: ["mcp"] },
+    { name: "runtime", command: ["runtime"] },
+    { name: "heartbeat", command: ["heartbeat"] },
+    { name: "context", command: ["context"] },
   ])("localizes $name help while preserving command and option signatures", ({ name, command }) => {
     // spawnSync is intentionally called one locale at a time so CLI module
     // startup and telemetry setup do not overlap across subprocesses.
@@ -114,6 +117,14 @@ describe("registered CLI operation help", () => {
     { name: "agent delete", command: ["agent", "delete"] },
     { name: "mcp login", command: ["mcp", "login"] },
     { name: "mcp proxy", command: ["mcp", "proxy"] },
+    { name: "connect", command: ["connect"] },
+    { name: "runtime import-remote", command: ["runtime", "import-remote"] },
+    { name: "runtime setup", command: ["runtime", "setup"] },
+    { name: "heartbeat run", command: ["heartbeat", "run"] },
+    { name: "context show", command: ["context", "show"] },
+    { name: "context list", command: ["context", "list"] },
+    { name: "context use", command: ["context", "use"] },
+    { name: "context set", command: ["context", "set"] },
     { name: "issue heartbeat-context", command: ["issue", "heartbeat-context"] },
     { name: "issue comment:get", command: ["issue", "comment:get"] },
     { name: "issue comment:delete", command: ["issue", "comment:delete"] },

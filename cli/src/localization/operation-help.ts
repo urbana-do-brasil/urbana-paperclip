@@ -62,6 +62,28 @@ const treeHoldArguments = {
   issueId: { en: "Root issue ID", "pt-BR": "ID da tarefa raiz" },
   holdId: { en: "Hold ID", "pt-BR": "ID da retenção" },
 };
+const contextBaseOptions = {
+  "--data-dir": commonClientOptions["--data-dir"],
+  "--context": commonClientOptions["--context"],
+};
+const contextShowOptions = {
+  ...contextBaseOptions,
+  "--profile": commonClientOptions["--profile"],
+  "--json": commonClientOptions["--json"],
+};
+const contextSetOptions = {
+  ...contextBaseOptions,
+  "--profile": { en: "Profile name (default: current profile)", "pt-BR": "Nome do perfil (padrão: perfil atual)" },
+  "--locale": { en: "Save profile language: pt-BR or en (independent of the web account)", "pt-BR": "Salvar o idioma do perfil: pt-BR ou en (independente da conta web)" },
+  "--api-base": { en: "Default API base URL", "pt-BR": "URL base padrão da API" },
+  "--company-id": { en: "Default company ID", "pt-BR": "ID padrão da organização" },
+  "--persona": { en: "Profile persona: board or agent", "pt-BR": "Persona do perfil: board ou agent" },
+  "--agent-id": { en: "Default agent ID for agent persona", "pt-BR": "ID padrão do agente para a persona agent" },
+  "--agent-name": { en: "Default agent display name", "pt-BR": "Nome de exibição padrão do agente" },
+  "--api-key-env-var-name": { en: "Env var containing API key (recommended)", "pt-BR": "Variável de ambiente que contém a chave da API (recomendado)" },
+  "--use": { en: "Set this profile as active", "pt-BR": "Definir este perfil como ativo" },
+  "--json": commonClientOptions["--json"],
+};
 const worktreeHomeOption = {
   en: "Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ~/.paperclip-worktrees)",
   "pt-BR": "Diretório raiz das instâncias de worktree (variável PAPERCLIP_WORKTREES_DIR, padrão: ~/.paperclip-worktrees)",
@@ -82,6 +104,21 @@ const operationHelp: Record<string, CommandHelp> = {
     "Iniciar uma instância isolada e inicializada do Paperclip para testes manuais",
   ),
   runtime: descriptionOnly("Manage explicitly installed agent runtimes", "Gerenciar runtimes de agentes instalados explicitamente"),
+  "runtime import-remote": {
+    description: {
+      en: "Import a verified Linux Pi companion into the installed server (no downloads)",
+      "pt-BR": "Importar um companion Pi verificado para Linux no servidor instalado (sem downloads)",
+    },
+    arguments: { directory: { en: "Directory to import from", "pt-BR": "Diretório de origem para a importação" } },
+    options: { "--sha256": { en: "SHA256 of companion.json from the trusted release", "pt-BR": "SHA256 de companion.json da versão confiável" } },
+  },
+  "runtime setup": {
+    description: {
+      en: "Install and verify the pinned Pi or Cursor runtime for this host (public downloads; no model calls)",
+      "pt-BR": "Instalar e verificar o runtime Pi ou Cursor fixado para este host (downloads públicos; sem chamadas a modelos)",
+    },
+    arguments: { provider: { en: "Runtime provider (pi or cursor)", "pt-BR": "Provedor de runtime (pi ou cursor)" } },
+  },
   channels: descriptionOnly(
     "Show the release channels and which one this install follows",
     "Exibir os canais de lançamento e qual deles esta instalação acompanha",
@@ -89,8 +126,49 @@ const operationHelp: Record<string, CommandHelp> = {
   "db:backup": descriptionOnly("Create a one-off database backup using current config", "Criar um backup pontual do banco de dados usando a configuração atual"),
   run: descriptionOnly("Bootstrap local setup (onboard + doctor) and run Paperclip", "Preparar a instalação local (onboard + doctor) e executar o Paperclip"),
   heartbeat: descriptionOnly("Heartbeat utilities", "Utilitários de heartbeat"),
+  "heartbeat run": {
+    description: { en: "Run one agent heartbeat and stream live logs", "pt-BR": "Executar um heartbeat de agente e acompanhar os logs em tempo real" },
+    options: {
+      ...commonClientOptions,
+      "--agent-id": { en: "Agent ID to invoke", "pt-BR": "ID do agente a invocar" },
+      "--source": { en: "Invocation source (timer | assignment | on_demand | automation)", "pt-BR": "Origem da invocação (timer | assignment | on_demand | automation)" },
+      "--trigger": { en: "Trigger detail (manual | ping | callback | system)", "pt-BR": "Detalhe do acionador (manual | ping | callback | system)" },
+      "--timeout-ms": { en: "Max time to wait before giving up", "pt-BR": "Tempo máximo de espera antes de desistir" },
+      "--debug": { en: "Show raw adapter stdout/stderr JSON chunks", "pt-BR": "Exibir blocos JSON brutos de stdout/stderr do adapter" },
+    },
+  },
   context: descriptionOnly("Manage CLI client context profiles", "Gerenciar perfis de contexto do cliente CLI"),
-  connect: descriptionOnly("Interactively connect the CLI as a board operator or agent", "Conectar a CLI de forma interativa como operador do board ou agente"),
+  "context show": {
+    ...descriptionOnly("Show current context and active profile", "Exibir o contexto atual e o perfil ativo"),
+    options: {
+      ...contextBaseOptions,
+      "--profile": { en: "Profile to inspect", "pt-BR": "Perfil a consultar" },
+      "--json": commonClientOptions["--json"],
+    },
+  },
+  "context list": {
+    ...descriptionOnly("List available context profiles", "Listar perfis de contexto disponíveis"),
+    options: { ...contextBaseOptions, "--json": commonClientOptions["--json"] },
+  },
+  "context use": {
+    ...descriptionOnly("Set active context profile", "Definir o perfil de contexto ativo"),
+    arguments: { profile: { en: "Profile name", "pt-BR": "Nome do perfil" } },
+    options: contextBaseOptions,
+  },
+  "context set": {
+    ...descriptionOnly("Set values on a profile", "Definir valores em um perfil"),
+    options: contextSetOptions,
+  },
+  "connect": {
+    description: { en: "Interactively connect the CLI as a board operator or agent", "pt-BR": "Conectar a CLI de forma interativa como operador do board ou agente" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": companyOptions["--company-id"],
+      "--persona": { en: "Persona to configure: board or agent", "pt-BR": "Persona a configurar: board ou agent" },
+      "--api-key-env-var-name": { en: "Env var name to store in the profile", "pt-BR": "Nome da variável de ambiente a armazenar no perfil" },
+      "--token-name": { en: "Token label to create", "pt-BR": "Rótulo do token a criar" },
+    },
+  },
   email: descriptionOnly("Explicitly send and inspect task-bound AgentMail conversations", "Enviar e inspecionar conversas AgentMail vinculadas a tarefas"),
   issue: descriptionOnly("Issue operations", "Operações de tarefas"),
   agent: descriptionOnly("Agent operations", "Operações de agentes"),
@@ -2236,7 +2314,7 @@ export function applyOperationHelpLocalization(root: Command, locale: SupportedL
     const path = parts.join(" ");
     // Commander creates help subcommands lazily, outside `commands`, so localize
     // the generated descriptions on the root and the audited command groups.
-    if (command === root || path === "issue" || path === "agent" || path === "mcp") {
+    if (command === root || ["issue", "agent", "mcp", "runtime", "heartbeat", "context"].includes(path)) {
       command.helpCommand("help [command]", helpCommandDescription[locale]);
     }
     const help = operationHelp[path];

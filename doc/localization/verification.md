@@ -3811,3 +3811,11 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - TryStep de Discord/Telegram/GitHub/Teams/Photon em PT-BR/en: UI/locale 77/77 e typecheck UI passaram; dados externos preservados.
 - Help de 25 operações issue: 44/44 testes reais sequenciais PT-BR/en; demais opções e comandos ainda pendentes. Checkpoint: **445/466 tarefas**, 21 caixas abertas incluindo agregadoras.
 - Integração TryStep, locale e help real: **121/121 testes em três arquivos**. Os comandos de help foram executados sequencialmente; a suíte levou 143,77 segundos.
+
+### Auditoria adicional de CompanyImport
+
+- A árvore tinha rótulo de checkbox em inglês; campos de fonte, renomeação e seleção de adapter não tinham nomes acessíveis associados. O painel AgentConfigForm também contém textos próprios ainda em inglês. Correção e cobertura permanecem pendentes em 3.8n; o smoke anterior não comprovava esses nomes.
+
+### Help runtime, heartbeat, connect e context — 4.3bd4
+
+- Argumentos/opções localizados e comparados por help real em PT-BR/en com subprocessos sequenciais: 55/55 testes; typecheck CLI passou. Outras operações permanecem em 4.3bd. Checkpoint: **446/467 tarefas**, 21 caixas abertas incluindo agregadoras.
