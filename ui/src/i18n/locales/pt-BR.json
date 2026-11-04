@@ -9892,6 +9892,102 @@
         "noneAvailable": "Não há agentes ativos disponíveis.",
         "continue": "Continuar"
       },
+      "agentmail": {
+        "loadingSetup": "Carregando a configuração de e-mail…",
+        "heading": "Dê um endereço de e-mail a um agente",
+        "steps": {
+          "agent": "Agente",
+          "emailAddress": "Endereço de e-mail"
+        },
+        "loading": "Carregando…",
+        "retryInboxes": "Tentar carregar caixas de entrada",
+        "continue": "Continuar",
+        "connecting": "Conectando…",
+        "back": "Voltar",
+        "errors": {
+          "loadProgress": "Não foi possível carregar o progresso da configuração de e-mail.",
+          "resumeNotFound": "Esta configuração de e-mail não foi encontrada. Volte para Conectores e inicie uma nova conexão."
+        },
+        "agent": {
+          "label": "Agente",
+          "choose": "Escolha um agente",
+          "noneFound": "Nenhum agente encontrado."
+        },
+        "credentials": {
+          "inboxKeyOnly": "Essa chave só conecta {{address}}. Escolha uma chave de conta salva ou informe uma para criar um novo endereço.",
+          "useExistingInbox": "Usar esta caixa de entrada",
+          "chooseNewAddressKey": "Escolher uma chave para um novo endereço"
+        },
+        "address": {
+          "heading": "Endereço de e-mail de {{agent}}",
+          "reservedScoped": "Este endereço foi criado no AgentMail. Termine de conectá-lo a {{agent}}.",
+          "reservedOrganization": "Este endereço foi criado no AgentMail. Termine de conectá-lo a {{agent}} ou escolha outro endereço. A caixa de entrada original continuará no AgentMail.",
+          "chooseDifferent": "Escolher outro endereço",
+          "domain": "Domínio de e-mail",
+          "chooseInbox": "Escolha uma caixa de entrada",
+          "alreadyAssigned": "já atribuído",
+          "taken": "Este endereço de e-mail já está em uso. Escolha outro endereço.",
+          "assigned": "Esta caixa de entrada já está atribuída a um agente.",
+          "checking": "Verificando endereço…",
+          "checkFailed": "Não foi possível verificar este endereço.",
+          "availableOnCreate": "O AgentMail confirma a disponibilidade quando você cria o endereço.",
+          "suggestionsAria": "Endereços de e-mail sugeridos",
+          "trySuggestion": "Tente:",
+          "useExisting": "Usar uma caixa de entrada existente",
+          "createNew": "Criar um novo endereço",
+          "loadingOptions": "Carregando opções de e-mail…",
+          "finishConnecting": "Concluir conexão",
+          "createAddress": "Criar endereço de e-mail",
+          "connectAddress": "Conectar endereço de e-mail"
+        },
+        "howItWorks": {
+          "heading": "Como funciona",
+          "description": "Os e-mails recebidos criam tarefas para {{agent}}. As respostas continuam na mesma tarefa."
+        },
+        "advanced": {
+          "heading": "Opções avançadas",
+          "customDomain": "Configurar um domínio personalizado ↗",
+          "receiving": "Recebimento",
+          "liveConnection": "Conexão em tempo real",
+          "webhook": "Webhook"
+        },
+        "trust": {
+          "boundaryRequired": "Este agente precisa de um limite de trabalho para receber e-mails.",
+          "configureBoundary": "Configurar limite de trabalho",
+          "lowTrustConfigured": "Revisão de baixa confiabilidade configurada",
+          "manageAccess": "Gerencie as tarefas e ferramentas que este agente pode acessar.",
+          "reviewSettings": "Revisar configurações de confiança",
+          "title": "Configurações de confiança · {{agent}}",
+          "description": "As alterações se aplicam a todo o trabalho deste agente. Use um agente dedicado para e-mail se as outras tarefas precisarem de acesso mais amplo.",
+          "boundaryNote": "A baixa confiabilidade limita o acesso ao Paperclip; ela não isola o ambiente de execução. Revise separadamente o acesso a arquivos, ferramentas e segredos.",
+          "save": "Salvar configurações de confiança"
+        },
+        "success": {
+          "heading": "O e-mail do seu agente está pronto",
+          "description": "{{agent}} já pode receber e-mails neste endereço.",
+          "settings": "Configurações de e-mail",
+          "done": "Concluir"
+        },
+        "credentialField": {
+          "apiKey": "Chave de API",
+          "newApiKey": "Nova chave de API",
+          "enterNewApiKey": "Informar uma nova chave de API",
+          "checkingSavedKey": "Verificando chave de API salva…",
+          "unavailableSavedKey": "Chave selecionada anteriormente · indisponível",
+          "pasteApiKey": "Cole sua chave de API do {{provider}}",
+          "checkingSavedKeys": "Verificando chaves de API salvas…",
+          "loadError": "Não foi possível carregar as chaves de API salvas.",
+          "getApiKey": "Obtenha uma chave de API do {{provider}} ↗",
+          "savedOption": "{{label}} · salva em {{date}}"
+        },
+        "safety": {
+          "heading": "Qualquer pessoa pode enviar e-mails para uma caixa de entrada sem restrições",
+          "description": "E-mails recebidos podem criar tarefas e iniciar o trabalho do agente. Configure uma lista de permissões no AgentMail para limitar quem pode entrar em contato com esta caixa de entrada.",
+          "note": "O Paperclip não verifica as restrições de remetentes. O AgentMail controla novas mensagens e respostas separadamente; confira as duas listas.",
+          "openAgentMail": "Abrir AgentMail ↗",
+          "setUpAllowlists": "Configurar listas de permissões ↗"
+        }
+      },
       "telegram": {
         "heading": "Criar {{agent}} no Telegram",
         "reconnectDescription": "A reconexão verifica este mesmo bot do BotFather e atualiza automaticamente o webhook e o menu de comandos do Paperclip. Ela não recria o bot nem altera os chats dos quais ele participa. Deixe o token em branco para reutilizar a credencial salva.",

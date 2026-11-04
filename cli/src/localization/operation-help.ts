@@ -104,7 +104,21 @@ const operationHelp: Record<string, CommandHelp> = {
     "Connect an assistant to Paperclip as a consenting human",
     "Conectar um assistente ao Paperclip como uma pessoa que concedeu consentimento",
   ),
-  "mcp proxy": descriptionOnly("Expose the authorized Paperclip tools over local MCP stdio", "Disponibilizar as ferramentas autorizadas do Paperclip por MCP stdio local"),
+  "mcp login": {
+    description: {
+      en: "Authorize Paperclip MCP access in a browser",
+      "pt-BR": "Autorizar o acesso ao MCP do Paperclip pelo navegador",
+    },
+    options: {
+      "--device": { en: "Authorize in a browser without a callback listener", "pt-BR": "Autorizar no navegador sem iniciar um listener de callback" },
+      "--url": { en: "Canonical Paperclip MCP URL", "pt-BR": "URL canônica do MCP do Paperclip" },
+      "--company": { en: "Restrict consent to this organization", "pt-BR": "Restringir o consentimento a esta organização" },
+    },
+  },
+  "mcp proxy": {
+    description: { en: "Expose the authorized Paperclip tools over local MCP stdio", "pt-BR": "Disponibilizar as ferramentas autorizadas do Paperclip por MCP stdio local" },
+    options: { "--url": { en: "The exact MCP URL used during login", "pt-BR": "A URL exata do MCP usada durante o login" } },
+  },
   "env-lab": {
     description: { en: "Deterministic local environment fixtures", "pt-BR": "Fixtures determinísticos de ambiente local" },
   },
@@ -1113,8 +1127,27 @@ const operationHelp: Record<string, CommandHelp> = {
     },
   },
   "issue heartbeat-context": descriptionOnly("Get heartbeat context for an issue", "Consultar o contexto de heartbeat de uma tarefa"),
-  "issue comment": descriptionOnly("Add comment to issue", "Adicionar um comentário à tarefa"),
-  "issue comments": descriptionOnly("List issue comments", "Listar comentários da tarefa"),
+  "issue comment": {
+    description: { en: "Add comment to issue", "pt-BR": "Adicionar um comentário à tarefa" },
+    arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
+    options: {
+      ...commonClientOptions,
+      "--body": { en: "Comment body", "pt-BR": "Conteúdo do comentário" },
+      "--attachment-id": { en: "Bind uploaded issue attachments to this comment", "pt-BR": "Vincular anexos enviados da tarefa a este comentário" },
+      "--reopen": { en: "Reopen if issue is done/cancelled", "pt-BR": "Reabrir se a tarefa estiver concluída ou cancelada" },
+      "--resume": { en: "Request explicit follow-up and wake the assignee when resumable", "pt-BR": "Solicitar acompanhamento explícito e notificar o responsável quando for possível retomar" },
+    },
+  },
+  "issue comments": {
+    description: { en: "List issue comments", "pt-BR": "Listar comentários da tarefa" },
+    arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
+    options: {
+      ...commonClientOptions,
+      "--after-comment-id": { en: "Only return comments after this comment ID", "pt-BR": "Retornar somente comentários após este ID de comentário" },
+      "--order": { en: "asc or desc", "pt-BR": "asc ou desc" },
+      "--limit": { en: "Maximum comments to return", "pt-BR": "Número máximo de comentários a retornar" },
+    },
+  },
   "issue comment:get": descriptionOnly("Get one issue comment", "Consultar um comentário da tarefa"),
   "issue comment:delete": descriptionOnly("Delete or cancel one issue comment", "Excluir ou cancelar um comentário da tarefa"),
   "issue approvals": descriptionOnly("List approvals linked to an issue", "Listar aprovações vinculadas a uma tarefa"),

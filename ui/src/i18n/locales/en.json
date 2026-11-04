@@ -9659,6 +9659,102 @@
         "noneAvailable": "No active agents are available.",
         "continue": "Continue"
       },
+      "agentmail": {
+        "loadingSetup": "Loading email setup…",
+        "heading": "Give an agent an email address",
+        "steps": {
+          "agent": "Agent",
+          "emailAddress": "Email address"
+        },
+        "loading": "Loading…",
+        "retryInboxes": "Retry loading inboxes",
+        "continue": "Continue",
+        "connecting": "Connecting…",
+        "back": "Back",
+        "errors": {
+          "loadProgress": "Could not load email setup progress.",
+          "resumeNotFound": "This email setup could not be found. Return to Connectors and start a new connection."
+        },
+        "agent": {
+          "label": "Agent",
+          "choose": "Choose an agent",
+          "noneFound": "No agents found."
+        },
+        "credentials": {
+          "inboxKeyOnly": "That key only connects {{address}}. Choose a saved account key or enter one to create a new address.",
+          "useExistingInbox": "Use the existing inbox instead",
+          "chooseNewAddressKey": "Choose a key for a new address"
+        },
+        "address": {
+          "heading": "{{agent}}’s email address",
+          "reservedScoped": "This address was created in AgentMail. Finish connecting it to {{agent}}.",
+          "reservedOrganization": "This address was created in AgentMail. Finish connecting it to {{agent}}, or choose a different address. The original inbox will stay in AgentMail.",
+          "chooseDifferent": "Choose a different address",
+          "domain": "Email domain",
+          "chooseInbox": "Choose an inbox",
+          "alreadyAssigned": "already assigned",
+          "taken": "This email address is already in use. Choose a different address.",
+          "assigned": "This inbox is already assigned to an agent.",
+          "checking": "Checking address…",
+          "checkFailed": "Could not check this address.",
+          "availableOnCreate": "AgentMail confirms availability when you create the address.",
+          "suggestionsAria": "Suggested email addresses",
+          "trySuggestion": "Try:",
+          "useExisting": "Use an existing inbox",
+          "createNew": "Create a new address",
+          "loadingOptions": "Loading email options…",
+          "finishConnecting": "Finish connecting",
+          "createAddress": "Create email address",
+          "connectAddress": "Connect email address"
+        },
+        "howItWorks": {
+          "heading": "How it Works",
+          "description": "Incoming email creates tasks for {{agent}}. Replies stay in the same task."
+        },
+        "advanced": {
+          "heading": "Advanced options",
+          "customDomain": "Set up a custom domain ↗",
+          "receiving": "Receiving",
+          "liveConnection": "Live connection",
+          "webhook": "Webhook"
+        },
+        "trust": {
+          "boundaryRequired": "This agent needs a work boundary before it can receive email.",
+          "configureBoundary": "Configure work boundary",
+          "lowTrustConfigured": "Low-trust review configured",
+          "manageAccess": "Manage which tasks and tools this agent can access.",
+          "reviewSettings": "Review trust settings",
+          "title": "Trust settings · {{agent}}",
+          "description": "Changes apply to all of this agent’s work. Use a dedicated email agent if its other tasks need broader access.",
+          "boundaryNote": "Low trust limits Paperclip access; it does not sandbox the runtime. Review filesystem, tool, and secret access separately.",
+          "save": "Save trust settings"
+        },
+        "success": {
+          "heading": "Your agent’s email is ready",
+          "description": "{{agent}} can now receive email at this address.",
+          "settings": "Email settings",
+          "done": "Done"
+        },
+        "credentialField": {
+          "apiKey": "API key",
+          "newApiKey": "New API key",
+          "enterNewApiKey": "Enter a new API key",
+          "checkingSavedKey": "Checking saved API key…",
+          "unavailableSavedKey": "Previously selected key · unavailable",
+          "pasteApiKey": "Paste your {{provider}} API key",
+          "checkingSavedKeys": "Checking saved API keys…",
+          "loadError": "Could not load saved API keys.",
+          "getApiKey": "Get an {{provider}} API key ↗",
+          "savedOption": "{{label}} · saved {{date}}"
+        },
+        "safety": {
+          "heading": "Anyone can email an unrestricted inbox",
+          "description": "Incoming email can create tasks and trigger agent work. Set up an allowlist in AgentMail to limit who can contact this inbox.",
+          "note": "Paperclip does not verify sender restrictions. AgentMail controls new messages and replies separately; check both lists.",
+          "openAgentMail": "Open AgentMail ↗",
+          "setUpAllowlists": "Set up allowlists ↗"
+        }
+      },
       "telegram": {
         "heading": "Create {{agent}} in Telegram",
         "reconnectDescription": "Reconnect verifies this same BotFather bot and automatically refreshes its Paperclip webhook and command menu. It does not recreate the bot or change its chat memberships. Leave the token blank to reuse the saved credential.",

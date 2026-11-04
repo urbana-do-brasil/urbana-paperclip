@@ -31,19 +31,19 @@ function runHelp(locale: "pt-BR" | "en", command: string[]) {
 function helpSummary(output: string): string {
   const lines = output.split(/\r?\n/);
   const usageIndex = lines.findIndex((line) => /^(Usage|Uso):/.test(line));
-  const optionsIndex = lines.findIndex((line, index) => index > usageIndex && /^(Options|Opções):$/.test(line.trim()));
-  if (usageIndex < 0 || optionsIndex < 0) return "";
-  return lines.slice(usageIndex + 1, optionsIndex).join(" ").trim();
+  const detailIndex = lines.findIndex((line, index) => index > usageIndex && /^(Arguments|Argumentos|Options|Opções):$/.test(line.trim()));
+  if (usageIndex < 0 || detailIndex < 0) return "";
+  return lines.slice(usageIndex + 1, detailIndex).join(" ").trim();
 }
 
-function helpRows(output: string, heading: "Options" | "Opções" | "Commands" | "Comandos"): HelpRow[] {
+function helpRows(output: string, heading: "Arguments" | "Argumentos" | "Options" | "Opções" | "Commands" | "Comandos"): HelpRow[] {
   const lines = output.split(/\r?\n/);
   const headingIndex = lines.findIndex((line) => line.trim() === `${heading}:`);
   if (headingIndex < 0) return [];
 
   const rows: HelpRow[] = [];
   for (const line of lines.slice(headingIndex + 1)) {
-    if (/^(Options|Opções|Commands|Comandos):$/.test(line.trim())) break;
+    if (/^(Arguments|Argumentos|Options|Opções|Commands|Comandos):$/.test(line.trim())) break;
     // Commander wraps long descriptions on indented continuation lines. The
     // first row contains the stable signature and enough text to compare locales.
     if (!line.startsWith("  ") || line.startsWith("   ") || !line.trim()) continue;
@@ -51,6 +51,16 @@ function helpRows(output: string, heading: "Options" | "Opções" | "Commands" |
     if (match) rows.push({ signature: match[1].trim(), description: match[2]?.trim() ?? "" });
   }
   return rows;
+}
+
+function expectLocalizedRows(routeName: string, ptRows: HelpRow[], enRows: HelpRow[]) {
+  expect(ptRows.map((row) => row.signature), `${routeName} signatures`).toEqual(enRows.map((row) => row.signature));
+  for (let index = 0; index < enRows.length; index += 1) {
+    const englishDescription = enRows[index].description;
+    if (englishDescription) {
+      expect(ptRows[index].description, `${routeName} ${enRows[index].signature} description`).not.toBe(englishDescription);
+    }
+  }
 }
 
 afterEach(() => {
@@ -82,19 +92,52 @@ describe("registered CLI operation help", () => {
 
       const ptCommands = helpRows(pt, "Comandos");
       const enCommands = helpRows(en, "Commands");
-      expect(ptCommands.map((row) => row.signature)).toEqual(enCommands.map((row) => row.signature));
+      expectLocalizedRows(route.name, ptCommands, enCommands);
       expect(ptCommands.length).toBeGreaterThan(0);
-      for (let index = 0; index < enCommands.length; index += 1) {
-        const englishDescription = enCommands[index].description;
-        if (englishDescription) {
-          expect(ptCommands[index].description, `${route.name} ${enCommands[index].signature} description`).not.toBe(englishDescription);
-        }
-      }
 
       const ptOptions = helpRows(pt, "Opções");
       const enOptions = helpRows(en, "Options");
-      expect(ptOptions.map((row) => row.signature)).toEqual(enOptions.map((row) => row.signature));
+      expectLocalizedRows(`${route.name} options`, ptOptions, enOptions);
       expect(ptOptions.length).toBeGreaterThan(0);
     }
   }, 90_000);
+
+  it.each([
+    { name: "issue list", command: ["issue", "list"] },
+    { name: "issue get", command: ["issue", "get"] },
+    { name: "issue create", command: ["issue", "create"] },
+    { name: "issue update", command: ["issue", "update"] },
+    { name: "issue delete", command: ["issue", "delete"] },
+    { name: "issue comment", command: ["issue", "comment"] },
+    { name: "issue comments", command: ["issue", "comments"] },
+    { name: "agent list", command: ["agent", "list"] },
+    { name: "agent get", command: ["agent", "get"] },
+    { name: "agent create", command: ["agent", "create"] },
+    { name: "agent hire", command: ["agent", "hire"] },
+    { name: "agent update", command: ["agent", "update"] },
+    { name: "agent delete", command: ["agent", "delete"] },
+    { name: "mcp login", command: ["mcp", "login"] },
+    { name: "mcp proxy", command: ["mcp", "proxy"] },
+  ])("localizes arguments and options for $name help", ({ name, command }) => {
+    // Each leaf runs in one PT-BR process followed by one English process.
+    const ptResult = runHelp("pt-BR", command);
+    expect(ptResult.status, `${name} PT-BR stderr: ${ptResult.stderr}`).toBe(0);
+    const enResult = runHelp("en", command);
+    expect(enResult.status, `${name} English stderr: ${enResult.stderr}`).toBe(0);
+
+    const pt = ptResult.stdout;
+    const en = enResult.stdout;
+    expect(helpSummary(pt), `${name} should show its PT-BR description`).not.toBe("");
+    expect(helpSummary(en), `${name} should show its English description`).not.toBe("");
+    expect(helpSummary(pt)).not.toBe(helpSummary(en));
+
+    const ptArguments = helpRows(pt, "Argumentos");
+    const enArguments = helpRows(en, "Arguments");
+    expectLocalizedRows(`${name} arguments`, ptArguments, enArguments);
+
+    const ptOptions = helpRows(pt, "Opções");
+    const enOptions = helpRows(en, "Options");
+    expect(ptOptions.length).toBeGreaterThan(0);
+    expectLocalizedRows(`${name} options`, ptOptions, enOptions);
+  }, 15_000);
 });

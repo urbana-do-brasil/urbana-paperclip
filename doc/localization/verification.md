@@ -3797,3 +3797,10 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Slack manual: 61/61 testes focados, preservando manifesto, credenciais e URLs.
 - Help CLI: índices raiz/issue/agent/mcp localizados; regressão executa oito subprocessos sequenciais em ambos idiomas e compara assinaturas. Help de opções/argumentos folha ainda requer auditoria.
 - Integração: **112/112 testes em quatro arquivos**. Checkpoint: **439/460 tarefas**, 21 caixas abertas incluindo agregadoras.
+
+### Smoke de importação, AgentMail e ajuda de comandos
+
+- Chromium: `pnpm exec playwright test --config tests/localization-browser/playwright.config.ts tests/localization-browser/company-import.spec.ts --reporter=list` passou 2/2 PT-BR/en. Auth/organizações e PostgreSQL efêmero foram reais na fixture; preview/apply/job/flags/adapters e ativação foram interceptados. O teste valida UI, teclado, flags e requests GitHub/ZIP, não o importador do servidor ou GitHub externo.
+- Setup AgentMail: 49/49 testes de UI/catálogos e 10/10 do detalhe; typecheck UI passou. Segredo, sessionStorage, payloads e URLs verificados. TryStep continua pendente.
+- Help folha de issue/agent/MCP: 16/16 testes, 15 comandos e quatro índices, subprocessos sequenciais; assinaturas preservadas. Outras opções/argumentos continuam pendentes. Checkpoint: **442/463 tarefas**, 21 caixas abertas incluindo agregadoras.
+- Integração AgentMail/help: 75/75 testes em quatro arquivos. Após conectar o rótulo técnico Webhook à chave existente, repetição AgentMail/locale: 49/49; gates de catálogos e fontes passaram. A inspeção das chaves de UI externa e o locale não alteram os valores de protocolo.
