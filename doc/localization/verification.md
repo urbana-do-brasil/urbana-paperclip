@@ -3824,3 +3824,7 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 
 - CompanyImport: campos, rename, adapter e checkboxes ganharam nomes acessíveis PT-BR/en; regressão em Chromium passou 2/2 após build de produção, com endpoints de importação interceptados.
 - Fallbacks próprios de erros de setup foram localizados, mantendo mensagens externas. Rodada integrada: **121/121 testes em quatro arquivos**; typecheck UI, build e gates passaram. AgentConfigForm continua pendente em 3.8n. Checkpoint: **448/469 tarefas**, 21 caixas abertas incluindo agregadoras.
+
+### Canais de lançamento na CLI — 4.3be
+
+- Descrições, estados e resumo humanos localizados em PT-BR/en. Fixture de registry inclui versão indisponível e verifica comandos e JSON idêntico byte a byte, inclusive campos cadence/audience originais; testes 6/6 e typecheck CLI passaram. Checkpoint: **449/470 tarefas**, 21 caixas abertas incluindo agregadoras.
