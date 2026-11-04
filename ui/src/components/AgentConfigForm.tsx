@@ -344,7 +344,7 @@ function ConfigSections({ order, className, children }: {
 
 export function AgentConfigForm(props: AgentConfigFormProps) {
   const { mode, adapterModels: externalModels } = props;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isCreate = mode === "create";
   const cards = props.sectionLayout === "cards";
   const showAdapterTypeField = props.showAdapterTypeField ?? true;
@@ -1316,6 +1316,14 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                     label: id === "xhigh" ? "X-High" : id[0].toUpperCase() + id.slice(1),
                   }))]
                 : claudeThinkingEffortOptions;
+  const localizedThinkingEffortOptions = thinkingEffortOptions.map((option) => ({
+    ...option,
+    label: i18n.resolvedLanguage === "en"
+      ? option.label
+      : t(`agentConfiguration.effort.options.${option.id || "auto"}`, {
+          defaultValue: option.label,
+        }),
+  }));
   const currentThinkingEffort = isCreate
     ? val!.thinkingEffort
     : adapterType === "codex_local"
@@ -1419,8 +1427,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
         {props.environmentVariablesPlacement === "secrets" && (
           <div data-config-section="environment-variables" className={cn(!cards && "border-b border-border")}>
             {cards
-              ? <h3 className="mb-3 text-sm font-medium">Environment variables</h3>
-              : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">Environment variables</div>
+              ? <h3 className="mb-3 text-sm font-medium">{t("agentConfiguration.environmentVariables")}</h3>
+              : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("agentConfiguration.environmentVariables")}</div>
             }
             <div className={cn(cards ? "rounded-lg border border-border p-4" : "px-4 pb-3")}>
               {environmentVariablesEditor}
@@ -1815,7 +1823,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                 <>
                   <ThinkingEffortDropdown
                     value={currentThinkingEffort}
-                    options={thinkingEffortOptions}
+                    options={localizedThinkingEffortOptions}
                     onChange={(v) =>
                       isCreate
                         ? set!({ thinkingEffort: v })
@@ -1828,7 +1836,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                     codexSearchEnabled &&
                     currentThinkingEffort === "minimal" && (
                       <p className="text-xs text-amber-400">
-                        Codex may reject `minimal` thinking when search is enabled.
+                        {t("agentConfiguration.codexSearchMinimalWarning")}
                       </p>
                     )}
                 </>
@@ -1875,7 +1883,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
               {renderAdapterFields("configuration")}
               {(isLocal || adapterType === "process" || configSchema?.fields.some((field) => schemaFieldSection(field.key) === "advanced")) && (
               <CollapsibleSection
-                title="Advanced"
+                title={t("agentConfiguration.advanced")}
                 open={configurationAdvancedOpen}
                 onToggle={() => setConfigurationAdvancedOpen(!configurationAdvancedOpen)}
               >
@@ -1892,7 +1900,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                 flashes on a managed instance.
               */}
               {!hideHostPaths && (
-                <Field label="Command" hint={help.localCommand}>
+                <Field label={t("agentConfiguration.localCommand.label")} hint={t("agentConfiguration.localCommand.hint")}>
                   <DraftInput
                     value={
                       isCreate
@@ -1927,7 +1935,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                 </Field>
               )}
 
-              <Field label="Extra args (comma-separated)" hint={help.extraArgs}>
+              <Field label={t("agentConfiguration.extraArguments.label")} hint={t("agentConfiguration.extraArguments.hint")}>
                 <DraftInput
                   value={
                     isCreate
@@ -1940,7 +1948,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                       : mark("adapterConfig", "extraArgs", v?.trim() ? parseCommaArgs(v) : null)
                   }
                   className={inputClass}
-                  placeholder="e.g. --verbose, --foo=bar"
+                  placeholder={t("agentConfiguration.extraArguments.placeholder")}
                 />
               </Field>
 
@@ -1957,8 +1965,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       {props.environmentVariablesPlacement !== "secrets" && (isLocal || configSchema?.fields.some((field) => schemaFieldSection(field.key) === "environment")) && (
         <div data-config-section="environment-variables" className={cn(!cards && "border-b border-border")}>
           {cards
-            ? <h3 className="text-sm font-medium mb-3">Environment variables</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">Environment variables</div>
+            ? <h3 className="text-sm font-medium mb-3">{t("agentConfiguration.environmentVariables")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("agentConfiguration.environmentVariables")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
             {isLocal ? environmentVariablesEditor : renderAdapterFields("environment")}
@@ -4145,10 +4153,11 @@ function ThinkingEffortDropdown({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const selected = options.find((option) => option.id === value) ?? options[0];
 
   return (
-    <Field label="Thinking effort" hint={help.thinkingEffort}>
+    <Field label={t("agentConfiguration.effort.label")} hint={t("agentConfiguration.effort.hint")}>
       <Popover open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
           <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">

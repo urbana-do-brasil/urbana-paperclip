@@ -3832,3 +3832,7 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Reabertura da configuração de agentes — 3.6g
 
 - Auditoria encontrou textos próprios ainda em inglês em AgentConfigForm, incluindo configuração avançada, variáveis e fluxos de login. Os agregadores 3.6/3.6d foram reabertos e o trabalho registrado em 3.6g; uma busca heurística detectou 38 ocorrências potenciais, sujeitas a distinguir conteúdo técnico de texto de interface. Checkpoint: **447/471 tarefas**, 24 caixas abertas incluindo agregadoras.
+
+### Configuração de agentes — 3.6g1
+
+- Controles de esforço, warning Codex, seção avançada, comando, argumentos e variáveis acompanham o idioma; valores técnicos e apresentação inglesa original preservados. UI/locale 119/119; integração com CompanyImport 155/155; typecheck UI e gates passaram. Login e outros textos ainda estão abertos em 3.6g. Checkpoint: **448/472 tarefas**, 24 caixas abertas incluindo agregadoras.

@@ -326,7 +326,12 @@ async function renderForm(
 async function renderCreateForm(
   environments: Environment[],
   valueOverrides: Partial<typeof defaultCreateValues> = {},
-  options: { showAdapterTestEnvironmentButton?: boolean } = {},
+  options: {
+    showAdapterTestEnvironmentButton?: boolean;
+    showCreateRunPolicySection?: boolean;
+    hideInstructionsFile?: boolean;
+    sectionLayout?: "inline" | "cards";
+  } = {},
 ) {
   mockEnvironmentsApi.list.mockResolvedValue(environments);
 
@@ -357,8 +362,11 @@ async function renderCreateForm(
               values={values}
               onChange={onChange}
               hidePromptTemplate
+              hideInstructionsFile={options.hideInstructionsFile}
+              sectionLayout={options.sectionLayout}
               showAdapterTypeField={false}
               showAdapterTestEnvironmentButton={options.showAdapterTestEnvironmentButton ?? false}
+              showCreateRunPolicySection={options.showCreateRunPolicySection}
             />
           </TooltipProvider>
         </ToastProvider>
@@ -751,6 +759,48 @@ describe("AgentConfigForm environment selector", () => {
     document.body.innerHTML = "";
     vi.clearAllMocks();
     await i18n.changeLanguage(DEFAULT_LOCALE);
+  });
+
+  it.each([
+    ["en", "Thinking effort", "Minimal", "Advanced", "Command", "Extra args (comma-separated)", "Environment variables", "e.g. --verbose, --foo=bar", "Codex may reject `minimal` thinking when search is enabled."],
+    ["pt-BR", "Nível de raciocínio", "Mínimo", "Avançado", "Comando", "Argumentos extras (separados por vírgula)", "Variáveis de ambiente", "Ex.: --verbose, --foo=bar", "O Codex pode rejeitar o nível de raciocínio `minimal` quando a busca está ativada."],
+  ])("localizes import-style agent configuration controls in %s", async (locale, effortLabel, minimalLabel, advancedLabel, commandLabel, extraArgsLabel, environmentVariablesLabel, extraArgsPlaceholder, warning) => {
+    await i18n.changeLanguage(locale);
+    const result = await renderCreateForm(
+      [],
+      {
+        adapterType: "codex_local",
+        model: "custom-model",
+        search: true,
+        thinkingEffort: "minimal",
+        command: "/usr/local/bin/codex",
+        extraArgs: "--verbose,--foo=bar",
+      },
+      {
+        sectionLayout: "cards",
+        hideInstructionsFile: true,
+        showCreateRunPolicySection: false,
+      },
+    );
+    roots.push(result.root);
+
+    expect(result.container.textContent).toContain(effortLabel);
+    expect(findButton(result.container, minimalLabel)).toBeTruthy();
+    expect(result.container.textContent).toContain(warning);
+    expect(result.container.textContent).toContain(environmentVariablesLabel);
+    await clickByText(result.container, minimalLabel);
+    const rawMinimalOption = [...document.querySelectorAll("button")].find((button) =>
+      [...button.querySelectorAll(".font-mono")].some((span) => span.textContent?.trim() === "minimal"),
+    );
+    expect(rawMinimalOption).toBeTruthy();
+    await clickElement(rawMinimalOption);
+    expect(result.onChange).toHaveBeenCalledWith(expect.objectContaining({ thinkingEffort: "minimal" }));
+
+    await clickByText(result.container, advancedLabel);
+    expect(result.container.textContent).toContain(commandLabel);
+    expect(result.container.textContent).toContain(extraArgsLabel);
+    expect(result.container.querySelector<HTMLInputElement>('input[placeholder="codex"]')?.value).toBe("/usr/local/bin/codex");
+    expect(result.container.querySelector<HTMLInputElement>(`input[placeholder="${extraArgsPlaceholder}"]`)?.value).toBe("--verbose,--foo=bar");
   });
 
   it("promotes environment drafts through the page Save action and discards them through the page Discard action", async () => {

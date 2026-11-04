@@ -6451,6 +6451,36 @@
       "modelLoadFailed": "Failed to load adapter models."
     },
     "configurationHeading": "Configuration",
+    "advanced": "Advanced",
+    "environmentVariables": "Environment variables",
+    "codexSearchMinimalWarning": "Codex may reject `minimal` thinking when search is enabled.",
+    "effort": {
+      "label": "Thinking effort",
+      "hint": "Control model reasoning depth. Supported values vary by adapter/model.",
+      "options": {
+        "auto": "Auto",
+        "off": "Off",
+        "minimal": "Minimal",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "xhigh": "X-High",
+        "max": "Max",
+        "ultra": "Ultra",
+        "agent": "Agent",
+        "plan": "Plan",
+        "ask": "Ask"
+      }
+    },
+    "localCommand": {
+      "label": "Command",
+      "hint": "Override the path to the CLI command you want the adapter to call (for example, /usr/local/bin/claude, codex, or opencode)."
+    },
+    "extraArguments": {
+      "label": "Extra args (comma-separated)",
+      "hint": "Extra CLI arguments for local adapters, comma-separated.",
+      "placeholder": "e.g. --verbose, --foo=bar"
+    },
     "codex": {
       "executionEngine": "Execution engine",
       "executionEngineHint": "Default uses ACP. If ACP is unavailable, the run fails with a setup error. Choose CLI explicitly to use it.",
