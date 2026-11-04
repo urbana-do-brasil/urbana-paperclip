@@ -3819,3 +3819,8 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 ### Help runtime, heartbeat, connect e context — 4.3bd4
 
 - Argumentos/opções localizados e comparados por help real em PT-BR/en com subprocessos sequenciais: 55/55 testes; typecheck CLI passou. Outras operações permanecem em 4.3bd. Checkpoint: **446/467 tarefas**, 21 caixas abertas incluindo agregadoras.
+
+### Acessibilidade da importação e fallbacks de conexão
+
+- CompanyImport: campos, rename, adapter e checkboxes ganharam nomes acessíveis PT-BR/en; regressão em Chromium passou 2/2 após build de produção, com endpoints de importação interceptados.
+- Fallbacks próprios de erros de setup foram localizados, mantendo mensagens externas. Rodada integrada: **121/121 testes em quatro arquivos**; typecheck UI, build e gates passaram. AgentConfigForm continua pendente em 3.8n. Checkpoint: **448/469 tarefas**, 21 caixas abertas incluindo agregadoras.

@@ -11,6 +11,7 @@ const localeCopy = {
   "pt-BR": {
     sourceTitle: "Fonte da importação",
     githubRepo: "Repositório do GitHub",
+    githubUrlLabel: "URL do GitHub",
     localZip: "Arquivo ZIP local",
     chooseZip: "Escolher ZIP",
     zipHelp: "Envie um arquivo .zip exportado diretamente do Paperclip.",
@@ -22,18 +23,26 @@ const localeCopy = {
     confirmRename: "confirmar renomeação",
     confirmed: "confirmado",
     newOrganizationName: "Organização importada",
+    newOrganizationNameLabel: "Nome da nova organização",
+    targetLabel: "Destino",
     importButton: "Importar 2 arquivos",
     importComplete: "Importação concluída",
     activateSelected: "Ativar seleção (2)",
     collapseAgents: "Recolher pasta agents",
     expandAgents: "Expandir pasta agents",
+    selectFileLabel: "Selecionar arquivo {{name}}",
+    selectFolderLabel: "Selecionar pasta {{name}}",
+    renameInputLabel: "Novo nome para {{name}}",
+    adapterSelectLabel: "Adaptador para {{agent}}",
     dotOption: "OpenAI Dot (experimental)",
     target: "Destino",
     collisionStrategy: "Estratégia de conflito",
+    collisionStrategyLabel: "Estratégia de conflito",
   },
   en: {
     sourceTitle: "Import source",
     githubRepo: "GitHub repo",
+    githubUrlLabel: "GitHub URL",
     localZip: "Local zip",
     chooseZip: "Choose zip",
     zipHelp: "Upload a .zip exported directly from Paperclip.",
@@ -45,14 +54,21 @@ const localeCopy = {
     confirmRename: "confirm rename",
     confirmed: "confirmed",
     newOrganizationName: "Imported Organization",
+    newOrganizationNameLabel: "New organization name",
+    targetLabel: "Target",
     importButton: "Import 2 files",
     importComplete: "Import complete",
     activateSelected: "Activate selected (2)",
     collapseAgents: "Collapse folder agents",
     expandAgents: "Expand folder agents",
+    selectFileLabel: "Select file {{name}}",
+    selectFolderLabel: "Select folder {{name}}",
+    renameInputLabel: "New name for {{name}}",
+    adapterSelectLabel: "Adapter for {{agent}}",
     dotOption: "OpenAI Dot (experimental)",
     target: "Target",
     collisionStrategy: "Collision strategy",
+    collisionStrategyLabel: "Collision strategy",
   },
 } satisfies Record<Locale, Record<string, string>>;
 
@@ -161,7 +177,7 @@ async function installCompanyImportRoutes(
 }
 
 async function previewGithubSource(page: Page, copy: (typeof localeCopy)[Locale]) {
-  await page.getByPlaceholder("https://github.com/owner/repo/tree/main/company").fill(importUrl);
+  await page.getByLabel(copy.githubUrlLabel, { exact: true }).fill(importUrl);
   await page.getByRole("button", { name: copy.previewButton, exact: true }).click();
   // CompanyImport renders this compact preview title as visible status text,
   // not as a heading in the accessibility tree.
@@ -211,14 +227,23 @@ for (const locale of locales) {
     await page.getByRole("button", { name: copy.localZip, exact: true }).click();
     await expect(page.getByText(copy.zipHelp, { exact: false })).toBeVisible();
     await page.getByRole("button", { name: copy.githubRepo, exact: true }).click();
-    await expect(page.getByRole("textbox").nth(0)).toHaveAttribute("placeholder", "https://github.com/owner/repo/tree/main/company");
-    await page.getByPlaceholder(copy.newOrganizationName).fill("Locale Smoke Import");
+    await expect(page.getByLabel(copy.githubUrlLabel, { exact: true })).toBeVisible();
+    await expect(page.getByLabel(copy.targetLabel, { exact: true })).toBeVisible();
+    await expect(page.getByLabel(copy.newOrganizationNameLabel, { exact: true })).toBeVisible();
+    await expect(page.getByLabel(copy.collisionStrategyLabel, { exact: true })).toBeVisible();
+    await page.getByLabel(copy.newOrganizationNameLabel, { exact: true }).fill("Locale Smoke Import");
 
     await previewGithubSource(page, copy);
     await expect(page.getByRole("heading", { name: copy.packageFiles, exact: true })).toBeVisible();
     await expect(page.getByText(copy.selectedFiles, { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: copy.conflictTitle, exact: true })).toBeVisible();
     await expect(page.getByText("Upstream preview note: fixture metadata v2 is preserved.", { exact: true })).toBeVisible();
+    await expect(page.getByRole("checkbox", {
+      name: copy.selectFileLabel.replace("{{name}}", ".paperclip.yaml"), exact: true,
+    })).toBeVisible();
+    await expect(page.getByRole("checkbox", {
+      name: copy.selectFolderLabel.replace("{{name}}", "agents"), exact: true,
+    })).toBeVisible();
     expect(captures.previews).toHaveLength(1);
     expect(captures.previews[0]!.contentType).toContain("application/json");
     expect(JSON.parse(captures.previews[0]!.body ?? "{}")).toMatchObject({
@@ -237,7 +262,9 @@ for (const locale of locales) {
     await page.keyboard.press("Enter");
     await expect(collapseAgents).toBeVisible();
 
-    const conflictName = page.getByRole("textbox").nth(2);
+    const conflictName = page.getByRole("textbox", {
+      name: copy.renameInputLabel.replace("{{name}}", "Browser Coder"), exact: true,
+    });
     await expect(conflictName).toHaveValue("company-Browser Coder");
     await conflictName.fill("Accessible Coder");
     const confirmRename = page.getByRole("button", { name: copy.confirmRename, exact: true });
@@ -245,7 +272,9 @@ for (const locale of locales) {
     await page.keyboard.press("Enter");
     await expect(page.getByRole("button", { name: copy.confirmed, exact: true })).toBeVisible();
 
-    const adapterSelect = page.locator("select").filter({ has: page.locator('option[value="claude_local"]') }).first();
+    const adapterSelect = page.getByRole("combobox", {
+      name: copy.adapterSelectLabel.replace("{{agent}}", "Browser Coder"), exact: true,
+    });
     await expect(adapterSelect.locator('option[value="paperclip_runner"]')).toHaveCount(0);
     await expect(adapterSelect.locator('option[value="openai_dot"]')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`${locale}-company-import-preview.png`), fullPage: true });
@@ -253,14 +282,18 @@ for (const locale of locales) {
     flags.current = { enableNativeRunner: true, enableOpenAiDot: false };
     await page.reload();
     await previewGithubSource(page, copy);
-    const nativeRunnerSelect = page.locator("select").filter({ has: page.locator('option[value="claude_local"]') }).first();
+    const nativeRunnerSelect = page.getByRole("combobox", {
+      name: copy.adapterSelectLabel.replace("{{agent}}", "Browser Coder"), exact: true,
+    });
     await expect(nativeRunnerSelect.locator('option[value="paperclip_runner"]')).toHaveCount(1);
     await expect(nativeRunnerSelect.locator('option[value="openai_dot"]')).toHaveCount(0);
 
     flags.current = { enableNativeRunner: false, enableOpenAiDot: true };
     await page.reload();
     await previewGithubSource(page, copy);
-    const dotOnlySelect = page.locator("select").filter({ has: page.locator('option[value="claude_local"]') }).first();
+    const dotOnlySelect = page.getByRole("combobox", {
+      name: copy.adapterSelectLabel.replace("{{agent}}", "Browser Coder"), exact: true,
+    });
     await expect(dotOnlySelect.locator('option[value="paperclip_runner"]')).toHaveCount(0);
     await expect(dotOnlySelect.locator('option[value="openai_dot"]')).toHaveText(copy.dotOption);
 
@@ -272,7 +305,7 @@ for (const locale of locales) {
       buffer: Buffer.from(zipBytes),
     });
     await expect(page.getByText("browser-export.zip", { exact: false })).toBeVisible();
-    await page.getByPlaceholder(copy.newOrganizationName).fill("Local Smoke Import");
+    await page.getByLabel(copy.newOrganizationNameLabel, { exact: true }).fill("Local Smoke Import");
     await page.getByRole("button", { name: copy.previewButton, exact: true }).click();
     await expect(page.getByText(copy.previewTitle, { exact: false })).toBeVisible();
     await expect(page.getByText(copy.selectedFiles, { exact: true })).toBeVisible();

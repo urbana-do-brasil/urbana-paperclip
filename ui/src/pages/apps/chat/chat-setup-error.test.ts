@@ -31,6 +31,13 @@ describe("sanitizedSetupErrorMessage", () => {
     );
   });
 
+  it("uses a localized fallback only when the provider returns no error message", () => {
+    expect(sanitizedSetupErrorMessage(undefined, undefined, "Confira os valores."))
+      .toBe("Confira os valores.");
+    expect(sanitizedSetupErrorMessage(new Error("Provider unavailable"), undefined, "Confira os valores."))
+      .toBe("Provider unavailable");
+  });
+
   it("redacts malformed UTF-16 credentials without throwing", () => {
     const malformedSecret = "\ud800";
     const escapedSecret = JSON.stringify(malformedSecret).slice(1, -1);

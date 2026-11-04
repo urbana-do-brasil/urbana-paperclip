@@ -314,8 +314,8 @@ function ChatSdkEndpointSetup() {
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't start setup",
-        body: error instanceof Error ? error.message : "Try again.",
+        title: t("apps.chatEndpointSetup.errors.startSetupTitle"),
+        body: error instanceof Error ? error.message : t("apps.chatEndpointSetup.errors.tryAgain"),
         tone: "error",
       }),
   });
@@ -374,7 +374,11 @@ function ChatSdkEndpointSetup() {
       if (next.setup?.step !== "test" && next.setup?.step !== "complete") setSlackIdentityReady(false);
     },
     onError: (error, variables) =>
-      setSetupError(sanitizedSetupErrorMessage(error, variables.values)),
+      setSetupError(sanitizedSetupErrorMessage(
+        error,
+        variables.values,
+        t("apps.chatEndpointSetup.errors.checkValuesFallback"),
+      )),
   });
   const generateSetupSecret = useMutation({
     mutationFn: () => chatEndpointsApi.generateSetupSecret(endpoint!.id),
@@ -435,8 +439,8 @@ function ChatSdkEndpointSetup() {
     },
     onError: (error) =>
       pushToast({
-        title: "Couldn't generate webhook secret",
-        body: error instanceof Error ? error.message : "Try again.",
+        title: t("apps.chatEndpointSetup.errors.generateWebhookSecretTitle"),
+        body: error instanceof Error ? error.message : t("apps.chatEndpointSetup.errors.tryAgain"),
         tone: "error",
       }),
   });
@@ -448,11 +452,11 @@ function ChatSdkEndpointSetup() {
     },
     onError: (error) =>
       pushToast({
-        title: provider === "slack" ? t("apps.chatEndpointSetup.slack.errors.finishSetup") : "Test not complete",
+        title: provider === "slack" ? t("apps.chatEndpointSetup.slack.errors.finishSetup") : t("apps.chatEndpointSetup.errors.testIncompleteTitle"),
         body:
           error instanceof Error
             ? error.message
-            : provider === "slack" ? t("apps.chatEndpointSetup.slack.errors.tryFinishAgain") : "Send the provider message, then try again.",
+            : provider === "slack" ? t("apps.chatEndpointSetup.slack.errors.tryFinishAgain") : t("apps.chatEndpointSetup.errors.testIncompleteBody"),
         tone: "error",
       }),
   });
@@ -587,7 +591,7 @@ function ChatSdkEndpointSetup() {
                 role="alert"
                 className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
               >
-                <p className="font-medium">{isSlack ? t("apps.chatEndpointSetup.slack.errors.connectionFailed") : "Connection failed"}</p>
+                <p className="font-medium">{isSlack ? t("apps.chatEndpointSetup.slack.errors.connectionFailed") : t("apps.chatEndpointSetup.errors.connectionFailed")}</p>
                 <p className="mt-1">{setupError}</p>
               </div>
             ) : null}

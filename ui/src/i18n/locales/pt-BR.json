@@ -7961,6 +7961,8 @@
       "errorCount_many": "{{count}} erros",
       "expandFolder": "Expandir pasta {{name}}",
       "collapseFolder": "Recolher pasta {{name}}",
+      "selectFile": "Selecionar arquivo {{name}}",
+      "selectFolder": "Selecionar pasta {{name}}",
       "failedMessage": "Falha na pré-visualização: {{message}} Tente novamente ou exporte o pacote sem anexos grandes para reduzir o tamanho.",
       "importFailedMessage": "Falha na importação: {{message}} Nada pode ter sido criado ou a importação pode ter parado no meio. Confira a organização de destino antes de tentar novamente.",
       "packageFiles": "Arquivos do pacote",
@@ -7978,6 +7980,7 @@
       "skipped": "ignorado",
       "confirmed": "confirmado",
       "confirmRename": "confirmar renomeação",
+      "renameInputLabel": "Novo nome para {{name}}",
       "kinds": {
         "agent": "agente",
         "project": "projeto",
@@ -7992,6 +7995,7 @@
       "agents_many": "{{count}} agentes",
       "agent": "agente",
       "configure": "configurar adaptador",
+      "selectForAgent": "Adaptador para {{agent}}",
       "fallbackSourceUnavailable": "O adaptador de origem {{sourceAdapter}} não está instalado aqui. Este agente usará {{selectedAdapter}}.",
       "dotExperimental": "{{provider}} (experimental)"
     },
@@ -9880,6 +9884,15 @@
       "unsupportedProvider": "Este provedor de chat não é compatível.",
       "selectOrganization": "Selecione uma organização para conectar o chat.",
       "endpointUnavailable": "Este endpoint não está disponível. Confira a URL pública do servidor.",
+      "errors": {
+        "startSetupTitle": "Não foi possível iniciar a configuração",
+        "generateWebhookSecretTitle": "Não foi possível gerar o segredo do webhook",
+        "tryAgain": "Tente novamente.",
+        "testIncompleteTitle": "Teste não concluído",
+        "testIncompleteBody": "Envie a mensagem pelo provedor e tente novamente.",
+        "connectionFailed": "Falha na conexão",
+        "checkValuesFallback": "Confira os valores obrigatórios e o acesso ao provedor e tente novamente."
+      },
       "copyFailure": {
         "title": "Não foi possível copiar para a área de transferência",
         "body": "Selecione e copie o valor manualmente."

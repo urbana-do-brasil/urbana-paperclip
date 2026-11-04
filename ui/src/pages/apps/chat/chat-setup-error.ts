@@ -14,9 +14,10 @@ function uriEncoded(value: string): string | null {
 export function sanitizedSetupErrorMessage(
   error: unknown,
   submittedValues: Record<string, string> | undefined,
+  fallback = chatSetupErrorFallback,
 ): string {
   let message = error instanceof Error ? error.message.trim() : "";
-  if (!message) return chatSetupErrorFallback;
+  if (!message) return fallback;
 
   const submittedSecrets = Object.values(submittedValues ?? {})
     .flatMap((value) => {
@@ -36,5 +37,5 @@ export function sanitizedSetupErrorMessage(
   }
 
   const normalized = message.replace(/\s+/g, " ").trim();
-  return normalized ? normalized.slice(0, 500) : chatSetupErrorFallback;
+  return normalized ? normalized.slice(0, 500) : fallback;
 }

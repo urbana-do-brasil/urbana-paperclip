@@ -469,6 +469,7 @@ function ConflictResolutionList({
     skipped: string;
     confirmed: string;
     confirmRename: string;
+    renameInputLabel: (name: string) => string;
     kindLabels: Record<string, string>;
   };
 }) {
@@ -541,6 +542,7 @@ function ConflictResolutionList({
                     ) : (
                       <input
                         className="min-w-0 flex-1 rounded-md border border-border bg-transparent px-2 py-1 font-mono text-xs outline-none focus:border-foreground"
+                        aria-label={labels.renameInputLabel(item.originalName)}
                         value={currentName}
                         onChange={(e) => onRename(item.slug, e.target.value)}
                       />
@@ -645,7 +647,13 @@ function AdapterPickerList({
   onChangeAdapter: (slug: string, adapterType: string) => void;
   onToggleExpand: (slug: string) => void;
   onChangeConfig: (slug: string, patch: Partial<CreateConfigValues>) => void;
-  labels: { title: string; agentCount: string; agent: string; configure: string };
+  labels: {
+    title: string;
+    agentCount: string;
+    agent: string;
+    configure: string;
+    selectForAgent: (agent: string) => string;
+  };
   fallbackMessages: Record<string, string>;
 }) {
   if (agents.length === 0) return null;
@@ -683,6 +691,7 @@ function AdapterPickerList({
                   <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
                   <select
                     className="min-w-0 flex-1 rounded-md border border-border bg-transparent px-2 py-1 text-xs outline-none focus:border-foreground"
+                    aria-label={labels.selectForAgent(agent.name)}
                     value={selectedType}
                     onChange={(e) => onChangeAdapter(agent.slug, e.target.value)}
                   >
@@ -1481,6 +1490,7 @@ export function CompanyImport() {
     skipped: t("companyImport.conflicts.skipped"),
     confirmed: t("companyImport.conflicts.confirmed"),
     confirmRename: t("companyImport.conflicts.confirmRename"),
+    renameInputLabel: (name: string) => t("companyImport.conflicts.renameInputLabel", { name }),
     kindLabels: Object.fromEntries(
       ["agent", "project", "issue", "skill"].map((kind) => [
         kind,
@@ -1729,6 +1739,7 @@ export function CompanyImport() {
     agentCount: t("companyImport.adapters.agents", { count: adapterAgents.length }),
     agent: t("companyImport.adapters.agent"),
     configure: t("companyImport.adapters.configure"),
+    selectForAgent: (agent: string) => t("companyImport.adapters.selectForAgent", { agent }),
   }), [adapterAgents.length, t]);
   const adapterFallbackMessages = useMemo(() => Object.fromEntries(
     adapterAgents
@@ -2066,8 +2077,10 @@ export function CompanyImport() {
           <Field
             label={t("companyImport.source.githubUrlLabel")}
             hint={t("companyImport.source.githubUrlHint")}
+            htmlFor="company-import-github-url"
           >
             <input
+              id="company-import-github-url"
               className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
               type="text"
               value={importUrl}
@@ -2081,8 +2094,9 @@ export function CompanyImport() {
           </Field>
         )}
 
-        <Field label={t("companyImport.source.targetLabel")} hint={t("companyImport.source.targetHint")}>
+        <Field label={t("companyImport.source.targetLabel")} hint={t("companyImport.source.targetHint")} htmlFor="company-import-target">
           <select
+            id="company-import-target"
             className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
             value={targetMode}
             disabled={importMutation.isPending}
@@ -2102,8 +2116,10 @@ export function CompanyImport() {
           <Field
             label={t("companyImport.source.newOrganizationNameLabel")}
             hint={t("companyImport.source.newOrganizationNameHint")}
+            htmlFor="company-import-new-organization-name"
           >
             <input
+              id="company-import-new-organization-name"
               className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
               type="text"
               value={newCompanyName}
@@ -2119,8 +2135,10 @@ export function CompanyImport() {
         <Field
           label={t("companyImport.source.collisionStrategyLabel")}
           hint={t("companyImport.source.collisionStrategyHint")}
+          htmlFor="company-import-collision-strategy"
         >
           <select
+            id="company-import-collision-strategy"
             className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
             value={collisionStrategy}
             disabled={importMutation.isPending}
@@ -2319,6 +2337,12 @@ export function CompanyImport() {
                   onToggleDir={handleToggleDir}
                   onSelectFile={setSelectedFile}
                   onToggleCheck={handleToggleCheck}
+                  checkboxLabel={(node) => t(
+                    node.kind === "dir"
+                      ? "companyImport.preview.selectFolder"
+                      : "companyImport.preview.selectFile",
+                    { name: node.path },
+                  )}
                   expandFolderLabel={(node) => t("companyImport.preview.expandFolder", { name: node.name })}
                   collapseFolderLabel={(node) => t("companyImport.preview.collapseFolder", { name: node.name })}
                   renderFileExtra={(node, checked) => renderImportFileExtra(node, checked, renameMap, fileActionLabels)}

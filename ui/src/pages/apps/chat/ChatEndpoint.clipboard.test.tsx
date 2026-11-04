@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => ({
   resumeSlackInstallation: vi.fn(),
   inspectPhoton: vi.fn(),
   setup: vi.fn(),
+  test: vi.fn(),
   setupTestStatus: vi.fn(),
   finishSlackSetup: vi.fn(),
   generateSetupSecret: vi.fn(),
@@ -314,6 +315,39 @@ describe("chat setup and identity-link clipboard actions", () => {
       });
     },
   );
+
+  it.each([
+    ["en", "Application ID", "Server ID", "Bot token", "Connect Discord bot", "Connection failed", "Check the required values and provider access, then try again."],
+    ["pt-BR", "ID do aplicativo", "ID do servidor", "Token do bot", "Conectar bot do Discord", "Falha na conexão", "Confira os valores obrigatórios e o acesso ao provedor e tente novamente."],
+  ])("localizes the setup fallback when Discord returns no error message in %s", async (locale, applicationIdLabel, serverIdLabel, botTokenLabel, connectLabel, heading, fallback) => {
+    await i18n.changeLanguage(locale);
+    await render("discord");
+    const inputFor = (name: string) => [...container.querySelectorAll("label")]
+      .find((label) => label.textContent?.trim() === name)
+      ?.querySelector("input") as HTMLInputElement;
+    const setValue = (input: HTMLInputElement, value: string) => flushSync(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    setValue(inputFor(applicationIdLabel), "synthetic-app-id");
+    setValue(inputFor(serverIdLabel), "synthetic-server-id");
+    setValue(inputFor(botTokenLabel), "synthetic-discord-token");
+    mocks.setup.mockRejectedValueOnce(undefined);
+
+    await click(connectLabel);
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(heading);
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(fallback);
+    expect(container.textContent).not.toContain("synthetic-discord-token");
+    expect(mocks.setup).toHaveBeenCalledWith("endpoint-a", {
+      action: "configure",
+      credentials: {
+        applicationId: "synthetic-app-id",
+        guildId: "synthetic-server-id",
+        botToken: "synthetic-discord-token",
+      },
+    });
+  });
 
   it.each([
     [
@@ -1318,6 +1352,25 @@ describe("chat setup and identity-link clipboard actions", () => {
       root = createRoot(container);
       client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     }
+  });
+
+  it.each([
+    ["en", "Test not complete", "Send the provider message, then try again."],
+    ["pt-BR", "Teste não concluído", "Envie a mensagem pelo provedor e tente novamente."],
+  ])("localizes the shared provider test fallback in %s", async (locale, title, body) => {
+    await i18n.changeLanguage(locale);
+    const endpoint = await render("discord");
+    const readyToTest: ChatEndpoint = {
+      ...endpoint,
+      setup: { ...endpoint.setup!, step: "test" },
+    };
+    flushSync(() => client.setQueryData(["chat-endpoint-setup-resume", endpoint.id], readyToTest));
+    await settle();
+    mocks.test.mockRejectedValueOnce(undefined);
+
+    await click(locale === "en" ? "I've sent the test message" : "Enviei a mensagem de teste");
+
+    expect(mocks.pushToast).toHaveBeenCalledWith({ title, body, tone: "error" });
   });
 
   it("resumes event configuration on the saved app and clears the retry token", async () => {

@@ -119,7 +119,11 @@ export function PhotonConnectStep({
       </Button>
       {inspection.isError && (
         <p role="alert" className="text-sm text-destructive">
-          {sanitizedSetupErrorMessage(inspection.error, { projectSecret })}
+          {sanitizedSetupErrorMessage(
+            inspection.error,
+            { projectSecret },
+            t("apps.chatEndpointSetup.errors.checkValuesFallback"),
+          )}
         </p>
       )}
       {inspection.data && (

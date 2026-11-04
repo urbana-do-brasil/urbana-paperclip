@@ -7793,6 +7793,8 @@
       "errorCount_other": "{{count}} errors",
       "expandFolder": "Expand folder {{name}}",
       "collapseFolder": "Collapse folder {{name}}",
+      "selectFile": "Select file {{name}}",
+      "selectFolder": "Select folder {{name}}",
       "failedMessage": "Preview failed: {{message}} Retry, or re-export the package without large attachments to reduce its size.",
       "importFailedMessage": "Import failed: {{message}} Nothing may have been created, or the import may have stopped partway. Check the target organization before retrying.",
       "packageFiles": "Package files",
@@ -7808,6 +7810,7 @@
       "skipped": "skipped",
       "confirmed": "confirmed",
       "confirmRename": "confirm rename",
+      "renameInputLabel": "New name for {{name}}",
       "kinds": {
         "agent": "agent",
         "project": "project",
@@ -7821,6 +7824,7 @@
       "agents_other": "{{count}} agents",
       "agent": "agent",
       "configure": "configure adapter",
+      "selectForAgent": "Adapter for {{agent}}",
       "fallbackSourceUnavailable": "Source adapter {{sourceAdapter}} is not installed here. This agent will use {{selectedAdapter}}.",
       "dotExperimental": "{{provider}} (experimental)"
     },
@@ -9647,6 +9651,15 @@
       "unsupportedProvider": "This chat provider is not supported.",
       "selectOrganization": "Select an organization to connect chat.",
       "endpointUnavailable": "This endpoint is unavailable. Check the server's public URL.",
+      "errors": {
+        "startSetupTitle": "Couldn't start setup",
+        "generateWebhookSecretTitle": "Couldn't generate webhook secret",
+        "tryAgain": "Try again.",
+        "testIncompleteTitle": "Test not complete",
+        "testIncompleteBody": "Send the provider message, then try again.",
+        "connectionFailed": "Connection failed",
+        "checkValuesFallback": "Check the required values and provider access, then try again."
+      },
       "copyFailure": {
         "title": "Couldn't copy to clipboard",
         "body": "Select and copy the value manually."

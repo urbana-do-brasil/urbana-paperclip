@@ -166,6 +166,14 @@ const companyImportLocaleCases = [
     sourceTitle: "Import source",
     githubRepo: "GitHub repo",
     githubHint: "Repo tree path or blob URL",
+    githubUrlLabel: "GitHub URL",
+    targetLabel: "Target",
+    newOrganizationNameLabel: "New organization name",
+    collisionStrategyLabel: "Collision strategy",
+    selectFileLabel: "Select file {{name}}",
+    selectFolderLabel: "Select folder {{name}}",
+    renameInputLabel: "New name for {{name}}",
+    adapterSelectLabel: "Adapter for {{agent}}",
     localZip: "Local zip",
     zipHelp: "Upload a .zip exported directly from Paperclip.",
     zipPackageSummary: "organization-backup.zip with 2 files",
@@ -194,6 +202,14 @@ const companyImportLocaleCases = [
     sourceTitle: "Fonte da importação",
     githubRepo: "Repositório do GitHub",
     githubHint: "Caminho da árvore do repositório",
+    githubUrlLabel: "URL do GitHub",
+    targetLabel: "Destino",
+    newOrganizationNameLabel: "Nome da nova organização",
+    collisionStrategyLabel: "Estratégia de conflito",
+    selectFileLabel: "Selecionar arquivo {{name}}",
+    selectFolderLabel: "Selecionar pasta {{name}}",
+    renameInputLabel: "Novo nome para {{name}}",
+    adapterSelectLabel: "Adaptador para {{agent}}",
     localZip: "Arquivo ZIP local",
     zipHelp: "Envie um arquivo .zip exportado diretamente do Paperclip.",
     zipPackageSummary: "organization-backup.zip com 2 arquivos",
@@ -1160,6 +1176,18 @@ describe("CompanyImport", () => {
     expect(container.textContent).toContain(localeCase.sourceTitle);
     expect(container.textContent).toContain(localeCase.githubRepo);
     expect(container.textContent).toContain(localeCase.githubHint);
+    const sourceFields = [
+      { label: localeCase.githubUrlLabel, id: "company-import-github-url", tagName: "INPUT" },
+      { label: localeCase.targetLabel, id: "company-import-target", tagName: "SELECT" },
+      { label: localeCase.newOrganizationNameLabel, id: "company-import-new-organization-name", tagName: "INPUT" },
+      { label: localeCase.collisionStrategyLabel, id: "company-import-collision-strategy", tagName: "SELECT" },
+    ];
+    for (const field of sourceFields) {
+      const label = Array.from(container.querySelectorAll<HTMLLabelElement>("label"))
+        .find((candidate) => candidate.textContent?.trim() === field.label);
+      expect(label?.htmlFor).toBe(field.id);
+      expect(container.querySelector(`#${field.id}`)?.tagName).toBe(field.tagName);
+    }
     expect(findButton((text) => text === i18n.t("companyImport.source.previewButton"))?.disabled).toBe(true);
     await clickButton((text) => text === localeCase.localZip);
     expect(container.textContent).toContain(localeCase.zipHelp);
@@ -1212,10 +1240,18 @@ describe("CompanyImport", () => {
       expect(container.textContent).toContain("Upstream note: source metadata v7 was retained.");
       expect(container.textContent).toContain(localeCase.conflictTitle);
       expect(container.textContent).toContain(localeCase.agentKind);
+      const checkboxLabels = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'))
+        .map((input) => input.getAttribute("aria-label"));
+      expect(checkboxLabels).toContain(i18n.t("companyImport.preview.selectFile", { name: ".paperclip.yaml" }));
+      expect(checkboxLabels).toContain(i18n.t("companyImport.preview.selectFolder", { name: "agents" }));
 
+      const renamedAgentInputLabel = i18n.t("companyImport.conflicts.renameInputLabel", { name: "Coder" });
       const renamedAgentInput = Array.from(container.querySelectorAll<HTMLInputElement>("input:not([type='file'])"))
-        .find((input) => input.value.includes("Coder"));
+        .find((input) => input.getAttribute("aria-label") === renamedAgentInputLabel);
       expect(renamedAgentInput).toBeTruthy();
+      const adapterSelectLabel = i18n.t("companyImport.adapters.selectForAgent", { agent: "Coder" });
+      expect(Array.from(container.querySelectorAll<HTMLSelectElement>("select"))
+        .some((select) => select.getAttribute("aria-label") === adapterSelectLabel)).toBe(true);
       await setTextInputValue(renamedAgentInput!, "Coder North");
       await clickButton((text) => text === localeCase.confirmRename);
       expect(container.textContent).toContain(localeCase.confirmed);
