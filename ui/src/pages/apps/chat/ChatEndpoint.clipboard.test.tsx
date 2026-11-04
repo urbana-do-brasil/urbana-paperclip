@@ -10,7 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChatSetupSidebarProvider } from "@/context/ChatSetupSidebarContext";
 import { ChatSetupSidebar } from "@/components/chat/ChatSetupNavigation";
 import { i18n } from "@/i18n";
-import { ChatEndpointSetup } from "./ChatEndpointSetup";
+import { ChatEndpointSetup, TryStep } from "./ChatEndpointSetup";
 import { ChatEndpointDetail } from "./ChatEndpointDetail";
 
 const mocks = vi.hoisted(() => ({
@@ -1226,6 +1226,99 @@ describe("chat setup and identity-link clipboard actions", () => {
       expect(copied).toContain("@Maya you there?");
     },
   );
+
+  it.each(["en", "pt-BR"])("localizes provider TryStep instructions and preserves mentions, commands, phone numbers, URLs, and callbacks in %s", async (locale) => {
+    const variants = [
+      {
+        provider: "discord" as const,
+        providerName: "Discord",
+        botUsername: "maya_discord",
+        preserved: locale === "en" ? ["Open a text channel where the bot is installed.", "@maya_discord"] : ["Abra um canal de texto em que o bot esteja instalado.", "@maya_discord"],
+        identityTitle: locale === "en" ? "Your first message identifies your account" : "Sua primeira mensagem identifica sua conta",
+      },
+      {
+        provider: "telegram" as const,
+        providerName: "Telegram",
+        botUsername: "maya_telegram",
+        preserved: locale === "en" ? ["Tap Start.", "/new", "Help me test this"] : ["Toque em Start.", "/new", "Help me test this"],
+        identityTitle: locale === "en" ? "Identity readiness could not be checked" : "Não foi possível verificar a identidade",
+        principalsError: true,
+      },
+      {
+        provider: "github" as const,
+        providerName: "GitHub",
+        botUsername: "paperclip[bot]",
+        preserved: locale === "en" ? ["Open an installed issue or pull request.", "@paperclip"] : ["Abra uma issue ou pull request em que o app esteja instalado.", "@paperclip"],
+        identityTitle: locale === "en" ? "Your first message identifies your account" : "Sua primeira mensagem identifica sua conta",
+      },
+      {
+        provider: "microsoft-teams" as const,
+        providerName: "Microsoft Teams",
+        botUsername: "maya_teams",
+        preserved: locale === "en" ? ["Open an installed channel and start a new post.", "@maya_teams"] : ["Abra um canal em que o app esteja instalado e crie uma publicação.", "@maya_teams"],
+        identityTitle: locale === "en" ? "Your first message identifies your account" : "Sua primeira mensagem identifica sua conta",
+      },
+      {
+        provider: "imessage-photon" as const,
+        providerName: "iMessage Photon",
+        botUsername: "+15551234567",
+        preserved: locale === "en" ? ["Open Apple Messages and send a fresh message to +15551234567.", "Link the discovered sender to a Paperclip person in Access"] : ["Abra o Apple Messages e envie uma nova mensagem para +15551234567.", "Vincule o remetente descoberto a uma pessoa do Paperclip em Acesso"],
+        identityTitle: locale === "en" ? "Link your Messages identity" : "Vincular sua identidade do Messages",
+      },
+    ];
+    await i18n.changeLanguage(locale);
+
+    for (const variant of variants) {
+      mocks.listPrincipals.mockResolvedValue([]);
+      if ("principalsError" in variant && variant.principalsError) {
+        mocks.listPrincipals.mockRejectedValueOnce(new Error("identity check unavailable"));
+      }
+      const onOpenAccess = vi.fn();
+      const onTest = vi.fn();
+      const providerUrl = `https://example.test/${variant.provider}?preserve=1`;
+      flushSync(() => root.render(
+        <QueryClientProvider client={client}>
+          <TryStep
+            endpointId="endpoint-a"
+            provider={variant.provider}
+            agentName="Maya"
+            botUsername={variant.botUsername}
+            photonAllocation="dedicated"
+            providerUrl={providerUrl}
+            guestIsolationState="enabled"
+            pending={false}
+            onOpenAccess={onOpenAccess}
+            onTest={onTest}
+            onSaveExit={vi.fn()}
+          />
+        </QueryClientProvider>,
+      ));
+      await settle();
+
+      expect(container.querySelector("h1")?.textContent).toBe(locale === "en"
+        ? `Try Maya in ${variant.providerName}`
+        : `Testar Maya no ${variant.providerName}`);
+      expect(container.textContent).toContain(variant.identityTitle);
+      for (const phrase of variant.preserved) expect(container.textContent).toContain(phrase);
+      expect(container.querySelector(`a[href="${providerUrl}"]`)).not.toBeNull();
+      expect(container.textContent).toContain(locale === "en" ? "Complete this real conversation to finish setup." : "Conclua esta conversa real para terminar a configuração.");
+
+      await click(locale === "en" ? "Review identity access" : "Revisar acesso da identidade");
+      expect(onOpenAccess).toHaveBeenCalledTimes(1);
+      if (variant.provider === "imessage-photon") {
+        const copyLabel = locale === "en" ? "Copy +15551234567" : "Copiar +15551234567";
+        await click(copyLabel);
+        expect(copied).toContain("+15551234567");
+      }
+      await click(locale === "en" ? "I've sent the test message" : "Enviei a mensagem de teste");
+      expect(onTest).toHaveBeenCalledTimes(1);
+
+      flushSync(() => root.unmount());
+      client.clear();
+      root = createRoot(container);
+      client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    }
+  });
 
   it("resumes event configuration on the saved app and clears the retry token", async () => {
     const endpoint = await render("slack");

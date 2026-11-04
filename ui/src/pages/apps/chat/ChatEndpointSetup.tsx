@@ -1690,7 +1690,7 @@ function ProviderConnectStep({
   );
 }
 
-function TryStep({
+export function TryStep({
   endpointId,
   provider,
   agentName,
@@ -1735,20 +1735,20 @@ function TryStep({
     (identity) => identity.status !== "linked",
   );
   const freshConversationInstruction =
-    provider === "imessage-photon" ? "send a fresh message to your Photon number" : provider === "telegram"
-      ? "start a fresh conversation with /new and send the test message again"
+    provider === "imessage-photon" ? t("apps.chatEndpointSetup.try.freshMessage.imessage") : provider === "telegram"
+      ? t("apps.chatEndpointSetup.try.freshMessage.telegram")
       : provider === "github"
-        ? "start a new issue or pull request conversation and mention the agent again"
+        ? t("apps.chatEndpointSetup.try.freshMessage.github")
         : provider === "microsoft-teams"
-          ? "start a new channel post and mention the agent again"
-          : "send a new root mention to the agent";
+          ? t("apps.chatEndpointSetup.try.freshMessage.microsoftTeams")
+          : t("apps.chatEndpointSetup.try.freshMessage.default");
   const identityGuidance = provider === "slack" ? null : provider === "imessage-photon" && principalsQuery.isSuccess && (identities.length === 0 || unlinkedIdentities.length > 0)
-    ? { tone: "info" as const, title: "Link your Messages identity", body: "Send one message to discover your phone number or Apple account address, then link that exact identity in Access. Send a fresh request after linking; earlier messages do not start work." }
+    ? { tone: "info" as const, title: t("apps.chatEndpointSetup.try.identity.linkMessagesTitle"), body: t("apps.chatEndpointSetup.try.identity.linkMessagesBody") }
     : principalsQuery.isError
     ? {
         tone: "warning" as const,
-        title: "Identity readiness could not be checked",
-        body: `Review Access before expecting an agent reply. After linking the account you are testing, ${freshConversationInstruction}.`,
+        title: t("apps.chatEndpointSetup.try.identity.checkFailedTitle"),
+        body: t("apps.chatEndpointSetup.try.identity.checkFailedBody", { freshConversationInstruction }),
       }
     : !principalsQuery.isSuccess || guestIsolationState === "loading"
       ? null
@@ -1756,31 +1756,33 @@ function TryStep({
         ? guestIsolationState === "disabled"
           ? {
               tone: "warning" as const,
-              title: "Link the account you’re testing",
+              title: t("apps.chatEndpointSetup.try.identity.linkTestedAccountTitle"),
               body:
                 provider === "telegram"
-                  ? "Tap Start in Telegram to discover your account; the welcome does not start an agent run. Link the account privately in Access, then return and send the test message."
-                  : `Your first ${providerNames[provider]} message discovers the external account, but isolated guest work is off, so it cannot safely start ${agentName}. Send it once, link that account privately in Access, then ${freshConversationInstruction}.`,
+                  ? t("apps.chatEndpointSetup.try.identity.telegramStartBeforeTest")
+                  : t("apps.chatEndpointSetup.try.identity.firstMessageGuestDisabled", {
+                    provider: providerNames[provider], agent: agentName, freshConversationInstruction,
+                  }),
             }
           : {
               tone: "info" as const,
-              title: "Your first message identifies your account",
+              title: t("apps.chatEndpointSetup.try.identity.firstMessageTitle"),
               body:
                 provider === "telegram"
-                  ? "Tap Start in Telegram to discover your account. Until linked, it is a restricted guest and still needs a sandbox-backed isolated run; test that path intentionally, or link it in Access and then send the test message."
-                  : `Until linked, the account is a restricted guest and still needs a sandbox-backed isolated run. Test that guest path intentionally, or link the account in Access and then ${freshConversationInstruction}.`,
+                  ? t("apps.chatEndpointSetup.try.identity.telegramFirstMessageGuest")
+                  : t("apps.chatEndpointSetup.try.identity.firstMessageGuestEnabled", { freshConversationInstruction }),
             }
         : unlinkedIdentities.length > 0
           ? guestIsolationState === "disabled"
             ? {
                 tone: "warning" as const,
-                title: "Link the account you’re testing",
-                body: `An observed external account is unlinked, and isolated guest work is off, so it cannot safely start ${agentName}. Link the account in Access, then ${freshConversationInstruction}; Paperclip does not replay the refused request.`,
+                title: t("apps.chatEndpointSetup.try.identity.linkTestedAccountTitle"),
+                body: t("apps.chatEndpointSetup.try.identity.unlinkedGuestDisabled", { agent: agentName, freshConversationInstruction }),
               }
             : {
                 tone: "info" as const,
-                title: "Unlinked identity detected",
-                body: `An unlinked account is a restricted guest and still needs a sandbox-backed isolated run. Test guest access intentionally, or link the account in Access and then ${freshConversationInstruction}.`,
+                title: t("apps.chatEndpointSetup.try.identity.unlinkedTitle"),
+                body: t("apps.chatEndpointSetup.try.identity.unlinkedGuestEnabled", { freshConversationInstruction }),
               }
           : null;
   const providerBotUsername = botUsername?.replace(/^@/, "");
@@ -1794,38 +1796,44 @@ function TryStep({
   const slackTestMessage = slackAccount?.status === "linked" ? "you there?" : `${botMention.startsWith("@") ? botMention : `@${botMention}`} you there?`;
   const instructions =
     provider === "imessage-photon" ? [
-      photonAllocation === "shared" ? "In your Photon project, enroll your sender in Users and find its assigned number in Get started. Send a fresh message to that number from Apple Messages." : `Open Apple Messages and send a fresh message to ${botUsername ?? botLabel ?? "the dedicated number"}.`,
-      "Link the discovered sender to a Paperclip person in Access, then send a fresh request.",
-      "Wait for the agent’s actual reply. Setup completes after that reply is delivered.",
-      ...(photonAllocation === "shared" ? ["This Pro-compatible channel supports DMs only. Group messages cannot start work."] : ["For a group: add the number in Messages, send a message, enable the discovered group in Settings, then send a fresh request."]),
+      photonAllocation === "shared"
+        ? t("apps.chatEndpointSetup.try.instructions.imessage.shared")
+        : t("apps.chatEndpointSetup.try.instructions.imessage.dedicated", {
+          number: botUsername ?? botLabel ?? t("apps.chatEndpointSetup.try.instructions.imessage.dedicatedNumber"),
+        }),
+      t("apps.chatEndpointSetup.try.instructions.imessage.linkIdentity"),
+      t("apps.chatEndpointSetup.try.instructions.imessage.waitForReply"),
+      ...(photonAllocation === "shared"
+        ? [t("apps.chatEndpointSetup.try.instructions.imessage.sharedLimit")]
+        : [t("apps.chatEndpointSetup.try.instructions.imessage.groupSetup")]),
     ] : provider === "discord"
       ? [
-          "Open a text channel where the bot is installed.",
-          `Mention ${botMention} in a new root message.`,
-          `Reply once inside ${agentName}'s new Discord thread.`,
+          t("apps.chatEndpointSetup.try.instructions.discord.openChannel"),
+          t("apps.chatEndpointSetup.try.instructions.discord.mention", { botMention }),
+          t("apps.chatEndpointSetup.try.instructions.discord.reply", { agent: agentName }),
         ]
       : provider === "telegram"
         ? [
-            "Open the bot's private chat.",
-            "Tap Start.",
-            "Send “Help me test this”.",
+            t("apps.chatEndpointSetup.try.instructions.telegram.openChat"),
+            t("apps.chatEndpointSetup.try.instructions.telegram.start"),
+            t("apps.chatEndpointSetup.try.instructions.telegram.testMessage"),
           ]
         : provider === "github"
           ? [
-              "Open an installed issue or pull request.",
-              `Mention ${botMention} in a comment.`,
-              "Add another comment to continue the same task.",
+              t("apps.chatEndpointSetup.try.instructions.github.openConversation"),
+              t("apps.chatEndpointSetup.try.instructions.github.mention", { botMention }),
+              t("apps.chatEndpointSetup.try.instructions.github.continueTask"),
             ]
           : provider === "microsoft-teams"
             ? [
-                "Open an installed channel and start a new post.",
-                `Mention ${botMention} in the post.`,
-                "Reply once beneath the post.",
+                t("apps.chatEndpointSetup.try.instructions.microsoftTeams.openChannel"),
+                t("apps.chatEndpointSetup.try.instructions.microsoftTeams.mention", { botMention }),
+                t("apps.chatEndpointSetup.try.instructions.microsoftTeams.reply"),
               ]
             : [
-                `Open a channel and invite ${botMention} if needed.`,
-                `Mention ${botMention} in a new channel message.`,
-                `Reply once in ${agentName}'s thread.`,
+                t("apps.chatEndpointSetup.try.instructions.default.openChannel", { botMention }),
+                t("apps.chatEndpointSetup.try.instructions.default.mention", { botMention }),
+                t("apps.chatEndpointSetup.try.instructions.default.reply", { agent: agentName }),
               ];
   return (
     <div className="space-y-5">
@@ -1833,16 +1841,16 @@ function TryStep({
         <h1 className="text-xl font-bold">
           {provider === "slack"
             ? t("apps.chatEndpointSetup.slack.manual.test.heading", { agent: agentName })
-            : <>Try {agentName} in {providerNames[provider]}</>}
+            : t("apps.chatEndpointSetup.try.heading", { agent: agentName, provider: providerNames[provider] })}
         </h1>
         {provider !== "slack" && <p className="mt-1 text-sm text-muted-foreground">
-          Complete this real conversation to finish setup.
+          {t("apps.chatEndpointSetup.try.description")}
         </p>}
       </div>
       {provider !== "slack" && (!principalsQuery.isSuccess || guestIsolationState === "loading") &&
       !principalsQuery.isError ? (
         <p role="status" className="text-sm text-muted-foreground">
-          Checking identity and guest readiness…
+          {t("apps.chatEndpointSetup.try.checkingIdentity")}
         </p>
       ) : null}
       {identityGuidance ? (
@@ -1862,11 +1870,11 @@ function TryStep({
             variant="outline"
             onClick={onOpenAccess}
           >
-            Review identity access
+            {t("apps.chatEndpointSetup.try.reviewIdentityAccess")}
           </Button>
         </div>
       ) : null}
-      {provider === "imessage-photon" && botUsername && <div className="space-y-2"><Button variant="outline" onClick={() => { void copyTextToClipboard(botUsername).then(() => { setNumberCopied(true); setCopyError(null); }, () => setCopyError("Could not copy the number. Select it in the instructions below.")); }}>{numberCopied ? "Number copied" : `Copy ${botUsername}`}</Button>{copyError && <p role="alert" className="text-sm text-destructive">{copyError}</p>}</div>}
+      {provider === "imessage-photon" && botUsername && <div className="space-y-2"><Button variant="outline" onClick={() => { void copyTextToClipboard(botUsername).then(() => { setNumberCopied(true); setCopyError(null); }, () => setCopyError(t("apps.chatEndpointSetup.try.numberCopyFailed"))); }}>{numberCopied ? t("apps.chatEndpointSetup.try.numberCopied") : t("apps.chatEndpointSetup.try.copyNumber", { number: botUsername })}</Button>{copyError && <p role="alert" className="text-sm text-destructive">{copyError}</p>}</div>}
       {provider === "slack" ? (
         <>
           <ol className="list-decimal space-y-4 pl-5 text-sm">
@@ -1899,13 +1907,13 @@ function TryStep({
         {providerUrl && (
           <Button asChild variant="outline">
             <a href={providerUrl} target="_blank" rel="noopener noreferrer">
-              Open {providerNames[provider]} <ExternalLink />
+              {t("apps.chatEndpointSetup.try.openProvider", { provider: providerNames[provider] })} <ExternalLink />
             </a>
           </Button>
         )}
         <Button disabled={pending} onClick={onTest}>
           {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-          I've sent the test message
+          {t("apps.chatEndpointSetup.try.testMessageSent")}
         </Button>
       </div>
       </>}

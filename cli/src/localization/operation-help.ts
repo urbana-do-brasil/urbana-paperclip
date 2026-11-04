@@ -37,6 +37,31 @@ const companyOptions = {
 const skillReferenceArgument = { skillRef: { en: "Company skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill da organização" } };
 const skillIdArgument = { skillId: { en: "Skill ID", "pt-BR": "ID da skill" } };
 const catalogReferenceArgument = { catalogRef: { en: "Catalog skill ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da skill do catálogo" } };
+const issueIdArgument = { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } };
+const rootIssueIdArgument = { issueId: { en: "Root issue ID", "pt-BR": "ID da tarefa raiz" } };
+const issueIdOrIdentifierArgument = { issueId: { en: "Issue ID or identifier", "pt-BR": "ID ou identificador da tarefa" } };
+const issueCommentArguments = {
+  issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" },
+  commentId: { en: "Comment ID", "pt-BR": "ID do comentário" },
+};
+const issueApprovalArguments = {
+  issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" },
+  approvalId: { en: "Approval ID", "pt-BR": "ID da aprovação" },
+};
+const workProductIdArgument = { workProductId: { en: "Work product ID", "pt-BR": "ID do entregável" } };
+const attachmentIdArgument = { attachmentId: { en: "Attachment ID", "pt-BR": "ID do anexo" } };
+const issueDocumentArguments = {
+  issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" },
+  key: { en: "Document key", "pt-BR": "Chave do documento" },
+};
+const issueInteractionArguments = {
+  issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" },
+  interactionId: { en: "Interaction ID", "pt-BR": "ID da interação" },
+};
+const treeHoldArguments = {
+  issueId: { en: "Root issue ID", "pt-BR": "ID da tarefa raiz" },
+  holdId: { en: "Hold ID", "pt-BR": "ID da retenção" },
+};
 const worktreeHomeOption = {
   en: "Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ~/.paperclip-worktrees)",
   "pt-BR": "Diretório raiz das instâncias de worktree (variável PAPERCLIP_WORKTREES_DIR, padrão: ~/.paperclip-worktrees)",
@@ -1126,7 +1151,11 @@ const operationHelp: Record<string, CommandHelp> = {
       "--yes": { en: "Confirm deletion", "pt-BR": "Confirmar exclusão" },
     },
   },
-  "issue heartbeat-context": descriptionOnly("Get heartbeat context for an issue", "Consultar o contexto de heartbeat de uma tarefa"),
+  "issue heartbeat-context": {
+    ...descriptionOnly("Get heartbeat context for an issue", "Consultar o contexto de heartbeat de uma tarefa"),
+    arguments: issueIdArgument,
+    options: commonClientOptions,
+  },
   "issue comment": {
     description: { en: "Add comment to issue", "pt-BR": "Adicionar um comentário à tarefa" },
     arguments: { issueId: { en: "Issue ID", "pt-BR": "ID da tarefa" } },
@@ -1148,39 +1177,111 @@ const operationHelp: Record<string, CommandHelp> = {
       "--limit": { en: "Maximum comments to return", "pt-BR": "Número máximo de comentários a retornar" },
     },
   },
-  "issue comment:get": descriptionOnly("Get one issue comment", "Consultar um comentário da tarefa"),
-  "issue comment:delete": descriptionOnly("Delete or cancel one issue comment", "Excluir ou cancelar um comentário da tarefa"),
-  "issue approvals": descriptionOnly("List approvals linked to an issue", "Listar aprovações vinculadas a uma tarefa"),
-  "issue approval:link": descriptionOnly("Link an approval to an issue", "Vincular uma aprovação a uma tarefa"),
-  "issue approval:unlink": descriptionOnly("Unlink an approval from an issue", "Desvincular uma aprovação de uma tarefa"),
-  "issue read": descriptionOnly("Mark an issue as read", "Marcar uma tarefa como lida"),
-  "issue unread": descriptionOnly("Mark an issue as unread", "Marcar uma tarefa como não lida"),
-  "issue archive": descriptionOnly("Archive an issue from the inbox", "Arquivar uma tarefa da caixa de entrada"),
-  "issue unarchive": descriptionOnly("Unarchive an issue from the inbox", "Desarquivar uma tarefa da caixa de entrada"),
-  "issue recovery-actions": descriptionOnly("List active recovery actions for an issue", "Listar ações de recuperação ativas de uma tarefa"),
+  "issue comment:get": {
+    ...descriptionOnly("Get one issue comment", "Consultar um comentário da tarefa"),
+    arguments: issueCommentArguments,
+    options: commonClientOptions,
+  },
+  "issue comment:delete": {
+    ...descriptionOnly("Delete or cancel one issue comment", "Excluir ou cancelar um comentário da tarefa"),
+    arguments: issueCommentArguments,
+    options: commonClientOptions,
+  },
+  "issue approvals": {
+    ...descriptionOnly("List approvals linked to an issue", "Listar aprovações vinculadas a uma tarefa"),
+    arguments: issueIdArgument,
+    options: commonClientOptions,
+  },
+  "issue approval:link": {
+    ...descriptionOnly("Link an approval to an issue", "Vincular uma aprovação a uma tarefa"),
+    arguments: issueApprovalArguments,
+    options: commonClientOptions,
+  },
+  "issue approval:unlink": {
+    ...descriptionOnly("Unlink an approval from an issue", "Desvincular uma aprovação de uma tarefa"),
+    arguments: issueApprovalArguments,
+    options: commonClientOptions,
+  },
+  "issue read": { ...descriptionOnly("Mark an issue as read", "Marcar uma tarefa como lida"), arguments: issueIdArgument, options: commonClientOptions },
+  "issue unread": { ...descriptionOnly("Mark an issue as unread", "Marcar uma tarefa como não lida"), arguments: issueIdArgument, options: commonClientOptions },
+  "issue archive": { ...descriptionOnly("Archive an issue from the inbox", "Arquivar uma tarefa da caixa de entrada"), arguments: issueIdArgument, options: commonClientOptions },
+  "issue unarchive": { ...descriptionOnly("Unarchive an issue from the inbox", "Desarquivar uma tarefa da caixa de entrada"), arguments: issueIdArgument, options: commonClientOptions },
+  "issue recovery-actions": {
+    ...descriptionOnly("List active recovery actions for an issue", "Listar ações de recuperação ativas de uma tarefa"),
+    arguments: issueIdArgument,
+    options: commonClientOptions,
+  },
   "issue recovery:resolve": descriptionOnly("Resolve an issue recovery action", "Resolver uma ação de recuperação de tarefa"),
   "issue child:create": descriptionOnly("Create a child issue from a JSON payload", "Criar uma tarefa filha a partir de um payload JSON"),
   "issue force-release": descriptionOnly("Force-release an issue from an agent checkout", "Liberar à força uma tarefa de um checkout de agente"),
-  "issue work-products": descriptionOnly("List issue work products", "Listar entregáveis da tarefa"),
+  "issue work-products": {
+    ...descriptionOnly("List issue work products", "Listar entregáveis da tarefa"),
+    arguments: issueIdArgument,
+    options: commonClientOptions,
+  },
   "issue work-product:create": descriptionOnly("Create an issue work product from JSON", "Criar um entregável da tarefa a partir de JSON"),
   "issue work-product:update": descriptionOnly("Update a work product from JSON", "Atualizar um entregável a partir de JSON"),
-  "issue work-product:delete": descriptionOnly("Delete a work product", "Excluir um entregável"),
-  "issue documents": descriptionOnly("List issue documents", "Listar documentos da tarefa"),
-  "issue document:get": descriptionOnly("Get an issue document", "Consultar um documento da tarefa"),
+  "issue work-product:delete": {
+    ...descriptionOnly("Delete a work product", "Excluir um entregável"),
+    arguments: workProductIdArgument,
+    options: commonClientOptions,
+  },
+  "issue documents": {
+    ...descriptionOnly("List issue documents", "Listar documentos da tarefa"),
+    arguments: issueIdArgument,
+    options: {
+      ...commonClientOptions,
+      "--include-system": { en: "Include system documents", "pt-BR": "Incluir documentos do sistema" },
+    },
+  },
+  "issue document:get": {
+    ...descriptionOnly("Get an issue document", "Consultar um documento da tarefa"),
+    arguments: issueDocumentArguments,
+    options: commonClientOptions,
+  },
   "issue document:put": descriptionOnly("Create or update an issue document", "Criar ou atualizar um documento da tarefa"),
-  "issue interactions": descriptionOnly("List issue thread interactions", "Listar interações do thread da tarefa"),
+  "issue interactions": {
+    ...descriptionOnly("List issue thread interactions", "Listar interações do thread da tarefa"),
+    arguments: issueIdArgument,
+    options: commonClientOptions,
+  },
   "issue interaction:create": descriptionOnly("Create an issue thread interaction from JSON", "Criar uma interação do thread da tarefa a partir de JSON"),
   "issue interaction:accept": descriptionOnly("Accept an issue thread interaction", "Aceitar uma interação do thread da tarefa"),
   "issue interaction:reject": descriptionOnly("Reject an issue thread interaction", "Rejeitar uma interação do thread da tarefa"),
   "issue interaction:cancel": descriptionOnly("Cancel an issue thread interaction", "Cancelar uma interação do thread da tarefa"),
   "issue interaction:respond": descriptionOnly("Respond to an issue question interaction", "Responder a uma interação de pergunta da tarefa"),
-  "issue tree-state": descriptionOnly("Get issue tree control state", "Consultar o estado de controle da árvore da tarefa"),
+  "issue tree-state": {
+    ...descriptionOnly("Get issue tree control state", "Consultar o estado de controle da árvore da tarefa"),
+    arguments: rootIssueIdArgument,
+    options: commonClientOptions,
+  },
   "issue tree-preview": descriptionOnly("Preview issue tree control changes", "Pré-visualizar alterações de controle da árvore da tarefa"),
-  "issue tree-holds": descriptionOnly("List issue tree holds", "Listar retenções da árvore da tarefa"),
+  "issue tree-holds": {
+    ...descriptionOnly("List issue tree holds", "Listar retenções da árvore da tarefa"),
+    arguments: rootIssueIdArgument,
+    options: {
+      ...commonClientOptions,
+      "--status": { en: "active or released", "pt-BR": "active ou released" },
+      "--mode": { en: "pause, resume, cancel, or restore", "pt-BR": "pause, resume, cancel ou restore" },
+      "--include-members": { en: "Include hold members", "pt-BR": "Incluir os membros da retenção" },
+    },
+  },
   "issue tree-hold:create": descriptionOnly("Create an issue tree hold from JSON", "Criar uma retenção da árvore da tarefa a partir de JSON"),
-  "issue tree-hold:get": descriptionOnly("Get an issue tree hold", "Consultar uma retenção da árvore da tarefa"),
-  "issue tree-hold:release": descriptionOnly("Release an issue tree hold", "Liberar uma retenção da árvore da tarefa"),
-  "issue attachments": descriptionOnly("List issue attachments", "Listar anexos da tarefa"),
+  "issue tree-hold:get": {
+    ...descriptionOnly("Get an issue tree hold", "Consultar uma retenção da árvore da tarefa"),
+    arguments: treeHoldArguments,
+    options: commonClientOptions,
+  },
+  "issue tree-hold:release": {
+    ...descriptionOnly("Release an issue tree hold", "Liberar uma retenção da árvore da tarefa"),
+    arguments: treeHoldArguments,
+    options: { ...commonClientOptions, "--payload-json": { en: "ReleaseIssueTreeHold JSON payload", "pt-BR": "Payload JSON de ReleaseIssueTreeHold" } },
+  },
+  "issue attachments": {
+    ...descriptionOnly("List issue attachments", "Listar anexos da tarefa"),
+    arguments: issueIdArgument,
+    options: commonClientOptions,
+  },
   "issue attachment:upload": descriptionOnly("Upload an issue attachment", "Enviar um anexo da tarefa"),
   "issue attachment:download": descriptionOnly("Download an attachment", "Baixar um anexo"),
   "issue attachment:delete": descriptionOnly("Delete an attachment", "Excluir um anexo"),
@@ -1194,10 +1295,35 @@ const operationHelp: Record<string, CommandHelp> = {
   "issue document:unlock": descriptionOnly("Unlock an issue document", "Desbloquear um documento da tarefa"),
   "issue document:revisions": descriptionOnly("List issue document revisions", "Listar revisões do documento da tarefa"),
   "issue document:restore": descriptionOnly("Restore an issue document revision", "Restaurar uma revisão do documento da tarefa"),
-  "issue feedback:list": descriptionOnly("List feedback traces for an issue", "Listar traces de feedback de uma tarefa"),
-  "issue runs": descriptionOnly("List heartbeat runs associated with an issue", "Listar execuções de heartbeat associadas a uma tarefa"),
-  "issue live-runs": descriptionOnly("List queued and running heartbeat runs associated with an issue", "Listar execuções de heartbeat na fila ou em andamento associadas a uma tarefa"),
-  "issue active-run": descriptionOnly("Show the active heartbeat run associated with an issue", "Exibir a execução de heartbeat ativa associada a uma tarefa"),
+  "issue feedback:list": {
+    ...descriptionOnly("List feedback traces for an issue", "Listar traces de feedback de uma tarefa"),
+    arguments: issueIdArgument,
+    options: {
+      ...commonClientOptions,
+      "--target-type": { en: "Filter by target type", "pt-BR": "Filtrar pelo tipo de destino" },
+      "--vote": { en: "Filter by vote value", "pt-BR": "Filtrar pelo valor do voto" },
+      "--status": { en: "Filter by trace status", "pt-BR": "Filtrar pelo status do trace" },
+      "--from": { en: "Only include traces created at or after this timestamp", "pt-BR": "Incluir somente traces criados neste instante ou depois" },
+      "--to": { en: "Only include traces created at or before this timestamp", "pt-BR": "Incluir somente traces criados neste instante ou antes" },
+      "--shared-only": { en: "Only include traces eligible for sharing/export", "pt-BR": "Incluir somente traces elegíveis para compartilhamento ou exportação" },
+      "--include-payload": { en: "Include stored payload snapshots in the response", "pt-BR": "Incluir snapshots dos payloads armazenados na resposta" },
+    },
+  },
+  "issue runs": {
+    ...descriptionOnly("List heartbeat runs associated with an issue", "Listar execuções de heartbeat associadas a uma tarefa"),
+    arguments: issueIdOrIdentifierArgument,
+    options: commonClientOptions,
+  },
+  "issue live-runs": {
+    ...descriptionOnly("List queued and running heartbeat runs associated with an issue", "Listar execuções de heartbeat na fila ou em andamento associadas a uma tarefa"),
+    arguments: issueIdOrIdentifierArgument,
+    options: commonClientOptions,
+  },
+  "issue active-run": {
+    ...descriptionOnly("Show the active heartbeat run associated with an issue", "Exibir a execução de heartbeat ativa associada a uma tarefa"),
+    arguments: issueIdOrIdentifierArgument,
+    options: commonClientOptions,
+  },
   "issue feedback:export": descriptionOnly("Export feedback traces for an issue", "Exportar traces de feedback de uma tarefa"),
   "issue checkout": descriptionOnly("Checkout issue for an agent", "Fazer checkout da tarefa para um agente"),
   "issue release": descriptionOnly(

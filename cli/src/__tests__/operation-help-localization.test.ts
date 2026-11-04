@@ -68,39 +68,35 @@ afterEach(() => {
 });
 
 describe("registered CLI operation help", () => {
-  it("localizes root, issue, agent, and mcp help while preserving command and option signatures", () => {
-    const routes = [
-      { name: "root", command: [] },
-      { name: "issue", command: ["issue"] },
-      { name: "agent", command: ["agent"] },
-      { name: "mcp", command: ["mcp"] },
-    ];
+  it.each([
+    { name: "root", command: [] },
+    { name: "issue", command: ["issue"] },
+    { name: "agent", command: ["agent"] },
+    { name: "mcp", command: ["mcp"] },
+  ])("localizes $name help while preserving command and option signatures", ({ name, command }) => {
+    // spawnSync is intentionally called one locale at a time so CLI module
+    // startup and telemetry setup do not overlap across subprocesses.
+    const ptResult = runHelp("pt-BR", command);
+    expect(ptResult.status, `${name} PT-BR stderr: ${ptResult.stderr}`).toBe(0);
+    const enResult = runHelp("en", command);
+    expect(enResult.status, `${name} English stderr: ${enResult.stderr}`).toBe(0);
 
-    for (const route of routes) {
-      // spawnSync is intentionally called one route/locale at a time so CLI
-      // module startup and telemetry setup do not overlap across subprocesses.
-      const ptResult = runHelp("pt-BR", route.command);
-      expect(ptResult.status, `${route.name} PT-BR stderr: ${ptResult.stderr}`).toBe(0);
-      const enResult = runHelp("en", route.command);
-      expect(enResult.status, `${route.name} English stderr: ${enResult.stderr}`).toBe(0);
+    const pt = ptResult.stdout;
+    const en = enResult.stdout;
+    expect(helpSummary(pt), `${name} should show its PT-BR description`).not.toBe("");
+    expect(helpSummary(en), `${name} should show its English description`).not.toBe("");
+    expect(helpSummary(pt)).not.toBe(helpSummary(en));
 
-      const pt = ptResult.stdout;
-      const en = enResult.stdout;
-      expect(helpSummary(pt), `${route.name} should show its PT-BR description`).not.toBe("");
-      expect(helpSummary(en), `${route.name} should show its English description`).not.toBe("");
-      expect(helpSummary(pt)).not.toBe(helpSummary(en));
+    const ptCommands = helpRows(pt, "Comandos");
+    const enCommands = helpRows(en, "Commands");
+    expectLocalizedRows(name, ptCommands, enCommands);
+    expect(ptCommands.length).toBeGreaterThan(0);
 
-      const ptCommands = helpRows(pt, "Comandos");
-      const enCommands = helpRows(en, "Commands");
-      expectLocalizedRows(route.name, ptCommands, enCommands);
-      expect(ptCommands.length).toBeGreaterThan(0);
-
-      const ptOptions = helpRows(pt, "Opções");
-      const enOptions = helpRows(en, "Options");
-      expectLocalizedRows(`${route.name} options`, ptOptions, enOptions);
-      expect(ptOptions.length).toBeGreaterThan(0);
-    }
-  }, 90_000);
+    const ptOptions = helpRows(pt, "Opções");
+    const enOptions = helpRows(en, "Options");
+    expectLocalizedRows(`${name} options`, ptOptions, enOptions);
+    expect(ptOptions.length).toBeGreaterThan(0);
+  }, 15_000);
 
   it.each([
     { name: "issue list", command: ["issue", "list"] },
@@ -118,6 +114,31 @@ describe("registered CLI operation help", () => {
     { name: "agent delete", command: ["agent", "delete"] },
     { name: "mcp login", command: ["mcp", "login"] },
     { name: "mcp proxy", command: ["mcp", "proxy"] },
+    { name: "issue heartbeat-context", command: ["issue", "heartbeat-context"] },
+    { name: "issue comment:get", command: ["issue", "comment:get"] },
+    { name: "issue comment:delete", command: ["issue", "comment:delete"] },
+    { name: "issue approvals", command: ["issue", "approvals"] },
+    { name: "issue approval:link", command: ["issue", "approval:link"] },
+    { name: "issue approval:unlink", command: ["issue", "approval:unlink"] },
+    { name: "issue read", command: ["issue", "read"] },
+    { name: "issue unread", command: ["issue", "unread"] },
+    { name: "issue archive", command: ["issue", "archive"] },
+    { name: "issue unarchive", command: ["issue", "unarchive"] },
+    { name: "issue recovery-actions", command: ["issue", "recovery-actions"] },
+    { name: "issue work-products", command: ["issue", "work-products"] },
+    { name: "issue work-product:delete", command: ["issue", "work-product:delete"] },
+    { name: "issue documents", command: ["issue", "documents"] },
+    { name: "issue document:get", command: ["issue", "document:get"] },
+    { name: "issue interactions", command: ["issue", "interactions"] },
+    { name: "issue tree-state", command: ["issue", "tree-state"] },
+    { name: "issue tree-holds", command: ["issue", "tree-holds"] },
+    { name: "issue tree-hold:get", command: ["issue", "tree-hold:get"] },
+    { name: "issue tree-hold:release", command: ["issue", "tree-hold:release"] },
+    { name: "issue attachments", command: ["issue", "attachments"] },
+    { name: "issue feedback:list", command: ["issue", "feedback:list"] },
+    { name: "issue runs", command: ["issue", "runs"] },
+    { name: "issue live-runs", command: ["issue", "live-runs"] },
+    { name: "issue active-run", command: ["issue", "active-run"] },
   ])("localizes arguments and options for $name help", ({ name, command }) => {
     // Each leaf runs in one PT-BR process followed by one English process.
     const ptResult = runHelp("pt-BR", command);

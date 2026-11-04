@@ -9755,6 +9755,75 @@
           "setUpAllowlists": "Set up allowlists ↗"
         }
       },
+      "try": {
+        "heading": "Try {{agent}} in {{provider}}",
+        "description": "Complete this real conversation to finish setup.",
+        "checkingIdentity": "Checking identity and guest readiness…",
+        "reviewIdentityAccess": "Review identity access",
+        "copyNumber": "Copy {{number}}",
+        "numberCopied": "Number copied",
+        "numberCopyFailed": "Could not copy the number. Select it in the instructions below.",
+        "openProvider": "Open {{provider}}",
+        "testMessageSent": "I've sent the test message",
+        "freshMessage": {
+          "imessage": "send a fresh message to your Photon number",
+          "telegram": "start a fresh conversation with /new and send the test message again",
+          "github": "start a new issue or pull request conversation and mention the agent again",
+          "microsoftTeams": "start a new channel post and mention the agent again",
+          "default": "send a new root mention to the agent"
+        },
+        "identity": {
+          "linkMessagesTitle": "Link your Messages identity",
+          "linkMessagesBody": "Send one message to discover your phone number or Apple account address, then link that exact identity in Access. Send a fresh request after linking; earlier messages do not start work.",
+          "checkFailedTitle": "Identity readiness could not be checked",
+          "checkFailedBody": "Review Access before expecting an agent reply. After linking the account you are testing, {{freshConversationInstruction}}.",
+          "linkTestedAccountTitle": "Link the account you're testing",
+          "firstMessageTitle": "Your first message identifies your account",
+          "unlinkedTitle": "Unlinked identity detected",
+          "telegramStartBeforeTest": "Tap Start in Telegram to discover your account; the welcome does not start an agent run. Link the account privately in Access, then return and send the test message.",
+          "telegramFirstMessageGuest": "Tap Start in Telegram to discover your account. Until linked, it is a restricted guest and still needs a sandbox-backed isolated run; test that path intentionally, or link it in Access and then send the test message.",
+          "firstMessageGuestDisabled": "Your first {{provider}} message discovers the external account, but isolated guest work is off, so it cannot safely start {{agent}}. Send it once, link that account privately in Access, then {{freshConversationInstruction}}.",
+          "firstMessageGuestEnabled": "Until linked, the account is a restricted guest and still needs a sandbox-backed isolated run. Test that guest path intentionally, or link the account in Access and then {{freshConversationInstruction}}.",
+          "unlinkedGuestDisabled": "An observed external account is unlinked, and isolated guest work is off, so it cannot safely start {{agent}}. Link the account in Access, then {{freshConversationInstruction}}; Paperclip does not replay the refused request.",
+          "unlinkedGuestEnabled": "An unlinked account is a restricted guest and still needs a sandbox-backed isolated run. Test guest access intentionally, or link the account in Access and then {{freshConversationInstruction}}."
+        },
+        "instructions": {
+          "imessage": {
+            "dedicatedNumber": "the dedicated number",
+            "dedicated": "Open Apple Messages and send a fresh message to {{number}}.",
+            "shared": "In your Photon project, enroll your sender in Users and find its assigned number in Get started. Send a fresh message to that number from Apple Messages.",
+            "linkIdentity": "Link the discovered sender to a Paperclip person in Access, then send a fresh request.",
+            "waitForReply": "Wait for the agent's actual reply. Setup completes after that reply is delivered.",
+            "sharedLimit": "This Pro-compatible channel supports DMs only. Group messages cannot start work.",
+            "groupSetup": "For a group: add the number in Messages, send a message, enable the discovered group in Settings, then send a fresh request."
+          },
+          "discord": {
+            "openChannel": "Open a text channel where the bot is installed.",
+            "mention": "Mention {{botMention}} in a new root message.",
+            "reply": "Reply once inside {{agent}}'s new Discord thread."
+          },
+          "telegram": {
+            "openChat": "Open the bot's private chat.",
+            "start": "Tap Start.",
+            "testMessage": "Send “Help me test this”."
+          },
+          "github": {
+            "openConversation": "Open an installed issue or pull request.",
+            "mention": "Mention {{botMention}} in a comment.",
+            "continueTask": "Add another comment to continue the same task."
+          },
+          "microsoftTeams": {
+            "openChannel": "Open an installed channel and start a new post.",
+            "mention": "Mention {{botMention}} in the post.",
+            "reply": "Reply once beneath the post."
+          },
+          "default": {
+            "openChannel": "Open a channel and invite {{botMention}} if needed.",
+            "mention": "Mention {{botMention}} in a new channel message.",
+            "reply": "Reply once in {{agent}}'s thread."
+          }
+        }
+      },
       "telegram": {
         "heading": "Create {{agent}} in Telegram",
         "reconnectDescription": "Reconnect verifies this same BotFather bot and automatically refreshes its Paperclip webhook and command menu. It does not recreate the bot or change its chat memberships. Leave the token blank to reuse the saved credential.",

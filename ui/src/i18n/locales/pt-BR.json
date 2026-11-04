@@ -9988,6 +9988,75 @@
           "setUpAllowlists": "Configurar listas de permissões ↗"
         }
       },
+      "try": {
+        "heading": "Testar {{agent}} no {{provider}}",
+        "description": "Conclua esta conversa real para terminar a configuração.",
+        "checkingIdentity": "Verificando a identidade e a prontidão de acesso de convidado…",
+        "reviewIdentityAccess": "Revisar acesso da identidade",
+        "copyNumber": "Copiar {{number}}",
+        "numberCopied": "Número copiado",
+        "numberCopyFailed": "Não foi possível copiar o número. Selecione-o nas instruções abaixo.",
+        "openProvider": "Abrir {{provider}}",
+        "testMessageSent": "Enviei a mensagem de teste",
+        "freshMessage": {
+          "imessage": "envie uma nova mensagem para seu número do Photon",
+          "telegram": "inicie uma nova conversa com /new e envie a mensagem de teste novamente",
+          "github": "inicie uma nova conversa em uma issue ou pull request e mencione o agente novamente",
+          "microsoftTeams": "inicie uma nova publicação em um canal e mencione o agente novamente",
+          "default": "envie uma nova menção na mensagem raiz"
+        },
+        "identity": {
+          "linkMessagesTitle": "Vincular sua identidade do Messages",
+          "linkMessagesBody": "Envie uma mensagem para descobrir seu número de telefone ou endereço da conta Apple e vincule essa identidade específica em Acesso. Depois de vinculá-la, envie uma nova solicitação; mensagens anteriores não iniciam trabalho.",
+          "checkFailedTitle": "Não foi possível verificar a identidade",
+          "checkFailedBody": "Antes de esperar uma resposta do agente, revise Acesso. Depois de vincular a conta que está testando, {{freshConversationInstruction}}.",
+          "linkTestedAccountTitle": "Vincule a conta que está testando",
+          "firstMessageTitle": "Sua primeira mensagem identifica sua conta",
+          "unlinkedTitle": "Identidade não vinculada detectada",
+          "telegramStartBeforeTest": "Toque em Start no Telegram para descobrir sua conta; a mensagem de boas-vindas não inicia uma execução do agente. Vincule a conta em Acesso sem compartilhá-la e volte para enviar a mensagem de teste.",
+          "telegramFirstMessageGuest": "Toque em Start no Telegram para descobrir sua conta. Até ser vinculada, ela será uma conta convidada restrita e ainda precisará de uma execução isolada em sandbox; teste esse caminho intencionalmente ou vincule a conta em Acesso e envie a mensagem de teste.",
+          "firstMessageGuestDisabled": "Sua primeira mensagem no {{provider}} descobre a conta externa, mas o trabalho isolado de convidados está desativado; por isso, não pode iniciar {{agent}} com segurança. Envie a mensagem uma vez, vincule a conta em Acesso sem compartilhá-la e então {{freshConversationInstruction}}.",
+          "firstMessageGuestEnabled": "Até ser vinculada, a conta será uma convidada restrita e ainda precisará de uma execução isolada em sandbox. Teste esse acesso de convidado intencionalmente ou vincule a conta em Acesso e então {{freshConversationInstruction}}.",
+          "unlinkedGuestDisabled": "Uma conta externa observada não está vinculada e o trabalho isolado de convidados está desativado; por isso, ela não pode iniciar {{agent}} com segurança. Vincule a conta em Acesso e então {{freshConversationInstruction}}; o Paperclip não repete a solicitação recusada.",
+          "unlinkedGuestEnabled": "Uma conta não vinculada é uma convidada restrita e ainda precisa de uma execução isolada em sandbox. Teste esse acesso intencionalmente ou vincule a conta em Acesso e então {{freshConversationInstruction}}."
+        },
+        "instructions": {
+          "imessage": {
+            "dedicatedNumber": "o número dedicado",
+            "dedicated": "Abra o Apple Messages e envie uma nova mensagem para {{number}}.",
+            "shared": "No projeto Photon, cadastre seu remetente em Users e encontre o número atribuído em Get started. Envie uma nova mensagem para esse número pelo Apple Messages.",
+            "linkIdentity": "Vincule o remetente descoberto a uma pessoa do Paperclip em Acesso e envie uma nova solicitação.",
+            "waitForReply": "Aguarde a resposta real do agente. A configuração termina quando ela for entregue.",
+            "sharedLimit": "Este canal compatível com Pro aceita somente mensagens diretas. Mensagens em grupo não iniciam trabalho.",
+            "groupSetup": "Para um grupo: adicione o número no Messages, envie uma mensagem, ative o grupo descoberto em Settings e então envie uma nova solicitação."
+          },
+          "discord": {
+            "openChannel": "Abra um canal de texto em que o bot esteja instalado.",
+            "mention": "Mencione {{botMention}} em uma nova mensagem raiz.",
+            "reply": "Responda uma vez na nova thread do Discord de {{agent}}."
+          },
+          "telegram": {
+            "openChat": "Abra a conversa privada do bot.",
+            "start": "Toque em Start.",
+            "testMessage": "Envie “Help me test this”."
+          },
+          "github": {
+            "openConversation": "Abra uma issue ou pull request em que o app esteja instalado.",
+            "mention": "Mencione {{botMention}} em um comentário.",
+            "continueTask": "Adicione outro comentário para continuar a mesma tarefa."
+          },
+          "microsoftTeams": {
+            "openChannel": "Abra um canal em que o app esteja instalado e crie uma publicação.",
+            "mention": "Mencione {{botMention}} na publicação.",
+            "reply": "Responda uma vez abaixo da publicação."
+          },
+          "default": {
+            "openChannel": "Abra um canal e convide {{botMention}} se necessário.",
+            "mention": "Mencione {{botMention}} em uma nova mensagem no canal.",
+            "reply": "Responda uma vez na thread de {{agent}}."
+          }
+        }
+      },
       "telegram": {
         "heading": "Criar {{agent}} no Telegram",
         "reconnectDescription": "A reconexão verifica este mesmo bot do BotFather e atualiza automaticamente o webhook e o menu de comandos do Paperclip. Ela não recria o bot nem altera os chats dos quais ele participa. Deixe o token em branco para reutilizar a credencial salva.",

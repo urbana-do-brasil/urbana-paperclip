@@ -3804,3 +3804,10 @@ Checkpoint: **334/352 tarefas**; outros grupos operacionais continuam pendentes.
 - Setup AgentMail: 49/49 testes de UI/catálogos e 10/10 do detalhe; typecheck UI passou. Segredo, sessionStorage, payloads e URLs verificados. TryStep continua pendente.
 - Help folha de issue/agent/MCP: 16/16 testes, 15 comandos e quatro índices, subprocessos sequenciais; assinaturas preservadas. Outras opções/argumentos continuam pendentes. Checkpoint: **442/463 tarefas**, 21 caixas abertas incluindo agregadoras.
 - Integração AgentMail/help: 75/75 testes em quatro arquivos. Após conectar o rótulo técnico Webhook à chave existente, repetição AgentMail/locale: 49/49; gates de catálogos e fontes passaram. A inspeção das chaves de UI externa e o locale não alteram os valores de protocolo.
+
+### Importação real em fixture, TryStep e help issue
+
+- Preview e `importBundle` reais de pacote inline com PostgreSQL efêmero: 7 testes passaram, benchmark opt-in ignorado; tarefa, comentário e documento confirmados no banco. Sem HTTP ou GitHub externo; execução root direta foi ignorada e o teste foi repetido em namespace de usuário. Chromium PT-BR/en com endpoints interceptados passou 2/2, incluindo resultado e ativação.
+- TryStep de Discord/Telegram/GitHub/Teams/Photon em PT-BR/en: UI/locale 77/77 e typecheck UI passaram; dados externos preservados.
+- Help de 25 operações issue: 44/44 testes reais sequenciais PT-BR/en; demais opções e comandos ainda pendentes. Checkpoint: **445/466 tarefas**, 21 caixas abertas incluindo agregadoras.
+- Integração TryStep, locale e help real: **121/121 testes em três arquivos**. Os comandos de help foram executados sequencialmente; a suíte levou 143,77 segundos.

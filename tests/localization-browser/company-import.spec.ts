@@ -284,6 +284,9 @@ for (const locale of locales) {
 
     await page.getByRole("button", { name: copy.importButton, exact: true }).click();
     await expect(page.getByRole("heading", { name: copy.importComplete, exact: true })).toBeVisible();
+    await expect(page.getByText("Locale Smoke Import:", { exact: false })).toBeVisible();
+    await expect(page.getByText("Browser Coder", { exact: true })).toBeVisible();
+    await expect(page.getByText("Nightly review", { exact: true })).toBeVisible();
     expect(captures.applies).toHaveLength(1);
     expect(captures.applies[0]!.contentType).toContain("multipart/form-data");
     expect(captures.applies[0]!.body).toContain("browser-export.zip");
