@@ -7,7 +7,7 @@
     "pt-BR",
     "en"
   ],
-  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-07. A CLI operacional 4.3 e a auditoria integral de help 4.3bd estão concluídas. Permanecem pendentes as jornadas experimentais 3.10, os contratos estruturados 4.4, a revisão humana dos guias 5.2/5.3, a qualificação real de runtimes 6.4, a CI remota 7.1, a reconciliação final 7.2, a regressão integrada 7.3 e a revisão independente 7.4. As jornadas web 3.1–3.9 e os lotes 3.11 estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
+  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-07. A CLI operacional 4.3, a auditoria integral de help 4.3bd e a regressão estruturada 4.4 estão concluídas. Permanecem pendentes as jornadas experimentais 3.10, a revisão humana dos guias 5.2/5.3, a qualificação real de runtimes 6.4, a CI remota 7.1, a reconciliação final 7.2, a regressão integrada 7.3 e a revisão independente 7.4. As jornadas web 3.1–3.9 e os lotes 3.11 estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
   "requiredStates": [
     "success",
     "empty",
@@ -934,7 +934,7 @@
         "cli/src/commands/pipelines.ts",
         "cli/src/commands/routines.ts"
       ],
-      "status": "help-verified-output-parity-pending",
+      "status": "output-parity-verified",
       "evidence": [
         "company list/get/current/stats/create/update/archive/branding:update/export",
         "cli/src/__tests__/company-export-localization.test.ts",
@@ -970,9 +970,11 @@
         "4.3bd13: help real PT-BR/en de agent task-sessions/skills/skills:sync/instructions-path:update/instructions-bundle/instructions-file:get/put/delete; 8/8 casos passaram com assinaturas fixadas.",
         "cli/src/__tests__/issue-subresources.test.ts",
         "cli/src/__tests__/agent-lifecycle.test.ts",
-        "cli/src/__tests__/operation-help-localization.test.ts"
+        "cli/src/__tests__/operation-help-localization.test.ts",
+        "4.4g: cli/src/__tests__/structured-subprocess-localization.test.ts executa issue list e agent list em subprocesso real contra servidor HTTP descartável; stdout humano localizado, stdout --json byte-idêntico entre PT-BR/en, stderr vazio no sucesso e stderr estruturado idêntico na falha de API; 5/5 no arquivo.",
+        "4.4h: docs/cli/{overview,setup-commands,control-plane-commands}.md e pares PT-BR comparados bloco a bloco; comandos idênticos na mesma ordem, comentários traduzíveis; context set/show --json, issue list, agent list e --help executados em HOME/state descartáveis."
       ],
-      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e família activity têm verificação parcial. A tabela de primeiro nível (75 comandos) está coberta em PT-BR/en; a auditoria de todos os comandos folha continua em 4.3bd. Outras operações e regressão 4.4 permanecem pendentes. Typechecks direcionados passaram nos lotes reportados; o typecheck integral da CLI terminou com exit 137 por memória."
+      "limits": "Operações de organização 4.3a–g, agentes/skills 4.3h–t, issues/projetos/metas/aprovações 4.3u e família activity têm verificação parcial. A tabela de primeiro nível (75 comandos), os 459 leafs de help e a fronteira de processo 4.4 têm evidência; a paridade textual cobre os três guias CLI, mas exemplos que exigem servidor completo, import ou mutações destrutivas não foram executados. O typecheck integral da CLI passou em lote posterior ao exit 137."
     },
     {
       "id": "help-start",
@@ -1095,7 +1097,8 @@
         "7.1a check:localization integrado ao workflow reutilizável local: 11 testes Node + 127 Vitest; scanner 493 arquivos alterados; 68 tópicos e links locais. Auditoria 7.1e constatou que o caller usa o workflow upstream, não esta cópia local.",
         "7.1d: sourceIndexes.documentation comparado com ui/src/help/topics.json; 71 slugs e pares EN/PT-BR sem divergências. Fixtures negativas 2/2 para tópico ausente/obsoleto e caminhos divergentes.",
         "scripts/check-localization-coverage-index.mjs",
-        "scripts/__tests__/check-localization-coverage-index.test.mjs"
+        "scripts/__tests__/check-localization-coverage-index.test.mjs",
+        "4.4g/h: a regressão de subprocesso passa a integrar check:localization por sufixo -localization.test.ts e cobre canais, códigos de saída e exemplos dos guias."
       ],
       "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos é reconciliado no gate. O job de localização foi declarado diretamente em pr.yml porque o workflow reutilizável chamado é o do upstream; execução remota ainda não foi verificada. A fonte é examinada incrementalmente por heurística, o contrato JSON é representativo e links sem âncoras não são verificados. Regressão integrada, matriz completa e revisão final permanecem pendentes."
     },
@@ -1857,7 +1860,9 @@
         "pi_local",
         "process"
       ],
-      "retiredTypes": ["acpx_local"],
+      "retiredTypes": [
+        "acpx_local"
+      ],
       "packages": [
         "claude-local",
         "codex-local",
@@ -1912,10 +1917,10 @@
   ],
   "checkpoint": {
     "date": "2026-11-07",
-    "completedTasks": 533,
-    "totalTasks": 542,
+    "completedTasks": 536,
+    "totalTasks": 544,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Em 2026-11-07, a auditoria integral do help CLI cobriu os 459 leafs registrados com assinaturas estáveis e zero descrição humana não localizada; 4.3bd e 4.3 foram concluídos. A reprodução focal da regressão 7.3 passou 451/451 em nove arquivos e 39/39 nos dois testes nativos que dependiam de Cargo; resta um caso de native-session-resume bloqueado por bwrap/loopback sem permissão no ambiente. O mapa foi reconciliado contra App.tsx (179 rotas), os 8 flags, as 35 chamadas de registro da CLI, os 55 arquivos de comando, os 16 adapters e os 71 tópicos de ajuda. Permanecem abertos 3.10, 4.4, 5.2, 5.3, 6.4, 7.1, 7.2, 7.3 e 7.4."
+    "reason": "Em 2026-11-07, a auditoria integral do help CLI cobriu os 459 leafs registrados com assinaturas estáveis e zero descrição humana não localizada; 4.3bd, 4.3 e 4.4 foram concluídos. A nova regressão de subprocesso fixa stdout/stderr, códigos de saída e bytes JSON idênticos entre PT-BR/en, e os três guias CLI têm comandos pareados e exemplos executados em fixture descartável (5/5). A reprodução focal da regressão 7.3 passou 451/451 em nove arquivos e 39/39 nos dois testes nativos que dependiam de Cargo; resta um caso de native-session-resume bloqueado por bwrap/loopback sem permissão no ambiente. O mapa foi reconciliado contra App.tsx (179 rotas), os 8 flags, as 35 chamadas de registro da CLI, os 55 arquivos de comando, os 16 adapters e os 71 tópicos de ajuda. Permanecem abertos 3.10, 5.2, 5.3, 6.4, 7.1, 7.2, 7.3 e 7.4."
   }
 }

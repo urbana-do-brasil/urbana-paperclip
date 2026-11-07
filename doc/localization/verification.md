@@ -4553,3 +4553,24 @@ agregadores. A aplicação não foi implantada.
 - Checkpoint do mapa atualizado para **533/542** tarefas em 2026-11-07. A
   reconciliação mecânica está concluída; o fechamento final de 7.2 depende dos
   grupos ainda parciais (3.10, 4.4, 5.2, 5.3, 6.4) e dos gates 7.1/7.3/7.4.
+
+### Contrato estruturado em subprocesso e exemplos CLI — 4.4g/4.4h — 2026-11-07
+
+- Novo teste `cli/src/__tests__/structured-subprocess-localization.test.ts`
+  executa a CLI real via `tsx` contra um servidor HTTP descartável e cobre:
+  `issue list` e `agent list` em modo humano e `--json`, além de uma falha de
+  API 500 nos dois idiomas. Ele exige stdout de contrato idêntico byte a byte,
+  stderr vazio no sucesso, stderr estruturado idêntico na falha, código de
+  saída 0/1 estável e ausência de texto de apresentação no JSON.
+- O mesmo arquivo compara os três guias CLI (`docs/cli/*.md` e
+  `docs/pt-BR/cli/*.md`) bloco a bloco. Comentários podem ser traduzidos, mas
+  todas as linhas de comando precisam ser idênticas e na mesma ordem. Também
+  executa exemplos representativos (`context set`, `context show --json`,
+  `issue list`, `agent list` e `--help`) em HOME/state descartáveis: **5/5
+  testes passaram** (28 s). Antes, os contratos JSON por operação já eram
+  cobertos por 53 suítes de localização em processo; esta rodada acrescenta a
+  fronteira de processo, os canais e os guias.
+- Com isso os lotes 4.4a–h fecham a tarefa 4.4. A cobertura não afirma que
+  todo exemplo perigoso dos guias (servidor, import, mutações destrutivas) foi
+  executado; os exemplos escolhidos são os determinísticos e seguros para
+  fixture, e a paridade textual cobre todos os blocos dos três guias.
