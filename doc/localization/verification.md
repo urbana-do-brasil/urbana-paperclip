@@ -4514,3 +4514,19 @@ agregadores. A aplicação não foi implantada.
 - A suíte integral foi reiniciada com as correções e o resultado final será
   anexado após a conclusão; os resultados acima são focados e não substituem a
   regressão completa.
+
+### Fechamento da auditoria integral do help — 4.3bd/4.3 — 2026-11-07
+
+- Foi adicionado ao teste de help um inventário completo de todos os **459**
+  leafs registrados na árvore Commander. Para cada leaf, o teste renderiza o
+  help em PT-BR e en, exige summary não vazio e diferente entre os idiomas,
+  compara a contagem e as assinaturas de argumentos/opções e rejeita qualquer
+  descrição humana que permaneça idêntica ao inglês.
+- Resultado: **1/1 teste integral passou**, com **0 issues**; a matriz focada
+  dos 22 leafs restantes passou **22/22** e a suíte completa do arquivo de help
+  já havia passado **408/408** antes da inclusão do inventário integral.
+- A matriz de subprocessos permanece fixando contratos de 164 leafs; os demais
+  295 leafs são cobertos pelo inventário em processo, que prova que a troca de
+  locale não altera assinaturas. Com isso, **4.3bd** e o agregador **4.3** são
+  considerados concluídos. A cobertura de sucesso/falha por operação continua
+  registrada nos lotes 4.3a–bc.

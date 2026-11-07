@@ -1822,4 +1822,42 @@ describe("registered CLI operation help", () => {
       expect(en.replace(/\s+/g, " ")).toContain('default: "markdown"');
     }
   }, 15_000);
+
+  it("audits every registered leaf for localized human text and stable signatures", () => {
+    const leaves = registeredLeafPaths(registeredProgram);
+    expect(leaves).toHaveLength(459);
+    const issues: string[] = [];
+
+    for (const path of leaves) {
+      const name = path.join(" ");
+      const pt = renderRegisteredHelp("pt-BR", path);
+      const en = renderRegisteredHelp("en", path);
+
+      const ptSummary = helpSummary(pt);
+      const enSummary = helpSummary(en);
+      if (!ptSummary || !enSummary) issues.push(`${name}: missing summary`);
+      else if (ptSummary === enSummary) issues.push(`${name}: untranslated summary`);
+
+      for (const [ptHeading, enHeading] of [["Argumentos", "Arguments"], ["Opções", "Options"]] as const) {
+        const ptRows = helpRows(pt, ptHeading);
+        const enRows = helpRows(en, enHeading);
+        if (ptRows.length !== enRows.length) {
+          issues.push(`${name}: ${enHeading.toLowerCase()} row count ${ptRows.length} != ${enRows.length}`);
+          continue;
+        }
+        for (let index = 0; index < enRows.length; index += 1) {
+          const enRow = enRows[index]!;
+          const ptRow = ptRows[index]!;
+          if (ptRow.signature !== enRow.signature) {
+            issues.push(`${name}: ${enRow.signature} signature changed to ${ptRow.signature}`);
+          }
+          if (enRow.description && ptRow.description === enRow.description) {
+            issues.push(`${name}: ${enRow.signature} untranslated description`);
+          }
+        }
+      }
+    }
+
+    expect(issues).toEqual([]);
+  }, 120_000);
 });

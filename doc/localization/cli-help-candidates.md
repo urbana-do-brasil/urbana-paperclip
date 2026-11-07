@@ -13,9 +13,11 @@ restantes — `available-skill` (3), `feedback` (3), `llm` (3), `inbox` (2),
 `access whoami`, `agent prompt`, `agent-config list`, `agent-prompt`, `board
 prompt`, `doctor`, `managed-agent setup`, `openapi`, `openclaw invite-prompt`,
 `test-drive` e `whoami` — foram localizados e verificados no lote 4.3bd39.
-Os números abaixo preservam o retrato da varredura original; os 175 paths sem
-sinal heurístico e os 317 leafs fora da matriz original ainda precisam de
-auditoria semântica e de contrato, respectivamente.
+Os números abaixo preservam o retrato da varredura original. A auditoria
+integral de 4.3bd passou a cobrir os **459** leafs registrados em processo,
+com **0** descrições humanas não localizadas e assinaturas idênticas entre
+PT-BR/en; a lista abaixo permanece como registro histórico da triagem
+heurística.
 
 ## Inventário
 
