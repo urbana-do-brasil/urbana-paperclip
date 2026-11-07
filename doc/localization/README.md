@@ -91,20 +91,20 @@ e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
 em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checklist do
-OpenSpec está em **530/541 tarefas**, com 11 itens abertos incluindo tarefas
-agregadoras. 3.8 e 6.3 foram fechadas após auditoria; seguem trabalho em CLI,
-ajuda pública, comunicação de agentes, reconciliação, regressão integrada e
-revisão independente.
+OpenSpec está em **533/542 tarefas**, com 9 itens abertos incluindo tarefas
+agregadoras. 3.8, 4.3, 4.3bd e 6.3 foram fechadas após auditoria; seguem
+trabalho em ajuda pública, comunicação real de agentes, reconciliação final,
+regressão integrada e revisão independente.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
 | 3. Interface web por jornadas | 3.8 foi concluída nas jornadas planejadas; a matriz browser é representativa, com APIs simuladas. 3.10a–v têm subtarefas verificadas, mas o grupo permanece aberto por lacunas de qualificação e auditoria. 3.11 permanece parcial nas superfícies host documentadas. |
-| 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; operações e help em 4.3 têm lotes localizados. A tabela raiz de 75 comandos está fixada em PT-BR/en; o inventário runtime identificou 459 leafs e 142 cobertos na matriz de subprocessos à época da varredura. Auditoria dos demais leafs e contratos estruturados (4.3/4.4) permanecem pendentes. O typecheck integral da CLI passou após os lotes recentes. |
+| 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas. 4.3 foi concluída; a auditoria integral cobre os 459 leafs com assinaturas estáveis e zero descrição humana não localizada. A tabela raiz de 75 comandos está fixada em PT-BR/en e 164 leafs têm paridade de subprocesso. Contratos estruturados (4.4) permanecem pendentes. O typecheck integral da CLI passou após os lotes recentes. |
 | 5. Ajuda e documentação pública bilíngue | 71 tópicos públicos têm fontes EN/PT-BR e passam pelo gate de cobertura. O smoke de pipelines passou em ambiente descartável, incluindo HTTP 409 e rotina com agente simulado; a revisão humana permanece pendente. |
 | 6. Comunicação dos agentes | 6.1–6.3 foram verificadas, incluindo contratos determinísticos dos 15 adapters ativos e uma jornada descartável com duas contas PT-BR/en. A qualificação de respostas reais em 6.4 permanece pendente. |
-| 7. Integração, regressão e revisão final | Checks locais 7.1a–e estão integrados; o job de localização de PR ainda requer execução remota. Reconciliação completa 7.2, regressão 7.3 e revisão independente 7.4 permanecem pendentes. |
+| 7. Integração, regressão e revisão final | Checks locais 7.1a–e estão integrados; o job de localização de PR ainda requer execução remota. O mapa 7.2 foi reconciliado em 2026-11-07 contra 179 rotas, 8 flags, 35 registros/55 arquivos de CLI, 16 adapters e 71 tópicos; restam grupos parciais e a regressão/revisão final. 7.3 tem a reprodução focal registrada e a suíte integral em andamento; 7.4 permanece pendente. |
 
 ## Continuação — interações de conexão (3.4d3c2)
 

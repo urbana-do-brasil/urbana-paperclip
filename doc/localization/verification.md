@@ -4530,3 +4530,26 @@ agregadores. A aplicação não foi implantada.
   locale não altera assinaturas. Com isso, **4.3bd** e o agregador **4.3** são
   considerados concluídos. A cobertura de sucesso/falha por operação continua
   registrada nos lotes 4.3a–bc.
+
+### Reconciliação do mapa — 7.2 — 2026-11-07
+
+- `sourceIndexes.routeDeclarations`: **179/179** paths literais de `ui/src/App.tsx`
+  conferem com o mapa, sem entradas ausentes ou obsoletas.
+- `sourceIndexes.featureFlags`: **8/8** flags de `App.tsx` e `Sidebar.tsx`
+  conferem (`enableCases`, `enableCombinedInboxTasks`,
+  `enableConferenceRoomChat`, `enableDecisions`, `enableGoalsSidebarLink`,
+  `enableIsolatedWorkspaces`, `enablePipelines`, `enableStatusCards`).
+- `sourceIndexes.cli`: o código tem **35** chamadas `register*Commands` e o mapa
+  tinha 33; foram acrescentadas `registerClientAuthCommands` e
+  `registerRunCommands`. Os **55** arquivos de `cli/src/commands` conferem, sem
+  arquivos ausentes ou obsoletos.
+- `sourceIndexes.adapters`: **16/16** tipos em `builtin-adapter-types.ts`
+  conferem; `retiredTypes` preserva `acpx_local`.
+- `sourceIndexes.documentation`: o gate `check-localization-coverage-index`
+  continua comparando os **71** tópicos de `ui/src/help/topics.json`.
+- Grupos `tasks` e `projects` foram atualizados de `pending` para
+  `journey-verified`; `cli-operations` registra
+  `help-verified-output-parity-pending`; `integration` registra `partial`.
+- Checkpoint do mapa atualizado para **533/542** tarefas em 2026-11-07. A
+  reconciliação mecânica está concluída; o fechamento final de 7.2 depende dos
+  grupos ainda parciais (3.10, 4.4, 5.2, 5.3, 6.4) e dos gates 7.1/7.3/7.4.
