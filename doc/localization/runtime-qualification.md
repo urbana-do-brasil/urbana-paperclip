@@ -19,7 +19,7 @@ vice-versa.
 | --- | --- | --- | --- |
 | `claude_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/claude-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en com `engine=cli`; `packages/adapters/claude-local/src/server/acp.test.ts` cobre `auto`/`acp`, execução nova e retomada até FakeRuntime. Nenhum qualifica resposta do modelo. | Não qualificada. |
 | `codex_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/codex-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en com `engine=cli`; `packages/adapters/codex-local/src/server/acp.test.ts` cobre `auto`/`acp`, execução nova e retomada até FakeRuntime. Nenhum qualifica resposta do modelo. | Não qualificada. |
-| `gemini_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/gemini-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en com `engine=cli`; `packages/adapters/gemini-local/src/server/acp.test.ts` cobre `auto`/`acp`, execução nova e retomada até FakeRuntime. Nenhum qualifica resposta do modelo. | Não qualificada. |
+| `gemini_local` | `engine=auto`/`acp`; `engine=cli` | `packages/adapters/gemini-local/src/server/execute.acp-fallback.test.ts` verifica prompt PT/en com `engine=cli`, inclusive fallback de sessão perdida; `packages/adapters/gemini-local/src/server/acp.test.ts` cobre `auto`/`acp`, execução nova e retomada até FakeRuntime. Nenhum qualifica resposta do modelo. | Não qualificada. |
 | `cursor` | adapter local Cursor | `packages/adapters/cursor-local/src/server/execute.test.ts` verifica a orientação montada no prompt. | Não qualificada. |
 | `cursor_cloud` | adapter Cursor Cloud | `packages/adapters/cursor-cloud/src/server/execute.test.ts` verifica a orientação montada no prompt. | Não qualificada. |
 | `grok_local` | adapter local Grok | `packages/adapters/grok-local/src/server/execute.test.ts` verifica a orientação montada no prompt. | Não qualificada. |
@@ -31,12 +31,17 @@ vice-versa.
 | `pi_local` | adapter Pi local remoto | `packages/adapters/pi-local/src/server/execute.remote.test.ts` verifica a orientação montada no prompt. | Não qualificada. |
 | `http` | receptor HTTP configurado | `server/src/adapters/http/execute-locale.integration.test.ts` confirma o POST a um receptor temporário em loopback. Não comprova o consumo por endpoint de terceiros. | Não qualificada. |
 | `process` | comando/framework configurado | `server/src/adapters/process/execute.test.ts` verifica as variáveis reservadas em subprocesso real. O framework precisa consumi-las para incluí-las no próprio prompt. | Não qualificada. |
-| `paperclip_runner` | Registrar `provider`, agent/modelo e versão do harness em cada linha, conforme a discriminação abaixo. A evidência de 6.2b cobre transporte/continuação e um runner Codex simulado; não generaliza para todos os providers. | `server/src/services/native-runtime/native-continuation.test.ts`, `packages/paperclip-runner/src/contracts/native-execution.test.ts` e evidências de runner em [verification.md](verification.md). | Não qualificada. |
+| `paperclip_runner` | Registrar `provider`, agent/modelo e versão do harness em cada linha, conforme a discriminação abaixo. | `server/src/services/native-runtime/native-execution-input.test.ts` verifica envelopes sintéticos por provider; `native-continuation.test.ts`, `packages/paperclip-runner/src/contracts/native-execution.test.ts` e [verification.md](verification.md) registram a continuação e seus limites. | Não qualificada. |
 
 `paperclip_runner` é um único `adapterType`, mas executa providers distintos.
 O registry declara `provider=codex`, `opencode`, `claude_managed`,
 `aws_agentcore` e `acpx`. Para `provider=acpx`, registre separadamente
-`acpxAgent=claude`, `grok`, `cursor` ou `pi`, com modelo exato. Além do runner/Codex simulado, `server/src/services/native-runtime/native-execution-input.test.ts` verifica envelopes inicial e de retomada para `opencode`, `acpx`/`claude`, `claude_managed` e `aws_agentcore` em PT-BR/en. Isso não comprova handshake externo ou respostas reais de nenhum provider. `acpxAgent=copilot` é
+`acpxAgent=claude`, `grok`, `cursor` ou `pi`, com modelo exato. O teste
+`server/src/services/native-runtime/native-execution-input.test.ts` verifica
+envelopes de início e retomada em PT-BR/en para Codex, OpenCode, os quatro
+agentes ACPX, Claude Managed e AWS AgentCore; o envelope inicial de OpenAI Dot
+também é testado com binding sintético. Esses testes não comprovam handshake
+externo ou respostas reais de nenhum provider. `acpxAgent=copilot` é
 apenas candidato aguardando qualificação local e Daytona, sem suporte de
 produção declarado. `provider=openai_dot` também aparece no resolver/runtime
 como caminho de bridge, embora não conste na lista padrão do seletor; sua

@@ -38,4 +38,15 @@ test("persistent smoke case keys are unique per run", () => {
     assert.match(source, new RegExp(`${key}="[^"]+-\\$\\{RUN_KEY\\}"`));
   }
   assert.doesNotMatch(source, /caseKey: "(?:feature-pipelines-ui|feature-routine-webhooks|blog-post|changelog-entry|launch-tweet|blog-hero-image|blog-social-card|blog-assembly-package)"/);
+  assert.match(source, /case_id "\$assembly_cases" "\$ASSEMBLY_CASE_KEY"/);
+});
+
+test("pipeline tutorial smoke checks HTTP 409 status and structured error bodies", () => {
+  assert.match(source, /API error 409:/);
+  assert.match(source, /api_capture_response POST "\/api\/cases\/\$tweet_case\/transition"/);
+  assert.match(source, /api_capture_response PATCH "\/api\/cases\/\$blog_case"/);
+  assert.match(source, /\.details\.blockers\[\].*blockedCaseId/s);
+  assert.match(source, /\.details\.version == 3 and \.details\.stage\.key == "assets"/);
+  assert.match(source, /currentVersion=3/);
+  assert.match(source, /currentStage=assets/);
 });

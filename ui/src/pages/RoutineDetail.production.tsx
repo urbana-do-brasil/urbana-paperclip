@@ -23,6 +23,7 @@ import { useToastActions } from "../context/ToastContext";
 import { queryKeys } from "../lib/queryKeys";
 import { copyTextToClipboard } from "../lib/clipboard";
 import { routineOverviewCopyText } from "../lib/routine-description-copy";
+import { buildRoutineTriggerCreatePayload } from "../lib/routine-trigger-create-payload";
 import {
   routineSecretCopyFailureToast,
   routineSecretCopySuccessTitle,
@@ -130,14 +131,6 @@ function autoResizeTextarea(element: HTMLTextAreaElement | null) {
   if (!element) return;
   element.style.height = "auto";
   element.style.height = `${element.scrollHeight}px`;
-}
-
-function getLocalTimezone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return "UTC";
-  }
 }
 
 function buildRoutineMutationPayload(input: RoutineEditDraft) {
@@ -481,18 +474,10 @@ export function RoutineDetail() {
 
   const createTrigger = useMutation({
     mutationFn: async (): Promise<RoutineTriggerResponse> => {
-      const existingOfKind = (routine?.triggers ?? []).filter((t) => t.kind === newTrigger.kind).length;
-      const autoLabel = existingOfKind > 0 ? `${newTrigger.kind}-${existingOfKind + 1}` : newTrigger.kind;
-      return routinesApi.createTrigger(routineId!, {
-        kind: newTrigger.kind,
-        label: autoLabel,
-        ...(newTrigger.kind === "schedule"
-          ? { cronExpression: newTrigger.cronExpression.trim(), timezone: getLocalTimezone() }
-          : {}),
-        ...(newTrigger.kind === "webhook"
-          ? { signingMode: newTrigger.signingMode, replayWindowSec: Number(newTrigger.replayWindowSec || "300") }
-          : {}),
-      });
+      return routinesApi.createTrigger(
+        routineId!,
+        buildRoutineTriggerCreatePayload(newTrigger, routine?.triggers ?? []),
+      );
     },
     onSuccess: async (result) => {
       if (result.secretMaterial) {

@@ -99,6 +99,23 @@ describe("TriggersSection", () => {
     expect(container.textContent).not.toContain("one-time-secret");
   });
 
+  it("preserves webhook creation and activation contracts in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render();
+    await click("Adicionar gatilho");
+    await choose("Quando outro app enviar um webhook");
+    await click("Continuar");
+    expect(api.createTrigger).toHaveBeenCalledWith("routine-1", { kind: "webhook", signingMode: "app_webhook", setupPending: true });
+    expect(container.textContent).toContain("one-time-secret");
+    expect(button("Copiar para o agente")).toBeTruthy();
+    expect(JSON.stringify(Object.values(sessionStorage))).not.toContain("one-time-secret");
+    await click("Verificar conexão");
+    expect(api.updateTrigger).not.toHaveBeenCalled();
+    await click("Concluir sem verificar");
+    expect(api.updateTrigger).toHaveBeenCalledWith("trigger-1", { setupPending: false });
+    expect(container.textContent).not.toContain("one-time-secret");
+  });
+
   it("warns about private URLs without blocking webhook setup or completion", async () => {
     routine.triggers = [{ id: "trigger-1", kind: "webhook", enabled: true, setupPending: true, signingMode: "bearer", webhookUrl: "https://paperclip.internal/webhook" }] as RoutineTrigger[];
     await render();

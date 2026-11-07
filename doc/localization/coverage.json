@@ -967,6 +967,7 @@
         "4.3bd10: help real PT-BR/en de agent me/inbox/inbox-mine/pause/resume/approve/terminate/permissions:update; 8/8 casos passaram e fixaram assinaturas de argumentos/opções.",
         "4.3bd11: `issue force-release` tinha argumento `<issueId>` em inglês no help PT-BR; agora exibe `ID da tarefa`. Teste real nos dois idiomas fixa argumento/opções e passou 1/1.",
         "4.3bd12: help real PT-BR/en de agent heartbeat:invoke/claude-login/configuration/config-revisions/config-revision:get/config-revision:rollback/runtime-state/runtime-state:reset-session; 8/8 casos passaram com assinaturas de argumentos/opções fixadas e sem textos próprios em inglês.",
+        "4.3bd13: help real PT-BR/en de agent task-sessions/skills/skills:sync/instructions-path:update/instructions-bundle/instructions-file:get/put/delete; 8/8 casos passaram com assinaturas fixadas.",
         "cli/src/__tests__/issue-subresources.test.ts",
         "cli/src/__tests__/agent-lifecycle.test.ts",
         "cli/src/__tests__/operation-help-localization.test.ts"
@@ -1022,9 +1023,10 @@
         "docs/pt-BR/agents-runtime.md",
         "docs/pt-BR/pipelines-tutorial.md",
         "scripts/smoke/pipelines-tutorial-smoke.sh",
-        "scripts/__tests__/pipeline-tutorial-smoke.test.mjs"
+        "scripts/__tests__/pipeline-tutorial-smoke.test.mjs",
+        "5.3e: guias OpenClaw/Docker reconciliados com scripts e Docker Sandbox legado; 20 blocos shell passaram bash -n, fixture de UI com comandos simulados e teste de conteúdo 7/7 passaram."
       ],
-      "limits": "O mapa contém 71 tópicos com pares em inglês/PT-BR; a reconciliação agora também exige paridade entre o manifesto e o índice manual de cobertura. Revisão humana e smoke operacional do guia OpenClaw continuam pendentes. O script de smoke de pipelines exige opt-in para API descartável e usa chaves únicas; teste de segurança e sintaxe passaram, mas os exemplos ainda precisam ser executados em fixture descartável e divergências da documentação de origem devem ser registradas. Os registros criados persistem, pois a API não oferece endpoint de limpeza."
+      "limits": "O mapa contém 71 tópicos com pares em inglês/PT-BR; a reconciliação também exige paridade entre o manifesto e o índice manual de cobertura. Revisão humana e smoke operacional do guia OpenClaw continuam pendentes. O smoke de pipelines passou em API e PostgreSQL descartáveis, verificando HTTP 409 e respostas estruturadas; a rotina foi executada com agente process simulado, sem geração real de conteúdo. Os registros criados persistem na instância alvo, pois a API não oferece endpoint de limpeza."
     },
     {
       "id": "help-delivery",
@@ -1068,13 +1070,15 @@
         "server/src/__tests__/durable-chat-wakeup.test.ts",
         "server/src/services/heartbeat/queue.test.ts",
         "6.2d: 138/138 testes em 9 suítes de carriers; 87/87 testes DB em seis suítes sem skips; lote ampliado 494/495 sob concorrência com timeout repetido isoladamente em 9/9; typechecks de adapter-utils/11 adapters e teste HTTP focal passaram.",
+        "6.2k: HTTP envia o contexto em cada POST e process inicia um subprocesso por execução com locale e diretriz no ambiente; não há sessão própria nesses carriers. Testes PT-BR/en em receptor TCP local e subprocesso real passaram 11/11.",
+        "6.2l–m: envelope OpenAI Dot v6 PT-BR/en em fixture passou na suíte 49/49; fallback Gemini PT-BR/en passou 10/10. Typechecks do servidor e do adapter Gemini passaram. O inventário dos 15 adapters ativos foi reconciliado em verification.md.",
         "tests/e2e/multi-user-authenticated.spec.ts: fluxo descartável com duas contas PT-BR/en, erro 422, resposta válida e histórico original após reload; Playwright 1/1.",
         "6.3: IssueChatThread + IssueChatThreadSystemNotice: 131/131 regressões e typecheck UI; perguntas, opções, confirmações, recibos e falhas próprias cobertos por 6.3a–h.",
         "ui/src/components/IssueChatThread.test.tsx",
         "ui/src/components/IssueChatThreadSystemNotice.test.tsx",
         "6.3h: fallback de histórico preserva comentário e omite data inválida; timestamps ISO continuam formatados no locale. 131/131 testes focados e typecheck UI passaram."
       ],
-      "limits": "6.1 e 6.3 foram verificadas com snapshots/contexto por requester, entrega de interação e fluxo compartilhado entre contas PT-BR/en; o cenário browser de 6.3 usa servidor/PostgreSQL descartáveis e está opt-in. 6.2 permanece aberta para reconciliação completa de carriers; há transporte determinístico em adaptadores suportados, mas respostas reais por runtime/modelo não foram qualificadas. O server typecheck integral terminou SIGKILL/137; consumo HTTP/process externos e respostas reais continuam pendentes em 6.2/6.4."
+      "limits": "6.1, 6.2 determinística e 6.3 foram verificadas; o cenário browser de 6.3 usa servidor/PostgreSQL descartáveis e está opt-in. `acpx_local` é aposentado; Dot, HTTP e process não oferecem retomada de sessão própria. Consumo externo e respostas reais por runtime/modelo não foram qualificados e permanecem em 6.4."
     },
     {
       "id": "integration",
@@ -1088,12 +1092,12 @@
       ],
       "status": "pending",
       "evidence": [
-        "7.1a check:localization integrado à CI full_ci: 11 testes Node + 127 Vitest; scanner 493 arquivos alterados; 68 tópicos e links locais.",
+        "7.1a check:localization integrado ao workflow reutilizável local: 11 testes Node + 127 Vitest; scanner 493 arquivos alterados; 68 tópicos e links locais. Auditoria 7.1e constatou que o caller usa o workflow upstream, não esta cópia local.",
         "7.1d: sourceIndexes.documentation comparado com ui/src/help/topics.json; 71 slugs e pares EN/PT-BR sem divergências. Fixtures negativas 2/2 para tópico ausente/obsoleto e caminhos divergentes.",
         "scripts/check-localization-coverage-index.mjs",
         "scripts/__tests__/check-localization-coverage-index.test.mjs"
       ],
-      "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos agora é reconciliado no gate. A fonte ainda é examinada incrementalmente por heurística, o contrato JSON é representativo, links sem âncoras não são verificados, CI GitHub ainda não executada e o lane é condicionado a full_ci. Regressão integrada, matriz completa e revisão final permanecem pendentes."
+      "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos é reconciliado no gate. O job de localização foi declarado diretamente em pr.yml porque o workflow reutilizável chamado é o do upstream; execução remota ainda não foi verificada. A fonte é examinada incrementalmente por heurística, o contrato JSON é representativo e links sem âncoras não são verificados. Regressão integrada, matriz completa e revisão final permanecem pendentes."
     },
     {
       "id": "cli-preferences",
@@ -1832,6 +1836,7 @@
     },
     "adapters": {
       "source": "server/src/adapters/registry.ts",
+      "builtinTypesSource": "server/src/adapters/builtin-adapter-types.ts",
       "types": [
         "acpx_local",
         "claude_local",
@@ -1840,12 +1845,17 @@
         "cursor_cloud",
         "gemini_local",
         "grok_local",
+        "hermes_gateway",
+        "hermes_local",
+        "http",
         "kimi_local",
         "openclaw_gateway",
         "opencode_local",
         "paperclip_runner",
-        "pi_local"
+        "pi_local",
+        "process"
       ],
+      "retiredTypes": ["acpx_local"],
       "packages": [
         "claude-local",
         "codex-local",

@@ -2384,6 +2384,7 @@
     "workReferences": {
       "empty": "Ainda não há trabalho vinculado.",
       "folder": "Pasta",
+      "workspaceFolderName": "Pasta de trabalho",
       "openExternalReference": "Abrir referência externa: {{label}}",
       "openTask": "Abrir tarefa: {{label}}"
     },

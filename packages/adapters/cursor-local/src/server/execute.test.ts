@@ -445,6 +445,75 @@ printf '%s\\n' '{"type":"result","subtype":"success","session_id":"cursor-sessio
   });
 
   it.each(["pt-BR", "en"] as const)(
+    "includes the locale on a first Cursor CLI run without a saved session (%s)",
+    async (locale) => {
+      setPrepareCursorSandboxCommand.mockReset().mockImplementation(async (input) => ({
+        command: input.command,
+        env: input.env,
+        remoteSystemHomeDir: null,
+        addedPathEntry: null,
+        preferredCommandPath: null,
+      }));
+      const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-first-locale-"));
+      const workspace = path.join(root, "workspace");
+      const commandPath = path.join(root, "agent.sh");
+      await fs.mkdir(workspace, { recursive: true });
+      await fs.writeFile(commandPath, buildFakeAgentScript(root), "utf8");
+      await fs.chmod(commandPath, 0o755);
+
+      try {
+        const metas: Array<{ commandArgs?: string[]; prompt?: string }> = [];
+        const result = await execute({
+          runId: `run-cursor-first-locale-${locale}`,
+          agent: {
+            id: "agent-1",
+            companyId: "company-1",
+            name: "Cursor Coder",
+            adapterType: "cursor",
+            adapterConfig: {},
+          },
+          runtime: {
+            sessionId: null,
+            sessionParams: null,
+            sessionDisplayId: null,
+            taskKey: null,
+          },
+          config: {
+            command: commandPath,
+            cwd: workspace,
+            promptTemplate: "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.",
+          },
+          context: createCommunicationLocalePromptFixture(locale),
+          onLog: async () => {},
+          onMeta: async (meta) => { metas.push(meta); },
+        });
+
+        expect(result.exitCode).toBe(0);
+        expect(metas).toHaveLength(1);
+        expect(metas[0]?.commandArgs).not.toContain("--resume");
+        const prompt = await fs.readFile(path.join(root, "prompt.txt"), "utf8");
+        expect(prompt).toBe(metas[0]?.prompt);
+        expect(prompt).toContain("## Human communication language");
+        expect(prompt).toContain(locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        expect(prompt).toContain("Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.");
+        if (locale === "pt-BR") {
+          expect(prompt).toContain("Do not switch these interactions to English.");
+          expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+        }
+      } finally {
+        await fs.rm(root, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it.each(["pt-BR", "en"] as const)(
     "rebuilds the assignment and keeps communication locale at the Cursor CLI boundary (%s)",
     async (locale) => {
       setPrepareCursorSandboxCommand.mockReset();

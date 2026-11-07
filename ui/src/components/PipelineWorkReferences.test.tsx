@@ -3,7 +3,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { i18n } from "@/i18n";
-import type { WorkReference } from "../lib/pipeline-references";
+import { extractWorkReferences, type WorkReference } from "../lib/pipeline-references";
 import { PipelineWorkReferences } from "./PipelineWorkReferences";
 
 describe("PipelineWorkReferences localization", () => {
@@ -35,6 +35,23 @@ describe("PipelineWorkReferences localization", () => {
     expect(folderMarkup).toContain("Campaign files");
     expect(folderMarkup).toContain("/work/campaigns/spring");
     expect(folderMarkup).toContain("feature/spring-launch");
+  });
+
+  it.each([
+    { language: "en", expectedName: "Workspace folder" },
+    { language: "pt-BR", expectedName: "Pasta de trabalho" },
+  ])("localizes the default workspace reference name in $language", async ({ language, expectedName }) => {
+    await i18n.changeLanguage(language);
+    const references = extractWorkReferences(
+      { workspaceRef: { path: "/work/campaigns/spring" } },
+      i18n.t("pipelineManagement.detail.workReferences.workspaceFolderName"),
+    );
+
+    const markup = renderToStaticMarkup(<PipelineWorkReferences references={references} />);
+
+    expect(markup).toContain(expectedName);
+    expect(markup).toContain("/work/campaigns/spring");
+    if (language === "pt-BR") expect(markup).not.toContain("Workspace folder");
   });
 
   it("localizes the accessible label while preserving the external URL", async () => {

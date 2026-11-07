@@ -361,7 +361,9 @@ function selectSerializedSuites(routeTests, shardIndex, shardCount) {
 function runVitest(args, label, testShard = null) {
   console.log(`\n[test:run] ${label}`);
   invocationIndex += 1;
-  const tempRootParent = process.platform === "win32" ? os.tmpdir() : "/tmp";
+  // Prefer an explicitly configured temp volume; on Unix keep the short /tmp
+  // default for socket paths when the caller has not selected another volume.
+  const tempRootParent = process.env.TMPDIR?.trim() || (process.platform === "win32" ? os.tmpdir() : "/tmp");
   // Production workspace/security checks reject symlink aliases. In particular
   // /tmp is /private/tmp on macOS, so fixture roots must use the canonical path.
   const testRoot = realpathSync(mkdtempSync(path.join(tempRootParent, "pv-")));

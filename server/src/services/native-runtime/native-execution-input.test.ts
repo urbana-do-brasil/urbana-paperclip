@@ -573,25 +573,38 @@ describe("native execution input external-chat framing", () => {
 
 
 describe("native runner provider locale guidance", () => {
-  it.each([
-    { provider: "opencode", locale: "pt-BR" },
-    { provider: "opencode", locale: "en" },
-    { provider: "acpx", locale: "pt-BR" },
-    { provider: "acpx", locale: "en" },
-    { provider: "claude_managed", locale: "pt-BR" },
-    { provider: "claude_managed", locale: "en" },
-    { provider: "aws_agentcore", locale: "pt-BR" },
-    { provider: "aws_agentcore", locale: "en" },
-  ] as const)("carries $locale guidance to $provider on fresh and resumed turns", ({ provider, locale }) => {
+  const providerCases = [
+    { label: "paperclip_runner/codex", provider: "codex", acpxAgent: null },
+    { label: "OpenCode", provider: "opencode", acpxAgent: null },
+    { label: "ACPX/Claude", provider: "acpx", acpxAgent: "claude" },
+    { label: "ACPX/Grok", provider: "acpx", acpxAgent: "grok" },
+    { label: "ACPX/Cursor", provider: "acpx", acpxAgent: "cursor" },
+    { label: "ACPX/Pi", provider: "acpx", acpxAgent: "pi" },
+    { label: "Claude Managed", provider: "claude_managed", acpxAgent: null },
+    { label: "AWS AgentCore", provider: "aws_agentcore", acpxAgent: null },
+  ] as const;
+  const cases = providerCases.flatMap((runtime) =>
+    (["pt-BR", "en"] as const).map((locale) => ({ ...runtime, locale })),
+  );
+
+  it.each(cases)("carries $locale guidance to $label on fresh and resumed turns", ({ provider, acpxAgent, locale }) => {
     const fixture = createCommunicationLocalePromptFixture(locale);
     const directive = locale === "pt-BR"
       ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
       : "Write human-facing replies, comments, questions, confirmations, and options in English.";
-    const model = provider === "opencode"
-      ? "openai/gpt-5.5"
-      : provider === "aws_agentcore"
-        ? "anthropic.claude-sonnet-4-6-v1"
-        : "claude-sonnet-5";
+    const model = provider === "codex"
+      ? "gpt-5.6-sol"
+      : provider === "opencode"
+        ? "openai/gpt-5.5"
+        : provider === "aws_agentcore"
+          ? "anthropic.claude-sonnet-4-6-v1"
+          : provider === "acpx" && acpxAgent === "grok"
+            ? "grok-4.7"
+            : provider === "acpx" && acpxAgent === "cursor"
+              ? "exact-cursor-model"
+              : provider === "acpx" && acpxAgent === "pi"
+                ? "openrouter/deepseek/deepseek-v4-flash-0731"
+                : "claude-sonnet-5";
     const buildInput = (resumedSession: boolean) => buildNativeExecutionInput({
       companyId: "10000000-0000-4000-8000-000000000001",
       runId: "50000000-0000-4000-8000-000000000005",
@@ -620,7 +633,7 @@ describe("native runner provider locale guidance", () => {
       },
       normalizedSessionId: resumedSession ? "60000000-0000-4000-8000-000000000006" : null,
       provider,
-      ...(provider === "acpx" ? { acpxAgent: "claude" as const } : {}),
+      ...(provider === "acpx" ? { acpxAgent: acpxAgent ?? "claude" } : {}),
       model,
       ...(provider === "claude_managed" ? {
         managedProfile: {
@@ -670,14 +683,22 @@ describe("native runner provider locale guidance", () => {
     const freshInput = buildInput(false);
     const freshEnvelope = buildNativeModelEnvelope(freshInput);
     expect(freshInput.provider).toMatchObject({ kind: provider, model });
-    expect(freshInput.session.driverKind).toBe(provider === "opencode"
-      ? "opencode_server"
-      : provider === "acpx"
-        ? "acpx_runtime"
-        : provider === "claude_managed"
-          ? "claude_managed_agents_api"
-          : "aws_agentcore_harness_api");
-    if (provider === "acpx") expect(freshInput.provider).toMatchObject({ agent: "claude" });
+    expect(freshInput.session.driverKind).toBe(provider === "codex"
+      ? "codex_app_server"
+      : provider === "opencode"
+        ? "opencode_server"
+        : provider === "acpx"
+          ? "acpx_runtime"
+          : provider === "claude_managed"
+            ? "claude_managed_agents_api"
+            : "aws_agentcore_harness_api");
+    if (provider === "acpx") {
+      expect(acpxAgent).not.toBeNull();
+      expect(freshInput.provider).toMatchObject({
+        agent: acpxAgent,
+        profile: { driverKind: "acpx_runtime", agent: acpxAgent },
+      });
+    }
     expect(freshEnvelope.task.prompt).toContain(directive);
     expect(freshEnvelope.task.prompt).toContain("`curl --fail --silent https://example.invalid/health`");
     expect(freshEnvelope.task.prompt).toContain("`X-Trace-Mode: RAW`");
@@ -704,12 +725,86 @@ describe("native runner provider locale guidance", () => {
       ? "Write human-facing replies, comments, questions, confirmations, and options in English."
       : "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR).");
     const resumedEvents = JSON.parse(resumedEnvelope.events) as { messages: unknown[] };
-    expect(resumedEvents.messages).toEqual(fixture.paperclipWake.executionContinuation.resumeDelta.messages);
+    const expectedResumeDelta = fixture.paperclipWake.executionContinuation.resumeDelta;
+    if (!expectedResumeDelta) throw new Error("Expected the locale fixture to include a resume delta");
+    expect(resumedEvents.messages).toEqual(expectedResumeDelta.messages);
     if (locale === "pt-BR") {
       expect(resumedEnvelope.communicationGuidance).toContain("keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR)");
       expect(resumedEnvelope.communicationGuidance).not.toContain("ASD-STE100 Simplified Technical English");
     } else {
       expect(resumedEnvelope.communicationGuidance).toContain("ASD-STE100 Simplified Technical English");
+    }
+  });
+
+  it.each(["pt-BR", "en"] as const)("carries %s guidance in the OpenAI Dot v6 model envelope", (locale) => {
+    const fixture = createCommunicationLocalePromptFixture(locale);
+    const companyId = "10000000-0000-4000-8000-000000000001";
+    const agentId = "30000000-0000-4000-8000-000000000003";
+    const input = buildNativeExecutionInput({
+      companyId,
+      runId: "50000000-0000-4000-8000-000000000005",
+      agentId,
+      issue: {
+        id: "issue-1",
+        identifier: "PAP-DOT-1",
+        title: "Keep the technical markers intact",
+        description: "Task description remains in its original language.",
+        workMode: "standard",
+      },
+      taskPrompt: fixture.paperclipTaskMarkdownAssignment,
+      initialCommunicationGuidance: "Saved agent instruction: keep `handoff_mode=SAFE` unchanged.",
+      wakePayload: fixture.paperclipWake,
+      resumedSession: false,
+      previousTurn: null,
+      workspace: {
+        id: "50000000-0000-4000-8000-000000000005",
+        cwd: "/workspace",
+        repoUrl: null,
+        repoRef: null,
+        branchName: null,
+      },
+      normalizedSessionId: null,
+      provider: "openai_dot",
+      model: null,
+      dotBinding: {
+        bindingId: "dot-binding-fixture",
+        bindingGeneration: 1,
+        companyId,
+        agentId,
+        acceptByUnixMs: 1_900_000_000_000,
+        expiresAtUnixMs: 1_900_000_600_000,
+      },
+      completionContract: {
+        id: "70000000-0000-4000-8000-000000000007",
+        sha256: `sha256:${"a".repeat(64)}`,
+        schemaVersion: "paperclip.run-result.v1",
+        contract: {
+          revision: "1",
+          objective: "Preserve technical markers and requested communication language.",
+          criteria: [{ id: "output", requirement: "Preserve technical markers and requested language." }],
+        },
+      },
+      runtimeContext: nativeRuntimeContextFixture(),
+    });
+
+    const envelope = buildNativeModelEnvelope(input);
+    const directive = locale === "pt-BR"
+      ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+      : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+    expect(input.schema).toBe("paperclip.native-execution-input.v6");
+    expect(input.provider).toMatchObject({ kind: "openai_dot", model: null, binding: { bindingId: "dot-binding-fixture" } });
+    expect(input.session).toMatchObject({ driverKind: "openai_dot_mcp", lifecyclePolicy: { mode: "per_turn" } });
+    expect(envelope.schema).toBe("paperclip.native-model-envelope.v3");
+    expect(envelope.task.prompt).toContain(directive);
+    expect(envelope.task.prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+    expect(envelope.task.prompt).toContain("`X-Trace-Mode: RAW`");
+    expect(envelope.task.prompt).toContain("`WAITING_FOR_REVIEW`");
+    expect(envelope.task.prompt).toContain("Saved agent instruction: keep `handoff_mode=SAFE` unchanged.");
+    if (locale === "pt-BR") {
+      expect(envelope.task.prompt).toContain("Do not switch these interactions to English.");
+      expect(envelope.task.prompt).not.toContain("ASD-STE100 Simplified Technical English");
+    } else {
+      expect(envelope.task.prompt).toContain("ASD-STE100 Simplified Technical English");
     }
   });
 });

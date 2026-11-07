@@ -4,6 +4,11 @@ import type { SupportedLocale } from "@paperclipai/shared/localization";
 type LocaleText = Record<SupportedLocale, string>;
 type CommandHelp = { description: LocaleText; options?: Record<string, LocaleText> };
 
+const serviceCommonOptions = {
+  "--instance": { en: "Local instance id (default: default)", "pt-BR": "ID da instância local (padrão: default)" },
+  "--json": { en: "Print machine-readable JSON", "pt-BR": "Exibir JSON legível por máquina" },
+};
+
 /** Human-facing help for local install and operations commands. Command and
  * option names stay stable so scripts and documentation keep their contracts. */
 const adminHelp: Record<string, CommandHelp> = {
@@ -43,11 +48,12 @@ const adminHelp: Record<string, CommandHelp> = {
   },
   service: {
     description: { en: "Manage Paperclip as a background service", "pt-BR": "Gerenciar o Paperclip como serviço em segundo plano" },
-    options: { "--instance": { en: "Local instance id (default: default)", "pt-BR": "ID da instância local (padrão: default)" }, "--json": { en: "Print machine-readable JSON", "pt-BR": "Exibir JSON legível por máquina" } },
+    options: serviceCommonOptions,
   },
   "service install": {
     description: { en: "Install and register the background service", "pt-BR": "Instalar e registrar o serviço em segundo plano" },
     options: {
+      ...serviceCommonOptions,
       "--no-start-now": { en: "Install without starting now", "pt-BR": "Instalar sem iniciar agora" },
       "--no-start-on-login": { en: "Install without enabling start on login", "pt-BR": "Instalar sem habilitar a inicialização ao entrar" },
       "--enable-linger": { en: "Allow systemd startup without an active login session", "pt-BR": "Permitir que o systemd inicie sem uma sessão de login ativa" },
@@ -55,26 +61,32 @@ const adminHelp: Record<string, CommandHelp> = {
   },
   "service uninstall": {
     description: { en: "Stop, disable, and remove the background service", "pt-BR": "Parar, desabilitar e remover o serviço em segundo plano" },
+    options: serviceCommonOptions,
   },
   "service start": {
     description: { en: "Start the background service", "pt-BR": "Iniciar o serviço em segundo plano" },
+    options: serviceCommonOptions,
   },
   "service stop": {
     description: { en: "Stop the background service", "pt-BR": "Parar o serviço em segundo plano" },
+    options: serviceCommonOptions,
   },
   "service restart": {
     description: { en: "Hot-restart the service while preserving active agent runs", "pt-BR": "Reiniciar o serviço sem interromper as execuções ativas dos agentes" },
     options: {
+      ...serviceCommonOptions,
       "--wait": { en: "Wait for active runs to drain instead of adopting them", "pt-BR": "Aguardar a conclusão das execuções ativas em vez de retomá-las" },
       "--expected-version": { en: "Require the restarted server to report this version", "pt-BR": "Exigir que o servidor reiniciado informe esta versão" },
     },
   },
   "service status": {
     description: { en: "Show supervisor and health status", "pt-BR": "Mostrar o estado do supervisor e da saúde do serviço" },
+    options: serviceCommonOptions,
   },
   "service logs": {
     description: { en: "Show service logs", "pt-BR": "Mostrar os logs do serviço" },
     options: {
+      ...serviceCommonOptions,
       "--follow": { en: "Follow new log output", "pt-BR": "Acompanhar novas linhas do log" },
       "--lines": { en: "Number of recent lines", "pt-BR": "Quantidade de linhas recentes" },
     },

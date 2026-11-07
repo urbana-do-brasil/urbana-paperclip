@@ -2862,7 +2862,10 @@ export function PipelineItemDetailView({ pipelineId, caseId }: { pipelineId: str
     return <div className="mx-auto max-w-3xl py-10 text-sm text-muted-foreground">{t("pipelineManagement.detail.notFound")}</div>;
   }
 
-  const workReferences = extractWorkReferences(detail.case);
+  const workReferences = extractWorkReferences(
+    detail.case,
+    t("pipelineManagement.detail.workReferences.workspaceFolderName"),
+  );
   const referenceKeys = referenceFieldKeys(detail.case.fields);
   const { shortFields: itemFields, longFields: mainPaneFields } = splitPipelineItemFields(
     displayPipelineItemFields(detail.case.fields)

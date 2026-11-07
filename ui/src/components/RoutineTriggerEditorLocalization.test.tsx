@@ -33,6 +33,36 @@ async function render(node: ReactNode) {
 }
 
 describe("routine trigger editor localization", () => {
+  it.each([
+    { locale: "en", open: "New trigger", submit: "Add trigger" },
+    { locale: "pt-BR", open: "Novo gatilho", submit: "Adicionar gatilho" },
+  ])("submits and closes the production trigger editor in $locale", async ({ locale, open, submit }) => {
+    await i18n.changeLanguage(locale);
+    const mutate = vi.fn((_value: unknown, options: { onSuccess: () => void }) => options.onSuccess());
+    const initialTrigger = { kind: "schedule", cronExpression: "0 10 * * *", signingMode: "bearer", replayWindowSec: "300" };
+    const context = {
+      routine: { id: "routine-1", companyId: "company-1", triggers: [] },
+      newTrigger: initialTrigger,
+      setNewTrigger: vi.fn(),
+      createTrigger: { isPending: false, mutate },
+      updateTrigger: { mutate: vi.fn() },
+      deleteTrigger: { mutate: vi.fn() },
+      rotateTrigger: { mutate: vi.fn() },
+      secretMessage: null,
+    } as unknown as RoutineDetailContextValue;
+    await render(<RoutineDetailContext.Provider value={context}><TriggersSection /></RoutineDetailContext.Provider>);
+    const findButton = (text: string) => [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent?.trim() === text);
+    await act(async () => findButton(open)!.click());
+    expect(findButton(submit)?.disabled).toBe(false);
+    await act(async () => findButton(submit)!.click());
+    expect(mutate).toHaveBeenCalledOnce();
+    expect(mutate.mock.calls[0][0]).toBeUndefined();
+    expect(context.setNewTrigger).toHaveBeenCalledOnce();
+    expect(findButton(open)).toBeTruthy();
+    expect(findButton(submit)).toBeUndefined();
+  });
+
   it("localizes schedule presets, cron labels, and validation in PT-BR", async () => {
     await i18n.changeLanguage("pt-BR");
     await render(<ScheduleEditor value="0 10 * * *" onChange={vi.fn()} />);

@@ -59,6 +59,11 @@ describe("public help mapping", () => {
             .replace(/("comment":\s*")[^"]*(")/g, '$1<localized example>$2')
             .replace(/(\s+\/\/).*$/gm, '$1<localized comment>');
         }
+        if (slug === "guides/openclaw-docker-setup") {
+          // The label printed to the operator may be translated; retain the
+          // command, quoting, and gateway-token variable in the comparison.
+          block = block.replace(/echo "(?:Your gateway token|Token do gateway): (\$OPENCLAW_GATEWAY_TOKEN)"/g, 'echo "<localized label>: $1"');
+        }
         if (slug === "feedback-voting") {
           block = block.replace(/\.\.\.(?:raw adapter files|arquivos brutos dos adapters)/g, "...<localized description>");
         }
@@ -98,6 +103,10 @@ describe("public help mapping", () => {
       expect(technicalTokens(portuguese.content)).toEqual(technicalTokens(english.content));
       expect(exampleBlocks(portuguese.content, slug)).toEqual(exampleBlocks(english.content, slug));
       expect(linkTargets(portuguese.content)).toEqual(linkTargets(english.content));
+      if (slug === "guides/openclaw-docker-setup") {
+        expect(portuguese.content).toContain('echo "Token do gateway: $OPENCLAW_GATEWAY_TOKEN"');
+        expect(english.content).toContain('echo "Your gateway token: $OPENCLAW_GATEWAY_TOKEN"');
+      }
       if (slug === "guides/execution-policy") {
         expect(portuguese.content).toContain('"title": "Implementar recurso X"');
         expect(portuguese.content).toContain("Decisão de revisão: aprovado — a implementação está correta e os testes passaram.");
@@ -130,6 +139,9 @@ describe("public help mapping", () => {
         expect(portuguese.content).toContain("...arquivos brutos dos adapters");
         expect(portuguese.content).not.toContain("...raw adapter files");
         expect(portuguese.content).not.toContain("session artifacts when available");
+        expect(english.content).toContain('Votes marked "keep local" are never queued for remote delivery.');
+        expect(portuguese.content).toContain("Votos marcados como **Manter local** nunca são colocados na fila de envio remoto.");
+        expect(portuguese.content).not.toContain("fila de exportação");
       }
     }
   });

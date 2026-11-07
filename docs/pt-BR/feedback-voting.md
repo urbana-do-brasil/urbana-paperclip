@@ -168,7 +168,7 @@ Quando a preferência da instância está configurada para perguntar, uma caixa 
 - **Manter local** — o voto é armazenado apenas localmente (`sharedWithLabs: false`)
 - **Compartilhar este voto** — o voto é marcado para compartilhamento (`sharedWithLabs: true`)
 
-Sua preferência é salva por empresa. Você pode alterá-la a qualquer momento nas configurações de feedback. Votos marcados como **Manter local** nunca são colocados na fila de exportação.
+Sua preferência é salva por empresa. Você pode alterá-la a qualquer momento nas configurações de feedback. Votos marcados como **Manter local** nunca são colocados na fila de envio remoto.
 
 ## Ciclo de vida dos dados
 

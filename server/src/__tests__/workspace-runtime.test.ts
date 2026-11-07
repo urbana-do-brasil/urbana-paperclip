@@ -5165,8 +5165,8 @@ describe("ensureRuntimeServicesForRun", () => {
       ),
     ].join(" ");
 
-    process.env.PAPERCLIP_CONFIG = "/tmp/base-paperclip-config.json";
-    process.env.PAPERCLIP_HOME = "/tmp/base-paperclip-home";
+    process.env.PAPERCLIP_CONFIG = path.join(workspaceRoot, "base-paperclip-config.json");
+    process.env.PAPERCLIP_HOME = path.join(workspaceRoot, "base-paperclip-home");
     process.env.PAPERCLIP_INSTANCE_ID = "base-instance";
     process.env.DATABASE_URL = "postgres://shared-db.example.com/paperclip";
 

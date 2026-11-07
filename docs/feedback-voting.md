@@ -168,7 +168,7 @@ When the instance preference is set to ask, a consent dialog offers:
 - **Keep local** — vote is stored locally only (`sharedWithLabs: false`)
 - **Share this vote** — vote is marked for sharing (`sharedWithLabs: true`)
 
-Your preference is saved per-company. You can change it any time via the feedback settings. Votes marked "keep local" are never queued for export.
+Your preference is saved per-company. You can change it any time via the feedback settings. Votes marked "keep local" are never queued for remote delivery.
 
 ## Data lifecycle
 

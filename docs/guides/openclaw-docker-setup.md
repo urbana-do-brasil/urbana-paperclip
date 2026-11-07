@@ -13,7 +13,7 @@ pnpm smoke:openclaw-join
 The harness automates:
 
 - invite creation (`allowedJoinTypes=agent`)
-- OpenClaw agent join request (`adapterType=openclaw`)
+- OpenClaw agent join request (`adapterType=openclaw_gateway`)
 - board approval
 - one-time API key claim (including invalid/replay claim checks)
 - wakeup callback delivery to a dockerized OpenClaw-style webhook receiver
@@ -24,6 +24,7 @@ Permissions note:
 
 - The harness performs board-governed actions (invite creation, join approval, wakeup of the new agent).
 - In authenticated mode, provide board/operator auth or the run exits early with an explicit permissions error.
+- The script removes its temporary Docker receiver container, but leaves the local receiver image and the invite, join request, agent, API key, and wakeup run in the target Paperclip instance. Use a disposable Paperclip instance if you need clean test data.
 
 ## One-Command OpenClaw Gateway UI (Manual Docker Flow)
 
@@ -39,7 +40,7 @@ What this command does:
 
 - clones/updates `openclaw/openclaw` in `/tmp/openclaw-docker`
 - builds `openclaw:local` (unless `OPENCLAW_BUILD=0`)
-- writes isolated smoke config under `~/.openclaw-paperclip-smoke/openclaw.json` and Docker `.env`
+- writes isolated smoke config under `OPENCLAW_CONFIG_DIR` (default `${OPENCLAW_TMP_DIR:-${TMPDIR:-/tmp}}/openclaw-paperclip-smoke`) and writes the Docker `.env` in the clone directory
 - pins agent model defaults to OpenAI (`openai/gpt-5.2` with OpenAI fallback)
 - starts `openclaw-gateway` via Compose (with required `/tmp` tmpfs override)
 - probes and prints a Paperclip host URL that is reachable from inside OpenClaw Docker
@@ -51,6 +52,7 @@ Environment knobs:
 
 - `OPENAI_API_KEY` (required; loaded from env or `~/.secrets`)
 - `OPENCLAW_DOCKER_DIR` (default `/tmp/openclaw-docker`)
+- `OPENCLAW_TMP_DIR` (default `${TMPDIR:-/tmp}`, used as the base for the default smoke config directory)
 - `OPENCLAW_GATEWAY_PORT` (default `18789`)
 - `OPENCLAW_GATEWAY_TOKEN` (default random)
 - `OPENCLAW_BUILD=0` to skip rebuild
@@ -59,7 +61,7 @@ Environment knobs:
 - `OPENCLAW_DISABLE_DEVICE_AUTH=0` keeps pairing enabled (then approve browser with `devices` CLI commands)
 - `OPENCLAW_MODEL_PRIMARY` (default `openai/gpt-5.2`)
 - `OPENCLAW_MODEL_FALLBACK` (default `openai/gpt-5.2-chat-latest`)
-- `OPENCLAW_CONFIG_DIR` (default `~/.openclaw-paperclip-smoke`)
+- `OPENCLAW_CONFIG_DIR` (default `${OPENCLAW_TMP_DIR:-${TMPDIR:-/tmp}}/openclaw-paperclip-smoke`)
 - `OPENCLAW_RESET_STATE=1` (default) resets smoke agent state on each run to avoid stale auth/session drift
 - `PAPERCLIP_HOST_PORT` (default `3100`)
 - `PAPERCLIP_HOST_FROM_CONTAINER` (default `host.docker.internal`)
@@ -90,18 +92,18 @@ Then restart Paperclip and rerun the smoke script.
 - Authenticated/private mode: ensure hostnames are in the allowed list when required:
 
 ```bash
-npx paperclipai allowed-hostname <host>
+npx paperclipai allowed-hostname my-host.tailnet.ts.net
 ```
 
 ## Prerequisites
 
-- **Docker Desktop v29+** (with Docker Sandbox support)
-- **2 GB+ RAM** available for the Docker image build
-- **API keys** in `~/.secrets` (at minimum `OPENAI_API_KEY`)
+- **Docker with Docker Compose v2** for Option B. Option A below requires an older Docker Desktop release that still includes the legacy `docker sandbox` command.
+- **6 GB+ RAM** available for a local OpenClaw source image build
+- **An OpenAI API key** in the environment or `~/.secrets` for model requests
 
-## Option A: Docker Sandbox (Recommended)
+## Option A: Docker Sandbox (Legacy)
 
-Docker Sandbox provides better isolation (microVM-based) and simpler setup than Docker Compose. Requires Docker Desktop v29+ / Docker Sandbox v0.12+.
+The commands below use Docker Desktop's legacy `docker sandbox` plugin. [Docker Desktop 4.80.0](https://docs.docker.com/desktop/release-notes/#4800) removed that plugin; current Docker Sandboxes use the `sbx` CLI (also exposed as `docker sbx` in Docker Desktop). This OpenClaw workflow has not been qualified with the current CLI, so use Option B on current Docker Desktop versions. See the [current Docker Sandboxes documentation](https://docs.docker.com/ai/sandboxes/install/) for the supported CLI.
 
 ```bash
 # 1. Clone the OpenClaw repo and build the image
@@ -182,9 +184,9 @@ docker sandbox rm openclaw
 docker sandbox version
 ```
 
-## Option B: Docker Compose (Fallback)
+## Option B: Docker Compose
 
-Use this if Docker Sandbox is not available (Docker Desktop < v29).
+Use this with Docker Compose v2 when the legacy Docker Sandbox command is unavailable.
 
 ```bash
 # 1. Clone the OpenClaw repo

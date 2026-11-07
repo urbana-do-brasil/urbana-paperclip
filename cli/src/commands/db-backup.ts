@@ -48,8 +48,10 @@ function resolveBackupDir(raw: string): string {
 }
 
 export async function dbBackupCommand(opts: DbBackupOptions): Promise<void> {
-  printPaperclipCliBanner();
-  p.intro(pc.bgCyan(pc.black(" paperclip db:backup ")));
+  if (!opts.json) {
+    printPaperclipCliBanner();
+    p.intro(pc.bgCyan(pc.black(" paperclip db:backup ")));
+  }
 
   const configPath = resolveConfigPath(opts.config);
   const config = readConfig(opts.config);
@@ -64,13 +66,15 @@ export async function dbBackupCommand(opts: DbBackupOptions): Promise<void> {
   );
   const filenamePrefix = opts.filenamePrefix?.trim() || "paperclip";
 
-  p.log.message(pc.dim(`${dbBackupMessage("config", {}, opts.json)} ${configPath}`));
-  p.log.message(pc.dim(`${dbBackupMessage("source", {}, opts.json)} ${connection.source}`));
-  p.log.message(pc.dim(`${dbBackupMessage("directory", {}, opts.json)} ${backupDir}`));
-  p.log.message(pc.dim(dbBackupMessage("retention", { days: retentionDays }, opts.json)));
+  if (!opts.json) {
+    p.log.message(pc.dim(`${dbBackupMessage("config", {}, opts.json)} ${configPath}`));
+    p.log.message(pc.dim(`${dbBackupMessage("source", {}, opts.json)} ${connection.source}`));
+    p.log.message(pc.dim(`${dbBackupMessage("directory", {}, opts.json)} ${backupDir}`));
+    p.log.message(pc.dim(dbBackupMessage("retention", { days: retentionDays }, opts.json)));
+  }
 
-  const spinner = p.spinner();
-  spinner.start(dbBackupMessage("starting", {}, opts.json));
+  const spinner = opts.json ? null : p.spinner();
+  spinner?.start(dbBackupMessage("starting", {}, opts.json));
   try {
     const result = await runDatabaseBackup({
       connectionString: connection.value,
@@ -78,7 +82,7 @@ export async function dbBackupCommand(opts: DbBackupOptions): Promise<void> {
       retention: { dailyDays: retentionDays, weeklyWeeks: 4, monthlyMonths: 1 },
       filenamePrefix,
     });
-    spinner.stop(dbBackupMessage("saved", { result: formatDatabaseBackupResult(result) }, opts.json));
+    spinner?.stop(dbBackupMessage("saved", { result: formatDatabaseBackupResult(result) }, opts.json));
 
     if (opts.json) {
       console.log(
@@ -95,10 +99,11 @@ export async function dbBackupCommand(opts: DbBackupOptions): Promise<void> {
           2,
         ),
       );
+    } else {
+      p.outro(pc.green(dbBackupMessage("done", {}, opts.json)));
     }
-    p.outro(pc.green(dbBackupMessage("done", {}, opts.json)));
   } catch (err) {
-    spinner.stop(pc.red(dbBackupMessage("failed", {}, opts.json)));
+    spinner?.stop(pc.red(dbBackupMessage("failed", {}, opts.json)));
     throw err;
   }
 }

@@ -5,8 +5,8 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o apply está em **482 de 496 tarefas**,
-com 14 caixas abertas, incluindo agregadores. A contagem inclui lotes menores
+Na branch `codex/localize-paperclip-pt-br`, o apply está em **530 de 541 tarefas**,
+com 11 caixas abertas, incluindo agregadores. A contagem inclui lotes menores
 por jornada; subtarefas concluídas não encerram automaticamente seu grupo. Os
 checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -91,7 +91,7 @@ e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
 em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checklist do
-OpenSpec está em **482/496 tarefas**, com 14 itens abertos incluindo tarefas
+OpenSpec está em **530/541 tarefas**, com 11 itens abertos incluindo tarefas
 agregadoras. 3.8 e 6.3 foram fechadas após auditoria; seguem trabalho em CLI,
 ajuda pública, comunicação de agentes, reconciliação, regressão integrada e
 revisão independente.
@@ -101,10 +101,10 @@ revisão independente.
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
 | 3. Interface web por jornadas | 3.8 foi concluída nas jornadas planejadas; a matriz browser é representativa, com APIs simuladas. 3.10a–v têm subtarefas verificadas, mas o grupo permanece aberto por lacunas de qualificação e auditoria. 3.11 permanece parcial nas superfícies host documentadas. |
-| 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; operações e help em 4.3 têm lotes localizados. A tabela raiz de 75 comandos está fixada em PT-BR/en; auditoria de todos os leafs e contratos estruturados (4.3/4.4) permanecem pendentes. O typecheck integral da CLI terminou com exit 137 por memória em rodadas anteriores; typechecks direcionados passaram. |
-| 5. Ajuda e documentação pública bilíngue | 71 tópicos públicos têm fontes EN/PT-BR e passam pelo gate de cobertura. 5.2c e 5.3d1/d3 estão incluídas; a execução real do smoke de pipelines e a revisão humana continuam pendentes. |
-| 6. Comunicação dos agentes | 6.1 e 6.3 foram verificadas, incluindo uma jornada descartável com duas contas PT-BR/en. Os lotes determinísticos 6.2a–h passaram, mas a auditoria agregada 6.2 e a qualificação de respostas reais em 6.4 permanecem pendentes. |
-| 7. Integração, regressão e revisão final | Checks locais 7.1a–d estão integrados; CI remota, reconciliação completa 7.2, regressão 7.3 e revisão independente 7.4 permanecem pendentes. |
+| 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas; operações e help em 4.3 têm lotes localizados. A tabela raiz de 75 comandos está fixada em PT-BR/en; o inventário runtime identificou 459 leafs e 142 cobertos na matriz de subprocessos à época da varredura. Auditoria dos demais leafs e contratos estruturados (4.3/4.4) permanecem pendentes. O typecheck integral da CLI passou após os lotes recentes. |
+| 5. Ajuda e documentação pública bilíngue | 71 tópicos públicos têm fontes EN/PT-BR e passam pelo gate de cobertura. O smoke de pipelines passou em ambiente descartável, incluindo HTTP 409 e rotina com agente simulado; a revisão humana permanece pendente. |
+| 6. Comunicação dos agentes | 6.1–6.3 foram verificadas, incluindo contratos determinísticos dos 15 adapters ativos e uma jornada descartável com duas contas PT-BR/en. A qualificação de respostas reais em 6.4 permanece pendente. |
+| 7. Integração, regressão e revisão final | Checks locais 7.1a–e estão integrados; o job de localização de PR ainda requer execução remota. Reconciliação completa 7.2, regressão 7.3 e revisão independente 7.4 permanecem pendentes. |
 
 ## Continuação — interações de conexão (3.4d3c2)
 

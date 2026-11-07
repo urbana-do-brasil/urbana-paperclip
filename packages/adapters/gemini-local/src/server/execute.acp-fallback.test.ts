@@ -214,6 +214,66 @@ describe("gemini_local ACP startup fallback", () => {
     },
   );
 
+  it.each(["pt-BR", "en"] as const)(
+    "reapplies %s communication guidance when an unavailable Gemini session falls back to a fresh turn",
+    async (locale) => {
+      const cwd = await mkdtemp(path.join(tmpdir(), "gemini-locale-resume-fallback-"));
+      const prompts: string[] = [];
+      const promptTemplate = "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.";
+      try {
+        runAdapterExecutionTargetProcess.mockReset()
+          .mockResolvedValueOnce({
+            exitCode: 1, signal: null, timedOut: false, stdout: "",
+            stderr: "Unknown session 'previous'", pid: 123, startedAt: new Date().toISOString(),
+          })
+          .mockResolvedValueOnce({
+            exitCode: 0, signal: null, timedOut: false,
+            stdout: JSON.stringify({ type: "message", role: "assistant", content: "done" }),
+            stderr: "", pid: 123, startedAt: new Date().toISOString(),
+          });
+        const ctx = buildContext({ engine: "cli", cwd, env: {}, promptTemplate });
+        const result = await execute({
+          ...ctx,
+          runtime: { ...ctx.runtime, sessionId: "previous" },
+          context: createCommunicationLocalePromptFixture(locale),
+          onMeta: async (meta) => { prompts.push(meta.prompt ?? ""); },
+        });
+
+        expect(result.exitCode).toBe(0);
+        expect(prompts).toHaveLength(2);
+        const calls = runAdapterExecutionTargetProcess.mock.calls as unknown[][];
+        const firstArgs = calls[0]?.[3] as string[] | undefined;
+        const retryArgs = calls[1]?.[3] as string[] | undefined;
+        expect(firstArgs).toContain("--resume");
+        expect(firstArgs).toContain("previous");
+        expect(retryArgs).not.toContain("--resume");
+        expect(retryArgs?.at(-1)).toBe(prompts[1]);
+
+        const directive = locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+        for (const prompt of prompts) {
+          expect(prompt).toContain("## Human communication language");
+          expect(prompt).toContain(directive);
+          expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+          expect(prompt).toContain("`X-Trace-Mode: RAW`");
+          expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        }
+        expect(prompts[0]).toContain("## Compact assignment");
+        expect(prompts[1]).toContain("## Owned assignment");
+        expect(prompts[1]).toContain(promptTemplate);
+        if (locale === "pt-BR") {
+          expect(prompts[0]).toContain("Do not switch these interactions to English.");
+          expect(prompts[0]).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompts[0]).toContain("ASD-STE100 Simplified Technical English");
+        }
+      } finally {
+        await rm(cwd, { recursive: true, force: true });
+      }
+    },
+  );
+
   it("rebuilds the full assignment when a resume falls back to a fresh CLI attempt", async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), "gemini-context-fallback-"));
     const prompts: string[] = [];

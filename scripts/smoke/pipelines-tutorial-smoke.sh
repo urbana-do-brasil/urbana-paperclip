@@ -56,6 +56,41 @@ api_json() {
   fi
 }
 
+api_capture_response() {
+  local method="$1"
+  local path="$2"
+  local body="${3:-}"
+  local response_file="$TMP_DIR/api-response.json"
+  if [[ -n "$body" ]]; then
+    API_STATUS_CODE="$(curl -sS -o "$response_file" -w '%{http_code}' -X "$method" \
+      -H "Authorization: Bearer $PAPERCLIP_API_KEY" \
+      -H "Content-Type: application/json" \
+      --data "$body" \
+      "${PAPERCLIP_API_URL%/}$path")"
+  else
+    API_STATUS_CODE="$(curl -sS -o "$response_file" -w '%{http_code}' -X "$method" \
+      -H "Authorization: Bearer $PAPERCLIP_API_KEY" \
+      "${PAPERCLIP_API_URL%/}$path")"
+  fi
+  API_RESPONSE_BODY="$(cat "$response_file")"
+}
+
+require_api_error() {
+  local status_code="$1"
+  local response_body="$2"
+  local expected_code="$3"
+  local message="$4"
+  local filter="$5"
+  shift 5
+  if [[ "$status_code" != "409" ]] || ! jq -e --arg expectedCode "$expected_code" "$@" "$filter" >/dev/null <<<"$response_body"; then
+    echo "$message (expected HTTP 409 with code=$expected_code; received HTTP $status_code)." >&2
+    if ! jq . >&2 <<<"$response_body"; then
+      echo "$response_body" >&2
+    fi
+    exit 1
+  fi
+}
+
 pick_agent_id() {
   if [[ -n "${DRAFTING_AGENT_ID:-}" ]]; then
     echo "$DRAFTING_AGENT_ID"
@@ -318,13 +353,20 @@ tweet_case="$(case_id "$content_cases" "$TWEET_CASE_KEY")"
 
 set +e
 blocked_output="$(pc_json pipelines case transition "$tweet_case" --to assets --expected-version 1 --reason "Try before upstream blog is published." 2>&1)"
-blocked_status=$?
+blocked_cli_exit=$?
 set -e
-if [[ "$blocked_status" -eq 0 || "$blocked_output" != *"code=blocked"* ]]; then
+if [[ "$blocked_cli_exit" -eq 0 || "$blocked_output" != *"API error 409:"* || "$blocked_output" != *"code=blocked"* ]]; then
   echo "Expected blocked transition to fail with code=blocked." >&2
   echo "$blocked_output" >&2
   exit 1
 fi
+blocked_request="$(jq -cn '{toStageKey:"assets",expectedVersion:1,reason:"Try before upstream blog is published."}')"
+api_capture_response POST "/api/cases/$tweet_case/transition" "$blocked_request"
+require_api_error "$API_STATUS_CODE" "$API_RESPONSE_BODY" "blocked" \
+  "Blocked transition response did not include the expected blocker." \
+  '.error == "Pipeline case is blocked" and .code == $expectedCode and .details.code == $expectedCode and any(.details.blockers[]; .id == $blockedCaseId and .caseKey == $blockedCaseKey)' \
+  --arg blockedCaseId "$blog_case" \
+  --arg blockedCaseKey "$BLOG_CASE_KEY"
 
 work_issue="$(pc_json issue create \
   --title "Smoke work issue for launch tweet $RUN_KEY" \
@@ -349,13 +391,18 @@ require_json "$comments" 'length >= 1 and (.[-1].body | contains("changed (v2"))
 
 set +e
 conflict_output="$(pc_json pipelines case edit "$blog_case" --expected-version 2 --title "Stale edit" 2>&1)"
-conflict_status=$?
+conflict_cli_exit=$?
 set -e
-if [[ "$conflict_status" -eq 0 || "$conflict_output" != *"code=version_conflict"* ]]; then
+if [[ "$conflict_cli_exit" -eq 0 || "$conflict_output" != *"API error 409:"* || "$conflict_output" != *"code=version_conflict"* || "$conflict_output" != *"currentVersion=3"* || "$conflict_output" != *"currentStage=assets"* ]]; then
   echo "Expected stale edit to fail with code=version_conflict." >&2
   echo "$conflict_output" >&2
   exit 1
 fi
+stale_edit_request='{"expectedVersion":2,"title":"Stale edit"}'
+api_capture_response PATCH "/api/cases/$blog_case" "$stale_edit_request"
+require_api_error "$API_STATUS_CODE" "$API_RESPONSE_BODY" "version_conflict" \
+  "Stale edit response did not include the current case version and stage." \
+  '.error == "Pipeline case version conflict" and .code == $expectedCode and .details.code == $expectedCode and .details.version == 3 and .details.stage.key == "assets" and .details.stage.kind == "working"'
 blog_version="$(case_version "$blog_case")"
 
 jq -n --arg parent "$feature_main" --argjson briefVersion "$blog_version" --arg heroCaseKey "$HERO_CASE_KEY" --arg cardCaseKey "$CARD_CASE_KEY" '{
@@ -400,7 +447,7 @@ jq -n --arg parent "$blog_case" --arg assemblyCaseKey "$ASSEMBLY_CASE_KEY" '{
 }' >"$TMP_DIR/assembly-cases.json"
 assembly_cases="$(pc_json pipelines ingest-batch "$CONTENT_PIPELINE" --file "$TMP_DIR/assembly-cases.json")"
 require_json "$assembly_cases" 'length == 1 and all(.ok == true)' "Assembly batch ingest failed."
-assembly_package="$(case_id "$assembly_cases" blog-assembly-package)"
+assembly_package="$(case_id "$assembly_cases" "$ASSEMBLY_CASE_KEY")"
 pc_json pipelines case transition "$assembly_package" --to published --expected-version 1 --reason "Assembly complete." >/dev/null
 require_json "$(pc_json pipelines case get "$blog_case")" '.stage.key == "final_review"' "Blog should auto-advance from Assembly to Final Review."
 
@@ -430,6 +477,9 @@ require_json "$rollup" '.complete == true and .done == 5 and .cancelled == 3 and
 
 events="$(pc_json pipelines case events "$changelog_case")"
 require_json "$events" '([.items[].type] | index("review_decided")) and ([.items[] | select(.type == "review_decided") | .payload.decision] | index("request_changes") and index("approve"))' "Changelog event history is missing request-changes and approval decisions."
+
+tweet_events="$(pc_json pipelines case events "$tweet_case")"
+require_json "$tweet_events" '[.items[] | select(.type == "review_decided" and .payload.decision == "reject" and .payload.reason == "Drop this tweet; blog already covers the announcement.")] | length > 0' "Tweet event history is missing the rejection and its reason."
 
 release_events="$(pc_json pipelines case events "$release_case_id")"
 require_json "$release_events" '.items | map(.type) | index("children_terminal") and index("transitioned")' "Release event history is missing rollup provenance."

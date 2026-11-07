@@ -1108,6 +1108,43 @@ describe("grok_local execute", () => {
     });
 
     it.each(["pt-BR", "en"] as const)(
+      "starts a new Grok --single turn with the selected locale and technical content (%s)",
+      async (locale) => {
+        const root = await makeTempRoot();
+        const promptTemplate = "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.";
+        const ctx = await makeCtx(`run-grok-first-locale-${locale}`, root);
+        ctx.authToken = undefined;
+        ctx.config = { cwd: root, engine: "cli", env: {}, promptTemplate };
+        ctx.context = createCommunicationLocalePromptFixture(locale);
+        runProcessMock.mockResolvedValue(makeSuccessfulRunResult({ sessionId: "first-session" }));
+
+        const result = await execute(ctx);
+
+        expect(result.exitCode).toBe(0);
+        expect(result.sessionParams?.sessionId).toBe("first-session");
+        expect(ctx.runtime.sessionId).toBeNull();
+        expect(runProcessMock).toHaveBeenCalledTimes(1);
+        const args = runProcessMock.mock.calls[0]?.[3] as string[];
+        expect(args).not.toContain("--resume");
+        const prompt = args[args.indexOf("--single") + 1] ?? "";
+        expect(prompt).toContain("## Human communication language");
+        expect(prompt).toContain(locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        expect(prompt).toContain(promptTemplate);
+        if (locale === "pt-BR") {
+          expect(prompt).toContain("Do not switch these interactions to English.");
+          expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+        }
+      },
+    );
+
+    it.each(["pt-BR", "en"] as const)(
       "retains communication locale and exact technical content through Grok --single on resume fallback (%s)",
       async (locale) => {
         const root = await makeTempRoot();

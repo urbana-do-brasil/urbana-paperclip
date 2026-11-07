@@ -103,10 +103,34 @@ const worktreeSeedOptions = {
 };
 
 const operationHelp: Record<string, CommandHelp> = {
-  "test-drive": descriptionOnly(
-    "Start an isolated, initialized Paperclip instance for manual testing",
-    "Iniciar uma instância isolada e inicializada do Paperclip para testes manuais",
-  ),
+  "test-drive": {
+    description: {
+      en: "Start an isolated, initialized Paperclip instance for manual testing",
+      "pt-BR": "Iniciar uma instância isolada e inicializada do Paperclip para testes manuais",
+    },
+    options: {
+      "--data-dir": { en: "Paperclip data directory to create or reuse", "pt-BR": "Diretório de dados do Paperclip a criar ou reutilizar" },
+      "--company-name": { en: "Initial company name", "pt-BR": "Nome inicial da organização" },
+      "--agent-name": { en: "Initial CEO agent name", "pt-BR": "Nome inicial do agente CEO" },
+      "--harness": { en: "Initial agent harness", "pt-BR": "Harness inicial do agente" },
+      "--model": { en: "Initial agent model", "pt-BR": "Modelo inicial do agente" },
+      "--api-key-env": { en: "Read the provider key from an environment variable", "pt-BR": "Ler a chave do provedor de uma variável de ambiente" },
+      "--api-key": { en: "Provider API key", "pt-BR": "Chave de API do provedor" },
+      "--no-browser": { en: "Do not open the initialized instance in a browser", "pt-BR": "Não abrir a instância inicializada no navegador" },
+    },
+  },
+  doctor: {
+    description: {
+      en: "Run diagnostic checks on your Paperclip setup",
+      "pt-BR": "Executar verificações de diagnóstico da instalação do Paperclip",
+    },
+    options: {
+      "--config": { en: "Path to config file", "pt-BR": "Caminho do arquivo de configuração" },
+      "--data-dir": commonClientOptions["--data-dir"],
+      "--repair": { en: "Attempt to repair issues automatically", "pt-BR": "Tentar reparar problemas automaticamente" },
+      "--yes": { en: "Skip repair confirmation prompts", "pt-BR": "Pular as confirmações de reparo" },
+    },
+  },
   runtime: descriptionOnly("Manage explicitly installed agent runtimes", "Gerenciar runtimes de agentes instalados explicitamente"),
   "runtime import-remote": {
     description: {
@@ -184,39 +208,822 @@ const operationHelp: Record<string, CommandHelp> = {
     },
   },
   email: descriptionOnly("Explicitly send and inspect task-bound AgentMail conversations", "Enviar e inspecionar conversas AgentMail vinculadas a tarefas"),
+  "email inboxes": {
+    description: { en: "List email inboxes available to the company", "pt-BR": "Listar as caixas de entrada de e-mail disponíveis para a organização" },
+    options: companyOptions,
+  },
+  "email send": {
+    description: { en: "Send a task-bound AgentMail message and start a conversation", "pt-BR": "Enviar uma mensagem AgentMail vinculada a uma tarefa e iniciar uma conversa" },
+    options: {
+      ...companyOptions,
+      "--file": { en: "JSON request file, including a stable idempotencyKey", "pt-BR": "Arquivo de requisição JSON, incluindo uma idempotencyKey estável" },
+    },
+  },
+  "email reply": {
+    description: { en: "Reply within an existing AgentMail conversation", "pt-BR": "Responder em uma conversa AgentMail existente" },
+    options: {
+      ...companyOptions,
+      "--file": { en: "JSON request file, including a stable idempotencyKey", "pt-BR": "Arquivo de requisição JSON, incluindo uma idempotencyKey estável" },
+    },
+  },
+  "email thread": {
+    description: { en: "Inspect an AgentMail conversation for a task", "pt-BR": "Consultar uma conversa AgentMail de uma tarefa" },
+    arguments: { issueId: { en: "Email task ID", "pt-BR": "ID da tarefa de e-mail" } },
+    options: companyOptions,
+  },
+  "email delivery": {
+    description: { en: "Inspect delivery status for an AgentMail publication", "pt-BR": "Consultar o status de entrega de uma publicação AgentMail" },
+    arguments: { publicationId: { en: "Publication ID returned by send", "pt-BR": "ID da publicação retornado pelo envio" } },
+    options: companyOptions,
+  },
   issue: descriptionOnly("Issue operations", "Operações de tarefas"),
   agent: descriptionOnly("Agent operations", "Operações de agentes"),
   project: descriptionOnly("Project operations", "Operações de projetos"),
-  "agent-prompt": descriptionOnly(
-    "Create/update Paperclip work for an agent using an agent API key",
-    "Criar ou atualizar trabalho no Paperclip para um agente usando uma chave de API de agente",
-  ),
+  "agent-prompt": {
+    description: {
+      en: "Create/update Paperclip work for an agent using an agent API key",
+      "pt-BR": "Criar ou atualizar trabalho no Paperclip para um agente usando uma chave de API de agente",
+    },
+    arguments: {
+      agent: { en: "Agent ID, shortname, or name", "pt-BR": "ID, shortname ou nome do agente" },
+      agentApiKey: { en: "Agent API key", "pt-BR": "Chave de API do agente" },
+      prompt: { en: "Prompt text", "pt-BR": "Texto do prompt" },
+    },
+    options: {
+      "--issue": { en: "Append as a comment to an existing issue", "pt-BR": "Adicionar como comentário a uma tarefa existente" },
+      "--title": { en: "Issue title when creating a new issue", "pt-BR": "Título da tarefa ao criar uma nova tarefa" },
+      "--no-wake": { en: "Do not wake the agent after creating/updating work", "pt-BR": "Não acordar o agente após criar ou atualizar o trabalho" },
+      ...commonClientOptions,
+    },
+  },
   board: descriptionOnly("Board operator operations", "Operações de operador do board"),
+  "board prompt": {
+    description: {
+      en: "Create/update Paperclip work for an agent using board auth",
+      "pt-BR": "Criar ou atualizar trabalho no Paperclip para um agente usando autenticação do board",
+    },
+    arguments: { prompt: { en: "Prompt text", "pt-BR": "Texto do prompt" } },
+    options: {
+      "--agent": { en: "Target agent ID, shortname, or name", "pt-BR": "ID, shortname ou nome do agente de destino" },
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--issue": { en: "Append as a comment to an existing issue", "pt-BR": "Adicionar como comentário a uma tarefa existente" },
+      "--title": { en: "Issue title when creating a new issue", "pt-BR": "Título da tarefa ao criar uma nova tarefa" },
+      "--no-wake": { en: "Do not wake the agent after creating/updating work", "pt-BR": "Não acordar o agente após criar ou atualizar o trabalho" },
+      ...commonClientOptions,
+    },
+  },
   finance: descriptionOnly("Finance event and summary operations", "Operações de eventos e resumos financeiros"),
+  "finance event:create": {
+    description: { en: "Record a finance event", "pt-BR": "Registrar um evento financeiro" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "finance events": {
+    description: { en: "List finance events", "pt-BR": "Listar eventos financeiros" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "finance summary": {
+    description: { en: "Get finance summary", "pt-BR": "Consultar o resumo financeiro" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "finance by-biller": {
+    description: { en: "Get finance summary by biller", "pt-BR": "Consultar o resumo financeiro por faturador" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "finance by-kind": {
+    description: { en: "Get finance summary by kind", "pt-BR": "Consultar o resumo financeiro por tipo" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
   budget: descriptionOnly("Budget policy and incident operations", "Operações de políticas orçamentárias e incidentes"),
+  "budget overview": {
+    description: { en: "Get budget overview", "pt-BR": "Consultar o resumo do orçamento" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "budget policy:upsert": {
+    description: { en: "Create or update a budget policy", "pt-BR": "Criar ou atualizar uma política de orçamento" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "budget company:update": {
+    description: { en: "Update company budget", "pt-BR": "Atualizar o orçamento da organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "UpdateBudget JSON payload", "pt-BR": "Payload JSON de UpdateBudget" },
+    },
+  },
+  "budget agent:update": {
+    description: { en: "Update agent budget", "pt-BR": "Atualizar o orçamento do agente" },
+    arguments: { agentId: { en: "Agent ID", "pt-BR": "ID do agente" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "UpdateBudget JSON payload", "pt-BR": "Payload JSON de UpdateBudget" },
+    },
+  },
+  "budget incident:resolve": {
+    description: { en: "Resolve a budget incident", "pt-BR": "Resolver um incidente de orçamento" },
+    arguments: { incidentId: { en: "Budget incident ID", "pt-BR": "ID do incidente de orçamento" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "ResolveBudgetIncident JSON payload", "pt-BR": "Payload JSON de ResolveBudgetIncident" },
+    },
+  },
   "agent-config": descriptionOnly("Agent configuration summaries", "Resumos de configuração de agentes"),
+  "agent-config list": {
+    description: { en: "List agent configurations", "pt-BR": "Listar configurações de agentes" },
+    options: {
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      ...commonClientOptions,
+    },
+  },
   workspace: descriptionOnly("Execution workspace operations", "Operações de espaços de trabalho de execução"),
+  "workspace list": {
+    description: { en: "List execution workspaces", "pt-BR": "Listar espaços de trabalho de execução" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "workspace get": {
+    description: { en: "Get an execution workspace", "pt-BR": "Consultar um espaço de trabalho de execução" },
+    arguments: { id: { en: "ID", "pt-BR": "ID do espaço de trabalho de execução" } },
+    options: commonClientOptions,
+  },
+  "workspace close-readiness": {
+    description: {
+      en: "Check execution workspace close readiness",
+      "pt-BR": "Verificar se o espaço de trabalho de execução está pronto para fechamento",
+    },
+    arguments: { id: { en: "ID", "pt-BR": "ID do espaço de trabalho de execução" } },
+    options: commonClientOptions,
+  },
+  "workspace operations": {
+    description: { en: "List execution workspace operations", "pt-BR": "Listar operações do espaço de trabalho de execução" },
+    arguments: { id: { en: "ID", "pt-BR": "ID do espaço de trabalho de execução" } },
+    options: commonClientOptions,
+  },
+  "workspace update": {
+    description: { en: "Update an execution workspace", "pt-BR": "Atualizar um espaço de trabalho de execução" },
+    arguments: { id: { en: "ID", "pt-BR": "ID do espaço de trabalho de execução" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "workspace runtime-service": {
+    description: {
+      en: "Control an execution workspace runtime service",
+      "pt-BR": "Controlar o serviço de runtime do espaço de trabalho de execução",
+    },
+    arguments: {
+      id: { en: "Workspace ID", "pt-BR": "ID do espaço de trabalho de execução" },
+      action: { en: "start, stop, restart, or run", "pt-BR": "Ação: start, stop, restart ou run" },
+    },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "Runtime target JSON payload", "pt-BR": "Payload JSON do alvo do runtime" },
+    },
+  },
+  "workspace runtime-command": {
+    description: {
+      en: "Run an execution workspace runtime command",
+      "pt-BR": "Executar um comando de runtime no espaço de trabalho de execução",
+    },
+    arguments: {
+      id: { en: "Workspace ID", "pt-BR": "ID do espaço de trabalho de execução" },
+      action: { en: "start, stop, restart, or run", "pt-BR": "Ação: start, stop, restart ou run" },
+    },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "Runtime target JSON payload", "pt-BR": "Payload JSON do alvo do runtime" },
+    },
+  },
   environment: descriptionOnly("Environment operations", "Operações de ambiente"),
+  "environment list": {
+    description: { en: "List environments", "pt-BR": "Listar ambientes" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "environment capabilities": {
+    description: { en: "Get environment capabilities", "pt-BR": "Consultar os recursos do ambiente" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "environment create": {
+    description: { en: "Create an environment", "pt-BR": "Criar um ambiente" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "environment get": {
+    description: { en: "Get an environment", "pt-BR": "Consultar um ambiente" },
+    arguments: { id: { en: "ID", "pt-BR": "ID do ambiente" } },
+    options: commonClientOptions,
+  },
+  "environment leases": {
+    description: { en: "List environment leases", "pt-BR": "Listar leases do ambiente" },
+    arguments: { id: { en: "ID", "pt-BR": "ID do ambiente" } },
+    options: commonClientOptions,
+  },
+  "environment lease": {
+    description: { en: "Get an environment lease", "pt-BR": "Consultar um lease do ambiente" },
+    arguments: { leaseId: { en: "Lease ID", "pt-BR": "ID do lease" } },
+    options: commonClientOptions,
+  },
+  "environment update": {
+    description: { en: "Update an environment", "pt-BR": "Atualizar um ambiente" },
+    arguments: { id: { en: "ID", "pt-BR": "ID do ambiente" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "environment delete": {
+    description: { en: "Delete an environment", "pt-BR": "Excluir um ambiente" },
+    arguments: { id: { en: "ID", "pt-BR": "ID do ambiente" } },
+    options: commonClientOptions,
+  },
+  "environment probe": {
+    description: { en: "Probe an environment", "pt-BR": "Verificar um ambiente" },
+    arguments: { id: { en: "ID", "pt-BR": "ID do ambiente" } },
+    options: commonClientOptions,
+  },
+  "environment probe-config": {
+    description: { en: "Probe an environment config", "pt-BR": "Testar a configuração de um ambiente" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
   "project-workspace": descriptionOnly("Project workspace operations", "Operações de espaços de trabalho de projetos"),
-  whoami: descriptionOnly("Show current CLI auth identity", "Exibir a identidade de autenticação atual da CLI"),
+  "project-workspace list": {
+    description: { en: "List project workspaces", "pt-BR": "Listar espaços de trabalho do projeto" },
+    arguments: { projectId: { en: "Project ID", "pt-BR": "ID do projeto" } },
+    options: commonClientOptions,
+  },
+  "project-workspace create": {
+    description: { en: "Create a project workspace", "pt-BR": "Criar um espaço de trabalho do projeto" },
+    arguments: {
+      projectId: { en: "Project ID", "pt-BR": "ID do projeto" },
+      workspaceId: { en: "Workspace ID for update", "pt-BR": "ID do espaço de trabalho para atualização" },
+    },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "project-workspace update": {
+    description: { en: "Update a project workspace", "pt-BR": "Atualizar um espaço de trabalho do projeto" },
+    arguments: {
+      projectId: { en: "Project ID", "pt-BR": "ID do projeto" },
+      workspaceId: { en: "Workspace ID for update", "pt-BR": "ID do espaço de trabalho para atualização" },
+    },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "project-workspace delete": {
+    description: { en: "Delete a project workspace", "pt-BR": "Excluir um espaço de trabalho do projeto" },
+    arguments: {
+      projectId: { en: "Project ID", "pt-BR": "ID do projeto" },
+      workspaceId: { en: "Workspace ID", "pt-BR": "ID do espaço de trabalho" },
+    },
+    options: commonClientOptions,
+  },
+  "project-workspace runtime-service": {
+    description: {
+      en: "Control a project workspace runtime service",
+      "pt-BR": "Controlar o serviço de runtime do espaço de trabalho do projeto",
+    },
+    arguments: {
+      projectId: { en: "Project ID", "pt-BR": "ID do projeto" },
+      workspaceId: { en: "Workspace ID", "pt-BR": "ID do espaço de trabalho" },
+      action: { en: "start, stop, restart, or run", "pt-BR": "Ação: start, stop, restart ou run" },
+    },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "Runtime target JSON payload", "pt-BR": "Payload JSON do alvo do runtime" },
+    },
+  },
+  "project-workspace runtime-command": {
+    description: {
+      en: "Run a project workspace runtime command",
+      "pt-BR": "Executar um comando de runtime no espaço de trabalho do projeto",
+    },
+    arguments: {
+      projectId: { en: "Project ID", "pt-BR": "ID do projeto" },
+      workspaceId: { en: "Workspace ID", "pt-BR": "ID do espaço de trabalho" },
+      action: { en: "start, stop, restart, or run", "pt-BR": "Ação: start, stop, restart ou run" },
+    },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "Runtime target JSON payload", "pt-BR": "Payload JSON do alvo do runtime" },
+    },
+  },
+  whoami: {
+    description: { en: "Show current CLI auth identity", "pt-BR": "Exibir a identidade de autenticação atual da CLI" },
+    options: commonClientOptions,
+  },
   access: descriptionOnly("Access and auth inspection operations", "Operações de inspeção de acesso e autenticação"),
-  openapi: descriptionOnly("Print the OpenAPI document", "Exibir o documento OpenAPI"),
+  "access whoami": {
+    description: { en: "Show current CLI auth identity", "pt-BR": "Exibir a identidade de autenticação atual da CLI" },
+    options: commonClientOptions,
+  },
+  openapi: {
+    description: { en: "Print the OpenAPI document", "pt-BR": "Exibir o documento OpenAPI" },
+    options: commonClientOptions,
+  },
   invite: descriptionOnly("Invite operations", "Operações de convites"),
+  "invite list": {
+    description: { en: "List company invites", "pt-BR": "Listar convites da organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "invite create": {
+    description: { en: "Create an invite", "pt-BR": "Criar um convite" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "invite revoke": {
+    description: { en: "Revoke an invite", "pt-BR": "Revogar um convite" },
+    arguments: { inviteId: { en: "Invite ID", "pt-BR": "ID do convite" } },
+    options: commonClientOptions,
+  },
+  "invite show": {
+    description: { en: "Get invite show", "pt-BR": "Consultar os dados do convite" },
+    arguments: { token: { en: "Invite token", "pt-BR": "Token do convite" } },
+    options: commonClientOptions,
+  },
+  "invite logo": {
+    description: { en: "Get invite logo", "pt-BR": "Obter o logotipo do convite" },
+    arguments: { token: { en: "Invite token", "pt-BR": "Token do convite" } },
+    options: commonClientOptions,
+  },
+  "invite onboarding": {
+    description: { en: "Get invite onboarding", "pt-BR": "Consultar as informações de integração do convite" },
+    arguments: { token: { en: "Invite token", "pt-BR": "Token do convite" } },
+    options: commonClientOptions,
+  },
+  "invite onboarding:text": {
+    description: { en: "Get invite onboarding:text", "pt-BR": "Consultar o texto de integração do convite" },
+    arguments: { token: { en: "Invite token", "pt-BR": "Token do convite" } },
+    options: commonClientOptions,
+  },
+  "invite skills:index": {
+    description: { en: "Get invite skills:index", "pt-BR": "Consultar o índice de skills do convite" },
+    arguments: { token: { en: "Invite token", "pt-BR": "Token do convite" } },
+    options: commonClientOptions,
+  },
+  "invite test-resolution": {
+    description: { en: "Test invite URL resolution", "pt-BR": "Testar a resolução da URL do convite" },
+    arguments: { token: { en: "Invite token", "pt-BR": "Token do convite" } },
+    options: {
+      ...commonClientOptions,
+      "--url": { en: "URL to test", "pt-BR": "URL a testar" },
+    },
+  },
+  "invite skill": {
+    description: { en: "Get invite skill markdown", "pt-BR": "Obter o Markdown da skill do convite" },
+    arguments: {
+      token: { en: "Invite token", "pt-BR": "Token do convite" },
+      skillName: { en: "Skill name", "pt-BR": "Nome da skill" },
+    },
+    options: commonClientOptions,
+  },
+  "invite accept": {
+    description: { en: "Accept an invite", "pt-BR": "Aceitar um convite" },
+    arguments: { token: { en: "Invite token", "pt-BR": "Token do convite" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "Invite accept JSON payload", "pt-BR": "Payload JSON para aceitar o convite" },
+    },
+  },
   join: descriptionOnly("Join request operations", "Operações de solicitações de entrada"),
+  "join list": {
+    description: { en: "List join requests", "pt-BR": "Listar solicitações de entrada" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--status": {
+        en: "Filter by status (pending_approval, approved, rejected; pending alias accepted)",
+        "pt-BR": "Filtrar por status (pending_approval, approved, rejected; alias pending aceito)",
+      },
+      "--request-type": { en: "Filter by request type", "pt-BR": "Filtrar pelo tipo de solicitação" },
+    },
+  },
+  "join approve": {
+    description: { en: "approve a join request", "pt-BR": "Aprovar uma solicitação de entrada" },
+    arguments: { requestId: { en: "Join request ID", "pt-BR": "ID da solicitação de entrada" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "join reject": {
+    description: { en: "reject a join request", "pt-BR": "Rejeitar uma solicitação de entrada" },
+    arguments: { requestId: { en: "Join request ID", "pt-BR": "ID da solicitação de entrada" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "join claim-key": {
+    description: {
+      en: "Claim an agent API key for an approved join request",
+      "pt-BR": "Resgatar uma chave de API de agente para uma solicitação de entrada aprovada",
+    },
+    arguments: { requestId: { en: "Join request ID", "pt-BR": "ID da solicitação de entrada" } },
+    options: {
+      ...commonClientOptions,
+      "--claim-secret": { en: "Claim secret", "pt-BR": "Segredo para resgatar a chave" },
+    },
+  },
   member: descriptionOnly("Company member operations", "Operações de membros da organização"),
+  "member list": {
+    description: { en: "List company members", "pt-BR": "Listar membros da organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "member user-directory": {
+    description: { en: "List company user directory", "pt-BR": "Listar o diretório de usuários da organização" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "member update": {
+    description: { en: "update a member", "pt-BR": "Atualizar um membro" },
+    arguments: { memberId: { en: "Member ID", "pt-BR": "ID do membro" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "member role-and-grants": {
+    description: { en: "role-and-grants a member", "pt-BR": "Gerenciar a função e as permissões de um membro" },
+    arguments: { memberId: { en: "Member ID", "pt-BR": "ID do membro" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "member permissions": {
+    description: { en: "permissions a member", "pt-BR": "Atualizar as permissões de um membro" },
+    arguments: { memberId: { en: "Member ID", "pt-BR": "ID do membro" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "member archive": {
+    description: { en: "archive a member", "pt-BR": "Arquivar um membro" },
+    arguments: { memberId: { en: "Member ID", "pt-BR": "ID do membro" } },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
   admin: descriptionOnly("Instance admin operations", "Operações administrativas da instância"),
+  "admin user": descriptionOnly("Admin user operations", "Operações de administração de usuários"),
+  "admin user list": {
+    description: { en: "List users", "pt-BR": "Listar usuários" },
+    options: {
+      ...commonClientOptions,
+      "--query": { en: "Search query", "pt-BR": "Consulta de pesquisa" },
+    },
+  },
+  "admin user promote": {
+    description: { en: "promote instance admin", "pt-BR": "Promover usuário a administrador da instância" },
+    arguments: { userId: { en: "User ID", "pt-BR": "ID do usuário" } },
+    options: commonClientOptions,
+  },
+  "admin user demote": {
+    description: { en: "demote instance admin", "pt-BR": "Remover do usuário a função de administrador da instância" },
+    arguments: { userId: { en: "User ID", "pt-BR": "ID do usuário" } },
+    options: commonClientOptions,
+  },
+  "admin user company-access": {
+    description: { en: "Get user company access", "pt-BR": "Consultar o acesso do usuário às organizações" },
+    arguments: { userId: { en: "User ID", "pt-BR": "ID do usuário" } },
+    options: commonClientOptions,
+  },
+  "admin user company-access:update": {
+    description: { en: "Update user company access", "pt-BR": "Atualizar o acesso do usuário às organizações" },
+    arguments: { userId: { en: "User ID", "pt-BR": "ID do usuário" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "UpdateUserCompanyAccess JSON payload", "pt-BR": "Payload JSON de UpdateUserCompanyAccess" },
+    },
+  },
   instance: descriptionOnly("Instance operations", "Operações da instância"),
+  "instance scheduler-heartbeats": {
+    description: { en: "List scheduler heartbeat agents", "pt-BR": "Listar agentes de heartbeat do agendador" },
+    options: commonClientOptions,
+  },
+  "instance settings:general": {
+    description: { en: "Get general instance settings", "pt-BR": "Consultar as configurações gerais da instância" },
+    options: commonClientOptions,
+  },
+  "instance settings:general:update": {
+    description: { en: "Update general instance settings", "pt-BR": "Atualizar as configurações gerais da instância" },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "instance settings:experimental": {
+    description: { en: "Get experimental instance settings", "pt-BR": "Consultar as configurações experimentais da instância" },
+    options: commonClientOptions,
+  },
+  "instance settings:experimental:update": {
+    description: { en: "Update experimental instance settings", "pt-BR": "Atualizar as configurações experimentais da instância" },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "instance database-backup": {
+    description: { en: "Create a database backup", "pt-BR": "Criar um backup do banco de dados" },
+    options: commonClientOptions,
+  },
   sidebar: descriptionOnly("Sidebar preference and badge operations", "Operações de preferências e indicadores da barra lateral"),
+  "sidebar preferences": {
+    description: { en: "Get current sidebar preferences", "pt-BR": "Consultar as preferências atuais da barra lateral" },
+    options: commonClientOptions,
+  },
+  "sidebar preferences:update": {
+    description: { en: "Update current sidebar preferences", "pt-BR": "Atualizar as preferências atuais da barra lateral" },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "sidebar project-preferences": {
+    description: { en: "Get current project sidebar preferences", "pt-BR": "Consultar as preferências atuais da barra lateral do projeto" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
+  "sidebar project-preferences:update": {
+    description: { en: "Update current project sidebar preferences", "pt-BR": "Atualizar as preferências atuais da barra lateral do projeto" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "sidebar badges": {
+    description: { en: "Get sidebar badges", "pt-BR": "Consultar os indicadores da barra lateral" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+    },
+  },
   inbox: descriptionOnly("Board inbox operations", "Operações da caixa de entrada do board"),
+  "inbox dismissals": {
+    description: { en: "List dismissed inbox items", "pt-BR": "Listar itens dispensados da caixa de entrada" },
+    options: {
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      ...commonClientOptions,
+    },
+  },
+  "inbox dismiss": {
+    description: { en: "Dismiss an inbox item", "pt-BR": "Dispensar um item da caixa de entrada" },
+    options: {
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+      ...commonClientOptions,
+    },
+  },
   openclaw: descriptionOnly("OpenClaw integration helpers", "Ferramentas de integração com OpenClaw"),
+  "openclaw invite-prompt": {
+    description: { en: "Create an OpenClaw invite prompt", "pt-BR": "Criar um prompt de convite do OpenClaw" },
+    options: {
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+      ...commonClientOptions,
+    },
+  },
   "available-skill": descriptionOnly("Public skill catalog operations", "Operações do catálogo público de skills"),
+  "available-skill list": {
+    description: { en: "List available skills", "pt-BR": "Listar skills disponíveis" },
+    options: commonClientOptions,
+  },
+  "available-skill index": {
+    description: { en: "Get available skill index", "pt-BR": "Consultar o índice de skills disponíveis" },
+    options: commonClientOptions,
+  },
+  "available-skill get": {
+    description: { en: "Get available skill markdown", "pt-BR": "Consultar o Markdown de uma skill disponível" },
+    arguments: { skillName: { en: "Skill name", "pt-BR": "Nome da skill" } },
+    options: commonClientOptions,
+  },
   llm: descriptionOnly("LLM prompt documentation", "Documentação de prompts de LLM"),
+  "llm agent-configuration": {
+    description: { en: "Get agent configuration prompt docs", "pt-BR": "Consultar os documentos de prompt de configuração de agentes" },
+    options: commonClientOptions,
+  },
+  "llm agent-icons": {
+    description: { en: "Get agent icon prompt docs", "pt-BR": "Consultar os documentos de prompt de ícones de agentes" },
+    options: commonClientOptions,
+  },
+  "llm agent-configuration:adapter": {
+    description: {
+      en: "Get adapter-specific agent configuration prompt docs",
+      "pt-BR": "Consultar os documentos de prompt de configuração de agentes específicos do adaptador",
+    },
+    arguments: { adapterType: { en: "Adapter type", "pt-BR": "Tipo de adaptador" } },
+    options: commonClientOptions,
+  },
   "managed-agent": descriptionOnly(
     "Provision and qualify remote managed-agent providers",
     "Provisionar e qualificar provedores remotos de agentes gerenciados",
   ),
+  "managed-agent setup": {
+    description: {
+      en: "Create or adopt a locked-down Anthropic Agent and Environment, then store a company profile",
+      "pt-BR": "Criar ou adotar um agente e ambiente Anthropic bloqueados e armazenar um perfil da organização",
+    },
+    options: {
+      "--profile-key": { en: "Stable company profile key", "pt-BR": "Chave estável do perfil da organização" },
+      "--display-name": { en: "Profile display name", "pt-BR": "Nome de exibição do perfil" },
+      "--api-key-secret-id": { en: "Existing company secret containing ANTHROPIC_API_KEY", "pt-BR": "Segredo existente da organização que contém ANTHROPIC_API_KEY" },
+      "--model": { en: "Pinned Claude model", "pt-BR": "Modelo Claude fixado" },
+      "--max-session-list-cost-usd": { en: "Default hard session ceiling", "pt-BR": "Teto rígido padrão da sessão" },
+      "--agent-id": { en: "Adopt an existing Anthropic Agent", "pt-BR": "Adotar um agente Anthropic existente" },
+      "--agent-version": { en: "Pin an existing Agent version", "pt-BR": "Fixar uma versão existente do agente" },
+      "--environment-id": { en: "Adopt an existing Anthropic Environment", "pt-BR": "Adotar um ambiente Anthropic existente" },
+      "--probe": { en: "Read-only qualification; create or persist nothing", "pt-BR": "Qualificação somente leitura; não cria nem persiste nada" },
+      "--acknowledge-retention": { en: "Acknowledge beta retention and non-ZDR/non-HIPAA status", "pt-BR": "Reconhecer a retenção beta e o status não ZDR/não HIPAA" },
+      "--company-id": { en: "Company ID (overrides context default)", "pt-BR": "ID da organização (substitui o padrão do contexto)" },
+      ...commonClientOptions,
+    },
+  },
   feedback: descriptionOnly("Inspect and export local feedback traces", "Inspecionar e exportar traces de feedback locais"),
+  "feedback export": {
+    description: {
+      en: "Export feedback votes and raw trace bundles into a folder plus zip archive",
+      "pt-BR": "Exportar votos de feedback e pacotes de traces brutos para uma pasta e um arquivo zip",
+    },
+    options: {
+      "--company-id": { en: "Company ID (overrides context default)", "pt-BR": "ID da organização (substitui o padrão do contexto)" },
+      "--target-type": { en: "Filter by target type", "pt-BR": "Filtrar pelo tipo de destino" },
+      "--vote": { en: "Filter by vote value", "pt-BR": "Filtrar pelo valor do voto" },
+      "--status": { en: "Filter by trace status", "pt-BR": "Filtrar pelo status do trace" },
+      "--project-id": { en: "Filter by project ID", "pt-BR": "Filtrar pelo ID do projeto" },
+      "--issue-id": { en: "Filter by issue ID", "pt-BR": "Filtrar pelo ID da tarefa" },
+      "--from": { en: "Only include traces created at or after this timestamp", "pt-BR": "Incluir apenas traces criados neste horário ou depois" },
+      "--to": { en: "Only include traces created at or before this timestamp", "pt-BR": "Incluir apenas traces criados neste horário ou antes" },
+      "--shared-only": { en: "Only include traces eligible for sharing/export", "pt-BR": "Incluir apenas traces elegíveis para compartilhamento/exportação" },
+      "--out": { en: "Output directory", "pt-BR": "Diretório de saída" },
+      ...commonClientOptions,
+    },
+  },
+  "feedback trace": {
+    description: { en: "Get a feedback trace", "pt-BR": "Consultar um trace de feedback" },
+    arguments: { traceId: { en: "Feedback trace ID", "pt-BR": "ID do trace de feedback" } },
+    options: commonClientOptions,
+  },
+  "feedback bundle": {
+    description: { en: "Get a feedback trace bundle", "pt-BR": "Consultar um pacote de trace de feedback" },
+    arguments: { traceId: { en: "Feedback trace ID", "pt-BR": "ID do trace de feedback" } },
+    options: commonClientOptions,
+  },
   auth: descriptionOnly("Authentication and bootstrap utilities", "Utilitários de autenticação e inicialização"),
+  "auth challenge": descriptionOnly("CLI auth challenge operations", "Operações de desafios de autenticação da CLI"),
+  "auth bootstrap-ceo": {
+    description: {
+      en: "Create a one-time bootstrap invite URL for first instance admin",
+      "pt-BR": "Criar uma URL de convite de uso único para o primeiro administrador da instância",
+    },
+    options: {
+      "--config": { en: "Path to config file", "pt-BR": "Caminho para o arquivo de configuração" },
+      "--data-dir": commonClientOptions["--data-dir"],
+      "--force": { en: "Create new invite even if admin already exists", "pt-BR": "Criar um novo convite mesmo se o administrador já existir" },
+      "--expires-hours": { en: "Invite expiration window in hours", "pt-BR": "Período de validade do convite em horas" },
+      "--base-url": { en: "Public base URL used to print invite link", "pt-BR": "URL pública base usada para exibir o link do convite" },
+    },
+  },
+  "auth login": {
+    description: {
+      en: "Authenticate the CLI for board-user access",
+      "pt-BR": "Autenticar a CLI para acessar o board como usuário",
+    },
+    options: {
+      ...companyOptions,
+      "--instance-admin": {
+        en: "Request instance-admin approval instead of plain board access",
+        "pt-BR": "Solicitar aprovação de administrador da instância em vez de acesso comum ao board",
+      },
+      "--no-browser": {
+        en: "Don't try to open a browser; just print the approval URL",
+        "pt-BR": "Não tente abrir um navegador; apenas exiba a URL de aprovação",
+      },
+    },
+  },
+  "auth logout": {
+    description: {
+      en: "Remove the stored board-user credential for this API base",
+      "pt-BR": "Remover a credencial armazenada do usuário do board para esta URL base da API",
+    },
+    options: commonClientOptions,
+  },
+  "auth revoke-current": {
+    description: { en: "Revoke the current board API token", "pt-BR": "Revogar o token atual da API do board" },
+    options: commonClientOptions,
+  },
+  "auth whoami": {
+    description: {
+      en: "Show the current board-user identity for this API base",
+      "pt-BR": "Exibir a identidade atual do usuário do board para esta URL base da API",
+    },
+    options: commonClientOptions,
+  },
+  "auth challenge create": {
+    description: { en: "Create a CLI auth challenge", "pt-BR": "Criar um desafio de autenticação da CLI" },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "CreateCliAuthChallenge JSON payload", "pt-BR": "Payload JSON de CreateCliAuthChallenge" },
+    },
+  },
+  "auth challenge get": {
+    description: { en: "Get a CLI auth challenge", "pt-BR": "Consultar um desafio de autenticação da CLI" },
+    arguments: { id: { en: "Challenge ID", "pt-BR": "ID do desafio" } },
+    options: {
+      ...commonClientOptions,
+      "--token": { en: "Challenge secret", "pt-BR": "Segredo do desafio" },
+      "--token-env": {
+        en: "Read the challenge secret from an environment variable",
+        "pt-BR": "Ler o segredo do desafio de uma variável de ambiente",
+      },
+    },
+  },
+  "auth challenge approve": {
+    description: { en: "approve a CLI auth challenge", "pt-BR": "Aprovar um desafio de autenticação da CLI" },
+    arguments: { id: { en: "Challenge ID", "pt-BR": "ID do desafio" } },
+    options: {
+      ...commonClientOptions,
+      "--token": { en: "Challenge secret", "pt-BR": "Segredo do desafio" },
+      "--token-env": {
+        en: "Read the challenge secret from an environment variable",
+        "pt-BR": "Ler o segredo do desafio de uma variável de ambiente",
+      },
+    },
+  },
+  "auth challenge cancel": {
+    description: { en: "cancel a CLI auth challenge", "pt-BR": "Cancelar um desafio de autenticação da CLI" },
+    arguments: { id: { en: "Challenge ID", "pt-BR": "ID do desafio" } },
+    options: {
+      ...commonClientOptions,
+      "--token": { en: "Challenge secret", "pt-BR": "Segredo do desafio" },
+      "--token-env": {
+        en: "Read the challenge secret from an environment variable",
+        "pt-BR": "Ler o segredo do desafio de uma variável de ambiente",
+      },
+    },
+  },
   mcp: descriptionOnly(
     "Connect an assistant to Paperclip as a consenting human",
     "Conectar um assistente ao Paperclip como uma pessoa que concedeu consentimento",
@@ -915,6 +1722,38 @@ const operationHelp: Record<string, CommandHelp> = {
   },
   routine: {
     description: { en: "Routine API operations", "pt-BR": "Operações da API de rotinas" },
+  },
+  "routine create": {
+    description: { en: "Create a routine", "pt-BR": "Criar uma rotina" },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "routine update": {
+    description: { en: "Update a routine", "pt-BR": "Atualizar uma rotina" },
+    arguments: { id: { en: "ID", "pt-BR": "ID da rotina" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "routine revision:restore": {
+    description: { en: "Restore a routine revision", "pt-BR": "Restaurar uma revisão de rotina" },
+    arguments: {
+      routineId: { en: "Routine ID", "pt-BR": "ID da rotina" },
+      revisionId: { en: "Revision ID", "pt-BR": "ID da revisão" },
+    },
+    options: commonClientOptions,
+  },
+  "routine run": {
+    description: { en: "Run a routine", "pt-BR": "Executar uma rotina" },
+    arguments: { id: { en: "ID", "pt-BR": "ID da rotina" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
   },
   routines: {
     description: { en: "Local routine maintenance commands", "pt-BR": "Comandos locais para manutenção de rotinas" },
@@ -1679,6 +2518,83 @@ const operationHelp: Record<string, CommandHelp> = {
     arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
     options: commonClientOptions,
   },
+  "company export:preview": {
+    description: {
+      en: "Preview a portable company export",
+      "pt-BR": "Pré-visualizar uma exportação portátil da organização",
+    },
+    arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "company export:api": {
+    description: {
+      en: "Export a company through the raw API route",
+      "pt-BR": "Exportar uma organização pela rota bruta da API",
+    },
+    arguments: { companyId: { en: "Company ID", "pt-BR": "ID da organização" } },
+    options: {
+      ...commonClientOptions,
+      "--payload-json": { en: "JSON payload", "pt-BR": "Payload JSON" },
+    },
+  },
+  "company feedback:list": {
+    description: {
+      en: "List feedback traces for a company",
+      "pt-BR": "Listar registros de feedback de uma organização",
+    },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--target-type": { en: "Filter by target type", "pt-BR": "Filtrar pelo tipo do destino" },
+      "--vote": { en: "Filter by vote value", "pt-BR": "Filtrar pelo valor do voto" },
+      "--status": { en: "Filter by trace status", "pt-BR": "Filtrar pelo status do registro" },
+      "--project-id": { en: "Filter by project ID", "pt-BR": "Filtrar pelo ID do projeto" },
+      "--issue-id": { en: "Filter by issue ID", "pt-BR": "Filtrar pelo ID da tarefa" },
+      "--from": { en: "Only include traces created at or after this timestamp", "pt-BR": "Incluir registros criados a partir deste horário" },
+      "--to": { en: "Only include traces created at or before this timestamp", "pt-BR": "Incluir registros criados até este horário" },
+      "--shared-only": { en: "Only include traces eligible for sharing/export", "pt-BR": "Incluir somente registros aptos para compartilhamento/exportação" },
+      "--include-payload": { en: "Include stored payload snapshots in the response", "pt-BR": "Incluir snapshots de payload armazenados na resposta" },
+    },
+  },
+  "company feedback:export": {
+    description: {
+      en: "Export feedback traces for a company",
+      "pt-BR": "Exportar registros de feedback de uma organização",
+    },
+    options: {
+      ...commonClientOptions,
+      "--company-id": { en: "Company ID", "pt-BR": "ID da organização" },
+      "--target-type": { en: "Filter by target type", "pt-BR": "Filtrar pelo tipo do destino" },
+      "--vote": { en: "Filter by vote value", "pt-BR": "Filtrar pelo valor do voto" },
+      "--status": { en: "Filter by trace status", "pt-BR": "Filtrar pelo status do registro" },
+      "--project-id": { en: "Filter by project ID", "pt-BR": "Filtrar pelo ID do projeto" },
+      "--issue-id": { en: "Filter by issue ID", "pt-BR": "Filtrar pelo ID da tarefa" },
+      "--from": { en: "Only include traces created at or after this timestamp", "pt-BR": "Incluir registros criados a partir deste horário" },
+      "--to": { en: "Only include traces created at or before this timestamp", "pt-BR": "Incluir registros criados até este horário" },
+      "--shared-only": { en: "Only include traces eligible for sharing/export", "pt-BR": "Incluir somente registros aptos para compartilhamento/exportação" },
+      "--include-payload": { en: "Include stored payload snapshots in the export", "pt-BR": "Incluir snapshots de payload armazenados na exportação" },
+      "--out": { en: "Write export to a file path instead of stdout", "pt-BR": "Gravar a exportação em um arquivo em vez de exibi-la no stdout" },
+      "--format": { en: "Export format: json or ndjson", "pt-BR": "Formato da exportação: json ou ndjson" },
+    },
+  },
+  "company delete": {
+    description: {
+      en: "Delete a company by ID or shortname/prefix (destructive)",
+      "pt-BR": "Excluir uma organização por ID ou nome curto/prefixo (ação destrutiva)",
+    },
+    arguments: {
+      selector: { en: "Company ID or issue prefix (for example PAP)", "pt-BR": "ID da organização ou prefixo de tarefa (por exemplo PAP)" },
+    },
+    options: {
+      ...commonClientOptions,
+      "--by": { en: "Selector mode: auto | id | prefix", "pt-BR": "Modo do seletor: auto | id | prefix" },
+      "--yes": { en: "Required safety flag to confirm destructive action", "pt-BR": "Sinalizador obrigatório para confirmar a ação destrutiva" },
+      "--confirm": { en: "Required safety value: target company ID or shortname/prefix", "pt-BR": "Valor obrigatório de segurança: ID ou nome curto/prefixo da organização de destino" },
+    },
+  },
   "company export": {
     description: {
       en: "Export a company into a portable markdown package",
@@ -1999,7 +2915,21 @@ const operationHelp: Record<string, CommandHelp> = {
       },
     },
   },
-  "agent prompt": descriptionOnly("Create/update Paperclip work using an agent persona", "Criar ou atualizar trabalho no Paperclip usando a persona de um agente"),
+  "agent prompt": {
+    description: {
+      en: "Create/update Paperclip work using an agent persona",
+      "pt-BR": "Criar ou atualizar trabalho no Paperclip usando a persona de um agente",
+    },
+    arguments: { prompt: { en: "Prompt text", "pt-BR": "Texto do prompt" } },
+    options: {
+      "--agent": { en: "Agent ID, shortname, or name; defaults to profile/identity agent", "pt-BR": "ID, shortname ou nome do agente; usa por padrão o agente do perfil/identidade" },
+      "--api-key-env": { en: "Read the agent API key from this environment variable", "pt-BR": "Ler a chave de API do agente desta variável de ambiente" },
+      "--issue": { en: "Append as a comment to an existing issue", "pt-BR": "Adicionar como comentário a uma tarefa existente" },
+      "--title": { en: "Issue title when creating a new issue", "pt-BR": "Título da tarefa ao criar uma nova tarefa" },
+      "--no-wake": { en: "Do not wake the agent after creating/updating work", "pt-BR": "Não acordar o agente após criar ou atualizar o trabalho" },
+      ...commonClientOptions,
+    },
+  },
   skill: {
     description: { en: "Company skill operations", "pt-BR": "Operações de skills da organização" },
   },
@@ -2181,12 +3111,306 @@ const operationHelp: Record<string, CommandHelp> = {
       ...commonClientOptions,
     },
   },
+  "teams list": {
+    description: {
+      en: "List app-shipped catalog teams with installed status for a company",
+      "pt-BR": "Listar equipes incluídas no catálogo com status de instalação para uma organização",
+    },
+    options: {
+      "--kind": { en: "Catalog kind filter (bundled or optional)", "pt-BR": "Filtrar pelo tipo de catálogo (bundled ou optional)" },
+      "--category": { en: "Catalog category filter", "pt-BR": "Filtrar pela categoria do catálogo" },
+      "--query": { en: "Search catalog text", "pt-BR": "Buscar texto no catálogo" },
+      ...companyOptions,
+    },
+  },
+  "teams inspect": {
+    description: {
+      en: "Inspect an app-shipped catalog team before installing it",
+      "pt-BR": "Inspecionar uma equipe incluída no catálogo antes de instalá-la",
+    },
+    arguments: { catalogRef: { en: "Catalog team ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da equipe do catálogo" } },
+    options: {
+      "--file": { en: "Print a specific catalog team file instead of the manifest detail", "pt-BR": "Exibir um arquivo específico da equipe do catálogo em vez dos detalhes do manifesto" },
+      ...commonClientOptions,
+    },
+  },
+  "teams preview": {
+    description: {
+      en: "Preview importing a catalog team into a company",
+      "pt-BR": "Pré-visualizar a importação de uma equipe do catálogo para uma organização",
+    },
+    arguments: { catalogRef: { en: "Catalog team ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da equipe do catálogo" } },
+    options: {
+      "--target-manager-agent-id": { en: "Existing agent ID that catalog root agents should report to", "pt-BR": "ID de um agente existente para o qual os agentes raiz do catálogo devem se reportar" },
+      "--target-manager-slug": { en: "Portable manager slug that catalog root agents should report to", "pt-BR": "Slug portátil do responsável ao qual os agentes raiz do catálogo devem se reportar" },
+      "--agent": { en: "Only preview selected agent slug; may be repeated", "pt-BR": "Pré-visualizar somente o slug do agente selecionado; pode ser repetido" },
+      "--collision-strategy": { en: "Import collision strategy (rename, skip, replace)", "pt-BR": "Estratégia para conflitos na importação (rename, skip, replace)" },
+      "--name-override": { en: "Override an imported entity name; may be repeated", "pt-BR": "Substituir o nome de uma entidade importada; pode ser repetido" },
+      "--selected-file": { en: "Restrict import preview to selected portable file; may be repeated", "pt-BR": "Restringir a pré-visualização da importação ao arquivo portátil selecionado; pode ser repetido" },
+      "--allow-external-sources": { en: "Allow GitHub, URL, or skills.sh skill sources declared by the catalog team", "pt-BR": "Permitir fontes de skills do GitHub, URL ou skills.sh declaradas pela equipe do catálogo" },
+      "--allow-unpinned-optional-sources": { en: "Allow optional-team external skill sources that are not pinned to a commit", "pt-BR": "Permitir fontes externas de skills de equipes opcionais que não estejam fixadas em um commit" },
+      "--allow-local-path-sources": { en: "Development only: allow local-path skill sources declared by the catalog team", "pt-BR": "Somente para desenvolvimento: permitir fontes de skills por caminho local declaradas pela equipe do catálogo" },
+      ...companyOptions,
+    },
+  },
+  "teams install": {
+    description: {
+      en: "Install a catalog team into a company",
+      "pt-BR": "Instalar uma equipe do catálogo em uma organização",
+    },
+    arguments: { catalogRef: { en: "Catalog team ID, key, or unique slug", "pt-BR": "ID, chave ou slug exclusivo da equipe do catálogo" } },
+    options: {
+      "--target-manager-agent-id": { en: "Existing agent ID that catalog root agents should report to", "pt-BR": "ID de um agente existente para o qual os agentes raiz do catálogo devem se reportar" },
+      "--target-manager-slug": { en: "Portable manager slug that catalog root agents should report to", "pt-BR": "Slug portátil do responsável ao qual os agentes raiz do catálogo devem se reportar" },
+      "--agent": { en: "Only install selected agent slug; may be repeated", "pt-BR": "Instalar somente o slug do agente selecionado; pode ser repetido" },
+      "--collision-strategy": { en: "Import collision strategy (rename, skip, replace)", "pt-BR": "Estratégia para conflitos na importação (rename, skip, replace)" },
+      "--name-override": { en: "Override an imported entity name; may be repeated", "pt-BR": "Substituir o nome de uma entidade importada; pode ser repetido" },
+      "--selected-file": { en: "Restrict install to selected portable file; may be repeated", "pt-BR": "Restringir a instalação ao arquivo portátil selecionado; pode ser repetido" },
+      "--secret-value": { en: "Secret env input value for install; may be repeated", "pt-BR": "Valor de entrada da variável de ambiente secreta para a instalação; pode ser repetido" },
+      "--adapter-override": { en: "Adapter type override for an imported agent slug; may be repeated", "pt-BR": "Substituir o tipo de adapter para um slug de agente importado; pode ser repetido" },
+      "--allow-external-sources": { en: "Allow GitHub, URL, or skills.sh skill sources declared by the catalog team", "pt-BR": "Permitir fontes de skills do GitHub, URL ou skills.sh declaradas pela equipe do catálogo" },
+      "--allow-unpinned-optional-sources": { en: "Allow optional-team external skill sources that are not pinned to a commit", "pt-BR": "Permitir fontes externas de skills de equipes opcionais que não estejam fixadas em um commit" },
+      "--allow-local-path-sources": { en: "Development only: allow local-path skill sources declared by the catalog team", "pt-BR": "Somente para desenvolvimento: permitir fontes de skills por caminho local declaradas pela equipe do catálogo" },
+      "--request-approval-on-forbidden": {
+        en: "When install is denied by agents:create permissions, create a board approval request instead of exiting with the raw 403",
+        "pt-BR": "Quando a permissão agents:create impedir a instalação, criar uma solicitação de aprovação no board em vez de encerrar com o erro 403 bruto",
+      },
+      "--approval-issue-id": {
+        en: "Issue ID to link to the fallback approval request; defaults to PAPERCLIP_TASK_ID when set",
+        "pt-BR": "ID da tarefa a vincular à solicitação de aprovação alternativa; usa PAPERCLIP_TASK_ID como padrão quando definido",
+      },
+      ...companyOptions,
+    },
+  },
   pipelines: {
     description: { en: "Pipeline and case operations", "pt-BR": "Operações de pipelines e casos" },
+  },
+  "pipelines guidance": {
+    description: { en: "Pipeline guidance document operations", "pt-BR": "Operações do documento de orientação do pipeline" },
+  },
+  "pipelines case": {
+    description: { en: "Pipeline case operations", "pt-BR": "Operações de casos do pipeline" },
   },
   "pipelines list": {
     description: { en: "List pipelines", "pt-BR": "Listar pipelines" },
     options: companyOptions,
+  },
+  "pipelines create": {
+    description: { en: "Create a pipeline", "pt-BR": "Criar um pipeline" },
+    options: {
+      ...companyOptions,
+      "--key": { en: "Pipeline key", "pt-BR": "Chave do pipeline" },
+      "--name": { en: "Pipeline name", "pt-BR": "Nome do pipeline" },
+      "--description": { en: "Pipeline description", "pt-BR": "Descrição do pipeline" },
+      "--project-id": { en: "Project ID", "pt-BR": "ID do projeto" },
+      "--enforce-transitions": { en: "Only allow configured transitions", "pt-BR": "Permitir somente as transições configuradas" },
+      "--stages-json": { en: "Pipeline stage array as JSON", "pt-BR": "Array de etapas do pipeline em JSON" },
+      "--stages-file": { en: "Read pipeline stage array from JSON file", "pt-BR": "Ler o array de etapas do pipeline de um arquivo JSON" },
+    },
+  },
+  "pipelines get": {
+    description: { en: "Get a pipeline by ID or key", "pt-BR": "Consultar um pipeline por ID ou chave" },
+    arguments: { pipeline: { en: "Pipeline ID or key", "pt-BR": "ID ou chave do pipeline" } },
+    options: companyOptions,
+  },
+  "pipelines set-transitions": {
+    description: { en: "Replace a pipeline transition edge set", "pt-BR": "Substituir o conjunto de transições do pipeline" },
+    arguments: { pipeline: { en: "Pipeline ID or key", "pt-BR": "ID ou chave do pipeline" } },
+    options: {
+      ...companyOptions,
+      "--file": { en: "JSON file with transition array or { transitions }", "pt-BR": "Arquivo JSON com um array de transições ou { transitions }" },
+      "--enforce": { en: "Enable transition enforcement", "pt-BR": "Ativar a validação de transições" },
+    },
+  },
+  "pipelines guidance get": {
+    description: { en: "Get pipeline guidance", "pt-BR": "Consultar as orientações do pipeline" },
+    arguments: { pipeline: { en: "Pipeline ID or key", "pt-BR": "ID ou chave do pipeline" } },
+    options: companyOptions,
+  },
+  "pipelines guidance put": {
+    description: { en: "Create or replace pipeline guidance", "pt-BR": "Criar ou substituir as orientações do pipeline" },
+    arguments: { pipeline: { en: "Pipeline ID or key", "pt-BR": "ID ou chave do pipeline" } },
+    options: {
+      ...companyOptions,
+      "--file": { en: "Markdown file", "pt-BR": "Arquivo Markdown" },
+      "--body": { en: "Markdown body", "pt-BR": "Conteúdo Markdown" },
+      "--title": { en: "Document title", "pt-BR": "Título do documento" },
+    },
+  },
+  "pipelines set-automation": {
+    description: { en: "Set a run_routine onEnter automation on a stage", "pt-BR": "Configurar uma automação run_routine onEnter em uma etapa" },
+    arguments: { pipeline: { en: "Pipeline ID or key", "pt-BR": "ID ou chave do pipeline" } },
+    options: {
+      ...companyOptions,
+      "--stage": { en: "Stage key", "pt-BR": "Chave da etapa" },
+      "--routine": { en: "Routine ID", "pt-BR": "ID da rotina" },
+      "--note": { en: "Automation note", "pt-BR": "Observação da automação" },
+    },
+  },
+  "pipelines ingest": {
+    description: { en: "Ingest one case into a pipeline", "pt-BR": "Inserir um caso em um pipeline" },
+    arguments: { pipeline: { en: "Pipeline ID or key", "pt-BR": "ID ou chave do pipeline" } },
+    options: {
+      ...companyOptions,
+      "--case-key": { en: "Case idempotency key", "pt-BR": "Chave de idempotência do caso" },
+      "--title": { en: "Case title", "pt-BR": "Título do caso" },
+      "--summary": { en: "Case summary", "pt-BR": "Resumo do caso" },
+      "--fields-json": { en: "Case fields JSON object", "pt-BR": "Objeto JSON com os campos do caso" },
+      "--fields-file": { en: "Read case fields JSON object from file", "pt-BR": "Ler os campos do caso de um arquivo JSON" },
+      "--stage": { en: "Initial stage key", "pt-BR": "Chave da etapa inicial" },
+      "--parent-case": { en: "Parent case ID", "pt-BR": "ID do caso pai" },
+      "--workspace-ref-json": { en: "Workspace ref JSON object", "pt-BR": "Objeto JSON da referência do workspace" },
+      "--blocked-by": { en: "Comma-separated blocker case IDs", "pt-BR": "IDs dos casos bloqueadores separados por vírgulas" },
+      "--blocked-by-key": { en: "Comma-separated blocker case keys", "pt-BR": "Chaves dos casos bloqueadores separadas por vírgulas" },
+    },
+  },
+  "pipelines ingest-batch": {
+    description: { en: "Ingest a batch of cases", "pt-BR": "Inserir um lote de casos" },
+    arguments: { pipeline: { en: "Pipeline ID or key", "pt-BR": "ID ou chave do pipeline" } },
+    options: {
+      ...companyOptions,
+      "--file": { en: "JSON file containing an array or { items }", "pt-BR": "Arquivo JSON com um array ou { items }" },
+    },
+  },
+  "pipelines cases": {
+    description: { en: "List cases in a pipeline", "pt-BR": "Listar casos de um pipeline" },
+    arguments: { pipeline: { en: "Pipeline ID or key", "pt-BR": "ID ou chave do pipeline" } },
+    options: {
+      ...companyOptions,
+      "--stage": { en: "Filter by stage key", "pt-BR": "Filtrar pela chave da etapa" },
+      "--parent": { en: "Filter by parent case ID", "pt-BR": "Filtrar pelo ID do caso pai" },
+      "--terminal": { en: "Only terminal cases", "pt-BR": "Somente casos terminais" },
+      "--q": { en: "Search title/summary", "pt-BR": "Buscar no título/resumo" },
+    },
+  },
+  "pipelines case get": {
+    description: { en: "Get a case", "pt-BR": "Consultar um caso" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: companyOptions,
+  },
+  "pipelines case events": {
+    description: { en: "List case events", "pt-BR": "Listar eventos do caso" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: companyOptions,
+  },
+  "pipelines case rollup": {
+    description: { en: "Get recursive case rollup", "pt-BR": "Consultar o resumo recursivo do caso" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: companyOptions,
+  },
+  "pipelines case edit": {
+    description: { en: "Edit case content", "pt-BR": "Editar o conteúdo do caso" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: {
+      ...companyOptions,
+      "--expected-version": { en: "Expected case version", "pt-BR": "Versão esperada do caso" },
+      "--title": { en: "New title", "pt-BR": "Novo título" },
+      "--summary": { en: "New summary", "pt-BR": "Novo resumo" },
+      "--fields-json": { en: "Replacement fields JSON object", "pt-BR": "Objeto JSON para substituir os campos" },
+      "--fields-file": { en: "Read replacement fields from JSON file", "pt-BR": "Ler os campos de substituição de um arquivo JSON" },
+      "--workspace-ref-json": { en: "Workspace ref JSON object", "pt-BR": "Objeto JSON da referência do workspace" },
+      "--parent-case": { en: "Parent case ID", "pt-BR": "ID do caso pai" },
+      "--lease-token": { en: "Lease token", "pt-BR": "Token do lease" },
+    },
+  },
+  "pipelines case claim": {
+    description: { en: "Claim a case lease", "pt-BR": "Assumir o lease de um caso" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: {
+      ...companyOptions,
+      "--lease-seconds": { en: "Lease duration in seconds", "pt-BR": "Duração do lease em segundos" },
+    },
+  },
+  "pipelines case release": {
+    description: { en: "Release a case lease", "pt-BR": "Liberar o lease de um caso" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: {
+      ...companyOptions,
+      "--lease-token": { en: "Lease token", "pt-BR": "Token do lease" },
+      "--force": { en: "Force release as board/user", "pt-BR": "Forçar a liberação como operador ou usuário" },
+    },
+  },
+  "pipelines case transition": {
+    description: { en: "Transition a case to another stage", "pt-BR": "Mover um caso para outra etapa" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: {
+      ...companyOptions,
+      "--to": { en: "Target stage key", "pt-BR": "Chave da etapa de destino" },
+      "--expected-version": { en: "Expected case version", "pt-BR": "Versão esperada do caso" },
+      "--reason": { en: "Transition reason", "pt-BR": "Motivo da transição" },
+      "--lease-token": { en: "Lease token", "pt-BR": "Token do lease" },
+      "--accept-suggestion": { en: "Accepted suggestion ID", "pt-BR": "ID da sugestão aceita" },
+    },
+  },
+  "pipelines case suggest": {
+    description: { en: "Suggest a transition without moving the case", "pt-BR": "Sugerir uma transição sem mover o caso" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: {
+      ...companyOptions,
+      "--to": { en: "Target stage key", "pt-BR": "Chave da etapa de destino" },
+      "--rationale": { en: "Suggestion rationale", "pt-BR": "Justificativa da sugestão" },
+      "--confidence": { en: "Confidence 0..1", "pt-BR": "Confiança de 0 a 1" },
+    },
+  },
+  "pipelines case resolve-suggestion": {
+    description: { en: "Accept or dismiss a pending transition suggestion", "pt-BR": "Aceitar ou dispensar uma sugestão de transição pendente" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: {
+      ...companyOptions,
+      "--suggestion": { en: "Suggestion ID", "pt-BR": "ID da sugestão" },
+      "--accept": { en: "Accept the suggestion", "pt-BR": "Aceitar a sugestão" },
+      "--dismiss": { en: "Dismiss the suggestion", "pt-BR": "Dispensar a sugestão" },
+      "--expected-version": { en: "Expected case version", "pt-BR": "Versão esperada do caso" },
+      "--reason": { en: "Decision reason", "pt-BR": "Motivo da decisão" },
+      "--lease-token": { en: "Lease token", "pt-BR": "Token do lease" },
+    },
+  },
+  "pipelines case review": {
+    description: { en: "Approve, reject, or request changes for a case in a review stage", "pt-BR": "Aprovar, rejeitar ou solicitar alterações em um caso em etapa de revisão" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: {
+      ...companyOptions,
+      "--approve": { en: "Approve the case", "pt-BR": "Aprovar o caso" },
+      "--reject": { en: "Reject the case", "pt-BR": "Rejeitar o caso" },
+      "--request-changes": { en: "Request changes for the case", "pt-BR": "Solicitar alterações no caso" },
+      "--reason": { en: "Decision reason", "pt-BR": "Motivo da decisão" },
+      "--expected-version": { en: "Expected case version", "pt-BR": "Versão esperada do caso" },
+      "--edits-json": { en: "Review edits JSON", "pt-BR": "JSON com alterações da revisão" },
+      "--edits-file": { en: "Read review edits JSON from file", "pt-BR": "Ler o JSON das alterações da revisão de um arquivo" },
+      "--title": { en: "Edit title before decision", "pt-BR": "Editar o título antes da decisão" },
+      "--summary": { en: "Edit summary before decision", "pt-BR": "Editar o resumo antes da decisão" },
+      "--fields-json": { en: "Edit fields before decision", "pt-BR": "Editar os campos antes da decisão" },
+      "--fields-file": { en: "Read edit fields from JSON file", "pt-BR": "Ler os campos de edição de um arquivo JSON" },
+      "--lease-token": { en: "Lease token", "pt-BR": "Token do lease" },
+    },
+  },
+  "pipelines case block": {
+    description: { en: "Replace a case blocker set", "pt-BR": "Substituir o conjunto de bloqueadores do caso" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: {
+      ...companyOptions,
+      "--by": { en: "Comma-separated blocker case IDs, or empty string to clear", "pt-BR": "IDs dos casos bloqueadores separados por vírgulas ou string vazia para limpar" },
+    },
+  },
+  "pipelines case open-conversation": {
+    description: { en: "Open or return the case conversation issue", "pt-BR": "Abrir ou retornar a tarefa de conversa do caso" },
+    arguments: { caseId: { en: "Case ID", "pt-BR": "ID do caso" } },
+    options: companyOptions,
+  },
+  "pipelines review-inbox": {
+    description: { en: "List cases waiting in review stages", "pt-BR": "Listar casos que aguardam em etapas de revisão" },
+    options: {
+      ...companyOptions,
+      "--pipeline": { en: "Filter to one pipeline", "pt-BR": "Filtrar por um pipeline" },
+      "--parent": { en: "Filter by parent case ID", "pt-BR": "Filtrar pelo ID do caso pai" },
+    },
+  },
+  "pipelines review-bulk": {
+    description: { en: "Apply bulk review decisions: approve, reject, or request_changes", "pt-BR": "Aplicar decisões de revisão em lote: aprovar, rejeitar ou request_changes" },
+    options: {
+      ...companyOptions,
+      "--file": { en: "JSON file containing an array or { items }", "pt-BR": "Arquivo JSON com um array ou { items }" },
+    },
   },
   secrets: {
     description: { en: "Secret declaration and provider operations", "pt-BR": "Operações de declarações de segredos e provedores" },
@@ -2554,7 +3778,7 @@ export function applyOperationHelpLocalization(root: Command, locale: SupportedL
     const path = parts.join(" ");
     // Commander creates help subcommands lazily, outside `commands`, so localize
     // the generated descriptions on the root and the audited command groups.
-    if (command === root || ["issue", "agent", "mcp", "runtime", "heartbeat", "context"].includes(path)) {
+    if (command === root || ["issue", "agent", "mcp", "runtime", "heartbeat", "context", "invite", "environment", "auth", "auth challenge", "workspace", "project-workspace", "project", "member", "instance", "company", "finance", "budget", "sidebar", "email", "admin", "admin user", "join", "routine", "teams", "pipelines", "pipelines guidance", "pipelines case", "available-skill", "feedback", "llm", "inbox", "access", "agent-config", "managed-agent", "openclaw", "board"].includes(path)) {
       command.helpCommand("help [command]", helpCommandDescription[locale]);
     }
     const help = operationHelp[path];

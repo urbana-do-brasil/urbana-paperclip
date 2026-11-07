@@ -2327,6 +2327,7 @@
     "workReferences": {
       "empty": "No linked work yet.",
       "folder": "Folder",
+      "workspaceFolderName": "Workspace folder",
       "openExternalReference": "Open external reference: {{label}}",
       "openTask": "Open task: {{label}}"
     },

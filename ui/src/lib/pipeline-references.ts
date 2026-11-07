@@ -114,12 +114,12 @@ function referenceFromField(key: string, value: unknown): WorkReference | null {
  * Extract every typed work reference for a case, starting with the dedicated
  * `workspaceRef` column and then any reference-shaped `fields` entries.
  */
-export function extractWorkReferences(caseItem: ReferenceCaseInput): WorkReference[] {
+export function extractWorkReferences(caseItem: ReferenceCaseInput, workspaceFolderLabel: string): WorkReference[] {
   const references: WorkReference[] = [];
 
   const workspaceRef = readRecord(caseItem.workspaceRef);
   if (workspaceRef && (workspaceRef.path || workspaceRef.folder || workspaceRef.workspacePath || workspaceRef.name)) {
-    references.push(workspaceFromRecord("workspaceRef", "Workspace folder", workspaceRef));
+    references.push(workspaceFromRecord("workspaceRef", workspaceFolderLabel, workspaceRef));
   }
 
   for (const [key, value] of Object.entries(caseItem.fields ?? {})) {

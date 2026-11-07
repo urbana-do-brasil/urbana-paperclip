@@ -4066,3 +4066,451 @@ agregadores. A aplicação não foi implantada.
   verifica as traduções; a validação do índice confirmou os 71 tópicos.
 - A auditoria foi editorial automatizada, não revisão humana final. A revisão
   humana de semântica e glossário continua pendente em 5.2/7.4.
+
+### Reconciliação do índice de adapters — 2026-11-04
+
+- O índice em `coverage.json` foi comparado com `builtin-adapter-types.ts`:
+  os 16 tipos registrados agora coincidem, incluindo `hermes_gateway`,
+  `hermes_local`, `http` e `process`, que faltavam no mapa. `acpx_local` foi
+  identificado separadamente como aposentado conforme `registry.ts`.
+- Esta comparação cobre o inventário, não a qualificação de idioma dos
+  runtimes. As tarefas 6.2, 6.4 e a reconciliação geral 7.2 continuam abertas.
+
+### Help de comandos agent — 4.3bd13 — 2026-11-04
+
+- A matriz de help executado em PT-BR/en passou a cobrir `task-sessions`,
+  `skills`, `skills:sync`, `instructions-path:update`, `instructions-bundle`
+  e `instructions-file:get/put/delete`. As traduções já existiam; o teste fixa
+  também as assinaturas de argumentos e opções. Execução focada: **8/8**.
+- A auditoria de todos os comandos folha permanece aberta em 4.3bd.
+
+### Matriz de idioma do Runner — 6.2i — 2026-11-04
+
+- A matriz determinística inclui Codex e ACPX/Grok, Cursor e Pi em PT-BR/en,
+  para início e retomada; verifica orientação, delta, marcadores técnicos e
+  identidade de provider e modelo. A suíte passou **47/47** e o typecheck do
+  servidor passou. A fixture de retomada agora exige explicitamente o delta.
+- Os testes usam builders e perfis sintéticos; a qualificação de respostas de
+  modelos reais permanece em 6.4, e a auditoria agregada 6.2 segue aberta.
+
+### Tentativa de smoke de pipelines — 5.3d2 — 2026-11-04
+
+- A API não chegou a abrir porta nem a criar dados. O PostgreSQL embarcado
+  recusou inicialização como root; a tentativa com usuário sem privilégios
+  falhou ao resolver o entrypoint `tsx`. A permissão temporária de travessia
+  foi removida. O smoke permanece pendente e exige ambiente descartável que
+  consiga executar as dependências do servidor como usuário sem privilégios.
+- A inspeção estática encontrou uma consulta pela chave fixa do pacote de
+  montagem, embora a criação use uma chave única por execução. A consulta foi
+  corrigida para usar `ASSEMBLY_CASE_KEY`; os dois testes do roteiro e `bash -n`
+  passaram. Isso ainda não comprova a execução dos exemplos contra a API.
+- Uma tentativa posterior iniciou API local e PostgreSQL 17 em contêiner
+  descartável. O smoke passou com 3 pipelines, 9 casos, rotina e issue,
+  incluindo bloqueio, divergência, aprovação, alterações, rejeição e rollup
+  5 concluídos/3 cancelados/0 abertos. O servidor, banco e credenciais foram
+  removidos. A rotina foi vinculada sem agente e não executada; códigos de
+  erro foram conferidos pela CLI, sem verificação direta do status HTTP 409.
+  Uma segunda execução passou com a asserção do evento de rejeição e seu
+  motivo, além da chave dinâmica de montagem. A segunda instância e suas
+  credenciais temporárias também foram removidas.
+- Em 5.3d5 o smoke foi ampliado e repetido: respostas HTTP de bloqueio e
+  conflito retornaram **409** com códigos e detalhes esperados, e as mensagens
+  CLI também foram verificadas. O ambiente foi removido.
+- Na execução posterior, um agente `process` simulado confirmou o encadeamento
+  pipeline → rotina → issue → agente: três issues foram criadas e seis
+  heartbeats concluíram com locale PT-BR e orientação presente. A API confirmou
+  o documento guidance. O agente simulado não consumiu o conteúdo do caso nem
+  produziu conteúdo; as issues ficaram em andamento. Instância, banco e arquivos
+  temporários foram removidos. Fontes EN/PT-BR têm 27 blocos e flags pareadas;
+  a convenção v1 para templates e campos está documentada nas duas fontes.
+
+### Criação de webhook em PT-BR — 3.10w — 2026-11-04
+
+- A suíte `editable-sections.test.tsx` passou **11/11** com um fluxo PT-BR de
+  criação e ativação de webhook equivalente ao cenário inglês existente. O
+  teste verifica payloads, apresentação temporária do segredo e ausência dele
+  em `sessionStorage`, usando API simulada. A integração real segue em 7.3.
+
+### Editor de gatilho production — 3.10x — 2026-11-04
+
+- O formulário de criação foi exercitado em PT-BR/en até o callback de sucesso,
+  conferindo envio, reset e fechamento. `RoutineTriggerEditorLocalization`
+  passou **4/4**. A mutação é simulada; o teste não comprova o payload na API.
+
+### Payload de gatilho production — 3.10y — 2026-11-04
+
+- A mutation production usa o helper compartilhado testado em PT-BR/en para
+  schedule/webhook. Cron, fuso, rótulo técnico, assinatura e janela de replay
+  foram verificados; três suítes passaram **21/21**, junto ao typecheck UI e
+  gate de tokens. O teste não substitui a integração com API/browser reais.
+- 3.10 permanece aberta para mutações integradas, revisão de textos comuns,
+  clipboard/leitor de tela reais e homologação visual.
+
+### Integração HTTP de gatilhos production — 3.10z — 2026-11-04
+
+- Quatro cenários PT-BR/en exercitam a página production, mutation e cliente
+  HTTP reais com `fetch` interceptado em memória. Método, rota, JSON, header de
+  locale, estado e segredo foram verificados. O conjunto passou **25/25** e o
+  typecheck UI passou; não houve servidor nem browser real.
+
+### Referência de workspace em pipelines — 3.10aa — 2026-11-05
+
+- O nome padrão de referência de pasta estava fixo em inglês. O detalhe agora
+  recebe o rótulo do catálogo no idioma efetivo, preservando caminhos e nomes
+  fornecidos. Testes do componente **4/4**, validação de catálogo **14/14** e
+  typecheck UI passaram. A revisão mais ampla de 3.10 continua aberta.
+
+### Primeira execução dos adapters Cursor e Grok — 6.2j — 2026-11-04
+
+- Os testes de Cursor local e Grok local agora verificam início sem sessão em
+  PT-BR/en, orientação, instruções configuradas e marcadores técnicos sem
+  `--resume`. As suítes passaram **65/65** e os typechecks dos dois adapters
+  passaram. O comportamento de modelos reais continua pendente em 6.4.
+
+### Integração efetiva da CI — 7.1e — 2026-11-04
+
+- Correção dos registros anteriores: `pr.yml` chama `pr-trusted.yml` no
+  repositório upstream. A alteração na cópia local do workflow reutilizável,
+  isoladamente, não demonstrava execução do gate nesta branch.
+- Foi adicionado um job próprio de localização ao workflow de PR, com checkout
+  completo, Node, pnpm, instalação pelo lockfile e `check:localization` usando
+  o SHA da base do PR. A execução no GitHub permanece pendente em 7.1.
+
+### Transporte HTTP e process — 6.2k — 2026-11-04
+
+- HTTP envia o contexto atual a cada POST; process inicia um subprocesso por
+  execução com locale e diretriz no ambiente. Nenhum dos dois declara sessão
+  própria para retomada. As suítes em receptor TCP local e subprocesso real
+  passaram **11/11**, incluindo PT-BR/en e proteção de marcadores técnicos.
+  O consumo por serviços externos e respostas de modelos continuam pendentes.
+
+### Reconciliação determinística dos adapters — 6.2l–m — 2026-11-04
+
+- Os 15 adapters ativos foram relacionados a testes PT-BR/en: Claude, Codex e
+  Gemini locais têm cobertura CLI e ACP; Cursor local/cloud, Grok, Kimi, Hermes
+  local/gateway, OpenClaw, OpenCode e Pi verificam seus prompts ou payloads em
+  início e retomada. HTTP usa receptor TCP local; process usa subprocesso real.
+  Ambos iniciam cada execução sem sessão própria. O tipo `acpx_local` está
+  aposentado e não foi contado como adapter ativo.
+- O Runner cobre Codex, OpenCode, ACPX/Claude/Grok/Cursor/Pi, Claude Managed e
+  AWS AgentCore em início e retomada. O envelope v6 OpenAI Dot foi acrescentado
+  em PT-BR/en; o driver declara `resume: false`. Suíte de input **49/49** e
+  typecheck do servidor passaram com limite explícito de memória de 4 GiB.
+- O fallback de sessão perdida do Gemini foi verificado explicitamente em
+  PT-BR/en: tentativa com resume e retry sem resume preservam diretriz e
+  marcadores. Suíte **10/10** e typecheck do adapter passaram.
+- Evidências por carrier: `packages/adapters/{claude-local,codex-local,gemini-local}/src/server/{acp,execute.acp-fallback}.test.ts`;
+  `packages/adapters/{cursor-local,cursor-cloud,grok-local,kimi-local,opencode-local}/src/server/execute.test.ts`;
+  `packages/adapters/hermes/src/{server/execute.instructions,gateway/server/execute}.test.ts`;
+  `packages/adapters/openclaw-gateway/src/server/execute-dispatch.test.ts`;
+  `packages/adapters/pi-local/src/server/execute.remote.test.ts`;
+  `server/src/adapters/http/execute-locale.integration.test.ts`,
+  `server/src/adapters/process/execute.test.ts` e
+  `server/src/services/native-runtime/native-execution-input.test.ts`.
+- 6.2 foi fechada para transporte determinístico e preservação de contratos.
+  Nenhum desses resultados qualifica respostas de serviços ou modelos reais;
+  essa exigência permanece em 6.4.
+- A matriz `runtime-qualification.md` foi atualizada para incluir os caminhos
+  Runner e o fallback Gemini já verificados, mantendo todas as respostas reais
+  como não qualificadas e o procedimento condicionado a acesso autorizado.
+
+### Help dos serviços — 4.3bd14 — 2026-11-04
+
+- As opções `--instance` e `--json` apareciam em inglês no help PT-BR dos
+  sete comandos `service`. As descrições foram localizadas e a matriz real
+  PT-BR/en passou **7/7**, preservando assinaturas; o typecheck CLI passou.
+  A suíte integral de help foi interrompida e substituída pelo recorte focado.
+
+### Help do env-lab — 4.3bd15 — 2026-11-04
+
+- Os comandos `env-lab up/status/down/doctor` já tinham help localizado. A
+  matriz de subprocessos agora verifica os quatro em PT-BR/en, fixando também
+  o alias `-i`; testes focados **4/4** e typecheck CLI passaram.
+
+### Help de rotinas — 4.3bd16 — 2026-11-04
+
+- Os helps de `routine list/get/revisions/runs` foram verificados em
+  subprocessos PT-BR/en, fixando as assinaturas. Testes focados **4/4** e
+  typecheck CLI passaram; a auditoria dos demais comandos continua aberta.
+
+### Help dos gatilhos de rotina — 4.3bd17 — 2026-11-04
+
+- Os cinco comandos `routine trigger:create/update/delete/rotate-secret/fire`
+  passaram **5/5** na matriz de help real PT-BR/en. O typecheck CLI desta rodada
+  foi inconclusivo: uma tentativa terminou com código 137 e outra sem resultado.
+
+### Gate local de localização — 2026-11-04
+
+- `pnpm check:localization` passou: **19/19 testes Node**, **467/467 testes
+  Vitest em 59 arquivos**, catálogos e os 71 tópicos reconciliados. O scanner
+  incremental verificou zero arquivos de produção alterados nesta execução;
+  suas fixtures negativas passaram. A execução remota do job de PR segue
+  pendente em 7.1.
+
+### Help de adapters — 4.3bd18 — 2026-11-04
+
+- Os helps `adapter list/get/delete/config-schema/ui-parser/models` já estavam
+  localizados. Foram incorporados à matriz de subprocessos PT-BR/en, com
+  assinaturas fixadas; execução focada **6/6**. O filtro inicial não selecionou
+  casos e foi corrigido antes da execução aprovada.
+
+### Inventário e help de execuções — 4.3bd19 — 2026-11-04
+
+- A introspecção da árvore Commander após o registro identificou **459 leafs**;
+  após adicionar dez comandos `run`, a matriz de subprocessos cobre 142 e deixa
+  317 fora dela, sem entradas obsoletas identificadas. O lote `run` passou
+  **10/10** em PT-BR/en. O inventário considera a árvore registrada nessa
+  execução; a auditoria geral 4.3bd permanece aberta.
+
+### Triagem escalável do help — 4.3bd20 — 2026-11-04
+
+- A CLI e o auditor compartilham a aplicação de locale à árvore Commander. A
+  renderização em processo correspondeu byte a byte ao subprocesso em cinco
+  caminhos representativos e nos dois idiomas; teste **6/6** e typecheck CLI
+  passaram. A matriz original de subprocessos foi preservada.
+- A triagem dos 459 leafs sinalizou **142 candidatos** entre os 317 ainda fora
+  da matriz. [cli-help-candidates.md](cli-help-candidates.md) registra os paths
+  e limites: igualdade pode ser legítima e continuações podem escapar; ausência
+  de sinal não comprova revisão semântica. A auditoria 4.3bd permanece aberta.
+- Após a extração e a correção do backup, `pnpm check:localization` passou:
+  **19/19 testes Node** e **491/491 Vitest em 59 arquivos**; o scanner
+  incremental examinou três arquivos de produção alterados.
+- Auditoria posterior confirmou que 23 comandos folha de `pipelines`, além de
+  dois grupos, mantinham descrições em inglês no PT-BR. A correção pertence
+  aos próximos lotes de 4.3bd; o resultado do gate não os declara traduzidos.
+
+### Help de pipelines — 4.3bd21 — 2026-11-04
+
+- Os 23 comandos folha `pipelines`, grupos `guidance`/`case` e os respectivos
+  comandos de ajuda agora têm descrições PT-BR. A matriz em processo verifica
+  textos e assinaturas nos dois idiomas; quatro subprocessos representam os
+  caminhos principais. Testes focados **30/30** e typecheck CLI passaram.
+  Os demais comandos candidatos da triagem seguem em 4.3bd.
+- Após esse lote e a reconciliação dos guias, `pnpm check:localization` passou
+  **19/19 testes Node** e **521/521 Vitest em 59 arquivos**; o scanner
+  incremental examinou três arquivos de produção alterados. O job remoto de
+  PR segue sem execução comprovada.
+
+### Help de convites — 4.3bd22 — 2026-11-05
+
+- Os 11 leafs `invite` e o help do grupo foram localizados, preservando a
+  descrição inglesa específica de `--company-id` e as assinaturas. Matriz em
+  processo e cinco subprocessos representativos passaram **17/17**; typecheck
+  CLI passou. A auditoria dos demais grupos permanece aberta.
+
+### Help de ambientes — 4.3bd23 — 2026-11-05
+
+- Os dez leafs `environment` e o help do grupo foram localizados; a matriz em
+  processo e subprocessos representativos passaram **16/16**. O typecheck CLI
+  terminou em corrida com uma interrupção por pressão de memória, sem resultado
+  conclusivo; deve ser repetido após a suíte integrada. Nenhuma conclusão sobre
+  os demais grupos decorre deste lote.
+
+### Help de autenticação — 4.3bd24 — 2026-11-05
+
+- Os nove leafs `auth` e os grupos `auth`/`auth challenge` foram localizados.
+  A matriz em processo e seis subprocessos representativos passaram **17/17**;
+  o typecheck CLI após este lote permanece pendente. A auditoria dos demais
+  comandos continua aberta.
+
+### Help de workspaces — 4.3bd25 — 2026-11-05
+
+- Os sete leafs `workspace` e o help do grupo foram localizados preservando
+  assinaturas e valores de ações. Matriz em processo e subprocessos
+  representativos passaram **16/16**; typecheck CLI posterior ainda pendente.
+
+### Help de workspaces de projeto — 4.3bd26 — 2026-11-05
+
+- Os seis leafs `project-workspace` e o help do grupo foram localizados. Matriz
+  em processo e subprocessos representativos passaram **11/11**; o typecheck
+  CLI após os últimos lotes continua pendente.
+
+### Help de membros — 4.3bd27 — 2026-11-05
+
+- Os seis leafs `member` e o help implícito foram localizados. Matriz em
+  processo e subprocessos representativos passaram **12/12**; o typecheck CLI
+  dos lotes recentes segue pendente.
+
+### Help de instância — 4.3bd28 — 2026-11-05
+
+- Os seis leafs `instance` e o help implícito foram localizados. Matriz em
+  processo e subprocessos representativos passaram **12/12**; o typecheck CLI
+  dos lotes recentes segue pendente.
+
+### Help de organizações — 4.3bd29 — 2026-11-05
+
+- Os cinco leafs `company` e o help implícito foram localizados. Matriz em
+  processo e subprocessos representativos passaram **11/11**, preservando o
+  default `ndjson`; o typecheck CLI dos lotes recentes segue pendente.
+
+### Help financeiro — 4.3bd30 — 2026-11-05
+
+- Os cinco leafs `finance` e o help implícito foram localizados. Matriz em
+  processo e subprocessos representativos passaram **10/10**; o typecheck CLI
+  dos lotes recentes segue pendente.
+
+### Help de orçamento — 4.3bd31 — 2026-11-05
+
+- Os cinco leafs `budget` e o help implícito foram localizados. Matriz em
+  processo e subprocessos representativos passaram **11/11**, preservando o
+  default `{}`; o typecheck CLI dos lotes recentes segue pendente.
+
+### Help da barra lateral — 4.3bd32 — 2026-11-05
+
+- Os cinco leafs `sidebar` e o help implícito foram localizados. Matriz em
+  processo e subprocessos representativos passaram **10/10**; o typecheck CLI
+  dos lotes recentes segue pendente.
+
+### Help de email — 4.3bd33 — 2026-11-05
+
+- Os cinco leafs `email` não registravam summary. Foram acrescentadas
+  descrições EN/PT-BR e localizados argumentos, opções e help do grupo,
+  preservando assinaturas. Matriz em processo e subprocessos representativos
+  passaram **10/10**; typecheck CLI posterior segue pendente.
+
+### Help de administração — 4.3bd34 — 2026-11-05
+
+- Os cinco leafs `admin` e os grupos `admin`/`admin user` foram localizados,
+  preservando inglês e assinaturas. Matriz em processo e subprocessos
+  representativos passaram **11/11**; typecheck CLI posterior segue pendente.
+
+### Help de projetos — 4.3bd35 — 2026-11-05
+
+- Os cinco leafs `project` já tinham descrições localizadas; o help implícito
+  do grupo foi corrigido e as assinaturas foram fixadas em teste. O filtro que
+  inclui também `project-workspace` passou **24/24**; typecheck CLI posterior
+  segue pendente.
+
+### Help de entrada — 4.3bd36 — 2026-11-05
+
+- Os quatro leafs `join` e o help implícito foram localizados; assinaturas e
+  inglês foram preservados. O teste focado passou **10/10**; typecheck CLI
+  após os lotes recentes continua pendente.
+
+### Help de rotinas (continuação) — 4.3bd37 — 2026-11-05
+
+- Os quatro leafs restantes de `routine` na triagem e o help implícito foram
+  localizados; assinaturas, inglês e default `{}` foram preservados. O filtro
+  focado passou **18/18**; typecheck CLI posterior segue pendente.
+
+### Help de equipes — 4.3bd38 — 2026-11-05
+
+- Os quatro leafs pendentes de `teams` e o help implícito foram localizados;
+  assinaturas, defaults e `PAPERCLIP_TASK_ID` foram preservados. O teste
+  focado passou **10/10**; typecheck CLI posterior segue pendente.
+
+### Typecheck CLI após os lotes — 2026-11-05
+
+- `pnpm --filter paperclipai typecheck` passou em execução isolada após os
+  lotes 4.3bd23–38. Isso supera as tentativas anteriores inconclusivas por
+  memória; a auditoria geral de comandos e a regressão integrada seguem abertas.
+
+### Saída estruturada de backup — 4.4f — 2026-11-04
+
+- `db:backup --json` emitia banner e progresso em stdout, quebrando a leitura
+  estruturada. O modo JSON agora emite apenas o objeto de sucesso; falhas
+  permanecem no stderr. Suíte **4/4** e typecheck CLI passaram. Subprocessos
+  reais nos dois idiomas confirmaram exit 1, stdout vazio e stderr equivalente
+  para validação inválida; o sucesso usou adapter de banco simulado, sem
+  `pg_dump`. Outros contratos permanecem em 4.4.
+
+### Guias OpenClaw/Docker — 5.3e — 2026-11-04
+
+- As versões PT-BR/en e `doc/DEVELOPING.md` foram reconciliadas com os scripts:
+  tipo `openclaw_gateway`, diretório temporário de configuração e persistência
+  de registros; o fluxo legado `docker sandbox` foi identificado conforme as
+  notas Docker Desktop 4.80. Comentários shell foram traduzidos em PT-BR.
+- Os 10 blocos shell de cada versão passaram `bash -n`; o script de UI passou
+  em fixture com Git/Docker/curl simulados. O teste de conteúdo da ajuda passou
+  **7/7**, com normalização apenas do rótulo traduzido de `echo`, mantendo a
+  variável. Nenhum OpenClaw ou Docker real foi iniciado; revisão humana e smoke
+  operacional real continuam em 5.3.
+
+### Revisão editorial de votos e política de execução — 5.2e — 2026-11-05
+
+- Os guias EN/PT-BR foram comparados em semântica, permissões e exemplos. Uma
+  frase em ambos confundia exportação local com fila de envio remoto de votos
+  `local_only`; foi corrigida. O teste de conteúdo passou **7/7** e os gates
+  confirmaram 71 tópicos. A revisão foi automatizada e não substitui revisão
+  humana nem validação do comportamento em runtime.
+- Um exame automatizado adicional comparou `guides/board-operator/approvals`
+  em EN/PT-BR e não encontrou divergência material nas condições de aprovação,
+  decisões e poderes do conselho. Não houve revisão humana nem teste operacional.
+
+### Typecheck recursivo — 7.3a — 2026-11-05
+
+- `NODE_OPTIONS=--max-old-space-size=4096 pnpm -r --workspace-concurrency=1
+  typecheck` terminou com exit 0 nos **35 projetos** aplicáveis. O runner Rust
+  emitiu avisos de código não utilizado, sem falhas. A suíte completa, build e
+  jornadas browser continuam pendentes em 7.3.
+- A tentativa `NODE_OPTIONS=--max-old-space-size=4096 pnpm test:run` como root
+  foi interrompida após falhas e diversos arquivos não executados na etapa
+  geral do servidor. A inspeção apontou PostgreSQL embarcado recusando root
+  como causa provável para as fixtures de banco; houve ainda falha em teste de
+  workspace a investigar separadamente. Não há resultado completo de suíte.
+  Um snapshot sem credenciais foi preparado em `/var/tmp` para reprodução com
+  usuário sem privilégios; não altera permissões globais do checkout.
+- No snapshot descartável, os 15 casos de leases que haviam falhado no setup
+  passaram **15/15** como `nobody`, com PostgreSQL embarcado (666 outros casos
+  do arquivo foram filtrados). Isso confirma o impedimento de root para esse
+  grupo, mas não prova a causa de outras falhas nem a suíte completa.
+- A suíte completa foi iniciada no snapshot sem privilégios; seu resultado
+  ainda não estava disponível neste registro. O snapshot antecede as edições
+  posteriores de `environment` e não pode comprová-las.
+- A execução no snapshot terminou com **18.365 testes aprovados, 15 falhos e
+  115 ignorados**, com falhas em 12 arquivos; 7.3 permanece aberta. Parte das
+  falhas veio de setup: o runner forçou `/tmp` e a reserva de espaço foi
+  atingida, a cópia omitira uma skill versionada e faltavam acesso ao Cargo e
+  suporte de rede para o sandbox `bwrap`. Outras assertions exigem análise.
+- Em 7.3b o runner passou a respeitar `TMPDIR` explicitamente configurado;
+  seus testes passaram **30/30**. Os cinco cenários de histórico Git e mais
+  **15/15** testes de workspace passaram ao usar disco em `/var/tmp`. Um teste
+  de serviços passou a usar um caminho exclusivo da fixture em vez de uma pasta
+  fixa em `/tmp`. A skill versionada foi incluída no snapshot e a reprodução
+  focal dos quatro casos de skill, workspace e erros de conexão passou.
+- Em 7.3c erros HTTP sem apresentação deixaram de criar a propriedade opcional
+  indefinida; as suítes de erro passaram **30/30**. O teste de heartbeat foi
+  alinhado à política de recibos humanos separados e verificou dois envios em
+  ordem e três execuções concluídas com PostgreSQL descartável. Esses resultados
+  focados não substituem a repetição integral no estado final.
+- O cenário de catálogo ausente usava `/nonexistent`, inacessível para o usuário
+  isolado nesta VPS; passou após usar uma pasta temporária própria. A fixture de
+  workspace deixou de usar um caminho fixo em `/tmp`, e a skill versionada foi
+  restaurada no snapshot. As reproduções focadas desses casos passaram. Ainda
+  faltam investigar as demais falhas, incluindo restrições de Cargo e `bwrap`.
+
+### Help CLI restante — 4.3bd39 — 2026-11-07
+
+- Os 22 leafs restantes da triagem foram localizados em PT-BR/en:
+  `available-skill` (list/index/get), `feedback` (export/trace/bundle), `llm`
+  (agent-configuration/agent-icons/agent-configuration:adapter), `inbox`
+  (dismissals/dismiss), `access whoami`, `agent prompt`, `agent-config list`,
+  `agent-prompt`, `board prompt`, `doctor`, `managed-agent setup`, `openapi`,
+  `openclaw invite-prompt`, `test-drive` e `whoami`.
+- A matriz em processo cobre argumentos, opções e assinaturas dos 22 leafs;
+  o filtro focado passou **22/22** (386 casos de outros lotes ignorados pelo
+  filtro). O typecheck completo da CLI ficou pendente porque a execução
+  concorrente com a suíte integrada foi encerrada por memória (exit 137).
+- A auditoria agregada de 4.3bd permanece aberta: a lista original ainda tem
+  317 leafs fora da matriz de subprocessos e 175 paths sem sinal heurístico que
+  exigem revisão semântica, além da confirmação de contrato por fixture.
+
+### Reprodução focal da regressão — 7.3 — 2026-11-07
+
+- No snapshot descartável com `TMPDIR` em `/var/tmp`, os dois testes nativos que
+  dependiam do Cargo passaram: `dot-runner` e
+  `native-codex-runner.integration` somaram **39/39**.
+- Os nove arquivos restantes que falharam na rodada integral anterior
+  (distribution-plugin-catalog, heartbeat-comment-wake-batching,
+  heartbeat-workspace-session, native-workspace-sync-history,
+  paperclip-skill-utils, workspace-runtime, ai-connection-configuration-failure,
+  isolated-task-directory e workspace-git-snapshot-streaming) passaram
+  **451/451**.
+- `native-session-resume` passou **49/50**; o único caso restante falha antes da
+  assertion porque o sandbox do Codex não consegue configurar loopback:
+  `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`. O binário
+  `bwrap` não está disponível em `/usr/bin` nesta VPS e o caso não é reproduzível
+  no ambiente isolado; a limitação é registrada, não presumida como produto.
+- A suíte integral foi reiniciada com as correções e o resultado final será
+  anexado após a conclusão; os resultados acima são focados e não substituem a
+  regressão completa.
