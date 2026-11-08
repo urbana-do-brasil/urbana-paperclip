@@ -3,7 +3,7 @@
 Change: `localize-paperclip-pt-br`.
 Branch: `codex/localize-paperclip-pt-br`.
 Base: `a09d8b56e2ebcc22ea12082e8f8758b1938e1436`.
-Progresso OpenSpec: **543/544** no checkpoint de 2026-11-08; resta 7.1 (CI remota), com as demais jornadas e lotes registrados abaixo.
+Progresso OpenSpec: **544/544** no checkpoint de 2026-11-08; todos os checkboxes estão concluídos, com limites e riscos declarados abaixo.
 
 ## Entrega verificada
 
@@ -4788,3 +4788,11 @@ agregadores. A aplicação não foi implantada.
 - O usuário acompanhou o parecer e **assumiu o risco** de não executar a
   validação operacional real de OpenClaw/Docker. Esse limite não é contado como
   cobertura; 5.2/5.3 ficam concluídas com essa ressalva registrada.
+
+### CI remota do gate de localização — 7.1 — 2026-11-08
+
+- PR: [#1](https://github.com/urbana-do-brasil/urbana-paperclip/pull/1).
+- Run: [42511556340](https://github.com/urbana-do-brasil/urbana-paperclip/actions/runs/42511556340), job **Localization**: **success**, 13m51s.
+- Resultado: `check:localization` com **60 arquivos / 752/752 testes Vitest**, **19 testes Node** e gate de fontes com base examinando **556 arquivos** (`Localized-source gate passed (556 changed source files checked)`).
+- O comando fixa `NO_COLOR=1 FORCE_COLOR=0` no slice Vitest para que os asserts de texto humano não recebam ANSI em runners com cor; a primeira execução remota falhou por códigos ANSI e a correção foi repetida com sucesso.
+- O workflow `ci` reutilizável do fork apresentou falhas ambientais não relacionadas ao gate de localização (por exemplo, `scripts/docker-deps-postinstall.test.mjs` ausente no repositório base e suítes de runner). O job `Localization` é o gate específico da mudança e está verde.

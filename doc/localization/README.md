@@ -1,12 +1,11 @@
 # Localização do Paperclip
 
-Esta entrega é **parcial**. O mapa em `coverage.json` registra áreas pendentes;
-um catálogo válido não significa que a aplicação inteira foi traduzida.
+Esta entrega está **concluída no escopo OpenSpec**, com limites e riscos declarados no mapa `coverage.json`; um catálogo válido não significa que todo conteúdo externo foi traduzido.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o checkpoint atual é **543 de 544 tarefas**,
-com 1 caixa aberta (7.1). A contagem inclui lotes menores
+Na branch `codex/localize-paperclip-pt-br`, o checkpoint atual é **544 de 544 tarefas**,
+com 0 caixas abertas. A contagem inclui lotes menores
 por jornada; subtarefas concluídas não encerram automaticamente seu grupo. Os
 checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -92,7 +91,7 @@ e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
 em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checklist do
-OpenSpec está em **543/544 tarefas**, com 1 item aberto:
+OpenSpec está em **544/544 tarefas**, sem itens abertos.
 agregadoras. 3.8, 4.3, 4.3bd, 7.2 e 7.3 foram fechadas após auditoria; seguem
 trabalho em ajuda pública (revisão humana), comunicação real de agentes (6.4),
 CI remota (7.1) e revisão independente final (7.4).

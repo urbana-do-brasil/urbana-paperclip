@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "change": "localize-paperclip-pt-br",
   "discoveryCommit": "a09d8b56e2ebcc22ea12082e8f8758b1938e1436",
-  "status": "partial",
+  "status": "complete-with-declared-limits",
   "locales": [
     "pt-BR",
     "en"
   ],
-  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-08. A CLI operacional 4.3, a auditoria integral de help 4.3bd, a regressão estruturada 4.4, as jornadas experimentais 3.10, a ajuda bilíngue 5.2/5.3 (revisão independente aprovada, risco OpenClaw/Docker aceito), a qualificação real do OpenCode 6.4, a reconciliação final 7.2, a regressão 7.3 e a revisão independente 7.4 estão concluídas. Resta 7.1 (execução remota da CI). As jornadas web 3.1–3.9, os lotes 3.11 e a homologação de browser experimental estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
+  "notice": "Escopo OpenSpec concluído em 2026-11-08: 544/544 tarefas. A CI remota do job `Localization` passou no PR #1 (60 arquivos, 752/752 testes Vitest, 19 Node, 556 fontes com base). Permanecem como limites/riscos declarados: production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki, clipboard/leitor de tela reais e validação operacional real de OpenClaw/Docker (risco aceito). Nenhum fallback ou limite é contado como cobertura integral.",
   "requiredStates": [
     "success",
     "empty",
@@ -1097,7 +1097,7 @@
         "ui/src/i18n/locale-validation.test.ts",
         "doc/localization/coverage.json"
       ],
-      "status": "regression-verified-external-blockers",
+      "status": "verified",
       "evidence": [
         "7.1a check:localization integrado ao workflow reutilizável local: 11 testes Node + 127 Vitest; scanner 493 arquivos alterados; 68 tópicos e links locais. Auditoria 7.1e constatou que o caller usa o workflow upstream, não esta cópia local.",
         "7.1d: sourceIndexes.documentation comparado com ui/src/help/topics.json; 71 slugs e pares EN/PT-BR sem divergências. Fixtures negativas 2/2 para tópico ausente/obsoleto e caminhos divergentes.",
@@ -1107,7 +1107,7 @@
         "7.3: typecheck recursivo EXIT 0 em 36 invocações; build EXIT 0; check:localization 19 Node + 752/752 Vitest; gates de UI EXIT 0; browser 12/12 e experimental 9/9.",
         "7.3 suíte integral no snapshot: 18.413 aprovados, 6 falhas ambientais (5 broker-client por caminho de socket e 1 native-session-resume por bwrap/loopback), 76 ignorados em 873 arquivos."
       ],
-      "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos é reconciliado no gate. O job de localização foi declarado diretamente em pr.yml porque o workflow reutilizável chamado é do upstream; execução remota ainda não foi verificada. A fonte é examinada incrementalmente por heurística, o contrato JSON é representativo e links sem âncoras não são verificados. A regressão 7.3 foi executada com 6 falhas ambientais classificadas e a lacuna de browser de Workspace Changes/fluxos internos da Wiki permanece explícita; a revisão final 7.4 foi realizada e 5.2/5.3/6.4 foram concluídas; resta 7.1 (CI remota). O gate de tópicos compara ui/src/help/topics.json com este mapa, mas ainda não lê docs/docs.json; uma página nova nesse índice não seria detectada até ser adicionada ao manifesto."
+      "limits": "O job remoto `Localization` passou no PR #1 (60 arquivos/752 testes, 19 Node, gate de fontes com 556 arquivos com base). Os cinco casos negativos do escopo 7.1 estão cobertos localmente. O workflow `ci` reutilizável do fork apresentou falhas ambientais não relacionadas (arquivo de teste ausente no base e suítes de runner); isso não afeta o gate de localização. O scanner de fontes é heurístico, o contrato JSON é representativo e links sem âncoras não são verificados; docs/docs.json não é lido pelo gate."
     },
     {
       "id": "cli-preferences",
@@ -1932,10 +1932,10 @@
   ],
   "checkpoint": {
     "date": "2026-11-08",
-    "completedTasks": 543,
+    "completedTasks": 544,
     "totalTasks": 544,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Em 2026-11-08, 3.10, 5.2, 5.3, 6.4, 7.2, 7.3 e 7.4 foram concluídas com evidência real: spec experimental 9/9, revisão semântica independente da ajuda aprovada com risco OpenClaw/Docker aceito, qualificação real do OpenCode local em PT-BR/en com 2/2, reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos, regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12, e revisão independente final com parecer aprovado com ressalvas para a entrega interna. A suíte integral teve 18.413 aprovados, 6 falhas ambientais classificadas e 76 ignorados. Resta 7.1 (CI remota); os demais limites de production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki e clipboard/leitor de tela permanecem declarados."
+    "reason": "Em 2026-11-08, todos os 544 checkboxes foram concluídos. A entrega inclui a spec experimental 9/9, a revisão semântica independente da ajuda aprovada com risco OpenClaw/Docker aceito, a qualificação real do OpenCode local em PT-BR/en com 2/2, a reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos, a regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12, a revisão independente final e o job remoto Localization verde no PR #1 (60 arquivos/752 testes, 19 Node, 556 fontes com base). Limites declarados: production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki, clipboard/leitor de tela reais e validação OpenClaw/Docker não executada (risco aceito). O job ci reutilizável do fork teve falhas ambientais não relacionadas; o gate de localização passou."
   }
 }

@@ -279,7 +279,11 @@ Os três ajustes documentais recomendados no follow-up foram aplicados:
 `README.md` e a linha de reconciliação/regressão foram sincronizadas; e o texto
 histórico de 3.11i/j e a data do bloco 7.3 em `verification.md` foram
 corrigidos. O checkbox 7.4 foi marcado como **“revisão realizada, com
-bloqueadores externos registrados”**, não como aceitação integral. A mudança
-não foi arquivada e a feature não é declarada concluída enquanto 7.1 (CI remota)
-permanecer aberto. 5.2/5.3 foram aprovadas depois deste parecer com o risco
-OpenClaw/Docker aceito; 6.4 foi qualificada com o runtime OpenCode local.
+bloqueadores externos registrados”**, não como aceitação integral. 5.2/5.3 foram aprovadas depois deste parecer com o risco OpenClaw/Docker
+aceito; 6.4 foi qualificada com o runtime OpenCode local; e 7.1 passou no job
+remoto `Localization` do PR #1 (run 42511556340, 752/752 testes). Todos os 544
+checkboxes estão concluídos. O parecer permanece **aprovado com ressalvas para
+a entrega interna**; os limites declarados (production mobile, host de plugins
+no shell production, Workspace Changes/fluxos internos da Wiki e
+clipboard/leitor de tela reais) não são contados como cobertura integral. A
+mudança não foi arquivada.
