@@ -3,7 +3,7 @@
 Change: `localize-paperclip-pt-br`.
 Branch: `codex/localize-paperclip-pt-br`.
 Base: `a09d8b56e2ebcc22ea12082e8f8758b1938e1436`.
-Progresso OpenSpec: **539/544** no checkpoint de 2026-11-08; restam 5.2, 5.3, 6.4, 7.1 e 7.4, com as demais jornadas e lotes registrados abaixo.
+Progresso OpenSpec: **540/544** no checkpoint de 2026-11-08; restam 5.2, 5.3, 6.4 e 7.1, com as demais jornadas e lotes registrados abaixo.
 
 ## Entrega verificada
 
@@ -4653,7 +4653,7 @@ agregadores. A aplicação não foi implantada.
   linhas técnicas, a auditoria integral dos **459 leafs** passou **1/1**. A
   matriz de subprocessos e os demais 409 testes não foram afetados.
 
-### Regressão integrada final — 7.3 — 2026-11-07
+### Regressão integrada final — 7.3 — 2026-11-08
 
 - **Typecheck:** `NODE_OPTIONS=--max-old-space-size=4096 pnpm -r
   --workspace-concurrency=1 typecheck` concluiu com **EXIT 0** em **36**
@@ -4699,3 +4699,28 @@ agregadores. A aplicação não foi implantada.
 - **Limite de ambiente:** o caso `native-session-resume` e o caminho de socket
   do snapshot não são reprodutíveis como produto; ambos foram repetidos ou
   delimitados, não contados como aprovados. A CI remota continua em 7.1.
+
+### Revisão independente final — 7.4 — 2026-11-08
+
+- Um agente revisor separado, sem participação na implementação, leu a proposta,
+  o design, as seis specs, `tasks.md`, `coverage.json`, `verification.md`,
+  `runtime-qualification.md`, o runbook e os logs desta rodada. O parecer está
+  em `doc/localization/reviews/final-independent-review-2026-11-07.md`, com
+  adendo de follow-up.
+- **Veredito:** aprovado com ressalvas para a entrega interna; **não** é
+  aceitação integral. O parecer confirma as seis specs no escopo local, mas
+  mantém explicitamente fora de cobertura: 5.2/5.3 (revisão humana/operacional),
+  6.4 (respostas reais por runtime/modelo) e 7.1 (CI remota).
+- **Achados internos corrigidos e checks repetidos:** undo real no streamlined
+  com eventos `routine.trigger_removed`/`routine.trigger_restored`; assert de
+  `routine.trigger_deleted` no production; browser de
+  PluginManager/PluginSettings/shell da Wiki; mobile escuro e teclado; ledger
+  540/544; logs de `broker-client` 8/8 e gate de fontes com base 556 arquivos;
+  validação de payload inseguro no catálogo CLI; `check:localization` 752/752;
+  e runbook com pré-condições de TMPDIR/bwrap e a lacuna 3.11.
+- **Limites declarados, não contados como cobertura:** production mobile, host
+  de plugins no shell production, Workspace Changes/fluxos internos da Wiki e
+  clipboard/leitor de tela reais.
+- **Fechamento:** 7.4 marcado como “revisão realizada, com bloqueadores
+  externos registrados”. A mudança OpenSpec não foi arquivada e a feature não é
+  declarada concluída enquanto 5.2, 5.3, 6.4 e 7.1 permanecerem abertos.

@@ -1,9 +1,9 @@
 # Revisão independente final — `localize-paperclip-pt-br`
 
-**Data:** 2026-11-07  
-**Branch revisada:** `codex/localize-paperclip-pt-br`  
-**HEAD:** `f3c3ac0955b874ec88ef18adf115989eb4e432e5` (`test(i18n): add structured CLI subprocess and docs parity regression`)  
-**Estado:** working tree com as evidências finais ainda não commitadas (`tasks.md`, `coverage.json`, `verification.md`, `README.md`, teste de help, `tests/e2e/playwright.config.ts`, `tests/e2e/localization-experimental.spec.ts` e `rollout-rollback.md`).  
+**Data:** 2026-11-07
+**Branch revisada:** `codex/localize-paperclip-pt-br`
+**HEAD:** `f3c3ac0955b874ec88ef18adf115989eb4e432e5` (`test(i18n): add structured CLI subprocess and docs parity regression`)
+**Estado:** working tree com as evidências finais ainda não commitadas (`tasks.md`, `coverage.json`, `verification.md`, `README.md`, teste de help, `tests/e2e/playwright.config.ts`, `tests/e2e/localization-experimental.spec.ts` e `rollout-rollback.md`).
 **Veredito:** **APROVADO COM RESSALVAS para a entrega interna e para a continuidade do 7.4**; **NÃO APROVADO para declarar a feature concluída, arquivar a change ou marcar 7.4 como aceitação integral** enquanto 5.2, 5.3, 6.4 e 7.1 permanecerem abertos e enquanto as correções de evidência/ledger abaixo não forem aplicadas. Em uma única classificação: **aprovado com ressalvas**, sendo as ressalvas impeditivas para declarar conclusão integral.
 
 Este parecer cobre a implementação e as evidências locais das seis specs no working tree acima. Ele **não** cobre implantação, CI remota, revisão semântica humana dos guias, respostas reais de modelos em runtimes externos nem homologação de tecnologia assistiva real. A entrega continua explicitamente **parcial** em `coverage.json` e **não implantada**.
@@ -196,3 +196,89 @@ Se a decisão de produto for aceitar 5.2/5.3/6.4/7.1 como riscos externos consci
 | 3.10 (a11y) | Tecnologia assistiva real e clipboard real | Markup, atributos ARIA e testes de componente |
 
 **Conclusão:** o núcleo da localização está bem implementado e tem evidência local forte; os problemas restantes são, em sua maioria, de fechamento de evidência, consistência do ledger e dependências externas. Por isso o parecer é **aprovado com ressalvas**, mas a aceitação integral e o checkbox 7.4 devem permanecer abertos até as correções e dependências acima.
+
+## Follow-up 2026-11-08
+
+**Commit revisado:** `2fa392d8d20111f34d577828c2f7236ba9e72f0c` (`test(i18n): close experimental browser and quality evidence gaps`).
+**Estado:** working tree limpo antes deste adendo; as correções estão commitadas. Este adendo reavalia os achados internos do parecer acima; os trechos anteriores permanecem como registro histórico.
+
+### Evidências novas conferidas
+
+- `tests/e2e/localization-experimental.spec.ts` agora tem **9 testes**. `/tmp/opencode/e2e-experimental-final3.log` termina com **9 passed (1.4m)**.
+- O teste de undo do streamlined cria um trigger, remove o webhook, verifica o banner, espera o evento `routine.trigger_removed`, clica em “Desfazer”, confirma o cartão restaurado, o trigger ativo na API e o evento `routine.trigger_restored`.
+- O arquivamento em production agora confirma o evento `routine.trigger_deleted` no ledger da API, além do toast e da lista ativa vazia.
+- O teste mobile usa viewport **390×844**, tema escuro e ativação do skip link “Ir para o conteúdo principal” por teclado.
+- O teste de plugins instala o LLM Wiki pela UI (`POST /plugins/install` no log), abre PluginManager, PluginSettings e o shell `/wiki` em PT-BR/en. A Wiki é carregada sem pasta local; o teste cobre host/localização, não leitura de conteúdo.
+- `/tmp/opencode/broker-client-short-tmpdir.log`: **8/8** testes de `broker-client` passaram com `TMPDIR=/tmp/pv`.
+- `/tmp/opencode/source-gate-base.log`: gate de fontes com base `a09d8b5` examinou **556** arquivos e passou.
+- `/tmp/opencode/check-localization-final3.log`: **19** testes Node + **752/752** Vitest em 60 arquivos, `EXIT:0`.
+- `/tmp/opencode/typecheck-cli-final.log` e `/tmp/opencode/build-cli-final.log`: typecheck e build da CLI concluídos.
+- `tasks.md`/`coverage.json`/`verification.md`: **539/544, 5 abertos** (5.2, 5.3, 6.4, 7.1, 7.4); `coverage.json.checkpoint.completedTasks = 539`.
+- `cli/src/localization/catalog-validation.ts` rejeita `<script>`, event handlers, `javascript:`, `data:` e URLs inesperadas; `cli/src/__tests__/cli-locale-localization.test.ts` passou **11/11**.
+- `rollout-rollback.md` registra `TMPDIR` curto, `bwrap`/loopback, a classificação das 6 falhas e a lacuna de browser de Workspace Changes/fluxos internos da Wiki.
+- `cli-help-candidates.md:41` marca a limitação de continuações como histórica/superada.
+
+### Situação de cada achado anterior
+
+| Achado anterior | Situação em 2026-11-08 | Evidência / observação |
+| --- | --- | --- |
+| 3.10 undo sem teste | **Resolvido** | Teste real no streamlined; eventos e API ativa; `e2e-final3` 9/9. A alegação agora é sustentada. |
+| 3.10 arquivamento sem assert de API | **Resolvido** | `waitForTriggerActivity("routine.trigger_deleted")` no teste de production. |
+| 3.10 apenas desktop/sem tema/teclado | **Parcialmente resolvido** | Mobile 390×844, tema escuro e skip link por teclado existem, mas o teste mobile é apenas `streamlined`; production mobile não foi exercitado. |
+| 3.11 browser prometido ao 7.3 | **Resolvido no escopo declarado** | PluginManager, PluginSettings e shell da Wiki em browser; Workspace Changes e fluxos internos da Wiki permanecem por componente e o status foi rebaixado para `host-browser-and-component-verified`. |
+| Ledger 538/544 e 7.3 aberto | **Resolvido no núcleo** | 539/544 e 5 abertos em `tasks.md`, `coverage.json`, `verification.md` e topo do `README.md`. Restam linhas históricas no README (abaixo). |
+| 7.3 sem log 8/8 e sem gate de fontes | **Resolvido** | `broker-client-short-tmpdir.log` 8/8; `source-gate-base.log` 556/556; descrição “não verde” com 18.413/6/76. |
+| CLI sem validação de payload inseguro | **Resolvido** | Validador e teste 11/11; `check:localization` 752/752. |
+| Rollout sem pré-condições | **Resolvido** | `rollout-rollback.md` agora registra TMPDIR/bwrap e a lacuna 3.11. |
+| `cli-help-candidates` histórico contraditório | **Resolvido** | Limite marcado como histórico/superado. |
+| Gate de fontes final examinou 0 arquivos | **Resolvido por evidência independente** | `source-gate-base.log` 556 arquivos; o log final antigo permanece apenas como registro do comando sem base. |
+| Evidência de browser de plugins no ledger | **Pendente (médio)** | `coverage.json.groups.plugins.evidence` ainda não lista `tests/e2e/localization-experimental.spec.ts`, embora `status` e `limits` afirmem browser. |
+| README sincronizado | **Pendente (médio/baixo)** | O topo e a linha 94 estão em 539/544, mas `README.md:74` e `README.md:103` ainda dizem “3.10a–v” e “grupo permanece aberto”; a linha 94 ainda lista reconciliação/regressão como pendentes. |
+| Texto histórico de 3.11j | **Pendente (baixo)** | `tasks.md:400` diz “revisão geral de 3.11 permanece aberta”, embora 3.11 esteja `[x]` e a revisão de browser esteja registrada. |
+| Data do bloco 7.3 | **Pendente (baixo)** | `verification.md:4656` mantém o título “7.3 — 2026-11-07” para conteúdo atualizado em 2026-11-08. |
+
+### Achados remanescentes
+
+**Médio**
+
+1. **`coverage.json.groups.plugins.evidence` não aponta para a nova prova de browser.** O status `host-browser-and-component-verified` e o texto de `limits` dizem que PluginManager/PluginSettings/shell da Wiki foram exercitados, mas o array `evidence` não contém `tests/e2e/localization-experimental.spec.ts`. A prova está em `tasks.md` e `verification.md`, mas o ledger do grupo não a referencia. Adicione o caminho (e, se quiser, o log `e2e-experimental-final3.log`) para que 7.2/7.4 sejam rastreáveis.
+2. **`README.md` ainda tem texto de checkpoint antigo.** `README.md:74` diz que as subtarefas 3.10a–v estão marcadas e que a auditoria agregada “ainda está pendente”; `README.md:103` diz que 3.10a–v têm subtarefas verificadas e que o grupo “permanece aberto”. Isso contradiz 539/544 e o status `journey-verified` de `experimental`. A linha 94 também mantém “reconciliação final” e “regressão integrada” como trabalho futuro. O topo está correto, mas o README não está totalmente sincronizado.
+
+**Baixo**
+
+1. **3.10 mobile/dark é apenas streamlined.** O teste `pt-BR streamlined mobile dark` não exercita o shell production em mobile. Se a aceitação de `localized-web-interface` exige a mesma matriz de variantes do desktop, falta uma execução production mobile ou uma ressalva explícita.
+2. **3.11 browser é apenas streamlined.** O teste de plugins chama `patchExperimental({ enableStreamlinedUi: true })`; PluginManager/PluginSettings não foram exercitados no shell production. O status `host-browser-and-component-verified` é honesto, mas a variante production permanece por componente.
+3. **`tasks.md:400` (3.11j)** ainda diz que a revisão geral de 3.11 permanece aberta; o parent 3.11 está `[x]`. Trate como texto histórico ou atualize.
+4. **`verification.md:4656`** mantém “7.3 — 2026-11-07” em um bloco atualizado em 2026-11-08.
+5. **O número “35” de 7.2 continua sendo de registros de topo.** O código tem 37 nomes de funções `register*Commands`; os dois helpers aninhados já estavam cobertos pelos pais. A frase “35 chamadas” deve ser lida como “35 registros de topo” para não sugerir ausência de helpers.
+
+Não encontrei referência de fonte quebrada nova, nem regressão de produto nos arquivos inspecionados. O validador de payload CLI e o undo real agora estão cobertos; o único ponto de produto que segue sem homologação real é o já declarado clipboard/leitor de tela, além dos fluxos internos da Wiki/Workspace Changes em browser.
+
+### Veredito final do follow-up
+
+**APROVADO COM RESSALVAS para a entrega interna.** As correções de 3.10, 3.11, 7.3, CLI e rollout resolvem os achados internos materiais do parecer anterior. O que resta são ajustes de rastreabilidade/documentação (evidência de plugins no `coverage.json`, README e texto histórico de 3.11j) e limites de cobertura explicitamente declarados (production mobile, plugin production, Workspace Changes/fluxos internos da Wiki, clipboard/leitor de tela).
+
+**NÃO APROVADO para declarar a feature concluída, arquivar a change ou tratar 7.4 como aceitação integral.** Continuam abertos por terceiros: 5.2/5.3 (revisão humana/operacional), 6.4 (qualificação real por runtime/modelo) e 7.1 (CI remota). Esses itens não podem ser contados como cobertura e não são substituídos por 9/9, 12/12, 752/752 ou pelos testes determinísticos de transporte.
+
+### Recomendação objetiva para 7.4
+
+**7.4 pode ser marcado como “revisão realizada, com bloqueadores externos registrados” depois de três ajustes documentais**, que não exigem mudança de produto:
+
+1. adicionar `tests/e2e/localization-experimental.spec.ts` ao `evidence` de `groups.plugins` no `coverage.json`;
+2. corrigir as passagens antigas de 3.10 no `README.md` (linhas 74/103) e a frase de reconciliação/regressão da linha 94; e
+3. atualizar `tasks.md:400` (3.11j) e a data do bloco 7.3 em `verification.md`.
+
+Se esses ajustes não forem feitos, **7.4 deve permanecer aberto**. Em nenhum cenário ele deve ser marcado como “aceitação integral” ou “feature concluída” enquanto 5.2/5.3/6.4/7.1 e os limites declarados (production mobile, plugin production, Workspace Changes/fluxos internos da Wiki, clipboard/leitor de tela) não forem concluídos ou formalmente aceitos como risco de escopo.
+
+
+## Fechamento do checkbox 7.4 — 2026-11-08
+
+Os três ajustes documentais recomendados no follow-up foram aplicados:
+`tests/e2e/localization-experimental.spec.ts` foi incluído em
+`coverage.json.groups.plugins.evidence`; as passagens antigas de 3.10 no
+`README.md` e a linha de reconciliação/regressão foram sincronizadas; e o texto
+histórico de 3.11i/j e a data do bloco 7.3 em `verification.md` foram
+corrigidos. O checkbox 7.4 foi marcado como **“revisão realizada, com
+bloqueadores externos registrados”**, não como aceitação integral. A mudança
+não foi arquivada e a feature não é declarada concluída enquanto 5.2, 5.3, 6.4
+e 7.1 permanecerem abertos.

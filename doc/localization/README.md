@@ -5,8 +5,8 @@ um catálogo válido não significa que a aplicação inteira foi traduzida.
 
 ## Roadmap da localização
 
-Na branch `codex/localize-paperclip-pt-br`, o checkpoint atual é **539 de 544 tarefas**,
-com 5 caixas abertas (5.2, 5.3, 6.4, 7.1 e 7.4). A contagem inclui lotes menores
+Na branch `codex/localize-paperclip-pt-br`, o checkpoint atual é **540 de 544 tarefas**,
+com 4 caixas abertas (5.2, 5.3, 6.4 e 7.1). A contagem inclui lotes menores
 por jornada; subtarefas concluídas não encerram automaticamente seu grupo. Os
 checkboxes em
 [tasks.md](../../openspec/changes/localize-paperclip-pt-br/tasks.md) são a fonte
@@ -71,9 +71,10 @@ atual continua redirecionando para o feed geral. 3.9f3g localizou os detalhes
 técnicos e as ações de reconexão/revogação; o wrapper avançado não tem import
 ativo. 3.9f4 localizou configurações de Browser Use Cloud, Railway e Honcho,
 além dos gestores de contas Composio/agregadores. 3.9f5 localizou a gestão de
-gateways MCP de apps. As subtarefas 3.10a–v estão marcadas em PT-BR/en nas
-variantes streamlined/production; a auditoria do critério agregado de rotinas,
-pipelines, casos e status cards ainda está pendente. 3.10b foi decomposta em
+gateways MCP de apps. As subtarefas 3.10a–aa estão marcadas em PT-BR/en nas
+variantes streamlined/production; a tarefa 3.10 foi concluída em 2026-11-08
+com a spec experimental 9/9 (incluindo mutações reais, mobile escuro, teclado
+e host de plugins) e mantém apenas limites declarados. 3.10b foi decomposta em
 cinco fatias revisáveis; 3.10b1 (shell,
 navegação e visão geral somente de leitura), 3.10b2 (edição, variáveis,
 segredos, políticas de entrega e salvamento), 3.10b3a (editor de agendas e
@@ -91,20 +92,20 @@ e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
 em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checklist do
-OpenSpec está em **539/544 tarefas**, com 5 itens abertos incluindo tarefas
-agregadoras. 3.8, 4.3, 4.3bd e 6.3 foram fechadas após auditoria; seguem
-trabalho em ajuda pública, comunicação real de agentes, reconciliação final,
-regressão integrada e revisão independente.
+OpenSpec está em **540/544 tarefas**, com 4 itens abertos incluindo tarefas
+agregadoras. 3.8, 4.3, 4.3bd, 7.2 e 7.3 foram fechadas após auditoria; seguem
+trabalho em ajuda pública (revisão humana), comunicação real de agentes (6.4),
+CI remota (7.1) e revisão independente final (7.4).
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
-| 3. Interface web por jornadas | 3.8 foi concluída nas jornadas planejadas; a matriz browser é representativa, com APIs simuladas. 3.10a–v têm subtarefas verificadas, mas o grupo permanece aberto por lacunas de qualificação e auditoria. 3.11 permanece parcial nas superfícies host documentadas. |
+| 3. Interface web por jornadas | 3.8 foi concluída nas jornadas planejadas; a matriz browser é representativa, com APIs simuladas. 3.10 está concluída com browser 9/9 e limites declarados. 3.11 tem browser de host para PluginManager/PluginSettings/shell da Wiki e cobertura por componente para Workspace Changes/fluxos internos. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas. 4.3 foi concluída; a auditoria integral cobre os 459 leafs com assinaturas estáveis e zero descrição humana não localizada. A tabela raiz de 75 comandos está fixada em PT-BR/en e 164 leafs têm paridade de subprocesso. Contratos estruturados (4.4) estão concluídos, incluindo a fronteira de subprocesso. O typecheck recursivo final passou com EXIT 0. |
 | 5. Ajuda e documentação pública bilíngue | 71 tópicos públicos têm fontes EN/PT-BR e passam pelo gate de cobertura. O smoke de pipelines passou em ambiente descartável, incluindo HTTP 409 e rotina com agente simulado; a revisão humana permanece pendente. |
 | 6. Comunicação dos agentes | 6.1–6.3 foram verificadas, incluindo contratos determinísticos dos 15 adapters ativos e uma jornada descartável com duas contas PT-BR/en. A qualificação de respostas reais em 6.4 permanece pendente. |
-| 7. Integração, regressão e revisão final | Checks locais 7.1a–e estão integrados; o job de localização de PR ainda requer execução remota. O mapa 7.2 foi reconciliado em 2026-11-07 contra 179 rotas, 8 flags, 35 registros/55 arquivos de CLI, 16 adapters e 71 tópicos. 7.3 foi executada com typecheck recursivo, build, gates e browser verdes; a suíte integral teve 6 falhas ambientais classificadas. A revisão independente final 7.4 está em correção e os limites externos 5.2/5.3/6.4/7.1 permanecem explícitos. |
+| 7. Integração, regressão e revisão final | Checks locais 7.1a–e estão integrados; o job de localização de PR ainda requer execução remota. O mapa 7.2 foi reconciliado em 2026-11-07 contra 179 rotas, 8 flags, 35 registros/55 arquivos de CLI, 16 adapters e 71 tópicos. 7.3 foi executada com typecheck recursivo, build, gates e browser verdes; a suíte integral teve 6 falhas ambientais classificadas. A revisão independente final 7.4 foi realizada e o parecer é aprovado com ressalvas para a entrega interna; os limites externos 5.2/5.3/6.4/7.1 permanecem explícitos. |
 
 ## Continuação — interações de conexão (3.4d3c2)
 

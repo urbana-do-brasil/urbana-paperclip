@@ -7,7 +7,7 @@
     "pt-BR",
     "en"
   ],
-  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-08. A CLI operacional 4.3, a auditoria integral de help 4.3bd, a regressão estruturada 4.4, as jornadas experimentais 3.10 e a reconciliação final 7.2 estão concluídas; 7.3 foi executada com 6 falhas ambientais classificadas. Permanecem abertos a revisão humana dos guias 5.2/5.3, a qualificação real de runtimes 6.4, a CI remota 7.1 e a revisão independente final 7.4. As jornadas web 3.1–3.9, os lotes 3.11 e a homologação de browser experimental estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
+  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-08. A CLI operacional 4.3, a auditoria integral de help 4.3bd, a regressão estruturada 4.4, as jornadas experimentais 3.10, a reconciliação final 7.2, a regressão 7.3 e a revisão independente 7.4 estão concluídas; 7.3 foi executada com 6 falhas ambientais classificadas e 7.4 tem parecer aprovado com ressalvas para a entrega interna. Permanecem abertos a revisão humana dos guias 5.2/5.3, a qualificação real de runtimes 6.4 e a CI remota 7.1. As jornadas web 3.1–3.9, os lotes 3.11 e a homologação de browser experimental estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
   "requiredStates": [
     "success",
     "empty",
@@ -879,7 +879,8 @@
         "3.11h19: 11 campos do schema Kitchen Sink localizados; inventário dos 16 IDs/pacotes próprios reconciliado com manifests, package.json e catálogos EN/PT-BR. Daytona verificado em todos os 18 campos; plugin + locale 38/38 e 14/14, typecheck UI e token gates passaram.",
         "ui/src/lib/plugin-presentation-localization.test.ts",
         "ui/src/i18n/locales/en.json",
-        "ui/src/i18n/locales/pt-BR.json"
+        "ui/src/i18n/locales/pt-BR.json",
+        "tests/e2e/localization-experimental.spec.ts"
       ],
       "limits": "3.11f3 e f3a–d cobrem as seções ativas de configurações da Wiki em PT-BR/en por jsdom. Em browser real, PluginManager, PluginSettings e o shell do LLM Wiki foram exercitados nos dois idiomas; a Wiki foi carregada sem pasta local configurada, então o teste cobre o host/localização, não a leitura de conteúdo. A aba Workspace Changes e os fluxos internos de dados da Wiki permanecem verificados por componente, não por browser. 3.11h auditou os 16 pacotes próprios e suas superfícies de metadata; os schemas Daytona, E2B, Novita, Modal, Cloudflare, Kubernetes, exe.dev, CreateOS, fake-plugin, File Browser e Kitchen Sink são localizados somente na apresentação. Fallbacks, nomes externos, valores editados/configurados e schemas de validação permanecem originais. A interação browser do Kitchen Sink não foi executada; fixture de orquestração depende de instalação local para typecheck completo."
     },
@@ -1103,7 +1104,7 @@
         "7.3: typecheck recursivo EXIT 0 em 36 invocações; build EXIT 0; check:localization 19 Node + 752/752 Vitest; gates de UI EXIT 0; browser 12/12 e experimental 9/9.",
         "7.3 suíte integral no snapshot: 18.413 aprovados, 6 falhas ambientais (5 broker-client por caminho de socket e 1 native-session-resume por bwrap/loopback), 76 ignorados em 873 arquivos."
       ],
-      "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos é reconciliado no gate. O job de localização foi declarado diretamente em pr.yml porque o workflow reutilizável chamado é do upstream; execução remota ainda não foi verificada. A fonte é examinada incrementalmente por heurística, o contrato JSON é representativo e links sem âncoras não são verificados. A regressão 7.3 foi executada com 6 falhas ambientais classificadas e a lacuna de browser de Workspace Changes/fluxos internos da Wiki permanece explícita; a revisão final 7.4 está em andamento. O gate de tópicos compara ui/src/help/topics.json com este mapa, mas ainda não lê docs/docs.json; uma página nova nesse índice não seria detectada até ser adicionada ao manifesto."
+      "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos é reconciliado no gate. O job de localização foi declarado diretamente em pr.yml porque o workflow reutilizável chamado é do upstream; execução remota ainda não foi verificada. A fonte é examinada incrementalmente por heurística, o contrato JSON é representativo e links sem âncoras não são verificados. A regressão 7.3 foi executada com 6 falhas ambientais classificadas e a lacuna de browser de Workspace Changes/fluxos internos da Wiki permanece explícita; a revisão final 7.4 foi realizada, com parecer aprovado com ressalvas para a entrega interna e os bloqueadores externos 5.2/5.3/6.4/7.1 registrados. O gate de tópicos compara ui/src/help/topics.json com este mapa, mas ainda não lê docs/docs.json; uma página nova nesse índice não seria detectada até ser adicionada ao manifesto."
     },
     {
       "id": "cli-preferences",
@@ -1928,10 +1929,10 @@
   ],
   "checkpoint": {
     "date": "2026-11-08",
-    "completedTasks": 539,
+    "completedTasks": 540,
     "totalTasks": 544,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Em 2026-11-08, 3.10, 7.2 e 7.3 foram concluídas com evidência real: spec experimental 9/9 (streamlined/production, PT-BR/en, mutações reais de gatilho com ledger de API, mobile escuro e teclado, host de plugins), reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos e regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12. A suíte integral teve 18.413 aprovados, 6 falhas ambientais classificadas (5 sockets Unix no snapshot e 1 bwrap/loopback) e 76 ignorados. Restam 5.2/5.3 (revisão humana), 6.4 (credenciais reais), 7.1 (CI remota) e 7.4 (revisão independente final em correção). A lacuna de browser de Workspace Changes e dos fluxos internos da Wiki está registrada e não contada como cobertura."
+    "reason": "Em 2026-11-08, 3.10, 7.2, 7.3 e 7.4 foram concluídas com evidência real: spec experimental 9/9 (streamlined/production, PT-BR/en, mutações reais de gatilho com ledger de API, undo no streamlined, mobile escuro, teclado e host de plugins), reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos, regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12, e revisão independente final com parecer aprovado com ressalvas para a entrega interna. A suíte integral teve 18.413 aprovados, 6 falhas ambientais classificadas (5 sockets Unix no snapshot e 1 bwrap/loopback) e 76 ignorados. Restam 5.2/5.3 (revisão humana), 6.4 (credenciais reais) e 7.1 (CI remota); os limites de production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki e clipboard/leitor de tela permanecem declarados e não contados como cobertura."
   }
 }
