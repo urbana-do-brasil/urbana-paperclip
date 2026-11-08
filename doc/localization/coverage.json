@@ -7,7 +7,7 @@
     "pt-BR",
     "en"
   ],
-  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-07. A CLI operacional 4.3, a auditoria integral de help 4.3bd e a regressão estruturada 4.4 estão concluídas. Permanecem pendentes as jornadas experimentais 3.10, a revisão humana dos guias 5.2/5.3, a qualificação real de runtimes 6.4, a CI remota 7.1, a reconciliação final 7.2, a regressão integrada 7.3 e a revisão independente 7.4. As jornadas web 3.1–3.9 e os lotes 3.11 estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
+  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-08. A CLI operacional 4.3, a auditoria integral de help 4.3bd, a regressão estruturada 4.4, as jornadas experimentais 3.10 e a reconciliação final 7.2 estão concluídas; 7.3 foi executada com 6 falhas ambientais classificadas. Permanecem abertos a revisão humana dos guias 5.2/5.3, a qualificação real de runtimes 6.4, a CI remota 7.1 e a revisão independente final 7.4. As jornadas web 3.1–3.9, os lotes 3.11 e a homologação de browser experimental estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
   "requiredStates": [
     "success",
     "empty",
@@ -86,7 +86,7 @@
         "ui/src/components/onboarding/ModelSourceTiles.tsx",
         "ui/src/components/onboarding/SavedProviderKeySelect.tsx",
         "ui/src/components/onboarding/Stepper.tsx",
-        "ui/src/components/ai-connections/useLocalAiLogin.tsx",
+        "ui/src/components/ai-connections/useLocalAiLogin.ts",
         "ui/src/components/new-agent/AgentProviderConnection.tsx",
         "ui/src/App.tsx"
       ],
@@ -683,7 +683,7 @@
     },
     {
       "id": "experimental",
-      "tasks": "3.10a–g (3.10b1–b5; b3a–b3c; b4a–b4c; b4c1–b4c2; c1–c3; d1–d2; e1a–e1b; e2a–e2b; e3a–e3b; e4–e5; f1; f2a–f2b; f3a–f3b; f4–f5; g1–g4 (g4a–g4b))",
+      "tasks": "3.10 (3.10a–aa; b1–b5; b3a–b3c; b4a–b4c; b4c1–b4c2; c1–c3; d1–d2; e1a–e1b; e2a–e2b; e3a–e3b; e4–e5; f1; f2a–f2b; f3a–f3b; f4–f5; g1–g4 (g4a–g4b); h–aa)",
       "label": "Rotinas, pipelines, casos e status cards",
       "sources": [
         "ui/src/pages/Routines.tsx",
@@ -758,7 +758,7 @@
         "ui/src/pages/StatusCards/StatusCardTile.tsx",
         "ui/src/lib/status-card-state.ts"
       ],
-      "status": "partial",
+      "status": "journey-verified",
       "evidence": [
         "ui/src/pages/Routines.test.tsx",
         "ui/src/components/RoutineList.test.tsx",
@@ -818,9 +818,10 @@
         "ui/src/pages/InstanceExperimentalSettings.test.tsx",
         "ui/src/components/StatusCardsExperimentalGate.test.tsx",
         "ui/src/components/SummarySlotCard.test.tsx",
-        "ui/src/components/SummarySlotCard.status.test.tsx"
+        "ui/src/components/SummarySlotCard.status.test.tsx",
+        "tests/e2e/localization-experimental.spec.ts"
       ],
-      "limits": "3.10a, 3.10b1–b5, 3.10c1–c3 e 3.10d1–d2 foram verificadas nas superfícies alcançáveis. Pipelines cobre catálogo/lista, board, intake, detalhe, configurações, estágios, avisos de saúde, segredos, fila de revisão e learnings; os gates `enablePipelines` cobrem carregamento, desativado e ativado. Review Queue localiza títulos, seções, prompts de fallback, status, contagens, seleção, decisões, prévia, erros/vazio e atalhos; rationale, resumos e conteúdo fornecido pela API são preservados. Learnings localiza eventos, fallbacks, paginação e datas; horário detalhado segue o locale selecionado e agrupamento corresponde ao dia local. Pipelines review: 17/17; learnings/helper, página e locale-validation: 26/26. Gates de tokens, JSON, diff e OpenSpec passaram. O typecheck da UI aponta somente o erro preexistente em `storybook/prototypes/NewAgentWizard.tsx` (`SETUP_LOGIN_HINTS` ausente); o typecheck do servidor foi encerrado por memória (SIGKILL/137). O feed de auditoria escopado de rotinas existe no AuditHub streamlined; a página production mantém o feed geral e não oferece visão escopada. 3.10e foi decomposta em e1 (coleção), e2 (detalhe/propriedades), e3 (atividade/documentos/anexos), e4 (integração com issues) e e5 (gates/navegação); e1 foi subdividida em e1a (busca/filtros/preferências de visualização) e e1b (onboarding/linhas/árvore/estados). 3.10e1a localizou busca, filtros, colunas, ordenação, agrupamento e alternância de árvore em PT-BR/en, preservando consultas, enums e preferências. Cases.test.tsx: 14/14; locale-validation: 12/12; gates de tokens, JSON e diff passaram. 3.10e1b localizou onboarding, linhas, grupos, árvore e cópia de identificadores; adicionou estado de falha com nova tentativa. Títulos, nomes, relações, IDs e nomes técnicos foram preservados. Cases, CaseDetail, CaseChildrenTree e locale-validation: 40/40; gates de tokens, JSON e diff passaram. 3.10e2 foi dividida em e2a (moldura, status e cópia Markdown) e e2b (propriedades, rótulos, tarefas e relações). 3.10e2a localizou moldura, status, abas, ações, erro e cópia Markdown do detalhe, preservando dados e identificadores. CaseDetail, Cases e locale-validation: 39/39; gates de tokens e OpenSpec passaram. 3.10e2b localizou propriedades, rótulos, tarefas vinculadas e relações, incluindo carregamento/falhas e nomes acessíveis, preservando dados e payloads. CaseDetail, Cases, CaseChildrenTree e locale-validation: 47/47; gates de tokens passaram. 3.10e3 foi dividida em e3a (atividade) e e3b (documentos/anexos). 3.10e3a localizou eventos, filtros, contagens, autoria de fallback e estados do feed, preservando nomes, links, payloads e valores desconhecidos. CaseActivityFeed, CaseDetail e locale-validation: 31/31; gates de tokens passaram. 3.10e3b localizou galeria de anexos, controles acessíveis e tamanhos; verificou bloqueio, prévia e restauração de revisão de documento de caso em ambos os idiomas. Arquivos, URLs, IDs e conteúdo foram preservados. CaseAttachmentsGallery, ImageGalleryModal, IssueDocumentsSection e locale-validation: 31/31; gates de tokens passaram. 3.10e4 localizou vínculos de casos em tarefas, papéis, status, falha/retry e nomes acessíveis das referências Markdown; flag, URLs, IDs e conteúdo foram preservados. IssueCasesPanel, MarkdownBody, case-reference e locale-validation: 83/83; gates de tokens passaram. 3.10e5 verificou o gate, as sidebars streamlined/production e as rotas reais de casos com flag ligada, desligada, carregamento e falha; rotas sem prefixo foram mantidas. Gate, Sidebar, IssueCasesPanel e locale-validation: 70/70; App.cases-routing: 5/5. 3.10f foi dividida em f1 (lista/arquivados), f2 (cartões/formatação), f3 (criação/configuração), f4 (detalhe/histórico) e f5 (flags/navegação). 3.10f1 localizou lista e arquivados, incluindo estados, ações e datas abreviadas, preservando nomes, IDs e operações. StatusCards/index, format e locale-validation: 23/23; gates de tokens passaram. A formatação de tokens/custo permanece em f2. 3.10f2 foi dividida em f2a (tokens/USD) e f2b (cartões/políticas). 3.10f2a localizou separadores de tokens e apresentação de USD, preservando quantidades e moeda; formatação, cartões, lista e locale-validation: 35/35. Textos da estimativa de custo permanecem em f3. 3.10f2b localizou estados, ações e política dos cartões; resumos, instruções, IDs e callbacks foram preservados. StatusCardTile, status-card-state, format, index e locale-validation: 54/54; gates de tokens passaram. 3.10f3 foi dividida em f3a (criação/agente) e f3b (políticas/custo), ambas concluídas em PT-BR/en. Criação, políticas, estimativas e componentes relacionados: 64/64 testes; dados, timezone, USD e payloads preservados. A próxima parte da UI é 3.11. Flags mapeadas nesta área: `enableCases`, `enablePipelines`, `enableStatusCards` e `enableSummaries`; 3.10f5/g1–g4 verificaram gates, navegação e estados conforme `verification.md`. SummarySlotCard e seus testes cobrem localização ativa e 403; toggle e dependência de `enableSummaries` foram testados. Evidências: f5 185/185, g1 45/45, g2 79/79, g3 25/25, g4a 52/52 e g4b 19/19; typecheck da UI passou nos lotes registrados. O tooltip de pipeline foi conferido pelo atributo `title`; testes de rotas g3/g4b usam sentinelas. Não há homologação visual registrada. O status permanece partial; esta reconciliação não altera checkboxes OpenSpec.",
+      "limits": "3.10a, 3.10b1–b5, 3.10c1–c3 e 3.10d1–d2 foram verificadas nas superfícies alcançáveis. Pipelines cobre catálogo/lista, board, intake, detalhe, configurações, estágios, avisos de saúde, segredos, fila de revisão e learnings; os gates `enablePipelines` cobrem carregamento, desativado e ativado. Review Queue localiza títulos, seções, prompts de fallback, status, contagens, seleção, decisões, prévia, erros/vazio e atalhos; rationale, resumos e conteúdo fornecido pela API são preservados. Learnings localiza eventos, fallbacks, paginação e datas; horário detalhado segue o locale selecionado e agrupamento corresponde ao dia local. Pipelines review: 17/17; learnings/helper, página e locale-validation: 26/26. Gates de tokens, JSON, diff e OpenSpec passaram. O typecheck final da UI passou sem diagnósticos e o do servidor passou com o swap adicional. O feed de auditoria escopado de rotinas existe no AuditHub streamlined; a página production mantém o feed geral e não oferece visão escopada. 3.10e foi decomposta em e1 (coleção), e2 (detalhe/propriedades), e3 (atividade/documentos/anexos), e4 (integração com issues) e e5 (gates/navegação); e1 foi subdividida em e1a (busca/filtros/preferências de visualização) e e1b (onboarding/linhas/árvore/estados). 3.10e1a localizou busca, filtros, colunas, ordenação, agrupamento e alternância de árvore em PT-BR/en, preservando consultas, enums e preferências. Cases.test.tsx: 14/14; locale-validation: 12/12; gates de tokens, JSON e diff passaram. 3.10e1b localizou onboarding, linhas, grupos, árvore e cópia de identificadores; adicionou estado de falha com nova tentativa. Títulos, nomes, relações, IDs e nomes técnicos foram preservados. Cases, CaseDetail, CaseChildrenTree e locale-validation: 40/40; gates de tokens, JSON e diff passaram. 3.10e2 foi dividida em e2a (moldura, status e cópia Markdown) e e2b (propriedades, rótulos, tarefas e relações). 3.10e2a localizou moldura, status, abas, ações, erro e cópia Markdown do detalhe, preservando dados e identificadores. CaseDetail, Cases e locale-validation: 39/39; gates de tokens e OpenSpec passaram. 3.10e2b localizou propriedades, rótulos, tarefas vinculadas e relações, incluindo carregamento/falhas e nomes acessíveis, preservando dados e payloads. CaseDetail, Cases, CaseChildrenTree e locale-validation: 47/47; gates de tokens passaram. 3.10e3 foi dividida em e3a (atividade) e e3b (documentos/anexos). 3.10e3a localizou eventos, filtros, contagens, autoria de fallback e estados do feed, preservando nomes, links, payloads e valores desconhecidos. CaseActivityFeed, CaseDetail e locale-validation: 31/31; gates de tokens passaram. 3.10e3b localizou galeria de anexos, controles acessíveis e tamanhos; verificou bloqueio, prévia e restauração de revisão de documento de caso em ambos os idiomas. Arquivos, URLs, IDs e conteúdo foram preservados. CaseAttachmentsGallery, ImageGalleryModal, IssueDocumentsSection e locale-validation: 31/31; gates de tokens passaram. 3.10e4 localizou vínculos de casos em tarefas, papéis, status, falha/retry e nomes acessíveis das referências Markdown; flag, URLs, IDs e conteúdo foram preservados. IssueCasesPanel, MarkdownBody, case-reference e locale-validation: 83/83; gates de tokens passaram. 3.10e5 verificou o gate, as sidebars streamlined/production e as rotas reais de casos com flag ligada, desligada, carregamento e falha; rotas sem prefixo foram mantidas. Gate, Sidebar, IssueCasesPanel e locale-validation: 70/70; App.cases-routing: 5/5. 3.10f foi dividida em f1 (lista/arquivados), f2 (cartões/formatação), f3 (criação/configuração), f4 (detalhe/histórico) e f5 (flags/navegação). 3.10f1 localizou lista e arquivados, incluindo estados, ações e datas abreviadas, preservando nomes, IDs e operações. StatusCards/index, format e locale-validation: 23/23; gates de tokens passaram. A formatação de tokens/custo permanece em f2. 3.10f2 foi dividida em f2a (tokens/USD) e f2b (cartões/políticas). 3.10f2a localizou separadores de tokens e apresentação de USD, preservando quantidades e moeda; formatação, cartões, lista e locale-validation: 35/35. Textos da estimativa de custo permanecem em f3. 3.10f2b localizou estados, ações e política dos cartões; resumos, instruções, IDs e callbacks foram preservados. StatusCardTile, status-card-state, format, index e locale-validation: 54/54; gates de tokens passaram. 3.10f3 foi dividida em f3a (criação/agente) e f3b (políticas/custo), ambas concluídas em PT-BR/en. Criação, políticas, estimativas e componentes relacionados: 64/64 testes; dados, timezone, USD e payloads preservados. A próxima parte da UI é 3.11. Flags mapeadas nesta área: `enableCases`, `enablePipelines`, `enableStatusCards` e `enableSummaries`; 3.10f5/g1–g4 verificaram gates, navegação e estados conforme `verification.md`. SummarySlotCard e seus testes cobrem localização ativa e 403; toggle e dependência de `enableSummaries` foram testados. Evidências: f5 185/185, g1 45/45, g2 79/79, g3 25/25, g4a 52/52 e g4b 19/19; typecheck da UI passou nos lotes registrados. O tooltip de pipeline foi conferido pelo atributo `title`; testes de rotas g3/g4b usam sentinelas. A homologação em browser real foi registrada em 2026-11-07: a spec experimental passou 6/6 nos shells streamlined/production e em PT-BR/en, cobrindo coleções, estados vazios, gates desligados e mutações reais de gatilho webhook no production; limites de summarizer, undo inline e clipboard/leitor de tela permanecem registrados em verification.md e nas tarefas 3.10/7.3. A spec experimental final passou 9/9 em 2026-11-08: inclui remoção/undo real no streamlined com eventos de API, viewport mobile em tema escuro, ativação do skip link por teclado e o host de plugins (PluginManager/PluginSettings/shell do LLM Wiki). A aba Workspace Changes e os fluxos internos da Wiki permanecem por componente; clipboard/leitor de tela reais não foram qualificados.",
       "flags": [
         "enableCases",
         "enablePipelines",
@@ -847,7 +848,7 @@
         "doc/plugins/PLUGIN_SPEC.md",
         "packages/plugins/sdk/README.md"
       ],
-      "status": "journey-verified",
+      "status": "host-browser-and-component-verified",
       "evidence": [
         "OpenSpec 3.11 decomposta em 12 lotes revisáveis",
         "PluginHostContext sem locale identificado na auditoria",
@@ -880,7 +881,7 @@
         "ui/src/i18n/locales/en.json",
         "ui/src/i18n/locales/pt-BR.json"
       ],
-      "limits": "3.11f3 e f3a–d cobrem as seções ativas de configurações da Wiki em PT-BR/en; interação foi verificada em jsdom, com homologação integrada em navegador ainda pendente em 7.3. 3.11h auditou os 16 pacotes próprios e suas superfícies de metadata; os schemas Daytona, E2B, Novita, Modal, Cloudflare, Kubernetes, exe.dev, CreateOS, fake-plugin, File Browser e Kitchen Sink são localizados somente na apresentação. Fallbacks, nomes externos, valores editados/configurados e schemas de validação permanecem originais. A interação browser do Kitchen Sink não foi executada; fixture de orquestração depende de instalação local para typecheck completo."
+      "limits": "3.11f3 e f3a–d cobrem as seções ativas de configurações da Wiki em PT-BR/en por jsdom. Em browser real, PluginManager, PluginSettings e o shell do LLM Wiki foram exercitados nos dois idiomas; a Wiki foi carregada sem pasta local configurada, então o teste cobre o host/localização, não a leitura de conteúdo. A aba Workspace Changes e os fluxos internos de dados da Wiki permanecem verificados por componente, não por browser. 3.11h auditou os 16 pacotes próprios e suas superfícies de metadata; os schemas Daytona, E2B, Novita, Modal, Cloudflare, Kubernetes, exe.dev, CreateOS, fake-plugin, File Browser e Kitchen Sink são localizados somente na apresentação. Fallbacks, nomes externos, valores editados/configurados e schemas de validação permanecem originais. A interação browser do Kitchen Sink não foi executada; fixture de orquestração depende de instalação local para typecheck completo."
     },
     {
       "id": "cli-admin",
@@ -923,7 +924,7 @@
         "cli/src/__tests__/prompt-default-accept.test.ts",
         "cli/src/__tests__/onboard-service.test.ts"
       ],
-      "limits": "Help/parser, instalação shell, instalação/atualização/serviço/doctor, onboarding e configuração passaram nos testes focados PT-BR/en. 4.3/4.4 permanecem pendentes; esta evidência não qualifica todos os contratos de saída estruturada."
+      "limits": "Help/parser, instalação shell, instalação/atualização/serviço/doctor, onboarding e configuração passaram nos testes focados PT-BR/en. 4.3/4.4 estão concluídos, incluindo a auditoria de 459 leafs e a fronteira de subprocesso; esta evidência não qualifica todos os exemplos perigosos dos guias."
     },
     {
       "id": "cli-operations",
@@ -1092,15 +1093,17 @@
         "ui/src/i18n/locale-validation.test.ts",
         "doc/localization/coverage.json"
       ],
-      "status": "partial",
+      "status": "regression-verified-external-blockers",
       "evidence": [
         "7.1a check:localization integrado ao workflow reutilizável local: 11 testes Node + 127 Vitest; scanner 493 arquivos alterados; 68 tópicos e links locais. Auditoria 7.1e constatou que o caller usa o workflow upstream, não esta cópia local.",
         "7.1d: sourceIndexes.documentation comparado com ui/src/help/topics.json; 71 slugs e pares EN/PT-BR sem divergências. Fixtures negativas 2/2 para tópico ausente/obsoleto e caminhos divergentes.",
         "scripts/check-localization-coverage-index.mjs",
         "scripts/__tests__/check-localization-coverage-index.test.mjs",
-        "4.4g/h: a regressão de subprocesso passa a integrar check:localization por sufixo -localization.test.ts e cobre canais, códigos de saída e exemplos dos guias."
+        "4.4g/h: a regressão de subprocesso passa a integrar check:localization por sufixo -localization.test.ts e cobre canais, códigos de saída e exemplos dos guias.",
+        "7.3: typecheck recursivo EXIT 0 em 36 invocações; build EXIT 0; check:localization 19 Node + 752/752 Vitest; gates de UI EXIT 0; browser 12/12 e experimental 9/9.",
+        "7.3 suíte integral no snapshot: 18.413 aprovados, 6 falhas ambientais (5 broker-client por caminho de socket e 1 native-session-resume por bwrap/loopback), 76 ignorados em 873 arquivos."
       ],
-      "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos é reconciliado no gate. O job de localização foi declarado diretamente em pr.yml porque o workflow reutilizável chamado é o do upstream; execução remota ainda não foi verificada. A fonte é examinada incrementalmente por heurística, o contrato JSON é representativo e links sem âncoras não são verificados. Regressão integrada, matriz completa e revisão final permanecem pendentes."
+      "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos é reconciliado no gate. O job de localização foi declarado diretamente em pr.yml porque o workflow reutilizável chamado é do upstream; execução remota ainda não foi verificada. A fonte é examinada incrementalmente por heurística, o contrato JSON é representativo e links sem âncoras não são verificados. A regressão 7.3 foi executada com 6 falhas ambientais classificadas e a lacuna de browser de Workspace Changes/fluxos internos da Wiki permanece explícita; a revisão final 7.4 está em andamento. O gate de tópicos compara ui/src/help/topics.json com este mapa, mas ainda não lê docs/docs.json; uma página nova nesse índice não seria detectada até ser adicionada ao manifesto."
     },
     {
       "id": "cli-preferences",
@@ -1903,8 +1906,8 @@
       "reason": "Preservar conteúdo original; localizar apenas a apresentação própria."
     },
     {
-      "scope": "doc/plans/** e openspec/**",
-      "reason": "Planejamento e evidências internas não são documentação de uso distribuída."
+      "scope": "docs/plans/** e openspec/**",
+      "reason": "Planejamento, propostas e evidências internas não são documentação de uso distribuída."
     },
     {
       "scope": "Documentação exclusiva de desenvolvimento e prompts exclusivamente técnicos",
@@ -1913,14 +1916,22 @@
     {
       "scope": "docs/guides/agent-developer/mcp-fixture-smoke.md",
       "reason": "Procedimento de teste de fixtures MCP para desenvolvimento; fora da navegação pública e dos guias operacionais. Não é evidência de qualificação de runtime."
+    },
+    {
+      "scope": "docs/specs/**",
+      "reason": "Especificações de design/protocolo para desenvolvimento; não são páginas de ajuda operacional nem entram no bundle público."
+    },
+    {
+      "scope": "docs/pr-screenshots/**",
+      "reason": "Capturas e artefatos de revisão de PR; material interno de desenvolvimento, sem instruções operacionais."
     }
   ],
   "checkpoint": {
-    "date": "2026-11-07",
-    "completedTasks": 536,
+    "date": "2026-11-08",
+    "completedTasks": 539,
     "totalTasks": 544,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Em 2026-11-07, a auditoria integral do help CLI cobriu os 459 leafs registrados com assinaturas estáveis e zero descrição humana não localizada; 4.3bd, 4.3 e 4.4 foram concluídos. A nova regressão de subprocesso fixa stdout/stderr, códigos de saída e bytes JSON idênticos entre PT-BR/en, e os três guias CLI têm comandos pareados e exemplos executados em fixture descartável (5/5). A reprodução focal da regressão 7.3 passou 451/451 em nove arquivos e 39/39 nos dois testes nativos que dependiam de Cargo; resta um caso de native-session-resume bloqueado por bwrap/loopback sem permissão no ambiente. O mapa foi reconciliado contra App.tsx (179 rotas), os 8 flags, as 35 chamadas de registro da CLI, os 55 arquivos de comando, os 16 adapters e os 71 tópicos de ajuda. Permanecem abertos 3.10, 5.2, 5.3, 6.4, 7.1, 7.2, 7.3 e 7.4."
+    "reason": "Em 2026-11-08, 3.10, 7.2 e 7.3 foram concluídas com evidência real: spec experimental 9/9 (streamlined/production, PT-BR/en, mutações reais de gatilho com ledger de API, mobile escuro e teclado, host de plugins), reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos e regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12. A suíte integral teve 18.413 aprovados, 6 falhas ambientais classificadas (5 sockets Unix no snapshot e 1 bwrap/loopback) e 76 ignorados. Restam 5.2/5.3 (revisão humana), 6.4 (credenciais reais), 7.1 (CI remota) e 7.4 (revisão independente final em correção). A lacuna de browser de Workspace Changes e dos fluxos internos da Wiki está registrada e não contada como cobertura."
   }
 }

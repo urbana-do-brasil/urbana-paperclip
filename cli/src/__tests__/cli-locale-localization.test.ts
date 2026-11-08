@@ -68,4 +68,22 @@ describe("CLI locale catalogs", () => {
       'task.reset placeholders differ in pt-BR: expected ["agentId"], received ["taskId"]',
     );
   });
+
+  it("rejects unsafe payloads introduced by a translation", () => {
+    const reference = { task: { reset: "Reset <path> for {agentId}" } };
+
+    expect(validateMessageCatalogPair(reference, { task: { reset: "Redefinir <path> para {agentId}" } })).toEqual([]);
+    expect(validateMessageCatalogPair(reference, { task: { reset: "Redefinir <script>alert(1)</script> {agentId}" } })).toContain(
+      "task.reset contains disallowed <script> in pt-BR",
+    );
+    expect(validateMessageCatalogPair(reference, { task: { reset: "Redefinir javascript:alert(1) {agentId}" } })).toContain(
+      "task.reset contains disallowed javascript: in pt-BR",
+    );
+    expect(validateMessageCatalogPair(reference, { task: { reset: "Redefinir <a onclick=\"x\"> {agentId}</a>" } })).toContain(
+      "task.reset contains disallowed event-handler attribute in pt-BR",
+    );
+    expect(validateMessageCatalogPair(reference, { task: { reset: "Redefinir https://evil.example {agentId}" } })).toContain(
+      "task.reset contains disallowed unexpected URL in pt-BR",
+    );
+  });
 });

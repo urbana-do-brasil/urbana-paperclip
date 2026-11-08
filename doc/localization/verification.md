@@ -3,7 +3,7 @@
 Change: `localize-paperclip-pt-br`.
 Branch: `codex/localize-paperclip-pt-br`.
 Base: `a09d8b56e2ebcc22ea12082e8f8758b1938e1436`.
-Progresso OpenSpec: **39/70**; grupos 1 e 2, jornadas 3.1–3.3, etapas 3.4a–3.4b5c, tarefas 3.4c1–3.4c3b1 e tarefa 4.2 verificadas.
+Progresso OpenSpec: **539/544** no checkpoint de 2026-11-08; restam 5.2, 5.3, 6.4, 7.1 e 7.4, com as demais jornadas e lotes registrados abaixo.
 
 ## Entrega verificada
 
@@ -4574,3 +4574,128 @@ agregadores. A aplicação não foi implantada.
   todo exemplo perigoso dos guias (servidor, import, mutações destrutivas) foi
   executado; os exemplos escolhidos são os determinísticos e seguros para
   fixture, e a paridade textual cobre todos os blocos dos três guias.
+
+### Jornadas experimentais em browser real — 3.10/3.11 — 2026-11-08
+
+- `tests/e2e/localization-experimental.spec.ts` passou **9/9** (1,4 min) contra
+  uma instância descartável real: UI de produção buildada, servidor Express e
+  PostgreSQL embutido em porta 3199, com `unshare` para executar como `nobody`.
+  A spec cria organização, rotina, pipeline e caso reais pela API e percorre as
+  telas.
+- Cobertura parametrizada `streamlined`/`production` × `pt-BR`/`en`: cabeçalhos
+  e estados vazios localizados de rotinas, pipelines, casos e status cards;
+  títulos/descrições dinâmicos preservados; ausência de overflow horizontal em
+  viewport desktop.
+- Cobertura de flags: com `enablePipelines`, `enableCases` e `enableStatusCards`
+  desligados, as rotas redirecionam para o dashboard e os links somem da
+  navegação nos dois idiomas.
+- Mutação real no shell production em PT-BR: criação de gatilho webhook pelo
+  formulário, leitura da URL/segredo, alteração de rótulo, rotação de segredo
+  (valor diferente) e arquivamento; o evento `routine.trigger_deleted` é
+  confirmado no ledger da API além do toast e da lista ativa vazia.
+- Mutação real no shell streamlined em PT-BR: remoção de webhook, banner
+  “Webhook foi removido.”, evento `routine.trigger_removed`, clique em
+  “Desfazer”, retorno do cartão e evento `routine.trigger_restored`; a
+  restauração ativa é confirmada na API. Este teste substitui a alegação
+  anterior de cobertura unitária de undo.
+- Viewport mobile 390×844 em tema escuro: cabeçalhos de rotinas, pipelines,
+  casos e status cards, ausência de overflow e ativação do skip link
+  “Ir para o conteúdo principal” por teclado.
+- Host de plugins em PT-BR/en: PluginManager, PluginSettings e o shell do LLM
+  Wiki são exercitados em browser; o plugin é instalado pela UI quando
+  necessário. A Wiki foi carregada sem pasta local configurada, então o teste
+  verifica o shell/localização do host, não a leitura de conteúdo da Wiki.
+- Limites objetivos: a criação de status card exige summarizer configurado
+  (`Summarizer built-in agent is not configured`), então a jornada verifica o
+  estado vazio localizado; a aba Workspace Changes e os fluxos internos da Wiki
+  permanecem verificados por componente; clipboard real e leitor de tela real
+  não foram qualificados (3.10l). Nenhum limite foi contado como cobertura.
+
+### Fechamento da reconciliação final do mapa — 7.2 — 2026-11-07
+
+- Reconciliação repetida no estado atual do checkout contra as fontes reais:
+  **179/179** paths literais de `ui/src/App.tsx`; **8/8** flags
+  (`enableCases`, `enableCombinedInboxTasks`, `enableConferenceRoomChat`,
+  `enableDecisions`, `enableGoalsSidebarLink`, `enableIsolatedWorkspaces`,
+  `enablePipelines`, `enableStatusCards`); **35/35** chamadas
+  `register*Commands` (incluindo `registerClientAuthCommands` e
+  `registerRunCommands` antes ausentes); **55/55** arquivos de
+  `cli/src/commands`; **16/16** tipos de adapter em `builtin-adapter-types.ts`
+  (com `acpx_local` em `retiredTypes`); **71/71** tópicos de
+  `ui/src/help/topics.json`.
+- O gate `check-localization-coverage-index` compara os 71 tópicos e seus pares
+  de caminhos EN/PT-BR; as fixtures negativas de tópico ausente, obsoleto e
+  caminho divergente passaram. Não há rota, flag, comando, arquivo, adapter ou
+  tópico do escopo atual sem entrada no mapa.
+- Todas as exclusões (`exclusions`) têm motivo específico; nenhuma superfície
+  excluída é contada como cobertura, e nenhum fallback é promovido a evidência.
+  Itens ainda abertos por dependência externa (revisão humana em 5.2/5.3,
+  credenciais reais em 6.4 e CI remota em 7.1) permanecem rastreados nas
+  próprias tarefas, não como lacuna silenciosa do mapa.
+
+### Auditoria de help com continuações — 4.3bd — 2026-11-07
+
+- A revisão independente apontou que `helpRows` considerava apenas a primeira
+  linha física de cada descrição do Commander. O parser foi corrigido para
+  concatenar linhas de continuação (indentação de 4+ espaços) à descrição
+  lógica da mesma opção/argumento.
+- A auditoria integral agora compara **cada linha de prosa PT-BR** com as
+  linhas inglesas da mesma linha lógica, além da igualdade da descrição
+  completa. Linhas técnicas (flags, caminhos, URLs, placeholders, listas de
+  valores entre parênteses/aspas) permanecem isentas por serem compartilhadas
+  intencionalmente.
+- Foi adicionada uma fixture negativa que falha quando uma continuação
+  permanece em inglês (`for heartbeat`) e uma positiva que prova a junção
+  (`ID da execução` + `do heartbeat`). O teste unitário passou **1/1**.
+- A primeira execução integral do arquivo passou **409/410**; os dois únicos
+  achados eram falsos positivos de enumerações técnicas (`storage, secrets)` e
+  `"workspace", "automation", "ui", "environment")`). Após a exclusão dessas
+  linhas técnicas, a auditoria integral dos **459 leafs** passou **1/1**. A
+  matriz de subprocessos e os demais 409 testes não foram afetados.
+
+### Regressão integrada final — 7.3 — 2026-11-07
+
+- **Typecheck:** `NODE_OPTIONS=--max-old-space-size=4096 pnpm -r
+  --workspace-concurrency=1 typecheck` concluiu com **EXIT 0** em **36**
+  invocações de typecheck; o `tsc` do servidor exigiu swap adicional de 8 GB
+  (heap V8 de 4 GB) e passou. A UI também passou isolada
+  (`pnpm --filter @paperclipai/ui typecheck`, EXIT 0).
+- **Gates de UI:** `pnpm check:tokens` (EXIT 0) e `pnpm check:token-gates`
+  (EXIT 0, quatro gates limpos e cliplab em sincronia).
+- **Gates de localização:** `pnpm check:localization` passou **19** testes Node
+  e **752/752** testes Vitest em **60** arquivos (886 s), incluindo o parser de
+  help com continuações, a fixture negativa e a validação de payloads inseguros
+  no catálogo CLI. `pnpm --filter paperclipai typecheck` e
+  `pnpm --filter paperclipai build` passaram (EXIT 0).
+- **Build:** `pnpm build` concluiu com **EXIT 0**, incluindo UI, servidor,
+  `paperclip-runner` (Cargo release), CLI e empacotamento.
+- **Suíte integral:** executada no snapshot descartável como `nobody` (base
+  `1855728`, com correções não commitadas; não é reproduzível por um único
+  hash). Resultado: **18.413** aprovados, **6** falhas e **76** ignorados em
+  **873** arquivos. Não é um resultado verde; as 6 falhas não são contadas como
+  aprovadas. Classificação:
+  - `broker-client` (5): `connect EINVAL` porque o caminho do socket Unix
+    ultrapassa o limite do `sun_path` dentro de
+    `/var/tmp/paperclip-nobody-snapshot.../tmp/pv-.../t/`. Repetição no checkout
+    atual com `TMPDIR=/tmp/pv`: **8/8** testes passaram
+    (`/tmp/opencode/broker-client-short-tmpdir.log`).
+  - `native-session-resume` (1): bloqueado antes da assertion por
+    `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`; o binário
+    `bwrap` não está disponível no ambiente isolado. Os outros **49/50** casos
+    passaram.
+- **Browser PT-BR/en:** `tests/localization-browser` **12/12** (2,4 min),
+  cobrindo primeira visita, conta real, dois navegadores/contas, duas
+  organizações, tema claro/escuro e desktop/mobile, além de ajuda pública.
+  `tests/e2e/localization-experimental.spec.ts` **9/9** (1,4 min), cobrindo
+  streamlined/production, PT-BR/en, gates desligados, mutação real de gatilho
+  no production, remoção/undo no streamlined, mobile escuro, teclado e o host
+  de plugins (PluginManager/PluginSettings/shell do LLM Wiki).
+- **Gate de fontes com base:** `PAPERCLIP_LOCALIZATION_BASE=a09d8b5... node
+  scripts/check-localized-source-literals.mjs` examinou **556** arquivos
+  alterados e passou (EXIT 0; `/tmp/opencode/source-gate-base.log`).
+- **Contratos específicos:** CLI estruturada em subprocesso **5/5** (4.4g/h);
+  ajuda instalada e navegação **12/12**; comunicação de agentes com transporte
+  determinístico 6.2/6.3 e qualificação real separada em 6.4.
+- **Limite de ambiente:** o caso `native-session-resume` e o caminho de socket
+  do snapshot não são reprodutíveis como produto; ambos foram repetidos ou
+  delimitados, não contados como aprovados. A CI remota continua em 7.1.

@@ -12,7 +12,7 @@ const tsx = fileURLToPath(new URL("../../node_modules/tsx/dist/cli.mjs", import.
 const homes: string[] = [];
 let registeredProgram: Command;
 
-type HelpRow = { signature: string; description: string };
+type HelpRow = { signature: string; description: string; lines: string[] };
 
 function runHelp(locale: "pt-BR" | "en", command: string[]) {
   const home = mkdtempSync(path.join(os.tmpdir(), "paperclip-operation-help-"));
@@ -97,23 +97,62 @@ function helpRows(output: string, heading: "Arguments" | "Argumentos" | "Options
   if (headingIndex < 0) return [];
 
   const rows: HelpRow[] = [];
+  let current: HelpRow | null = null;
   for (const line of lines.slice(headingIndex + 1)) {
     if (/^(Arguments|Argumentos|Options|Opções|Commands|Comandos):$/.test(line.trim())) break;
-    // Commander wraps long descriptions on indented continuation lines. The
-    // first row contains the stable signature and enough text to compare locales.
-    if (!line.startsWith("  ") || line.startsWith("   ") || !line.trim()) continue;
+    if (!line.trim()) continue;
+    // Commander wraps long descriptions on continuation lines indented past the
+    // two-space row prefix. Join them so the audit checks the logical
+    // description, not only its first physical line.
+    if (/^(?: {4,}|\t)/.test(line)) {
+      if (!current) continue;
+      const text = line.trim();
+      current.description = `${current.description} ${text}`.trim();
+      current.lines.push(text);
+      continue;
+    }
+    if (!line.startsWith("  ")) continue;
     const match = line.match(/^  (.+?)(?:\s{2,}(\S.*))?$/);
-    if (match) rows.push({ signature: match[1].trim(), description: match[2]?.trim() ?? "" });
+    if (match) {
+      const description = match[2]?.trim() ?? "";
+      current = {
+        signature: match[1].trim(),
+        description,
+        lines: description ? [description] : [],
+      };
+      rows.push(current);
+    }
   }
   return rows;
 }
 
+function normalizeHelpLine(line: string): string {
+  return line.replace(/\s+/g, " ").trim();
+}
+
+function looksLikeHumanProse(line: string): boolean {
+  const normalized = normalizeHelpLine(line);
+  const words = normalized.split(" ").filter(Boolean);
+  // Identical technical snippets (flags, paths, URLs, placeholders) are
+  // intentionally shared between locales. Human prose of at least two words
+  // must not stay byte-identical to the English row.
+  return words.length >= 2 && !/[<>:/\\_{}[\]$`=()"']|--|https?:\/\//i.test(normalized);
+}
+
 function expectLocalizedRows(routeName: string, ptRows: HelpRow[], enRows: HelpRow[]) {
   expect(ptRows.map((row) => row.signature), `${routeName} signatures`).toEqual(enRows.map((row) => row.signature));
+  const englishProseLines = new Set(
+    enRows.flatMap((row) => row.lines.map(normalizeHelpLine)).filter(looksLikeHumanProse),
+  );
   for (let index = 0; index < enRows.length; index += 1) {
     const englishDescription = enRows[index].description;
     if (englishDescription) {
       expect(ptRows[index].description, `${routeName} ${enRows[index].signature} description`).not.toBe(englishDescription);
+    }
+    for (const line of ptRows[index].lines) {
+      if (looksLikeHumanProse(line) && englishProseLines.has(normalizeHelpLine(line))) {
+        throw new Error(`${routeName} ${enRows[index].signature} has untranslated continuation: ${line}`);
+      }
     }
   }
 }
@@ -1854,10 +1893,45 @@ describe("registered CLI operation help", () => {
           if (enRow.description && ptRow.description === enRow.description) {
             issues.push(`${name}: ${enRow.signature} untranslated description`);
           }
+          const englishProseLines = new Set(
+            enRow.lines.map(normalizeHelpLine).filter(looksLikeHumanProse),
+          );
+          for (const line of ptRow.lines) {
+            if (looksLikeHumanProse(line) && englishProseLines.has(normalizeHelpLine(line))) {
+              issues.push(`${name}: ${enRow.signature} untranslated continuation "${line}"`);
+            }
+          }
         }
       }
     }
 
     expect(issues).toEqual([]);
   }, 120_000);
+});
+
+describe("help row parsing", () => {
+  it("joins wrapped continuation lines and rejects an English continuation", () => {
+    const pt = [
+      "Opções:",
+      "  --run-id <id>  ID da execução",
+      "                 do heartbeat",
+      "  --json  Exibir JSON bruto",
+    ].join("\n");
+    const en = [
+      "Options:",
+      "  --run-id <id>  Execution ID",
+      "                 for heartbeat",
+      "  --json  Show raw JSON",
+    ].join("\n");
+
+    const ptRows = helpRows(pt, "Opções");
+    expect(ptRows[0]?.description).toBe("ID da execução do heartbeat");
+    expect(ptRows[0]?.lines).toEqual(["ID da execução", "do heartbeat"]);
+    expect(() => expectLocalizedRows("fixture", ptRows, helpRows(en, "Options"))).not.toThrow();
+
+    const untranslated = pt.replace("do heartbeat", "for heartbeat");
+    expect(() =>
+      expectLocalizedRows("negative fixture", helpRows(untranslated, "Opções"), helpRows(en, "Options")),
+    ).toThrow(/untranslated continuation/);
+  });
 });

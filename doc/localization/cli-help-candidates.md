@@ -38,7 +38,7 @@ As ocorrências repetidas por path foram: 131 summaries com texto igual entre id
 ## Limites
 
 - A comparação por igualdade detecta texto possivelmente não localizado, mas termos técnicos, valores de protocolo, nomes próprios ou texto legitimamente idêntico podem ser válidos. Uma diferença também não comprova qualidade semântica.
-- A análise de descrições examina a primeira linha visível da linha de help. Texto continuado em linhas seguintes pode não ser avaliado.
+- **Limite da varredura original, superado em 2026-11-07:** a análise inicial examinava apenas a primeira linha visível da linha de help e podia não avaliar texto continuado. O parser atual de `operation-help-localization.test.ts` concatena as continuações indentadas e tem fixture negativa para continuação em inglês; a auditoria integral dos 459 leafs usa esse parser.
 - Summary ausente pode indicar que o comando não registra uma descrição, e não uma falha de tradução. As folhas `email` são exemplo para confirmar na registration e na UX.
 - A árvore representa os comandos registrados neste checkout e ambiente. Caminhos condicionais por plataforma ou variável de ambiente podem alterar o inventário.
 - Assinaturas foram comparadas entre idiomas; o contrato exato só está fixado por fixture nos comandos que já têm entrada em `expectedLeafHelpSignatures`. A lista não substitui uma especificação independente dos contratos.
