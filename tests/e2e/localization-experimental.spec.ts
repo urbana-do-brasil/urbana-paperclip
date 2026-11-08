@@ -258,8 +258,8 @@ for (const shell of [
         await expect(page.getByText(caseRow.title, { exact: true }).last()).toBeVisible();
         await expectNoOverflow(page);
 
-        await page.goto(`/${prefix}/status-cards`);
-        await waitForPath(page, `/${prefix}/status-cards`);
+        await page.goto(`/${prefix}/status`);
+        await waitForPath(page, `/${prefix}/status`);
         await expect(page.locator("#main-content").getByRole("heading", { name: labels.status, exact: true })).toBeVisible();
         await expect(page.getByText(labels.noStatusCards, { exact: true })).toBeVisible();
         await expectNoOverflow(page);
@@ -373,7 +373,7 @@ test("pt-BR streamlined mobile dark: experimental collections stay localized and
     await expect(page.locator("#main-content").getByRole("heading", { name: "Casos", exact: true })).toBeVisible();
     await expectNoOverflow(page);
 
-    await page.goto(`/${prefix}/status-cards`);
+    await page.goto(`/${prefix}/status`);
     await expect(page.locator("#main-content").getByRole("heading", { name: "Status", exact: true })).toBeVisible();
     await expectNoOverflow(page);
 
@@ -446,7 +446,7 @@ test("pt-BR and en: experimental flag off redirects collections to the dashboard
       for (const route of [
         { path: "pipelines", nav: "Pipelines" },
         { path: "cases", nav: labels.cases },
-        { path: "status-cards", nav: labels.status },
+        { path: "status", nav: labels.status },
       ]) {
         await page.goto(`/${company.issuePrefix}/${route.path}`);
         await page.waitForURL(new RegExp(`/${company.issuePrefix}/dashboard(?:$|[/?#])`), { timeout: 20_000 });

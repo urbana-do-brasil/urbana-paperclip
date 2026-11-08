@@ -296,7 +296,7 @@ describe("ConnectionIntentInteractionBody states and audience", () => {
     expect(document.body.textContent).toContain("Permitida");
     expect(document.body.textContent).toContain("Perguntar antes");
     expect(button("Agora não")).toBeDefined();
-    expect(button("Conceder acesso")?.disabled).toBe(false);
+    await waitForAssertion(() => expect(button("Conceder acesso")?.disabled).toBe(false));
 
     await act(() => button("Agora não")?.click());
     await flush();
