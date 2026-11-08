@@ -1,11 +1,14 @@
 # Qualificação de idioma por runtime
 
 Esta matriz registra evidências para a mudança OpenSpec
-`localize-paperclip-pt-br`. **Nenhum runtime/modelo está homologado para
-comunicação real em PT-BR ou inglês com base apenas nos testes abaixo.** Uma
-captura de prompt ou de payload prova transporte da orientação, não que um
-runtime ou modelo a siga. As evidências de 6.2 são determinísticas; a
-qualificação de respostas reais é a atividade separada de 6.4.
+`localize-paperclip-pt-br`. **O runtime `opencode_local` foi qualificado em
+2026-11-08 para respostas reais em PT-BR e inglês** com o modelo
+`opencode-go/deepseek-v4.1-flash` (OpenCode Go), conforme a seção de
+qualificação real abaixo. **Os demais runtimes/modelos listados permanecem não
+qualificados e não são declarados suportados por esta entrega.** Uma captura
+de prompt ou de payload prova transporte da orientação, não que um runtime ou
+modelo a siga. As evidências de 6.2 são determinísticas; a qualificação de
+respostas reais é a atividade separada de 6.4.
 
 Os IDs abaixo vêm do catálogo de adapters built-in. Variantes de engine,
 provider e agent são caminhos de execução distintos e precisam de registros
@@ -27,7 +30,7 @@ vice-versa.
 | `hermes_gateway` | Hermes Gateway | `packages/adapters/hermes/src/gateway/server/execute.test.ts` verifica o transporte estruturado. | Não qualificada. |
 | `kimi_local` | adapter local Kimi | `packages/adapters/kimi-local/src/server/execute.test.ts` verifica a orientação montada no prompt. | Não qualificada. |
 | `openclaw_gateway` | OpenClaw Gateway | `packages/adapters/openclaw-gateway/src/server/execute-dispatch.test.ts` verifica o transporte do locale. | Não qualificada. |
-| `opencode_local` | adapter local OpenCode | `packages/adapters/opencode-local/src/server/execute.test.ts` verifica a orientação montada no prompt. | Não qualificada. |
+| `opencode_local` | adapter local OpenCode v2.2.6; modelo `opencode-go/deepseek-v4.1-flash` | `packages/adapters/opencode-local/src/server/execute.test.ts` verifica a orientação montada no prompt; `execute.qualification.test.ts` executa o CLI real em PT-BR/en. | **Qualificada** (pt-BR/en) em 2026-11-08; ver seção abaixo. |
 | `pi_local` | adapter Pi local remoto | `packages/adapters/pi-local/src/server/execute.remote.test.ts` verifica a orientação montada no prompt. | Não qualificada. |
 | `http` | receptor HTTP configurado | `server/src/adapters/http/execute-locale.integration.test.ts` confirma o POST a um receptor temporário em loopback. Não comprova o consumo por endpoint de terceiros. | Não qualificada. |
 | `process` | comando/framework configurado | `server/src/adapters/process/execute.test.ts` verifica as variáveis reservadas em subprocesso real. O framework precisa consumi-las para incluí-las no próprio prompt. | Não qualificada. |
@@ -56,6 +59,51 @@ como `engine=acp` de `claude_local`/`codex_local` e `provider=acpx` de
 `paperclip_runner`, não ao adapter aposentado. O pacote
 `@paperclipai/adapter-hermes-gateway` é um shim de compatibilidade; o caminho
 ativo é `adapterType=hermes_gateway` do pacote Hermes.
+
+
+## Política de suporte desta entrega
+
+O único runtime oficialmente **suportado e qualificado para comunicação humana
+localizada** nesta entrega é:
+
+- `adapterType=opencode_local`;
+- OpenCode CLI **v2.2.6**;
+- modelo **`opencode-go/deepseek-v4.1-flash`** (provedor OpenCode Go);
+- locales **pt-BR** e **en**.
+
+Os demais adapters e providers do inventário continuam disponíveis no produto,
+mas **não são declarados suportados/qualificados por esta entrega**. Eles não
+podem ser contados como cobertura de idioma até uma qualificação própria por
+combinação, seguindo a ficha abaixo. A decisão de escopo foi tomada em
+2026-11-08; a conexão OpenCode Go já autorizada no ambiente foi usada, sem
+novas credenciais.
+
+## Qualificação real — `opencode_local` — 2026-11-08
+
+| Campo | Valor |
+| --- | --- |
+| Estado | **Qualificado** para pt-BR e en. |
+| Data | 2026-11-08, execução local. |
+| Adapter | `opencode_local` (`@paperclipai/adapter-opencode-local` 0.3.1). |
+| Caminho | CLI local `opencode`, sessão nova, `--format json`; sem remote/sandbox. |
+| Runtime/modelo | OpenCode **v2.2.6**; modelo `opencode-go/deepseek-v4.1-flash` (OpenCode Go). |
+| Idioma | `pt-BR` e `en`, cada um com resposta real separada. |
+| Cenários | Resposta, pergunta de confirmação, duas opções e confirmação; retomada/delegação não exercitadas nesta rodada. |
+| Ambiente | Workspace temporário descartável; nenhuma organização, tarefa ou credencial de produção foi criada. |
+| Resultado | O modelo respondeu no idioma solicitado; a resposta PT-BR continha prosa em português e opções “Opção 1/2”; a resposta EN continha prosa em inglês e opções “1./2.”. |
+| Integridade técnica | `curl --fail --silent https://example.invalid/health`, `X-Trace-Mode: RAW` e `WAITING_FOR_REVIEW` foram preservados exatamente nos dois idiomas. |
+| Evidência | `packages/adapters/opencode-local/src/server/execute.qualification.test.ts` (2/2 com `PAPERCLIP_RUN_OPENCODE_QUALIFICATION=1`); JSONL sanitizado em `/tmp/opencode/opencode-qualification-{pt-BR,en}.jsonl`; log `/tmp/opencode/opencode-qualification.log`. |
+| Falhas/limites | O teste usa um contexto de prompt determinístico (fixture sem credenciais) e o adapter real; não é uma tarefa de produção. Retomada/delegação e telas de interação não foram exercitadas nesta rodada. Os demais runtimes não foram qualificados. |
+
+O teste é opt-in e fica **skipped** em execuções normais; ele não exige
+credenciais de IA no CI. Para repetir:
+
+```sh
+PAPERCLIP_RUN_OPENCODE_QUALIFICATION=1 pnpm exec vitest run \
+  packages/adapters/opencode-local/src/server/execute.qualification.test.ts \
+  --testTimeout 300000
+```
+
 
 Plugins externos podem registrar outros IDs. Não presumir cobertura por
 semelhança de nome ou protocolo: identificar o plugin, versão, rota e modelo

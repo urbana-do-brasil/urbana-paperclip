@@ -3,7 +3,7 @@
 Change: `localize-paperclip-pt-br`.
 Branch: `codex/localize-paperclip-pt-br`.
 Base: `a09d8b56e2ebcc22ea12082e8f8758b1938e1436`.
-Progresso OpenSpec: **540/544** no checkpoint de 2026-11-08; restam 5.2, 5.3, 6.4 e 7.1, com as demais jornadas e lotes registrados abaixo.
+Progresso OpenSpec: **541/544** no checkpoint de 2026-11-08; restam 5.2, 5.3 e 7.1, com as demais jornadas e lotes registrados abaixo.
 
 ## Entrega verificada
 
@@ -4724,3 +4724,25 @@ agregadores. A aplicação não foi implantada.
 - **Fechamento:** 7.4 marcado como “revisão realizada, com bloqueadores
   externos registrados”. A mudança OpenSpec não foi arquivada e a feature não é
   declarada concluída enquanto 5.2, 5.3, 6.4 e 7.1 permanecerem abertos.
+
+### Qualificação real do runtime OpenCode — 6.4 — 2026-11-08
+
+- Escopo autorizado: usar a conexão **OpenCode Go** já existente no ambiente,
+  sem novas credenciais. Runtime oficialmente suportado e qualificado desta
+  entrega: `opencode_local` (adapter 0.3.1), OpenCode CLI **v2.2.6**, modelo
+  **`opencode-go/deepseek-v4.1-flash`**, locales **pt-BR** e **en**.
+- Teste opt-in `packages/adapters/opencode-local/src/server/execute.qualification.test.ts`:
+  **2/2** com chamadas reais ao modelo, workspace temporário e o adapter real.
+  Cada idioma produziu resposta, pergunta de confirmação e duas opções no
+  idioma solicitado; os marcadores `curl --fail --silent
+  https://example.invalid/health`, `X-Trace-Mode: RAW` e
+  `WAITING_FOR_REVIEW` foram preservados exatamente.
+- Evidência sanitizada: `/tmp/opencode/opencode-qualification-pt-BR.jsonl`,
+  `/tmp/opencode/opencode-qualification-en.jsonl` e
+  `/tmp/opencode/opencode-qualification.log` (57,9 s). O teste fica `skipped`
+  por padrão e não exige credenciais de IA no CI.
+- Política em `doc/localization/runtime-qualification.md`: os demais adapters e
+  providers **não são declarados suportados/qualificados** por esta entrega e
+  não contam como cobertura. Limites: o contexto é uma fixture determinística
+  de prompt com adapter real; retomada/delegação e telas de interação não foram
+  exercitadas nesta rodada.

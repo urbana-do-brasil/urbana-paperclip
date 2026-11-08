@@ -7,7 +7,7 @@
     "pt-BR",
     "en"
   ],
-  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-08. A CLI operacional 4.3, a auditoria integral de help 4.3bd, a regressão estruturada 4.4, as jornadas experimentais 3.10, a reconciliação final 7.2, a regressão 7.3 e a revisão independente 7.4 estão concluídas; 7.3 foi executada com 6 falhas ambientais classificadas e 7.4 tem parecer aprovado com ressalvas para a entrega interna. Permanecem abertos a revisão humana dos guias 5.2/5.3, a qualificação real de runtimes 6.4 e a CI remota 7.1. As jornadas web 3.1–3.9, os lotes 3.11 e a homologação de browser experimental estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
+  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-08. A CLI operacional 4.3, a auditoria integral de help 4.3bd, a regressão estruturada 4.4, as jornadas experimentais 3.10, a qualificação real do OpenCode 6.4, a reconciliação final 7.2, a regressão 7.3 e a revisão independente 7.4 estão concluídas; 7.3 foi executada com 6 falhas ambientais classificadas e 7.4 tem parecer aprovado com ressalvas para a entrega interna. Permanecem abertos a revisão humana dos guias 5.2/5.3 e a CI remota 7.1. As jornadas web 3.1–3.9, os lotes 3.11 e a homologação de browser experimental estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
   "requiredStates": [
     "success",
     "empty",
@@ -1066,7 +1066,7 @@
         "packages/adapters/",
         "ui/src/components/IssueChatThread.tsx"
       ],
-      "status": "interaction-snapshot-verified",
+      "status": "runtime-qualified-opencode",
       "evidence": [
         "server/src/__tests__/communication-locale.integration.test.ts",
         "server/src/__tests__/communication-locale-dot.test.ts",
@@ -1080,9 +1080,10 @@
         "6.3: IssueChatThread + IssueChatThreadSystemNotice: 131/131 regressões e typecheck UI; perguntas, opções, confirmações, recibos e falhas próprias cobertos por 6.3a–h.",
         "ui/src/components/IssueChatThread.test.tsx",
         "ui/src/components/IssueChatThreadSystemNotice.test.tsx",
-        "6.3h: fallback de histórico preserva comentário e omite data inválida; timestamps ISO continuam formatados no locale. 131/131 testes focados e typecheck UI passaram."
+        "6.3h: fallback de histórico preserva comentário e omite data inválida; timestamps ISO continuam formatados no locale. 131/131 testes focados e typecheck UI passaram.",
+        "packages/adapters/opencode-local/src/server/execute.qualification.test.ts (2/2, opt-in real OpenCode Go)"
       ],
-      "limits": "6.1, 6.2 determinística e 6.3 foram verificadas; o cenário browser de 6.3 usa servidor/PostgreSQL descartáveis e está opt-in. `acpx_local` é aposentado; Dot, HTTP e process não oferecem retomada de sessão própria. Consumo externo e respostas reais por runtime/modelo não foram qualificados e permanecem em 6.4."
+      "limits": "6.1, 6.2 determinística e 6.3 foram verificadas; o cenário browser de 6.3 usa servidor/PostgreSQL descartáveis e está opt-in. `acpx_local` é aposentado; Dot, HTTP e process não oferecem retomada de sessão própria. Consumo externo e respostas reais por runtime/modelo não foram qualificados e permanecem em 6.4. Em 2026-11-08 o runtime `opencode_local` (OpenCode v2.2.6, modelo `opencode-go/deepseek-v4.1-flash`) foi qualificado em PT-BR/en com respostas reais; os demais adapters/providers permanecem não qualificados e não são declarados suportados por esta entrega."
     },
     {
       "id": "integration",
@@ -1929,10 +1930,10 @@
   ],
   "checkpoint": {
     "date": "2026-11-08",
-    "completedTasks": 540,
+    "completedTasks": 541,
     "totalTasks": 544,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Em 2026-11-08, 3.10, 7.2, 7.3 e 7.4 foram concluídas com evidência real: spec experimental 9/9 (streamlined/production, PT-BR/en, mutações reais de gatilho com ledger de API, undo no streamlined, mobile escuro, teclado e host de plugins), reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos, regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12, e revisão independente final com parecer aprovado com ressalvas para a entrega interna. A suíte integral teve 18.413 aprovados, 6 falhas ambientais classificadas (5 sockets Unix no snapshot e 1 bwrap/loopback) e 76 ignorados. Restam 5.2/5.3 (revisão humana), 6.4 (credenciais reais) e 7.1 (CI remota); os limites de production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki e clipboard/leitor de tela permanecem declarados e não contados como cobertura."
+    "reason": "Em 2026-11-08, 3.10, 6.4, 7.2, 7.3 e 7.4 foram concluídas com evidência real: spec experimental 9/9, qualificação real do OpenCode local em PT-BR/en com 2/2, reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos, regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12, e revisão independente final com parecer aprovado com ressalvas para a entrega interna. A suíte integral teve 18.413 aprovados, 6 falhas ambientais classificadas e 76 ignorados. Restam 5.2/5.3 (revisão humana) e 7.1 (CI remota); os demais runtimes não são declarados suportados/qualificados e os limites de production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki e clipboard/leitor de tela permanecem declarados."
   }
 }
