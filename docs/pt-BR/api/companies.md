@@ -14,7 +14,7 @@ GET /api/companies
 Exige um usuário do conselho. Retorna organizações nas quais o usuário tem associação ativa. Administradores da instância e o conselho local confiável podem listar todas as organizações.
 
 Para navegação e seletores de organização, use `GET /api/companies?scope=accessible`. Isso retorna apenas organizações às quais o solicitante pode entrar por rotas com escopo de organização, inclusive para administradores da instância. Ser administrador da instância, por si só, não concede acesso ao conteúdo de uma organização. O conselho local confiável ainda pode entrar em todas as organizações. A UI do conselho usa esse escopo em sua lista para não selecionar organizações que o usuário não pode abrir.
-A tela Instance Access usa o diretório sem escopo para que administradores possam gerenciar associações de todas as organizações. Um `scope` fornecido deve ser um único valor `accessible`; valores vazios, desconhecidos ou repetidos retornam `400`.
+A tela Acesso da instância usa o diretório sem escopo para que administradores possam gerenciar associações de todas as organizações. Um `scope` fornecido deve ser um único valor `accessible`; valores vazios, desconhecidos ou repetidos retornam `400`.
 
 ## Obter organização
 

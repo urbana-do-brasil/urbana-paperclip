@@ -1,14 +1,14 @@
 ---
 title: Espaços de trabalho de execução e serviços de runtime
-summary: Como a configuração de runtime do projeto, os espaços de trabalho de execução e as execuções de issues se relacionam
+summary: Como a configuração de runtime do projeto, os espaços de trabalho de execução e as execuções de tarefas se relacionam
 ---
 
-Este guia documenta o modelo de runtime previsto para projetos, espaços de trabalho de execução e execuções de issues no Paperclip.
+Este guia documenta o modelo de runtime previsto para projetos, espaços de trabalho de execução e execuções de tarefas no Paperclip.
 
 O Paperclip apresenta esse modelo em termos de comandos do espaço de trabalho:
 
-- `Services` são comandos de longa duração que permanecem supervisionados.
-- `Jobs` são comandos executados uma vez, que terminam em seguida.
+- **Serviços** são comandos de longa duração que permanecem supervisionados.
+- **Jobs** são comandos executados uma vez, que terminam em seguida.
 - O JSON bruto de runtime continua disponível para configuração avançada, mas não é mais o modelo principal apresentado.
 
 ## Configuração de runtime do projeto
@@ -25,7 +25,7 @@ Os comandos do espaço de trabalho podem ser controlados manualmente pela interf
 
 - Os serviços do espaço de trabalho do projeto são iniciados e interrompidos pela interface desse espaço; os jobs do projeto podem ser executados sob demanda no mesmo local.
 - Os serviços do espaço de trabalho de execução são iniciados e interrompidos pela interface desse espaço; seus jobs podem ser executados sob demanda no mesmo local.
-- As execuções de heartbeat também iniciam automaticamente os serviços de runtime do espaço de trabalho no início da execução de uma issue. `ensureRuntimeServicesForRun` (`server/src/services/workspace-runtime.ts`, chamada de `server/src/services/heartbeat.ts`) inicia cada serviço cujo estado desejado resulta em `running`: esse é o padrão quando não há estado desejado explícito por serviço. Um serviço em execução que corresponda a uma chave de reutilização existente é reutilizado em vez de reiniciado.
+- As execuções de heartbeat também iniciam automaticamente os serviços de runtime do espaço de trabalho no início da execução de uma tarefa. `ensureRuntimeServicesForRun` (`server/src/services/workspace-runtime.ts`, chamada de `server/src/services/heartbeat.ts`) inicia cada serviço cujo estado desejado resulta em `running`: esse é o padrão quando não há estado desejado explícito por serviço. Um serviço em execução que corresponda a uma chave de reutilização existente é reutilizado em vez de reiniciado.
 - Você pode excluir um serviço desse início automático definindo seu estado desejado como `stopped`/`manual` na configuração de runtime; esses serviços continuam controlados pela interface.
 - O Paperclip não reinicia automaticamente os serviços do espaço de trabalho na inicialização do servidor. Eles só voltam a funcionar quando a próxima execução ou um início manual os ativa.
 
@@ -38,14 +38,14 @@ Espaços de trabalho de execução isolam o código e o estado de runtime do esp
 - O espaço de trabalho de execução pode substituir a configuração herdada por opções próprias.
 - A configuração herdada responde "quais comandos existem e como executá-los", mas cada processo de serviço em execução continua específico daquele espaço de trabalho de execução.
 
-## Issues e espaços de trabalho de execução
+## Tarefas e espaços de trabalho de execução
 
-Issues estão vinculadas ao comportamento do espaço de trabalho de execução, e não ao gerenciamento automático de runtime.
+Tarefas estão vinculadas ao comportamento do espaço de trabalho de execução, e não ao gerenciamento automático de runtime.
 
-- Uma issue pode criar um novo espaço de trabalho de execução quando você escolhe o modo isolado.
-- Uma issue pode reutilizar um espaço de trabalho de execução existente quando você escolhe a reutilização.
-- Várias issues podem compartilhar intencionalmente um espaço de trabalho de execução para trabalhar na mesma branch e nos mesmos serviços de runtime em execução.
-- Executar uma issue inicia automaticamente os serviços cujo estado de runtime desejado é `running` durante a execução (consulte "Controle de runtime" acima). O Paperclip não os interrompe ao final, a menos que sejam efêmeros e nenhuma outra execução mantenha um lease.
+- Uma tarefa pode criar um novo espaço de trabalho de execução quando você escolhe o modo isolado.
+- Uma tarefa pode reutilizar um espaço de trabalho de execução existente quando você escolhe a reutilização.
+- Várias tarefas podem compartilhar intencionalmente um espaço de trabalho de execução para trabalhar na mesma branch e nos mesmos serviços de runtime em execução.
+- Executar uma tarefa inicia automaticamente os serviços cujo estado de runtime desejado é `running` durante a execução (consulte "Controle de runtime" acima). O Paperclip não os interrompe ao final, a menos que sejam efêmeros e nenhuma outra execução mantenha um lease.
 
 ## Ciclo de vida do espaço de trabalho de execução
 
@@ -117,7 +117,7 @@ Segredos). O servidor resolve o token por execução e o usa para autenticar clo
 
 - Escopo: somente URLs de repositório `https://github.com/...` são autenticadas dessa forma. URLs SSH, hosts GitHub Enterprise e outros provedores mantêm o comportamento do ambiente (configuração Git do sistema/auxiliares de credenciais no host do servidor). URLs que já contêm suas próprias credenciais nunca são substituídas.
 - Fallback: sem segredo correspondente na organização, o servidor tenta a variável `GITHUB_TOKEN` ou
-  `GH_TOKEN` no **ambiente do processo do servidor** (útil em implantações self-hosted de um único tenant) e depois acesso sem autenticação; repositórios públicos continuam funcionando sem configuração.
+  `GH_TOKEN` no **ambiente do processo do servidor** (útil em implantações self-hosted de locatário único) e depois acesso sem autenticação; repositórios públicos continuam funcionando sem configuração.
 - O token nunca aparece em linhas de comando, URLs ou em disco; ele é passado ao Git por um auxiliar de credenciais efêmero. Cada resolução é registrada como evento de acesso a segredo.
 - Isso é separado da **credencial de push do agente**: agentes que fazem push de branches/PRs ainda precisam de
   `GH_TOKEN`/`GITHUB_TOKEN` vinculado no escopo do agente ou projeto (consulte
@@ -132,7 +132,7 @@ O estado do código passa de uma execução para outra apenas pelo diretório de
 - Outros repositórios do projeto em `.paperclip-repositories/` fazem o mesmo percurso de ida e volta. Cada um é empacotado e restaurado como seu próprio checkout Git.
 - A etapa de restauração do adapter, ao final da execução, grava diretamente na worktree local quaisquer novos commits remotos.
 - Adapters nunca devem executar `git push` no código de runtime nem presumir que existe um remoto.
-- Uma falha de restauração é um erro no nível da execução e registra `workspace_finalize=failed` no espaço de trabalho de execução, bloqueando ativações de issues dependentes até a próxima finalização bem-sucedida.
+- Uma falha de restauração é um erro no nível da execução e registra `workspace_finalize=failed` no espaço de trabalho de execução, bloqueando ativações de tarefas dependentes até a próxima finalização bem-sucedida.
 
 O invariante é verificado pelo caso "no-remote-git contract" em `packages/adapter-utils/src/ssh-fixture.test.ts`, que garante que um commit existente apenas no remoto chega à worktree local sem que haja um remoto configurado em qualquer momento.
 

@@ -7,7 +7,7 @@
     "pt-BR",
     "en"
   ],
-  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-08. A CLI operacional 4.3, a auditoria integral de help 4.3bd, a regressão estruturada 4.4, as jornadas experimentais 3.10, a qualificação real do OpenCode 6.4, a reconciliação final 7.2, a regressão 7.3 e a revisão independente 7.4 estão concluídas; 7.3 foi executada com 6 falhas ambientais classificadas e 7.4 tem parecer aprovado com ressalvas para a entrega interna. Permanecem abertos a revisão humana dos guias 5.2/5.3 e a CI remota 7.1. As jornadas web 3.1–3.9, os lotes 3.11 e a homologação de browser experimental estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
+  "notice": "Cobertura parcial; mapa reconciliado em 2026-11-08. A CLI operacional 4.3, a auditoria integral de help 4.3bd, a regressão estruturada 4.4, as jornadas experimentais 3.10, a ajuda bilíngue 5.2/5.3 (revisão independente aprovada, risco OpenClaw/Docker aceito), a qualificação real do OpenCode 6.4, a reconciliação final 7.2, a regressão 7.3 e a revisão independente 7.4 estão concluídas. Resta 7.1 (execução remota da CI). As jornadas web 3.1–3.9, os lotes 3.11 e a homologação de browser experimental estão verificados conforme as seções anteriores; exclusões e limites permanecem registrados no arquivo.",
   "requiredStates": [
     "success",
     "empty",
@@ -989,7 +989,7 @@
         "docs/feedback-voting.md",
         "docs/pt-BR/feedback-voting.md"
       ],
-      "status": "source-pairs-present-review-pending",
+      "status": "review-approved-risk-accepted",
       "evidence": [
         "ui/src/help/topics.json",
         "scripts/check-localized-help.mjs",
@@ -997,9 +997,10 @@
         "docs/pt-BR/feedback-voting.md",
         "ui/src/help/content.test.ts",
         "5.2c: rótulos humanos dos diagramas de fluxo em PT-BR; topologia/estados preservados e exemplos técnicos mantidos idênticos. Conteúdo/HelpPage: 7/7; gate de 71 tópicos passou.",
-        "5.2d: o título de tarefa e quatro comentários livres nos exemplos de criação/decisão da API, comentários explicativos TypeScript e rótulo/nota da árvore de exportação estão em PT-BR; campos, estados, IDs, caminhos, comandos e estrutura JSON permanecem preservados. O teste compara os blocos normalizando somente valores humanizados de `title`/`comment` e comentários inline; conteúdo/HelpPage: 7/7."
+        "5.2d: o título de tarefa e quatro comentários livres nos exemplos de criação/decisão da API, comentários explicativos TypeScript e rótulo/nota da árvore de exportação estão em PT-BR; campos, estados, IDs, caminhos, comandos e estrutura JSON permanecem preservados. O teste compara os blocos normalizando somente valores humanizados de `title`/`comment` e comentários inline; conteúdo/HelpPage: 7/7.",
+        "doc/localization/reviews/help-semantic-review-2026-11-08.md"
       ],
-      "limits": "O guia de votos de feedback entrou no mapa público com par em PT-BR; os tópicos mapeados desta área têm as duas versões. A auditoria editorial corrigiu rótulos de diagramas, título e comentários humanizados em exemplos que ainda estavam em inglês, preservando estados e contratos técnicos. Revisão independente da semântica, glossário e exemplos continua pendente."
+      "limits": "A revisão semântica independente dos 71 tópicos foi aprovada em 2026-11-08 após correções editoriais; o glossário foi ampliado e os contratos técnicos foram preservados. A validação operacional real de OpenClaw/Docker não foi executada por decisão do usuário e é risco aceito, não cobertura."
     },
     {
       "id": "help-admin",
@@ -1016,7 +1017,7 @@
         "docs/pipelines-tutorial.md",
         "docs/pt-BR/pipelines-tutorial.md"
       ],
-      "status": "source-pairs-present-review-pending",
+      "status": "review-approved-risk-accepted",
       "evidence": [
         "ui/src/help/topics.json",
         "scripts/check-localized-help.mjs",
@@ -1028,9 +1029,10 @@
         "docs/pt-BR/pipelines-tutorial.md",
         "scripts/smoke/pipelines-tutorial-smoke.sh",
         "scripts/__tests__/pipeline-tutorial-smoke.test.mjs",
-        "5.3e: guias OpenClaw/Docker reconciliados com scripts e Docker Sandbox legado; 20 blocos shell passaram bash -n, fixture de UI com comandos simulados e teste de conteúdo 7/7 passaram."
+        "5.3e: guias OpenClaw/Docker reconciliados com scripts e Docker Sandbox legado; 20 blocos shell passaram bash -n, fixture de UI com comandos simulados e teste de conteúdo 7/7 passaram.",
+        "doc/localization/reviews/help-semantic-review-2026-11-08.md"
       ],
-      "limits": "O mapa contém 71 tópicos com pares em inglês/PT-BR; a reconciliação também exige paridade entre o manifesto e o índice manual de cobertura. Revisão humana e smoke operacional do guia OpenClaw continuam pendentes. O smoke de pipelines passou em API e PostgreSQL descartáveis, verificando HTTP 409 e respostas estruturadas; a rotina foi executada com agente process simulado, sem geração real de conteúdo. Os registros criados persistem na instância alvo, pois a API não oferece endpoint de limpeza."
+      "limits": "A revisão semântica independente foi aprovada em 2026-11-08: 71 tópicos, 424 blocos cercados, 168 blocos de shell e 67 links, sem divergência de flags, variáveis, caminhos, portas, versões, códigos HTTP ou identificadores; 27 blocos diferem apenas em strings humanas. docs/docs.json tem 57 páginas únicas e 14 tópicos help-only documentados. OpenClaw/Docker reais não foram executados por decisão do usuário e são risco aceito, não cobertura."
     },
     {
       "id": "help-delivery",
@@ -1105,7 +1107,7 @@
         "7.3: typecheck recursivo EXIT 0 em 36 invocações; build EXIT 0; check:localization 19 Node + 752/752 Vitest; gates de UI EXIT 0; browser 12/12 e experimental 9/9.",
         "7.3 suíte integral no snapshot: 18.413 aprovados, 6 falhas ambientais (5 broker-client por caminho de socket e 1 native-session-resume por bwrap/loopback), 76 ignorados em 873 arquivos."
       ],
-      "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos é reconciliado no gate. O job de localização foi declarado diretamente em pr.yml porque o workflow reutilizável chamado é do upstream; execução remota ainda não foi verificada. A fonte é examinada incrementalmente por heurística, o contrato JSON é representativo e links sem âncoras não são verificados. A regressão 7.3 foi executada com 6 falhas ambientais classificadas e a lacuna de browser de Workspace Changes/fluxos internos da Wiki permanece explícita; a revisão final 7.4 foi realizada, com parecer aprovado com ressalvas para a entrega interna e os bloqueadores externos 5.2/5.3/6.4/7.1 registrados. O gate de tópicos compara ui/src/help/topics.json com este mapa, mas ainda não lê docs/docs.json; uma página nova nesse índice não seria detectada até ser adicionada ao manifesto."
+      "limits": "Os cinco casos negativos do escopo 7.1 estão cobertos localmente e o índice de tópicos é reconciliado no gate. O job de localização foi declarado diretamente em pr.yml porque o workflow reutilizável chamado é do upstream; execução remota ainda não foi verificada. A fonte é examinada incrementalmente por heurística, o contrato JSON é representativo e links sem âncoras não são verificados. A regressão 7.3 foi executada com 6 falhas ambientais classificadas e a lacuna de browser de Workspace Changes/fluxos internos da Wiki permanece explícita; a revisão final 7.4 foi realizada e 5.2/5.3/6.4 foram concluídas; resta 7.1 (CI remota). O gate de tópicos compara ui/src/help/topics.json com este mapa, mas ainda não lê docs/docs.json; uma página nova nesse índice não seria detectada até ser adicionada ao manifesto."
     },
     {
       "id": "cli-preferences",
@@ -1930,10 +1932,10 @@
   ],
   "checkpoint": {
     "date": "2026-11-08",
-    "completedTasks": 541,
+    "completedTasks": 543,
     "totalTasks": 544,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Em 2026-11-08, 3.10, 6.4, 7.2, 7.3 e 7.4 foram concluídas com evidência real: spec experimental 9/9, qualificação real do OpenCode local em PT-BR/en com 2/2, reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos, regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12, e revisão independente final com parecer aprovado com ressalvas para a entrega interna. A suíte integral teve 18.413 aprovados, 6 falhas ambientais classificadas e 76 ignorados. Restam 5.2/5.3 (revisão humana) e 7.1 (CI remota); os demais runtimes não são declarados suportados/qualificados e os limites de production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki e clipboard/leitor de tela permanecem declarados."
+    "reason": "Em 2026-11-08, 3.10, 5.2, 5.3, 6.4, 7.2, 7.3 e 7.4 foram concluídas com evidência real: spec experimental 9/9, revisão semântica independente da ajuda aprovada com risco OpenClaw/Docker aceito, qualificação real do OpenCode local em PT-BR/en com 2/2, reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos, regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12, e revisão independente final com parecer aprovado com ressalvas para a entrega interna. A suíte integral teve 18.413 aprovados, 6 falhas ambientais classificadas e 76 ignorados. Resta 7.1 (CI remota); os demais limites de production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki e clipboard/leitor de tela permanecem declarados."
   }
 }

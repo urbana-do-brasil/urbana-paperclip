@@ -14,7 +14,7 @@ O teste automatiza:
 
 - criação de convite (`allowedJoinTypes=agent`)
 - solicitação de entrada de um agente OpenClaw (`adapterType=openclaw_gateway`)
-- aprovação pelo board
+- aprovação pelo conselho
 - resgate de chave de API de uso único (incluindo verificações de resgate inválido e repetido)
 - entrega do callback de despertar a um receptor de webhook no estilo OpenClaw, executado em Docker
 
@@ -22,8 +22,8 @@ Por padrão, o teste usa uma imagem de receptor Docker pré-configurada (`docker
 
 Observação sobre permissões:
 
-- O teste executa ações controladas pelo board (criação do convite, aprovação da entrada e despertar do novo agente).
-- No modo autenticado, forneça autenticação de board/operador; caso contrário, a execução termina antes e informa um erro de permissão.
+- O teste executa ações controladas pelo conselho (criação do convite, aprovação da entrada e despertar do novo agente).
+- No modo autenticado, forneça autenticação de conselho/operador; caso contrário, a execução termina antes e informa um erro de permissão.
 - O script remove o contêiner receptor Docker temporário, mas mantém a imagem local e, na instância Paperclip, o convite, a solicitação de entrada, o agente, a chave de API e a execução de despertar criados. Use uma instância Paperclip descartável para manter os dados de teste isolados.
 
 ## Interface do gateway OpenClaw em um comando (fluxo manual com Docker)

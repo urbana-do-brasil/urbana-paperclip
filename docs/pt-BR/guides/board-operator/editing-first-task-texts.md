@@ -32,7 +32,7 @@ O agente só pode criar contratações ou tarefas depois que o usuário aceitar 
 
 ## Aplicar uma edição
 
-Edite o Markdown pelo editor web do GitHub ou localmente, abra um pull request e faça o merge. Uma instância local carrega a alteração após a próxima reinicialização do servidor; tenants do Cloud a recebem na próxima versão.
+Edite o Markdown pelo editor web do GitHub ou localmente, abra um pull request e faça o merge. Uma instância local carrega a alteração após a próxima reinicialização do servidor; locatários do Cloud a recebem na próxima versão.
 
 Uma primeira tarefa existente mantém a descrição armazenada, e um primeiro agente existente mantém seu arquivo de instruções. A skill é atribuída automaticamente a novos agentes de onboarding; agentes existentes não são migrados. Você pode editar a cópia da persona do agente na aplicação em **Instruções**.
 

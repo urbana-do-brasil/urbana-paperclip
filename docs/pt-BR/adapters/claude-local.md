@@ -57,24 +57,24 @@ Se a retomada falhar com erro de sessão desconhecida, o adapter tenta novamente
 
 ### `previous_message_id` inválido (recuperação)
 
-Sintoma nos logs ou na conversa da issue:
+Sintoma nos logs ou na conversa da tarefa:
 
 ```
 API Error: 400 diagnostics.previous_message_id: must be the `id` from a prior /v1/messages response (starts with `msg_`)
 ```
 
-Significado: o JSONL da transcrição do Claude Code no disco para essa sessão contém um `previous_message_id` malformado (sem prefixo `msg_`). O endpoint `/v1/messages` da Anthropic rejeita determinísticamente toda tentativa de retomada dessa transcrição com erro 400. Sem proteções, o Paperclip persistiria novamente o mesmo ID de sessão inválido e a issue ficaria permanentemente parada — veja `RED-976` / `RED-978`.
+Significado: o JSONL da transcrição do Claude Code no disco para essa sessão contém um `previous_message_id` malformado (sem prefixo `msg_`). O endpoint `/v1/messages` da Anthropic rejeita determinísticamente toda tentativa de retomada dessa transcrição com erro 400. Sem proteções, o Paperclip persistiria novamente o mesmo ID de sessão inválido e a tarefa ficaria permanentemente parada — veja `RED-976` / `RED-978`.
 
 O que o adapter faz automaticamente:
 
 1. **Rotação automática na retomada.** Se uma tentativa `--resume` retornar esse erro 400, o adapter tenta novamente uma vez com uma nova sessão, exclui o `<session>.jsonl` inválido do diretório local de configuração do Claude quando possível e usa o novo ID de sessão nas próximas operações.
 2. **Validação antes de persistir.** Um resultado com esse erro 400 nunca tem seu `session_id` gravado no armazenamento de sessão da tarefa, mesmo se o Claude Code emitir um ID no evento de resultado. O adapter retorna `sessionId: null`, `sessionParams: null` e `errorCode: "claude_poisoned_previous_message_id"`.
-3. **Limpeza em caso de erro.** O adapter define `clearSession: true` no resultado, fazendo o serviço de heartbeat remover qualquer linha de sessão persistida para essa issue (`clearTaskSessions`). A próxima continuação começa de uma sessão limpa.
+3. **Limpeza em caso de erro.** O adapter define `clearSession: true` no resultado, fazendo o serviço de heartbeat remover qualquer linha de sessão persistida para essa tarefa (`clearTaskSessions`). A próxima continuação começa de uma sessão limpa.
 
 Checklist para quem está de plantão se isso ocorrer em produção:
 
-- Confirme que `errorCode` é `claude_poisoned_previous_message_id` na linha da execução; isso significa que as proteções funcionaram e a issue se recupera automaticamente no próximo heartbeat.
-- Se a mesma issue continuar em ciclo após um heartbeat, verifique se `agentTaskSessions` para aquele `(agentId, taskKey)` foi limpo. Se não, o retorno do adapter se perdeu (por exemplo, finalização de execução malformada); escale o problema. **Não** edite a linha manualmente; abra uma issue filha com o ID da execução.
+- Confirme que `errorCode` é `claude_poisoned_previous_message_id` na linha da execução; isso significa que as proteções funcionaram e a tarefa se recupera automaticamente no próximo heartbeat.
+- Se a mesma tarefa continuar em ciclo após um heartbeat, verifique se `agentTaskSessions` para aquele `(agentId, taskKey)` foi limpo. Se não, o retorno do adapter se perdeu (por exemplo, finalização de execução malformada); escale o problema. **Não** edite a linha manualmente; abra uma tarefa filha com o ID da execução.
 - Para alvos remotos (sandbox/SSH), o JSONL inválido fica no remoto e o adapter apenas registra a intenção de limpeza. A tentativa com sessão nova ainda funciona porque usa um novo ID, e `clearSession: true` no servidor prevalece independentemente do estado do disco remoto.
 
 ## Injeção de skills

@@ -3,7 +3,7 @@
 Change: `localize-paperclip-pt-br`.
 Branch: `codex/localize-paperclip-pt-br`.
 Base: `a09d8b56e2ebcc22ea12082e8f8758b1938e1436`.
-Progresso OpenSpec: **541/544** no checkpoint de 2026-11-08; restam 5.2, 5.3 e 7.1, com as demais jornadas e lotes registrados abaixo.
+Progresso OpenSpec: **543/544** no checkpoint de 2026-11-08; resta 7.1 (CI remota), com as demais jornadas e lotes registrados abaixo.
 
 ## Entrega verificada
 
@@ -4746,3 +4746,45 @@ agregadores. A aplicação não foi implantada.
   não contam como cobertura. Limites: o contexto é uma fixture determinística
   de prompt com adapter real; retomada/delegação e telas de interação não foram
   exercitadas nesta rodada.
+
+### Reconciliação final da ajuda e decisão do docs.json — 5.2/5.3 — 2026-11-08
+
+- A comparação final dos pares EN/PT-BR registrou **71 tópicos**, **424 blocos
+  cercados**, **168 blocos de shell**, **67 links** e nenhuma divergência de
+  flag, variável, caminho, porta, versão, código HTTP ou identificador técnico.
+  Os 27 blocos de shell que diferem após remoção de comentários contêm apenas
+  strings humanas traduzidas (`echo`, `--title`, `--summary`, `--reason`,
+  `--name`, `--comment` e valores JSON).
+- `docs/docs.json` foi reconciliado: as duas entradas duplicadas
+  (`guides/board-operator/execution-workspaces-and-runtime-services` e
+  `guides/board-operator/delegation`) foram removidas. Os 14 tópicos que
+  existem no manifesto de ajuda mas não na navegação do site são **help-only**
+  e continuam disponíveis pelo bundle da aplicação: `adapters/gemini-local`,
+  `adapters/kimi-local`, `agents/runtime`, `api/routines`,
+  `api/secrets-remote-import`, `built-in-agents`, `companies/companies-spec`,
+  `deploy/aws-ecs`, `deploy/dev-plane-restart-hygiene`, `feedback-voting`,
+  `guides/board-operator/language`, `guides/execution-policy`,
+  `guides/openclaw-docker-setup` e `pipelines/tutorial`. Essa ausência não é
+  contada como cobertura do site público.
+- A validação operacional real de OpenClaw/Docker foi dispensada pelo operador
+  em 2026-11-08 e registrada como risco aceito; não é contada como cobertura.
+
+### Aprovação da revisão semântica da ajuda — 5.2/5.3 — 2026-11-08
+
+- Um revisor independente percorreu os 71 tópicos EN/PT-BR e emitiu parecer em
+  `doc/localization/reviews/help-semantic-review-2026-11-08.md`. A primeira
+  rodada encontrou 12 tópicos com correção obrigatória e 26 com ajuste
+  editorial; todos os achados altos/médios foram corrigidos.
+- Correções: rótulos de UI em `skills-store`, caminhos em `deploy/secrets` e
+  `cli/setup-commands`, abas de rotina, erros de significado em
+  `what-is-paperclip`, `agents-runtime` e `codex-local`, `eval` em
+  `adapter-ui-parser`, gramática em `managing-agents`, deriva de glossário
+  (`tarefa`, `organização`, `conselho`, `card de status`, `pipeline`, `caso`,
+  `rotina`, `despertar`), `docs/docs.json` e exemplos humanos.
+- A re-revisão final foi **APROVADA**. Contratos técnicos: 71 tópicos, 424
+  blocos cercados, 168 blocos de shell, 67 links; nenhuma divergência de flag,
+  rota, variável, porta, versão, código HTTP ou identificador. `docs/docs.json`
+  tem 57 páginas únicas; 14 tópicos help-only foram documentados.
+- O usuário acompanhou o parecer e **assumiu o risco** de não executar a
+  validação operacional real de OpenClaw/Docker. Esse limite não é contado como
+  cobertura; 5.2/5.3 ficam concluídas com essa ressalva registrada.

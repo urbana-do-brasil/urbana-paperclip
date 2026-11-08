@@ -55,7 +55,7 @@ Com um parser, a UI apresenta:
 1. **Durante o build** — compile `src/ui-parser.ts` para `dist/ui-parser.js` (sem importações em runtime)
 2. **Inicialização do servidor** — o carregador de plugins lê o arquivo e o armazena em cache na memória
 3. **Carregamento da UI** — quando o usuário abre uma execução, a UI busca o parser em `GET /api/:type/ui-parser.js`
-4. **Runtime** — o módulo obtido é avaliado e registrado. Todas as linhas posteriores usam o parser real
+4. **Runtime** — o módulo obtido é executado (eval) e registrado. Todas as linhas posteriores usam o parser real
 
 ## Contrato: package.json
 
@@ -211,7 +211,7 @@ Defina `isError: true` nos resultados de ferramenta para mostrar um indicador ve
 
 5. **Tolerante a erros.** Nunca lance exceções. Retorne `[{ kind: "stdout", ts, text: line }]` para qualquer linha que não consiga analisar, em vez de interromper a transcrição.
 
-6. **Tamanho do arquivo.** Mantenha-o abaixo de 50 KB. Ele é servido por solicitação e avaliado no navegador.
+6. **Tamanho do arquivo.** Mantenha-o abaixo de 50 KB. Ele é servido por solicitação e executado (eval) no navegador.
 
 ## Ciclo de vida
 
@@ -221,7 +221,7 @@ Defina `isError: true` nos resultados de ferramenta para mostrar um indicador ve
 | UI abre execução | `getUIAdapter(type)` é chamado. Se não houver parser integrado, inicia `fetch(/api/:type/ui-parser.js)` assíncrono |
 | Primeiras linhas chegam | O parser genérico de processo as trata imediatamente, sem bloqueio. O parser dinâmico carrega em segundo plano |
 | Parser carrega | `registerUIAdapter()` é chamado. A análise de todas as linhas posteriores usa o parser real |
-| Parser falha (404, erro de avaliação) | Um aviso é registrado no console. O parser genérico continua. O tipo com falha é armazenado em cache, sem novas tentativas |
+| Parser falha (404, erro de execução (eval)) | Um aviso é registrado no console. O parser genérico continua. O tipo com falha é armazenado em cache, sem novas tentativas |
 | Servidor reinicia | O cache em memória é preenchido novamente a partir dos pacotes de adapter |
 
 ## Comportamento em erros

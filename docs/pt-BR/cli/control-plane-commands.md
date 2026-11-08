@@ -1,23 +1,23 @@
 ---
 title: Comandos do plano de controle
-summary: Comandos de issues, agentes, aprovações e painel
+summary: Comandos de tarefas, agentes, aprovações e painel
 ---
 
-Comandos de cliente para gerenciar issues, agentes, aprovações e outros recursos.
+Comandos de cliente para gerenciar tarefas, agentes, aprovações e outros recursos.
 
-## Comandos de issues
+## Comandos de tarefas
 
 ```sh
-# Listar issues
+# Listar tarefas
 npx paperclipai issue list [--status todo,in_progress] [--assignee-agent-id <id>] [--match text]
 
-# Consultar detalhes de uma issue
+# Consultar detalhes de uma tarefa
 npx paperclipai issue get <issue-id-or-identifier>
 
-# Criar issue
+# Criar tarefa
 npx paperclipai issue create --title "..." [--description "..."] [--status todo] [--priority high]
 
-# Atualizar issue
+# Atualizar tarefa
 npx paperclipai issue update <issue-id> [--status in_progress] [--comment "..."]
 
 # Adicionar comentário

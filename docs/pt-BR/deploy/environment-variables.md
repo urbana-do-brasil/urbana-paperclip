@@ -204,14 +204,14 @@ Estas variáveis são definidas automaticamente pelo servidor ao invocar agentes
 | `PAPERCLIP_API_URL` | URL base da API do Paperclip (herda o valor do servidor; consulte Configuração do servidor acima) |
 | `PAPERCLIP_API_KEY` | JWT de curta duração para autenticação na API |
 | `PAPERCLIP_RUN_ID` | ID da execução atual do heartbeat |
-| `PAPERCLIP_TASK_ID` | Issue que acionou esta ativação |
+| `PAPERCLIP_TASK_ID` | Tarefa que acionou esta ativação |
 | `PAPERCLIP_WAKE_REASON` | Motivo da ativação |
 | `PAPERCLIP_WAKE_COMMENT_ID` | Comentário que acionou esta ativação |
 | `PAPERCLIP_APPROVAL_ID` | ID da aprovação resolvida |
 | `PAPERCLIP_APPROVAL_STATUS` | Decisão da aprovação |
-| `PAPERCLIP_LINKED_ISSUE_IDS` | IDs de issues vinculadas separados por vírgulas |
+| `PAPERCLIP_LINKED_ISSUE_IDS` | IDs de tarefas vinculadas separados por vírgulas |
 | `PAPERCLIP_COMMUNICATION_LOCALE` | Idioma validado da comunicação humana (`pt-BR` ou `en`); injetado pelo adapter `process` |
-| `PAPERCLIP_COMMUNICATION_GUIDANCE` | Orientação curta de idioma, escrita pelo servidor; injetada pelo adapter `process` sem conteúdo do wake |
+| `PAPERCLIP_COMMUNICATION_GUIDANCE` | Orientação curta de idioma, escrita pelo servidor; injetada pelo adapter `process` sem conteúdo do despertar |
 
 ## Chaves de provedores de LLM (para adapters)
 

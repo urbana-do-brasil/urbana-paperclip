@@ -58,7 +58,7 @@ ainda pode escolher uma nova chave ou outra conta:
 
 Reutilizar uma conexão vincula sua referência de segredo ao agente. Isso não
 copia nem altera o valor salvo. A conexão é testada antes da criação do agente;
-ela aparecer na lista não garante que o provedor ainda aceite a credencial.
+o fato de ela aparecer na lista não garante que o provedor ainda aceite a credencial.
 Essas opções também se aplicam aos fluxos de configuração do runner nativo de
 Claude e Codex.
 

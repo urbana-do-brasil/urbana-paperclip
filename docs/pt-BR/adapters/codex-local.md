@@ -8,7 +8,7 @@ O adapter `codex_local` executa localmente a CLI OpenAI Codex. Ele oferece persi
 ## Pré-requisitos
 
 - Codex CLI instalada (comando `codex` disponível)
-- Uma sessão Codex no host com `~/.codex/auth.json` ou uma `OPENAI_API_KEY` por agente configurada no ambiente do adapter (o Paperclip a materializa em `$CODEX_HOME/auth.json` para diretórios gerenciados; a Codex CLI lê credenciais de `auth.json`, não diretamente do ambiente do processo. Para um `CODEX_HOME` externo autogerenciado, grave `auth.json` diretamente nele)
+- Um login do Codex no host com `~/.codex/auth.json` ou uma `OPENAI_API_KEY` por agente configurada no ambiente do adapter (o Paperclip a materializa em `$CODEX_HOME/auth.json` para diretórios gerenciados; a Codex CLI lê credenciais de `auth.json`, não diretamente do ambiente do processo. Para um `CODEX_HOME` externo autogerenciado, grave `auth.json` diretamente nele)
 
 ## Campos de configuração
 

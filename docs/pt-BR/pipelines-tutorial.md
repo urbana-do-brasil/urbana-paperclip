@@ -15,14 +15,14 @@ O tutorial identifica deliberadamente as convenções separadamente dos recursos
 
 ## Pré-requisitos
 
-Execute este fluxo em uma instância de desenvolvimento do Paperclip, usando um token do board ou um token de agente com permissão para gerenciar pipelines, rotinas e issues.
+Execute este fluxo em uma instância de desenvolvimento do Paperclip, usando um token do conselho ou um token de agente com permissão para gerenciar pipelines, rotinas e tarefas.
 
 ```sh
 export PAPERCLIP_API_URL=http://localhost:3100
 export PAPERCLIP_COMPANY_ID=<company-id>
 export PAPERCLIP_API_KEY=<token>
 
-# Opcional: atribua a um agente específico as issues de redação criadas pela rotina.
+# Opcional: atribua a um agente específico as tarefas de redação criadas pela rotina.
 export DRAFTING_AGENT_ID=<agent-id>
 
 export RUN_KEY="$(date +%Y%m%d%H%M%S)"
@@ -174,7 +174,7 @@ cat > /tmp/content-guidance.md <<'MD'
 A revisão final tem três saídas:
 
 - aprove para Publicação quando as revisões fixadas estiverem prontas para envio
-- solicite alterações e retorne a Redação quando a mesma issue de trabalho precisar continuar
+- solicite alterações e retorne a Redação quando a mesma tarefa de trabalho precisar continuar
 - descarte em Descartado quando o conteúdo não deve ser publicado
 
 Convenção: casos de materiais armazenam `briefedFromVersion` em `fields` para que a revisão de montagem compare um briefing fixado com a `version` atual do caso de origem.
@@ -218,7 +218,7 @@ paperclipai pipelines set-automation \
 
 ## Etapa 2: Acionamento, recebimento e aprovação
 
-Em um sistema real, o fluxo começaria com uma rotina de corte da versão. Hoje, a rotina é acionada por um temporizador ou pela API e cria uma issue de recebimento. Nela, o agente escreve um documento de proposta e pede ao board uma confirmação por caixa de seleção.
+Em um sistema real, o fluxo começaria com uma rotina de corte da versão. Hoje, a rotina é acionada por um temporizador ou pela API e cria uma tarefa de recebimento. Nela, o agente escreve um documento de proposta e pede ao conselho uma confirmação por caixa de seleção.
 
 Aqui, a seleção aceita na caixa de seleção é representada pelos arquivos em lote. Esse arquivo, junto com o prompt da rotina, compõe a convenção de modelos da v1.
 
@@ -376,7 +376,7 @@ paperclipai pipelines case resolve-suggestion \
 
 ## Etapa 4: Edição paralela e divergência
 
-O rascunho ainda pode mudar enquanto houver trabalho dependente. Uma atualização relevante no caso de origem publica um comentário sobre essa divergência nas issues de trabalho vinculadas e dependentes.
+O rascunho ainda pode mudar enquanto houver trabalho dependente. Uma atualização relevante no caso de origem publica um comentário sobre essa divergência nas tarefas de trabalho vinculadas e dependentes.
 
 ```sh
 export TWEET_WORK_ISSUE="$(
@@ -642,7 +642,7 @@ PAPERCLIP_API_KEY=<token> \
 pnpm smoke:pipelines-tutorial
 ```
 
-Execute somente em uma instância e empresa descartáveis. O smoke cria pipelines, casos, uma rotina e uma issue; a API não oferece um endpoint para excluir esses registros. A variável explícita de instância descartável faz o script recusar a execução por padrão. Não a defina em uma instância compartilhada ou de produção.
+Execute somente em uma instância e organização descartáveis. O smoke cria pipelines, casos, uma rotina e uma tarefa; a API não oferece um endpoint para excluir esses registros. A variável explícita de instância descartável faz o script recusar a execução por padrão. Não a defina em uma instância compartilhada ou de produção.
 
 O smoke verifica se:
 
@@ -650,7 +650,7 @@ O smoke verifica se:
 - a revisão de recursos aprova um recurso e rejeita outro
 - a ingestão em lote conecta `blockedByCaseKeys`
 - a prontidão usa `suggest-transition` seguida de aceitação
-- uma divergência no caso de origem publica um comentário de sistema em uma issue de trabalho vinculada
+- uma divergência no caso de origem publica um comentário de sistema em uma tarefa de trabalho vinculada
 - edições com versão desatualizada falham com `409 code=version_conflict`
 - o mecanismo de estado terminal dos filhos em Montagem avança automaticamente o caso pai para Revisão final
 - os resultados de aprovação, solicitação de alterações e descarte na Revisão final funcionam

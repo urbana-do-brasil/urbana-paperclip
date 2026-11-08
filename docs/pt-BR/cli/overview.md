@@ -74,4 +74,4 @@ O contexto é armazenado em `~/.paperclip/context.json`.
 A CLI tem duas categorias:
 
 1. **[Comandos de configuração](/cli/setup-commands)** — inicialização da instância, diagnósticos e configuração
-2. **[Comandos do plano de controle](/cli/control-plane-commands)** — issues, agentes, aprovações e atividades
+2. **[Comandos do plano de controle](/cli/control-plane-commands)** — tarefas, agentes, aprovações e atividades

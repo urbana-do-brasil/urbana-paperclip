@@ -12,8 +12,8 @@ Uma skill é um diretório que contém um arquivo `SKILL.md` com frontmatter YAM
 ```
 skills/
 └── my-skill/
-    ├── SKILL.md          # Main skill document
-    └── references/       # Optional supporting files
+    ├── SKILL.md          # Documento principal da skill
+    └── references/       # Arquivos de apoio opcionais
         └── examples.md
 ```
 
@@ -23,9 +23,9 @@ skills/
 ---
 name: my-skill
 description: >
-  Short description of what this skill does and when to use it.
-  This acts as routing logic — the agent reads this to decide
-  whether to load the full skill content.
+  Descrição curta do que esta skill faz e quando usá-la.
+  Isso funciona como lógica de roteamento — o agente lê para decidir
+  se carrega o conteúdo completo da skill.
 ---
 
 # My Skill

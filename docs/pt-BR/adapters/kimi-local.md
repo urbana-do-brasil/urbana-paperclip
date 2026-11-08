@@ -31,7 +31,7 @@ O adapter `kimi_local` executa a Kimi Code CLI (`kimi`) localmente. Ele tem dois
 
 ## Mecanismo de execução
 
-Por padrão, o adapter executa o Kimi pelo **mecanismo ACP** (`kimi acp`, um servidor Agent Client Protocol por stdio), o mesmo mecanismo compartilhado por `claude_local`, `codex_local` e `gemini_local`. O ACP transmite a transcrição ao vivo: o texto do assistente chega em incrementos e chamadas de ferramentas informam status `pending`/`completed`, de modo que a conversa da issue é atualizada continuamente em vez de em blocos.
+Por padrão, o adapter executa o Kimi pelo **mecanismo ACP** (`kimi acp`, um servidor Agent Client Protocol por stdio), o mesmo mecanismo compartilhado por `claude_local`, `codex_local` e `gemini_local`. O ACP transmite a transcrição ao vivo: o texto do assistente chega em incrementos e chamadas de ferramentas informam status `pending`/`completed`, de modo que a conversa da tarefa é atualizada continuamente em vez de em blocos.
 
 Seleção do mecanismo (campo de configuração `engine`):
 
@@ -67,7 +67,7 @@ As skills desejadas do Paperclip são entregues de um diretório dedicado por ex
 
 ### Skill do plano de controle
 
-`paperclipai agent local-cli <agentRef> -C <companyId>` instala as skills do plano de controle do Paperclip em `~/.kimi-code/skills` (respeitando `KIMI_CODE_HOME`), junto dos destinos existentes `~/.codex/skills` e `~/.claude/skills`. O Kimi descobre automaticamente esse diretório em cada execução, de modo que o agente tenha a referência da API do plano de controle (rotas de issues, comentários e interações) desde o primeiro turno, em vez de redescobrir endpoints por tentativa e erro. Passe `--no-install-skills` para pular essa etapa. Isso é independente da entrega por execução via `--skills-dir` acima, que só se aplica quando um agente tem skills configuradas explicitamente.
+`paperclipai agent local-cli <agentRef> -C <companyId>` instala as skills do plano de controle do Paperclip em `~/.kimi-code/skills` (respeitando `KIMI_CODE_HOME`), junto dos destinos existentes `~/.codex/skills` e `~/.claude/skills`. O Kimi descobre automaticamente esse diretório em cada execução, de modo que o agente tenha a referência da API do plano de controle (rotas de tarefas, comentários e interações) desde o primeiro turno, em vez de redescobrir endpoints por tentativa e erro. Passe `--no-install-skills` para pular essa etapa. Isso é independente da entrega por execução via `--skills-dir` acima, que só se aplica quando um agente tem skills configuradas explicitamente.
 
 ## Teste de ambiente
 

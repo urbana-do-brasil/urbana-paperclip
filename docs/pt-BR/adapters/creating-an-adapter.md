@@ -258,13 +258,13 @@ O fluxo de ida e volta suportado:
 - **Por execução, no lado remoto.** `prepareWorkspaceForSshExecution` (em `packages/adapter-utils/src/ssh.ts`) empacota o worktree local com git bundle e o envia ao diretório remoto da execução. Nenhum `git remote` é configurado; o bundle é o transporte.
 - **No fim da execução, no bloco `finally` do adapter.** O adapter invoca `restoreRemoteWorkspace` (por exemplo, em `execute.ts` de claude-local), que chama `restoreWorkspaceFromSshExecution` → `exportGitWorkspaceFromSsh` → `integrateImportedGitHead`. Commits remotos feitos durante a execução voltam ao worktree local do Mac sem `git push` e sem remoto configurado.
 
-A invariável que os adapters devem preservar:
+A invariante que os adapters devem preservar:
 
 - **Nunca execute `git push`** a partir do código do adapter ou do runtime. A configuração fornecida pelo operador pode optar por isso, mas o contrato padrão não realiza operações remotas.
 - **Nunca suponha que existe um remoto.** O cwd local é a fonte de verdade entre execuções.
 - **Apresente falhas de restauração.** Uma falha de sincronização de volta deve se propagar como erro da execução, não como aviso silencioso. O heartbeat registra uma linha `workspace_finalize` (`succeeded`/`failed`) ao redor de `adapter.execute` para que tarefas dependentes não despertem com um worktree desatualizado.
 
-A invariável é garantida pelo caso "no-remote-git contract" em `packages/adapter-utils/src/ssh-fixture.test.ts`: ele verifica que `git remote` está vazio antes e depois da ida e volta e que um commit existente apenas no remoto chega ao ambiente local somente pela restauração.
+A invariante é garantida pelo caso "no-remote-git contract" em `packages/adapter-utils/src/ssh-fixture.test.ts`: ele verifica que `git remote` está vazio antes e depois da ida e volta e que um commit existente apenas no remoto chega ao ambiente local somente pela restauração.
 
 ## Segurança
 

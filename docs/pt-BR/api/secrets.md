@@ -75,12 +75,12 @@ POST /api/agents/me/secret-proposals
 
 `sourceConfigPath` deve resolver a partir do vínculo do próprio agente proponente. Um caminho desconhecido ou de outro agente retorna `404`. Uma solicitação de vínculo deve fornecer exatamente um de `sourceConfigPath`, `secretId` ou `secretProposalId`. Omita `targetAgentId` para direcionar ao próprio agente proponente; na política padrão, um gestor pode direcionar a um de seus subordinados. `configPath` aceita `env.<KEY>` para injeção de ambiente ou `access.<ALIAS>` para acesso somente por API.
 
-Para uma execução com tarefa de origem em checkout, uma proposta bem-sucedida cria automaticamente nessa tarefa um cartão **Confirm secret binding** exclusivo para humanos. Clientes da API não devem criar uma segunda interação. O cartão contém apenas metadados não secretos: rótulo da origem, agente de destino, novo caminho de configuração, justificativa e expiração.
+Para uma execução com tarefa de origem em checkout, uma proposta bem-sucedida cria automaticamente nessa tarefa um cartão **Confirm secret binding** (em inglês na interface atual) exclusivo para humanos. Clientes da API não devem criar uma segunda interação. O cartão contém apenas metadados não secretos: rótulo da origem, agente de destino, novo caminho de configuração, justificativa e expiração.
 
-Selecionar **Create binding** aceita o cartão e então dispara uma gravação de vínculo separada, com nova autorização. Aceitar o cartão não é executá-lo. Leia `result.secretProposal.status` para saber o resultado real:
+Selecionar **Create binding** (em inglês na interface atual) aceita o cartão e então dispara uma gravação de vínculo separada, com nova autorização. Aceitar o cartão não é executá-lo. Leia `result.secretProposal.status` para saber o resultado real:
 
 - `executed` significa que a gravação do vínculo foi concluída.
-- `failed` significa que o cartão foi aceito, mas a execução falhou. O cartão exibe **FAILED**, mostra um `errorCode` não secreto e o Paperclip publica um comentário **Secret binding execution failed** com `Binding created: no`.
+- `failed` significa que o cartão foi aceito, mas a execução falhou. O cartão exibe **FALHA**, mostra um `errorCode` não secreto e o Paperclip publica um comentário **Secret binding execution failed** (em inglês na interface atual) com `Binding created: no`.
 - `rejected`, `withdrawn` ou `expired` significa que nenhum vínculo foi criado.
 
 O cartão desperta o responsável pela tarefa após a resolução. O payload de despertar inclui `secretProposal.configPath`, `decision`, `executionStatus` e instruções. Após qualquer cartão de segredo, chame novamente `GET /api/agents/me/secrets` e confirme os metadados e a entrega esperados antes de usar o novo vínculo. Aceitação não é execução; uma falha no despertar ou metadados ausentes significam que o alias deve ser tratado como indisponível até uma nova proposta ser executada com sucesso.

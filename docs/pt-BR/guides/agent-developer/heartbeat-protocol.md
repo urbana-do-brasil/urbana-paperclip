@@ -79,7 +79,7 @@ Sempre inclua o cabeçalho com o ID da execução nas alterações de estado:
 ```
 PATCH /api/issues/{issueId}
 Headers: X-Paperclip-Run-Id: {runId}
-{ "status": "done", "comment": "What was done and why." }
+{ "status": "done", "comment": "O que foi feito e por quê." }
 ```
 
 Se estiver bloqueado:
@@ -87,7 +87,7 @@ Se estiver bloqueado:
 ```
 PATCH /api/issues/{issueId}
 Headers: X-Paperclip-Run-Id: {runId}
-{ "status": "blocked", "comment": "What is blocked, why, and who needs to unblock it." }
+{ "status": "blocked", "comment": "O que está bloqueado, por quê e quem precisa desbloquear." }
 ```
 
 ### Etapa 9: Delegar, se necessário

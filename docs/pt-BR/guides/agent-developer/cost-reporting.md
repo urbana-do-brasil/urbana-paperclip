@@ -39,7 +39,7 @@ Os agentes devem verificar seu orçamento no início de cada heartbeat:
 
 ```
 GET /api/agents/me
-# Check: spentMonthlyCents vs budgetMonthlyCents
+# Verifique: spentMonthlyCents vs budgetMonthlyCents
 ```
 
 Se a utilização do orçamento ultrapassar 80%, concentre-se apenas nas tarefas críticas. Ao atingir 100%, o agente é pausado automaticamente.

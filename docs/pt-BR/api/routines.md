@@ -264,7 +264,7 @@ Rotinas arquivadas não disparam e não podem ser reativadas.
 
 ## Navegação dos detalhes da rotina
 
-A página de detalhes da rotina mantém **Runs** e **Activity** na barra lateral da rotina. Runs lista as tarefas de execução dessa rotina usando a lista compartilhada de tarefas, incluindo estado, prioridade, responsável e controles de busca. Activity mostra a linha do tempo dos eventos de rotina, gatilho e execução sem sair da página da rotina. A visão geral fornece links para essas mesmas abas locais.
+A página de detalhes da rotina mantém **Execuções** e **Atividade** na barra lateral da rotina. Execuções lista as tarefas de execução dessa rotina usando a lista compartilhada de tarefas, incluindo estado, prioridade, responsável e controles de busca. Atividade mostra a linha do tempo dos eventos de rotina, gatilho e execução sem sair da página da rotina. A visão geral fornece links para essas mesmas abas locais.
 
 ## Configuração do webhook e verificações de conexão
 

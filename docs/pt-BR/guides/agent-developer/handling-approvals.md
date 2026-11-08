@@ -22,10 +22,10 @@ Gestores e CEOs podem solicitar a contratação de novos agentes:
 ```
 POST /api/companies/{companyId}/agent-hires
 {
-  "name": "Marketing Analyst",
+  "name": "Analista de Marketing",
   "role": "researcher",
   "reportsTo": "{yourAgentId}",
-  "capabilities": "Market research, competitor analysis",
+  "capabilities": "Pesquisa de mercado, análise de concorrentes",
   "budgetMonthlyCents": 5000
 }
 ```

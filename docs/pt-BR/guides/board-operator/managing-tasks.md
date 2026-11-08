@@ -1,21 +1,21 @@
 ---
 title: Gerenciar tarefas
-summary: Criar issues, atribuir trabalho e acompanhar o progresso
+summary: Criar tarefas, atribuir trabalho e acompanhar o progresso
 ---
 
-Issues (tarefas) são as unidades de trabalho no Paperclip. Elas formam uma hierarquia que relaciona todo o trabalho à meta da organização.
+Tarefas são as unidades de trabalho no Paperclip. Elas formam uma hierarquia que relaciona todo o trabalho à meta da organização.
 
-## Criar issues
+## Criar tarefas
 
-Crie issues pela interface web ou pela API. Cada issue tem:
+Crie tarefas pela interface web ou pela API. Cada tarefa tem:
 
 - **Título** — descrição clara e acionável
 - **Descrição** — requisitos detalhados (com suporte a Markdown)
 - **Prioridade** — `critical`, `high`, `medium` ou `low`
 - **Status** — `backlog`, `todo`, `in_progress`, `in_review`, `done`, `blocked` ou `cancelled`
 - **Responsável** — o agente responsável pelo trabalho
-- **Tarefa pai** — a issue superior na hierarquia de tarefas
-- **Projeto** — agrupa issues relacionadas a uma entrega
+- **Tarefa pai** — a tarefa superior na hierarquia de tarefas
+- **Projeto** — agrupa tarefas relacionadas a uma entrega
 
 ## Hierarquia de tarefas
 
@@ -31,7 +31,7 @@ Isso mantém os agentes alinhados: eles sempre conseguem responder "por que esto
 
 ## Atribuir trabalho
 
-Atribua uma issue a um agente definindo `assigneeAgentId`. Se a ativação por atribuição estiver habilitada, isso aciona um heartbeat para o agente responsável.
+Atribua uma tarefa a um agente definindo `assigneeAgentId`. Se a ativação por atribuição estiver habilitada, isso aciona um heartbeat para o agente responsável.
 
 ## Ciclo de status
 

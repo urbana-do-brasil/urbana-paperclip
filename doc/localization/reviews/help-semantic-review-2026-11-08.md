@@ -12,6 +12,8 @@
 
 A validação operacional real de OpenClaw/Docker **não foi executada por decisão explícita do usuário** e está registrada abaixo como risco aceito. Ela não é contada como cobertura e não é a causa deste veredito.
 
+> **Veredito final após o follow-up de 2026-11-08:** **aprovado**. O veredito acima é o histórico da primeira rodada; o adendo ao final registra a confirmação final, os 38 tópicos re-revisados e a única observação editorial não bloqueante fora do conjunto.
+
 ## Resultado por tópico
 
 Legenda: `ok` = sem achado material; `revisar` = ajuste editorial/terminologia, sem bloquear sozinho; `corrigir` = instrução ou rótulo que não corresponde ao produto ou muda o sentido.
@@ -164,3 +166,94 @@ Legenda: `ok` = sem achado material; `revisar` = ajuste editorial/terminologia, 
 6. **Repetir a revisão independente apenas nos tópicos corrigidos** (cerca de 15), não nos 71; depois registrar a conclusão de 5.2/5.3 e o risco aceito de OpenClaw/Docker. Não marcar a tradução como integral enquanto os achados altos estiverem abertos.
 
 **Não alterei documentos de produto.** A única escrita desta revisão é este parecer.
+
+---
+
+## Follow-up 2026-11-08
+
+**Base revisada:** working tree sobre `229f08058`, com as correções de conteúdo ainda não commitadas. O parecer acima permanece como registro da primeira rodada; este adendo substitui o veredito para 5.2/5.3.
+**Escopo:** somente os **38 tópicos marcados `corrigir` ou `revisar`** na primeira rodada; os 33 tópicos já `ok` não foram reabertos.
+**Método:** diff integral dos arquivos alterados, conferência dos rótulos contra `ui/src/i18n/locales/pt-BR.json`, comparação EN/PT-BR de comandos, flags, variáveis, rotas, JSON, links e identificadores, validação de `docs/docs.json` e leitura do novo glossário. Nenhum comando de produto foi executado.
+
+### Veredito final
+
+**APROVADO para 5.2/5.3.** Os seis achados altos da primeira rodada foram corrigidos: os rótulos de UI de `skills-store` e dos caminhos de segredos agora correspondem ao catálogo PT-BR; `Runs`/`Activity` viraram `Execuções`/`Atividade`; e os três erros de significado (`o que` vs. `em que`, `assumido` vs. `retirado`, `login` vs. `sessão`) foram sanados. Também foi corrigido o erro técnico de `eval`.
+
+As ressalvas do follow-up foram aplicadas e conferidas: *single tenant* agora é “locatário único”, *Cloud tenants* é “locatários do Cloud”, a concordância de “drenagem” está correta, **FAILED** virou **FALHA**, `Environment variables` virou “Variáveis de ambiente”, `workspace` virou “espaço de trabalho”, “empresas” virou “organizações” e o glossário de status card foi alinhado à UI (“Cards de status”). Não restou bloqueador nem ressalva no conjunto re-revisado. A única observação remanescente é o uso de “wake” em prosa em `adapters/process`, tópico que não estava no conjunto re-revisado e não bloqueia o aceite. O risco de não executar OpenClaw/Docker reais continua sendo risco aceito pelo usuário, não cobertura.
+
+### Tabela dos tópicos re-revisados
+
+Legenda: `ok` = correção confirmada. Nesta rodada, todos os 38 tópicos re-revisados ficaram `ok`.
+
+| Slug | Status original | Status final | Observação |
+|---|---|---|---|
+| `api/routines` | corrigir | ok | Abas agora `Execuções`/`Atividade`; identificadores de rota intactos. |
+| `deploy/dev-plane-restart-hygiene` | corrigir | ok | Título, `drenagem` e concordância (“adicionada”) confirmados. |
+| `agents/runtime` | corrigir | ok | “Assumido pelo agente”, “painel” e “espaço de trabalho” confirmados. |
+| `adapters/adapter-ui-parser` | corrigir | ok | `eval` agora “executado (eval)”; nenhum identificador alterado. |
+| `adapters/codex-local` | corrigir | ok | “Login do Codex no host”; pré-requisito agora correto. |
+| `cli/setup-commands` | corrigir | ok | Caminho `Configurações da organização → Segredos → Cofres de provedores` consistente. |
+| `deploy/secrets` | corrigir | ok | Caminhos e rótulos corrigidos; `Variáveis de ambiente` confirmado. |
+| `guides/agent-developer/skills-store` | corrigir | ok | Rótulos conferem com o catálogo PT-BR; “Skills” permanece apenas no breadcrumb hardcoded da UI. |
+| `guides/board-operator/execution-workspaces-and-runtime-services` | corrigir | ok | `Serviços`/`Jobs`, tarefas e “locatário único” confirmados. |
+| `guides/board-operator/managing-agents` | corrigir | ok | “O fato de ela aparecer na lista…” corrigido. |
+| `guides/board-operator/managing-tasks` | corrigir | ok | Título, headings e prosa agora usam “tarefa”; `assigneeAgentId` preservado. |
+| `start/what-is-paperclip` | corrigir | ok | “O que cada agente está fazendo” e “organizações autônomas” confirmados. |
+| `feedback-voting` | revisar | ok | “Organização” e “conselho” substituem “empresa”/“board” em prosa. |
+| `pipelines/tutorial` | revisar | ok | “Tarefa” e “conselho” em prosa; comandos, chaves e estados preservados. |
+| `adapters/claude-local` | revisar | ok | “Issue” em prosa virou “tarefa”; `clearTaskSessions` e IDs intactos. |
+| `adapters/creating-an-adapter` | revisar | ok | “Invariante” corrigido; contrato técnico preservado. |
+| `adapters/external-adapters` | revisar | ok | “Adaptadores” corrigido; `exports` e caminhos intactos. |
+| `api/companies` | revisar | ok | “Acesso da instância” corrigido. |
+| `api/dashboard` | revisar | ok | Título/heading agora “Painel”; endpoint `dashboard` preservado. |
+| `api/secrets` | revisar | ok | **FALHA** confirmado; a nota de inglês permanece apenas no título/ação hardcoded e no comentário do servidor. |
+| `cli/control-plane-commands` | revisar | ok | Comentários e headings usam “tarefas”; comandos `issue` intactos. |
+| `cli/overview` | revisar | ok | Categoria agora “tarefas”. |
+| `deploy/environment-variables` | revisar | ok | `Issue`/`wake` em prosa corrigidos; nomes de variáveis preservados. |
+| `guides/agent-developer/comments-and-communication` | revisar | ok | Exemplos humanos traduzidos; JSON, links e IDs preservados. |
+| `guides/agent-developer/cost-reporting` | revisar | ok | Comentário de exemplo traduzido; variáveis intactas. |
+| `guides/agent-developer/handling-approvals` | revisar | ok | `name`/`capabilities` humanos traduzidos; `role`, `reportsTo` e budget intactos. |
+| `guides/agent-developer/heartbeat-protocol` | revisar | ok | Comentários de exemplo traduzidos; headers e IDs intactos. |
+| `guides/agent-developer/task-workflow` | revisar | ok | Comentários e labels humanos traduzidos; `idempotencyKey` e payloads intactos. |
+| `guides/agent-developer/writing-a-skill` | revisar | ok | Comentários e frontmatter de exemplo traduzidos; estrutura preservada. |
+| `guides/board-operator/approvals` | revisar | ok | “Tarefas vinculadas” corrigido. |
+| `guides/board-operator/editing-first-task-texts` | revisar | ok | “Locatários do Cloud” confirmado. |
+| `guides/board-operator/status-cards` | revisar | ok | “Tarefa de geração” e glossário “Card/Cards de status” alinhados. |
+| `start/core-concepts` | revisar | ok | “Tarefas” e “Executar agora” corrigidos. |
+| `companies/companies-spec` | revisar | ok | “Opcional:” corrigido. |
+| `adapters/kimi-local` | revisar | ok | “Issue” em prosa virou “tarefa”; identificadores ACP/CLI intactos. |
+| `deploy/aws-ecs` | revisar | ok | `placeholder` e `Rollback` corrigidos; comandos AWS intactos. |
+| `guides/execution-policy` | revisar | ok | “Conselho” substituiu “board”; campos e estados intactos. |
+| `guides/openclaw-docker-setup` | revisar | ok | “Conselho” substituiu “board”; comandos e variáveis intactos. |
+
+### Confirmação dos achados da primeira rodada
+
+- **A1 — `skills-store`:** confirmado. `Loja de skills`, `Criar uma cópia`, `Fontes de skills`, `Importar do GitHub`, `Nova`, `Buscar skills`, `Adicionar repositórios`, `Verificar referências`, `Atualizar`, `Selecionar skills`, `Salvar seleção`, `Desconectar fonte`, `Removida da origem` e `Branch padrão` aparecem no guia e correspondem ao catálogo PT-BR. “Skills” em `Skills → Fontes de skills` é o breadcrumb hardcoded em `SkillSources.tsx:35`, portanto não é uma regressão da tradução.
+- **A2 — caminhos de segredos:** confirmado. `Company Settings`/`Organization Settings` foram substituídos por `Configurações da organização`; `Provider vaults` → `Cofres de provedores`; `Import from vault` → `Importar do cofre`; `Secret` → `Segredo`; `latest` → `mais recente`; e `Environment variables` → `Variáveis de ambiente`, em `deploy/secrets` e `cli/setup-commands`.
+- **A3 — `api/routines`:** confirmado. As abas agora são `Execuções` e `Atividade`.
+- **A4 — `what-is-paperclip`:** confirmado. “Ver o que cada agente está fazendo” e summary com “organizações”; o corpo ainda usa “empresas” em l.6.
+- **A5 — `agents-runtime`:** confirmado. “Assumido pelo agente”, “painel” e “espaço de trabalho de destino”; sem resíduo.
+- **A6 — `codex-local`:** confirmado. “Login do Codex no host”.
+- **A7 — `adapter-ui-parser`:** confirmado. “Executado (eval)” e “erro de execução (eval)”; nenhuma rota ou identificador mudou.
+- **A8 — `managing-agents`:** confirmado. A oração agora tem sujeito explícito.
+- **A9 — glossário e deriva:** confirmado. O glossário ganhou Board/Conselho, Board operator, Status card (“Card de status / Cards de status”, com a UI no plural), Pipeline, Case, Routine e Wake; as ocorrências de “issue” em prosa caíram para os tipos de entidade legítimos de `activity-log`; *tenant* e “Cards de status” foram alinhados.
+- **A10 — `dev-plane`:** confirmado. Título, `drenagem`, `procedimento operacional` e concordância (“está sendo adicionada”) corrigidos.
+- **A11 — `execution-workspaces`:** confirmado. `Serviços`/`Jobs` e “tarefas”; *single tenant* agora é “locatário único”.
+- **A12 — `api/secrets`:** confirmado. O cartão e o comentário hardcoded permanecem anotados como ingleses; **FAILED** virou **FALHA**, que é o rótulo da UI PT-BR.
+- **A13 — `docs/docs.json`:** confirmado. JSON válido, 57 páginas únicas, sem duplicatas; os 14 tópicos help-only estão listados em `verification.md` e não são contados como cobertura do site.
+- **A14 — 5.3b/verificação:** confirmado. 71 tópicos, 424 blocos cercados, 168 blocos de shell, 67 links e 27 blocos com diferenças apenas humanas; nenhuma divergência de flag, variável, rota, porta, versão, código HTTP ou identificador técnico.
+- **A15 — exemplos humanos:** confirmado. Os exemplos de `comments-and-communication`, `handling-approvals`, `heartbeat-protocol`, `task-workflow`, `cost-reporting` e `writing-a-skill` foram traduzidos apenas nos textos humanos; JSON, chaves, links, headers, IDs e comandos permanecem iguais.
+
+### Achados remanescentes
+
+**Nenhum achado remanescente no conjunto re-revisado.** As oito ressalvas do follow-up foram aplicadas e conferidas: `locatário único`, `locatários do Cloud`, “está sendo adicionada”, **FALHA**, “Variáveis de ambiente”, “espaço de trabalho”, “organizações autônomas” e o glossário “Card/Cards de status”.
+
+Permanece apenas uma observação editorial **fora do conjunto re-revisado**: `docs/pt-BR/adapters/process.md:42` ainda usa “wake” em prosa, embora o glossário prescreva “despertar”. O tópico foi marcado `ok` na primeira rodada e não foi reaberto; não é bloqueador e pode ser corrigido em uma limpeza posterior.
+
+### Risco aceito e recomendação de aceite
+
+- **OpenClaw/Docker reais:** não executados. O usuário dispensou a validação operacional e assume o risco; isso está registrado em `verification.md` e em `tasks.md` 5.3b como risco aceito, não como cobertura. A revisão do guia OpenClaw foi semântica e estática.
+- **Recomendação:** **5.2/5.3 podem ser marcados como concluídos** com o risco OpenClaw/Docker aceito pelo usuário e registrado como limite, não como cobertura. Não é necessário reabrir nenhum tópico re-revisado.
+- **Não recomendo** declarar “tradução integral” nem cobertura operacional de OpenClaw/Docker. A cobertura estrutural e semântica dos 71 tópicos está demonstrada; a cobertura de runtime não. A observação de `adapters/process` e a limpeza de `wake` podem ser tratadas depois, sem bloquear o aceite.
+
+**Nenhum outro arquivo foi alterado nesta revisão.**

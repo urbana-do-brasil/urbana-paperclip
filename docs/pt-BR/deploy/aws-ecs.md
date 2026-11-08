@@ -267,7 +267,7 @@ aws ecs create-cluster --cluster-name paperclip
 aws logs create-log-group --log-group-name /ecs/paperclip
 ```
 
-Registre a definição da tarefa usando o modelo em `docker/ecs-task-definition.json`. Antes de registrar, substitua os valores de placeholder:
+Registre a definição da tarefa usando o modelo em `docker/ecs-task-definition.json`. Antes de registrar, substitua os valores provisórios:
 
 ```bash
 sed -e "s|<ACCOUNT_ID>|$AWS_ACCOUNT_ID|g" \
@@ -453,7 +453,7 @@ aws ecs describe-services \
 
 O ECS faz uma atualização gradual: inicia uma nova tarefa, espera que ela passe nas verificações de integridade e depois drena a tarefa antiga.
 
-## Rollback
+## Reverter
 
 Se a nova implantação não estiver íntegra:
 

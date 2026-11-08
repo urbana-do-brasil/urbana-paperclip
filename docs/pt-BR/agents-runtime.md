@@ -24,7 +24,7 @@ Cada heartbeat:
 Há quatro formas de acionar um agente:
 
 - `timer`: intervalo agendado (por exemplo, a cada 5 minutos)
-- `assignment`: quando um trabalho é atribuído ou retirado pelo agente
+- `assignment`: quando um trabalho é atribuído ou assumido pelo agente
 - `on_demand`: acionamento manual (botão/API)
 - `automation`: acionamento pelo sistema para automações futuras
 
@@ -117,7 +117,7 @@ Você deverá ver mudanças ao vivo em:
 - status do agente;
 - status da execução de heartbeat;
 - tarefas e atividades causadas pelo trabalho do agente;
-- painéis relevantes de dashboard, custos e atividade.
+- visões relevantes do painel, custos e atividade.
 
 Se a conexão cair, a interface se reconectará automaticamente.
 
@@ -181,7 +181,7 @@ Sempre que possível, comece com o menor nível de privilégio e evite expor seg
 ## 10. Checklist de configuração mínima
 
 1. Escolha um adapter (por exemplo, `claude_local`, `codex_local`, `opencode_local`, `hermes_local`, `hermes_gateway`, `cursor` ou `openclaw_gateway`). Plugins externos como `droid_local` também estão disponíveis no gerenciador de adapters.
-2. Defina `cwd` como o workspace de destino (para adapters locais).
+2. Defina `cwd` como o espaço de trabalho de destino (para adapters locais).
 3. Opcionalmente, adicione um modelo de prompt (`promptTemplate`) ou use o pacote gerenciado de instruções.
 4. Configure a política de heartbeat (acionamentos por timer e/ou atribuição).
 5. Acione uma execução manual.

@@ -45,7 +45,7 @@ A criação por agentes tem controles adicionais:
 - prompts criados pelo conselho mantêm o limite geral da API de 20.000 caracteres
 - todas as rotas continuam limitadas à organização e protegidas por `enableStatusCards`
 
-Criar um card coloca imediatamente na fila a execução de compilação do Summarizer. Agentes não devem chamar os endpoints de gravação da consulta ou do resumo diretamente; esses endpoints aceitam apenas a issue de geração e a execução atribuídas ao Summarizer.
+Criar um card coloca imediatamente na fila a execução de compilação do Summarizer. Agentes não devem chamar os endpoints de gravação da consulta ou do resumo diretamente; esses endpoints aceitam apenas a tarefa de geração e a execução atribuídas ao Summarizer.
 
 Consulte a skill distribuída `status-card-query` para obter uma receita de API para agentes que pode ser copiada e colada.
 

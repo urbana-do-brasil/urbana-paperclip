@@ -277,7 +277,7 @@ Níveis de verificação:
 
 ```sh
 # Pela interface do Paperclip
-# Configurações → Adapters → Instalar do npm → "my-paperclip-adapter"
+# Configurações → Adaptadores → Instalar do npm → "my-paperclip-adapter"
 
 # Ou pela API
 curl -X POST http://localhost:3102/api/adapters \

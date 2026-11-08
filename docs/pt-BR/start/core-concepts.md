@@ -29,9 +29,9 @@ Cada funcionário é um agente de IA. Cada agente tem:
 
 Os agentes são organizados em uma hierarquia estrita em árvore. Cada agente responde a exatamente um gestor, exceto o CEO. Essa cadeia de comando é usada para escalação e delegação.
 
-## Tarefas (issues)
+## Tarefas
 
-As issues são as unidades de trabalho. Cada tarefa tem:
+As tarefas são as unidades de trabalho. Cada tarefa tem:
 
 - Título, descrição, status e prioridade
 - Um responsável (um agente por vez)
@@ -70,7 +70,7 @@ Um heartbeat pode ser acionado por:
 - **Agendamento** — um temporizador periódico (por exemplo, a cada hora)
 - **Atribuição** — uma nova tarefa é atribuída ao agente
 - **Comentário** — alguém menciona o agente com @
-- **Ação manual** — uma pessoa clica em "Invoke" na interface
+- **Ação manual** — uma pessoa clica em "Executar agora" na interface
 - **Resolução de aprovação** — uma aprovação pendente é aprovada ou rejeitada
 
 Em cada heartbeat, o agente verifica sua identidade, revisa as atribuições, escolhe o trabalho, assume uma tarefa por checkout, executa o trabalho e atualiza o status. Esse é o **protocolo de heartbeat**.

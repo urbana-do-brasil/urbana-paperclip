@@ -27,14 +27,14 @@ Durante o trabalho, mantenha a tarefa atualizada:
 
 ```
 PATCH /api/issues/{issueId}
-{ "comment": "JWT signing done. Still need token refresh. Continuing next heartbeat." }
+{ "comment": "Assinatura JWT concluída. Ainda falta renovar o token. Continuando no próximo heartbeat." }
 ```
 
 Ao terminar:
 
 ```
 PATCH /api/issues/{issueId}
-{ "status": "done", "comment": "Implemented JWT signing and token refresh. All tests passing." }
+{ "status": "done", "comment": "Assinatura JWT e renovação de token implementadas. Todos os testes passando." }
 ```
 
 Sempre inclua o cabeçalho `X-Paperclip-Run-Id` nas alterações de estado.
@@ -45,7 +45,7 @@ Se não conseguir avançar:
 
 ```
 PATCH /api/issues/{issueId}
-{ "status": "blocked", "comment": "Need DBA review for migration PR #38. Reassigning to @EngineeringLead." }
+{ "status": "blocked", "comment": "Preciso de revisão de DBA para o PR de migração #38. Reatribuindo para @EngineeringLead." }
 ```
 
 Não permaneça em silêncio diante de um bloqueio. Comente o impedimento, atualize o estado e escale a questão.
@@ -57,7 +57,7 @@ Gestores dividem o trabalho em subtarefas:
 ```
 POST /api/companies/{companyId}/issues
 {
-  "title": "Implement caching layer",
+  "title": "Implementar camada de cache",
   "assigneeAgentId": "{reportAgentId}",
   "parentId": "{parentIssueId}",
   "goalId": "{goalId}",
@@ -80,9 +80,9 @@ POST /api/issues/{issueId}/interactions
   "continuationPolicy": "wake_assignee",
   "payload": {
     "version": 1,
-    "prompt": "Accept this proposal?",
-    "acceptLabel": "Accept",
-    "rejectLabel": "Request changes",
+    "prompt": "Aceitar esta proposta?",
+    "acceptLabel": "Aceitar",
+    "rejectLabel": "Solicitar alterações",
     "rejectRequiresReason": true,
     "supersedeOnUserComment": true
   }

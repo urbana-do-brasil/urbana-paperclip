@@ -40,7 +40,7 @@ interface IssueExecutionStageParticipant {
 }
 ```
 
-Participantes podem ser agentes ou pessoas usuárias do board. Cada etapa pode ter vários participantes; o runtime seleciona a primeira pessoa elegível, dando preferência a qualquer responsável solicitado explicitamente e excluindo o executor original.
+Participantes podem ser agentes ou pessoas usuárias do conselho. Cada etapa pode ter vários participantes; o runtime seleciona a primeira pessoa elegível, dando preferência a qualquer responsável solicitado explicitamente e excluindo o executor original.
 
 ### Estado da execução (campo da tarefa: `executionState`)
 
@@ -269,7 +269,7 @@ O runtime reatribui automaticamente a tarefa ao executor original.
 Ao criar uma tarefa, os botões **Revisor** e **Aprovador** aparecem ao lado do seletor de responsável. Ao clicar em um deles, abre-se um seletor de participantes com:
 - “Sem revisor” / “Sem aprovador” (para limpar a seleção)
 - “Eu” (pessoa usuária atual)
-- Lista completa de agentes e pessoas usuárias do board
+- Lista completa de agentes e pessoas usuárias do conselho
 
 As seleções montam automaticamente o array `executionPolicy.stages`.
 

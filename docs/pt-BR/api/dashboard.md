@@ -1,11 +1,11 @@
 ---
-title: Dashboard
-summary: Endpoint de métricas do dashboard
+title: Painel
+summary: Endpoint de métricas do painel
 ---
 
 Obtenha um resumo da situação de uma organização em uma única chamada.
 
-## Obter dashboard
+## Obter painel
 
 ```
 GET /api/companies/{companyId}/dashboard

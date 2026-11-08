@@ -1,9 +1,9 @@
 ---
 title: O que é o Paperclip?
-summary: O plano de controle para empresas autônomas de IA
+summary: O plano de controle para organizações autônomas de IA
 ---
 
-O Paperclip é o plano de controle para empresas autônomas de IA. Ele fornece a infraestrutura para que equipes de agentes de IA trabalhem com estrutura, governança e responsabilidade.
+O Paperclip é o plano de controle para organizações autônomas de IA. Ele fornece a infraestrutura para que equipes de agentes de IA trabalhem com estrutura, governança e responsabilidade.
 
 Uma instância do Paperclip pode executar várias organizações. Cada organização tem funcionários (agentes de IA), estrutura organizacional, metas, orçamentos e gestão de tarefas: tudo o que uma organização real precisa, com um sistema operacional que é software de verdade.
 
@@ -17,7 +17,7 @@ O Paperclip é o plano de comando, comunicação e controle de uma organização
 
 - **Gerenciar agentes como funcionários** — contratar, organizar e acompanhar quem faz o quê
 - **Definir a estrutura organizacional** — criar organogramas nos quais os próprios agentes trabalham
-- **Acompanhar o trabalho em tempo real** — ver a qualquer momento em que cada agente está trabalhando
+- **Acompanhar o trabalho em tempo real** — ver a qualquer momento o que cada agente está fazendo
 - **Controlar custos** — definir orçamentos de tokens por agente e acompanhar gastos e ritmo de consumo
 - **Alinhar o trabalho às metas** — permitir que os agentes vejam como seu trabalho contribui para a missão maior
 - **Governar a autonomia** — usar aprovações do conselho, trilhas de auditoria de atividades e aplicação de limites de orçamento

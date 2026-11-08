@@ -21,14 +21,14 @@ Criar um segredo da organização não cria automaticamente uma variável de amb
 
 Para variáveis de ambiente de agentes e projetos:
 
-1. Crie ou vincule o segredo em `Company Settings > Secrets`.
-2. Abra o campo `Environment variables` do agente ou o campo `Env` do projeto.
+1. Crie ou vincule o segredo em `Configurações da organização > Segredos`.
+2. Abra o campo `Variáveis de ambiente` do agente ou o campo `Env` do projeto.
 3. Adicione a chave de variável de ambiente esperada pelo processo, como `GH_TOKEN` ou `OPENAI_API_KEY`.
-4. Defina a origem da linha como `Secret`, selecione o segredo armazenado e escolha `latest` ou uma versão fixada.
+4. Defina a origem da linha como `Segredo`, selecione o segredo armazenado e escolha `mais recente` ou uma versão fixada.
 
 Em runtime, o Paperclip resolve o segredo selecionado no servidor e injeta o valor sob a chave de ambiente da linha de vinculação. O nome armazenado do segredo pode ser legível para pessoas; a chave de vinculação é o que o processo do agente recebe.
 
-O ambiente do projeto se aplica a todas as execuções de issues nesse projeto. Quando uma chave de ambiente do projeto coincide com uma chave do agente, o valor do projeto prevalece antes de o Paperclip injetar suas próprias variáveis de runtime `PAPERCLIP_*`.
+O ambiente do projeto se aplica a todas as execuções de tarefas nesse projeto. Quando uma chave de ambiente do projeto coincide com uma chave do agente, o valor do projeto prevalece antes de o Paperclip injetar suas próprias variáveis de runtime `PAPERCLIP_*`.
 
 Separadamente dos vínculos de ambiente, o **próprio servidor** consome um segredo da organização chamado `GITHUB_TOKEN`, `GH_TOKEN` ou `PAPERCLIP_GITHUB_TOKEN` (pelo nome, sem exigir vinculação) para autenticar operações Git no servidor — clonagem de repositórios privados do GitHub em espaços de trabalho de projeto apenas com repositório e atualização das referências base de worktrees. Consulte [Espaços de trabalho de execução](../guides/board-operator/execution-workspaces-and-runtime-services.md#private-repositories-and-repo-only-project-workspaces).
 
@@ -164,7 +164,7 @@ Um *cofre de provedor* é uma configuração nomeada no escopo da organização 
 
 ### Onde configurar
 
-Abra `Organization Settings → Secrets` na interface do conselho e acesse a aba `Provider vaults`. A partir dela você pode:
+Abra `Configurações da organização → Segredos` na interface do conselho e acesse a aba `Cofres de provedores`. A partir dela você pode:
 
 - Criar um cofre para qualquer família de provedor compatível.
 - Editar a configuração sem segredos de um cofre existente.
@@ -227,9 +227,9 @@ Cofres de provedor AWS podem importar entradas existentes do AWS Secrets Manager
 
 Fluxo do operador na interface do conselho:
 
-1. Abra `Company Settings -> Secrets`.
+1. Abra `Configurações da organização > Segredos`.
 2. Confirme que pelo menos um cofre de provedor AWS está em `ready` ou `warning`.
-3. Na aba `Secrets`, escolha `Import from vault`.
+3. Na aba `Segredos`, escolha `Importar do cofre`.
 4. Selecione um cofre AWS, pesquise o inventário remoto e carregue mais páginas conforme necessário.
 5. Marque as linhas a importar, revise ou edite nome e chave no Paperclip e envie.
 6. Revise o resumo de resultados das linhas criadas, ignoradas e com falha.

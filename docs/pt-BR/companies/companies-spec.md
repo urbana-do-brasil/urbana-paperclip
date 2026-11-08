@@ -581,7 +581,7 @@ lean-dev-shop/
     └── review/SKILL.md
 ```
 
-Optional:
+Opcional:
 
 ```text
 .paperclip.yaml

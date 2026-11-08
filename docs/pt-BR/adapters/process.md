@@ -39,9 +39,9 @@ Cada processo filho também recebe duas variáveis reservadas, geradas pelo serv
 | Variável | Descrição |
 |----------|-----------|
 | `PAPERCLIP_COMMUNICATION_LOCALE` | Idioma validado da comunicação humana (`pt-BR` ou `en`). Valores históricos ou inválidos usam `pt-BR`. |
-| `PAPERCLIP_COMMUNICATION_GUIDANCE` | Orientação curta de idioma e estilo de interação para o wake atual. Não inclui descrição da tarefa, comentários ou outro texto do wake. |
+| `PAPERCLIP_COMMUNICATION_GUIDANCE` | Orientação curta de idioma e estilo de interação para o despertar atual. Não inclui descrição da tarefa, comentários ou outro texto do despertar. |
 
-A orientação pede que o runtime personalizado escreva mensagens humanas no idioma selecionado e preserve código, comandos, protocolos, citações e requisitos de saída exata como estão. ASD-STE100 Simplified Technical English aparece somente em wakes em inglês quando a flag experimental de estilo de interação está ativa; wakes em português recebem orientação concisa em português.
+A orientação pede que o runtime personalizado escreva mensagens humanas no idioma selecionado e preserve código, comandos, protocolos, citações e requisitos de saída exata como estão. ASD-STE100 Simplified Technical English aparece somente em despertares em inglês quando a flag experimental de estilo de interação está ativa; despertares em português recebem orientação concisa em português.
 
 O adapter `process` não acrescenta essa orientação aos argumentos do comando nem à entrada padrão. Um framework personalizado que chama um modelo deve ler essas variáveis e incluir a orientação na entrada que monta para o modelo. `PAPERCLIP_WAKE_PAYLOAD_JSON` foi aposentada e não é injetada; obtenha os detalhes da tarefa pelo canal de entrada ou pela API já usados pelo framework personalizado.
 

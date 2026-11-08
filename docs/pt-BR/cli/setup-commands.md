@@ -96,7 +96,7 @@ pnpm paperclipai configure --section storage
 fallback para segredos que não apontam para um cofre específico da organização.
 Cofres de provedores por organização (instâncias nomeadas, escolha do cofre
 padrão, vários cofres por provedor e futuras integrações GCP/Vault) ficam na
-interface do conselho em `Company Settings → Secrets → Provider vaults` e na API
+interface do conselho em `Configurações da organização → Segredos → Cofres de provedores` e na API
 `/api/companies/{companyId}/secret-provider-configs`.
 
 ## `paperclipai env`

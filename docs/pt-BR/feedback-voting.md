@@ -38,7 +38,7 @@ Exibe um resumo colorido com a contagem de votos, detalhes de cada rastreamento 
 # CLI instalada
 paperclipai feedback report
 
-# Use outro servidor ou outra empresa
+# Use outro servidor ou outra organização
 npx paperclipai feedback report --api-base http://127.0.0.1:3000 --company-id <company-id>
 
 # Inclua no relatório os dumps dos payloads brutos
@@ -47,7 +47,7 @@ pnpm paperclipai feedback report --payloads
 
 ### Endpoints da API
 
-Todos os endpoints exigem acesso de usuário do board (concedido automaticamente no desenvolvimento local).
+Todos os endpoints exigem acesso de pessoa usuária do conselho (concedido automaticamente no desenvolvimento local).
 
 **Listar votos de uma tarefa:**
 ```bash
@@ -59,7 +59,7 @@ curl http://127.0.0.1:3102/api/issues/<issueId>/feedback-votes
 curl 'http://127.0.0.1:3102/api/issues/<issueId>/feedback-traces?includePayload=true'
 ```
 
-**Listar todos os rastreamentos de uma empresa:**
+**Listar todos os rastreamentos de uma organização:**
 ```bash
 curl 'http://127.0.0.1:3102/api/companies/<companyId>/feedback-traces?includePayload=true'
 ```
@@ -168,7 +168,7 @@ Quando a preferência da instância está configurada para perguntar, uma caixa 
 - **Manter local** — o voto é armazenado apenas localmente (`sharedWithLabs: false`)
 - **Compartilhar este voto** — o voto é marcado para compartilhamento (`sharedWithLabs: true`)
 
-Sua preferência é salva por empresa. Você pode alterá-la a qualquer momento nas configurações de feedback. Votos marcados como **Manter local** nunca são colocados na fila de envio remoto.
+Sua preferência é salva por organização. Você pode alterá-la a qualquer momento nas configurações de feedback. Votos marcados como **Manter local** nunca são colocados na fila de envio remoto.
 
 ## Ciclo de vida dos dados
 

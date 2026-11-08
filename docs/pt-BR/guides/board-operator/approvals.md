@@ -27,7 +27,7 @@ pending -> approved
 
 1. Um agente cria uma solicitação de aprovação
 2. Ela aparece na sua fila de aprovações (página de aprovações na interface)
-3. Você revisa os detalhes da solicitação e as issues vinculadas
+3. Você revisa os detalhes da solicitação e as tarefas vinculadas
 4. Você pode:
    - **Aprovar** — a ação prossegue
    - **Rejeitar** — a ação é negada
@@ -38,7 +38,7 @@ pending -> approved
 Na página de aprovações, você pode consultar todas as aprovações pendentes. Cada uma mostra:
 
 - Quem a solicitou e por quê
-- Issues vinculadas (contexto da solicitação)
+- Tarefas vinculadas (contexto da solicitação)
 - O payload completo (por exemplo, a configuração proposta para o agente contratado)
 
 ## Poderes de intervenção do conselho

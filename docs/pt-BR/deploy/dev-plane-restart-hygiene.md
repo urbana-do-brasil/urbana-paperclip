@@ -1,8 +1,8 @@
-# Cuidados com implantação e reinicialização do plano de desenvolvimento
+# Cuidados com implantação e reinicialização do plano de controle de desenvolvimento
 
-Runbook operacional para reiniciar um plano de controle Paperclip de desenvolvimento ou compartilhado sem interromper trabalho de agentes em andamento. Escrito após o aumento de falhas de 2026-07-06/07, quando uma janela de implantação com muitas reinicializações foi a maior causa individual de tarefas com falha.
+Procedimento operacional para reiniciar um plano de controle Paperclip de desenvolvimento ou compartilhado sem interromper trabalho de agentes em andamento. Escrito após o aumento de falhas de 2026-07-06/07, quando uma janela de implantação com muitas reinicializações foi a maior causa individual de tarefas com falha.
 
-> Relato histórico de incidente upstream: o estado do drain descrito abaixo reflete julho de 2026. Verifique a capacidade atual de drain antes de usar este runbook.
+> Relato histórico de incidente upstream: o estado da drenagem descrito abaixo reflete julho de 2026. Verifique a capacidade atual de drenagem antes de usar este procedimento.
 
 ## Por que isso importa
 
@@ -17,7 +17,7 @@ Cada reinicialização do plano de controle encerra abruptamente qualquer execu�
    SELECT count(*) FROM heartbeat_runs WHERE status = 'running';
    ```
 
-3. **Faça drain antes de reiniciar (em breve).** O drain gracioso por SIGTERM — parar de aceitar novas execuções, deixar as execuções em andamento terminarem ou salvarem um checkpoint e então encerrar — está sendo adicionado em PAP-12930. Quando estiver disponível, envie SIGTERM e aguarde o drain em vez de reiniciar abruptamente. Até lá, a regra 2 funciona como seu drain.
+3. **Faça a drenagem antes de reiniciar (em breve).** A drenagem graciosa por SIGTERM — parar de aceitar novas execuções, deixar as execuções em andamento terminarem ou salvarem um checkpoint e então encerrar — está sendo adicionada em PAP-12930. Quando estiver disponível, envie SIGTERM e aguarde a drenagem em vez de reiniciar abruptamente. Até lá, a regra 2 funciona como sua drenagem.
 4. **Após qualquer reinicialização, avalie o impacto.** Veja as consultas de detecção abaixo; confirme que execuções perdidas foram repetidas com sucesso ou recebem acompanhamento manual.
 
 ## Como identificar uma sequência de reinicializações
