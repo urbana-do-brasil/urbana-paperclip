@@ -511,7 +511,7 @@ test.describe.serial("native chat adapter UI", () => {
       if (provider.provider !== "slack") {
         await expect(
           page.getByRole("heading", {
-            name: "Link the account you’re testing",
+            name: /Link the account you.re testing/i,
           }),
         ).toBeVisible();
         await expect(
