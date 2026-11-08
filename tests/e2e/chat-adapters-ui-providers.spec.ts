@@ -88,7 +88,7 @@ async function exerciseGitHubReviewSetup(page: Page, mock: ChatMock, seed: Seed,
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   await page.getByRole("button", { name: "Resume", exact: true }).click();
   await expect.poll(() => mock.lifecycleActions).toEqual(["pause", "resume"]);
-  await page.getByRole("button", { name: /replay failed delivery/i }).click();
+  await page.getByRole("button", { name: /replay failed .*delivery/i }).click();
   await expect.poll(() => mock.replayedDelivery).toBe(true);
   mock.setStatus("attention");
   await page.reload();
