@@ -280,5 +280,6 @@ Os três ajustes documentais recomendados no follow-up foram aplicados:
 histórico de 3.11i/j e a data do bloco 7.3 em `verification.md` foram
 corrigidos. O checkbox 7.4 foi marcado como **“revisão realizada, com
 bloqueadores externos registrados”**, não como aceitação integral. A mudança
-não foi arquivada e a feature não é declarada concluída enquanto 5.2, 5.3, 6.4
-e 7.1 permanecerem abertos.
+não foi arquivada e a feature não é declarada concluída enquanto 7.1 (CI remota)
+permanecer aberto. 5.2/5.3 foram aprovadas depois deste parecer com o risco
+OpenClaw/Docker aceito; 6.4 foi qualificada com o runtime OpenCode local.
