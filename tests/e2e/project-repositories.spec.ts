@@ -10,7 +10,7 @@ test("project creation and repository configuration persist on a short mobile vi
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("textbox", { name: "Project name" })).toBeFocused();
   await dialog.getByRole("textbox", { name: "Project name" }).fill("Repository acceptance");
-  await expect(dialog.getByText("Source repos", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Source repositories", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Goal", { exact: true })).toHaveCount(0);
   await expect(dialog.getByPlaceholder("https://github.com/org/repo")).toHaveCount(0);
   await dialog.getByRole("button", { name: "Create project", exact: true }).click();

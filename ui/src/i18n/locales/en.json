@@ -8807,7 +8807,8 @@
       "gitRepo": "Remote git repo",
       "gitRepoDescription": "A repo URL with optional refs and local checkout.",
       "remoteManaged": "Remote-managed workspace",
-      "remoteManagedDescription": "A hosted workspace tracked by external reference."
+      "remoteManagedDescription": "A hosted workspace tracked by external reference.",
+      "managed": "Managed by the platform"
     },
     "fields": {
       "workspaceName": "Workspace name",

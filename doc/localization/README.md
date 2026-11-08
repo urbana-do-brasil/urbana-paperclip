@@ -102,9 +102,9 @@ CI remota (7.1) e revisão independente final (7.4).
 | 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
 | 3. Interface web por jornadas | 3.8 foi concluída nas jornadas planejadas; a matriz browser é representativa, com APIs simuladas. 3.10 está concluída com browser 9/9 e limites declarados. 3.11 tem browser de host para PluginManager/PluginSettings/shell da Wiki e cobertura por componente para Workspace Changes/fluxos internos. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas. 4.3 foi concluída; a auditoria integral cobre os 459 leafs com assinaturas estáveis e zero descrição humana não localizada. A tabela raiz de 75 comandos está fixada em PT-BR/en e 164 leafs têm paridade de subprocesso. Contratos estruturados (4.4) estão concluídos, incluindo a fronteira de subprocesso. O typecheck recursivo final passou com EXIT 0. |
-| 5. Ajuda e documentação pública bilíngue | 71 tópicos públicos têm fontes EN/PT-BR e passam pelo gate de cobertura. O smoke de pipelines passou em ambiente descartável, incluindo HTTP 409 e rotina com agente simulado; a revisão humana permanece pendente. |
+| 5. Ajuda e documentação pública bilíngue | 71 tópicos públicos têm fontes EN/PT-BR e passam pelo gate de cobertura. O smoke de pipelines passou em ambiente descartável, incluindo HTTP 409 e rotina com agente simulado; a revisão semântica independente foi aprovada e a validação OpenClaw/Docker real foi dispensada como risco aceito. |
 | 6. Comunicação dos agentes | 6.1–6.3 foram verificadas, incluindo contratos determinísticos dos 15 adapters ativos e uma jornada descartável com duas contas PT-BR/en. 6.4 qualificou o runtime OpenCode local (`opencode_local` + `opencode-go/deepseek-v4.1-flash`) em PT-BR/en; os demais runtimes não são declarados suportados e não contam como cobertura. |
-| 7. Integração, regressão e revisão final | Checks locais 7.1a–e estão integrados; o job de localização de PR ainda requer execução remota. O mapa 7.2 foi reconciliado em 2026-11-07 contra 179 rotas, 8 flags, 35 registros/55 arquivos de CLI, 16 adapters e 71 tópicos. 7.3 foi executada com typecheck recursivo, build, gates e browser verdes; a suíte integral teve 6 falhas ambientais classificadas. A revisão independente final 7.4 foi realizada e o parecer é aprovado com ressalvas para a entrega interna; 5.2/5.3 foram aprovadas com o risco OpenClaw/Docker aceito e 7.1 aguarda a CI remota. |
+| 7. Integração, regressão e revisão final | Checks locais 7.1a–e estão integrados e o job `Localization` passou na CI remota do PR #1. O mapa 7.2 foi reconciliado em 2026-11-07 contra 179 rotas, 8 flags, 35 registros/55 arquivos de CLI, 16 adapters e 71 tópicos. 7.3 foi executada com typecheck recursivo, build, gates e browser; a CI completa ainda tem falhas ambientais do fork, e a correção dos testes introduzidos está em andamento. A revisão independente final 7.4 foi realizada e o parecer é aprovado com ressalvas para a entrega interna. |
 
 ## Continuação — interações de conexão (3.4d3c2)
 
@@ -472,7 +472,8 @@ allowlists. Planos internos e a fixture de desenvolvimento MCP não são
 incluídos. `scripts/check-localized-help.mjs` valida os pares de fontes e seus
 padrões de inclusão; o bundle e a navegação também foram verificados em browser.
 Essas verificações não substituem a revisão semântica dos guias nem a validação
-operacional dos comandos documentados, que permanecem pendentes em 5.2/5.3.
+operacional dos comandos documentados; a revisão semântica foi aprovada e a
+validação OpenClaw/Docker real foi dispensada pelo operador como risco aceito.
 
 ### Continuação — perfil público de usuário (3.8c2)
 

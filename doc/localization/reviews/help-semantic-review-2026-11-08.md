@@ -1,9 +1,9 @@
 # Revisão semântica independente da ajuda bilíngue — 5.2/5.3
 
-**Data:** 2026-11-08  
-**Branch:** `codex/localize-paperclip-pt-br`  
-**Commit revisado:** `d201dfda8` (o conteúdo de `docs/` e `ui/src/help/` não mudou entre `3f917cbad` e este commit)  
-**Escopo:** 71 tópicos públicos de `ui/src/help/topics.json` e seus pares EN/PT-BR, tasks 5.2/5.3, glossário de `doc/localization/README.md`, evidências de `doc/localization/verification.md` e `docs/docs.json`. No checkpoint atual, restam 5.2, 5.3 e 7.1 em `tasks.md`.  
+**Data:** 2026-11-08
+**Branch:** `codex/localize-paperclip-pt-br`
+**Commit revisado:** `d201dfda8` (o conteúdo de `docs/` e `ui/src/help/` não mudou entre `3f917cbad` e este commit)
+**Escopo:** 71 tópicos públicos de `ui/src/help/topics.json` e seus pares EN/PT-BR, tasks 5.2/5.3, glossário de `doc/localization/README.md`, evidências de `doc/localization/verification.md` e `docs/docs.json`. No checkpoint atual, restam 5.2, 5.3 e 7.1 em `tasks.md`.
 **Método:** comparação integral dos pares, leitura dos guias de operador, deployment, adapters, CLI, API e agentes; conferência de comandos, flags, variáveis, identificadores, links e termos de UI; nenhum comando de produto foi executado. A revisão independente de 2026-11-07 já registrava 5.2/5.3 abertas por ausência de revisão humana/editorial; este parecer executa essa revisão e localiza os desvios concretos.
 
 ## Veredito

@@ -1,8 +1,8 @@
 # Rollout e rollback da localização PT-BR/en
 
-**Change:** `localize-paperclip-pt-br`  
-**Branch:** `codex/localize-paperclip-pt-br`  
-**Estado:** implementação e verificação local; **não implantada**.  
+**Change:** `localize-paperclip-pt-br`
+**Branch:** `codex/localize-paperclip-pt-br`
+**Estado:** implementação e verificação local; **não implantada**.
 **Data:** 2026-11-07.
 
 ## 1. Escopo operacional
@@ -133,13 +133,14 @@ conteúdo.
 
 ## 6. Limites conhecidos desta entrega
 
-- **Revisão humana dos guias (5.2/5.3):** os 71 pares e os gates estruturais
-  estão verificados; a revisão semântica/editorial humana permanece pendente.
-- **Qualificação real de runtimes (6.4):** transporte e prompts estão
-  verificados; respostas reais por runtime/modelo dependem de credenciais
-  autorizadas e dados descartáveis.
-- **CI remota (7.1):** o job foi integrado e os gates locais/negativos passaram;
-  a execução verde no workflow remoto ainda não foi observada.
+- **Revisão humana dos guias (5.2/5.3):** os 71 pares, os gates estruturais e a
+  revisão semântica independente foram aprovados; a validação OpenClaw/Docker
+  real foi dispensada pelo operador e é risco aceito, não cobertura.
+- **Qualificação real de runtimes (6.4):** o runtime local `opencode_local`
+  com `opencode-go/deepseek-v4.1-flash` foi qualificado em PT-BR/en; os demais
+  runtimes não são declarados suportados e não contam como cobertura.
+- **CI remota (7.1):** o job `Localization` passou no PR #1 (run 42513087212);
+  o workflow `ci` reutilizável do fork tem falhas ambientais não relacionadas.
 - **Clipboard real e leitor de tela (3.10l):** verificados por markup e testes
   de componente; não houve homologação com tecnologia assistiva real.
 - **`native-session-resume`:** um caso permanece bloqueado no ambiente por

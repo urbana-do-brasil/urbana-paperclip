@@ -1055,7 +1055,7 @@
         "tests/localization-browser/locale.spec.ts",
         "scripts/__tests__/check-localized-help.test.mjs"
       ],
-      "limits": "5.1 e 5.4 verificadas, incluindo 132 arquivos-fonte distribuídos, navegação pública PT-BR/en e renderização segura. Revisão semântica humana e validação operacional permanecem pendentes em 5.2/5.3."
+      "limits": "5.1 e 5.4 verificadas, incluindo 132 arquivos-fonte distribuídos, navegação pública PT-BR/en e renderização segura. A revisão semântica independente de 5.2/5.3 foi aprovada; a validação OpenClaw/Docker real foi dispensada pelo usuário como risco aceito e não é contada como cobertura."
     },
     {
       "id": "agent-language",
@@ -1107,7 +1107,7 @@
         "7.3: typecheck recursivo EXIT 0 em 36 invocações; build EXIT 0; check:localization 19 Node + 752/752 Vitest; gates de UI EXIT 0; browser 12/12 e experimental 9/9.",
         "7.3 suíte integral no snapshot: 18.413 aprovados, 6 falhas ambientais (5 broker-client por caminho de socket e 1 native-session-resume por bwrap/loopback), 76 ignorados em 873 arquivos."
       ],
-      "limits": "O job remoto `Localization` passou no PR #1 (60 arquivos/752 testes, 19 Node, gate de fontes com 556 arquivos com base). Os cinco casos negativos do escopo 7.1 estão cobertos localmente. O workflow `ci` reutilizável do fork apresentou falhas ambientais não relacionadas (arquivo de teste ausente no base e suítes de runner); isso não afeta o gate de localização. O scanner de fontes é heurístico, o contrato JSON é representativo e links sem âncoras não são verificados; docs/docs.json não é lido pelo gate."
+      "limits": "O job remoto `Localization` passou no PR #1 (60 arquivos/752 testes, 19 Node, gate de fontes com 556 arquivos com base). Os cinco casos negativos do escopo 7.1 estão cobertos localmente. O workflow `ci` reutilizável do fork apresentou falhas ambientais não relacionadas (arquivo de teste ausente no base e suítes de runner); isso não afeta o gate de localização. O scanner de fontes é heurístico, o contrato JSON é representativo e links sem âncoras não são verificados; docs/docs.json não é lido pelo gate. A revisão independente da PR #1 encontrou falhas introduzidas em testes de UI, servidor e e2e; as correções locais passaram (UI 798/9146, servidor 86/86, e2e direcionados 5/5) e a nova execução remota deve confirmar. As falhas do workflow `ci` que restarem devem ser classificadas separadamente."
     },
     {
       "id": "cli-preferences",
@@ -1936,6 +1936,6 @@
     "totalTasks": 544,
     "branch": "codex/localize-paperclip-pt-br",
     "deployed": false,
-    "reason": "Em 2026-11-08, todos os 544 checkboxes foram concluídos. A entrega inclui a spec experimental 9/9, a revisão semântica independente da ajuda aprovada com risco OpenClaw/Docker aceito, a qualificação real do OpenCode local em PT-BR/en com 2/2, a reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos, a regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12, a revisão independente final e o job remoto Localization verde no PR #1 (60 arquivos/752 testes, 19 Node, 556 fontes com base). Limites declarados: production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki, clipboard/leitor de tela reais e validação OpenClaw/Docker não executada (risco aceito). O job ci reutilizável do fork teve falhas ambientais não relacionadas; o gate de localização passou."
+    "reason": "Em 2026-11-08, todos os 544 checkboxes foram concluídos. A entrega inclui a spec experimental 9/9, a revisão semântica independente da ajuda aprovada com risco OpenClaw/Docker aceito, a qualificação real do OpenCode local em PT-BR/en com 2/2, a reconciliação de 179 rotas/8 flags/35 registros/55 arquivos/16 adapters/71 tópicos, a regressão integrada com typecheck recursivo EXIT 0, build EXIT 0, check:localization 752/752 e browser 12/12, a revisão independente final e o job remoto Localization verde no PR #1 (60 arquivos/752 testes, 19 Node, 556 fontes com base). Limites declarados: production mobile, host de plugins no shell production, Workspace Changes/fluxos internos da Wiki, clipboard/leitor de tela reais e validação OpenClaw/Docker não executada (risco aceito). O job ci reutilizável do fork teve falhas ambientais não relacionadas; o gate de localização passou. A revisão independente da PR #1 encontrou falhas introduzidas em testes legados de UI, servidor e e2e; elas foram corrigidas (UI 798/9146, servidor 86/86, e2e direcionados 5/5, check:localization 752/752, typecheck/build verdes) e a CI remota final deve ser repetida."
   }
 }

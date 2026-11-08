@@ -160,22 +160,15 @@ export function completedActivitySummary(
     parts
       .map((p, i) => (i ? p.charAt(0).toLowerCase() + p.slice(1) : p))
       .join(", ");
-  const fullLabel = values.length > 3 && translate
-    ? translate("taskDetail.chatTranscript.providerActivity.experimental.activityGroups.andMore", {
-        first: values[0]!.label,
-        second: values[1]!.label,
-      })
-    : values.length > 3
-      ? `${join(values.slice(0, 2).map((v) => v.label))}, and more`
-      : join(values.map((v) => v.label));
-  const label = values.length > 3 && translate
-    ? translate("taskDetail.chatTranscript.providerActivity.experimental.activityGroups.andMore", {
-        first: values[0]!.label,
-        second: values[1]!.label,
-      })
-    : values.length > 3
-      ? `${join(values.slice(0, 2).map((v) => v.label))}, and more`
-      : fullLabel;
+  const fullLabel = join(values.map((v) => v.label));
+  const label = values.length > 3
+    ? translate
+      ? translate("taskDetail.chatTranscript.providerActivity.experimental.activityGroups.andMore", {
+          first: values[0]!.label,
+          second: values[1]!.label,
+        })
+      : `${join(values.slice(0, 2).map((v) => v.label))}, and more`
+    : fullLabel;
   return {
     label,
     fullLabel,

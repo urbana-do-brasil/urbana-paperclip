@@ -433,7 +433,11 @@ export function ProjectWorkspaceDetail() {
     updateWorkspace.mutate(patch);
   };
 
-  const sourceTypeDescriptionKey = SOURCE_TYPE_OPTIONS.find((option) => option.value === form.sourceType)?.descriptionKey;
+  const visibleSourceTypeOptions = hideHostPaths
+    ? SOURCE_TYPE_OPTIONS.filter((option) => option.value === "git_repo" || option.value === "remote_managed")
+    : SOURCE_TYPE_OPTIONS;
+  const selectedSourceType = visibleSourceTypeOptions.find((option) => option.value === form.sourceType);
+  const sourceTypeDescriptionKey = selectedSourceType?.descriptionKey;
   const handleTabChange = (tab: ProjectWorkspaceTab) => {
     const workspacePath = projectWorkspaceUrl(project, routeWorkspaceId);
     if (isProjectWorkspacePluginTab(tab)) {
@@ -543,7 +547,12 @@ export function ProjectWorkspaceDetail() {
                     setForm((current) => current ? { ...current, sourceType: event.target.value as ProjectWorkspaceSourceType } : current)
                   }
                 >
-                  {SOURCE_TYPE_OPTIONS.map((option) => (
+                  {hideHostPaths && !selectedSourceType && (
+                    <option value={form.sourceType} disabled>
+                      {t("projectWorkspaceDetail.sourceTypes.managed")}
+                    </option>
+                  )}
+                  {visibleSourceTypeOptions.map((option) => (
                     <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                   ))}
                 </select>

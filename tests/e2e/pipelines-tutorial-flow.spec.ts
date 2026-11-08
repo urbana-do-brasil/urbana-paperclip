@@ -471,7 +471,7 @@ test.describe("Pipelines tutorial UI flow", () => {
     await expect(contentTypeVariable).toBeVisible();
     await contentTypeVariable.locator("input").first().fill("Content type");
     await contentTypeVariable.getByRole("combobox").first().click();
-    await page.getByRole("option", { name: "select" }).click();
+    await page.getByRole("option", { name: "Options list" }).click();
     await contentTypeVariable.locator("input:not([type='checkbox'])").nth(1).fill("Blog post, Changelog entry, Launch tweet");
     await page.getByRole("button", { name: "Save stage" }).click();
     await expect(page.getByText("Stage saved").first()).toBeVisible();
@@ -569,7 +569,7 @@ test.describe("Pipelines tutorial UI flow", () => {
     const tweetDragged = await dragCardToColumn(page, "Launch tweet", "Drafting", "Published");
     const overrideReason = "Tweet can skip review because the blog post already covers the announcement.";
     if (tweetDragged) {
-      await expect(page.getByRole("heading", { name: "This skips the normal flow" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "This move skips the normal flow" })).toBeVisible();
       await page.getByLabel("Reason").fill(overrideReason);
       await expect(page.getByRole("button", { name: "Override and move" })).toBeEnabled();
       await page.getByRole("button", { name: "Override and move" }).click();

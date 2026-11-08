@@ -278,7 +278,7 @@ test("AgentMail setup and email work through the normal task conversation", asyn
   await expect(page.getByRole("heading", { name: inbox.address, exact: true })).toBeVisible();
   const navigation = page.getByRole("navigation", { name: "Chat connection" });
   await navigation.getByRole("link", { name: "Access", exact: true }).click();
-  await expect(page.getByText("Any human in the organization", { exact: true })).toBeVisible();
+  await expect(page.getByText("Any human in the company", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Reconnect inbox", exact: true })).toHaveCount(0);
   await navigation.getByRole("link", { name: "Conversations", exact: true }).click();
   await expect(page.getByRole("list", { name: "Conversations" })).toBeVisible();

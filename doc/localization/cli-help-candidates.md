@@ -283,4 +283,3 @@ As ocorrências repetidas por path foram: 131 summaries com texto igual entre id
 ### whoami (1)
 
 - `whoami`
-

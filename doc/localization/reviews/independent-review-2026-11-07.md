@@ -1,7 +1,7 @@
 # Revisão independente — `localize-paperclip-pt-br`
 
-**Data:** 2026-11-07  
-**Branch revisada:** `codex/localize-paperclip-pt-br` (`HEAD da284b800`)  
+**Data:** 2026-11-07
+**Branch revisada:** `codex/localize-paperclip-pt-br` (`HEAD da284b800`)
 **Veredito:** **REPROVADO para aceitação integral**. As fatias verificadas têm evidência relevante, mas a própria mudança continua parcial e vários requisitos normativos ainda não foram demonstrados.
 
 ## Escopo e método

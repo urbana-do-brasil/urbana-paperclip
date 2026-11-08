@@ -924,6 +924,7 @@ describe("agent live run routes", () => {
     // always comes from the authenticated caller.
     expect(mockHeartbeatService.wakeup).toHaveBeenCalledWith(routeAgentId, {
       manualUserWake: true,
+      communicationOriginRunId: null,
       source: "on_demand",
       triggerDetail: "manual",
       reason: "issue_assigned",
@@ -956,6 +957,7 @@ describe("agent live run routes", () => {
     expect(res.status, JSON.stringify(res.body)).toBe(202);
     expect(mockHeartbeatService.wakeup).toHaveBeenCalledWith(routeAgentId, {
       manualUserWake: true,
+      communicationOriginRunId: null,
       source: "on_demand",
       triggerDetail: "manual",
       requestedByActorType: "user",

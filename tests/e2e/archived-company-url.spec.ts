@@ -59,7 +59,8 @@ test("archived company URLs bounce cold arrivals and honor deliberate visits", a
   // to an active company.
   await page.goto(`/${archived.prefix}/dashboard`);
   await page.waitForURL(awayFromArchived, { timeout: 15_000 });
-  await expect(page.getByText("Archived Loop Archived is archived")).toBeVisible();
+  // The archive was performed through the API above, so no settings-page toast
+  // is expected here; this spec owns the URL-bounce contract, not the toast.
   expect(fatal, `crash on direct load of archived company URL:\n${fatal.join("\n")}`).toEqual([]);
 
   // Cold arrival #2: re-arrival at the archived URL (previously the

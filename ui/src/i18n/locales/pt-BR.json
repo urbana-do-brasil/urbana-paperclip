@@ -9019,7 +9019,8 @@
       "gitRepo": "Repositório Git remoto",
       "gitRepoDescription": "URL de repositório com referências opcionais e cópia local.",
       "remoteManaged": "Espaço de trabalho remoto gerenciado",
-      "remoteManagedDescription": "Um espaço hospedado e identificado por uma referência externa."
+      "remoteManagedDescription": "Um espaço hospedado e identificado por uma referência externa.",
+      "managed": "Gerenciado pela plataforma"
     },
     "fields": {
       "workspaceName": "Nome do espaço de trabalho",

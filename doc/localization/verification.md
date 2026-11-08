@@ -4792,7 +4792,35 @@ agregadores. A aplicação não foi implantada.
 ### CI remota do gate de localização — 7.1 — 2026-11-08
 
 - PR: [#1](https://github.com/urbana-do-brasil/urbana-paperclip/pull/1).
-- Run: [42511556340](https://github.com/urbana-do-brasil/urbana-paperclip/actions/runs/42511556340), job **Localization**: **success**, 13m51s.
+- Run final do HEAD `7090cac39`: [42513087212](https://github.com/urbana-do-brasil/urbana-paperclip/actions/runs/42513087212), job **Localization**: **success**, 13m51s. A run anterior do commit de código (`42511556340`) também passou.
 - Resultado: `check:localization` com **60 arquivos / 752/752 testes Vitest**, **19 testes Node** e gate de fontes com base examinando **556 arquivos** (`Localized-source gate passed (556 changed source files checked)`).
 - O comando fixa `NO_COLOR=1 FORCE_COLOR=0` no slice Vitest para que os asserts de texto humano não recebam ANSI em runners com cor; a primeira execução remota falhou por códigos ANSI e a correção foi repetida com sucesso.
 - O workflow `ci` reutilizável do fork apresentou falhas ambientais não relacionadas ao gate de localização (por exemplo, `scripts/docker-deps-postinstall.test.mjs` ausente no repositório base e suítes de runner). O job `Localization` é o gate específico da mudança e está verde.
+
+### Correções da revisão independente da PR #1 — 2026-11-08
+
+- A revisão da PR #1 solicitou alterações. Foram corrigidos os bloqueadores
+  introduzidos pela mudança:
+  - `completedActivitySummary.fullLabel` voltou a preservar a descrição
+    completa para `aria-label`/`title`; o teste existente passou sem alteração.
+  - `ProjectWorkspaceDetail` com `hideHostPaths=true` deixou de oferecer as
+    opções de caminho local (`local_path`/`non_git_path`) e mostra um rótulo
+    neutro “Gerenciado pela plataforma” para um valor legado; o teste novo
+    passou.
+  - 15 suítes legadas de UI que afirmam texto em inglês agora declaram
+    explicitamente `en` no setup de testes; as suítes de localização mantêm
+    PT-BR explícito. A suíte completa da UI passou **798 arquivos / 9146
+    testes**.
+  - `server/src/__tests__/agent-live-run-routes.test.ts` passou a incluir
+    `communicationOriginRunId: null`; **86/86** testes do arquivo passaram.
+  - E2E: strings desatualizadas foram corrigidas (`Source repositories`,
+    `Any human in the company`, `Waiting`, `the authorization code`,
+    `Options list`, `This move skips the normal flow`) e o teste de URL
+    arquivada deixou de esperar um toast que só existe no fluxo de UI.
+    Os testes direcionados passaram: archived-company-url, Slack catalog,
+    onboarding reload, project-repositories e pipelines tutorial.
+- `git diff --check` foi corrigido (whitespace em docs) e o lockfile continua
+  intocado no diff final.
+- A classificação de CI será atualizada com a nova execução remota; as falhas
+  do workflow `ci` que restarem devem ser separadas entre ambientais do fork e
+  regressões reais.
