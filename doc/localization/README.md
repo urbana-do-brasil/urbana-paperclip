@@ -91,20 +91,19 @@ e1 (coleção; dividida em e1a para busca/filtros/preferências e e1b para
 onboarding/linhas/árvore/estados), e2 (detalhe), e3 (atividade/documentos/anexos),
 e4 (integração com issues) e e5 (gates/navegação). O detalhe e2 foi subdividido
 em e2a (moldura/status/cópia) e e2b (propriedades/relações). O checklist do
-OpenSpec está em **544/544 tarefas**, sem itens abertos.
-agregadoras. 3.8, 4.3, 4.3bd, 7.2 e 7.3 foram fechadas após auditoria; seguem
-trabalho em ajuda pública (revisão humana), comunicação real de agentes (6.4),
-CI remota (7.1) e revisão independente final (7.4).
+OpenSpec está em **544/544 tarefas**, sem itens abertos. 3.8, 4.3, 4.3bd,
+5.2/5.3, 6.4, 7.1, 7.2, 7.3 e 7.4 foram fechadas; os limites declarados
+permanecem no mapa.
 
 | Etapa | Situação |
 | --- | --- |
 | 1. Fundação e validação de localização | Concluída. |
-| 2. Primeira jornada de preferência de idioma | Concluída; a cobertura geral ainda é parcial. |
+| 2. Primeira jornada de preferência de idioma | Concluída; as demais jornadas estão registradas nas etapas seguintes. |
 | 3. Interface web por jornadas | 3.8 foi concluída nas jornadas planejadas; a matriz browser é representativa, com APIs simuladas. 3.10 está concluída com browser 9/9 e limites declarados. 3.11 tem browser de host para PluginManager/PluginSettings/shell da Wiki e cobertura por componente para Workspace Changes/fluxos internos. |
 | 4. CLI bilíngue | Resolução/persistência (4.1) e instalação/administração (4.2) verificadas. 4.3 foi concluída; a auditoria integral cobre os 459 leafs com assinaturas estáveis e zero descrição humana não localizada. A tabela raiz de 75 comandos está fixada em PT-BR/en e 164 leafs têm paridade de subprocesso. Contratos estruturados (4.4) estão concluídos, incluindo a fronteira de subprocesso. O typecheck recursivo final passou com EXIT 0. |
 | 5. Ajuda e documentação pública bilíngue | 71 tópicos públicos têm fontes EN/PT-BR e passam pelo gate de cobertura. O smoke de pipelines passou em ambiente descartável, incluindo HTTP 409 e rotina com agente simulado; a revisão semântica independente foi aprovada e a validação OpenClaw/Docker real foi dispensada como risco aceito. |
 | 6. Comunicação dos agentes | 6.1–6.3 foram verificadas, incluindo contratos determinísticos dos 15 adapters ativos e uma jornada descartável com duas contas PT-BR/en. 6.4 qualificou o runtime OpenCode local (`opencode_local` + `opencode-go/deepseek-v4.1-flash`) em PT-BR/en; os demais runtimes não são declarados suportados e não contam como cobertura. |
-| 7. Integração, regressão e revisão final | Checks locais 7.1a–e estão integrados e o job `Localization` passou na CI remota do PR #1. O mapa 7.2 foi reconciliado em 2026-11-07 contra 179 rotas, 8 flags, 35 registros/55 arquivos de CLI, 16 adapters e 71 tópicos. 7.3 foi executada com typecheck recursivo, build, gates e browser; a CI completa ainda tem falhas ambientais do fork, e a correção dos testes introduzidos está em andamento. A revisão independente final 7.4 foi realizada e o parecer é aprovado com ressalvas para a entrega interna. |
+| 7. Integração, regressão e revisão final | Checks locais 7.1a–e estão integrados e o job `Localization` passou na CI remota do PR #1. O mapa 7.2 foi reconciliado em 2026-11-07 contra 179 rotas, 8 flags, 35 registros/55 arquivos de CLI, 16 adapters e 71 tópicos. 7.3 foi executada com typecheck recursivo, build, gates e browser; a CI remota relevante passou (Localization, server 5/9, UI 1/2 e 2/2, e2e 8/8) e as falhas restantes do workflow `ci` são ambientais do fork. A revisão independente final 7.4 foi realizada e o parecer é aprovado com ressalvas para a entrega interna. |
 
 ## Continuação — interações de conexão (3.4d3c2)
 
@@ -354,41 +353,15 @@ padrão e experimental, anotações documentais e controles de execução na con
 estão localizados. Os últimos ajustes permanecem no working tree; a aplicação
 não foi implantada.
 
-Próximos passos:
+## Estado atual do apply
 
-1. Seguir por 3.5–3.11. Repetir UI build, gates de
-   tokens e browser na consolidação das jornadas antes da aceitação global.
-2. Migrar os comandos operacionais (4.3) e verificar os contratos de saída estruturada,
-   stdout/stderr e subprocessos (4.4).
-3. Manter 5.2/5.3 abertas até revisão humana e validação operacional dos guias;
-   5.1/5.4 já verificadas no bundle e em browser.
-4. Implementar 6.2/6.3 e preparar a qualificação real, autorizada e descartável
-   exigida por 6.4. OAuth/MCP e configurações autenticadas seguem em 3.8.
-5. Integrar checks, reconciliar cobertura e executar aceitação/revisão final
-   nas tarefas 7.1–7.4. A mudança ainda não está pronta para arquivamento.
+O apply está em **544/544 tarefas**. A lista detalhada e as evidências estão em
+`tasks.md` e `verification.md`; o mapa `coverage.json` declara os limites e as
+exclusões justificadas. Não há itens abertos.
 
-Não interprete a contagem de 81/108 como percentual da tradução: os itens têm
-tamanhos muito diferentes e a contagem inclui subtarefas e seus grupos pais.
-O arquivo de tarefas mantém a lista detalhada e suas dependências.
-
-A [matriz de qualificação por runtime](runtime-qualification.md) distingue evidência de transporte da homologação de respostas reais, ainda pendente.
-
-## Cobertura
-
-O ponto de partida contém 179 caminhos literais de `App.tsx`, 33 registros da
-CLI, 57 tópicos da navegação documental e os adapters registrados. Caminhos
-aninhados, rotas de índice, variantes de shell e flags precisam ser conferidos
-durante cada jornada. Os anchors de cada grupo indicam onde começar; não são
-uma lista exaustiva de arquivos. Documentação nova e superfícies descobertas
-devem ser acrescentadas ao mapa, sem remover pendências silenciosamente.
-
-Os grupos pendentes permanecem `pending` até conter fontes, estados, variantes e
-evidência da verificação correspondente. A preferência tem somente a jornada
-inicial verificada; isso não aprova toda a interface. Os grupos de erros, plugins, CLI, ajuda e
-comunicação dos agentes fazem parte da entrega. Conteúdo original de usuários,
-provedores e logs não é traduzido. Os limites de documentação interna e prompts
-técnicos estão registrados em `exclusions` e precisam ser classificados por
-tópico se houver dúvida.
+A [matriz de qualificação por runtime](runtime-qualification.md) registra o
+runtime local `opencode_local` qualificado em PT-BR/en; os demais runtimes não
+são declarados suportados. A mudança não foi implantada nem arquivada.
 
 ## Glossário inicial
 

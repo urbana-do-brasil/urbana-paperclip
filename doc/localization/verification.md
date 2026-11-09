@@ -4821,6 +4821,17 @@ agregadores. A aplicação não foi implantada.
     onboarding reload, project-repositories e pipelines tutorial.
 - `git diff --check` foi corrigido (whitespace em docs) e o lockfile continua
   intocado no diff final.
-- A classificação de CI será atualizada com a nova execução remota; as falhas
-  do workflow `ci` que restarem devem ser separadas entre ambientais do fork e
-  regressões reais.
+- Classificação final de CI (run 42540450295, HEAD `33df4d4cb`): os jobs
+  relevantes passaram — `Localization`, `Verify serialized server suites
+  (5/9)`, `General tests (workspaces-a 1/2)`, `General tests (workspaces-a
+  2/2)` no attempt 2 e os **8/8 shards de e2e**. As falhas restantes do workflow
+  `ci` são ambientais/pré-existentes do fork (scripts/ações ausentes, runner
+  group, catálogo de skills do master e Dependency graph), não regressões da
+  localização.
+- Correções adicionais para a CI completa: o runner `run-vitest-stable.mjs`
+  agora define `NO_COLOR=1`/`FORCE_COLOR=0` para todas as suítes gerais; o mapa
+  de rotas OpenAPI inclui `managed-resource-attributions.ts`; o teste
+  experimental usa a rota canônica `/status`; os e2e do GitHub/Teams usam
+  rótulos de replay/conta compatíveis com a UI; e o CLI usa `testTimeout` de
+  15s. A execução remota final passou os jobs relevantes; as falhas restantes
+  do workflow `ci` são ambientais/pré-existentes do fork.
