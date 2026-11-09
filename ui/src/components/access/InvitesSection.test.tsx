@@ -7,6 +7,9 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InvitesSection } from "./InvitesSection";
 import { queryKeys } from "@/lib/queryKeys";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
+import { ApiError } from "@/api/client";
 
 const listInvitesMock = vi.hoisted(() => vi.fn());
 const createCompanyInviteMock = vi.hoisted(() => vi.fn());
@@ -81,7 +84,8 @@ describe("InvitesSection", () => {
     };
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
 
@@ -112,10 +116,11 @@ describe("InvitesSection", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("renders a human-only invite flow and keeps invite history in a table", async () => {
@@ -238,6 +243,187 @@ describe("InvitesSection", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("localizes invite history and preserves role, URL, and revoke contracts", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <InvitesSection />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    expect(container.textContent).toContain("Convidar uma pessoa");
+    expect(container.textContent).toContain("Escolha uma função");
+    expect(container.textContent).toContain("Operador");
+    expect(container.textContent).toContain("Histórico de convites");
+    expect(container.textContent).toContain("Board User 25");
+    expect(container.textContent).toContain("Aceito");
+    expect(container.textContent).toContain("Revisar solicitação");
+    expect(container.textContent).toContain("Revogar");
+
+    const createButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Criar convite",
+    );
+    await act(async () => {
+      createButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await flushReact();
+    await flushReact();
+
+    expect(createCompanyInviteMock).toHaveBeenCalledWith("company-1", {
+      allowedJoinTypes: "human",
+      humanRole: "operator",
+      agentMessage: null,
+    });
+    expect(container.querySelector('input[aria-label="URL do convite mais recente"]')).toHaveProperty(
+      "value",
+      "https://paperclip.local/invite/new-token",
+    );
+    expect(pushToastMock).toHaveBeenCalledWith({
+      title: "Convite criado",
+      body: "O convite está pronto abaixo e foi copiado para a área de transferência.",
+      tone: "success",
+    });
+
+    const revokeButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Revogar",
+    );
+    await act(async () => {
+      revokeButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await flushReact();
+    expect(revokeInviteMock).toHaveBeenCalledWith("invite-25");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("localizes invite audiences and lifecycle states without changing stored values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listInvitesMock.mockResolvedValueOnce({
+      invites: [
+        {
+          ...inviteHistory[0],
+          id: "invite-agent",
+          state: "expired",
+          allowedJoinTypes: "agent",
+          humanRole: null,
+        },
+        {
+          ...inviteHistory[0],
+          id: "invite-both",
+          state: "revoked",
+          allowedJoinTypes: "both",
+          humanRole: "admin",
+        },
+      ],
+      nextOffset: null,
+    });
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <InvitesSection />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    expect(container.textContent).toContain("Agente");
+    expect(container.textContent).toContain("Pessoa ou agente · Administrador");
+    expect(container.textContent).toContain("Expirado");
+    expect(container.textContent).toContain("Revogado");
+    expect(listInvitesMock).toHaveBeenCalledWith("company-1", { limit: 5, offset: 0 });
+
+    await act(async () => root.unmount());
+  });
+
+  it("localizes the empty and permission-denied states", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listInvitesMock.mockResolvedValueOnce({ invites: [], nextOffset: null });
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <InvitesSection />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+    expect(container.textContent).toContain("Ainda não há convites criados para esta organização.");
+    await act(async () => root.unmount());
+
+    listInvitesMock.mockRejectedValueOnce(new ApiError("Forbidden", 403, {}));
+    const deniedRoot = createRoot(container);
+    const deniedQueryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    await act(async () => {
+      deniedRoot.render(
+        <MemoryRouter>
+          <QueryClientProvider client={deniedQueryClient}>
+            <InvitesSection />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    expect(container.textContent).toContain("Você não tem permissão para gerenciar os convites da organização.");
+    expect(createCompanyInviteMock).not.toHaveBeenCalled();
+    expect(revokeInviteMock).not.toHaveBeenCalled();
+
+    await act(async () => deniedRoot.unmount());
+  });
+
+  it("localizes the loading state while invite history is unresolved", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listInvitesMock.mockReturnValueOnce(new Promise(() => {}));
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <InvitesSection />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    expect(container.textContent).toContain("Carregando convites…");
+
+    await act(async () => root.unmount());
   });
 
   it("falls back to selectable text when browser clipboard access is unavailable", async () => {

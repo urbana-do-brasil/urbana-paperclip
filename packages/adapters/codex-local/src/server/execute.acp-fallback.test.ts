@@ -100,6 +100,8 @@ vi.mock("./runtime-config.js", async () => {
 });
 
 import { execute } from "./execute.js";
+import type { AdapterInvocationMeta } from "@paperclipai/adapter-utils";
+import { createCommunicationLocalePromptFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
 
 function buildContext(config: Record<string, unknown> = {}) {
   return {
@@ -146,4 +148,63 @@ describe("codex_local ACP startup fallback", () => {
 
     expect(runAdapterExecutionTargetProcess).not.toHaveBeenCalled();
   });
+
+  it.each(["pt-BR", "en"] as const)(
+    "carries communication locale through the Codex CLI stdin prompt on fresh and resumed turns (%s)",
+    async (locale) => {
+      const prompts: string[] = [];
+      const promptTemplate = "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.";
+      runAdapterExecutionTargetProcess.mockReset().mockResolvedValue({
+        exitCode: 0,
+        signal: null,
+        timedOut: false,
+        stdout: [
+          JSON.stringify({ type: "thread.started", thread_id: "localized-codex-session" }),
+          JSON.stringify({ type: "turn.completed", usage: { input_tokens: 1, output_tokens: 1 } }),
+        ].join("\n"),
+        stderr: "",
+        pid: 123,
+        startedAt: new Date().toISOString(),
+      });
+
+      for (const sessionId of [null, "codex-session-existing"] as const) {
+        const ctx = buildContext({ engine: "cli", env: {}, promptTemplate });
+        await execute({
+          ...ctx,
+          runtime: { ...ctx.runtime, sessionId },
+          context: createCommunicationLocalePromptFixture(locale),
+          onMeta: async (meta: AdapterInvocationMeta) => { prompts.push(meta.prompt ?? ""); },
+        } as never);
+
+        const call = (runAdapterExecutionTargetProcess.mock.calls as unknown[][]).at(-1);
+        const args = call?.[3] as string[] | undefined;
+        const options = call?.[4] as { stdin?: string } | undefined;
+        const prompt = prompts.at(-1) ?? "";
+        expect(options?.stdin).toBe(prompt);
+        if (sessionId) expect(args).toContain(sessionId);
+      }
+
+      const languageDirective = locale === "pt-BR"
+        ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+        : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+      expect(prompts).toHaveLength(2);
+      for (const prompt of prompts) {
+        expect(prompt).toContain("## Human communication language");
+        expect(prompt).toContain(languageDirective);
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+      }
+      expect(prompts[0]).toContain("Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.");
+      expect(prompts[0]).toContain("## Owned assignment");
+      expect(prompts[1]).toContain("## Compact assignment");
+      expect(prompts[1]).not.toContain("Configured agent instruction:");
+      if (locale === "pt-BR") {
+        expect(prompts[0]).toContain("Do not switch these interactions to English.");
+        expect(prompts[0]).not.toContain("ASD-STE100 Simplified Technical English");
+      } else {
+        expect(prompts[0]).toContain("ASD-STE100 Simplified Technical English");
+      }
+    },
+  );
 });

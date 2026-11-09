@@ -1,9 +1,9 @@
 import { configFieldsForSection } from "../config-sections";
+import { useTranslation } from "@/i18n";
 import type { AdapterConfigFieldsProps } from "../types";
 import {
   Field,
   DraftInput,
-  help,
 } from "../../components/agent-config-primitives";
 
 const inputClass =
@@ -34,9 +34,13 @@ export function ProcessConfigFields({
   eff,
   mark,
 }: AdapterConfigFieldsProps) {
+  const { t } = useTranslation();
   return configFieldsForSection(section, (
     <>
-      <Field configSection="advanced" label="Command" hint={help.command}>
+      <Field configSection="advanced"
+        label={t("agentConfiguration.process.command")}
+        hint={t("agentConfiguration.process.commandHint")}
+      >
         <DraftInput
           value={
             isCreate
@@ -50,10 +54,13 @@ export function ProcessConfigFields({
           }
           immediate
           className={inputClass}
-          placeholder="e.g. node, python"
+          placeholder={t("agentConfiguration.process.commandPlaceholder")}
         />
       </Field>
-      <Field configSection="advanced" label="Args (comma-separated)" hint={help.args}>
+      <Field configSection="advanced"
+        label={t("agentConfiguration.process.args")}
+        hint={t("agentConfiguration.process.argsHint")}
+      >
         <DraftInput
           value={
             isCreate
@@ -71,7 +78,7 @@ export function ProcessConfigFields({
           }
           immediate
           className={inputClass}
-          placeholder="e.g. script.js, --flag"
+          placeholder={t("agentConfiguration.process.argsPlaceholder")}
         />
       </Field>
     </>

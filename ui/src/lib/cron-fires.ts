@@ -218,16 +218,8 @@ export type FireDisposition = "queued" | "coalesced" | "skipped";
 export interface FirePreviewEntry {
   at: Date;
   disposition: FireDisposition;
-  /** Short human label for the disposition (e.g. "queued", "would be coalesced"). */
-  label: string;
-  note: string | null;
+  note: "runsImmediately" | "previousRunActive" | null;
 }
-
-const DISPOSITION_LABEL: Record<FireDisposition, string> = {
-  queued: "queued",
-  coalesced: "would be coalesced",
-  skipped: "would be skipped",
-};
 
 /**
  * Annotate a list of upcoming fires with how the chosen concurrency policy would
@@ -245,8 +237,7 @@ export function previewFirePolicies(
       return {
         at,
         disposition: "queued",
-        label: DISPOSITION_LABEL.queued,
-        note: "runs immediately",
+        note: "runsImmediately",
       };
     }
     let disposition: FireDisposition;
@@ -265,8 +256,7 @@ export function previewFirePolicies(
     return {
       at,
       disposition,
-      label: DISPOSITION_LABEL[disposition],
-      note: disposition === "queued" ? null : "if the previous run is still active",
+      note: disposition === "queued" ? null : "previousRunActive",
     };
   });
 }

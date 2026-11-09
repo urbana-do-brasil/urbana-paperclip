@@ -2,6 +2,8 @@
 
 Operational runbook for restarting a dev/shared Paperclip control plane without killing in-flight agent work. Written after the 2026-07-06/07 failure spike, where a restart-heavy deploy window was the single largest source of failed tasks.
 
+> Historical upstream incident report: the drain status described below reflects July 2026. Verify the current drain capability before using this runbook.
+
 ## Why this matters
 
 Every control-plane restart hard-kills any heartbeat run in flight at that moment. The run is finalized as `failed` with `error_code = 'process_lost'`. There is an automatic single retry (`process_lost_retry`), but it is best-effort: in the 07-06/07 incident window only 12 of 36 lost runs recovered. On the evening of 07-06, **9 restarts in 90 minutes killed 16 in-flight runs**.

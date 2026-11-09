@@ -3,7 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AdapterExecutionContext } from "@paperclipai/adapter-utils";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import {
+  createCommunicationLocalePromptFixture,
+  createPromptContextFixture,
+} from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
 
 const ensureRuntimeInstalledMock = vi.hoisted(() => vi.fn(async () => {}));
 const ensureCommandMock = vi.hoisted(() => vi.fn(async () => {}));
@@ -161,6 +164,67 @@ describe("kimi_local execute", () => {
     );
     expect(deliveredPrompt).toContain("Change the final scope to the launch checklist.");
   });
+
+  it.each(["pt-BR", "en"] as const)(
+    "preserves locale and technical markers in the Kimi CLI argument on fresh and resumed turns (%s)",
+    async (locale) => {
+      const root = await makeTempRoot();
+      const prompts: string[] = [];
+      const promptTemplate = "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.";
+      runProcessMock.mockImplementation(async (_runId, _target, _command, args) => {
+        prompts.push(String(args.at(-1) ?? ""));
+        return {
+          exitCode: 0,
+          signal: null,
+          timedOut: false,
+          stdout: KIMI_STDOUT,
+          stderr: "",
+        };
+      });
+
+      const firstContext = makeContext(root, {
+        authToken: undefined,
+        config: { cwd: root, promptTemplate },
+        context: createCommunicationLocalePromptFixture(locale),
+      });
+      const firstResult = await execute(firstContext);
+      const resumedContext = makeContext(root, {
+        authToken: undefined,
+        config: { cwd: root, promptTemplate },
+        context: createCommunicationLocalePromptFixture(locale),
+      });
+      resumedContext.runtime = {
+        ...resumedContext.runtime,
+        sessionId: firstResult.sessionId ?? null,
+        sessionParams: firstResult.sessionParams ?? null,
+      };
+      await execute(resumedContext);
+
+      const languageDirective = locale === "pt-BR"
+        ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+        : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+      expect(prompts).toHaveLength(2);
+      for (const [index, prompt] of prompts.entries()) {
+        const args = runProcessMock.mock.calls[index]?.[3] as string[];
+        expect(args.at(-1)).toBe(prompt);
+        expect(prompt).toContain("## Human communication language");
+        expect(prompt).toContain(languageDirective);
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+      }
+      expect(prompts[0]).toContain("Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.");
+      expect(prompts[0]).toContain("## Owned assignment");
+      expect(prompts[1]).toContain("## Compact assignment");
+      expect(prompts[1]).not.toContain("Configured agent instruction:");
+      if (locale === "pt-BR") {
+        expect(prompts[0]).toContain("Do not switch these interactions to English.");
+        expect(prompts[0]).not.toContain("ASD-STE100 Simplified Technical English");
+      } else {
+        expect(prompts[0]).toContain("ASD-STE100 Simplified Technical English");
+      }
+    },
+  );
 
   it("forwards streamed stdout lines to onEvent as assistant + tool_call runtime events", async () => {
     const root = await makeTempRoot();

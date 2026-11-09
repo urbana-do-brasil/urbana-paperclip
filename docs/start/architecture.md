@@ -28,9 +28,9 @@ Paperclip is a monorepo with four main layers.
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 19, Vite 6, React Router 7, Radix UI, Tailwind CSS 4, TanStack Query |
+| Frontend | React 19, Vite 8, React Router 7, Radix UI, Tailwind CSS 4, TanStack Query |
 | Backend | Node.js 24.11+, Express.js 5, TypeScript |
-| Database | PostgreSQL 17 (or embedded PGlite), Drizzle ORM |
+| Database | PostgreSQL (external or embedded), Drizzle ORM |
 | Auth | Better Auth (sessions + API keys) |
 | Adapters | Claude Code CLI, Codex CLI, shell process, HTTP webhook |
 | Package manager | pnpm 9 with workspaces |

@@ -77,19 +77,19 @@ describe("MarkdownBody code block interactions", () => {
     const wrapButton = node.querySelector<HTMLButtonElement>(".paperclip-markdown-codeblock-wrap");
 
     expect(pre?.style.whiteSpace).toBe("");
-    expect(wrapButton?.getAttribute("aria-label")).toBe("Wrap lines");
+    expect(wrapButton?.getAttribute("aria-label")).toBe("Ativar quebra de linhas");
 
     click(wrapButton);
 
     expect(pre?.style.whiteSpace).toBe("pre-wrap");
     expect(pre?.style.overflowWrap).toBe("anywhere");
     expect(wrapButton?.getAttribute("aria-pressed")).toBe("true");
-    expect(wrapButton?.getAttribute("aria-label")).toBe("Unwrap lines");
+    expect(wrapButton?.getAttribute("aria-label")).toBe("Desativar quebra de linhas");
 
     click(wrapButton);
 
     expect(pre?.style.whiteSpace).toBe("");
     expect(wrapButton?.getAttribute("aria-pressed")).toBe("false");
-    expect(wrapButton?.getAttribute("aria-label")).toBe("Wrap lines");
+    expect(wrapButton?.getAttribute("aria-label")).toBe("Ativar quebra de linhas");
   });
 });

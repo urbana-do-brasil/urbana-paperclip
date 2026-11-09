@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SkillSources } from './SkillSources';
 import { skillSourcesApi } from '@/api/skillSources';
+import { i18n } from '@/i18n';
 
 const context = vi.hoisted(() => ({ navigate: vi.fn(), breadcrumbs: vi.fn(), sourceId: 'new' }));
 vi.mock('@/context/CompanyContext', () => ({ useCompany: () => ({ selectedCompanyId: 'company-1', selectedCompany: { name: 'Acme' } }) }));
@@ -43,7 +44,8 @@ async function input(selector: string, value: string) {
     element.dispatchEvent(new Event('input', { bubbles: true }));
   });
 }
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage('en');
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
   vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(() => {});
@@ -56,9 +58,28 @@ beforeEach(() => {
 afterEach(async () => {
   if (root) await act(async () => root.unmount());
   host?.remove(); client?.clear(); vi.restoreAllMocks(); vi.clearAllMocks(); vi.unstubAllGlobals();
+  await i18n.changeLanguage('en');
 });
 
 describe('GitHub skill source import', () => {
+  it('localizes source discovery in PT-BR while preserving repository and skill metadata', async () => {
+    await i18n.changeLanguage('pt-BR');
+    vi.mocked(skillSourcesApi.discoverStream).mockResolvedValue({
+      ...discovery,
+      candidates: [{ path: 'tools/review/SKILL.md', name: 'Code review', description: 'Check code quality.', fileCount: 2, error: null, warnings: [] }],
+    });
+    await mount();
+    expect(document.body.textContent).toContain('Fontes de skills');
+    expect(document.body.textContent).toContain('Importar do GitHub');
+    await act(async () => (document.querySelector('[cmdk-item]') as HTMLElement).click());
+    await act(async () => button('Buscar skills').click()); await flush();
+    expect(document.body.textContent).toContain('acme/team-skills');
+    expect(document.body.textContent).toContain('Code review');
+    expect(document.body.textContent).toContain('Check code quality.');
+    expect(document.body.textContent).toContain('1 de 1 selecionadas');
+    expect(document.body.textContent).toContain('Selecione pacotes completos de skills.');
+    expect(document.querySelector<HTMLInputElement>('[aria-label="Importar tools/review/SKILL.md"]')?.checked).toBe(true);
+  });
   it('shows measured Git download progress before skill discovery and retains the automatically chosen connection', async () => {
     let finish!: (value: typeof discovery & { connectionId: string }) => void;
     vi.mocked(skillSourcesApi.discoverStream).mockImplementation((_company, _input, update) => {

@@ -15,6 +15,7 @@ import {
 } from "@paperclipai/shared";
 import { ThemeProvider } from "../context/ThemeContext";
 import { MarkdownBody } from "./MarkdownBody";
+import { i18n } from "@/i18n";
 import { queryKeys } from "../lib/queryKeys";
 import type { WorkspaceFileAvailabilityTarget } from "../lib/workspace-file-availability";
 
@@ -44,6 +45,7 @@ vi.mock("@/lib/router", () => ({
     hash: "",
     state: null,
   }),
+  useCaseHref: () => (...segments: string[]) => `/PAP/${["cases", ...segments].join("/")}`,
 }));
 
 vi.mock("../api/issues", () => ({
@@ -94,6 +96,24 @@ function renderMarkdown(
 }
 
 describe("MarkdownBody", () => {
+  it("localizes accessible case references when linkification is enabled", async () => {
+    const previousLanguage = i18n.language;
+    try {
+      await i18n.changeLanguage("pt-BR");
+      const pt = renderMarkdown("Veja PAP-C7 no texto do usuário.", [], { linkCaseReferences: true });
+      expect(pt).toContain('href="/PAP/cases/PAP-C7"');
+      expect(pt).toContain('aria-label="Caso PAP-C7"');
+      expect(pt).toContain("no texto do usuário");
+      await i18n.changeLanguage("en");
+      const en = renderMarkdown("See PAP-C7.", [], { linkCaseReferences: true });
+      expect(en).toContain('aria-label="Case PAP-C7"');
+      const disabled = renderMarkdown("PAP-C7", [], { linkCaseReferences: false });
+      expect(disabled).not.toContain('data-mention-kind="case"');
+      expect(disabled).toContain("PAP-C7");
+    } finally {
+      await i18n.changeLanguage(previousLanguage);
+    }
+  });
   it("preserves a saved document anchor in an explicit task link", () => {
     // Hover/focus can resolve the issue to its plain identifier. Both the old
     // fragment-bearing cache key and the corrected plain key model that load.
@@ -575,10 +595,45 @@ describe("MarkdownBody", () => {
     ].join("\n"));
 
     expect(html).toContain('class="paperclip-markdown-table-scroll"');
-    expect(html).toContain('aria-label="Scrollable table"');
+    expect(html).toContain('aria-label="Tabela com rolagem"');
     expect(html).toContain('tabindex="0"');
     expect(html).toContain("<table>");
     expect(html).toContain('style="overflow-wrap:anywhere;word-break:normal"');
+  });
+
+  it("localizes accessible markdown controls in Portuguese and English without changing content", async () => {
+    const previousLanguage = i18n.language;
+    const markdown = [
+      "```ts",
+      "const answer = 42;",
+      "```",
+      "",
+      "| Case | Pipeline value |",
+      "| --- | --- |",
+      "| PAP-C7 | preserve this value |",
+    ].join("\n");
+
+    try {
+      await i18n.changeLanguage("pt-BR");
+      const pt = renderMarkdown(markdown);
+      expect(pt).toContain('aria-label="Copiar código"');
+      expect(pt).toContain('aria-label="Ativar quebra de linhas"');
+      expect(pt).toContain('aria-label="Tabela com rolagem"');
+      expect(pt).toContain("const answer = 42;");
+      expect(pt).toContain("PAP-C7");
+      expect(pt).toContain("preserve this value");
+
+      await i18n.changeLanguage("en");
+      const en = renderMarkdown(markdown);
+      expect(en).toContain('aria-label="Copy code"');
+      expect(en).toContain('aria-label="Wrap lines"');
+      expect(en).toContain('aria-label="Scrollable table"');
+      expect(en).toContain("const answer = 42;");
+      expect(en).toContain("PAP-C7");
+      expect(en).toContain("preserve this value");
+    } finally {
+      await i18n.changeLanguage(previousLanguage);
+    }
   });
 
   it("opens external links in a new tab with safe rel attributes", () => {
@@ -660,10 +715,10 @@ describe("MarkdownBody", () => {
     expect(html).toContain("paperclip-markdown-codeblock-actions");
     expect(html).toContain("position:absolute;top:0.4rem;right:0.4rem;display:inline-flex");
     expect(html).toContain("paperclip-markdown-codeblock-wrap");
-    expect(html).toContain('aria-label="Wrap lines"');
+    expect(html).toContain('aria-label="Ativar quebra de linhas"');
     expect(html).toContain("position:static;opacity:1;display:inline-flex");
     expect(html).toContain("paperclip-markdown-codeblock-copy");
-    expect(html).toContain('aria-label="Copy code"');
+    expect(html).toContain('aria-label="Copiar código"');
     expect(html).toContain("lucide-copy");
   });
 
@@ -672,7 +727,7 @@ describe("MarkdownBody", () => {
 
     expect(html).toContain("paperclip-markdown-codeblock");
     expect(html).toContain("paperclip-markdown-codeblock-wrap");
-    expect(html).toContain('aria-label="Wrap lines"');
+    expect(html).toContain('aria-label="Ativar quebra de linhas"');
     expect(html).toContain("paperclip-markdown-codeblock-copy");
   });
 

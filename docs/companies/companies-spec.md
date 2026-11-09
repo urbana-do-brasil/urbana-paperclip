@@ -579,12 +579,12 @@ lean-dev-shop/
 │   └── weekly-review/TASK.md
 └── skills/
     └── review/SKILL.md
+```
 
 Optional:
 
 ```text
 .paperclip.yaml
-```
 ```
 
 **Recommendation**

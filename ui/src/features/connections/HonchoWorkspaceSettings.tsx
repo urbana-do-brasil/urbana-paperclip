@@ -5,8 +5,10 @@ import { toolsApi } from "@/api/tools";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InlineBanner } from "@/components/InlineBanner";
+import { useTranslation } from "@/i18n";
 
 export function HonchoWorkspaceSettings({ connection, canConfigure }: { connection: ToolConnection; canConfigure: boolean }) {
+  const { t } = useTranslation();
   const id = useId();
   const client = useQueryClient();
   const connectionConfig = connectionInstructionsConfig(connection);
@@ -18,14 +20,14 @@ export function HonchoWorkspaceSettings({ connection, canConfigure }: { connecti
     mutationFn: () => toolsApi.updateConnection(connection.id, { config: { ...connectionConfig, methodConfig: { ...config, workspaceId: value.trim() } } }),
     onSuccess: async () => { await client.invalidateQueries({ queryKey: ["tools"] }); setDraft(null); },
   });
-  return <section className="space-y-3" aria-label="Honcho workspace">
-    <label htmlFor={id} className="text-sm font-medium">Honcho workspace</label>
-    <Input id={id} value={value} maxLength={512} disabled={!canConfigure || mutation.isPending} placeholder="Workspace ID" onChange={(event) => setDraft(event.target.value)} />
-    {!value.trim() && <InlineBanner tone="warning">Enter a workspace to include Honcho instructions. Existing tools remain available.</InlineBanner>}
+  return <section className="space-y-3" aria-label={t("apps.appDetail.providers.honcho.workspace")}>
+    <label htmlFor={id} className="text-sm font-medium">{t("apps.appDetail.providers.honcho.workspace")}</label>
+    <Input id={id} value={value} maxLength={512} disabled={!canConfigure || mutation.isPending} placeholder={t("apps.appDetail.providers.honcho.workspaceId")} onChange={(event) => setDraft(event.target.value)} />
+    {!value.trim() && <InlineBanner tone="warning">{t("apps.appDetail.providers.honcho.emptyWorkspace")}</InlineBanner>}
     {mutation.isError && <div role="alert"><InlineBanner tone="danger">{mutation.error.message}</InlineBanner></div>}
     {draft !== null && draft !== saved && <div className="flex items-center justify-between">
-      <Button variant="ghost" disabled={mutation.isPending} onClick={() => { setDraft(null); mutation.reset(); }}>Cancel</Button>
-      <Button disabled={!canConfigure || mutation.isPending || !value.trim()} onClick={() => mutation.mutate()}>{mutation.isPending ? "Saving…" : "Save workspace"}</Button>
+      <Button variant="ghost" disabled={mutation.isPending} onClick={() => { setDraft(null); mutation.reset(); }}>{t("apps.appDetail.providers.honcho.cancel")}</Button>
+      <Button disabled={!canConfigure || mutation.isPending || !value.trim()} onClick={() => mutation.mutate()}>{mutation.isPending ? t("apps.appDetail.providers.honcho.saving") : t("apps.appDetail.providers.honcho.save")}</Button>
     </div>}
   </section>;
 }

@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import type { ToolConnectionCredentialSource } from "@paperclipai/shared";
-import { Navigate, Outlet, Route, Routes, useActiveCompanyPrefix, useLocation, useParams } from "@/lib/router";
+import { Navigate, Outlet, Route, Routes, useLocation, useParams } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/i18n";
 import { Layout } from "./components/Layout";
@@ -10,6 +10,7 @@ import { TaskChatLab } from "./pages/TaskChatLab";
 import { PipelinesExperimentalGate } from "./components/PipelinesExperimentalGate";
 import { CasesExperimentalGate } from "./components/CasesExperimentalGate";
 import { StatusCardsExperimentalGate } from "./components/StatusCardsExperimentalGate";
+import { StatusCardsLegacyRedirect } from "./components/StatusCardsLegacyRedirect";
 import { CloudManagedPageGate } from "./components/CloudManagedPageGate";
 import { HiddenSettingsPageGate } from "./components/HiddenSettingsPageGate";
 import { IsolatedWorkspacesRouteGate } from "./components/IsolatedWorkspacesRouteGate";
@@ -621,15 +622,15 @@ export function OnboardingRoutePage() {
   }
 
   const title = matchedCompany
-    ? `Add another agent to ${matchedCompany.name}`
+    ? t("onboarding.route.addAgentTitle", { company: matchedCompany.name })
     : companies.length > 0
-      ? "Create another organization"
-      : "Create your first organization";
+      ? t("onboarding.route.createAnotherOrganizationTitle")
+      : t("onboarding.route.createFirstOrganizationTitle");
   const description = matchedCompany
-    ? "Run onboarding again to add an agent and a starter task for this organization."
+    ? t("onboarding.route.addAgentDescription")
     : companies.length > 0
-      ? "Run onboarding again to create another organization and seed its first agent."
-      : "Get started by creating an organization and your first agent.";
+      ? t("onboarding.route.createAnotherOrganizationDescription")
+      : t("onboarding.route.createFirstOrganizationDescription");
 
   return (
     <div className="mx-auto max-w-xl py-10">
@@ -667,7 +668,9 @@ export function OnboardingRoutePage() {
                     : openOnboarding()
               }
             >
-              {matchedCompany ? "Add Agent" : "Start Onboarding"}
+              {matchedCompany
+                ? t("onboarding.route.addAgent")
+                : t("onboarding.route.start")}
             </Button>
           )}
         </div>
@@ -698,13 +701,6 @@ function CompanyRootRedirect() {
   }
 
   return <Navigate to={`/${targetCompany.issuePrefix}/dashboard`} replace />;
-}
-
-function StatusCardsLegacyRedirect() {
-  const { cardId } = useParams<{ cardId?: string }>();
-  const prefix = useActiveCompanyPrefix();
-  const base = prefix ? `/${prefix}` : "";
-  return <Navigate to={`${base}/status${cardId ? `/${cardId}` : ""}`} replace />;
 }
 
 function AuditCompatibilityRedirect({

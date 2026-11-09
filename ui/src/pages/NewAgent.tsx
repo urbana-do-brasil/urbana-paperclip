@@ -1,14 +1,16 @@
 import { useEffect } from "react";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { NewAgentSetup } from "../components/new-agent/NewAgentSetup";
+import { useTranslation } from "@/i18n";
 
 export function NewAgent() {
+  const { t } = useTranslation();
   const { setBreadcrumbs } = useBreadcrumbs();
   useEffect(() => {
     setBreadcrumbs([
-      { label: "Agents", href: "/agents" },
-      { label: "New agent" },
+      { label: t("agentSetup.page.agents"), href: "/agents" },
+      { label: t("agentSetup.page.newAgent") },
     ]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
   return <NewAgentSetup />;
 }

@@ -4,6 +4,7 @@ import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 
 vi.mock("@/lib/router", () => ({
   Link: ({
@@ -20,7 +21,7 @@ vi.mock("@/lib/router", () => ({
   },
 }));
 
-import { RoutineSubSidebar } from "./RoutineSubSidebar";
+import { RoutineSectionPicker, RoutineSubSidebar } from "./RoutineSubSidebar";
 import type { RoutineSectionKey } from "./routine-sections/context";
 
 function act(callback: () => void) {
@@ -30,16 +31,18 @@ function act(callback: () => void) {
 let container: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
   container.remove();
   vi.clearAllMocks();
+  await i18n.changeLanguage("en");
 });
 
 function renderSidebar(overrides?: {
@@ -113,5 +116,34 @@ describe("RoutineSubSidebar", () => {
       triggers.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     expect(onNavigate).toHaveBeenCalledWith("triggers");
+  });
+
+  it("localizes desktop and mobile section navigation in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    renderSidebar();
+    const labels = Array.from(container.querySelectorAll("a")).map((link) => link.textContent?.trim());
+    expect(labels).toEqual([
+      "Resumo",
+      "Gatilhos",
+      "Variáveis",
+      "Segredos",
+      "Entrega",
+      "Execuções",
+      "Atividade",
+      "Histórico",
+    ]);
+    expect(Array.from(container.querySelectorAll("p")).map((p) => p.textContent)).toContain("Operação");
+    expect(container.querySelector('nav[aria-label="Seções da rotina"]')).not.toBeNull();
+
+    act(() => {
+      root.render(
+        <RoutineSectionPicker
+          activeSection="overview"
+          onNavigate={vi.fn()}
+          isSectionDirty={() => false}
+        />,
+      );
+    });
+    expect(container.querySelector('button[aria-label="Seção da rotina"]')).not.toBeNull();
   });
 });

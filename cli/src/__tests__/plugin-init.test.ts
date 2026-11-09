@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setCliLocale } from "../localization/index.js";
 
 const mocks = vi.hoisted(() => ({
   scaffoldPluginProject: vi.fn((options: { outputDir: string }) => options.outputDir),
@@ -37,6 +38,7 @@ function makeTempDir(): string {
 }
 
 afterEach(() => {
+  setCliLocale("pt-BR");
   while (tempDirs.length > 0) {
     const dir = tempDirs.pop();
     if (dir) fs.rmSync(dir, { recursive: true, force: true });
@@ -214,6 +216,7 @@ describe("plugin target diagnostics", () => {
   });
 
   it("formats unreachable diagnostics with a remediation hint", () => {
+    setCliLocale("en");
     const rendered = formatTargetDiagnostics({
       apiBase: "http://127.0.0.1:3100",
       reachable: false,

@@ -1071,6 +1071,14 @@ The SDK includes a `ui` subpath export that plugin frontends import. This subpat
 
 Plugins are encouraged but not required to use the shared components. A plugin may render entirely custom UI as long as it communicates through the bridge.
 
+`PluginHostContext` optionally includes `locale?: "pt-BR" | "en"`, the host's
+effective UI language. Current Paperclip hosts provide one of these values to
+`useHostContext()` and the `context` prop passed to plugin slot components. The
+field is optional for compatibility with older hosts. When the user changes
+language, the host updates the context of mounted plugin components without
+remounting or reloading them. Plugins can use the value to select their own
+content; Paperclip does not translate plugin UI or plugin-provided content.
+
 `useHostNavigation()` is the supported way for plugin UI to navigate to
 Paperclip-internal pages. It exposes `resolveHref(to)`, `navigate(to,
 options?)`, and `linkProps(to, options?)`. Plugin links should prefer
@@ -1186,6 +1194,13 @@ The host SDK ships shared components that plugins can import to quickly build UI
 | `AssigneePicker` | Host assignee picker for agents and board users | Creating issues, assigning routines, filtering work |
 | `ProjectPicker` | Host project picker | Creating issues, scoping dashboards, filtering work |
 | `ManagedRoutinesList` | Host routine list | Plugin settings pages that manage routines |
+
+`ManagedRoutinesList` supports an optional `labels` object for plugin-localized
+copy: `configure`, `managedBy`, `schedule`, `missingRefs`,
+`defaultsCanBeRepaired`, `reconciling`, `reconcile`, `resetting`, and `reset`.
+The `managedBy` label may use `{name}` for the plugin display name. Omitting
+`labels` preserves the existing English defaults for compatibility. Labels do
+not alter routine titles, stable resource keys, schedule values, or callbacks.
 
 Plugins may also use entirely custom components. The shared components exist to reduce boilerplate and keep visual consistency, not to limit what plugins can render.
 

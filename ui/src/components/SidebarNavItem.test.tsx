@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Inbox } from "lucide-react";
 import { SidebarNavItem, SidebarNavExpandedProvider } from "./SidebarNavItem";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { i18n } from "../i18n";
 
 const sidebarState = vi.hoisted(() => ({
   isMobile: false,
@@ -42,7 +43,8 @@ describe("SidebarNavItem", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     sidebarState.collapsed = false;
     sidebarState.peeking = false;
     container = document.createElement("div");
@@ -71,6 +73,14 @@ describe("SidebarNavItem", () => {
   function classTokens(element: Element | null | undefined) {
     return element?.className.toString().split(/\s+/).filter(Boolean) ?? [];
   }
+
+  it("localizes the collapsed rail status in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    sidebarState.collapsed = true;
+    render(<SidebarNavItem to="/dashboard" label="Painel" icon={Inbox} liveCount={2} />);
+
+    expect(link().getAttribute("aria-label")).toBe("Painel, 2 em execução");
+  });
 
   it("shows the full label and numeric badge when expanded", () => {
     render(<SidebarNavItem to="/inbox" label="Inbox" icon={Inbox} badge={28} badgeLabel="unread" />);

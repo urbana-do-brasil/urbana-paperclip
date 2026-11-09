@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import {
   AssigneeChip,
   AssigneeRunningBanner,
@@ -29,6 +30,14 @@ const resolvers: HandoffChipResolvers = {
   resolveUserLabel: (id) => (id === "user-board" ? "Riley Board" : null),
   currentUserId: "user-board",
 };
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
+  await i18n.changeLanguage("pt-BR");
+});
 
 async function act(callback: () => void | Promise<void>) {
   let result: void | Promise<void> = undefined;
@@ -128,6 +137,15 @@ describe("RunStatusBadge", () => {
     const badge = host.querySelector<HTMLElement>("[data-testid='run-status-badge']")!;
     expect(badge.textContent).toContain("cancelled");
     expect(badge.className).toContain("muted");
+  });
+
+  it("localizes the interrupted label and its screen-reader hint", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const host = mount(<RunStatusBadge status="cancelled" operatorInterrupted />);
+    const badge = host.querySelector<HTMLElement>("[data-testid='run-status-badge']")!;
+    expect(badge.textContent).toContain("interrompida");
+    expect(badge.textContent).toContain("interrompida por comentário no painel");
+    expect(badge.className).toContain("amber");
   });
 });
 

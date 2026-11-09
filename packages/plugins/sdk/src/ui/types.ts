@@ -24,6 +24,7 @@ import type {
   PluginLauncherBounds,
   PluginLauncherRenderEnvironment,
 } from "@paperclipai/shared";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
 import type {
   PluginLauncherRenderContextSnapshot,
   PluginModalBoundsRequest,
@@ -87,6 +88,11 @@ export interface PluginBridgeError {
  * @see PLUGIN_SPEC.md §19 — UI Extension Model
  */
 export interface PluginHostContext {
+  /**
+   * Effective user-facing host language. Current hosts provide `pt-BR` or
+   * `en`; optional so existing hosts and plugin fixtures remain compatible.
+   */
+  locale?: SupportedLocale;
   /** UUID of the currently active company, if any. */
   companyId: string | null;
   /** URL prefix for the current company (e.g. `"my-company"`). */

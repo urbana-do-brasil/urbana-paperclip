@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import type { ExecutionWorkspace, Issue } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IssueWorkspaceCard } from "./IssueWorkspaceCard";
+import { i18n } from "@/i18n";
 
 function act(callback: () => void | Promise<void>) {
   let result: void | Promise<void> | undefined;
@@ -133,7 +134,8 @@ describe("IssueWorkspaceCard", () => {
   let container: HTMLDivElement;
   let originalResizeObserver: typeof ResizeObserver | undefined;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     originalResizeObserver = globalThis.ResizeObserver;
     globalThis.ResizeObserver = class ResizeObserver {
       observe() {}
@@ -145,9 +147,10 @@ describe("IssueWorkspaceCard", () => {
     useQueryMock.mockReset();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     globalThis.ResizeObserver = originalResizeObserver!;
     container.remove();
+    await i18n.changeLanguage("pt-BR");
   });
 
   it("keeps workspace details and files while suppressing editing and draft writes", () => {
@@ -172,6 +175,31 @@ describe("IssueWorkspaceCard", () => {
     expect(onBrowseFiles).toHaveBeenCalledOnce();
     expect(onUpdate).not.toHaveBeenCalled();
     expect(onDraftChange).not.toHaveBeenCalled();
+    act(() => root.unmount());
+  });
+
+  it("localizes workspace mode, status and file actions in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    useQueryMock.mockImplementation((options: { queryKey: unknown[] }) => ({
+      data: options.queryKey[0] === "instance" ? { enableIsolatedWorkspaces: true } : [],
+    }));
+    const root = createRoot(container);
+    act(() => root.render(
+      <IssueWorkspaceCard
+        issue={createIssue({ currentExecutionWorkspace: createExecutionWorkspace() })}
+        project={{ id: "project-1", executionWorkspacePolicy: { enabled: true, defaultMode: "isolated_workspace" } }}
+        onUpdate={vi.fn()}
+        onBrowseFiles={vi.fn()}
+        onOpenFileByPath={vi.fn()}
+      />,
+    ));
+
+    expect(container.textContent).toContain("Espaço de trabalho isolado");
+    expect(container.textContent).toContain("Ativo");
+    expect(container.textContent).toContain("Ver detalhes do espaço de trabalho");
+    expect(container.textContent).toContain("Navegar pelos arquivos");
+    expect(container.textContent).toContain("Abrir arquivo pelo caminho");
+
     act(() => root.unmount());
   });
 

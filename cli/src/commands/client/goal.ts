@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import pc from "picocolors";
 import type { Goal } from "@paperclipai/shared";
 import { createGoalSchema, updateGoalSchema } from "@paperclipai/shared";
 import {
@@ -10,6 +11,7 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { cliMessage, cliMessageCatalog } from "../../localization/index.js";
 
 interface GoalListOptions extends BaseClientOptions {
   companyId?: string;
@@ -55,7 +57,7 @@ export function registerGoalCommands(program: Command): void {
             return;
           }
           if (rows.length === 0) {
-            printOutput([], { json: false });
+            console.log(pc.dim(cliMessage("emptyList")));
             return;
           }
           for (const row of rows) {
@@ -66,6 +68,15 @@ export function registerGoalCommands(program: Command): void {
               level: row.level,
               parentId: row.parentId,
               ownerAgentId: row.ownerAgentId,
+            }, {
+              labels: {
+                id: cliMessage("goalListId"),
+                status: cliMessage("goalListStatus"),
+                title: cliMessage("goalListTitle"),
+                level: cliMessage("goalListLevel"),
+                parentId: cliMessage("goalListParentId"),
+                ownerAgentId: cliMessage("goalListOwnerAgentId"),
+              },
             }));
           }
         } catch (err) {
@@ -84,6 +95,10 @@ export function registerGoalCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const row = await ctx.api.get<Goal>(apiPath`/api/goals/${goalId}`);
+          if (row === null && !ctx.json) {
+            console.log(pc.dim(cliMessage("emptyValue")));
+            return;
+          }
           printOutput(row, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -160,7 +175,13 @@ export function registerGoalCommands(program: Command): void {
       .option("--yes", "Confirm deletion")
       .action(async (goalId: string, opts: GoalDeleteOptions) => {
         try {
-          if (!opts.yes) throw new Error("Deletion requires --yes.");
+          if (!opts.yes) {
+            throw new Error(
+              opts.json
+                ? cliMessageCatalog.en.goalDeleteNeedsYes
+                : cliMessage("goalDeleteNeedsYes"),
+            );
+          }
           const ctx = resolveCommandContext(opts);
           const deleted = await ctx.api.delete<Goal>(apiPath`/api/goals/${goalId}`);
           printOutput(deleted, { json: ctx.json });

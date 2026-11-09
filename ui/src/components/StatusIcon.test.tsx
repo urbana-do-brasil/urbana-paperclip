@@ -1,9 +1,14 @@
 // @vitest-environment node
 
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { StatusIcon } from "./StatusIcon";
 import { IssueStatusBadge } from "./StatusBadge";
+import { i18n } from "../i18n";
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 /**
  * StatusIcon renders the unified {@link StatusGlyph} (one shape per status) at
@@ -92,6 +97,30 @@ describe("StatusIcon", () => {
     expect(html).toContain('viewBox="0 0 24 24"');
     expect(html).toContain('<button type="button"');
     expect(html).toContain('aria-label="Change status (current: Todo)"');
+  });
+
+  it("localizes status names and accessible controls into Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const html = renderToStaticMarkup(<StatusIcon status="todo" onChange={() => {}} />);
+    expect(html).toContain('aria-label="Alterar status (atual: A fazer)"');
+    expect(html).not.toContain("Change status");
+
+    const blockedHtml = renderToStaticMarkup(
+      <StatusIcon
+        status="blocked"
+        blockerAttention={{
+          state: "covered",
+          reason: "active_child",
+          unresolvedBlockerCount: 1,
+          coveredBlockerCount: 1,
+          attentionBlockerCount: 0,
+          stalledBlockerCount: 0,
+          sampleBlockerIdentifier: "PAP-9",
+          sampleStalledBlockerIdentifier: null,
+        }}
+      />,
+    );
+    expect(blockedHtml).toContain("Bloqueada · aguardando a subtarefa em execução PAP-9");
   });
 
 });

@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PROJECT_COLORS } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { projectsApi } from "../api/projects";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { getLastProjectId } from "../lib/recent-projects";
 import { NewProjectForm } from "./NewProjectDialog";
 
@@ -23,17 +25,19 @@ vi.mock("./ui/dialog", () => ({
 
 let root: ReturnType<typeof createRoot>;
 let container: HTMLDivElement;
-beforeEach(() => {
+beforeEach(async () => {
+  await act(async () => { await i18n.changeLanguage("en"); });
   localStorage.clear();
   vi.mocked(projectsApi.create).mockReset();
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 });
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
   container.remove();
   vi.restoreAllMocks();
+  await act(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 });
 
 async function settle() {
@@ -67,6 +71,32 @@ describe("new project colors", () => {
     await settle();
     expect(vi.mocked(projectsApi.create).mock.calls[1][1]).toEqual({ name: "Colorful project", color: firstColor, status: "planned", repositoryIds: [] });
     expect(getLastProjectId("company-1")).toBe("project-created");
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("localizes project creation in Brazilian Portuguese without changing its API payload", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    vi.mocked(projectsApi.create).mockResolvedValue({ id: "project-created" } as Awaited<ReturnType<typeof projectsApi.create>>);
+    const onClose = vi.fn();
+    act(() => root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}>
+      <NewProjectForm companyId="company-1" onClose={onClose} />
+    </QueryClientProvider>));
+
+    expect(container.textContent).toContain("Criar projeto");
+    const input = container.querySelector<HTMLInputElement>('input[aria-label="Nome do projeto"]')!;
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "Projeto colorido");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    act(() => container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+    await settle();
+
+    expect(vi.mocked(projectsApi.create).mock.calls[0][1]).toEqual({
+      name: "Projeto colorido",
+      color: expect.stringMatching(/^#[0-9a-f]{6}$/),
+      status: "planned",
+      repositoryIds: [],
+    });
     expect(onClose).toHaveBeenCalledOnce();
   });
 });

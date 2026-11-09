@@ -103,8 +103,10 @@ import {
   type PlannedIssueDocumentInsert,
   type PlannedIssueDocumentMerge,
   type PlannedIssueInsert,
+  type WorktreeMergePlan,
 } from "./worktree-merge-history-lib.js";
 import { detectGitWorkspaceInfo } from "./git-workspace.js";
+import { worktreeListMarkerLabels, worktreeOperationMessage } from "../localization/worktree-operations.js";
 
 type WorktreeInitOptions = {
   name?: string;
@@ -283,14 +285,14 @@ function formatSeededWorktreeExecutionQuarantineSummary(
   summary: SeededWorktreeExecutionQuarantineSummary,
 ): string {
   return [
-    `disabled timer heartbeats: ${summary.disabledTimerHeartbeats}`,
-    `reset running agents: ${summary.resetRunningAgents}`,
-    `quarantined in-progress issues: ${summary.quarantinedInProgressIssues}`,
-    `unassigned todo issues: ${summary.unassignedTodoIssues}`,
-    `unassigned review issues: ${summary.unassignedReviewIssues}`,
-    `stopped project workspace runtimes: ${summary.stoppedProjectWorkspaceRuntimes}`,
-    `stopped execution workspace runtimes: ${summary.stoppedExecutionWorkspaceRuntimes}`,
-    `stopped runtime services: ${summary.stoppedRuntimeServices}`,
+    worktreeOperationMessage("disabledTimerHeartbeats", { count: summary.disabledTimerHeartbeats }),
+    worktreeOperationMessage("resetRunningAgents", { count: summary.resetRunningAgents }),
+    worktreeOperationMessage("quarantinedInProgressIssues", { count: summary.quarantinedInProgressIssues }),
+    worktreeOperationMessage("unassignedTodoIssues", { count: summary.unassignedTodoIssues }),
+    worktreeOperationMessage("unassignedReviewIssues", { count: summary.unassignedReviewIssues }),
+    worktreeOperationMessage("stoppedProjectWorkspaceRuntimes", { count: summary.stoppedProjectWorkspaceRuntimes }),
+    worktreeOperationMessage("stoppedExecutionWorkspaceRuntimes", { count: summary.stoppedExecutionWorkspaceRuntimes }),
+    worktreeOperationMessage("stoppedRuntimeServices", { count: summary.stoppedRuntimeServices }),
   ].join(", ");
 }
 
@@ -299,12 +301,10 @@ const WORKTREE_NAME_PREFIX = "paperclip-";
 function resolveWorktreeMakeName(name: string): string {
   const value = nonEmpty(name);
   if (!value) {
-    throw new Error("Worktree name is required.");
+    throw new Error(worktreeOperationMessage("worktreeNameRequired"));
   }
   if (!/^[A-Za-z0-9._-]+$/.test(value)) {
-    throw new Error(
-      "Worktree name must contain only letters, numbers, dots, underscores, or dashes.",
-    );
+    throw new Error(worktreeOperationMessage("invalidWorktreeName"));
   }
   return value.startsWith(WORKTREE_NAME_PREFIX) ? value : `${WORKTREE_NAME_PREFIX}${value}`;
 }
@@ -558,14 +558,30 @@ function readPidFilePort(postmasterPidFile: string): number | null {
 }
 
 function readRunningPostmasterPid(postmasterPidFile: string): number | null {
-  if (!existsSync(postmasterPidFile)) return null;
+  let contents: string;
   try {
-    const pid = Number(readFileSync(postmasterPidFile, "utf8").split("\n")[0]?.trim());
-    if (!Number.isInteger(pid) || pid <= 0) return null;
+    contents = readFileSync(postmasterPidFile, "utf8");
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
+
+  const pid = Number(contents.split("\n")[0]?.trim());
+  if (!Number.isInteger(pid) || pid <= 0) {
+    throw new Error(worktreeOperationMessage("invalidPostmasterPidFile", { pidFile: postmasterPidFile }));
+  }
+
+  try {
     process.kill(pid, 0);
     return pid;
-  } catch {
-    return null;
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error) {
+      if (error.code === "ESRCH") return null;
+      if (error.code === "EPERM") return pid;
+    }
+    throw error;
   }
 }
 
@@ -684,7 +700,10 @@ function validateGitBranchName(cwd: string, branchName: string): string {
       stdio: ["ignore", "pipe", "pipe"],
     });
   } catch (error) {
-    throw new Error(`Invalid branch name "${branchName}": ${extractExecSyncErrorMessage(error) ?? String(error)}`);
+    throw new Error(worktreeOperationMessage("invalidGitBranchName", {
+      branchName,
+      detail: extractExecSyncErrorMessage(error) ?? String(error),
+    }));
   }
   return value;
 }
@@ -697,7 +716,7 @@ function isPrimaryGitWorktree(cwd: string): boolean {
 function resolvePrimaryGitRepoRoot(cwd: string): string {
   const workspace = detectGitWorkspaceInfo(cwd);
   if (!workspace) {
-    throw new Error("Current directory is not inside a git repository.");
+    throw new Error(worktreeOperationMessage("currentDirectoryNotGitRepo"));
   }
   if (workspace.gitDir === workspace.commonDir) {
     return workspace.root;
@@ -873,9 +892,7 @@ export function resolveWorktreeReseedSource(input: WorktreeReseedOptions): Resol
   const hasExplicitConfigSource = Boolean(fromConfig || fromDataDir || fromInstance);
 
   if (fromSelector && hasExplicitConfigSource) {
-    throw new Error(
-      "Use either --from <worktree> or --from-config/--from-data-dir/--from-instance, not both.",
-    );
+    throw new Error(worktreeOperationMessage("reseedSourceSelectorsConflict"));
   }
 
   if (fromSelector) {
@@ -898,9 +915,7 @@ export function resolveWorktreeReseedSource(input: WorktreeReseedOptions): Resol
     };
   }
 
-  throw new Error(
-    "Pass --from <worktree> or --from-config/--from-instance explicitly so the reseed source is unambiguous.",
-  );
+  throw new Error(worktreeOperationMessage("reseedSourceRequired"));
 }
 
 function resolveWorktreeRepairSource(input: WorktreeRepairOptions): ResolvedWorktreeReseedSource {
@@ -927,9 +942,7 @@ export function resolveWorktreeReseedTargetPaths(input: {
   const instanceId = nonEmpty(envEntries.PAPERCLIP_INSTANCE_ID);
 
   if (!homeDir || !instanceId) {
-    throw new Error(
-      `Target config ${input.configPath} does not look like a worktree-local Paperclip instance. Expected PAPERCLIP_HOME and PAPERCLIP_INSTANCE_ID in the adjacent .env.`,
-    );
+    throw new Error(worktreeOperationMessage("reseedTargetEnvMissing", { configPath: input.configPath }));
   }
 
   return resolveWorktreeLocalPaths({
@@ -1005,13 +1018,13 @@ async function ensureRepairTargetWorktree(input: {
   );
 
   if (existsSync(targetPath)) {
-    throw new Error(`Target path already exists but is not a registered git worktree: ${targetPath}`);
+    throw new Error(worktreeOperationMessage("repairTargetExistsUnregistered", { targetPath }));
   }
 
   mkdirSync(path.dirname(targetPath), { recursive: true });
 
   const spinner = p.spinner();
-  spinner.start(`Creating git worktree for ${branchName}...`);
+  spinner.start(worktreeOperationMessage("worktreeMakeStarting", { targetPath }));
   try {
     execFileSync("git", resolveGitWorktreeAddArgs({
       branchName,
@@ -1021,9 +1034,9 @@ async function ensureRepairTargetWorktree(input: {
       cwd: repoRoot,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    spinner.stop(`Created git worktree at ${targetPath}.`);
+    spinner.stop(worktreeOperationMessage("worktreeMakeCreated", { targetPath }));
   } catch (error) {
-    spinner.stop(pc.red("Failed to create git worktree."));
+    spinner.stop(pc.red(worktreeOperationMessage("worktreeMakeFailed")));
     throw new Error(extractExecSyncErrorMessage(error) ?? String(error));
   }
 
@@ -2263,9 +2276,7 @@ export async function ensureWorktreeSeeded(
     ?? nonEmpty(process.env.PAPERCLIP_COMPANY_ID)
     ?? undefined;
   if (!explicitSourceConfigPath && registeredBaseWorkspaceCwd && (!registeredProjectWorkspaceId || !expectedCompanyId)) {
-    throw new Error(
-      "Managed worktree seed registration is incomplete; project workspace and company bindings are required.",
-    );
+    throw new Error(worktreeOperationMessage("incompleteSeedRegistration"));
   }
 
   const targetRoot = path.dirname(path.dirname(configPath));
@@ -2278,7 +2289,7 @@ export async function ensureWorktreeSeeded(
   });
 
   if (initialManifest && initialManifest.targetInstanceId !== registeredSeedSource.targetInstanceId) {
-    throw new Error("Worktree seed manifest target instance does not match the registered target instance.");
+    throw new Error(worktreeOperationMessage("seedTargetInstanceMismatch"));
   }
 
   // Resolve all authority-bearing paths before creating the lock. The manifest is
@@ -2301,7 +2312,7 @@ export async function ensureWorktreeSeeded(
     if (!manifest && existsSync(markers.pending)) {
       const currentLegacyPending = readLegacyWorktreeSeedPendingMarker(markers.pending);
       if (currentLegacyPending.sourceConfigPath !== legacyPending?.sourceConfigPath) {
-        throw new Error("Worktree seed source diagnostics changed while waiting for the seed lock.");
+        throw new Error(worktreeOperationMessage("seedSourceChangedWhileWaiting"));
       }
       markWorktreeSeedPending({
         configPath,
@@ -2346,7 +2357,7 @@ export async function ensureWorktreeSeeded(
       });
       manifest = readWorktreeSeedManifest(configPath);
       if (!manifest) {
-        throw new Error("Failed to create a pending worktree seed manifest.");
+        throw new Error(worktreeOperationMessage("pendingSeedManifestCreateFailed"));
       }
     }
     if (
@@ -2414,7 +2425,7 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
   );
   const seedMode = opts.seedMode ?? "minimal";
   if (!isWorktreeSeedMode(seedMode)) {
-    throw new Error(`Unsupported seed mode "${seedMode}". Expected one of: minimal, full.`);
+    throw new Error(worktreeOperationMessage("invalidSeedMode", { seedMode }));
   }
   const instanceId = sanitizeWorktreeInstanceId(opts.instance ?? worktreeName);
   const paths = resolveWorktreeLocalPaths({
@@ -2430,9 +2441,10 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
   const sourceConfig = existsSync(sourceConfigPath) ? readConfig(sourceConfigPath) : null;
 
   if ((existsSync(paths.configPath) || existsSync(paths.instanceRoot)) && !opts.force) {
-    throw new Error(
-      `Worktree config already exists at ${paths.configPath} or instance data exists at ${paths.instanceRoot}. Re-run with --force to replace it.`,
-    );
+    throw new Error(worktreeOperationMessage("configAlreadyExists", {
+      configPath: paths.configPath,
+      instanceRoot: paths.instanceRoot,
+    }));
   }
 
   if (opts.force) {
@@ -2532,12 +2544,10 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
   let reboundWorkspaceSummary: SeedWorktreeDatabaseResult["reboundWorkspaces"] = [];
   if (!opts.empty && opts.seed !== false) {
     if (!sourceConfig) {
-      throw new Error(
-        `Cannot seed worktree database because source config was not found at ${sourceConfigPath}. Use --no-seed or provide --from-config.`,
-      );
+      throw new Error(worktreeOperationMessage("missingSourceConfig", { sourceConfigPath }));
     }
     const spinner = p.spinner();
-    spinner.start(`Seeding isolated worktree database from source instance (${seedMode})...`);
+    spinner.start(worktreeOperationMessage("seedStarting", { seedMode }));
     const markers = resolveWorktreeSeedMarkerPaths(paths.configPath);
     const releaseSeedLock = await acquireWorktreeSeedLock(markers.lock);
     try {
@@ -2556,48 +2566,48 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
       seedExecutionQuarantineSummary = seeded.executionQuarantine;
       pausedScheduledRoutineCount = seeded.pausedScheduledRoutines;
       reboundWorkspaceSummary = seeded.reboundWorkspaces;
-      spinner.stop(`Seeded isolated worktree database (${seedMode}).`);
+      spinner.stop(worktreeOperationMessage("seedComplete", { seedMode }));
     } catch (error) {
-      spinner.stop(pc.red("Failed to seed worktree database."));
+      spinner.stop(pc.red(worktreeOperationMessage("seedFailed")));
       throw error;
     } finally {
       await releaseSeedLock();
     }
   }
 
-  p.log.message(pc.dim(`Repo config: ${paths.configPath}`));
-  p.log.message(pc.dim(`Repo env: ${paths.envPath}`));
-  p.log.message(pc.dim(`Isolated home: ${paths.homeDir}`));
-  p.log.message(pc.dim(`Instance: ${paths.instanceId}`));
-  p.log.message(pc.dim(`Worktree badge: ${branding.name} (${branding.color})`));
-  p.log.message(pc.dim(`Server port: ${serverPort} | DB port: ${databasePort}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("repoConfig")} ${paths.configPath}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("repoEnv")} ${paths.envPath}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("isolatedHome")} ${paths.homeDir}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("instance")} ${paths.instanceId}`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("worktreeBadge")} ${branding.name} (${branding.color})`));
+  p.log.message(pc.dim(`${worktreeOperationMessage("serverPort")} ${serverPort} | ${worktreeOperationMessage("dbPort")} ${databasePort}`));
   if (copiedGitHooks?.copied) {
     p.log.message(
-      pc.dim(`Mirrored git hooks: ${copiedGitHooks.sourceHooksPath} -> ${copiedGitHooks.targetHooksPath}`),
+      pc.dim(`${worktreeOperationMessage("mirroredGitHooks")} ${copiedGitHooks.sourceHooksPath} -> ${copiedGitHooks.targetHooksPath}`),
     );
   }
   if (seedSummary) {
-    p.log.message(pc.dim(`Seed mode: ${seedMode}`));
-    p.log.message(pc.dim(`Seed snapshot: ${seedSummary}`));
+    p.log.message(pc.dim(`${worktreeOperationMessage("seedMode")} ${seedMode}`));
+    p.log.message(pc.dim(`${worktreeOperationMessage("seedSnapshot")} ${seedSummary}`));
     if (opts.preserveLiveWork) {
-      p.log.warning("Preserved copied live work; this worktree instance may auto-run source-instance assignments.");
+      p.log.warning(worktreeOperationMessage("preservedLiveWork"));
     } else if (seedExecutionQuarantineSummary) {
       p.log.message(
-        pc.dim(`Seed execution quarantine: ${formatSeededWorktreeExecutionQuarantineSummary(seedExecutionQuarantineSummary)}`),
+        pc.dim(`${worktreeOperationMessage("seedExecutionQuarantine")} ${formatSeededWorktreeExecutionQuarantineSummary(seedExecutionQuarantineSummary)}`),
       );
     }
     if (pausedScheduledRoutineCount != null) {
-      p.log.message(pc.dim(`Paused scheduled routines: ${pausedScheduledRoutineCount}`));
+      p.log.message(pc.dim(`${worktreeOperationMessage("pausedScheduledRoutines")} ${pausedScheduledRoutineCount}`));
     }
     for (const rebound of reboundWorkspaceSummary) {
       p.log.message(
-        pc.dim(`Rebound workspace ${rebound.name}: ${rebound.fromCwd} -> ${rebound.toCwd}`),
+        pc.dim(worktreeOperationMessage("reboundWorkspace", rebound)),
       );
     }
   }
   p.outro(
     pc.green(
-      `Worktree ready. Run Paperclip inside this repo and the CLI/server will use ${paths.instanceId} automatically.`,
+      worktreeOperationMessage("worktreeReady", { instanceId: paths.instanceId }),
     ),
   );
 }
@@ -2613,17 +2623,17 @@ export async function worktreeEnsureSeededCommand(opts: WorktreeEnsureSeededOpti
   p.intro(pc.bgCyan(pc.black(" paperclipai worktree ensure-seeded ")));
 
   const spinner = p.spinner();
-  spinner.start("Checking isolated worktree database seed state...");
+  spinner.start(worktreeOperationMessage("checkingSeedState"));
   try {
     const result = await ensureWorktreeSeeded(opts);
     if (result.seeded) {
-      spinner.stop("Seeded isolated worktree database (minimal).");
+      spinner.stop(worktreeOperationMessage("seedComplete", { seedMode: "minimal" }));
     } else if (result.reason === "legacy_database") {
-      spinner.stop("Validated and adopted an existing legacy worktree database.");
+      spinner.stop(worktreeOperationMessage("adoptedLegacySeed"));
     } else if (result.reason === "explicitly_empty") {
-      spinner.stop("Explicitly empty instance; automatic database copying is disabled.");
+      spinner.stop(worktreeOperationMessage("explicitlyEmptySeed"));
     } else {
-      spinner.stop("Worktree database already has a verified seed manifest.");
+      spinner.stop(worktreeOperationMessage("verifiedSeedAlready"));
     }
     if (result.details) {
       p.log.message(pc.dim(`Seed snapshot: ${result.details.backupSummary}`));
@@ -2639,9 +2649,11 @@ export async function worktreeEnsureSeededCommand(opts: WorktreeEnsureSeededOpti
         );
       }
     }
-    p.outro(pc.green(result.reason === "explicitly_empty" ? "Empty worktree ready." : "Worktree database seed complete."));
+    p.outro(pc.green(result.reason === "explicitly_empty"
+      ? worktreeOperationMessage("emptyWorktreeReady")
+      : worktreeOperationMessage("seedOperationComplete")));
   } catch (error) {
-    spinner.stop(pc.red("Failed to seed worktree database."));
+    spinner.stop(pc.red(worktreeOperationMessage("seedFailed")));
     throw error;
   }
 }
@@ -2656,7 +2668,7 @@ export async function worktreeMakeCommand(nameArg: string, opts: WorktreeMakeOpt
   const sourceConfigPath = resolveSourceConfigPath(opts);
   const targetPath = resolveWorktreeMakeTargetPath(name);
   if (existsSync(targetPath)) {
-    throw new Error(`Target path already exists: ${targetPath}`);
+    throw new Error(worktreeOperationMessage("worktreeMakeTargetExists", { targetPath }));
   }
 
   mkdirSync(path.dirname(targetPath), { recursive: true });
@@ -2668,9 +2680,10 @@ export async function worktreeMakeCommand(nameArg: string, opts: WorktreeMakeOpt
         stdio: ["ignore", "pipe", "pipe"],
       });
     } catch (error) {
-      throw new Error(
-        `Failed to fetch from remote "${remote}": ${extractExecSyncErrorMessage(error) ?? String(error)}`,
-      );
+      throw new Error(worktreeOperationMessage("worktreeMakeFetchFailed", {
+        remote,
+        detail: extractExecSyncErrorMessage(error) ?? String(error),
+      }));
     }
   }
 
@@ -2682,15 +2695,15 @@ export async function worktreeMakeCommand(nameArg: string, opts: WorktreeMakeOpt
   });
 
   const spinner = p.spinner();
-  spinner.start(`Creating git worktree at ${targetPath}...`);
+  spinner.start(worktreeOperationMessage("worktreeMakeStarting", { targetPath }));
   try {
     execFileSync("git", worktreeArgs, {
       cwd: sourceCwd,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    spinner.stop(`Created git worktree at ${targetPath}.`);
+    spinner.stop(worktreeOperationMessage("worktreeMakeCreated", { targetPath }));
   } catch (error) {
-    spinner.stop(pc.red("Failed to create git worktree."));
+    spinner.stop(pc.red(worktreeOperationMessage("worktreeMakeFailed")));
     throw new Error(extractExecSyncErrorMessage(error) ?? String(error));
   }
 
@@ -2732,16 +2745,16 @@ export function resolvePnpmInstallInvocation(
 
 function installDependenciesBestEffort(targetPath: string): void {
   const installSpinner = p.spinner();
-  installSpinner.start("Installing dependencies...");
+  installSpinner.start(worktreeOperationMessage("worktreeInstallStarting"));
   const pnpm = resolvePnpmInstallInvocation();
   try {
     execFileSync(pnpm.command, [...pnpm.argsPrefix, "install"], {
       cwd: targetPath,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    installSpinner.stop("Installed dependencies.");
+    installSpinner.stop(worktreeOperationMessage("worktreeInstallComplete"));
   } catch (error) {
-    installSpinner.stop(pc.yellow("Failed to install dependencies (continuing anyway)."));
+    installSpinner.stop(pc.yellow(worktreeOperationMessage("worktreeInstallFailed")));
     p.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
   }
 }
@@ -2841,42 +2854,21 @@ function toMergeSourceChoices(cwd: string): MergeSourceChoice[] {
 }
 
 function branchHasUniqueCommits(cwd: string, branchName: string): boolean {
-  try {
-    const output = execFileSync(
-      "git",
-      ["log", "--oneline", branchName, "--not", "--remotes", "--exclude", `refs/heads/${branchName}`, "--branches"],
-      { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-    ).trim();
-    return output.length > 0;
-  } catch {
-    return false;
-  }
-}
-
-function branchExistsOnAnyRemote(cwd: string, branchName: string): boolean {
-  try {
-    const output = execFileSync(
-      "git",
-      ["branch", "-r", "--list", `*/${branchName}`],
-      { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-    ).trim();
-    return output.length > 0;
-  } catch {
-    return false;
-  }
+  const output = execFileSync(
+    "git",
+    ["log", "--oneline", branchName, "--not", "--remotes", "--exclude", branchName, "--branches"],
+    { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+  ).trim();
+  return output.length > 0;
 }
 
 function worktreePathHasUncommittedChanges(worktreePath: string): boolean {
-  try {
-    const output = execFileSync(
-      "git",
-      ["status", "--porcelain"],
-      { cwd: worktreePath, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-    ).trim();
-    return output.length > 0;
-  } catch {
-    return false;
-  }
+  const output = execFileSync(
+    "git",
+    ["status", "--porcelain"],
+    { cwd: worktreePath, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+  ).trim();
+  return output.length > 0;
 }
 
 export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeCleanupOptions): Promise<void> {
@@ -2902,8 +2894,8 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
   );
 
   if (!hasBranch && !hasTargetDir && !hasInstanceData && !linkedWorktree) {
-    p.log.info("Nothing to clean up — no branch, worktree directory, or instance data found.");
-    p.outro(pc.green("Already clean."));
+    p.log.info(worktreeOperationMessage("cleanupNothingFound"));
+    p.outro(pc.green(worktreeOperationMessage("cleanupAlreadyClean")));
     return;
   }
 
@@ -2911,35 +2903,39 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
 
   const problems: string[] = [];
 
-  if (hasBranch && branchHasUniqueCommits(sourceCwd, name)) {
-    const onRemote = branchExistsOnAnyRemote(sourceCwd, name);
-    if (onRemote) {
-      p.log.info(
-        `Branch "${name}" has unique local commits, but the branch also exists on a remote — safe to delete locally.`,
-      );
-    } else {
-      problems.push(
-        `Branch "${name}" has commits not found on any other branch or remote. ` +
-          `Deleting it will lose work. Push it first, or use --force.`,
-      );
+  if (hasBranch) {
+    try {
+      if (branchHasUniqueCommits(sourceCwd, name)) {
+        problems.push(worktreeOperationMessage("cleanupBranchUniqueCommits", { branchName: name }));
+      }
+    } catch (error) {
+      problems.push(worktreeOperationMessage("cleanupSafetyVerificationFailed", {
+        detail: extractExecSyncErrorMessage(error) ?? String(error),
+      }));
     }
   }
 
-  if (hasTargetDir && worktreePathHasUncommittedChanges(targetPath)) {
-    problems.push(
-      `Worktree directory ${targetPath} has uncommitted changes. Commit or stash first, or use --force.`,
-    );
+  if (hasTargetDir) {
+    try {
+      if (worktreePathHasUncommittedChanges(targetPath)) {
+        problems.push(worktreeOperationMessage("cleanupUncommittedWorktree", { targetPath }));
+      }
+    } catch (error) {
+      problems.push(worktreeOperationMessage("cleanupSafetyVerificationFailed", {
+        detail: extractExecSyncErrorMessage(error) ?? String(error),
+      }));
+    }
   }
 
   if (problems.length > 0 && !opts.force) {
     for (const problem of problems) {
       p.log.error(problem);
     }
-    throw new Error("Safety checks failed. Resolve the issues above or re-run with --force.");
+    throw new Error(worktreeOperationMessage("cleanupSafetyFailed"));
   }
   if (problems.length > 0 && opts.force) {
     for (const problem of problems) {
-      p.log.warning(`Overridden by --force: ${problem}`);
+      p.log.warning(worktreeOperationMessage("cleanupForceOverride", { problem }));
     }
   }
 
@@ -2950,7 +2946,7 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
     const worktreeDirExists = existsSync(linkedWorktree.worktree);
     const spinner = p.spinner();
     if (worktreeDirExists) {
-      spinner.start(`Removing git worktree at ${linkedWorktree.worktree}...`);
+      spinner.start(worktreeOperationMessage("cleanupRemoveWorktreeStarting", { worktreePath: linkedWorktree.worktree }));
       try {
         const removeArgs = ["worktree", "remove", linkedWorktree.worktree];
         if (opts.force) removeArgs.push("--force");
@@ -2958,18 +2954,18 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
           cwd: sourceCwd,
           stdio: ["ignore", "pipe", "pipe"],
         });
-        spinner.stop(`Removed git worktree at ${linkedWorktree.worktree}.`);
+        spinner.stop(worktreeOperationMessage("cleanupWorktreeRemoved", { worktreePath: linkedWorktree.worktree }));
       } catch (error) {
-        spinner.stop(pc.yellow(`Could not remove worktree cleanly, will prune instead.`));
-        p.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
+        spinner.stop(pc.yellow(worktreeOperationMessage("cleanupWorktreeRemoveFailed")));
+        throw new Error(extractExecSyncErrorMessage(error) ?? String(error));
       }
     } else {
-      spinner.start("Pruning stale worktree entry...");
+      spinner.start(worktreeOperationMessage("cleanupPruningStaleWorktree"));
       execFileSync("git", ["worktree", "prune"], {
         cwd: sourceCwd,
         stdio: ["ignore", "pipe", "pipe"],
       });
-      spinner.stop("Pruned stale worktree entry.");
+      spinner.stop(worktreeOperationMessage("cleanupPrunedStaleWorktree"));
     }
   } else {
     // Even without a linked worktree, prune to clean up any orphaned entries
@@ -2982,24 +2978,24 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
   // 3b. Remove the worktree directory if it still exists (e.g. partial creation)
   if (existsSync(targetPath)) {
     const spinner = p.spinner();
-    spinner.start(`Removing worktree directory ${targetPath}...`);
+    spinner.start(worktreeOperationMessage("cleanupRemoveDirectoryStarting", { targetPath }));
     rmSync(targetPath, { recursive: true, force: true });
-    spinner.stop(`Removed worktree directory ${targetPath}.`);
+    spinner.stop(worktreeOperationMessage("cleanupDirectoryRemoved", { targetPath }));
   }
 
   // 3c. Delete the local branch (now safe — worktree is gone)
   if (localBranchExists(sourceCwd, name)) {
     const spinner = p.spinner();
-    spinner.start(`Deleting local branch "${name}"...`);
+    spinner.start(worktreeOperationMessage("cleanupDeleteBranchStarting", { branchName: name }));
     try {
       const deleteFlag = opts.force ? "-D" : "-d";
       execFileSync("git", ["branch", deleteFlag, name], {
         cwd: sourceCwd,
         stdio: ["ignore", "pipe", "pipe"],
       });
-      spinner.stop(`Deleted local branch "${name}".`);
+      spinner.stop(worktreeOperationMessage("cleanupBranchDeleted", { branchName: name }));
     } catch (error) {
-      spinner.stop(pc.yellow(`Could not delete branch "${name}".`));
+      spinner.stop(pc.yellow(worktreeOperationMessage("cleanupBranchDeleteFailed", { branchName: name })));
       p.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
     }
   }
@@ -3007,12 +3003,12 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
   // 3d. Remove instance data
   if (existsSync(instanceRoot)) {
     const spinner = p.spinner();
-    spinner.start(`Removing instance data at ${instanceRoot}...`);
+    spinner.start(worktreeOperationMessage("cleanupRemoveInstanceStarting", { instanceRoot }));
     rmSync(instanceRoot, { recursive: true, force: true });
-    spinner.stop(`Removed instance data at ${instanceRoot}.`);
+    spinner.stop(worktreeOperationMessage("cleanupInstanceRemoved", { instanceRoot }));
   }
 
-  p.outro(pc.green("Cleanup complete."));
+  p.outro(pc.green(worktreeOperationMessage("cleanupCompleted")));
 }
 
 export async function worktreeEnvCommand(opts: WorktreeEnvOptions): Promise<void> {
@@ -3182,7 +3178,7 @@ async function resolveMergeCompany(input: {
   throw new Error(`Multiple shared companies found. Re-run with --company <id-or-prefix>. Options: ${options}`);
 }
 
-function renderMergePlan(plan: Awaited<ReturnType<typeof collectMergePlan>>["plan"], extras: {
+export function renderMergePlan(plan: WorktreeMergePlan, extras: {
   sourcePath: string;
   targetPath: string;
   unsupportedRunCount: number;
@@ -3195,26 +3191,32 @@ function renderMergePlan(plan: Awaited<ReturnType<typeof collectMergePlan>>["pla
     return `${value.slice(0, Math.max(0, maxWidth - 1)).trimEnd()}…`;
   };
   const lines = [
-    `Mode: preview`,
-    `Source: ${extras.sourcePath}`,
-    `Target: ${extras.targetPath}`,
-    `Company: ${plan.companyName} (${plan.issuePrefix})`,
+    worktreeOperationMessage("mergePlanModePreview"),
+    worktreeOperationMessage("mergePlanSource", { sourcePath: extras.sourcePath }),
+    worktreeOperationMessage("mergePlanTarget", { targetPath: extras.targetPath }),
+    worktreeOperationMessage("mergePlanCompany", { companyName: plan.companyName, issuePrefix: plan.issuePrefix }),
     "",
-    "Projects",
-    `- import: ${plan.counts.projectsToImport}`,
+    worktreeOperationMessage("mergePlanProjects"),
+    worktreeOperationMessage("mergePlanImport", { count: plan.counts.projectsToImport }),
     "",
-    "Issues",
-    `- insert: ${plan.counts.issuesToInsert}`,
-    `- already present: ${plan.counts.issuesExisting}`,
-    `- shared/imported issues with drift: ${plan.counts.issueDrift}`,
+    worktreeOperationMessage("mergePlanIssues"),
+    worktreeOperationMessage("mergePlanInsert", { count: plan.counts.issuesToInsert }),
+    worktreeOperationMessage("mergePlanAlreadyPresent", { count: plan.counts.issuesExisting }),
+    worktreeOperationMessage("mergePlanIssueDrift", { count: plan.counts.issueDrift }),
   ];
 
   if (plan.projectImports.length > 0) {
     lines.push("");
-    lines.push("Planned project imports");
+    lines.push(worktreeOperationMessage("mergePlanPlannedProjectImports"));
     for (const project of plan.projectImports) {
       lines.push(
-        `- ${project.source.name} (${project.workspaces.length} workspace${project.workspaces.length === 1 ? "" : "s"})`,
+        worktreeOperationMessage("mergePlanProjectImport", {
+          name: project.source.name,
+          count: project.workspaces.length,
+          workspaceLabel: worktreeOperationMessage(project.workspaces.length === 1
+            ? "mergePlanWorkspaceSingular"
+            : "mergePlanWorkspacePlural"),
+        }),
       );
     }
   }
@@ -3222,12 +3224,14 @@ function renderMergePlan(plan: Awaited<ReturnType<typeof collectMergePlan>>["pla
   const issueInserts = plan.issuePlans.filter((item): item is PlannedIssueInsert => item.action === "insert");
   if (issueInserts.length > 0) {
     lines.push("");
-    lines.push("Planned issue imports");
+    lines.push(worktreeOperationMessage("mergePlanPlannedIssueImports"));
     for (const issue of issueInserts) {
       const projectNote =
         (issue.projectResolution === "mapped" || issue.projectResolution === "imported")
         && issue.mappedProjectName
-          ? ` project->${issue.projectResolution === "imported" ? "import:" : ""}${issue.mappedProjectName}`
+          ? worktreeOperationMessage(issue.projectResolution === "imported"
+            ? "mergePlanProjectImported"
+            : "mergePlanProjectMapped", { projectName: issue.mappedProjectName })
           : "";
       const adjustments = issue.adjustments.length > 0 ? ` [${issue.adjustments.join(", ")}]` : "";
       const prefix = `- ${issue.source.identifier ?? issue.source.id} -> ${issue.previewIdentifier} (${issue.targetStatus}${projectNote})`;
@@ -3241,44 +3245,44 @@ function renderMergePlan(plan: Awaited<ReturnType<typeof collectMergePlan>>["pla
 
   if (plan.scopes.includes("comments")) {
     lines.push("");
-    lines.push("Comments");
-    lines.push(`- insert: ${plan.counts.commentsToInsert}`);
-    lines.push(`- already present: ${plan.counts.commentsExisting}`);
-    lines.push(`- skipped (missing parent): ${plan.counts.commentsMissingParent}`);
+    lines.push(worktreeOperationMessage("mergePlanComments"));
+    lines.push(worktreeOperationMessage("mergePlanInsert", { count: plan.counts.commentsToInsert }));
+    lines.push(worktreeOperationMessage("mergePlanAlreadyPresent", { count: plan.counts.commentsExisting }));
+    lines.push(worktreeOperationMessage("mergePlanSkippedMissingParent", { count: plan.counts.commentsMissingParent }));
   }
 
   lines.push("");
-  lines.push("Documents");
-  lines.push(`- insert: ${plan.counts.documentsToInsert}`);
-  lines.push(`- merge existing: ${plan.counts.documentsToMerge}`);
-  lines.push(`- already present: ${plan.counts.documentsExisting}`);
-  lines.push(`- skipped (conflicting key): ${plan.counts.documentsConflictingKey}`);
-  lines.push(`- skipped (missing parent): ${plan.counts.documentsMissingParent}`);
-  lines.push(`- revisions insert: ${plan.counts.documentRevisionsToInsert}`);
+  lines.push(worktreeOperationMessage("mergePlanDocuments"));
+  lines.push(worktreeOperationMessage("mergePlanInsert", { count: plan.counts.documentsToInsert }));
+  lines.push(worktreeOperationMessage("mergePlanMergeExisting", { count: plan.counts.documentsToMerge }));
+  lines.push(worktreeOperationMessage("mergePlanAlreadyPresent", { count: plan.counts.documentsExisting }));
+  lines.push(worktreeOperationMessage("mergePlanSkippedConflictingKey", { count: plan.counts.documentsConflictingKey }));
+  lines.push(worktreeOperationMessage("mergePlanSkippedMissingParent", { count: plan.counts.documentsMissingParent }));
+  lines.push(worktreeOperationMessage("mergePlanRevisionsInsert", { count: plan.counts.documentRevisionsToInsert }));
 
   lines.push("");
-  lines.push("Attachments");
-  lines.push(`- insert: ${plan.counts.attachmentsToInsert}`);
-  lines.push(`- already present: ${plan.counts.attachmentsExisting}`);
-  lines.push(`- skipped (missing parent): ${plan.counts.attachmentsMissingParent}`);
+  lines.push(worktreeOperationMessage("mergePlanAttachments"));
+  lines.push(worktreeOperationMessage("mergePlanInsert", { count: plan.counts.attachmentsToInsert }));
+  lines.push(worktreeOperationMessage("mergePlanAlreadyPresent", { count: plan.counts.attachmentsExisting }));
+  lines.push(worktreeOperationMessage("mergePlanSkippedMissingParent", { count: plan.counts.attachmentsMissingParent }));
 
   lines.push("");
-  lines.push("Adjustments");
-  lines.push(`- cleared assignee agents: ${plan.adjustments.clear_assignee_agent}`);
-  lines.push(`- cleared projects: ${plan.adjustments.clear_project}`);
-  lines.push(`- cleared project workspaces: ${plan.adjustments.clear_project_workspace}`);
-  lines.push(`- cleared goals: ${plan.adjustments.clear_goal}`);
-  lines.push(`- cleared comment author agents: ${plan.adjustments.clear_author_agent}`);
-  lines.push(`- cleared document agents: ${plan.adjustments.clear_document_agent}`);
-  lines.push(`- cleared document revision agents: ${plan.adjustments.clear_document_revision_agent}`);
-  lines.push(`- cleared attachment author agents: ${plan.adjustments.clear_attachment_agent}`);
-  lines.push(`- coerced in_progress to todo: ${plan.adjustments.coerce_in_progress_to_todo}`);
+  lines.push(worktreeOperationMessage("mergePlanAdjustments"));
+  lines.push(worktreeOperationMessage("mergePlanClearedAssigneeAgents", { count: plan.adjustments.clear_assignee_agent }));
+  lines.push(worktreeOperationMessage("mergePlanClearedProjects", { count: plan.adjustments.clear_project }));
+  lines.push(worktreeOperationMessage("mergePlanClearedProjectWorkspaces", { count: plan.adjustments.clear_project_workspace }));
+  lines.push(worktreeOperationMessage("mergePlanClearedGoals", { count: plan.adjustments.clear_goal }));
+  lines.push(worktreeOperationMessage("mergePlanClearedCommentAuthors", { count: plan.adjustments.clear_author_agent }));
+  lines.push(worktreeOperationMessage("mergePlanClearedDocumentAgents", { count: plan.adjustments.clear_document_agent }));
+  lines.push(worktreeOperationMessage("mergePlanClearedDocumentRevisionAgents", { count: plan.adjustments.clear_document_revision_agent }));
+  lines.push(worktreeOperationMessage("mergePlanClearedAttachmentAuthors", { count: plan.adjustments.clear_attachment_agent }));
+  lines.push(worktreeOperationMessage("mergePlanCoercedInProgressToTodo", { count: plan.adjustments.coerce_in_progress_to_todo }));
 
   lines.push("");
-  lines.push("Not imported in this phase");
-  lines.push(`- heartbeat runs: ${extras.unsupportedRunCount}`);
+  lines.push(worktreeOperationMessage("mergePlanNotImported"));
+  lines.push(worktreeOperationMessage("mergePlanHeartbeatRuns", { count: extras.unsupportedRunCount }));
   lines.push("");
-  lines.push("Identifiers shown above are provisional preview values. `--apply` reserves fresh issue numbers at write time.");
+  lines.push(worktreeOperationMessage("mergePlanIdentifiersDisclaimer"));
 
   return lines.join("\n");
 }
@@ -3632,10 +3636,11 @@ export async function worktreeListCommand(opts: WorktreeListOptions): Promise<vo
     return;
   }
 
+  const markers = worktreeListMarkerLabels();
   for (const choice of choices) {
     const flags = [
-      choice.isCurrent ? "current" : null,
-      choice.hasPaperclipConfig ? "paperclip" : "no-paperclip-config",
+      choice.isCurrent ? markers.current : null,
+      choice.hasPaperclipConfig ? markers.paperclipConfig : markers.noPaperclipConfig,
     ].filter((value): value is string => value !== null);
     p.log.message(`${choice.branchLabel}  ${choice.worktree}  [${flags.join(", ")}]`);
   }
@@ -3660,7 +3665,7 @@ function resolveWorktreeEndpointFromSelector(
   const trimmed = selector.trim();
   const allowCurrent = opts?.allowCurrent !== false;
   if (trimmed.length === 0) {
-    throw new Error("Worktree selector cannot be empty.");
+    throw new Error(worktreeOperationMessage("worktreeSelectorEmpty"));
   }
 
   const currentEndpoint = resolveCurrentWorktreeEndpoint();
@@ -3676,7 +3681,7 @@ function resolveWorktreeEndpointFromSelector(
     }
     const configPath = path.resolve(directPath, ".paperclip", "config.json");
     if (!existsSync(configPath)) {
-      throw new Error(`Resolved worktree path ${directPath} does not contain .paperclip/config.json.`);
+      throw new Error(worktreeOperationMessage("worktreeSelectorPathMissingConfig", { worktreePath: directPath }));
     }
     return {
       rootPath: directPath,
@@ -3693,12 +3698,10 @@ function resolveWorktreeEndpointFromSelector(
       || choice.branchLabel === trimmed),
   );
   if (!matched) {
-    throw new Error(
-      `Could not resolve worktree "${selector}". Use a path, a listed worktree directory name, branch name, or "current".`,
-    );
+    throw new Error(worktreeOperationMessage("worktreeSelectorNotFound", { selector }));
   }
   if (!matched.hasPaperclipConfig && !matched.isCurrent) {
-    throw new Error(`Resolved worktree "${selector}" does not look like a Paperclip worktree.`);
+    throw new Error(worktreeOperationMessage("worktreeSelectorNotPaperclip", { selector }));
   }
   return resolveEndpointFromChoice(matched);
 }
@@ -4200,11 +4203,16 @@ export async function worktreeMergeHistoryCommand(sourceArg: string | undefined,
     const confirmed = opts.yes
       ? true
       : await p.confirm({
-        message: `Import ${collected.plan.counts.issuesToInsert} issues and ${collected.plan.counts.commentsToInsert} comments from ${sourceEndpoint.label} into ${targetEndpoint.label}?`,
+        message: worktreeOperationMessage("mergeHistoryConfirmPrompt", {
+          issues: collected.plan.counts.issuesToInsert,
+          comments: collected.plan.counts.commentsToInsert,
+          source: sourceEndpoint.label,
+          target: targetEndpoint.label,
+        }),
         initialValue: false,
       });
     if (p.isCancel(confirmed) || !confirmed) {
-      p.log.warn("Import cancelled.");
+      p.log.warn(worktreeOperationMessage("mergeHistoryCancelled"));
       return;
     }
 
@@ -4216,13 +4224,23 @@ export async function worktreeMergeHistoryCommand(sourceArg: string | undefined,
       plan: collected.plan,
     });
     if (applied.skippedMissingAttachmentObjects > 0) {
-      p.log.warn(
-        `Skipped ${applied.skippedMissingAttachmentObjects} attachments whose source files were missing from storage.`,
-      );
+      p.log.warn(worktreeOperationMessage("mergeHistorySkippedAttachments", {
+        count: applied.skippedMissingAttachmentObjects,
+      }));
     }
     p.outro(
       pc.green(
-        `Imported ${applied.insertedProjects} projects (${applied.insertedProjectWorkspaces} workspaces), ${applied.insertedIssues} issues, ${applied.insertedComments} comments, ${applied.insertedDocuments} documents (${applied.insertedDocumentRevisions} revisions, ${applied.mergedDocuments} merged), and ${applied.insertedAttachments} attachments into ${company.issuePrefix}.`,
+        worktreeOperationMessage("mergeHistoryImported", {
+          projects: applied.insertedProjects,
+          workspaces: applied.insertedProjectWorkspaces,
+          issues: applied.insertedIssues,
+          comments: applied.insertedComments,
+          documents: applied.insertedDocuments,
+          revisions: applied.insertedDocumentRevisions,
+          merged: applied.mergedDocuments,
+          attachments: applied.insertedAttachments,
+          issuePrefix: company.issuePrefix,
+        }),
       ),
     );
   } finally {
@@ -4262,7 +4280,7 @@ async function backupWorktreeReseedTarget(input: {
 async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
   const seedMode = opts.seedMode ?? "full";
   if (!isWorktreeSeedMode(seedMode)) {
-    throw new Error(`Unsupported seed mode "${seedMode}". Expected one of: minimal, full.`);
+    throw new Error(worktreeOperationMessage("invalidSeedMode", { seedMode }));
   }
 
   const targetEndpoint = opts.to
@@ -4271,19 +4289,19 @@ async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
   const source = resolveWorktreeReseedSource(opts);
 
   if (path.resolve(source.configPath) === path.resolve(targetEndpoint.configPath)) {
-    throw new Error("Source and target Paperclip configs are the same. Choose different --from/--to values.");
+    throw new Error(worktreeOperationMessage("reseedSameConfig"));
   }
   if (!existsSync(source.configPath)) {
-    throw new Error(`Source config not found at ${source.configPath}.`);
+    throw new Error(worktreeOperationMessage("reseedSourceConfigMissing", { configPath: source.configPath }));
   }
 
   const targetConfig = readConfig(targetEndpoint.configPath);
   if (!targetConfig) {
-    throw new Error(`Target config not found at ${targetEndpoint.configPath}.`);
+    throw new Error(worktreeOperationMessage("reseedTargetConfigMissing", { configPath: targetEndpoint.configPath }));
   }
   const sourceConfig = readConfig(source.configPath);
   if (!sourceConfig) {
-    throw new Error(`Source config not found at ${source.configPath}.`);
+    throw new Error(worktreeOperationMessage("reseedSourceConfigMissing", { configPath: source.configPath }));
   }
 
   const targetPaths = resolveWorktreeReseedTargetPaths({
@@ -4292,28 +4310,37 @@ async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
   });
   const runningTargetPid = resolveRunningEmbeddedPostgresPid(targetConfig);
   if (runningTargetPid && !opts.allowLiveTarget) {
-    throw new Error(
-      `Target worktree database appears to be running (pid ${runningTargetPid}). Stop Paperclip in ${targetEndpoint.rootPath} before reseeding, or re-run with --allow-live-target if you want to override this guard.`,
-    );
+    throw new Error(worktreeOperationMessage("reseedTargetDatabaseRunning", {
+      pid: runningTargetPid,
+      rootPath: targetEndpoint.rootPath,
+    }));
   }
 
   const confirmed = opts.yes
     ? true
     : await p.confirm({
-      message: `Overwrite the isolated Paperclip DB for ${targetEndpoint.label} from ${source.label} using ${seedMode} seed mode?`,
+      message: worktreeOperationMessage("reseedConfirm", {
+        targetLabel: targetEndpoint.label,
+        sourceLabel: source.label,
+        seedMode,
+      }),
       initialValue: false,
     });
   if (p.isCancel(confirmed) || !confirmed) {
-    p.log.warn("Reseed cancelled.");
+    p.log.warn(worktreeOperationMessage("reseedCancelled"));
     return;
   }
 
   if (runningTargetPid && opts.allowLiveTarget) {
-    p.log.warning(`Proceeding even though the target embedded PostgreSQL appears to be running (pid ${runningTargetPid}).`);
+    p.log.warning(worktreeOperationMessage("reseedProceedLiveTarget", { pid: runningTargetPid }));
   }
 
   const spinner = p.spinner();
-  spinner.start(`Reseeding ${targetEndpoint.label} from ${source.label} (${seedMode})...`);
+  spinner.start(worktreeOperationMessage("reseedStarting", {
+    targetLabel: targetEndpoint.label,
+    sourceLabel: source.label,
+    seedMode,
+  }));
   const markers = resolveWorktreeSeedMarkerPaths(targetEndpoint.configPath);
   mkdirSync(path.dirname(markers.lock), { recursive: true });
   const releaseSeedLock = await acquireWorktreeSeedLock(markers.lock);
@@ -4321,7 +4348,7 @@ async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
     let targetBackupSummary: string | null = null;
     if (opts.backupTarget) {
       targetBackupSummary = await backupWorktreeReseedTarget({ targetConfig, targetPaths });
-      p.log.message(pc.dim(`Recoverable pre-repair backup: ${targetBackupSummary}`));
+      p.log.message(pc.dim(worktreeOperationMessage("reseedBackupSummary", { backupSummary: targetBackupSummary })));
     }
     markWorktreeSeedPending({
       configPath: targetEndpoint.configPath,
@@ -4343,26 +4370,29 @@ async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
     });
     // An operator-confirmed successful reseed replaces the earlier empty-instance choice.
     rmSync(markers.empty, { force: true });
-    spinner.stop(`Reseeded ${targetEndpoint.label} (${seedMode}).`);
-    p.log.message(pc.dim(`Source: ${source.configPath}`));
-    p.log.message(pc.dim(`Target: ${targetEndpoint.configPath}`));
-    p.log.message(pc.dim(`Seed snapshot: ${seeded.backupSummary}`));
+    spinner.stop(worktreeOperationMessage("reseedCompleteStatus", {
+      targetLabel: targetEndpoint.label,
+      seedMode,
+    }));
+    p.log.message(pc.dim(worktreeOperationMessage("reseedSourceLabel", { configPath: source.configPath })));
+    p.log.message(pc.dim(worktreeOperationMessage("reseedTargetLabel", { configPath: targetEndpoint.configPath })));
+    p.log.message(pc.dim(`${worktreeOperationMessage("seedSnapshot")} ${seeded.backupSummary}`));
     if (opts.preserveLiveWork) {
-      p.log.warning("Preserved copied live work; this worktree instance may auto-run source-instance assignments.");
+      p.log.warning(worktreeOperationMessage("preservedLiveWork"));
     } else {
       p.log.message(
-        pc.dim(`Seed execution quarantine: ${formatSeededWorktreeExecutionQuarantineSummary(seeded.executionQuarantine)}`),
+        pc.dim(`${worktreeOperationMessage("seedExecutionQuarantine")} ${formatSeededWorktreeExecutionQuarantineSummary(seeded.executionQuarantine)}`),
       );
     }
-    p.log.message(pc.dim(`Paused scheduled routines: ${seeded.pausedScheduledRoutines}`));
+    p.log.message(pc.dim(`${worktreeOperationMessage("pausedScheduledRoutines")} ${seeded.pausedScheduledRoutines}`));
     for (const rebound of seeded.reboundWorkspaces) {
       p.log.message(
-        pc.dim(`Rebound workspace ${rebound.name}: ${rebound.fromCwd} -> ${rebound.toCwd}`),
+        pc.dim(worktreeOperationMessage("reboundWorkspace", rebound)),
       );
     }
-    p.outro(pc.green(`Reseed complete for ${targetEndpoint.label}.`));
+    p.outro(pc.green(worktreeOperationMessage("reseedOutro", { targetLabel: targetEndpoint.label })));
   } catch (error) {
-    spinner.stop(pc.red("Failed to reseed worktree database."));
+    spinner.stop(pc.red(worktreeOperationMessage("reseedFailed")));
     throw error;
   } finally {
     await releaseSeedLock();
@@ -4381,7 +4411,7 @@ export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promis
 
   const seedMode = opts.seedMode ?? "minimal";
   if (!isWorktreeSeedMode(seedMode)) {
-    throw new Error(`Unsupported seed mode "${seedMode}". Expected one of: minimal, full.`);
+    throw new Error(worktreeOperationMessage("invalidSeedMode", { seedMode }));
   }
 
   const target = await ensureRepairTargetWorktree({
@@ -4390,17 +4420,17 @@ export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promis
     opts,
   });
   if (!target) {
-    p.log.warn("Current checkout is the primary repo worktree. Pass --branch to create or repair a linked worktree.");
-    p.outro(pc.yellow("No worktree repaired."));
+    p.log.warn(worktreeOperationMessage("repairPrimaryCheckoutWarning"));
+    p.outro(pc.yellow(worktreeOperationMessage("repairNoWorktreeOutcome")));
     return;
   }
 
   const source = resolveWorktreeRepairSource(opts);
   if (!existsSync(source.configPath)) {
-    throw new Error(`Source config not found at ${source.configPath}.`);
+    throw new Error(worktreeOperationMessage("repairSourceConfigMissing", { sourceConfigPath: source.configPath }));
   }
   if (path.resolve(source.configPath) === path.resolve(target.configPath)) {
-    throw new Error("Source and target Paperclip configs are the same. Use --from-config/--from-instance to point repair at a different source.");
+    throw new Error(worktreeOperationMessage("repairSourceTargetSameConfig"));
   }
 
   const targetConfig = existsSync(target.configPath) ? readConfig(target.configPath) : null;
@@ -4410,8 +4440,8 @@ export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promis
   );
 
   if (targetConfig && targetHasWorktreeEnv && opts.noSeed) {
-    p.log.message(pc.dim(`Target ${target.label} already has worktree-local config/env. Skipping reseed because --no-seed was passed.`));
-    p.outro(pc.green(`Worktree metadata already looks healthy for ${target.label}.`));
+    p.log.message(pc.dim(worktreeOperationMessage("repairMetadataSkipReseed", { label: target.label })));
+    p.outro(pc.green(worktreeOperationMessage("repairMetadataHealthy", { label: target.label })));
     return;
   }
 
@@ -4435,12 +4465,13 @@ export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promis
   });
   const runningTargetPid = readRunningPostmasterPid(path.resolve(repairPaths.embeddedPostgresDataDir, "postmaster.pid"));
   if (runningTargetPid && !opts.allowLiveTarget) {
-    throw new Error(
-      `Target worktree database appears to be running (pid ${runningTargetPid}). Stop Paperclip in ${target.rootPath} before repairing, or re-run with --allow-live-target if you want to override this guard.`,
-    );
+    throw new Error(worktreeOperationMessage("repairTargetDatabaseRunning", {
+      pid: runningTargetPid,
+      rootPath: target.rootPath,
+    }));
   }
   if (runningTargetPid && opts.allowLiveTarget) {
-    p.log.warning(`Proceeding even though the target embedded PostgreSQL appears to be running (pid ${runningTargetPid}).`);
+    p.log.warning(worktreeOperationMessage("repairProceedLiveDatabase", { pid: runningTargetPid }));
   }
 
   const originalCwd = process.cwd();

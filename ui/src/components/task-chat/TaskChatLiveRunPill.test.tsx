@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExecutionProjection } from "@paperclipai/shared";
 import type { TranscriptEntry } from "../../adapters";
+import { i18n } from "@/i18n";
 import { TaskChatLiveRunPill, toolCountSummaryFromEntries } from "./TaskChatLiveRunPill";
 
 function toolCall(overrides: Partial<Extract<TranscriptEntry, { kind: "tool_call" }>>): TranscriptEntry {
@@ -36,22 +37,36 @@ describe("toolCountSummaryFromEntries", () => {
     ];
     expect(toolCountSummaryFromEntries(entries)).toBe("called 1 tool");
   });
+
+  it("localizes command and tool counts without changing their count", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const entries: TranscriptEntry[] = [
+      toolCall({ name: "bash", input: { command: "ls" }, toolUseId: "c1" }),
+      toolCall({ name: "command_execution", input: { command: "pwd" }, toolUseId: "c2" }),
+      toolCall({ name: "read_file", input: { path: "a.ts" }, toolUseId: "t1" }),
+    ];
+    expect(toolCountSummaryFromEntries(entries, (key, options) => i18n.t(key, options))).toBe(
+      "executou 2 comandos, usou 1 ferramenta",
+    );
+  });
 });
 
 describe("TaskChatLiveRunPill", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     act(() => root.unmount());
     container.remove();
     vi.useRealTimers();
+    await i18n.changeLanguage("pt-BR");
   });
 
   it("shimmers 'Working' with elapsed + tool summary while streaming", () => {
@@ -118,6 +133,23 @@ describe("TaskChatLiveRunPill", () => {
     expect(pill?.textContent).toContain("Worked");
     expect(pill?.textContent).toContain("for 42 seconds");
     expect(pill?.textContent).toContain("ran 1 command");
+  });
+
+  it("renders a PT-BR live status and localized elapsed duration", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const startedAtMs = Date.now() - 2_000;
+    act(() => {
+      root.render(
+        <TaskChatLiveRunPill
+          status="running"
+          startedAtMs={startedAtMs}
+          toolSummary="usou 1 ferramenta"
+        />,
+      );
+    });
+    expect(container.querySelector(".shimmer-text")?.textContent).toBe("Trabalhando");
+    expect(container.textContent).toContain("por 2 segundos");
+    expect(container.textContent).toContain("usou 1 ferramenta");
   });
 
 });

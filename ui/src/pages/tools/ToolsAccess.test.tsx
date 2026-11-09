@@ -3,10 +3,12 @@
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { ToolsAccess } from "./ToolsAccess";
 
 const mockParams = vi.hoisted(() => ({ tab: undefined as string | undefined }));
 const navigateMock = vi.hoisted(() => vi.fn(({ to }: { to: string }) => <div data-navigate={to} />));
+const setBreadcrumbsMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/router", () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
@@ -15,7 +17,7 @@ vi.mock("@/lib/router", () => ({
 }));
 
 vi.mock("@/context/BreadcrumbContext", () => ({
-  useBreadcrumbs: () => ({ setBreadcrumbs: vi.fn() }),
+  useBreadcrumbs: () => ({ setBreadcrumbs: setBreadcrumbsMock }),
 }));
 
 vi.mock("@/context/CompanyContext", () => ({
@@ -53,7 +55,8 @@ describe("ToolsAccess", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -115,6 +118,16 @@ describe("ToolsAccess", () => {
 
     expect(container.textContent).not.toContain("Developer tools");
     expect(container.textContent).toContain("Tool profiles");
+    expect(setBreadcrumbsMock.mock.calls.at(-1)?.[0]).toContainEqual(expect.objectContaining({ label: "Profiles" }));
     expect(container.firstElementChild?.classList.contains("max-w-5xl")).toBe(true);
+  });
+
+  it("localizes developer tool navigation in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockParams.tab = "profiles";
+    await render();
+
+    expect(setBreadcrumbsMock.mock.calls.at(-1)?.[0]).toContainEqual(expect.objectContaining({ label: "Perfis" }));
+    expect(container.textContent).toContain("Tool profiles");
   });
 });

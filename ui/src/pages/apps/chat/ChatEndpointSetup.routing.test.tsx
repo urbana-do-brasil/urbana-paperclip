@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { ChatConnectionPurpose, ChatEndpointSetup } from "./ChatEndpointSetup";
 
 vi.mock("@/lib/router", async () => import("react-router-dom"));
@@ -29,7 +30,8 @@ function Location() {
 describe("Chat connector setup routing", () => {
   let root: Root;
   let container: HTMLDivElement;
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
@@ -75,6 +77,19 @@ describe("Chat connector setup routing", () => {
     flushSync(() => tools.click());
     expect(onTools).toHaveBeenCalledOnce();
     expect(onChat).toHaveBeenCalledOnce();
+  });
+  it.each([
+    ["en", "Choose how to connect", "What should this Telegram connection do?", "Chat with an agent", "Use this connection as an agent tool"],
+    ["pt-BR", "Escolha como se conectar", "O que esta conexão com Telegram deve fazer?", "Conversar com um agente", "Usar esta conexão como ferramenta de agente"],
+  ])("localizes the shared connection-purpose shell in %s while retaining the provider name", async (locale, heading, question, chatTitle, toolTitle) => {
+    await i18n.changeLanguage(locale);
+    flushSync(() => root.render(
+      <ChatConnectionPurpose provider="telegram" onChat={vi.fn()} onTools={vi.fn()} />,
+    ));
+    expect(container.textContent).toContain(heading);
+    expect(container.textContent).toContain(question);
+    expect(container.textContent).toContain(chatTitle);
+    expect(container.textContent).toContain(toolTitle);
   });
   it.each([
     "",

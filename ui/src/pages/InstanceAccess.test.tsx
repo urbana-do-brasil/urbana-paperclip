@@ -6,12 +6,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
 import { CompanyProvider, useCompany } from "@/context/CompanyContext";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { InstanceAccess } from "./InstanceAccess";
 
 const mocks = vi.hoisted(() => ({
   list: vi.fn(), directory: vi.fn(), detachInflightList: vi.fn(), detachInflightDirectory: vi.fn(),
   getSession: vi.fn(), searchAdminUsers: vi.fn(), getUserCompanyAccess: vi.fn(),
   setUserCompanyAccess: vi.fn(), setBreadcrumbs: vi.fn(), pushToast: vi.fn(),
+  promoteInstanceAdmin: vi.fn(), demoteInstanceAdmin: vi.fn(),
 }));
 vi.mock("@/api/companies", () => ({ companiesApi: mocks }));
 vi.mock("@/api/auth", () => ({ authApi: mocks }));
@@ -21,7 +24,13 @@ vi.mock("@/context/ToastContext", () => ({ useToast: () => mocks }));
 
 const companyA = { id: "company-a", name: "Company A", issuePrefix: "CPA", status: "active" };
 const companyB = { id: "company-b", name: "Company B", issuePrefix: "CPB", status: "active" };
-const user = { id: "admin", name: "Admin", email: "admin@example.com", isInstanceAdmin: true };
+const user = {
+  id: "admin",
+  name: "Admin",
+  email: "admin@example.com",
+  isInstanceAdmin: true,
+  activeCompanyMembershipCount: 1,
+};
 const membershipA = {
   id: "membership-a", companyId: companyA.id, companyName: companyA.name,
   status: "active", membershipRole: "owner", updatedAt: "2020-01-01T00:00:00Z",
@@ -57,7 +66,8 @@ function button(text: string) {
   return [...container.querySelectorAll("button")].find((element) => element.textContent === text);
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.resetAllMocks();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   localStorage.clear();
@@ -67,6 +77,8 @@ beforeEach(() => {
   mocks.searchAdminUsers.mockResolvedValue([user]);
   mocks.getUserCompanyAccess.mockResolvedValue({ user, companyAccess: [membershipA] });
   mocks.setUserCompanyAccess.mockResolvedValue({});
+  mocks.promoteInstanceAdmin.mockResolvedValue({});
+  mocks.demoteInstanceAdmin.mockResolvedValue({});
   client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   container = document.createElement("div");
   document.body.appendChild(container);
@@ -77,6 +89,7 @@ afterEach(async () => {
   await act(async () => root.unmount());
   client.clear();
   container.remove();
+  await i18n.changeLanguage(DEFAULT_LOCALE);
 });
 
 describe("InstanceAccess company directory", () => {
@@ -119,9 +132,52 @@ describe("InstanceAccess company directory", () => {
   });
 
   it("does not request the directory when instance administration is forbidden", async () => {
+    await i18n.changeLanguage("pt-BR");
     mocks.searchAdminUsers.mockRejectedValue(new ApiError("Forbidden", 403, {}));
     await renderPage();
-    await eventually(() => expect(container.textContent).toContain("Instance admin access is required"));
+    await eventually(() => expect(container.textContent).toContain("É necessário ter acesso de administração da instância para gerenciar usuários."));
     expect(mocks.directory).not.toHaveBeenCalled();
+  });
+
+  it("localizes organization and instance access while preserving membership values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderPage();
+    await eventually(() => {
+      expect(button("Salvar acesso às organizações")).toBeDefined();
+      expect(container.textContent).toContain("Acesso da instância");
+      expect(container.textContent).toContain("Buscar usuários");
+      expect(container.textContent).toContain("1 associação ativa à organização");
+      expect(container.textContent).toContain("Proprietário • Ativo");
+    });
+
+    const otherCompany = [...container.querySelectorAll("label")].find(
+      (label) => label.textContent?.includes("Company B"),
+    );
+    const checkbox = otherCompany?.querySelector<HTMLButtonElement>('[role="checkbox"]');
+    expect(checkbox?.getAttribute("aria-checked")).toBe("false");
+    await act(async () => checkbox!.click());
+    await act(async () => button("Salvar acesso às organizações")!.click());
+    await eventually(() => {
+      expect(mocks.setUserCompanyAccess).toHaveBeenCalledWith(user.id, [companyA.id, companyB.id]);
+    });
+    expect(mocks.pushToast).toHaveBeenCalledWith({
+      title: "Acesso às organizações atualizado",
+      tone: "success",
+    });
+
+    await act(async () => button("Remover administrador da instância")!.click());
+    await eventually(() => expect(mocks.demoteInstanceAdmin).toHaveBeenCalledWith(user.id));
+    expect(mocks.pushToast).toHaveBeenCalledWith({
+      title: "Função na instância atualizada",
+      tone: "success",
+    });
+  });
+
+  it("shows a localized empty user search result", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mocks.searchAdminUsers.mockResolvedValue([]);
+    await renderPage();
+    await eventually(() => expect(container.textContent).toContain("Nenhum usuário corresponde à busca."));
+    expect(container.textContent).toContain("Selecione um usuário para consultar o acesso à instância.");
   });
 });

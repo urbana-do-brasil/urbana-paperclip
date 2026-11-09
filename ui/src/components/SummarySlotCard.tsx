@@ -8,6 +8,7 @@ import type {
   SummarySlotRevision,
   SummarySlotScopeKind,
 } from "@paperclipai/shared";
+import type { TFunction } from "i18next";
 import { Bot, Clock3, History, Loader2, RefreshCw, Sparkles } from "lucide-react";
 
 import { agentsApi } from "@/api/agents";
@@ -19,11 +20,12 @@ import { ConfigureBuiltInAgentModal } from "@/components/ConfigureBuiltInAgentMo
 import { InlineBanner } from "@/components/InlineBanner";
 import { useSummaryDraftStream } from "@/components/useSummaryDraftStream";
 import { useCompanyLiveEvent } from "@/context/LiveUpdatesProvider";
+import { useTranslation } from "@/i18n";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { queryKeys } from "@/lib/queryKeys";
-import { cn, formatDateTime, relativeTime } from "@/lib/utils";
+import { cn, formatDateTime, formatNumber, relativeTime } from "@/lib/utils";
 
 const SUMMARIZER_KEY = "summarizer";
 const TERMINAL_ISSUE_STATUSES = new Set(["done", "cancelled"]);
@@ -44,31 +46,41 @@ function issueLabel(issue: SummarySlotIssueRef) {
   return issue.identifier ? `${issue.identifier}: ${issue.title}` : issue.title;
 }
 
-function revisionLabel(revision: SummarySlotRevision) {
-  return `Rev ${revision.revisionNumber}`;
+function revisionLabel(revision: SummarySlotRevision, t: TFunction) {
+  return t("summarySlotCard.revision.label", {
+    revision: formatNumber(revision.revisionNumber),
+  });
 }
 
 function formatRevisionTimestamp(date: Date | string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).format(new Date(date)).replace(",", "");
+  return formatDateTime(date, { includeYear: false });
 }
 
-function revisionOptionLabel(revision: SummarySlotRevision) {
-  return `${revisionLabel(revision)} - ${formatRevisionTimestamp(revision.createdAt)}`;
+function revisionOptionLabel(revision: SummarySlotRevision, t: TFunction) {
+  return t("summarySlotCard.revision.option", {
+    revision: revisionLabel(revision, t),
+    date: formatRevisionTimestamp(revision.createdAt),
+  });
 }
 
 function latestRevisionOptionLabel(
   document: SummarySlotDocument,
   revision: SummarySlotRevision | null,
+  t: TFunction,
 ) {
-  return `Latest (Rev ${document.latestRevisionNumber}) - ${
-    formatRevisionTimestamp(revision?.createdAt ?? document.updatedAt)
-  }`;
+  return t("summarySlotCard.revision.latestOption", {
+    revision: formatNumber(document.latestRevisionNumber),
+    date: formatRevisionTimestamp(revision?.createdAt ?? document.updatedAt),
+  });
+}
+
+type SummarySlotActionError =
+  | { message: string }
+  | { key: "summarySlotCard.errors.generateFallback" };
+
+function readExternalErrorMessage(error: unknown): string | null {
+  if (error instanceof Error && error.message) return error.message;
+  return typeof error === "string" && error.length > 0 ? error : null;
 }
 
 interface LiveGenerationStatus {
@@ -87,11 +99,14 @@ function readPayloadString(value: unknown): string | null {
  * assistant snippet, then the active tool name. Returns null when nothing
  * has streamed yet so the card falls back to its static generating text.
  */
-export function resolveGenerationStatusLine(status: LiveGenerationStatus | null): string | null {
+export function resolveGenerationStatusLine(
+  status: LiveGenerationStatus | null,
+  t: TFunction,
+): string | null {
   if (!status) return null;
   if (status.message) return status.message;
   if (status.lastAssistantSnippet) return status.lastAssistantSnippet;
-  if (status.currentToolName) return `Working with ${status.currentToolName}`;
+  if (status.currentToolName) return t("summarySlotCard.generation.workingWithTool", { toolName: status.currentToolName });
   return null;
 }
 
@@ -141,10 +156,11 @@ export function SummarySlotCard({
   description,
   className,
 }: SummarySlotCardProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null);
   const [configureOpen, setConfigureOpen] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<SummarySlotActionError | null>(null);
   const selector: SummarySlotSelector | null = companyId
     ? { companyId, scopeKind, scopeId, slotKey }
     : null;
@@ -201,7 +217,10 @@ export function SummarySlotCard({
       ]);
     },
     onError: (error) => {
-      setActionError(error instanceof Error ? error.message : "Summary generation could not be started.");
+      const message = readExternalErrorMessage(error);
+      setActionError(message
+        ? { message }
+        : { key: "summarySlotCard.errors.generateFallback" });
     },
   });
 
@@ -234,9 +253,11 @@ export function SummarySlotCard({
     .toSorted((left, right) => right.revisionNumber - left.revisionNumber)
     .slice(0, MAX_REVISION_OPTIONS - (latestDocument ? 1 : 0));
   const revisionSelectValue = historicalRevision?.id ?? LATEST_REVISION_SELECT_VALUE;
-  const latestSelectLabel = latestDocument ? latestRevisionOptionLabel(latestDocument, latestRevision) : "Latest";
+  const latestSelectLabel = latestDocument
+    ? latestRevisionOptionLabel(latestDocument, latestRevision, t)
+    : t("summarySlotCard.revision.latest");
   const generatingIssue = slotQuery.data?.generatingIssue ?? null;
-  const liveStatusLine = resolveGenerationStatusLine(useGenerationStatus(generatingIssue?.id ?? null));
+  const liveStatusLine = resolveGenerationStatusLine(useGenerationStatus(generatingIssue?.id ?? null), t);
   const draftStream = useSummaryDraftStream(companyId, generatingIssue);
   // The token-streamed STATUS line is more responsive than the server-derived
   // progress snippet; prefer it and fall back to the Phase 1 status line.
@@ -246,6 +267,9 @@ export function SummarySlotCard({
     && !TERMINAL_ISSUE_STATUSES.has(generatingIssue.status);
   const generationFailed = slotQuery.data?.slot?.status === "failed";
   const canGenerateFirstSummary = summarizerState?.status === "ready";
+  const actionErrorMessage = actionError
+    ? ("message" in actionError ? actionError.message : t(actionError.key))
+    : null;
 
   if (experimentalQuery.isLoading || !summariesEnabled) return null;
 
@@ -261,9 +285,9 @@ export function SummarySlotCard({
           <div className="flex flex-wrap items-center gap-2">
             <Sparkles className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <h2 className="text-sm font-semibold">{title}</h2>
-            {isGenerating ? <Badge variant="secondary">Generating</Badge> : null}
-            {displayingHistoricalRevision ? <Badge variant="outline">Historical revision</Badge> : null}
-            {latestDocument && !displayingHistoricalRevision ? <Badge variant="outline">Latest revision</Badge> : null}
+            {isGenerating ? <Badge variant="secondary">{t("summarySlotCard.badges.generating")}</Badge> : null}
+            {displayingHistoricalRevision ? <Badge variant="outline">{t("summarySlotCard.badges.historicalRevision")}</Badge> : null}
+            {latestDocument && !displayingHistoricalRevision ? <Badge variant="outline">{t("summarySlotCard.badges.latestRevision")}</Badge> : null}
           </div>
           {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
         </div>
@@ -275,7 +299,7 @@ export function SummarySlotCard({
               variant="outline"
               onClick={() => setSelectedRevisionId(null)}
             >
-              Latest
+              {t("summarySlotCard.revision.latest")}
             </Button>
           ) : null}
           {latestDocument && !generationFailed ? (
@@ -287,7 +311,7 @@ export function SummarySlotCard({
               disabled={!selector || generateMutation.isPending || Boolean(isGenerating)}
             >
               {generateMutation.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-              Refresh
+              {t("summarySlotCard.actions.refresh")}
             </Button>
           ) : null}
         </div>
@@ -305,18 +329,17 @@ export function SummarySlotCard({
               <div className="space-y-1 text-sm">
                 <p className="font-medium text-foreground">
                   {needsSetup.status === "pending_approval"
-                    ? "Summarizer setup is pending approval"
-                    : "Set up the Summarizer"}
+                    ? t("summarySlotCard.setup.pendingApproval")
+                    : t("summarySlotCard.setup.title")}
                 </p>
                 <p className="text-muted-foreground">
-                  Summaries are generated by Paperclip's built-in Summarizer agent. Configure its adapter and model
-                  before requesting this summary.
+                  {t("summarySlotCard.setup.description")}
                 </p>
               </div>
             </div>
             {needsSetup.status === "pending_approval" ? null : (
               <Button type="button" size="sm" onClick={() => setConfigureOpen(true)}>
-                Set up Summarizer
+                {t("summarySlotCard.actions.setupSummarizer")}
               </Button>
             )}
           </div>
@@ -335,7 +358,7 @@ export function SummarySlotCard({
       {!needsSetup && summarizerState?.status === "paused" && summarizerState.agent ? (
         <InlineBanner
           tone="warning"
-          title="Summarizer is paused"
+          title={t("summarySlotCard.paused.title")}
           actions={
             <Button
               type="button"
@@ -343,38 +366,40 @@ export function SummarySlotCard({
               onClick={() => summarizerState.agent && resumeSummarizer.mutate(summarizerState.agent.id)}
               disabled={resumeSummarizer.isPending}
             >
-              {resumeSummarizer.isPending ? "Resuming..." : "Resume agent"}
+              {resumeSummarizer.isPending
+                ? t("summarySlotCard.actions.resuming")
+                : t("summarySlotCard.actions.resumeAgent")}
             </Button>
           }
         >
-          Existing summaries remain readable, but new summaries will not be generated until the agent resumes.
+          {t("summarySlotCard.paused.body")}
         </InlineBanner>
       ) : null}
 
-      {actionError ? (
-        <InlineBanner tone="warning" title="Summary request failed">
-          {actionError}
+      {actionErrorMessage ? (
+        <InlineBanner tone="warning" title={t("summarySlotCard.errors.requestTitle")}>
+          {actionErrorMessage}
         </InlineBanner>
       ) : null}
 
       {slotQuery.isError ? (
         <InlineBanner
           tone="warning"
-          title="Summary could not be loaded"
+          title={t("summarySlotCard.errors.loadTitle")}
           actions={
             <Button type="button" size="sm" variant="outline" onClick={() => void slotQuery.refetch()}>
-              Retry
+              {t("summarySlotCard.actions.retry")}
             </Button>
           }
         >
-          {slotQuery.error instanceof Error ? slotQuery.error.message : "Try loading the summary again."}
+          {readExternalErrorMessage(slotQuery.error) ?? t("summarySlotCard.errors.loadFallback")}
         </InlineBanner>
       ) : null}
 
       {!slotQuery.isError && generationFailed ? (
         <InlineBanner
           tone="danger"
-          title="Summary generation failed"
+          title={t("summarySlotCard.errors.generationTitle")}
           actions={
             <Button
               type="button"
@@ -382,11 +407,13 @@ export function SummarySlotCard({
               onClick={startGeneration}
               disabled={!selector || generateMutation.isPending}
             >
-              {generateMutation.isPending ? "Retrying..." : "Retry"}
+              {generateMutation.isPending
+                ? t("summarySlotCard.actions.retrying")
+                : t("summarySlotCard.actions.retry")}
             </Button>
           }
         >
-          {slotQuery.data?.slot?.failureReason ?? "The generation task ended before writing a summary."}
+          {slotQuery.data?.slot?.failureReason ?? t("summarySlotCard.errors.generationFallback")}
         </InlineBanner>
       ) : null}
 
@@ -394,7 +421,7 @@ export function SummarySlotCard({
         <div className="flex items-start gap-3 text-sm">
           <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
           <div className="min-w-0 space-y-1">
-            <p className="font-medium text-foreground">Generating summary</p>
+            <p className="font-medium text-foreground">{t("summarySlotCard.generation.title")}</p>
             {generationStatusLine ? (
               <p
                 className="animate-pulse truncate text-muted-foreground"
@@ -424,7 +451,7 @@ export function SummarySlotCard({
               </div>
             ) : null}
             <p className="text-muted-foreground">
-              Summarizer is working in{" "}
+              {t("summarySlotCard.generation.workingInIssue")} {" "}
               <Link className="underline" to={`/issues/${generatingIssue.identifier ?? generatingIssue.id}`}>
                 {issueLabel(generatingIssue)}
               </Link>
@@ -437,8 +464,8 @@ export function SummarySlotCard({
       {!slotQuery.isError && !latestDocument && !isGenerating && !generationFailed && canGenerateFirstSummary ? (
         <div className="flex flex-col items-start gap-3 rounded-lg border border-border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1 text-sm">
-            <p className="font-medium text-foreground">No summary yet</p>
-            <p className="text-muted-foreground">Generate a concise status snapshot for this surface.</p>
+            <p className="font-medium text-foreground">{t("summarySlotCard.empty.title")}</p>
+            <p className="text-muted-foreground">{t("summarySlotCard.empty.description")}</p>
           </div>
           <Button
             type="button"
@@ -447,7 +474,9 @@ export function SummarySlotCard({
             disabled={!selector || generateMutation.isPending}
           >
             {generateMutation.isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
-            {generateMutation.isPending ? "Generating..." : "Generate summary"}
+            {generateMutation.isPending
+              ? t("summarySlotCard.actions.generating")
+              : t("summarySlotCard.actions.generate")}
           </Button>
         </div>
       ) : null}
@@ -460,7 +489,9 @@ export function SummarySlotCard({
 
           <div className="flex flex-col gap-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <span title={formatDateTime(historicalRevision?.createdAt ?? latestRevision?.createdAt ?? latestDocument.updatedAt)}>
-              Updated {relativeTime(historicalRevision?.createdAt ?? latestRevision?.createdAt ?? latestDocument.updatedAt)}
+              {t("summarySlotCard.updated", {
+                relativeTime: relativeTime(historicalRevision?.createdAt ?? latestRevision?.createdAt ?? latestDocument.updatedAt),
+              })}
             </span>
 
             {revisions.length > 1 ? (
@@ -473,12 +504,15 @@ export function SummarySlotCard({
                 <SelectTrigger
                   size="sm"
                   className="h-auto border-0 bg-transparent p-0 text-xs shadow-none hover:text-foreground focus-visible:ring-0"
-                  aria-label="Select summary revision"
-                  title={historicalRevision ? revisionOptionLabel(historicalRevision) : latestSelectLabel}
+                  aria-label={t("summarySlotCard.revision.selectAria")}
+                  title={historicalRevision ? revisionOptionLabel(historicalRevision, t) : latestSelectLabel}
                 >
                   <SelectValue>
                     <History className="size-3.5" aria-hidden="true" />
-                    <span>{revisions.length} revisions</span>
+                    <span>{t("summarySlotCard.revision.count", {
+                      count: revisions.length,
+                      formattedCount: formatNumber(revisions.length),
+                    })}</span>
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent align="end" position="popper">
@@ -493,7 +527,7 @@ export function SummarySlotCard({
                       className="text-xs"
                       title={formatDateTime(revision.createdAt)}
                     >
-                      {revisionOptionLabel(revision)}
+                      {revisionOptionLabel(revision, t)}
                     </SelectItem>
                   ))}
                 </SelectContent>

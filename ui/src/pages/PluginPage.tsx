@@ -1,17 +1,16 @@
 import { useEffect, useMemo } from "react";
 import { Link, Navigate, useParams } from "@/lib/router";
-import { useQuery } from "@tanstack/react-query";
 import { useCompany } from "@/context/CompanyContext";
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";
-import { pluginsApi } from "@/api/plugins";
-import { queryKeys } from "@/lib/queryKeys";
 import {
   PluginSlotMount,
   resolveRouteSidebarSlot,
+  usePluginUiContributionsWithPresentation,
   type ResolvedPluginSlot,
 } from "@/plugins/slots";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "@/i18n";
 import { NotFoundPage } from "./NotFound";
 
 /**
@@ -23,6 +22,7 @@ import { NotFoundPage } from "./NotFound";
  * @see doc/plugins/PLUGIN_SPEC.md §24.4 — Company-Context Plugin Page
  */
 export function PluginPage() {
+  const { t } = useTranslation();
   const params = useParams<{
     companyPrefix?: string;
     pluginId?: string;
@@ -51,11 +51,9 @@ export function PluginPage() {
     [companies, resolvedCompanyId],
   );
 
-  const { data: contributions } = useQuery({
-    queryKey: queryKeys.plugins.uiContributions,
-    queryFn: () => pluginsApi.listUiContributions(),
-    enabled: !!resolvedCompanyId && (!!pluginId || !!pluginRoutePath),
-  });
+  const { data: contributions, presentations, isLoading: contributionsLoading } = usePluginUiContributionsWithPresentation(
+    !!resolvedCompanyId && (!!pluginId || !!pluginRoutePath),
+  );
 
   const pageSlot = useMemo(() => {
     if (!contributions) return null;
@@ -64,29 +62,35 @@ export function PluginPage() {
       if (!contribution) return null;
       const slot = contribution.slots.find((s) => s.type === "page");
       if (!slot) return null;
+      const presentation = presentations.get(contribution.pluginId);
       return {
         ...slot,
         pluginId: contribution.pluginId,
         pluginKey: contribution.pluginKey,
         pluginDisplayName: contribution.displayName,
         pluginVersion: contribution.version,
+        hostDisplayName: presentation?.slotDisplayNames[slot.id] ?? slot.displayName,
+        hostPluginDisplayName: presentation?.pluginDisplayName ?? contribution.displayName,
       };
     }
     if (!pluginRoutePath) return null;
     const matches = contributions.flatMap((contribution) => {
       const slot = contribution.slots.find((entry) => entry.type === "page" && entry.routePath === pluginRoutePath);
       if (!slot) return [];
+      const presentation = presentations.get(contribution.pluginId);
       return [{
         ...slot,
         pluginId: contribution.pluginId,
         pluginKey: contribution.pluginKey,
         pluginDisplayName: contribution.displayName,
         pluginVersion: contribution.version,
+        hostDisplayName: presentation?.slotDisplayNames[slot.id] ?? slot.displayName,
+        hostPluginDisplayName: presentation?.pluginDisplayName ?? contribution.displayName,
       }];
     });
     if (matches.length !== 1) return null;
     return matches[0] ?? null;
-  }, [pluginId, pluginRoutePath, contributions]);
+  }, [pluginId, pluginRoutePath, contributions, presentations]);
 
   const context = useMemo(
     () => ({
@@ -107,10 +111,12 @@ export function PluginPage() {
         pluginKey: contribution.pluginKey,
         pluginDisplayName: contribution.displayName,
         pluginVersion: contribution.version,
+        hostDisplayName: presentations.get(contribution.pluginId)?.slotDisplayNames[slot.id] ?? slot.displayName,
+        hostPluginDisplayName: presentations.get(contribution.pluginId)?.pluginDisplayName ?? contribution.displayName,
       })),
     );
     return resolveRouteSidebarSlot(flattened, pluginRoutePath) !== null;
-  }, [contributions, pluginRoutePath]);
+  }, [contributions, pluginRoutePath, presentations]);
 
   useEffect(() => {
     if (!pageSlot) return;
@@ -119,10 +125,10 @@ export function PluginPage() {
       return;
     }
     setBreadcrumbs([
-      { label: "Plugins", href: "/company/settings/instance/plugins" },
-      { label: pageSlot.pluginDisplayName },
+      { label: t("pluginHost.pluginsBreadcrumb"), href: "/company/settings/instance/plugins" },
+      { label: pageSlot.hostPluginDisplayName ?? pageSlot.pluginDisplayName },
     ]);
-  }, [pageSlot, pluginRouteSplat, setBreadcrumbs, routeSidebarActive]);
+  }, [pageSlot, pluginRouteSplat, setBreadcrumbs, routeSidebarActive, t]);
 
   if (!resolvedCompanyId) {
     if (hasInvalidCompanyPrefix) {
@@ -130,13 +136,13 @@ export function PluginPage() {
     }
     return (
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Select an organization to view this page.</p>
+        <p className="text-sm text-muted-foreground">{t("pluginHost.selectOrganization")}</p>
       </div>
     );
   }
 
-  if (!contributions) {
-    return <div className="text-sm text-muted-foreground">Loading…</div>;
+  if (contributionsLoading || !contributions) {
+    return <div className="text-sm text-muted-foreground">{t("common.loading")}</div>;
   }
 
   if (!pluginId && pluginRoutePath) {
@@ -146,7 +152,7 @@ export function PluginPage() {
     if (duplicateMatches.length > 1) {
       return (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          Multiple plugins declare the route <code>{pluginRoutePath}</code>. Use the plugin-id route until the conflict is resolved.
+          {t("pluginHost.multiplePageRoute")} <code>{pluginRoutePath}</code>. {t("pluginHost.multiplePageRouteSuffix")}
         </div>
       );
     }
@@ -170,7 +176,7 @@ export function PluginPage() {
           <Button variant="ghost" size="sm" asChild>
             <Link to={companyPrefix ? `/${companyPrefix}/dashboard` : "/dashboard"}>
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back
+              {t("pluginHost.back")}
             </Link>
           </Button>
         </div>
@@ -187,7 +193,7 @@ export function PluginPage() {
 
 function resolveRouteSidebarPageTitle(pageSlot: ResolvedPluginSlot, routeSplat: string | undefined): string {
   const title = titleFromRouteSplat(routeSplat);
-  return title ?? pageSlot.displayName ?? pageSlot.pluginDisplayName;
+  return title ?? pageSlot.hostDisplayName ?? pageSlot.displayName ?? pageSlot.hostPluginDisplayName ?? pageSlot.pluginDisplayName;
 }
 
 function titleFromRouteSplat(routeSplat: string | undefined): string | null {

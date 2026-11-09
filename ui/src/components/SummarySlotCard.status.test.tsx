@@ -16,6 +16,7 @@ import type {
   SummarySlotIssueRef,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { __liveUpdatesTestUtils } from "@/context/LiveUpdatesProvider";
 import { SummarySlotCard, resolveGenerationStatusLine } from "./SummarySlotCard";
 
@@ -158,23 +159,32 @@ describe("resolveGenerationStatusLine", () => {
         message: "reviewing 14 open issues",
         currentToolName: "Read",
         lastAssistantSnippet: "thinking about the launch",
-      }),
+      }, i18n.t),
     ).toBe("reviewing 14 open issues");
   });
 
-  it("falls back to the assistant snippet, then the tool name", () => {
+  it("falls back to the assistant snippet, then the tool name", async () => {
+    await i18n.changeLanguage("en");
     expect(
-      resolveGenerationStatusLine({ message: null, currentToolName: "Grep", lastAssistantSnippet: "drafting" }),
+      resolveGenerationStatusLine({ message: null, currentToolName: "Grep", lastAssistantSnippet: "drafting" }, i18n.t),
     ).toBe("drafting");
     expect(
-      resolveGenerationStatusLine({ message: null, currentToolName: "Grep", lastAssistantSnippet: null }),
+      resolveGenerationStatusLine({ message: null, currentToolName: "Grep", lastAssistantSnippet: null }, i18n.t),
     ).toBe("Working with Grep");
   });
 
+  it("localizes the active-tool fallback in both languages", async () => {
+    const status = { message: null, currentToolName: "Grep", lastAssistantSnippet: null };
+    await i18n.changeLanguage("pt-BR");
+    expect(resolveGenerationStatusLine(status, i18n.t)).toBe("Trabalhando com Grep");
+    await i18n.changeLanguage("en");
+    expect(resolveGenerationStatusLine(status, i18n.t)).toBe("Working with Grep");
+  });
+
   it("returns null when nothing has streamed", () => {
-    expect(resolveGenerationStatusLine(null)).toBeNull();
+    expect(resolveGenerationStatusLine(null, i18n.t)).toBeNull();
     expect(
-      resolveGenerationStatusLine({ message: null, currentToolName: null, lastAssistantSnippet: null }),
+      resolveGenerationStatusLine({ message: null, currentToolName: null, lastAssistantSnippet: null }, i18n.t),
     ).toBeNull();
   });
 });
@@ -215,7 +225,7 @@ describe("SummarySlotCard live status line", () => {
 
     // Falls back to the static generating copy before any event arrives.
     expect(container.querySelector('[data-testid="summary-generation-status-line"]')).toBeNull();
-    expect(container.textContent).toContain("Summarizer is working in");
+    expect(container.textContent).toContain(i18n.t("summarySlotCard.generation.workingInIssue"));
 
     await act(async () => {
       dispatchLiveEventToSubscribers(

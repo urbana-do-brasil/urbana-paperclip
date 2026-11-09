@@ -281,7 +281,7 @@ test.describe("Onboarding wizard", () => {
 
     // Nothing before the row is answered: the card is the answer to the tile,
     // and the button has nothing to do until there is a source to do it with.
-    const cardInstruction = page.getByText("then come back and enter authorization code");
+    const cardInstruction = page.getByText("then come back and enter the authorization code");
     await expect(cardInstruction).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Next", exact: true })).toBeDisabled();
 
@@ -485,7 +485,7 @@ test.describe("Onboarding wizard", () => {
     // Connect press between choosing a source and being signed in.
     await source.click();
 
-    const cardInstruction = page.getByText("then come back and enter authorization code");
+    const cardInstruction = page.getByText("then come back and enter the authorization code");
     const authorizationLink = page.getByRole("link", { name: /^Sign in to / });
 
     await expect(cardInstruction).toBeVisible({ timeout: 30_000 });

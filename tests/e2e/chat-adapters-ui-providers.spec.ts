@@ -88,7 +88,7 @@ async function exerciseGitHubReviewSetup(page: Page, mock: ChatMock, seed: Seed,
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   await page.getByRole("button", { name: "Resume", exact: true }).click();
   await expect.poll(() => mock.lifecycleActions).toEqual(["pause", "resume"]);
-  await page.getByRole("button", { name: "Replay failed delivery", exact: true }).click();
+  await page.getByRole("button", { name: /replay failed .*delivery/i }).click();
   await expect.poll(() => mock.replayedDelivery).toBe(true);
   mock.setStatus("attention");
   await page.reload();
@@ -511,7 +511,7 @@ test.describe.serial("native chat adapter UI", () => {
       if (provider.provider !== "slack") {
         await expect(
           page.getByRole("heading", {
-            name: "Link the account you’re testing",
+            name: /Link the account you.re testing/i,
           }),
         ).toBeVisible();
         await expect(
@@ -731,7 +731,7 @@ test.describe.serial("native chat adapter UI", () => {
         new RegExp(`/${seed.prefix}/issues/issue-${provider.provider}$`),
       );
       mock.conversationState = "waiting";
-      await expect(page.getByText("waiting", { exact: true })).toBeVisible({
+      await expect(page.getByText("Waiting", { exact: true })).toBeVisible({
         timeout: 8_000,
       });
 

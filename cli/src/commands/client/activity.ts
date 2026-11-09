@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import type { ActivityEvent } from "@paperclipai/shared";
+import { cliMessage } from "../../localization/index.js";
 import {
   addCommonClientOptions,
   apiPath,
@@ -61,6 +62,16 @@ export function registerActivityCommands(program: Command): void {
                 entityType: row.entityType,
                 entityId: row.entityId,
                 createdAt: String(row.createdAt),
+              }, {
+                labels: {
+                  id: cliMessage("activityListId"),
+                  action: cliMessage("activityListAction"),
+                  actorType: cliMessage("activityListActorType"),
+                  actorId: cliMessage("activityListActorId"),
+                  entityType: cliMessage("activityListEntityType"),
+                  entityId: cliMessage("activityListEntityId"),
+                  createdAt: cliMessage("activityListCreatedAt"),
+                },
               }),
             );
           }

@@ -117,6 +117,27 @@ export interface ItemVerdictProgress {
   pendingItemIds: string[];
 }
 
+/** Translation key for known decision values; unknown server values stay visible verbatim. */
+export function getItemVerdictLabelKey(
+  verdict: string,
+  resolved = false,
+): string | null {
+  const labels: Record<string, string> = resolved
+    ? {
+        approve: "taskDetail.interactionConfirmations.itemVerdicts.resolved.approve",
+        reject: "taskDetail.interactionConfirmations.itemVerdicts.resolved.reject",
+        defer: "taskDetail.interactionConfirmations.itemVerdicts.resolved.defer",
+      }
+    : {
+        approve: "taskDetail.interactionConfirmations.itemVerdicts.verdict.approve",
+        reject: "taskDetail.interactionConfirmations.itemVerdicts.verdict.reject",
+        defer: "taskDetail.interactionConfirmations.itemVerdicts.verdict.defer",
+      };
+  return Object.prototype.hasOwnProperty.call(labels, verdict)
+    ? labels[verdict]!
+    : null;
+}
+
 /**
  * Derive the `M of N decided` progress for a per-item verdict interaction from
  * its payload (the full item roster) and result (verdicts accumulated so far).
@@ -148,12 +169,24 @@ export function getItemVerdictProgress(args: {
 
 export function buildItemVerdictsSummary(
   interaction: RequestItemVerdictsInteraction,
+  translate?: (
+    key: string,
+    options?: { count?: number; created?: number; total?: number },
+  ) => string,
 ): string {
   const progress = getItemVerdictProgress({
     payload: interaction.payload,
     result: interaction.result,
   });
   if (interaction.status === "answered") {
+    if (translate) {
+      const key = "taskDetail.interactionConfirmations.itemVerdicts.summary";
+      const parts = [translate(`${key}.decided`, { count: progress.decided })];
+      if (progress.approved > 0) parts.push(translate(`${key}.approved`, { count: progress.approved }));
+      if (progress.rejected > 0) parts.push(translate(`${key}.rejected`, { count: progress.rejected }));
+      if (progress.deferred > 0) parts.push(translate(`${key}.deferred`, { count: progress.deferred }));
+      return parts.join(" · ");
+    }
     const parts = [`${progress.decided} decided`];
     if (progress.approved > 0) parts.push(`${progress.approved} approved`);
     if (progress.rejected > 0) parts.push(`${progress.rejected} rejected`);
@@ -162,9 +195,24 @@ export function buildItemVerdictsSummary(
   }
   if (interaction.status === "expired") {
     const outcome = interaction.result?.outcome;
+    if (translate) {
+      if (outcome === "superseded_by_comment") {
+        return translate("taskDetail.interactionConfirmations.itemVerdicts.summary.expiredAfterComment");
+      }
+      if (outcome === "stale_target") {
+        return translate("taskDetail.interactionConfirmations.itemVerdicts.summary.expiredAfterTargetChange");
+      }
+      return translate("taskDetail.interactionConfirmations.itemVerdicts.summary.expired");
+    }
     if (outcome === "superseded_by_comment") return "Verdicts expired after comment";
     if (outcome === "stale_target") return "Verdicts expired after target changed";
     return "Verdicts expired";
+  }
+  if (translate) {
+    return translate("taskDetail.interactionConfirmations.itemVerdicts.summary.progress", {
+      count: progress.decided,
+      total: progress.total,
+    });
   }
   return `${progress.decided} of ${progress.total} decided`;
 }
@@ -210,16 +258,66 @@ export function getRequestConfirmationTargetHref({
 
 export function buildIssueThreadInteractionSummary(
   interaction: IssueThreadInteraction,
+  translate?: (
+    key: string,
+    options?: { count?: number; created?: number; total?: number; label?: string; service?: string },
+  ) => string,
 ) {
   const administrativeOutcome = interaction.result && "outcome" in interaction.result
     ? interaction.result.outcome
     : null;
-  if (administrativeOutcome === "skipped") return "Skipped interaction";
-  if (administrativeOutcome === "withdrawn") return "Withdrawn interaction";
-  if (administrativeOutcome === "issue_closed") return "Expired when issue closed";
-  if (administrativeOutcome === "addressee_deleted") return "Cancelled when addressee was deleted";
+  const questionCount = interaction.kind === "ask_user_questions"
+    ? interaction.payload.questions.length
+    : null;
+  if (interaction.kind === "ask_user_questions" && translate) {
+    if (administrativeOutcome === "withdrawn") {
+      return translate("taskDetail.interactionQuestions.questionWithdrawn", { count: questionCount! });
+    }
+    if (administrativeOutcome === "issue_closed") {
+      return translate("taskDetail.interactionQuestions.questionExpiredIssueClosed", { count: questionCount! });
+    }
+  }
+  const administrativeSummaryKeys: Record<string, string> = {
+    skipped: "skipped",
+    withdrawn: "withdrawn",
+    issue_closed: "issueClosed",
+    addressee_deleted: "addresseeDeleted",
+  };
+  if (administrativeOutcome && administrativeSummaryKeys[administrativeOutcome]) {
+    const key = administrativeSummaryKeys[administrativeOutcome]!;
+    return translate
+      ? translate(`taskDetail.interactionConfirmations.summary.${key}`)
+      : ({
+          skipped: "Skipped interaction",
+          withdrawn: "Withdrawn interaction",
+          issueClosed: "Expired when issue closed",
+          addresseeDeleted: "Cancelled when addressee was deleted",
+        } as const)[key as "skipped" | "withdrawn" | "issueClosed" | "addresseeDeleted"];
+  }
   if (interaction.kind === "suggest_tasks") {
     const count = interaction.payload.tasks.length;
+    if (translate) {
+      if (interaction.status === "accepted") {
+        const createdCount = interaction.result?.createdTasks?.length ?? 0;
+        const skippedCount = interaction.result?.skippedClientKeys?.length ?? 0;
+        return skippedCount > 0
+          ? translate("taskDetail.interactionSuggestedTasks.summary.acceptedPartial", {
+              created: createdCount,
+              count,
+            })
+          : translate("taskDetail.interactionSuggestedTasks.summary.accepted", {
+              count: createdCount,
+            });
+      }
+      if (interaction.status === "rejected") {
+        return translate("taskDetail.interactionSuggestedTasks.summary.rejected", {
+          count,
+        });
+      }
+      return translate("taskDetail.interactionSuggestedTasks.summary.suggested", {
+        count,
+      });
+    }
     if (interaction.status === "accepted") {
       const createdCount = interaction.result?.createdTasks?.length ?? 0;
       const skippedCount = interaction.result?.skippedClientKeys?.length ?? 0;
@@ -235,75 +333,149 @@ export function buildIssueThreadInteractionSummary(
   }
 
   if (interaction.kind === "request_confirmation") {
-    if (interaction.status === "accepted") return "Confirmed request";
+    if (interaction.status === "accepted") {
+      return translate
+        ? translate("taskDetail.interactionConfirmations.summary.requestConfirmed")
+        : "Confirmed request";
+    }
     if (interaction.status === "rejected") {
       const rejectLabel = interaction.payload.rejectLabel?.trim();
-      return rejectLabel ? `Selected “${rejectLabel}”` : "Declined request";
+      return rejectLabel
+        ? translate
+          ? translate("taskDetail.interactionConfirmations.summary.requestSelected", { label: rejectLabel })
+          : `Selected “${rejectLabel}”`
+        : translate
+          ? translate("taskDetail.interactionConfirmations.summary.requestDeclined")
+          : "Declined request";
     }
     if (interaction.status === "expired") {
       const outcome = interaction.result?.outcome;
-      if (outcome === "superseded_by_comment") return "Confirmation expired after comment";
-      if (outcome === "stale_target") return "Confirmation expired after target changed";
-      return "Confirmation expired";
+      const key = outcome === "superseded_by_comment"
+        ? "requestExpiredAfterComment"
+        : outcome === "stale_target"
+          ? "requestExpiredAfterTargetChange"
+          : "requestExpired";
+      const fallback = outcome === "superseded_by_comment"
+        ? "Confirmation expired after comment"
+        : outcome === "stale_target"
+          ? "Confirmation expired after target changed"
+          : "Confirmation expired";
+      return translate ? translate(`taskDetail.interactionConfirmations.summary.${key}`) : fallback;
     }
-    return "Requested confirmation";
+    return translate
+      ? translate("taskDetail.interactionConfirmations.summary.requestPending")
+      : "Requested confirmation";
   }
 
   if (interaction.kind === "request_checkbox_confirmation") {
     const optionCount = interaction.payload.options.length;
     if (interaction.status === "accepted") {
       const selectedCount = interaction.result?.selectedOptionIds?.length ?? 0;
-      if (selectedCount === 0) return "Confirmed with no options selected";
-      return selectedCount === 1
-        ? `Confirmed 1 of ${optionCount} options`
-        : `Confirmed ${selectedCount} of ${optionCount} options`;
+      if (selectedCount === 0) {
+        return translate
+          ? translate("taskDetail.interactionConfirmations.summary.checkboxConfirmedNone")
+          : "Confirmed with no options selected";
+      }
+      return translate
+        ? translate("taskDetail.interactionConfirmations.summary.checkboxConfirmed", {
+            count: selectedCount,
+            total: optionCount,
+          })
+        : selectedCount === 1
+          ? `Confirmed 1 of ${optionCount} options`
+          : `Confirmed ${selectedCount} of ${optionCount} options`;
     }
-    if (interaction.status === "rejected") return "Declined selection";
+    if (interaction.status === "rejected") {
+      return translate
+        ? translate("taskDetail.interactionConfirmations.summary.checkboxDeclined")
+        : "Declined selection";
+    }
     if (interaction.status === "expired") {
       const outcome = interaction.result?.outcome;
-      if (outcome === "superseded_by_comment") return "Selection expired after comment";
-      if (outcome === "stale_target") return "Selection expired after target changed";
-      return "Selection expired";
+      const key = outcome === "superseded_by_comment"
+        ? "checkboxExpiredAfterComment"
+        : outcome === "stale_target"
+          ? "checkboxExpiredAfterTargetChange"
+          : "checkboxExpired";
+      const fallback = outcome === "superseded_by_comment"
+        ? "Selection expired after comment"
+        : outcome === "stale_target"
+          ? "Selection expired after target changed"
+          : "Selection expired";
+      return translate ? translate(`taskDetail.interactionConfirmations.summary.${key}`) : fallback;
     }
-    return optionCount === 1
-      ? "Requested a selection from 1 option"
-      : `Requested a selection from ${optionCount} options`;
+    return translate
+      ? translate("taskDetail.interactionConfirmations.summary.checkboxPending", { count: optionCount })
+      : optionCount === 1
+        ? "Requested a selection from 1 option"
+        : `Requested a selection from ${optionCount} options`;
   }
 
   if (interaction.kind === "request_item_verdicts") {
-    return buildItemVerdictsSummary(interaction);
+    return buildItemVerdictsSummary(interaction, translate);
   }
 
   if (interaction.kind === "connection_intent") {
-    if (interaction.status === "accepted") return `${interaction.payload.serviceName} connected`;
-    if (interaction.status === "rejected") return `${interaction.payload.serviceName} declined`;
+    const service = interaction.payload.serviceName;
+    if (interaction.status === "accepted") {
+      return translate
+        ? translate("taskDetail.interactionConfirmations.summary.connectionConnected", { service })
+        : `${service} connected`;
+    }
+    if (interaction.status === "rejected") {
+      return translate
+        ? translate("taskDetail.interactionConfirmations.summary.connectionDeclined", { service })
+        : `${service} declined`;
+    }
     if (interaction.status === "expired") {
       return interaction.result?.outcome === "superseded"
-        ? `${interaction.payload.serviceName} request superseded`
-        : `${interaction.payload.serviceName} request expired`;
+        ? translate
+          ? translate("taskDetail.interactionConfirmations.summary.connectionRequestSuperseded", { service })
+          : `${service} request superseded`
+        : translate
+          ? translate("taskDetail.interactionConfirmations.summary.connectionRequestExpired", { service })
+          : `${service} request expired`;
     }
-    return `Connect ${interaction.payload.serviceName}`;
+    return translate
+      ? translate("taskDetail.interactionConfirmations.summary.connectionPending", { service })
+      : `Connect ${service}`;
   }
 
-  const count = interaction.payload.questions.length;
+  const count = questionCount!;
   if (interaction.status === "answered") {
-    return count === 1 ? "Answered 1 question" : `Answered ${count} questions`;
+    return translate
+      ? translate("taskDetail.interactionQuestions.summary.answered", { count })
+      : count === 1 ? "Answered 1 question" : `Answered ${count} questions`;
   }
   if (interaction.status === "cancelled") {
-    return count === 1 ? "Cancelled 1 question" : `Cancelled ${count} questions`;
+    return translate
+      ? translate("taskDetail.interactionQuestions.summary.cancelled", { count })
+      : count === 1 ? "Cancelled 1 question" : `Cancelled ${count} questions`;
   }
   if (interaction.status === "expired") {
     if (interaction.result?.expirationReason === "superseded_by_comment") {
-      return count === 1 ? "Question expired after comment" : "Questions expired after comment";
+      return translate
+        ? translate("taskDetail.interactionQuestions.summary.expiredAfterComment", { count })
+        : count === 1 ? "Question expired after comment" : "Questions expired after comment";
     }
-    return count === 1 ? "Question expired" : "Questions expired";
+    return translate
+      ? translate("taskDetail.interactionQuestions.summary.expired", { count })
+      : count === 1 ? "Question expired" : "Questions expired";
   }
-  return count === 1 ? "Asked 1 question" : `Asked ${count} questions`;
+  if (interaction.status === "failed") {
+    return translate
+      ? translate("taskDetail.interactionQuestions.summary.failed", { count })
+      : count === 1 ? "Failed to ask 1 question" : `Failed to ask ${count} questions`;
+  }
+  return translate
+    ? translate("taskDetail.interactionQuestions.summary.asked", { count })
+    : count === 1 ? "Asked 1 question" : `Asked ${count} questions`;
 }
 
 /** Readable model input for a durable answer delivered into a successor run. */
 export function buildAnsweredQuestionsDeliveryText(
   interaction: AskUserQuestionsInteraction,
+  translate?: (key: string) => string,
 ): string {
   const questionSet = interaction.payload.questionSet;
   const legacyQuestionById = new Map(
@@ -324,9 +496,15 @@ export function buildAnsweredQuestionsDeliveryText(
     const label = canonical?.header && canonical.header !== prompt
       ? `${canonical.header} — ${prompt}`
       : prompt;
-    return `- ${label}: ${values.join(", ") || "No answer"}`;
+    const noAnswer = translate
+      ? translate("taskDetail.interactionQuestions.noAnswer")
+      : "No answer";
+    return `- ${label}: ${values.join(", ") || noAnswer}`;
   });
-  return ["Answered questions", ...(lines.length > 0 ? ["", ...lines] : [])].join("\n");
+  const heading = translate
+    ? translate("taskDetail.interactionQuestions.questionsAnswered")
+    : "Answered questions";
+  return [heading, ...(lines.length > 0 ? ["", ...lines] : [])].join("\n");
 }
 
 export function buildSuggestedTaskTree(

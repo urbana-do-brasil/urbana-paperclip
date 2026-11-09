@@ -20,6 +20,8 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { cliMessage, isCliJsonRequested } from "../../localization/index.js";
+import { secretListColumnLabels, secretProviderHealthLabels } from "../../localization/secret-operations.js";
 
 interface SecretListOptions extends BaseClientOptions {
   companyId?: string;
@@ -111,6 +113,13 @@ const DEFAULT_DECLARATION_INCLUDE: CompanyPortabilityInclude = {
   skills: false,
 };
 
+function secretMessage(
+  key: Parameters<typeof cliMessage>[0],
+  values?: Parameters<typeof cliMessage>[1],
+): string {
+  return cliMessage(key, values, isCliJsonRequested() ? "en" : undefined);
+}
+
 export function parseSecretsInclude(input: string | undefined): CompanyPortabilityInclude {
   if (!input?.trim()) return { ...DEFAULT_DECLARATION_INCLUDE };
   const values = input.split(",").map((part) => part.trim().toLowerCase()).filter(Boolean);
@@ -122,7 +131,7 @@ export function parseSecretsInclude(input: string | undefined): CompanyPortabili
     skills: values.includes("skills"),
   };
   if (!Object.values(include).some(Boolean)) {
-    throw new Error("Invalid --include value. Use one or more of: company,agents,projects,issues,tasks,skills");
+    throw new Error(secretMessage("secretInvalidInclude"));
   }
   return include;
 }
@@ -193,15 +202,15 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 
 function readValueFromOptions(opts: { value?: string; valueEnv?: string }): string {
   if (opts.value !== undefined && opts.valueEnv !== undefined) {
-    throw new Error("Use only one of --value or --value-env.");
+    throw new Error(secretMessage("secretValueOptionsConflict"));
   }
   if (opts.valueEnv !== undefined) {
     const value = process.env[opts.valueEnv];
-    if (!value) throw new Error(`Environment variable ${opts.valueEnv} is empty or unset.`);
+    if (!value) throw new Error(secretMessage("secretValueEnvironmentEmpty", { name: opts.valueEnv }));
     return value;
   }
   if (opts.value !== undefined) return opts.value;
-  throw new Error("Secret value is required. Pass --value or --value-env.");
+  throw new Error(secretMessage("secretValueRequired"));
 }
 
 function renderDeclaration(input: CompanyPortabilityEnvInput): Record<string, unknown> {
@@ -234,6 +243,24 @@ function renderSecret(secret: CompanySecret): Record<string, unknown> {
   };
 }
 
+function printSecretList(rows: CompanySecret[], json: boolean): void {
+  if (json) {
+    printOutput(rows, { json: true });
+    return;
+  }
+  if (rows.length === 0) {
+    printOutput([], { json: false });
+    return;
+  }
+  for (const row of rows) {
+    console.log(formatSecretMetadata(row));
+  }
+}
+
+function formatSecretMetadata(secret: CompanySecret): string {
+  return formatInlineRecord(renderSecret(secret), { labels: secretListColumnLabels() });
+}
+
 function printProviderHealth(rows: SecretProviderHealth[], json: boolean): void {
   if (json) {
     printOutput(rows, { json: true });
@@ -249,10 +276,10 @@ function printProviderHealth(rows: SecretProviderHealth[], json: boolean): void 
         id: row.provider,
         status: row.status,
         message: row.message,
-      }),
+      }, { labels: secretProviderHealthLabels() }),
     );
     for (const warning of row.warnings ?? []) {
-      console.log(pc.yellow(`warning=${warning}`));
+      console.log(pc.yellow(`${secretProviderHealthLabels().warning}=${warning}`));
     }
     const missingConfig = asStringArray(row.details?.missingConfig);
     if (missingConfig.length > 0) {
@@ -269,7 +296,7 @@ function printProviderHealth(rows: SecretProviderHealth[], json: boolean): void 
       console.log(pc.dim(`detectedCredentialSources=${detectedCredentialSources.join(",")}`));
     }
     for (const guidance of row.backupGuidance ?? []) {
-      console.log(pc.dim(`backup=${guidance}`));
+      console.log(pc.dim(`${secretProviderHealthLabels().backup}=${guidance}`));
     }
   }
 }
@@ -299,7 +326,7 @@ async function migrateInlineEnv(opts: SecretMigrateInlineEnvOptions): Promise<vo
       { json: ctx.json },
     );
     if (!ctx.json) {
-      console.log(pc.dim("Re-run with --apply to create/rotate secrets and update agent env bindings."));
+      console.log(pc.dim(cliMessage("secretMigrateRerunWithApply")));
     }
     return;
   }
@@ -327,7 +354,7 @@ async function migrateInlineEnv(opts: SecretMigrateInlineEnvOptions): Promise<vo
       value,
       description: `Migrated from agent ${candidate.agentId} env ${candidate.envKey}`,
     });
-    if (!created) throw new Error(`Secret create returned no data for ${candidate.secretName}`);
+    if (!created) throw new Error(secretMessage("secretCreateReturnedNoData", { name: candidate.secretName }));
     createdOrRotated.set(`${candidate.agentId}:${candidate.envKey}`, created.id);
     createdSecrets += 1;
   }
@@ -376,7 +403,7 @@ export function registerSecretCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const rows = (await ctx.api.get<CompanySecret[]>(apiPath`/api/companies/${ctx.companyId}/secrets`)) ?? [];
-          printOutput(ctx.json ? rows : rows.map(renderSecret), { json: ctx.json });
+          printSecretList(rows, ctx.json);
         } catch (err) {
           handleCommandError(err);
         }
@@ -395,7 +422,7 @@ export function registerSecretCommands(program: Command): void {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const kind = opts.kind ?? "all";
           if (!["all", "secret", "plain"].includes(kind)) {
-            throw new Error("Invalid --kind value. Use: all, secret, plain");
+            throw new Error(secretMessage("secretInvalidKind"));
           }
           const preview = await ctx.api.post<CompanyPortabilityExportPreviewResult>(
             apiPath`/api/companies/${ctx.companyId}/exports/preview`,
@@ -431,7 +458,8 @@ export function registerSecretCommands(program: Command): void {
             value: readValueFromOptions(opts),
             description: opts.description,
           });
-          printOutput(ctx.json ? created : renderSecret(created!), { json: ctx.json });
+          if (ctx.json) printOutput(created, { json: true });
+          else console.log(formatSecretMetadata(created!));
         } catch (err) {
           handleCommandError(err);
         }
@@ -461,7 +489,8 @@ export function registerSecretCommands(program: Command): void {
             providerVersionRef: opts.providerVersionRef,
             description: opts.description,
           });
-          printOutput(ctx.json ? created : renderSecret(created!), { json: ctx.json });
+          if (ctx.json) printOutput(created, { json: true });
+          else console.log(formatSecretMetadata(created!));
         } catch (err) {
           handleCommandError(err);
         }
@@ -540,9 +569,9 @@ export function registerSecretCommands(program: Command): void {
       .option("--confirm <secretId>", "Repeat the secret ID to confirm deletion")
       .action(async (secretId: string, opts: SecretDeleteOptions) => {
         try {
-          if (!opts.yes) throw new Error("Deletion requires --yes.");
+          if (!opts.yes) throw new Error(secretMessage("secretDeleteNeedsYes"));
           if (opts.confirm !== secretId) {
-            throw new Error("Deletion requires --confirm <secretId> matching the secret ID.");
+            throw new Error(secretMessage("secretDeleteNeedsConfirm"));
           }
           const ctx = resolveCommandContext(opts);
           printOutput(await ctx.api.delete(apiPath`/api/secrets/${secretId}`), { json: ctx.json });

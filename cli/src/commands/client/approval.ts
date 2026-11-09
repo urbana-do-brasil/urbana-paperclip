@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import pc from "picocolors";
 import {
   createApprovalSchema,
   requestApprovalRevisionSchema,
@@ -16,6 +17,7 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { cliMessage } from "../../localization/index.js";
 
 interface ApprovalListOptions extends BaseClientOptions {
   companyId?: string;
@@ -69,7 +71,7 @@ export function registerApprovalCommands(program: Command): void {
           }
 
           if (rows.length === 0) {
-            printOutput([], { json: false });
+            console.log(pc.dim(cliMessage("emptyList")));
             return;
           }
 
@@ -81,6 +83,14 @@ export function registerApprovalCommands(program: Command): void {
                 status: row.status,
                 requestedByAgentId: row.requestedByAgentId,
                 requestedByUserId: row.requestedByUserId,
+              }, {
+                labels: {
+                  id: cliMessage("approvalListId"),
+                  type: cliMessage("approvalListType"),
+                  status: cliMessage("approvalListStatus"),
+                  requestedByAgentId: cliMessage("approvalListRequestedByAgentId"),
+                  requestedByUserId: cliMessage("approvalListRequestedByUserId"),
+                },
               }),
             );
           }
@@ -100,6 +110,10 @@ export function registerApprovalCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const row = await ctx.api.get<Approval>(apiPath`/api/approvals/${approvalId}`);
+          if (row === null && !ctx.json) {
+            console.log(pc.dim(cliMessage("emptyValue")));
+            return;
+          }
           printOutput(row, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);

@@ -13,6 +13,8 @@
  */
 
 import type { InteractionAudienceDescription } from "./interaction-audience";
+import { parseApiErrorMessage } from "@paperclipai/shared/api-error-messages";
+import { formatUiError } from "../api/error-presentation";
 
 /**
  * Denials that mean "you are outside this card's resolver audience". Mirrors the
@@ -71,11 +73,26 @@ function errorStatus(error: unknown): number | null {
   return typeof status === "number" ? status : null;
 }
 
+function hasAllowlistedApiPresentation(error: unknown): boolean {
+  const body = record(record(error)?.body);
+  return Boolean(parseApiErrorMessage(body));
+}
+
 /** The server's human-readable reason, preserved verbatim apart from punctuation. */
 function serverReason(error: unknown): string | null {
-  const body = record(record(error)?.body);
+  const errorRecord = record(error);
+  const body = record(errorRecord?.body);
+  if (error instanceof Error && hasAllowlistedApiPresentation(error)) {
+    return formatUiError(error);
+  }
   const fromBody = typeof body?.error === "string" ? body.error.trim() : "";
-  const fromError = error instanceof Error ? error.message.trim() : "";
+  const fromError = error instanceof Error
+    ? error.message.trim()
+    : typeof errorRecord?.message === "string"
+      ? errorRecord.message.trim()
+      : typeof error === "string"
+        ? error.trim()
+        : "";
   const reason = fromBody || fromError;
   if (!reason) return null;
   // The API writes reasons as bare clauses ("This interaction is human-only").
@@ -106,6 +123,8 @@ export type InteractionResolutionAudience = Pick<
 export function describeInteractionResolutionFailure(
   error: unknown,
   audience?: InteractionResolutionAudience | null,
+  fallbackMessage?: string,
+  retrySuffix?: string,
 ): InteractionResolutionFailure {
   const code = interactionResolutionErrorCode(error);
   const reason = serverReason(error);
@@ -150,7 +169,9 @@ export function describeInteractionResolutionFailure(
   return {
     kind: "transient",
     code,
-    message: reason ? `${reason} Try again.` : "Couldn't submit. Try again.",
+    message: reason
+      ? `${reason}${hasAllowlistedApiPresentation(error) ? "" : ` ${retrySuffix ?? "Try again."}`}`
+      : fallbackMessage ?? "Couldn't submit. Try again.",
   };
 }
 
@@ -158,6 +179,8 @@ export function describeInteractionResolutionFailure(
 export function interactionResolutionErrorMessage(
   error: unknown,
   audience?: InteractionResolutionAudience | null,
+  fallbackMessage?: string,
+  retrySuffix?: string,
 ): string {
-  return describeInteractionResolutionFailure(error, audience).message;
+  return describeInteractionResolutionFailure(error, audience, fallbackMessage, retrySuffix).message;
 }

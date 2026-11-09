@@ -16,6 +16,7 @@ import { EditorAutocompleteProvider } from "./context/EditorAutocompleteContext"
 import { PrimaryAgentProvider } from "./context/PrimaryAgentProvider";
 import { ToastProvider } from "./context/ToastContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { LocaleProvider } from "./context/LocaleContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { initPluginBridge } from "./plugins/bridge-init";
 import { PluginLauncherProvider } from "./plugins/launchers";
@@ -25,20 +26,25 @@ import { startServiceWorkerUpdates } from "./lib/service-worker-updates";
 import "@mdxeditor/editor/style.css";
 import "./index.css";
 
-initPluginBridge(React, ReactDOM);
+const isPublicHelp = /^\/help(?:\/|$)/.test(window.location.pathname);
+const HelpPage = React.lazy(() => import("./help/HelpPage").then((module) => ({ default: module.HelpPage })));
+
+if (!isPublicHelp) initPluginBridge(React, ReactDOM);
 
 // React 19.2 emits an unbounded stream of performance.measure() entries for its
 // DevTools performance tracks and never clears them; on a long-lived tab they
 // accumulate into millions of native objects (GBs). Reap them periodically.
-startPerfMeasureReaper();
+if (!isPublicHelp) startPerfMeasureReaper();
 
 // Parked SPA tabs never navigate, so beyond registering the worker this also
 // re-checks /sw.js on tab focus and hourly, and applies a discovered update
 // with one reload while the tab is hidden — otherwise an old worker and its
 // cached shell can outlive a deploy indefinitely.
-window.addEventListener("load", () => {
-  startServiceWorkerUpdates();
-});
+if (!isPublicHelp) {
+  window.addEventListener("load", () => {
+    startServiceWorkerUpdates();
+  });
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,9 +69,15 @@ if (!rootElement) throw new Error("Paperclip root element is missing");
 
 getOrCreatePaperclipReactRoot(window, rootElement).render(
   <StrictMode>
+    {isPublicHelp ? (
+      <React.Suspense fallback={<p role="status">{window.location.pathname.startsWith("/help/en") ? "Loading help…" : "Carregando ajuda…"}</p>}>
+        <HelpPage />
+      </React.Suspense>
+    ) : (
     <AppErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <SentryGate />
+        <LocaleProvider>
         <ThemeProvider>
           <BrowserRouter>
             <CompanyProvider>
@@ -93,7 +105,9 @@ getOrCreatePaperclipReactRoot(window, rootElement).render(
             </CompanyProvider>
           </BrowserRouter>
         </ThemeProvider>
+        </LocaleProvider>
       </QueryClientProvider>
     </AppErrorBoundary>
+    )}
   </StrictMode>
 );

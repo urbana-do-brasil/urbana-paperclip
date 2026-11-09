@@ -6,6 +6,8 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
+import { Sidebar as ProductionSidebar } from "./Sidebar.production";
+import { i18n } from "../i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const mockHeartbeatsApi = vi.hoisted(() => ({
@@ -100,6 +102,10 @@ vi.mock("./SidebarCompanyMenu", () => ({
   SidebarCompanyMenu: () => <div>Company menu</div>,
 }));
 
+vi.mock("./SidebarCompanyMenu.production", () => ({
+  SidebarCompanyMenu: () => <div>Company menu</div>,
+}));
+
 vi.mock("./SidebarAgents", () => ({
   SidebarAgents: ({ streamlined }: { streamlined?: boolean }) => (
     <div data-testid="sidebar-agents" data-streamlined={String(streamlined)}>
@@ -108,11 +114,19 @@ vi.mock("./SidebarAgents", () => ({
   ),
 }));
 
+vi.mock("./SidebarAgents.production", () => ({
+  SidebarAgents: () => <div data-testid="sidebar-agents">Active agents</div>,
+}));
+
 vi.mock("./SidebarProjects", () => ({
   SidebarProjects: () => <div data-testid="sidebar-projects">Classic projects</div>,
 }));
 
 vi.mock("./SidebarStarredProjects", () => ({
+  SidebarStarredProjects: () => <div data-testid="sidebar-starred-projects" />,
+}));
+
+vi.mock("./SidebarStarredProjects.production", () => ({
   SidebarStarredProjects: () => <div data-testid="sidebar-starred-projects" />,
 }));
 
@@ -154,7 +168,28 @@ describe("Sidebar", () => {
     return root;
   }
 
-  beforeEach(() => {
+  async function renderProductionSidebar() {
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    flushSync(() => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <ProductionSidebar />
+          </TooltipProvider>
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    return root;
+  }
+
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockHeartbeatsApi.liveRunsForCompany.mockResolvedValue([]);
@@ -203,6 +238,106 @@ describe("Sidebar", () => {
       root.unmount();
     });
   });
+
+  it.each([
+    ["standard", false],
+    ["production", true],
+  ])("localizes primary navigation in PT-BR in the %s sidebar", async (_variant, production) => {
+    await i18n.changeLanguage("pt-BR");
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableStreamlinedUi: false });
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    const navText = container.querySelector("nav")?.textContent ?? "";
+
+    expect(navText).toContain("Buscar");
+    expect(navText).toContain("Painel");
+    expect(navText).toContain("Caixa de entrada");
+    expect(navText).toContain("Tarefas");
+    expect(navText).toContain("Organização");
+    expect(navText).not.toContain("Search");
+
+    flushSync(() => root.unmount());
+  });
+
+  it.each([
+    ["standard", false, "pt-BR", "Casos"],
+    ["standard", false, "en", "Cases"],
+    ["production", true, "pt-BR", "Casos"],
+    ["production", true, "en", "Cases"],
+  ])("shows enabled Cases navigation in the %s sidebar for %s", async (_variant, production, locale, label) => {
+    await i18n.changeLanguage(locale as string);
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableCases: true });
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    const link = container.querySelector('a[href="/cases"]');
+    expect(link?.textContent).toContain(label);
+    flushSync(() => root.unmount());
+  });
+
+  it.each([["standard", false], ["production", true]])("hides Cases navigation in the %s sidebar when disabled or unavailable", async (_variant, production) => {
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableCases: false });
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    expect(container.querySelector('a[href="/cases"]')).toBeNull();
+    flushSync(() => root.unmount());
+  });
+
+  it.each([["standard", false], ["production", true]])("does not show Cases navigation in the %s sidebar while settings load", async (_variant, production) => {
+    mockInstanceSettingsApi.getExperimental.mockImplementation(() => new Promise(() => {}));
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    expect(container.querySelector('a[href="/cases"]')).toBeNull();
+    flushSync(() => root.unmount());
+  });
+
+  it.each([["standard", false], ["production", true]])("hides Cases navigation in the %s sidebar if settings fail", async (_variant, production) => {
+    mockInstanceSettingsApi.getExperimental.mockRejectedValue(new Error("forbidden"));
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    expect(container.querySelector('a[href="/cases"]')).toBeNull();
+    flushSync(() => root.unmount());
+  });
+
+  it.each([
+    ["standard", false, "pt-BR"],
+    ["standard", false, "en"],
+    ["production", true, "pt-BR"],
+    ["production", true, "en"],
+  ])("shows the Status route in the %s sidebar for %s", async (_variant, production, locale) => {
+    await i18n.changeLanguage(locale as string);
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableStatusCards: true });
+    const root = production ? await renderProductionSidebar() : await renderSidebar();
+    const statusLink = container.querySelector<HTMLAnchorElement>('a[href="/status"]');
+
+    expect(statusLink?.textContent).toContain(i18n.t("navigation.status"));
+    expect(statusLink?.textContent).toContain("beta");
+    flushSync(() => root.unmount());
+  });
+
+  it.each([["standard", false], ["production", true]])(
+    "hides the Status route in the %s sidebar when the flag is off",
+    async (_variant, production) => {
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableStatusCards: false });
+      const root = production ? await renderProductionSidebar() : await renderSidebar();
+      expect(container.querySelector('a[href="/status"]')).toBeNull();
+      flushSync(() => root.unmount());
+    },
+  );
+
+  it.each([["standard", false], ["production", true]])(
+    "keeps the Status route hidden in the %s sidebar while settings load",
+    async (_variant, production) => {
+      mockInstanceSettingsApi.getExperimental.mockImplementation(() => new Promise(() => {}));
+      const root = production ? await renderProductionSidebar() : await renderSidebar();
+      expect(container.querySelector('a[href="/status"]')).toBeNull();
+      flushSync(() => root.unmount());
+    },
+  );
+
+  it.each([["standard", false], ["production", true]])(
+    "keeps the Status route hidden in the %s sidebar when settings fail",
+    async (_variant, production) => {
+      mockInstanceSettingsApi.getExperimental.mockRejectedValue(new Error("forbidden"));
+      const root = production ? await renderProductionSidebar() : await renderSidebar();
+      expect(container.querySelector('a[href="/status"]')).toBeNull();
+      flushSync(() => root.unmount());
+    },
+  );
 
   it("renders plugin sidebar launchers inside the Work section", async () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({
@@ -695,6 +830,57 @@ describe("Sidebar", () => {
       root.unmount();
     });
   });
+
+  it.each(["en", "pt-BR"] as const)(
+    "navigates to Pipelines from the collapsed rail in both sidebar variants (%s)",
+    async (locale) => {
+      await i18n.changeLanguage(locale);
+      mockSidebar.collapsed = true;
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enablePipelines: true });
+
+      for (const render of [renderSidebar, renderProductionSidebar]) {
+        const root = await render();
+        const link = [...container.querySelectorAll("a")].find((anchor) => anchor.getAttribute("href") === "/pipelines");
+
+        expect(link?.textContent?.trim()).toBe(i18n.t("navigation.pipelines"));
+        expect(link?.parentElement?.getAttribute("data-slot")).toBe("tooltip-trigger");
+
+        flushSync(() => {
+          root.unmount();
+        });
+        container.replaceChildren();
+      }
+    },
+  );
+
+  it.each(["en", "pt-BR"] as const)(
+    "keeps Pipelines hidden in both sidebar variants when its flag is off, loading, or unavailable (%s)",
+    async (locale) => {
+      await i18n.changeLanguage(locale);
+      mockSidebar.collapsed = false;
+
+      const expectHiddenInBothVariants = async () => {
+        for (const render of [renderSidebar, renderProductionSidebar]) {
+          const root = await render();
+          expect([...container.querySelectorAll("a")].some((anchor) => anchor.getAttribute("href") === "/pipelines")).toBe(false);
+          expect(container.textContent).not.toContain(i18n.t("navigation.pipelines"));
+          flushSync(() => {
+            root.unmount();
+          });
+          container.replaceChildren();
+        }
+      };
+
+      mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enablePipelines: false });
+      await expectHiddenInBothVariants();
+
+      mockInstanceSettingsApi.getExperimental.mockImplementation(() => new Promise(() => {}));
+      await expectHiddenInBothVariants();
+
+      mockInstanceSettingsApi.getExperimental.mockRejectedValue(new Error("settings unavailable"));
+      await expectHiddenInBothVariants();
+    },
+  );
 
   it("shows the Workspaces link when isolated workspaces are enabled", async () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: true });

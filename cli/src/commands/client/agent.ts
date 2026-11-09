@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import pc from "picocolors";
 import {
   agentSkillSyncSchema,
   createAgentSchema,
@@ -30,6 +31,8 @@ import {
   resolveCommandContext,
   type BaseClientOptions,
 } from "./common.js";
+import { adminOperationMessage } from "../../localization/admin-operations.js";
+import { cliMessage } from "../../localization/index.js";
 
 interface AgentListOptions extends BaseClientOptions {
   companyId?: string;
@@ -231,7 +234,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const me = await ctx.api.get<Agent>("/api/agents/me");
-          printOutput(me, { json: ctx.json });
+          printAgentResult(me, ctx.json);
         } catch (err) {
           handleCommandError(err);
         }
@@ -250,17 +253,13 @@ export function registerAgentCommands(program: Command): void {
             printOutput(rows, { json: true });
             return;
           }
-          for (const row of rows) {
-            console.log(formatInlineRecord({
-              identifier: row.identifier,
-              id: row.id,
-              status: row.status,
-              priority: row.priority,
-              title: row.title,
-              projectId: row.projectId,
-            }));
+          if (rows.length === 0) {
+            console.log(cliMessage("emptyList"));
+            return;
           }
-          if (rows.length === 0) printOutput([], { json: false });
+          for (const row of rows) {
+            console.log(formatAgentInboxRecord(row as unknown as Record<string, unknown>));
+          }
         } catch (err) {
           handleCommandError(err);
         }
@@ -279,7 +278,17 @@ export function registerAgentCommands(program: Command): void {
           const params = new URLSearchParams({ userId: opts.userId });
           if (opts.status) params.set("status", opts.status);
           const rows = (await ctx.api.get<Issue[]>(`/api/agents/me/inbox/mine?${params.toString()}`)) ?? [];
-          printOutput(rows, { json: ctx.json });
+          if (ctx.json) {
+            printOutput(rows, { json: true });
+            return;
+          }
+          if (rows.length === 0) {
+            console.log(cliMessage("emptyList"));
+            return;
+          }
+          for (const row of rows) {
+            console.log(formatAgentInboxRecord(row as unknown as Record<string, unknown>, { includeScalarFields: true }));
+          }
         } catch (err) {
           handleCommandError(err);
         }
@@ -302,20 +311,20 @@ export function registerAgentCommands(program: Command): void {
           }
 
           if (rows.length === 0) {
-            printOutput([], { json: false });
+            console.log(cliMessage("emptyList"));
             return;
           }
 
           for (const row of rows) {
             console.log(
               formatInlineRecord({
-                id: row.id,
-                name: row.name,
-                role: row.role,
-                status: row.status,
-                reportsTo: row.reportsTo,
-                budgetMonthlyCents: row.budgetMonthlyCents,
-                spentMonthlyCents: row.spentMonthlyCents,
+                [cliMessage("agentListId")]: row.id,
+                [cliMessage("agentListName")]: row.name,
+                [cliMessage("agentListRole")]: row.role,
+                [cliMessage("agentListStatus")]: row.status,
+                [cliMessage("agentListReportsTo")]: row.reportsTo,
+                [cliMessage("agentListMonthlyBudget")]: row.budgetMonthlyCents,
+                [cliMessage("agentListMonthlySpent")]: row.spentMonthlyCents,
               }),
             );
           }
@@ -335,7 +344,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const row = await ctx.api.get<Agent>(apiPath`/api/agents/${agentId}`);
-          printOutput(row, { json: ctx.json });
+          printAgentResult(row, ctx.json);
         } catch (err) {
           handleCommandError(err);
         }
@@ -353,7 +362,12 @@ export function registerAgentCommands(program: Command): void {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const payload = createAgentSchema.parse(parseJson(opts.payloadJson));
           const created = await ctx.api.post<Agent>(apiPath`/api/companies/${ctx.companyId}/agents`, payload);
-          printOutput(created, { json: ctx.json });
+          if (ctx.json) {
+            printOutput(created, { json: true });
+          } else {
+            console.log(adminOperationMessage("agentCreateDone"));
+            printOutput(created, { json: false });
+          }
         } catch (err) {
           handleCommandError(err);
         }
@@ -371,7 +385,12 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const result = await ctx.api.post(apiPath`/api/companies/${ctx.companyId}/agent-hires`, parseJson(opts.payloadJson));
-          printOutput(result, { json: ctx.json });
+          if (ctx.json) {
+            printOutput(result, { json: true });
+          } else {
+            console.log(adminOperationMessage("agentHireDone"));
+            printOutput(result, { json: false });
+          }
         } catch (err) {
           handleCommandError(err);
         }
@@ -390,6 +409,7 @@ export function registerAgentCommands(program: Command): void {
           const ctx = resolveCommandContext(opts);
           const payload = updateAgentSchema.parse(parseJson(opts.payloadJson));
           const updated = await ctx.api.patch<Agent>(apiPath`/api/agents/${agentId}`, payload);
+          if (!ctx.json) console.log(adminOperationMessage("agentUpdateDone", { agentId }));
           printOutput(updated, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -405,9 +425,14 @@ export function registerAgentCommands(program: Command): void {
       .option("--yes", "Confirm deletion")
       .action(async (agentId: string, opts: AgentDeleteOptions) => {
         try {
-          if (!opts.yes) throw new Error("Refusing to delete without --yes");
+          if (!opts.yes) {
+            throw new Error(
+              opts.json ? "Refusing to delete without --yes" : adminOperationMessage("agentDeleteNeedsYes"),
+            );
+          }
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.delete(apiPath`/api/agents/${agentId}`);
+          if (!ctx.json) console.log(adminOperationMessage("agentDeleteDone", { agentId }));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -432,6 +457,22 @@ export function registerAgentCommands(program: Command): void {
           try {
             const ctx = resolveCommandContext(opts);
             const result = await ctx.api.post(`${apiPath`/api/agents/${agentId}`}/${path}`, {});
+            if (name === "pause" || name === "resume" || name === "approve" || name === "terminate") {
+              if (ctx.json) {
+                printOutput(result, { json: true });
+              } else {
+                const message = name === "pause"
+                  ? "agentPauseDone"
+                  : name === "resume"
+                    ? "agentResumeDone"
+                    : name === "approve"
+                      ? "agentApproveDone"
+                      : "agentTerminateDone";
+                console.log(adminOperationMessage(message, { agentId }));
+                printOutput(result, { json: false });
+              }
+              return;
+            }
             printOutput(result, { json: ctx.json });
           } catch (err) {
             handleCommandError(err);
@@ -467,6 +508,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/configuration`);
+          if (!ctx.json) console.log(cliMessage("agentConfigurationOutput"));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -483,6 +525,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/config-revisions`);
+          if (!ctx.json) console.log(cliMessage("agentConfigRevisionsOutput"));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -500,6 +543,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/config-revisions/${revisionId}`);
+          if (!ctx.json) console.log(cliMessage("agentConfigRevisionOutput"));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -517,6 +561,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.post(apiPath`/api/agents/${agentId}/config-revisions/${revisionId}/rollback`, {});
+          if (!ctx.json) console.log(`${cliMessage("agentConfigRevisionRollbackOutput")} ${revisionId}.`);
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -533,6 +578,7 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/runtime-state`);
+          if (!ctx.json) console.log(cliMessage("agentRuntimeStateOutput"));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -551,6 +597,7 @@ export function registerAgentCommands(program: Command): void {
           const ctx = resolveCommandContext(opts);
           const payload = resetAgentSessionSchema.parse({ taskKey: opts.taskKey });
           const result = await ctx.api.post(apiPath`/api/agents/${agentId}/runtime-state/reset-session`, payload);
+          if (!ctx.json) console.log(adminOperationMessage("agentRuntimeSessionResetDone", { agentId }));
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -567,6 +614,13 @@ export function registerAgentCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const result = await ctx.api.get(apiPath`/api/agents/${agentId}/task-sessions`);
+          if (!ctx.json) {
+            console.log(cliMessage("agentTaskSessionsOutput"));
+            if (Array.isArray(result) && result.length === 0) {
+              console.log(cliMessage("emptyList"));
+              return;
+            }
+          }
           printOutput(result, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -856,7 +910,7 @@ export function registerAgentCommands(program: Command): void {
             }
           }
           console.log("");
-          console.log("# Run this in your shell before launching codex/claude:");
+          console.log(cliMessage("agentLocalCliShellInstruction"));
           console.log(exportsText);
         } catch (err) {
           handleCommandError(err);
@@ -864,6 +918,41 @@ export function registerAgentCommands(program: Command): void {
       }),
     { includeCompany: false },
   );
+}
+
+function formatAgentInboxRecord(
+  row: Record<string, unknown>,
+  options: { includeScalarFields?: boolean } = {},
+): string {
+  const record = options.includeScalarFields
+    ? row
+    : {
+        identifier: row.identifier,
+        id: row.id,
+        status: row.status,
+        priority: row.priority,
+        title: row.title,
+        projectId: row.projectId,
+      };
+  return formatInlineRecord(record, {
+    labels: {
+      identifier: cliMessage("agentInboxIdentifier"),
+      id: cliMessage("agentInboxId"),
+      name: cliMessage("agentInboxName"),
+      status: cliMessage("agentInboxStatus"),
+      priority: cliMessage("agentInboxPriority"),
+      title: cliMessage("agentInboxTitle"),
+      projectId: cliMessage("agentInboxProjectId"),
+    },
+  });
+}
+
+function printAgentResult(row: Agent | null, json: boolean): void {
+  if (row === null && !json) {
+    console.log(pc.dim(cliMessage("emptyValue")));
+    return;
+  }
+  printOutput(row, { json });
 }
 
 function parseJsonObject(value: string | undefined): Record<string, unknown> | undefined {

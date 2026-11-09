@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { IssueWorkProduct } from "@paperclipai/shared";
 import { IssueOutputSection } from "./IssueOutputSection";
+import { i18n } from "@/i18n";
 
 function makeWorkProduct(overrides: Partial<IssueWorkProduct> & { id: string }): IssueWorkProduct {
   return {
@@ -50,6 +51,14 @@ function metadata(key: string, contentType: string, filename: string) {
 }
 
 describe("IssueOutputSection", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  afterEach(async () => {
+    await i18n.changeLanguage("pt-BR");
+  });
+
   it("renders a playable, downloadable video as the primary output", () => {
     const markup = renderToStaticMarkup(
       <IssueOutputSection
@@ -125,6 +134,25 @@ describe("IssueOutputSection", () => {
     );
 
     expect(markup).toBe("");
+  });
+
+  it("localizes output labels and file actions in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const markup = renderToStaticMarkup(
+      <IssueOutputSection
+        workProducts={[
+          makeWorkProduct({
+            id: "wp-pt-br",
+            isPrimary: true,
+            metadata: metadata("att-1", "application/pdf", "relatorio.pdf"),
+          }),
+        ]}
+      />,
+    );
+
+    expect(markup).toContain("Saída");
+    expect(markup).toContain("Baixar");
+    expect(markup).toContain('aria-label="Baixar relatorio.pdf"');
   });
 
   it("renders the primary card plus an Also produced list for multiple outputs", () => {

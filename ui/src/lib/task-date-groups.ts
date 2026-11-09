@@ -30,8 +30,10 @@ export function taskDateGroup(value: Date | string | number, now: Date = new Dat
 export function taskDateGroupSeparator(
   previous: TaskDateGroup | null,
   current: TaskDateGroup,
+  translate?: (key: string) => string,
 ): string | null {
   if (previous === current) return null;
   if (previous === null && current === "earlier") return null;
+  if (translate) return translate(`taskCollection.dateGroups.${current}`);
   return taskDateGroupLabels[current];
 }

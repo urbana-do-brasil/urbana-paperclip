@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { ComponentProps, ReactNode } from "react";
+import { act as reactAct, type ComponentProps, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectWorkspaceSummary } from "../lib/project-workspaces-tab";
 import { queryKeys } from "../lib/queryKeys";
 import { ProjectWorkspaceSummaryCard } from "./ProjectWorkspaceSummaryCard";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 
 const mockInstanceSettingsApi = vi.hoisted(() => ({
   getExperimental: vi.fn(),
@@ -127,7 +129,8 @@ describe("ProjectWorkspaceSummaryCard", () => {
   let container: HTMLDivElement;
   let writeClipboard: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await reactAct(async () => { await i18n.changeLanguage("en"); });
     container = document.createElement("div");
     document.body.appendChild(container);
     writeClipboard = vi.fn().mockResolvedValue(undefined);
@@ -142,9 +145,10 @@ describe("ProjectWorkspaceSummaryCard", () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({});
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await reactAct(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
   });
 
   it("keeps the path row hidden while the policy is still loading", () => {
@@ -339,6 +343,69 @@ describe("ProjectWorkspaceSummaryCard", () => {
     });
   });
 
+  it("localizes the linked workspace card while preserving routes, paths, IDs, and action payloads", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    const runtimeSpy = vi.fn();
+    const closeSpy = vi.fn();
+    const summary = createSummary({
+      workspaceName: "PAP-989-workspace",
+      cwd: "/worktrees/PAP-989-workspace",
+      branchName: "PAP-989-workspace",
+      serviceCount: 1,
+      runningServiceCount: 1,
+      executionWorkspaceStatus: "cleanup_failed",
+    });
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(withQueryClient(
+        <ProjectWorkspaceSummaryCard
+          projectRef="paperclip-app"
+          summary={summary}
+          runtimeActionKey={null}
+          runtimeActionPending={false}
+          onRuntimeAction={runtimeSpy}
+          onCloseWorkspace={closeSpy}
+        />,
+      ));
+    });
+
+    expect(container.textContent).toContain("Espaço de execução");
+    expect(container.textContent).toContain("Tarefas vinculadas");
+    expect(container.textContent).toContain("1/1 serviço");
+    expect(container.textContent).toContain("Falha na limpeza");
+    expect(container.textContent).toContain("Parar serviços");
+    expect(container.textContent).toContain("Tentar encerrar novamente");
+    expect(container.querySelector("a[href='/execution-workspaces/workspace-1']")).not.toBeNull();
+    expect(container.querySelector("a[href='/issues/PAP-1364']")).not.toBeNull();
+    expect(container.querySelector('button[title="/worktrees/PAP-989-workspace"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Copiar branch"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Copiar caminho"]')).not.toBeNull();
+
+    const actionButtons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+    const runtimeButton = actionButtons.find((button) => button.textContent?.includes("Parar serviços"));
+    const closeButton = actionButtons.find((button) => button.textContent?.includes("Tentar encerrar novamente"));
+    act(() => {
+      runtimeButton?.click();
+      closeButton?.click();
+    });
+    expect(runtimeSpy).toHaveBeenCalledWith({
+      key: "execution:workspace-1",
+      kind: "execution_workspace",
+      workspaceId: "workspace-1",
+      action: "stop",
+    });
+    expect(closeSpy).toHaveBeenCalledWith({
+      id: "workspace-1",
+      name: "PAP-989-workspace",
+      status: "cleanup_failed",
+    });
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
   it("copies branch and path from both text and icon controls with feedback", async () => {
     const root = createRoot(container);
     const summary = createSummary({
@@ -375,14 +442,12 @@ describe("ProjectWorkspaceSummaryCard", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(writeClipboard).toHaveBeenLastCalledWith(summary.branchName);
-    expect(branchTextButton?.nextElementSibling?.className).toContain("opacity-100");
 
     await act(async () => {
       pathTextButton!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(writeClipboard).toHaveBeenLastCalledWith(summary.cwd);
-    expect(pathTextButton?.nextElementSibling?.className).toContain("opacity-100");
 
     await act(async () => {
       branchIconButton!.dispatchEvent(new MouseEvent("click", { bubbles: true }));

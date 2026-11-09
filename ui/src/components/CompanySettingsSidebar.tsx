@@ -22,6 +22,11 @@ import { INSTANCE_SETTINGS_PATH_PREFIX } from "@/lib/instance-settings";
 import { SIDEBAR_SCROLL_RESET_STATE } from "@/lib/navigation-scroll";
 import { queryKeys } from "@/lib/queryKeys";
 import { useCompany } from "@/context/CompanyContext";
+import { useTranslation } from "@/i18n";
+import {
+  isBundledPluginRecord,
+  localizePluginPresentation,
+} from "@/lib/plugin-presentation-localization";
 import { useCloudInstance } from "@/hooks/useCloudInstance";
 import { useHiddenSettings } from "@/hooks/useHiddenSettings";
 import { usePluginSlots } from "@/plugins/slots";
@@ -42,6 +47,7 @@ function isSandboxProviderOnly(plugin: PluginRecord): boolean {
 }
 
 export function CompanySettingsSidebar() {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { hidden: hiddenSettings } = useHiddenSettings();
   const showPage = (pageKey: string) => !hiddenSettings.has(pageKey);
@@ -79,12 +85,17 @@ export function CompanySettingsSidebar() {
     // operator hides the Plugins surface.
     enabled: showPlugins,
   });
+  const { data: bundledPlugins } = useQuery({
+    queryKey: queryKeys.plugins.examples,
+    queryFn: () => pluginsApi.listBundled(),
+    enabled: showPlugins,
+  });
   const sidebarPlugins = (plugins ?? []).filter((plugin) => !isSandboxProviderOnly(plugin));
 
   return (
     <ContextualSidebarFrame
       surface="settings"
-      title="Settings"
+      title={t("settingsNav.title")}
       showHeader={false}
       className={primarySidebarStyles.surface}
     >
@@ -93,20 +104,20 @@ export function CompanySettingsSidebar() {
         className="flex h-(--sz-60px) shrink-0 items-center px-3"
       >
         <div data-slot="settings-back-group" className={`${primarySidebarStyles.group} w-full`}>
-          <SidebarNavItem to="/dashboard" label="Back to app" icon={ArrowLeft} />
+          <SidebarNavItem to="/dashboard" label={t("settingsNav.backToApp")} icon={ArrowLeft} />
         </div>
       </div>
       <nav
-        aria-label="Settings"
+        aria-label={t("settingsNav.title")}
         data-slot="contextual-sidebar-nav"
         className={primarySidebarStyles.nav}
       >
         <div data-slot="contextual-sidebar-group" className={primarySidebarStyles.group}>
-          <SidebarNavItem to="/company/settings" label="General" icon={SlidersHorizontal} end />
+          <SidebarNavItem to="/company/settings" label={t("settingsNav.general")} icon={SlidersHorizontal} end />
           {showPage("instance.profile") && (
             <SidebarNavItem
               to={`${INSTANCE_SETTINGS_PATH_PREFIX}/profile`}
-              label="Profile"
+              label={t("settingsNav.profile")}
               icon={UserRoundPen}
               end
             />
@@ -114,7 +125,7 @@ export function CompanySettingsSidebar() {
           {showPage("company.members") && (
             <SidebarNavItem
               to="/company/settings/members"
-              label="Members"
+              label={t("settingsNav.members")}
               icon={Users}
               badge={badges?.joinRequests ?? 0}
               end
@@ -126,18 +137,18 @@ export function CompanySettingsSidebar() {
               <SidebarNavItem
                 key={`${slot.pluginKey}:${slot.id}`}
                 to={`/company/settings/${slot.routePath}`}
-                label={slot.displayName}
+                label={slot.hostDisplayName ?? slot.displayName}
                 icon={Puzzle}
                 end
               />
             ))}
           {showPage("company.secrets") && (
-            <SidebarNavItem to="/company/settings/secrets" label="Secrets" icon={KeyRound} end />
+            <SidebarNavItem to="/company/settings/secrets" label={t("settingsNav.secrets")} icon={KeyRound} end />
           )}
           {showPage("instance.environments") && (
             <SidebarNavItem
               to={`${INSTANCE_SETTINGS_PATH_PREFIX}/environments`}
-              label="Environments"
+              label={t("settingsNav.environments")}
               icon={MonitorCog}
               end
             />
@@ -145,56 +156,66 @@ export function CompanySettingsSidebar() {
           {showPage("instance.access") && (
             <SidebarNavItem
               to={`${INSTANCE_SETTINGS_PATH_PREFIX}/access`}
-              label="Access"
+              label={t("settingsNav.access")}
               icon={Shield}
               end
             />
           )}
           {showPage("company.export") && (
-            <SidebarNavItem to="/company/export" label="Export" icon={Download} />
+            <SidebarNavItem to="/company/export" label={t("settingsNav.export")} icon={Download} />
           )}
           {!isCloud && showPage("company.import") && (
-            <SidebarNavItem to="/company/import" label="Import" icon={Upload} end />
+            <SidebarNavItem to="/company/import" label={t("settingsNav.import")} icon={Upload} end />
           )}
           {showPage("instance.experimental") && (
             <SidebarNavItem
               to={`${INSTANCE_SETTINGS_PATH_PREFIX}/experimental`}
-              label="Experimental"
+              label={t("settingsNav.experimental")}
               icon={FlaskConical}
             />
           )}
           {showPlugins && (
             <SidebarNavItem
               to={`${INSTANCE_SETTINGS_PATH_PREFIX}/plugins`}
-              label="Plugins"
+              label={t("settingsNav.plugins")}
               icon={Puzzle}
             />
           )}
           {showPlugins && sidebarPlugins.length > 0 ? (
             <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border/70 pl-3">
-              {sidebarPlugins.map((plugin) => (
-                <NavLink
-                  key={plugin.id}
-                  to={`${INSTANCE_SETTINGS_PATH_PREFIX}/plugins/${plugin.id}`}
-                  state={SIDEBAR_SCROLL_RESET_STATE}
-                  className={({ isActive }) =>
-                    [
-                      "rounded-md px-2 py-1.5 text-xs transition-colors",
-                      isActive
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-                    ].join(" ")
-                  }
-                >
-                  {plugin.manifestJson.displayName ?? plugin.packageName}
-                </NavLink>
-              ))}
+              {sidebarPlugins.map((plugin) => {
+                const presentation = localizePluginPresentation(
+                  plugin.manifestJson.id,
+                  plugin.manifestJson.displayName ?? plugin.packageName,
+                  plugin.manifestJson.description ?? "",
+                  t,
+                  plugin.manifestJson.id === plugin.pluginKey
+                    && isBundledPluginRecord(plugin, bundledPlugins),
+                );
+                return (
+                  <NavLink
+                    key={plugin.id}
+                    to={`${INSTANCE_SETTINGS_PATH_PREFIX}/plugins/${plugin.id}`}
+                    state={SIDEBAR_SCROLL_RESET_STATE}
+                    className={({ isActive }) =>
+                      [
+                        "rounded-md px-2 py-1.5 text-xs transition-colors",
+                        isActive
+                          ? "bg-accent text-foreground"
+                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                      ].join(" ")
+                    }
+                  >
+                    {presentation.displayName}
+                  </NavLink>
+                );
+              })}
             </div>
           ) : null}
           {showPage("instance.adapters") && (
             <SidebarNavItem
               to={`${INSTANCE_SETTINGS_PATH_PREFIX}/adapters`}
-              label="Adapters"
+              label={t("settingsNav.adapters")}
               icon={Cpu}
             />
           )}

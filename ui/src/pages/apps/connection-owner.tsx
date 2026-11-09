@@ -1,6 +1,8 @@
 import type { McpConnection, ToolConnection } from "@paperclipai/shared";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
 import { humanizeConnectionDisplayName } from "@paperclipai/shared";
 import { Identity } from "@/components/Identity";
+import { useTranslation } from "@/i18n";
 import type { CompanyUserProfile } from "@/lib/company-members";
 
 export type ConnectionOwnerProfile = CompanyUserProfile;
@@ -16,9 +18,12 @@ export function connectionOwnerProfile(
   };
 }
 
-function ownerGivenName(label: string): string {
+function ownerGivenName(label: string, locale = "en"): string {
   const trimmed = label.trim();
-  if (!trimmed) return "Board";
+  if (["Board", "Board member"].includes(trimmed)) {
+    return locale.toLowerCase().startsWith("pt") ? "Quadro" : "Board";
+  }
+  if (!trimmed) return locale.toLowerCase().startsWith("pt") ? "Quadro" : "Board";
   const first = trimmed.split(/\s+/)[0] ?? trimmed;
   return first.includes("@") ? first.split("@")[0] || "Board" : first;
 }
@@ -35,6 +40,7 @@ export function connectionDisplayNameForOwner(
   connection: Pick<ToolConnection, "name">,
   applicationName: string,
   owner: ConnectionOwnerProfile | null,
+  locale = "en",
 ): string {
   const rawName = connection.name.trim();
   // Provider account identifiers are machine values, not prose. Preserve
@@ -49,6 +55,9 @@ export function connectionDisplayNameForOwner(
   if (connectionName.trim().toLocaleLowerCase() !== applicationName.trim().toLocaleLowerCase()) {
     return connectionName;
   }
+  if (locale.toLowerCase().startsWith("pt")) {
+    return `${applicationName} de ${ownerGivenName(owner.label, locale)}`;
+  }
   return `${possessive(ownerGivenName(owner.label))} ${applicationName}`;
 }
 
@@ -59,11 +68,28 @@ export function assistantConnectionDisplayName(connection: McpConnection): strin
   return `${owner}${clientName} connection`;
 }
 
+/** Localize only the generic relationship label; preserve owner/client names. */
+export function assistantConnectionDisplayNameForLocale(
+  connection: McpConnection,
+  locale: SupportedLocale,
+): string {
+  if (locale === "en") return assistantConnectionDisplayName(connection);
+  const clientName = connection.clientName.trim();
+  if (!connection.user) return `Conexão ${clientName}`;
+  return `Conexão ${clientName} de ${ownerGivenName(connection.user.name)}`;
+}
+
 export function ConnectionOwnerIdentity({ owner }: { owner: ConnectionOwnerProfile | null }) {
-  if (!owner) return <span className="text-xs text-muted-foreground">Unknown</span>;
+  const { t } = useTranslation();
+  if (!owner) return <span className="text-xs text-muted-foreground">{t("apps.connections.unknownOwner")}</span>;
+  const label = owner.label === "Board"
+    ? t("apps.connections.boardOwner")
+    : owner.label === "Board member"
+      ? t("apps.connections.boardMemberOwner")
+      : owner.label;
   return (
     <Identity
-      name={owner.label}
+      name={label}
       avatarUrl={owner.image}
       size="sm"
       className="text-muted-foreground"

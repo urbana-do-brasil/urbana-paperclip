@@ -1,4 +1,6 @@
 import { isAcknowledgedNativeReassignmentStop, isAcknowledgedNativeStop } from "../../../services/acknowledged-native-stop.js";
+import { DEFAULT_USER_LOCALE } from "@paperclipai/shared/localization";
+import { readCommunicationLocaleSnapshot } from "../../../services/heartbeat/communication-locale.js";
 import { isCompletedOnboardingHandoffWake } from "../../../services/chat-completion-delivery.js";
 import { instanceSettingsService } from "../../../services/instance-settings.js";
 import { currentConversationCommentCondition } from "../../../services/agent-conversations.js";
@@ -619,6 +621,7 @@ function buildTransaction(tx: Db, deps: WakeQueuePostgresAdapterDeps, db: Db, ru
               retryReason: EXECUTION_REVIEW_PARTICIPANT_RECOVERY_RETRY_REASON,
               source: "issue.execution_review_recovery",
               retryOfRunId: finishingRun.id,
+              ...(readCommunicationLocaleSnapshot(finishingRun.contextSnapshot) ?? { communicationLocale: DEFAULT_USER_LOCALE, communicationLocaleSource: "default" }),
               currentStageId: executionState?.currentStageId ?? null,
               currentStageType: executionState?.currentStageType ?? null,
               reviewRecoveryInstruction:
@@ -688,7 +691,7 @@ function buildTransaction(tx: Db, deps: WakeQueuePostgresAdapterDeps, db: Db, ru
           triggerDetail: "system",
           status: "queued",
           wakeupRequestId: wakeupRequest.id,
-          contextSnapshot,
+          contextSnapshot: { ...contextSnapshot, ...(readCommunicationLocaleSnapshot(finishingRun.contextSnapshot) ?? { communicationLocale: DEFAULT_USER_LOCALE, communicationLocaleSource: "default" }) },
           responsibleUserId,
           sessionIdBefore: sessionBefore,
           retryOfRunId: finishingRun.id,

@@ -9,6 +9,8 @@ import {
   type ClientContextProfile,
 } from "../../client/context.js";
 import { printOutput } from "./common.js";
+import { cliMessage, parseCliLocale } from "../../localization/index.js";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
 
 interface ContextOptions {
   dataDir?: string;
@@ -18,6 +20,7 @@ interface ContextOptions {
 }
 
 interface ContextSetOptions extends ContextOptions {
+  locale?: SupportedLocale;
   apiBase?: string;
   companyId?: string;
   persona?: "board" | "agent";
@@ -89,6 +92,7 @@ export function registerContextCommands(program: Command): void {
     .option("-d, --data-dir <path>", "Paperclip data directory root (isolates state from ~/.paperclip)")
     .option("--context <path>", "Path to CLI context file")
     .option("--profile <name>", "Profile name (default: current profile)")
+    .option("--locale <locale>", cliMessage("localeOption"), parseCliLocale)
     .option("--api-base <url>", "Default API base URL")
     .option("--company-id <id>", "Default company ID")
     .option("--persona <persona>", "Profile persona: board or agent")
@@ -142,6 +146,7 @@ function setIfProvided<K extends keyof ClientContextProfile>(
 
 function buildContextPatch(opts: ContextSetOptions): Partial<ClientContextProfile> {
   const patch: Partial<ClientContextProfile> = {};
+  setIfProvided(patch, "locale", opts.locale);
   setIfProvided(patch, "apiBase", opts.apiBase);
   setIfProvided(patch, "companyId", opts.companyId);
   setIfProvided(patch, "persona", parsePersona(opts.persona));

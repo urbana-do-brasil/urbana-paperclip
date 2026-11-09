@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FileTree, buildFileTree } from "./FileTree";
+import { i18n } from "@/i18n";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -214,5 +215,66 @@ describe("FileTree", () => {
     expect(onSelectFile).not.toHaveBeenCalled();
     expect(onToggleDir).not.toHaveBeenCalled();
     expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(true);
+  });
+
+  it("localizes generic empty and error labels with the host language while preserving error details", async () => {
+    const previousLanguage = i18n.resolvedLanguage ?? i18n.language;
+    const retry = vi.fn();
+    const nodes = buildFileTree({});
+    const changeLanguage = async (language: "pt-BR" | "en") => {
+      await act(async () => {
+        await i18n.changeLanguage(language);
+      });
+    };
+    const renderError = () => {
+      act(() => root.render(
+        <FileTree
+          nodes={nodes}
+          selectedFile={null}
+          expandedDirs={new Set()}
+          onSelectFile={() => {}}
+          onToggleDir={() => {}}
+          error={{ message: "Original provider detail", retry }}
+        />,
+      ));
+    };
+    const renderEmpty = () => {
+      act(() => root.render(
+        <FileTree
+          nodes={nodes}
+          selectedFile={null}
+          expandedDirs={new Set()}
+          onSelectFile={() => {}}
+          onToggleDir={() => {}}
+        />,
+      ));
+    };
+
+    try {
+      await changeLanguage("pt-BR");
+      renderError();
+      expect(container.querySelector("[role='tree']")?.getAttribute("aria-label")).toBe("Arquivos");
+      expect(container.textContent).toContain("Erro");
+      expect(container.textContent).toContain("Original provider detail");
+      expect(container.querySelector("button")?.textContent).toContain("Tentar novamente");
+
+      await changeLanguage("en");
+      expect(container.querySelector("[role='tree']")?.getAttribute("aria-label")).toBe("Files");
+      expect(container.textContent).toContain("Error");
+      expect(container.textContent).toContain("Original provider detail");
+      expect(container.querySelector("button")?.textContent).toContain("Retry");
+
+      renderEmpty();
+      expect(container.querySelector("[role='tree']")?.getAttribute("aria-label")).toBe("Files");
+      expect(container.textContent).toContain("No files");
+      expect(container.textContent).toContain("Files will appear here when they are available.");
+
+      await changeLanguage("pt-BR");
+      expect(container.querySelector("[role='tree']")?.getAttribute("aria-label")).toBe("Arquivos");
+      expect(container.textContent).toContain("Ainda não há arquivos");
+      expect(container.textContent).toContain("Os arquivos aparecerão aqui quando estiverem disponíveis.");
+    } finally {
+      await changeLanguage(previousLanguage === "en" ? "en" : "pt-BR");
+    }
   });
 });

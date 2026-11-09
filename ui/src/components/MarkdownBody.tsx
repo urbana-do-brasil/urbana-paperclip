@@ -17,6 +17,7 @@ import { getCachedIssueDetail } from "../lib/issueDetailCache";
 import { queryKeys } from "../lib/queryKeys";
 import { parseIssueReferenceFromHref, remarkLinkIssueReferences } from "../lib/issue-reference";
 import { remarkLinkCaseReferences } from "../lib/case-reference";
+import { useTranslation } from "@/i18n";
 
 const CASE_HREF_RE = /^\/cases\/([A-Z][A-Z0-9]*-C\d+)$/i;
 
@@ -216,13 +217,14 @@ function MarkdownCaseLink({
 }) {
   // Cases resolve via the get-by-identifier route; navigate there on click.
   // Kept boxless/underlined to match the issue mention treatment.
+  const { t } = useTranslation();
   const caseHref = useCaseHref();
   return (
     <Link
       to={caseHref(identifier)}
       data-mention-kind="case"
       className={cn("paperclip-markdown-case-ref", "font-normal underline")}
-      aria-label={`Case ${identifier}`}
+      aria-label={t("caseManagement.issueLinks.caseReference", { identifier })}
     >
       {children}
     </Link>
@@ -627,6 +629,7 @@ function CodeBlock({
   children: ReactNode;
   preProps: React.HTMLAttributes<HTMLPreElement>;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
   const [wrapLines, setWrapLines] = useState(false);
@@ -652,8 +655,14 @@ function CodeBlock({
     }, 1500);
   }, [children]);
 
-  const copyLabel = failed ? "Copy failed" : copied ? "Copied!" : "Copy";
-  const wrapLabel = wrapLines ? "Unwrap lines" : "Wrap lines";
+  const copyLabel = failed
+    ? t("markdownBody.copyFailed")
+    : copied
+      ? t("markdownBody.copied")
+      : t("markdownBody.copy");
+  const wrapLabel = wrapLines
+    ? t("markdownBody.unwrapLines")
+    : t("markdownBody.wrapLines");
 
   return (
     <div className="paperclip-markdown-codeblock" data-wrap-lines={wrapLines || undefined}>
@@ -700,7 +709,7 @@ function CodeBlock({
         <button
           type="button"
           onClick={handleCopy}
-          aria-label="Copy code"
+          aria-label={t("markdownBody.copyCode")}
           title={copyLabel}
           className="paperclip-markdown-codeblock-action paperclip-markdown-codeblock-copy"
           style={codeBlockActionStyle}
@@ -791,6 +800,7 @@ function MarkdownBodyImpl({
   resolveWorkspaceFileRef,
 }: MarkdownBodyProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   // Read company prefixes non-throwingly: MarkdownBody renders in surfaces that
   // may lack a CompanyProvider. A null context (or no companies yet) leaves
   // knownPrefixes undefined, which keeps issue auto-linking permissive.
@@ -854,7 +864,12 @@ function MarkdownBodyImpl({
       </blockquote>
     ),
     table: ({ node: _node, style: tableStyle, children: tableChildren, ...tableProps }) => (
-      <div className="paperclip-markdown-table-scroll" role="region" aria-label="Scrollable table" tabIndex={0}>
+      <div
+        className="paperclip-markdown-table-scroll"
+        role="region"
+        aria-label={t("markdownBody.scrollableTable")}
+        tabIndex={0}
+      >
         <table {...tableProps} style={tableStyle as React.CSSProperties | undefined}>
           {tableChildren}
         </table>
@@ -1010,7 +1025,7 @@ function MarkdownBodyImpl({
       };
     }
     return map;
-  }, [theme, linkIssueReferences, linkCaseReferences, externalReferenceLookup, resolveImageSrc, onImageClick, mediaMode]);
+  }, [theme, t, linkIssueReferences, linkCaseReferences, externalReferenceLookup, resolveImageSrc, onImageClick, mediaMode]);
 
   return (
     <div

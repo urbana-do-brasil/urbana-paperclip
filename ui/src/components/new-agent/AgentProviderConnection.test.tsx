@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { flushSync } from "react-dom";
+import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { AgentProviderConnection } from "./AgentProviderConnection";
 import { defaultAiConnectionName } from "../ai-connections/model";
 import { ApiError } from "@/api/client";
@@ -38,7 +40,11 @@ vi.mock("../AgentConfigForm", () => ({
 let root: Root;
 let host: HTMLDivElement;
 let client: QueryClient;
-afterEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+afterEach(async () => {
+  await act(async () => { await i18n.changeLanguage("en"); });
   flushSync(() => root?.unmount());
   host?.remove();
   client?.clear();
@@ -151,6 +157,14 @@ function openProvider() {
   );
 }
 describe("AgentProviderConnection reuse", () => {
+  it("localizes provider connection choices and saved-key counts in Brazilian Portuguese", async () => {
+    await mount("codex_local");
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    expect(host.querySelector('[role="radiogroup"][aria-label="Conecte seu provedor de modelo"]')).not.toBeNull();
+    expect(host.textContent).toContain("2 chaves de API salvas disponíveis.");
+    expect(host.textContent).toContain("OpenAI");
+  });
+
   it("keeps all three connection tiles visible while switching forms", async () => {
     await mount("codex_local", false, true, true, true, false, undefined, false, "local_trusted", true, {
       content: <div>Advanced connection picker</div>,

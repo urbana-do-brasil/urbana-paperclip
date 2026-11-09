@@ -1,6 +1,10 @@
 import { Command } from "commander";
+import { randomUUID } from "node:crypto";
+import os from "node:os";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompanyPortabilityPreviewResult } from "@paperclipai/shared";
+import { setCliLocale } from "../localization/index.js";
 import {
   buildCompanyDashboardUrl,
   buildDefaultImportAdapterOverrides,
@@ -15,7 +19,9 @@ import {
 } from "../commands/client/company.js";
 
 const ORIGINAL_ENV = { ...process.env };
+const ORIGINAL_ARGV = process.argv;
 const COMPANY_ID = "22222222-2222-4222-8222-222222222222";
+const EMPTY_CONTEXT_PATH = path.join(os.tmpdir(), `paperclip-company-context-${randomUUID()}.json`);
 
 function makeProgram(): Command {
   const program = new Command();
@@ -79,9 +85,310 @@ describe("company CLI commands", () => {
   });
 
   afterEach(() => {
+    process.argv = ORIGINAL_ARGV;
     process.env = { ...ORIGINAL_ENV };
+    setCliLocale("pt-BR");
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+
+  it("localizes empty company lists and preserves records and JSON contracts", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([company()]))
+      .mockResolvedValueOnce(jsonResponse([company()]))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([company()]))
+      .mockResolvedValueOnce(jsonResponse([company()]));
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(vazio)");
+
+    setCliLocale("en");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(empty)");
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    const ptRecord = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    const enRecord = String(logSpy.mock.calls.at(-1)?.[0]);
+    expect(ptRecord).toBe(enRecord);
+    expect(ptRecord).toContain(`id=${COMPANY_ID} name=Paperclip status=active`);
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const ptEmptyJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const enEmptyJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    expect(ptEmptyJson).toBe("[]");
+    expect(enEmptyJson).toBe(ptEmptyJson);
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const ptJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const enJson = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptJson).toBe(enJson);
+    expect(JSON.parse(ptJson)).toEqual([company()]);
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("localizes company-list API failures while preserving details and exit status", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "company fixture failure" }, 500))
+      .mockResolvedValueOnce(jsonResponse({ error: "company fixture failure" }, 500));
+    process.argv = ["node", "paperclipai", "company", "list"];
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+      throw new Error(`exit:${code ?? 0}`);
+    }) as typeof process.exit);
+
+    setCliLocale("pt-BR");
+    await expect(runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]))
+      .rejects.toThrow("exit:1");
+    const ptError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    setCliLocale("en");
+    await expect(runCommand(["company", "list", "--api-base", "http://paperclip.test", "--api-key", "board-token"]))
+      .rejects.toThrow("exit:1");
+    const enError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptError).toContain("Erro de API 500: Não foi possível concluir a solicitação. Detalhes: company fixture failure");
+    expect(enError).toContain("API error 500: The request could not be completed. Details: company fixture failure");
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1]);
+  });
+
+  it("preserves company get and current JSON records across locales", async () => {
+    const responseCompany = company({ name: "Acme", issuePrefix: "ACME" });
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(responseCompany))
+      .mockResolvedValueOnce(jsonResponse(responseCompany))
+      .mockResolvedValueOnce(jsonResponse(responseCompany))
+      .mockResolvedValueOnce(jsonResponse(responseCompany));
+
+    setCliLocale("pt-BR");
+    await runCommand([
+      "company", "get", COMPANY_ID,
+      "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json",
+    ]);
+    const ptGet = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    setCliLocale("en");
+    await runCommand([
+      "company", "get", COMPANY_ID,
+      "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json",
+    ]);
+    const enGet = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    setCliLocale("pt-BR");
+    await runCommand([
+      "company", "current", "--company-id", COMPANY_ID,
+      "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json",
+    ]);
+    const ptCurrent = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    setCliLocale("en");
+    await runCommand([
+      "company", "current", "--company-id", COMPANY_ID,
+      "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json",
+    ]);
+    const enCurrent = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptGet).toBe(enGet);
+    expect(ptCurrent).toBe(enCurrent);
+    expect(JSON.parse(ptGet)).toEqual(responseCompany);
+    expect(JSON.parse(ptCurrent)).toEqual(responseCompany);
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      `http://paperclip.test/api/companies/${COMPANY_ID}`,
+      `http://paperclip.test/api/companies/${COMPANY_ID}`,
+      `http://paperclip.test/api/companies/${COMPANY_ID}`,
+      `http://paperclip.test/api/companies/${COMPANY_ID}`,
+    ]);
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("localizes null company results only in human output", async () => {
+    const noContent = () => new Response(null, { status: 204 });
+    fetchMock
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent());
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "get", COMPANY_ID, "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(nulo)");
+    setCliLocale("en");
+    await runCommand(["company", "get", COMPANY_ID, "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(null)");
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "get", COMPANY_ID, "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const ptGetJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "get", COMPANY_ID, "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const enGetJson = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "current", "--company-id", COMPANY_ID, "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(nulo)");
+    setCliLocale("en");
+    await runCommand(["company", "current", "--company-id", COMPANY_ID, "--api-base", "http://paperclip.test", "--api-key", "board-token"]);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(null)");
+
+    setCliLocale("pt-BR");
+    await runCommand(["company", "current", "--company-id", COMPANY_ID, "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const ptCurrentJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "current", "--company-id", COMPANY_ID, "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"]);
+    const enCurrentJson = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptGetJson).toBe("null");
+    expect(enGetJson).toBe(ptGetJson);
+    expect(ptCurrentJson).toBe("null");
+    expect(enCurrentJson).toBe(ptCurrentJson);
+  });
+
+  it("localizes company get API errors and current-company resolution failures", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "Company not found" }, 404))
+      .mockResolvedValueOnce(jsonResponse({ error: "Company not found" }, 404))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403));
+    process.argv = ["node", "paperclipai", "company", "get", COMPANY_ID];
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+      throw new Error(`exit:${code ?? 0}`);
+    }) as typeof process.exit);
+    const base = ["--api-base", "http://paperclip.test", "--api-key", "board-token"];
+    const contextOption = ["--context", EMPTY_CONTEXT_PATH];
+
+    setCliLocale("pt-BR");
+    await expect(runCommand(["company", "get", COMPANY_ID, ...base])).rejects.toThrow("exit:1");
+    const ptGetError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await expect(runCommand(["company", "get", COMPANY_ID, ...base])).rejects.toThrow("exit:1");
+    const enGetError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    process.argv = ["node", "paperclipai", "company", "current", ...contextOption];
+    setCliLocale("pt-BR");
+    await expect(runCommand(["company", "current", ...contextOption, ...base])).rejects.toThrow("exit:1");
+    const ptCurrentError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await expect(runCommand(["company", "current", ...contextOption, ...base])).rejects.toThrow("exit:1");
+    const enCurrentError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    process.argv = ["node", "paperclipai", "company", "current", "--json", ...contextOption];
+    setCliLocale("pt-BR");
+    await expect(runCommand(["company", "current", ...contextOption, ...base, "--json"]))
+      .rejects.toThrow("exit:1");
+    const ptCurrentJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await expect(runCommand(["company", "current", ...contextOption, ...base, "--json"]))
+      .rejects.toThrow("exit:1");
+    const enCurrentJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptGetError).toContain("Erro de API 404: Não foi possível concluir a solicitação. Detalhes: Company not found");
+    expect(enGetError).toContain("API error 404: The request could not be completed. Details: Company not found");
+    expect(ptCurrentError).toContain("A organização atual não está disponível. Informe --company-id");
+    expect(enCurrentError).toContain("Current company is not available. Pass --company-id");
+    expect(ptCurrentError).not.toContain("Board access required");
+    expect(enCurrentError).not.toContain("Board access required");
+    expect(ptCurrentJsonError).toBe(enCurrentJsonError);
+    expect(ptCurrentJsonError).toContain("Current company is not available. Pass --company-id");
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1, 1, 1, 1, 1]);
+  });
+
+  it("preserves company stats JSON and localizes human and structured failures", async () => {
+    const stats = {
+      companyCount: 2,
+      totalMonthlyBudgetCents: 45000,
+      byAgent: [{ agentId: "agent-1", spentMonthlyCents: 12500 }],
+    };
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(stats))
+      .mockResolvedValueOnce(jsonResponse(stats))
+      .mockResolvedValueOnce(jsonResponse({ error: "provider unavailable", messageKey: "service_unavailable" }, 503))
+      .mockResolvedValueOnce(jsonResponse({ error: "provider unavailable", messageKey: "service_unavailable" }, 503))
+      .mockResolvedValueOnce(jsonResponse({ error: "stats fixture failure", details: { code: "STATS_FAILED" } }, 503))
+      .mockResolvedValueOnce(jsonResponse({ error: "stats fixture failure", details: { code: "STATS_FAILED" } }, 503));
+
+    const base = ["--api-base", "http://paperclip.test", "--api-key", "board-token"];
+    setCliLocale("pt-BR");
+    await runCommand(["company", "stats", ...base, "--json"]);
+    const ptJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(["company", "stats", ...base, "--json"]);
+    const enJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    expect(ptJson).toBe(enJson);
+    expect(JSON.parse(ptJson)).toEqual(stats);
+
+    process.argv = ["node", "paperclipai", "company", "stats"];
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+      throw new Error(`exit:${code ?? 0}`);
+    }) as typeof process.exit);
+
+    setCliLocale("pt-BR");
+    await expect(runCommand(["company", "stats", ...base])).rejects.toThrow("exit:1");
+    const ptHumanError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await expect(runCommand(["company", "stats", ...base])).rejects.toThrow("exit:1");
+    const enHumanError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    process.argv = ["node", "paperclipai", "company", "stats", "--json"];
+    setCliLocale("pt-BR");
+    await expect(runCommand(["company", "stats", ...base, "--json"])).rejects.toThrow("exit:1");
+    const ptJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await expect(runCommand(["company", "stats", ...base, "--json"])).rejects.toThrow("exit:1");
+    const enJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptHumanError).toContain("Erro de API 503: O Paperclip está temporariamente indisponível.");
+    expect(enHumanError).toContain("API error 503: Paperclip is temporarily unavailable.");
+    expect(ptJsonError).toBe(enJsonError);
+    expect(ptJsonError).toBe('API error 503: stats fixture failure details={"code":"STATS_FAILED"}');
+    expect(logSpy).toHaveBeenCalledTimes(2);
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1, 1, 1]);
+  });
+
+  it("localizes an empty company stats result without translating JSON null", async () => {
+    const noContent = () => new Response(null, { status: 204 });
+    fetchMock
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent())
+      .mockResolvedValueOnce(noContent());
+    const base = ["company", "stats", "--api-base", "http://paperclip.test", "--api-key", "board-token"];
+
+    setCliLocale("pt-BR");
+    await runCommand(base);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(nulo)");
+    setCliLocale("en");
+    await runCommand(base);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toBe("(null)");
+
+    setCliLocale("pt-BR");
+    await runCommand([...base, "--json"]);
+    const ptJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand([...base, "--json"]);
+    const enJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    expect(ptJson).toBe("null");
+    expect(enJson).toBe(ptJson);
   });
 
   it("gets the current company from an explicit company context without board-wide listing", async () => {
@@ -169,31 +476,225 @@ describe("company CLI commands", () => {
     expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject([{ id: COMPANY_ID, name: "Paperclip" }]);
   });
 
-  it("explains that company creation requires board instance-admin authentication under agent auth", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403));
-    vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+  it("localizes the company creation authorization guidance but stabilizes --json output", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ error: "Board access required" }, 403));
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
       throw new Error(`exit:${code ?? 0}`);
     }) as typeof process.exit);
+    const args = ["company", "create", "--payload-json", "{\"name\":\"Disposable\"}", "--api-base", "http://paperclip.test", "--api-key", "agent-token"];
 
-    await expect(runCommand([
-      "company",
-      "create",
-      "--payload-json",
-      "{\"name\":\"Disposable\"}",
-      "--api-base",
-      "http://paperclip.test",
-      "--api-key",
-      "agent-token",
-      "--json",
-    ])).rejects.toThrow("exit:1");
+    process.argv = ["node", "paperclipai", "company", "create"];
+    setCliLocale("pt-BR");
+    await expect(runCommand(args)).rejects.toThrow("exit:1");
+    const ptHuman = String(errorSpy.mock.calls.at(-1)?.[0]);
+    process.argv = ["node", "paperclipai", "company", "create"];
+    setCliLocale("en");
+    await expect(runCommand(args)).rejects.toThrow("exit:1");
+    const enHuman = String(errorSpy.mock.calls.at(-1)?.[0]);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/companies",
-      expect.objectContaining({ method: "POST" }),
-    );
-    const rendered = String(errorSpy.mock.calls[0]?.[0]);
-    expect(rendered).toContain("Creating companies requires board/instance-admin authentication");
-    expect(rendered).toContain("company list --json");
+    process.argv = ["node", "paperclipai", "company", "create", "--json"];
+    setCliLocale("pt-BR");
+    await expect(runCommand([...args, "--json"])).rejects.toThrow("exit:1");
+    const ptJson = String(errorSpy.mock.calls.at(-1)?.[0]);
+    process.argv = ["node", "paperclipai", "company", "create", "--json"];
+    setCliLocale("en");
+    await expect(runCommand([...args, "--json"])).rejects.toThrow("exit:1");
+    const enJson = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptHuman).toContain("Para criar organizações é necessária autenticação board/instance-admin.");
+    expect(ptHuman).toContain("paperclipai company list --json");
+    expect(enHuman).toContain("Creating companies requires board/instance-admin authentication");
+    expect(enHuman).toContain("paperclipai company list --json");
+    expect(ptJson).toBe(enJson);
+    expect(ptJson).toContain("Creating companies requires board/instance-admin authentication");
+    expect(fetchMock.mock.calls.map(([url, init]) => [url, init?.method, init?.body])).toEqual([
+      ...Array.from({ length: 4 }, () => [
+        "http://paperclip.test/api/companies",
+        "POST",
+        "{\"name\":\"Disposable\"}",
+      ]),
+    ]);
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1, 1, 1]);
+  });
+
+  it("preserves create, update, and archive payload and JSON contracts", async () => {
+    const createPayload = { name: "Acme", issuePrefix: "ACME", budgetMonthlyCents: 25000 };
+    const updatePayload = { name: "Acme Labs", requireBoardApprovalForNewAgents: true };
+    const created = company({ name: "Acme", issuePrefix: "ACME", budgetMonthlyCents: 25000 });
+    const updated = company({ name: "Acme Labs", requireBoardApprovalForNewAgents: true });
+    const archived = company({ status: "archived" });
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(created))
+      .mockResolvedValueOnce(jsonResponse(updated))
+      .mockResolvedValueOnce(jsonResponse(archived))
+      .mockResolvedValueOnce(jsonResponse(created))
+      .mockResolvedValueOnce(jsonResponse(updated))
+      .mockResolvedValueOnce(jsonResponse(archived));
+    const base = ["--api-base", "http://paperclip.test", "--api-key", "board-token", "--json"];
+
+    const runMutations = async (locale: "pt-BR" | "en") => {
+      setCliLocale(locale);
+      await runCommand(["company", "create", "--payload-json", JSON.stringify(createPayload), ...base]);
+      const createOutput = String(logSpy.mock.calls.at(-1)?.[0]);
+      await runCommand(["company", "update", COMPANY_ID, "--payload-json", JSON.stringify(updatePayload), ...base]);
+      const updateOutput = String(logSpy.mock.calls.at(-1)?.[0]);
+      await runCommand(["company", "archive", COMPANY_ID, ...base]);
+      const archiveOutput = String(logSpy.mock.calls.at(-1)?.[0]);
+      return { createOutput, updateOutput, archiveOutput };
+    };
+
+    const pt = await runMutations("pt-BR");
+    const en = await runMutations("en");
+
+    expect(pt).toEqual(en);
+    expect(JSON.parse(pt.createOutput)).toEqual(created);
+    expect(JSON.parse(pt.updateOutput)).toEqual(updated);
+    expect(JSON.parse(pt.archiveOutput)).toEqual(archived);
+    expect(fetchMock.mock.calls.map(([url, init]) => [init?.method ?? "GET", url, init?.body])).toEqual([
+      ["POST", "http://paperclip.test/api/companies", JSON.stringify(createPayload)],
+      ["PATCH", `http://paperclip.test/api/companies/${COMPANY_ID}`, JSON.stringify(updatePayload)],
+      ["POST", `http://paperclip.test/api/companies/${COMPANY_ID}/archive`, "{}"],
+      ["POST", "http://paperclip.test/api/companies", JSON.stringify(createPayload)],
+      ["PATCH", `http://paperclip.test/api/companies/${COMPANY_ID}`, JSON.stringify(updatePayload)],
+      ["POST", `http://paperclip.test/api/companies/${COMPANY_ID}/archive`, "{}"],
+    ]);
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("preserves the company branding update payload, endpoint, and JSON response", async () => {
+    const brandingPayload = {
+      name: "Acme Studio",
+      description: null,
+      logoAssetId: "44444444-4444-4444-8444-444444444444",
+    };
+    const responseCompany = company(brandingPayload);
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(responseCompany))
+      .mockResolvedValueOnce(jsonResponse(responseCompany));
+    const base = [
+      "company", "branding:update", COMPANY_ID,
+      "--payload-json", JSON.stringify(brandingPayload),
+      "--api-base", "http://paperclip.test", "--api-key", "board-token", "--json",
+    ];
+
+    setCliLocale("pt-BR");
+    await runCommand(base);
+    const ptJson = String(logSpy.mock.calls.at(-1)?.[0]);
+    setCliLocale("en");
+    await runCommand(base);
+    const enJson = String(logSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptJson).toBe(enJson);
+    expect(JSON.parse(ptJson)).toEqual(responseCompany);
+    expect(fetchMock.mock.calls.map(([url, init]) => [url, init?.method, init?.body])).toEqual([
+      [
+        `http://paperclip.test/api/companies/${COMPANY_ID}/branding`,
+        "PATCH",
+        JSON.stringify(brandingPayload),
+      ],
+      [
+        `http://paperclip.test/api/companies/${COMPANY_ID}/branding`,
+        "PATCH",
+        JSON.stringify(brandingPayload),
+      ],
+    ]);
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("preserves company branding validation and structured errors across locales", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "Invalid branding fields", details: { field: "logoAssetId" }, messageKey: "validation" }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Invalid branding fields", details: { field: "logoAssetId" }, messageKey: "validation" }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured branding failure", details: { code: "BRANDING_REJECTED" } }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured branding failure", details: { code: "BRANDING_REJECTED" } }, 422));
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+      throw new Error(`exit:${code ?? 0}`);
+    }) as typeof process.exit);
+    const args = [
+      "company", "branding:update", COMPANY_ID,
+      "--payload-json", "{\"name\":\"Acme Studio\"}",
+      "--api-base", "http://paperclip.test", "--api-key", "board-token",
+    ];
+
+    process.argv = ["node", "paperclipai", "company", "branding:update", COMPANY_ID];
+    setCliLocale("pt-BR");
+    await expect(runCommand(args)).rejects.toThrow("exit:1");
+    const ptHumanError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    process.argv = ["node", "paperclipai", "company", "branding:update", COMPANY_ID];
+    setCliLocale("en");
+    await expect(runCommand(args)).rejects.toThrow("exit:1");
+    const enHumanError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    process.argv = ["node", "paperclipai", "company", "branding:update", COMPANY_ID, "--json"];
+    setCliLocale("pt-BR");
+    await expect(runCommand([...args, "--json"])).rejects.toThrow("exit:1");
+    const ptJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+    process.argv = ["node", "paperclipai", "company", "branding:update", COMPANY_ID, "--json"];
+    setCliLocale("en");
+    await expect(runCommand([...args, "--json"])).rejects.toThrow("exit:1");
+    const enJsonError = String(errorSpy.mock.calls.at(-1)?.[0]);
+
+    expect(ptHumanError).toContain("Erro de API 422: Os dados enviados são inválidos.");
+    expect(ptHumanError).toContain('details={"field":"logoAssetId"}');
+    expect(enHumanError).toContain("API error 422: The submitted data is invalid.");
+    expect(enHumanError).toContain('details={"field":"logoAssetId"}');
+    expect(ptJsonError).toBe(enJsonError);
+    expect(ptJsonError).toBe('API error 422: Structured branding failure details={"code":"BRANDING_REJECTED"}');
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual([1, 1, 1, 1]);
+  });
+
+  it("preserves update and archive error status, details, and --json presentation", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "Update rejected", details: { field: "name" }, messageKey: "validation" }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Update rejected", details: { field: "name" }, messageKey: "validation" }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured update failure", details: { code: "UPDATE_REJECTED" } }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured update failure", details: { code: "UPDATE_REJECTED" } }, 422))
+      .mockResolvedValueOnce(jsonResponse({ error: "Archive conflict", details: { code: "ACTIVE_AGENTS" } }, 409))
+      .mockResolvedValueOnce(jsonResponse({ error: "Archive conflict", details: { code: "ACTIVE_AGENTS" } }, 409))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured archive failure", details: { code: "ARCHIVE_REJECTED" } }, 409))
+      .mockResolvedValueOnce(jsonResponse({ error: "Structured archive failure", details: { code: "ARCHIVE_REJECTED" } }, 409));
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+      throw new Error(`exit:${code ?? 0}`);
+    }) as typeof process.exit);
+    const base = ["--api-base", "http://paperclip.test", "--api-key", "board-token"];
+    const payload = JSON.stringify({ name: "Renamed" });
+    const runFailure = async (operation: "update" | "archive", locale: "pt-BR" | "en", json: boolean) => {
+      setCliLocale(locale);
+      const args = operation === "update"
+        ? ["company", "update", COMPANY_ID, "--payload-json", payload, ...base]
+        : ["company", "archive", COMPANY_ID, ...base];
+      process.argv = ["node", "paperclipai", ...args, ...(json ? ["--json"] : [])];
+      await expect(runCommand([...args, ...(json ? ["--json"] : [])])).rejects.toThrow("exit:1");
+      return String(errorSpy.mock.calls.at(-1)?.[0]);
+    };
+
+    const ptUpdateHuman = await runFailure("update", "pt-BR", false);
+    const enUpdateHuman = await runFailure("update", "en", false);
+    const ptUpdateJson = await runFailure("update", "pt-BR", true);
+    const enUpdateJson = await runFailure("update", "en", true);
+    const ptArchiveHuman = await runFailure("archive", "pt-BR", false);
+    const enArchiveHuman = await runFailure("archive", "en", false);
+    const ptArchiveJson = await runFailure("archive", "pt-BR", true);
+    const enArchiveJson = await runFailure("archive", "en", true);
+
+    expect(ptUpdateHuman).toContain("Erro de API 422: Os dados enviados são inválidos.");
+    expect(ptUpdateHuman).toContain('details={"field":"name"}');
+    expect(enUpdateHuman).toContain("API error 422: The submitted data is invalid.");
+    expect(ptUpdateJson).toBe(enUpdateJson);
+    expect(ptUpdateJson).toBe('API error 422: Structured update failure details={"code":"UPDATE_REJECTED"}');
+    expect(ptArchiveHuman).toContain("Erro de API 409: Não foi possível concluir a solicitação. Detalhes: Archive conflict");
+    expect(ptArchiveHuman).toContain('details={"code":"ACTIVE_AGENTS"}');
+    expect(enArchiveHuman).toContain("API error 409: The request could not be completed. Details: Archive conflict");
+    expect(ptArchiveJson).toBe(enArchiveJson);
+    expect(ptArchiveJson).toBe('API error 409: Structured archive failure details={"code":"ARCHIVE_REJECTED"}');
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(exitSpy.mock.calls.map(([code]) => code)).toEqual(Array.from({ length: 8 }, () => 1));
   });
 });
 
@@ -267,6 +768,7 @@ describe("resolveCompanyImportApplyConfirmationMode", () => {
   });
 
   it("requires --yes for non-interactive apply", () => {
+    setCliLocale("en");
     expect(() =>
       resolveCompanyImportApplyConfirmationMode({
         yes: false,
@@ -274,9 +776,18 @@ describe("resolveCompanyImportApplyConfirmationMode", () => {
         json: false,
       })
     ).toThrow(/non-interactive terminal requires --yes/i);
+    setCliLocale("pt-BR");
+    expect(() =>
+      resolveCompanyImportApplyConfirmationMode({
+        yes: false,
+        interactive: false,
+        json: false,
+      })
+    ).toThrow(/terminal não interativo, informe --yes/i);
   });
 
   it("requires --yes for json apply", () => {
+    setCliLocale("en");
     expect(() =>
       resolveCompanyImportApplyConfirmationMode({
         yes: false,
@@ -284,6 +795,14 @@ describe("resolveCompanyImportApplyConfirmationMode", () => {
         json: true,
       })
     ).toThrow(/with --json requires --yes/i);
+    setCliLocale("pt-BR");
+    expect(() =>
+      resolveCompanyImportApplyConfirmationMode({
+        yes: false,
+        interactive: false,
+        json: true,
+      })
+    ).toThrow(/com --json, informe --yes/i);
   });
 });
 
@@ -473,16 +992,16 @@ describe("renderCompanyImportPreview", () => {
       infoMessages: ["Using claude-local adapter"],
     });
 
-    expect(rendered).toContain("Include");
-    expect(rendered).toContain("company, projects, tasks, agents, skills");
-    expect(rendered).toContain("7 agents total");
-    expect(rendered).toContain("1 project total");
-    expect(rendered).toContain("1 task total");
-    expect(rendered).toContain("skills: 1 skill packaged");
-    expect(rendered).toContain("+1 more");
+    expect(rendered).toContain("Incluir");
+    expect(rendered).toContain("organização, projetos, tarefas, agentes, skills");
+    expect(rendered).toContain("7 agentes no total");
+    expect(rendered).toContain("1 projeto no total");
+    expect(rendered).toContain("1 tarefa no total");
+    expect(rendered).toContain("skills: 1 skill incluída no pacote");
+    expect(rendered).toContain("+1 mais");
     expect(rendered).toContain("Using claude-local adapter");
-    expect(rendered).toContain("Warnings");
-    expect(rendered).toContain("Errors");
+    expect(rendered).toContain("Avisos");
+    expect(rendered).toContain("Erros");
   });
 });
 
@@ -529,14 +1048,14 @@ describe("renderCompanyImportResult", () => {
       },
     );
 
-    expect(rendered).toContain("Company");
+    expect(rendered).toContain("Organização");
     expect(rendered).toContain("https://paperclip.example/PAP/dashboard");
-    expect(rendered).toContain("3 agents total (1 created, 1 updated, 1 skipped)");
-    expect(rendered).toContain("1 skill total (1 renamed)");
-    expect(rendered).toContain("3 projects total (1 created, 1 updated, 1 skipped)");
-    expect(rendered).toContain("Agent results");
-    expect(rendered).toContain("Skill results");
-    expect(rendered).toContain("Project results");
+    expect(rendered).toContain("3 agentes no total (1 created, 1 updated, 1 skipped)");
+    expect(rendered).toContain("1 skill no total (1 renamed)");
+    expect(rendered).toContain("3 projetos no total (1 created, 1 updated, 1 skipped)");
+    expect(rendered).toContain("Resultados dos agentes");
+    expect(rendered).toContain("Resultados das skills");
+    expect(rendered).toContain("Resultados dos projetos");
     expect(rendered).toContain("Using claude-local adapter");
     expect(rendered).toContain("Review API keys");
   });

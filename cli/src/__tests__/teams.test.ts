@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { registerTeamCommands } from "../commands/client/teams.js";
+import { setCliLocale } from "../localization/index.js";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -75,6 +76,7 @@ describe("teams CLI commands", () => {
   let errorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    setCliLocale("pt-BR");
     process.env = { ...ORIGINAL_ENV };
     delete process.env.PAPERCLIP_API_URL;
     delete process.env.PAPERCLIP_API_KEY;
@@ -115,7 +117,7 @@ describe("teams CLI commands", () => {
       expect.objectContaining({ method: "GET" }),
     );
     const rendered = logSpy.mock.calls.map((call: unknown[]) => String(call[0])).join("\n");
-    expect(rendered).toContain("id");
+    expect(rendered).toContain("ID");
     expect(rendered).toContain("paperclipai:bundled:software-development:product-engineering");
   });
 
@@ -575,7 +577,7 @@ describe("teams CLI commands", () => {
         body: JSON.stringify({}),
       }),
     );
-    expect(String(errorSpy.mock.calls[0]?.[0])).toContain("API error 422");
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain("Erro de API 422");
     expect(String(errorSpy.mock.calls[0]?.[0])).toContain("development-only");
   });
 });

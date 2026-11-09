@@ -303,6 +303,59 @@ describeEmbeddedPostgres("company import batches inserts", () => {
     expect(uniqueIdentifiers.size).toBe(issueCount);
   });
 
+  it("previews and imports an inline package while preserving task, comment, and document content", async () => {
+    const bundle = buildSyntheticBundle({ issueCount: 1, commentsPerIssue: 1, documentsPerIssue: 1 });
+    const companyName = `CompanyImport backend ${randomUUID()}`;
+    const request = {
+      source: { type: "inline" as const, rootPath: bundle.rootPath, files: bundle.files },
+      include: { company: true, agents: false, projects: false, issues: true },
+      target: { mode: "new_company" as const, newCompanyName: companyName },
+      collisionStrategy: "rename" as const,
+    };
+    const expectedTaskBody = `Description body for task 1. `.repeat(6).trim();
+    const expectedCommentBody = `Comment 1 on task 1. `.repeat(4).trim();
+    const expectedDocumentBody = `# spec\n\n${`Document body for task 1 spec. `.repeat(8)}`;
+    const portability = companyPortabilityService(db);
+
+    const preview = await portability.previewImport(request);
+    expect(preview.errors).toEqual([]);
+    expect(preview.plan).toMatchObject({
+      companyAction: "create",
+      issuePlans: [{ slug: "task-0001", action: "create", plannedTitle: "Task 1" }],
+    });
+    expect(preview.manifest.issues[0]).toMatchObject({
+      slug: "task-0001",
+      title: "Task 1",
+      description: expectedTaskBody,
+      comments: [{ body: expectedCommentBody, authorType: "system" }],
+      documents: [{ key: "spec", title: "spec", path: "tasks/task-0001/documents/spec.md" }],
+    });
+    expect(preview.files["tasks/task-0001/documents/spec.md"]).toBe(expectedDocumentBody);
+
+    const result = await portability.importBundle(request, "company-import-backend-user");
+    expect(result.company).toMatchObject({ name: companyName, action: "created" });
+    expect(result.warnings).toEqual([]);
+
+    const [importedIssue] = await db
+      .select({ id: issues.id, title: issues.title, description: issues.description })
+      .from(issues)
+      .where(eq(issues.companyId, result.company.id));
+    expect(importedIssue).toMatchObject({ title: "Task 1", description: expectedTaskBody });
+
+    const importedComments = await db
+      .select({ body: issueComments.body, authorType: issueComments.authorType })
+      .from(issueComments)
+      .where(eq(issueComments.issueId, importedIssue!.id));
+    expect(importedComments).toEqual([{ body: expectedCommentBody, authorType: "system" }]);
+
+    const importedDocuments = await db
+      .select({ key: issueDocuments.key, title: documents.title, body: documents.latestBody })
+      .from(issueDocuments)
+      .innerJoin(documents, eq(issueDocuments.documentId, documents.id))
+      .where(eq(issueDocuments.issueId, importedIssue!.id));
+    expect(importedDocuments).toEqual([{ key: "spec", title: "spec", body: expectedDocumentBody }]);
+  });
+
   it("keeps imported issues out of the importing user's inbox", async () => {
     const importingUserId = "board-inbox-user";
     const bundle = buildTouchedIssuesBundle(3);

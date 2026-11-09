@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatIdentityConfirm } from "./ChatIdentityConfirm";
+import { i18n } from "@/i18n";
 
 const mocks = vi.hoisted(() => ({
   getSession: vi.fn(), previewIdentityLink: vi.fn(), confirmIdentityLink: vi.fn(),
@@ -22,7 +23,8 @@ describe("self-service Slack identity confirmation", () => {
   let root: Root;
   let client: QueryClient;
   const identity = { provider: "slack", externalLabel: "Dotta", companyName: "Acme", botLabel: "CEO", selfService: true, canConfirm: true };
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.resetAllMocks();
     mocks.getSession.mockResolvedValue({ user: { id: "user-a", name: "Dotta" } });
     mocks.previewIdentityLink.mockResolvedValue(identity);
@@ -69,4 +71,33 @@ describe("self-service Slack identity confirmation", () => {
     await vi.waitFor(() => expect(container.textContent).toContain("This identity link is unavailable"));
     expect(container.querySelector("button")).toBeNull();
   });
+  it.each([["pt-BR", "Confirmar identidade", "Identidade vinculada", "Voltar ao Slack"], ["en", "Confirm identity", "Identity linked", "Return to Slack"]])(
+    "preserves identity and token when confirming in %s", async (locale, confirmLabel, success, returnLabel) => {
+      await i18n.changeLanguage(locale);
+      mocks.previewIdentityLink.mockResolvedValue({ ...identity, externalLabel: "Person <external>", companyName: "Acme <Corp>" });
+      render(); await vi.waitFor(() => expect(button(confirmLabel)).toBeTruthy());
+      expect(container.textContent).toContain("Person <external>");
+      expect(container.textContent).toContain("Acme <Corp>");
+      expect(container.querySelector("external")).toBeNull();
+      button(confirmLabel).click();
+      await vi.waitFor(() => expect(container.textContent).toContain(success));
+      expect(container.textContent).toContain("Person <external>");
+      expect(container.textContent).toContain("Acme <Corp>");
+      expect(mocks.confirmIdentityLink).toHaveBeenCalledWith("synthetic-token-that-is-at-least-32-characters");
+      expect(container.querySelector("a")?.textContent).toBe(returnLabel);
+      expect(container.querySelector("a")?.getAttribute("href")).toBe("https://app.slack.com/");
+    },
+  );
+  it.each([["pt-BR", "Solicitar acesso", "Não foi possível solicitar acesso."], ["en", "Request access", "Couldn't request access."]])(
+    "announces request failures in %s without confirming identity", async (locale, requestLabel, message) => {
+      await i18n.changeLanguage(locale);
+      mocks.previewIdentityLink.mockResolvedValue({ ...identity, canConfirm: false });
+      mocks.requestIdentityAccess.mockRejectedValue(new Error("expired"));
+      render(); await vi.waitFor(() => expect(button(requestLabel)).toBeTruthy());
+      button(requestLabel).click();
+      await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain(message));
+      expect(mocks.requestIdentityAccess).toHaveBeenCalledWith("synthetic-token-that-is-at-least-32-characters");
+      expect(mocks.confirmIdentityLink).not.toHaveBeenCalled();
+    },
+  );
 });

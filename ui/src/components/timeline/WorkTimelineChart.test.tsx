@@ -7,6 +7,7 @@ import type { WorkTimelineResult } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkTimelineChart } from "./WorkTimelineChart";
 import { computeLayout } from "@/lib/timeline/layout";
+import { i18n } from "@/i18n";
 
 vi.mock("@/lib/router", () => ({
   useLocation: () => ({ pathname: "/PAP/timeline" }),
@@ -18,7 +19,8 @@ vi.mock("@/lib/router", () => ({
 let container: HTMLDivElement;
 let root: Root;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);

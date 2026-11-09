@@ -4,6 +4,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import type { Issue } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import {
   TaskDetailReferencesPanel,
   TaskDetailSubtasksPanel,
@@ -36,15 +37,17 @@ describe("task-detail relation panels", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root.unmount());
     container.remove();
+    await i18n.changeLanguage("pt-BR");
   });
 
   it("puts progress before wholly clickable subtask navigation rows", () => {
@@ -124,5 +127,22 @@ describe("task-detail relation panels", () => {
     expect(sections[0]?.textContent).not.toContain("Mentions this task");
     expect(sections[1]?.textContent).toContain("Mentions this task");
     expect(container.querySelector('a[href="/issues/PAP-9"]')).not.toBeNull();
+  });
+
+  it("localizes subtask progress, empty states, and reference headings", async () => {
+    await i18n.changeLanguage("pt-BR");
+    flushSync(() => root.render(
+      <>
+        <TaskDetailSubtasksPanel items={[]} />
+        <TaskDetailReferencesPanel referenced={[]} mentionedIn={[]} />
+      </>,
+    ));
+
+    expect(container.querySelector('[aria-label="Subtarefas"]')).not.toBeNull();
+    expect(container.textContent).toContain("Progresso");
+    expect(container.textContent).toContain("Ainda não há subtarefas.");
+    expect(container.textContent).toContain("Referenciadas");
+    expect(container.textContent).toContain("Mencionada em");
+    expect(container.textContent).toContain("Esta tarefa não referencia outra tarefa.");
   });
 });

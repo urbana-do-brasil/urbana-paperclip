@@ -27,6 +27,7 @@ import {
   type BaseClientOptions,
   type ResolvedClientContext,
 } from "./common.js";
+import { skillOperationErrorMessage, skillOperationMessage } from "../../localization/skill-operations.js";
 
 interface SkillsOptions extends BaseClientOptions {
   companyId?: string;
@@ -271,9 +272,10 @@ export function registerSkillsCommands(program: Command): void {
             printOutput(result, { json: true });
             return;
           }
-          console.log(
-            `Imported ${result?.imported.length ?? 0} skill(s); warnings=${result?.warnings.length ?? 0}`,
-          );
+          console.log(skillOperationMessage("imported", {
+            count: result?.imported.length ?? 0,
+            warnings: result?.warnings.length ?? 0,
+          }));
           printCompanySkillRows(result?.imported ?? []);
           for (const warning of result?.warnings ?? []) {
             console.log(`warning=${warning}`);
@@ -310,7 +312,10 @@ export function registerSkillsCommands(program: Command): void {
             printOutput(created, { json: true });
             return;
           }
-          console.log(`Created skill ${created?.name ?? opts.name} (${created?.key ?? created?.id ?? "unknown"})`);
+          console.log(skillOperationMessage("created", {
+            name: created?.name ?? opts.name,
+            key: created?.key ?? created?.id ?? "unknown",
+          }));
         } catch (err) {
           handleCommandError(err);
         }
@@ -338,9 +343,16 @@ export function registerSkillsCommands(program: Command): void {
             printOutput(result, { json: true });
             return;
           }
-          console.log(
-            `Scanned projects=${result?.scannedProjects ?? 0} workspaces=${result?.scannedWorkspaces ?? 0} discovered=${result?.discovered ?? 0} imported=${result?.imported.length ?? 0} updated=${result?.updated.length ?? 0} skipped=${result?.skipped.length ?? 0} conflicts=${result?.conflicts.length ?? 0} warnings=${result?.warnings.length ?? 0}`,
-          );
+          console.log(skillOperationMessage("scanned", {
+            projects: result?.scannedProjects ?? 0,
+            workspaces: result?.scannedWorkspaces ?? 0,
+            discovered: result?.discovered ?? 0,
+            imported: result?.imported.length ?? 0,
+            updated: result?.updated.length ?? 0,
+            skipped: result?.skipped.length ?? 0,
+            conflicts: result?.conflicts.length ?? 0,
+            warnings: result?.warnings.length ?? 0,
+          }));
         } catch (err) {
           handleCommandError(err);
         }
@@ -380,7 +392,7 @@ export function registerSkillsCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           if (opts.all && skillRef?.trim()) {
-            throw new Error("Use either a skill reference or --all, not both.");
+            throw new Error(skillOperationErrorMessage("useSkillOrAll"));
           }
           const rows = opts.all
             ? await updateAllCompanySkills(ctx, opts)
@@ -429,7 +441,7 @@ export function registerSkillsCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const skill = await resolveCompanySkill(ctx, skillRef);
-          await confirmDangerousAction(opts.yes, `Reset catalog skill "${skill.name}" (${skill.key}) to its pinned origin?`);
+          await confirmDangerousAction(opts.yes, skillOperationMessage("resetPrompt", { name: skill.name, key: skill.key }));
           const reset = await ctx.api.post<CompanySkill>(
             `/api/companies/${ctx.companyId}/skills/${encodeURIComponent(skill.id)}/reset`,
             { force: opts.force || undefined },
@@ -438,7 +450,10 @@ export function registerSkillsCommands(program: Command): void {
             printOutput(reset, { json: true });
             return;
           }
-          console.log(`Reset skill ${reset?.name ?? skill.name} (${reset?.key ?? skill.key}) to pinned origin.`);
+          console.log(skillOperationMessage("resetDone", {
+            name: reset?.name ?? skill.name,
+            key: reset?.key ?? skill.key,
+          }));
         } catch (err) {
           handleCommandError(err);
         }
@@ -456,7 +471,7 @@ export function registerSkillsCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const skill = await resolveCompanySkill(ctx, skillRef);
-          await confirmDangerousAction(opts.yes, `Remove company skill "${skill.name}" (${skill.key})?`);
+          await confirmDangerousAction(opts.yes, skillOperationMessage("removePrompt", { name: skill.name, key: skill.key }));
           const removed = await ctx.api.delete<CompanySkill>(
             `/api/companies/${ctx.companyId}/skills/${encodeURIComponent(skill.id)}`,
           );
@@ -464,7 +479,10 @@ export function registerSkillsCommands(program: Command): void {
             printOutput(removed, { json: true });
             return;
           }
-          console.log(`Removed skill ${removed?.name ?? skill.name} (${removed?.key ?? skill.key})`);
+          console.log(skillOperationMessage("removeDone", {
+            name: removed?.name ?? skill.name,
+            key: removed?.key ?? skill.key,
+          }));
         } catch (err) {
           handleCommandError(err);
         }
@@ -516,7 +534,7 @@ function registerAgentSkillCommands(skills: Command): void {
         try {
           const desiredSkills = opts.skill ?? [];
           if (desiredSkills.length === 0) {
-            throw new Error("At least one --skill value is required for skills agent sync.");
+            throw new Error(skillOperationErrorMessage("emptyDesiredSkills"));
           }
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const agentRow = await resolveAgent(ctx, agentRef);
@@ -529,9 +547,12 @@ function registerAgentSkillCommands(skills: Command): void {
             printOutput(snapshot, { json: true });
             return;
           }
-          console.log(
-            `Desired company skills updated with ${mode} mode for ${agentRow.name} (${agentRow.id}); runtime sync returned ${snapshot?.entries.length ?? 0} entrie(s).`,
-          );
+          console.log(skillOperationMessage("agentSyncDone", {
+            mode,
+            name: agentRow.name,
+            id: agentRow.id,
+            count: snapshot?.entries.length ?? 0,
+          }));
           printAgentSkillSnapshot(snapshot, agentRow);
         } catch (err) {
           handleCommandError(err);
@@ -552,7 +573,7 @@ function registerAgentSkillCommands(skills: Command): void {
           const agentRow = await resolveAgent(ctx, agentRef);
           await confirmDangerousAction(
             opts.yes,
-            `Clear desired company skills for "${agentRow.name}" (${agentRow.id})?`,
+            skillOperationMessage("agentClearPrompt", { name: agentRow.name, id: agentRow.id }),
           );
           const snapshot = await ctx.api.post<AgentSkillSnapshot>(
             `/api/agents/${encodeURIComponent(agentRow.id)}/skills/sync`,
@@ -562,9 +583,7 @@ function registerAgentSkillCommands(skills: Command): void {
             printOutput(snapshot, { json: true });
             return;
           }
-          console.log(
-            `Desired company skills cleared for ${agentRow.name} (${agentRow.id}).`,
-          );
+          console.log(skillOperationMessage("agentClearDone", { name: agentRow.name, id: agentRow.id }));
           printAgentSkillSnapshot(snapshot, agentRow);
         } catch (err) {
           handleCommandError(err);
@@ -593,11 +612,11 @@ async function listCatalogSkills(
 async function getCatalogSkill(ctx: ResolvedClientContext, catalogRef: string): Promise<CatalogSkill> {
   const ref = catalogRef.trim();
   if (!ref) {
-    throw new Error("Catalog skill reference is required.");
+    throw new Error(skillOperationErrorMessage("catalogReferenceRequired"));
   }
   const detail = await ctx.api.get<CatalogSkill>(`/api/skills/catalog/ref?ref=${encodeURIComponent(ref)}`);
   if (!detail) {
-    throw new Error(`Catalog skill not found: ${catalogRef}`);
+    throw new Error(skillOperationErrorMessage("catalogSkillNotFound", { reference: catalogRef }));
   }
   return detail;
 }
@@ -608,7 +627,7 @@ export function resolveCompanySkillReference(
 ): CompanySkillReferenceTarget {
   const trimmed = reference.trim();
   if (!trimmed) {
-    throw new Error("Skill reference is required.");
+    throw new Error(skillOperationErrorMessage("skillReferenceRequired"));
   }
 
   const byId = skills.find((skill) => skill.id === trimmed);
@@ -621,10 +640,10 @@ export function resolveCompanySkillReference(
   const bySlug = skills.filter((skill) => skill.slug === normalizedSlug);
   if (bySlug.length === 1 && bySlug[0]) return bySlug[0];
   if (bySlug.length > 1) {
-    throw new Error(`Ambiguous skill slug "${trimmed}". Use a skill ID or key instead.`);
+    throw new Error(skillOperationErrorMessage("ambiguousSkill", { reference: trimmed }));
   }
 
-  throw new Error(`Skill not found: ${reference}`);
+  throw new Error(skillOperationErrorMessage("skillNotFound", { reference }));
 }
 
 async function resolveCompanySkill(
@@ -646,7 +665,7 @@ async function checkCompanySkills(
       `/api/companies/${ctx.companyId}/skills/${encodeURIComponent(skill.id)}/update-status`,
     );
     if (!status) {
-      throw new Error(`No update status returned for skill ${skill.key}.`);
+      throw new Error(skillOperationErrorMessage("updateStatusMissing", { key: skill.key }));
     }
     rows.push({ skill: toSkillReferenceTarget(skill), status });
   }
@@ -728,7 +747,7 @@ async function auditCompanySkills(
       {},
     );
     if (!audit) {
-      throw new Error(`No audit result returned for skill ${skill.key}.`);
+      throw new Error(skillOperationErrorMessage("auditResultMissing", { key: skill.key }));
     }
     rows.push({ skill: toSkillReferenceTarget(skill), audit });
   }
@@ -739,7 +758,7 @@ async function resolveAgent(ctx: ResolvedClientContext, agentRef: string): Promi
   const params = new URLSearchParams({ companyId: ctx.companyId ?? "" });
   const agent = await ctx.api.get<Agent>(`/api/agents/${encodeURIComponent(agentRef)}?${params.toString()}`);
   if (!agent) {
-    throw new Error(`Agent not found: ${agentRef}`);
+    throw new Error(skillOperationErrorMessage("agentNotFound", { reference: agentRef }));
   }
   return agent;
 }
@@ -810,15 +829,15 @@ function printCatalogSkillDetail(skill: CatalogSkill): void {
 
 function printCatalogInstallResult(result: CompanySkillInstallCatalogResult | null): void {
   if (!result) {
-    console.log("Catalog install returned no result.");
+    console.log(skillOperationMessage("catalogInstallNoResult"));
     return;
   }
-  console.log(
-    `Catalog skill ${result.action}: ${result.skill.name} (${result.skill.key}) in company skill library.`,
-  );
-  console.log(
-    "This does not attach the skill to an agent. Use `paperclipai skills agent sync <agent> --skill <skill>` when you want an agent to use it.",
-  );
+  console.log(skillOperationMessage("catalogInstallDone", {
+    action: result.action,
+    name: result.skill.name,
+    key: result.skill.key,
+  }));
+  console.log(skillOperationMessage("catalogInstallHint"));
   for (const warning of result.warnings) {
     console.log(`warning=${warning}`);
   }
@@ -897,12 +916,17 @@ function printCompanySkillUpdateRows(rows: CompanySkillUpdateRow[]): void {
 
 function printAgentSkillSnapshot(snapshot: AgentSkillSnapshot | null, agent: Agent): void {
   if (!snapshot) {
-    console.log(`Agent ${agent.name} (${agent.id}) returned no skill snapshot.`);
+    console.log(skillOperationMessage("agentSnapshotMissing", { name: agent.name, id: agent.id }));
     return;
   }
-  console.log(
-    `Agent ${agent.name} (${agent.id}) adapter=${snapshot.adapterType} supported=${snapshot.supported} mode=${snapshot.mode} desiredCompanySkills=${snapshot.desiredSkills.length}`,
-  );
+  console.log(skillOperationMessage("agentSnapshot", {
+    name: agent.name,
+    id: agent.id,
+    adapter: snapshot.adapterType,
+    supported: snapshot.supported,
+    mode: snapshot.mode,
+    count: snapshot.desiredSkills.length,
+  }));
   if (snapshot.warnings.length > 0) {
     for (const warning of snapshot.warnings) {
       console.log(`warning=${warning}`);
@@ -942,7 +966,7 @@ function normalizeSkillSlug(value: string): string {
 
 function requireSkillRef(skillRef: string | undefined): string {
   if (!skillRef?.trim()) {
-    throw new Error("Skill reference is required unless --all is used.");
+    throw new Error(skillOperationErrorMessage("skillReferenceRequiredUnlessAll"));
   }
   return skillRef;
 }
@@ -1010,13 +1034,13 @@ async function readStdin(): Promise<string> {
 async function confirmDangerousAction(yes: boolean | undefined, message: string): Promise<void> {
   if (yes) return;
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    throw new Error("This command requires --yes when not running in an interactive terminal.");
+    throw new Error(skillOperationErrorMessage("confirmNeedsYes"));
   }
   const rl = createInterface({ input, output });
   try {
     const answer = (await rl.question(`${message} Type yes to continue: `)).trim().toLowerCase();
     if (answer !== "yes") {
-      throw new Error("Aborted.");
+      throw new Error(skillOperationErrorMessage("aborted"));
     }
   } finally {
     rl.close();

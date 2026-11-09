@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DevRestartBanner } from "./DevRestartBanner";
+import { i18n } from "../i18n";
 
 const mockHealthApi = vi.hoisted(() => ({
   requestDevServerRestart: vi.fn(),
@@ -33,7 +34,8 @@ const devServer = {
   lastRestartAt: "2026-03-20T11:30:00.000Z",
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.spyOn(window, "confirm").mockReturnValue(true);
   vi.spyOn(window, "alert").mockImplementation(() => undefined);
   mockHealthApi.requestDevServerRestart.mockResolvedValue(undefined);
@@ -75,6 +77,26 @@ describe("DevRestartBanner", () => {
     expect(window.confirm).toHaveBeenCalledWith("Restart Paperclip now? This may interrupt 1 live run.");
     expect(mockHealthApi.requestDevServerRestart).toHaveBeenCalledTimes(1);
     expect(node.textContent).toContain("Restart requested");
+  });
+
+  it("localizes restart status, active runs, and confirmation in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const node = render();
+    const button = [...node.querySelectorAll("button")]
+      .find((entry) => entry.textContent?.includes("Reiniciar agora"));
+
+    expect(node.textContent).toContain("É necessário reiniciar");
+    expect(node.textContent).toContain("Aguardando o fim de 1 execução ativa");
+    expect(button).toBeTruthy();
+
+    await act(async () => {
+      button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      "Reiniciar o Paperclip agora? Isso pode interromper 1 execução ativa.",
+    );
+    expect(node.textContent).toContain("Reinicialização solicitada");
   });
 
   it("does not request restart when confirmation is declined", async () => {

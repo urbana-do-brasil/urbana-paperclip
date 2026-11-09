@@ -115,9 +115,20 @@ describe("openclaw_gateway execute dispatch boundary", () => {
     vi.useRealTimers();
   });
 
-  it.each([false, true])("sends conversation policy without the issue-completion workflow (resumed=%s)", async (resumed) => {
+  it.each([
+    [false, "pt-BR"], [true, "pt-BR"], [false, "en"], [true, "en"],
+  ] as const)("sends conversation policy without the issue-completion workflow (resumed=%s, locale=%s)", async (resumed, locale) => {
     const ctx = createContext();
-    const directive = "Chat directive: clarify goals and hand plans off to project tasks.";
+    const technicalMarkers = [
+      "`curl --fail --silent https://example.invalid/health`",
+      "`X-Trace-Mode: RAW`",
+      "`WAITING_FOR_REVIEW`",
+    ];
+    const directive = [
+      "Chat directive: clarify goals and hand plans off to project tasks.",
+      "Preserve these exact technical markers:",
+      ...technicalMarkers,
+    ].join(" ");
     ctx.context = {
       ...ctx.context,
       conversationMode: true,
@@ -128,6 +139,8 @@ describe("openclaw_gateway execute dispatch boundary", () => {
         issue: { id: "issue-1", workMode: "planning", status: "in_progress" },
         interactionKind: "request_confirmation",
         interactionStatus: "accepted",
+        communicationLocale: locale,
+        simplifiedEnglishInteractions: true,
       },
     };
     if (resumed) ctx.runtime.sessionId = "prior-session";
@@ -136,6 +149,16 @@ describe("openclaw_gateway execute dispatch boundary", () => {
     expect(websocketState.messages).toHaveLength(1);
     const prompt = websocketState.messages[0]!;
     expect(prompt).toContain(directive);
+    for (const marker of technicalMarkers) expect(prompt).toContain(marker);
+    expect(prompt).toContain(locale === "pt-BR"
+      ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+      : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+    if (locale === "pt-BR") {
+      expect(prompt).toContain("keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR)");
+      expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+    } else {
+      expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+    }
     expect(prompt).toContain("X-Paperclip-Run-Id");
     expect(prompt).not.toContain("Execution contract:");
     expect(prompt).not.toContain("Create child issues");

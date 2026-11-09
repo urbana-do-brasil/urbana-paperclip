@@ -3,10 +3,16 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { AgentLifecycleState } from "@paperclipai/shared";
-import { expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { AgentLifecycleStatus, agentLifecycleRefetchInterval } from "./AgentLifecycleStatus";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+describe("AgentLifecycleStatus", () => {
+beforeEach(async () => { await i18n.changeLanguage("en"); });
+afterEach(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 
 it.each([
   ["preparing", "Preparing agent"], ["verifying", "Verifying agent"],
@@ -44,4 +50,15 @@ it("retries a failed step once while pending and removes the failure after recov
     await act(async () => root.render(<AgentLifecycleStatus agent={{ lifecycleState: "terminated", lifecycleError: null }} onRetry={retry} retryPending={false} />));
     expect(container.textContent).toBe("");
   } finally { await act(async () => root.unmount()); }
+});
+
+it("localizes progress and retry controls while preserving runtime errors", async () => {
+  await i18n.changeLanguage("pt-BR");
+  const agent = { lifecycleState: "cleaning_up" as AgentLifecycleState, lifecycleError: "The lifecycle step failed." };
+  const html = renderToStaticMarkup(<AgentLifecycleStatus agent={agent} onRetry={() => {}} retryPending />);
+  expect(html).toContain("Limpando recursos do agente");
+  expect(html).toContain("Os recursos necessários estão sendo removidos. O encerramento ainda não foi concluído.");
+  expect(html).toContain("The lifecycle step failed.");
+  expect(html).toContain("Tentando novamente…");
+});
 });

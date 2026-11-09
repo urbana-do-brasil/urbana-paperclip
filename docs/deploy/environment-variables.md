@@ -204,6 +204,8 @@ These are set automatically by the server when invoking agents:
 | `PAPERCLIP_APPROVAL_ID` | Resolved approval ID |
 | `PAPERCLIP_APPROVAL_STATUS` | Approval decision |
 | `PAPERCLIP_LINKED_ISSUE_IDS` | Comma-separated linked issue IDs |
+| `PAPERCLIP_COMMUNICATION_LOCALE` | Validated human communication locale (`pt-BR` or `en`); injected by the process adapter |
+| `PAPERCLIP_COMMUNICATION_GUIDANCE` | Short server-authored language guidance; injected by the process adapter without wake content |
 
 ## LLM Provider Keys (for adapters)
 

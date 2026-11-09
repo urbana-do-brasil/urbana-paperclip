@@ -3,9 +3,10 @@
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { AnchorHTMLAttributes } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { CaseChildrenTree } from "./CaseChildrenTree";
 import type { CaseSummary } from "@/api/cases";
+import { i18n } from "@/i18n";
 
 function act(callback: () => void) {
   flushSync(callback);
@@ -46,7 +47,11 @@ function child(overrides: Partial<CaseSummary>): CaseSummary {
 
 describe("CaseChildrenTree", () => {
   let container: HTMLDivElement;
-  beforeEach(() => {
+  let previousLanguage = "pt-BR";
+  beforeAll(() => { previousLanguage = i18n.language; });
+  afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -73,8 +78,7 @@ describe("CaseChildrenTree", () => {
     expect(text).toContain("PAP-C8");
     expect(text).not.toContain("launch/post");
     expect(text).toContain("blog_post");
-    // StatusBadge renders the status with underscores as spaces.
-    expect(text).toContain("in review");
+    expect(text).toContain("In review");
     expect(text).toContain("Hero image");
     expect(container.querySelector('a[href="/PAP/cases/PAP-C8"]')).not.toBeNull();
     expect(container.querySelector('a[href="/PAP/cases/PAP-C9"]')).not.toBeNull();
@@ -104,6 +108,24 @@ describe("CaseChildrenTree", () => {
     expect(container.textContent).toContain("Child 6");
     expect(container.textContent).toContain("Child 7");
     expect(container.textContent).not.toContain("Show 2 more");
+    act(() => root.unmount());
+  });
+
+  it("localizes the child tree while preserving case data and navigation", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const children = Array.from({ length: 2 }, (_, index) =>
+      child({ id: `child-${index}`, identifier: `PAP-C${index + 1}`, title: `USER CHILD ${index + 1}`, caseType: "USER_TYPE", status: "in_review" })
+    );
+    act(() => root.render(<CaseChildrenTree children={children} maxVisible={1} />));
+    expect(container.textContent).toContain("USER CHILD 1");
+    expect(container.textContent).toContain("USER_TYPE");
+    expect(container.textContent).toContain("Em revisão");
+    expect(container.textContent).toContain("Mostrar mais 1");
+    expect(container.querySelector('a[href="/PAP/cases/PAP-C1"]')).toBeTruthy();
+    const showMore = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("Mostrar mais 1"));
+    act(() => showMore!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(container.textContent).toContain("USER CHILD 2");
     act(() => root.unmount());
   });
 });

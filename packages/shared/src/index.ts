@@ -134,6 +134,8 @@ export {
   type PipelineHealthStageRef,
   type PipelineHealthWarning,
   type PipelineHealthWarningCode,
+  type PipelineHealthWarningTranslationKey,
+  type PipelineHealthWarningTranslationParams,
 } from "./pipeline-health.js";
 export {
   caseTypeMatchesPipeline,
@@ -1646,6 +1648,8 @@ export type {
   OAuthRedirectConstraints,
   QuotaWindow,
   ProviderQuotaResult,
+  ManagedResourcePluginAttribution,
+  ManagedResourceAttributionEntry,
 } from "./types/index.js";
 export { WORKSPACE_READINESS_STATES } from "./types/index.js";
 export {

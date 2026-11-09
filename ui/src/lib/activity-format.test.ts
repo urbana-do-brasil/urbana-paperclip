@@ -1,6 +1,7 @@
 import type { Agent } from "@paperclipai/shared";
 import { describe, expect, it } from "vitest";
 import { formatActivityVerb, formatIssueActivityAction } from "./activity-format";
+import { i18n } from "@/i18n";
 
 describe("activity formatting", () => {
   const agentMap = new Map<string, Agent>([
@@ -160,5 +161,19 @@ describe("activity formatting", () => {
     expect(formatIssueActivityAction("issue.successful_run_handoff_escalated")).toBe(
       "Run finished without a next step - recovery escalated",
     );
+  });
+
+  it("localizes known organization activity verbs and statuses while keeping unknown actions visible", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const translate = i18n.t.bind(i18n);
+
+    expect(formatActivityVerb("issue.comment_added", null, { translate })).toBe("comentou em");
+    expect(formatActivityVerb("issue.updated", {
+      status: "in_review",
+      _previous: { status: "in_progress" },
+    }, { translate })).toBe("alterou o status de em andamento para em revisão em");
+    expect(formatActivityVerb("future.event_type", null, { translate })).toBe("future event type");
+
+    await i18n.changeLanguage("en");
   });
 });

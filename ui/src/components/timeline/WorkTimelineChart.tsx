@@ -1,4 +1,6 @@
 import { agentAvatarUrl } from "@/lib/agent-avatar-url";
+import { useTranslation } from "react-i18next";
+import { formatTimelineDuration } from "@/lib/timeline/formatting";
 import { resolveAgentAppearance } from "@paperclipai/shared";
 /**
  * Work Timeline — custom-SVG Gantt (board-locked Direction C, PAP-12422).
@@ -20,7 +22,6 @@ import {
   barColor,
   chooseTickStepMs,
   computeLayout,
-  formatDuration,
   isCancelledStatus,
   shortLabel,
   TIMELINE_COLORS,
@@ -118,23 +119,22 @@ interface DragSelectionState {
   currentX: number;
 }
 
-function fmtClock(ms: number): string {
+function fmtClock(ms: number, locale: string): string {
   const d = new Date(ms);
   const hasMinutes = d.getMinutes() !== 0;
-  return d.toLocaleTimeString("en-US", {
+  return d.toLocaleTimeString(locale, {
     hour: "numeric",
     minute: hasMinutes ? "2-digit" : undefined,
-    hour12: true,
   });
 }
 
-function fmtTick(ms: number, stepMs: number): string {
+function fmtTick(ms: number, stepMs: number, locale: string): string {
   const d = new Date(ms);
-  const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const date = d.toLocaleDateString(locale, { month: "short", day: "numeric" });
   if (stepMs >= 24 * 60 * 60 * 1000) {
     return date;
   }
-  return `${date}, ${fmtClock(ms)}`;
+  return `${date}, ${fmtClock(ms, locale)}`;
 }
 
 export function formatVisibleDurationMinutes(minutes: number): string {
@@ -258,6 +258,7 @@ export function WorkTimelineChart({
   onVisibleWindowChange,
   nowMs,
 }: WorkTimelineChartProps) {
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const initialWindowKeyRef = useRef<string | null>(null);
@@ -444,8 +445,8 @@ export function WorkTimelineChart({
     const related = layout.connectors.filter((c) => c.sourceRunId === bar.span.runId || c.targetRunId === bar.span.runId);
     if (related.length === 0) return null;
     return related.some((c) => c.dashed)
-      ? "dashed handoff: retry or changes requested"
-      : "solid handoff: delegation or assignment";
+      ? t("workTimeline.connectorHints.retry")
+      : t("workTimeline.connectorHints.delegation");
   };
 
   const showTooltip = (evt: React.MouseEvent, bar: PositionedBar) => {
@@ -673,7 +674,7 @@ export function WorkTimelineChart({
         </div>
       </div>
 
-      <TimeAxisOverlay layout={layout} ticks={ticks} stepMs={stepMs} scrollLeft={scrollLeft} />
+      <TimeAxisOverlay layout={layout} ticks={ticks} stepMs={stepMs} scrollLeft={scrollLeft} locale={i18n.language} />
 
       <MiniMap
         layout={layout}
@@ -730,11 +731,13 @@ function TimeAxisOverlay({
   ticks,
   stepMs,
   scrollLeft,
+  locale,
 }: {
   layout: ReturnType<typeof computeLayout>;
   ticks: number[];
   stepMs: number;
   scrollLeft: number;
+  locale: string;
 }) {
   return (
     <div
@@ -757,7 +760,7 @@ function TimeAxisOverlay({
             <g key={`axis-tick-${ms}`}>
               <line x1={gx} y1={AXIS_H - 7} x2={gx} y2={AXIS_H} stroke="var(--color-border)" strokeWidth={1} />
               <text x={gx + 3} y={19} fontSize={11} fill="var(--color-muted-foreground)">
-                {fmtTick(ms, stepMs)}
+                {fmtTick(ms, stepMs, locale)}
               </text>
             </g>
           );
@@ -779,10 +782,11 @@ function TimeAxisOverlay({
 }
 
 function Tooltip({ tooltip, now }: { tooltip: TooltipState; now: number }) {
+  const { t, i18n } = useTranslation();
   const { bar } = tooltip;
   const startMs = new Date(bar.span.start).getTime();
   const endMs = bar.span.end ? new Date(bar.span.end).getTime() : now;
-  const title = bar.span.issueTitle ?? bar.span.issueIdentifier ?? "run";
+  const title = bar.span.issueTitle ?? bar.span.issueIdentifier ?? t("workTimeline.run");
   const left = Math.min(tooltip.x + 14, (typeof window !== "undefined" ? window.innerWidth : 1200) - 300);
   return (
     <div
@@ -792,13 +796,13 @@ function Tooltip({ tooltip, now }: { tooltip: TooltipState; now: number }) {
     >
       <div className="text-(length:--text-compact) font-medium text-foreground">{truncate(title)}</div>
       <div className="mt-0.5 text-muted-foreground">
-        {fmtClock(startMs)}–{bar.span.end ? fmtClock(endMs) : "now"} · {formatDuration(startMs, endMs)} ·{" "}
-        <span className="font-medium text-foreground">{bar.span.status}</span>
+        {fmtClock(startMs, i18n.language)}–{bar.span.end ? fmtClock(endMs, i18n.language) : t("workTimeline.legend.now")} · {formatTimelineDuration(startMs, endMs)} ·{" "}
+        <span className="font-medium text-foreground">{t(`workTimeline.runStatuses.${bar.span.status}`, { defaultValue: bar.span.status })}</span>
       </div>
       {bar.kickoff && (
         <div className="text-muted-foreground">
-          kicked off by: {(bar.kickoff as WorkTimelineActor).name}
-          {bar.span.retryOfRunId ? " · retry" : ""}
+          {t("workTimeline.kickedOffBy")}: {(bar.kickoff as WorkTimelineActor).name}
+          {bar.span.retryOfRunId ? ` · ${t("workTimeline.retry")}` : ""}
         </div>
       )}
       {tooltip.connectorHint && (
@@ -821,6 +825,7 @@ function MiniMap({
   scrollLeft: number;
   onVisibleRangeChange: (fromMs: number, toMs: number) => void;
 }) {
+  const { t } = useTranslation();
   const documentDragCleanupRef = useRef<(() => void) | null>(null);
   const W = Math.max(320, viewportW || 900);
   const H = 54;
@@ -946,7 +951,7 @@ function MiniMap({
           height={H - 2}
           width={handleW}
           testId="timeline-minimap-left-handle"
-          label="Drag left edge to resize visible range"
+          label={t("workTimeline.resizeLeftHandle")}
           onMouseDown={(e) => startRangeDrag("left", e)}
         />
         <MiniMapHandle
@@ -955,7 +960,7 @@ function MiniMap({
           height={H - 2}
           width={handleW}
           testId="timeline-minimap-right-handle"
-          label="Drag right edge to resize visible range"
+          label={t("workTimeline.resizeRightHandle")}
           onMouseDown={(e) => startRangeDrag("right", e)}
         />
       </svg>

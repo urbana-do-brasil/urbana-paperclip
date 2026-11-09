@@ -7,6 +7,7 @@ import { toolsApi } from "@/api/tools";
 import { queryKeys } from "@/lib/queryKeys";
 import { COMPOSIO_APP_MANAGEMENT_URL } from "@/lib/aggregator-app-setup";
 import { Link } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,19 +15,21 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 export function ComposioAppManager({ app, connections, initialConnectionId, onClose }: {
   app: AggregatorAppCatalogEntry; connections: ToolConnection[]; initialConnectionId?: string; onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [connectionId, setConnectionId] = useState(initialConnectionId ?? connections[0]?.id ?? "");
   const connection = connections.find(candidate => candidate.id === connectionId);
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent>
-    <DialogHeader><DialogTitle>Manage {app.name}</DialogTitle><DialogDescription>Accounts and sign-in are managed in Composio.</DialogDescription></DialogHeader>
-    {connections.length > 1 ? <div className="space-y-2"><Label htmlFor="composio-manage-gateway">Composio account</Label>
+    <DialogHeader><DialogTitle>{t("apps.browse.accountManager.manageTitle", { appName: app.name })}</DialogTitle><DialogDescription>{t("apps.browse.accountManager.managedIn", { providerName: "Composio" })}</DialogDescription></DialogHeader>
+    {connections.length > 1 ? <div className="space-y-2"><Label htmlFor="composio-manage-gateway">{t("apps.browse.accountManager.composioAccount")}</Label>
       <select id="composio-manage-gateway" value={connectionId} onChange={event => setConnectionId(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
         {connections.map(candidate => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
       </select></div> : null}
-    {connection ? <ComposioAccountObservations key={connection.id} app={app} connection={connection} onClose={onClose} /> : <p role="alert">This Composio connection is no longer available.</p>}
+    {connection ? <ComposioAccountObservations key={connection.id} app={app} connection={connection} onClose={onClose} /> : <p role="alert">{t("apps.browse.accountManager.composioConnectionUnavailable")}</p>}
   </DialogContent></Dialog>;
 }
 
 function ComposioAccountObservations({ app, connection, onClose }: { app: AggregatorAppCatalogEntry; connection: ToolConnection; onClose: () => void }) {
+  const { t } = useTranslation();
   const queries = useQueryClient();
   const key = queryKeys.tools.composioApps(connection.id);
   const accountsQuery = useQuery({ queryKey: key, queryFn: () => toolsApi.listComposioApps(connection.id), staleTime: Infinity, refetchOnWindowFocus: false });
@@ -41,26 +44,27 @@ function ComposioAccountObservations({ app, connection, onClose }: { app: Aggreg
       const toolkits = snapshots.length ? snapshots.map(snapshot => snapshot.toolkit) : [app.routes.find(route => route.provider === "composio")!.toolkit];
       queries.setQueryData(key, await toolsApi.refreshComposioApps(connection.id, toolkits));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Couldn’t check Composio. Try again.");
+      setError(cause instanceof Error ? cause.message : t("apps.browse.accountManager.loadFailed", { providerName: "Composio" }));
       await queries.invalidateQueries({ queryKey: key });
     } finally { setBusy(false); }
   }
   return <>
-    {error || accountsQuery.isError ? <p role="alert" className="text-sm text-destructive">{error ?? "Couldn’t load Composio accounts. Refresh to try again."}</p> : null}
-    {accountsQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">Loading accounts…</p> : accounts.length === 0 ? <p className="text-sm text-muted-foreground">No connected {app.name} accounts.</p> : <div className="divide-y divide-border">
+    {error || accountsQuery.isError ? <p role="alert" className="text-sm text-destructive">{error ?? t("apps.browse.accountManager.loadFailed", { providerName: "Composio" })}</p> : null}
+    {accountsQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">{t("apps.browse.accountManager.loadingAccounts")}</p> : accounts.length === 0 ? <p className="text-sm text-muted-foreground">{t("apps.browse.accountManager.noAccounts", { appName: app.name })}</p> : <div className="divide-y divide-border">
       {accounts.map(({ account, snapshot }) => <div key={`${snapshot.toolkit}:${account.id}`} className="py-3">
-        <p className="truncate text-sm font-medium">{account.alias || `${app.name} account`}</p>
+        <p className="truncate text-sm font-medium">{account.alias || t("apps.browse.accountManager.accountName", { appName: app.name })}</p>
         <p className="text-xs text-muted-foreground">{snapshot.errorAt || Date.now() - new Date(snapshot.checkedAt).getTime() > 5 * 60_000
-          ? "Last known account · Refresh to verify" : account.status === "ACTIVE" ? "Connected" : account.status === "INITIATED" ? "Waiting for sign-in" : "Needs sign-in"}{account.isDefault ? " · Default" : ""}</p>
+          ? t("apps.browse.accountManager.lastKnownRefresh") : account.status === "ACTIVE" ? t("apps.browse.accountManager.connected")
+          : account.status === "INITIATED" ? t("apps.browse.accountManager.waitingForSignin") : t("apps.browse.accountManager.needsSignin")}{account.isDefault ? ` · ${t("apps.browse.accountManager.default")}` : ""}</p>
       </div>)}
     </div>}
     <div className="space-y-1 text-xs text-muted-foreground">
-      <p>Via <Link to={`/apps/${connection.id}/permissions`} onClick={onClose} className="underline underline-offset-2">“{connection.name}”</Link></p>
-      <p>Composio permissions apply to all apps on this connection.</p>
+      <p>{t("apps.browse.accountManager.via")} <Link to={`/apps/${connection.id}/permissions`} onClick={onClose} className="underline underline-offset-2">“{connection.name}”</Link></p>
+      <p>{t("apps.browse.accountManager.composioPermissions")}</p>
     </div>
-    <DialogFooter className="sm:items-center sm:justify-between"><Button variant="ghost" onClick={onClose}>Close</Button>
-      <div className="flex items-center gap-2"><Button variant="ghost" disabled={busy} onClick={() => void refresh()}>{busy ? "Checking…" : "Refresh"}</Button>
-        <Button asChild><a href={COMPOSIO_APP_MANAGEMENT_URL} target="_blank" rel="noopener noreferrer">Open in Composio<ExternalLink className="size-4" /></a></Button></div>
+    <DialogFooter className="sm:items-center sm:justify-between"><Button variant="ghost" onClick={onClose}>{t("apps.browse.accountManager.close")}</Button>
+      <div className="flex items-center gap-2"><Button variant="ghost" disabled={busy} onClick={() => void refresh()}>{busy ? t("apps.browse.accountManager.checking") : t("apps.browse.accountManager.refresh")}</Button>
+        <Button asChild><a href={COMPOSIO_APP_MANAGEMENT_URL} target="_blank" rel="noopener noreferrer">{t("apps.browse.accountManager.openInProvider", { providerName: "Composio" })}<ExternalLink className="size-4" /></a></Button></div>
     </DialogFooter>
   </>;
 }

@@ -8,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { MarkdownBody } from "@/components/MarkdownBody";
+import { useTranslation } from "@/i18n";
 import { WorkspaceFileLink } from "@/components/WorkspaceFileLink";
 import { cn } from "@/lib/utils";
 import type {
@@ -22,7 +23,10 @@ import {
   protocolActivityIsRunning,
   protocolActivityLabel,
   protocolActivityPresentation,
+  providerActivityDetailLabel,
+  providerActivityStatusLabel,
   providerNoticeSeverity,
+  type TaskChatActivityTranslator,
 } from "./task-chat-activity-presentation";
 
 const COMPACT_RESEARCH_RESULT_LIMIT = 5;
@@ -43,13 +47,19 @@ function stepStatusIcon(status: TaskChatProtocolStep["status"], neutral = false)
   return <Circle className="h-3 w-3 text-muted-foreground" aria-hidden />;
 }
 
-function DetailList({ details }: { details: readonly TaskChatProtocolDetail[] }) {
+function DetailList({
+  details,
+  translate,
+}: {
+  details: readonly TaskChatProtocolDetail[];
+  translate?: TaskChatActivityTranslator;
+}) {
   if (details.length === 0) return null;
   return (
     <dl className="flex min-w-0 flex-col gap-1.5" data-testid="task-chat-provider-detail-list">
       {details.map((detail) => (
         <div className="grid min-w-0 grid-cols-1 gap-0.5 sm:grid-cols-(--gtc-task-chat-details) sm:gap-3" key={`${detail.label}:${detail.value}`}>
-          <dt className="text-muted-foreground">{detail.label}</dt>
+          <dt className="text-muted-foreground">{providerActivityDetailLabel(detail.label, translate)}</dt>
           <dd className={cn("min-w-0 break-words text-foreground", detail.mono && "font-mono")}>{detail.value}</dd>
         </div>
       ))}
@@ -65,7 +75,7 @@ function sourceHostname(href: string): string {
   }
 }
 
-function ResearchDetails({ item }: { item: TaskChatProviderActivityItem }) {
+function ResearchDetails({ item, translate }: { item: TaskChatProviderActivityItem; translate?: TaskChatActivityTranslator }) {
   const [showAllResults, setShowAllResults] = useState(false);
   const query = item.details.find((detail) => detail.label.toLowerCase() === "query");
   const additionalDetails = item.details.filter((detail) => !["action", "query", "status"].includes(detail.label.toLowerCase()));
@@ -76,16 +86,16 @@ function ResearchDetails({ item }: { item: TaskChatProviderActivityItem }) {
     <div className="flex min-w-0 flex-col gap-2.5">
       {query ? (
         <div className="min-w-0 rounded-sm bg-muted/40 px-2.5 py-2" data-testid="task-chat-research-query">
-          <p className="text-(length:--text-nano) font-medium uppercase tracking-wide text-muted-foreground">Query</p>
+          <p className="text-(length:--text-nano) font-medium uppercase tracking-wide text-muted-foreground">{translate?.("taskDetail.chatTranscript.providerActivity.experimental.research.query") ?? "Query"}</p>
           <p className="mt-0.5 min-w-0 break-words font-mono text-(length:--text-micro) text-foreground">{query.value}</p>
         </div>
       ) : null}
       {item.links.length > 0 ? (
         <div className="min-w-0">
           <p className="mb-1 text-(length:--text-nano) font-medium uppercase tracking-wide text-muted-foreground">
-            {item.links.length} {item.links.length === 1 ? "result" : "results"}
+            {translate ? translate("taskDetail.chatTranscript.providerActivity.experimental.research.results", { count: item.links.length }) : `${item.links.length} ${item.links.length === 1 ? "result" : "results"}`}
           </p>
-          <ol className="divide-y divide-border/60" aria-label="Research sources">
+          <ol className="divide-y divide-border/60" aria-label={translate?.("taskDetail.chatTranscript.providerActivity.experimental.research.sources") ?? "Research sources"}>
             {visibleLinks.map((link, index) => (
               <li className="min-w-0 py-1.5 first:pt-0 last:pb-0" key={`${link.href}:${index}`}>
                 <a className="flex min-w-0 items-center gap-1 font-medium text-foreground hover:underline" href={link.href} target="_blank" rel="noreferrer">
@@ -105,7 +115,7 @@ function ResearchDetails({ item }: { item: TaskChatProviderActivityItem }) {
               className="mt-1.5 text-muted-foreground hover:text-foreground"
               onClick={() => setShowAllResults(true)}
             >
-              Show {hiddenResultCount} more {hiddenResultCount === 1 ? "result" : "results"}
+              {translate ? translate("taskDetail.chatTranscript.providerActivity.experimental.research.showMore", { count: hiddenResultCount }) : `Show ${hiddenResultCount} more ${hiddenResultCount === 1 ? "result" : "results"}`}
             </button>
           ) : showAllResults && item.links.length > COMPACT_RESEARCH_RESULT_LIMIT ? (
             <button
@@ -113,25 +123,25 @@ function ResearchDetails({ item }: { item: TaskChatProviderActivityItem }) {
               className="mt-1.5 text-muted-foreground hover:text-foreground"
               onClick={() => setShowAllResults(false)}
             >
-              Show fewer results
+              {translate?.("taskDetail.chatTranscript.providerActivity.experimental.research.showFewer") ?? "Show fewer results"}
             </button>
           ) : null}
         </div>
       ) : null}
-      <DetailList details={additionalDetails} />
+      <DetailList details={additionalDetails} translate={translate} />
       {item.output || item.outputTruncated ? (
-        <p className="text-muted-foreground">Additional provider output is available in Runner Inspector.</p>
+        <p className="text-muted-foreground">{translate?.("taskDetail.chatTranscript.providerActivity.experimental.research.additionalOutput") ?? "Additional provider output is available in Runner Inspector."}</p>
       ) : null}
     </div>
   );
 }
 
-function ProviderDetails({ item, neutral = false }: { item: TaskChatProviderActivityItem; neutral?: boolean }) {
-  if (item.family === "research") return <ResearchDetails item={item} />;
+function ProviderDetails({ item, neutral = false, translate }: { item: TaskChatProviderActivityItem; neutral?: boolean; translate?: TaskChatActivityTranslator }) {
+  if (item.family === "research") return <ResearchDetails item={item} translate={translate} />;
   return (
     <div className="flex min-w-0 flex-col gap-2">
       {item.steps.length > 0 ? (
-        <ol className="flex flex-col gap-1" aria-label="Plan steps">
+        <ol className="flex flex-col gap-1" aria-label={translate?.("taskDetail.chatTranscript.providerActivity.experimental.cards.planSteps") ?? "Plan steps"}>
           {item.steps.map((step) => (
             <li className="flex min-w-0 items-start gap-2" key={step.id}>
               <span className="mt-0.5 shrink-0">{stepStatusIcon(step.status, neutral)}</span>
@@ -141,7 +151,7 @@ function ProviderDetails({ item, neutral = false }: { item: TaskChatProviderActi
         </ol>
       ) : null}
       {item.links.length > 0 ? (
-        <ul className="flex flex-col gap-1.5" aria-label="Research sources">
+        <ul className="flex flex-col gap-1.5" aria-label={translate?.("taskDetail.chatTranscript.providerActivity.experimental.cards.researchSources") ?? "Research sources"}>
           {item.links.map((link) => (
             <li key={link.href}>
               <a className="inline-flex min-w-0 items-center gap-1 font-medium text-primary hover:underline" href={link.href} target="_blank" rel="noreferrer">
@@ -154,12 +164,12 @@ function ProviderDetails({ item, neutral = false }: { item: TaskChatProviderActi
         </ul>
       ) : null}
       {item.children.length > 0 ? (
-        <ul className="flex flex-col gap-1.5" aria-label="Delegated agents">
+        <ul className="flex flex-col gap-1.5" aria-label={translate?.("taskDetail.chatTranscript.providerActivity.experimental.cards.delegatedAgents") ?? "Delegated agents"}>
           {item.children.map((child) => (
             <li className="flex min-w-0 flex-col gap-0.5" key={child.id}>
               <span className="flex min-w-0 items-center gap-2">
                 <span className="font-medium text-foreground">{child.title}</span>
-                <span className="capitalize text-muted-foreground">{child.status}</span>
+                <span className="text-muted-foreground">{translate ? providerActivityStatusLabel(child.status, translate) : child.status}</span>
                 {child.metadata ? <span className="min-w-0 truncate font-mono text-(length:--text-micro)">{child.metadata}</span> : null}
               </span>
               {child.summary ? <span className="text-muted-foreground">{child.summary}</span> : null}
@@ -168,12 +178,12 @@ function ProviderDetails({ item, neutral = false }: { item: TaskChatProviderActi
         </ul>
       ) : null}
       {item.details.length > 0 ? (
-        <DetailList details={item.details} />
+        <DetailList details={item.details} translate={translate} />
       ) : null}
       {item.output ? (
         <pre className="max-h-(--sz-64) overflow-auto whitespace-pre-wrap rounded-sm bg-muted/50 p-2 font-mono text-(length:--text-micro) text-foreground">{item.output}</pre>
       ) : null}
-      {item.outputTruncated ? <p className="text-muted-foreground">Output truncated to 8 KiB.</p> : null}
+      {item.outputTruncated ? <p className="text-muted-foreground">{translate?.("taskDetail.chatTranscript.providerActivity.experimental.cards.outputTruncated") ?? "Output truncated to 8 KiB."}</p> : null}
     </div>
   );
 }
@@ -227,11 +237,11 @@ function WorkspaceFileDetails({ item }: { item: TaskChatWorkspaceFileItem }) {
   );
 }
 
-function detailContent(item: TaskChatProtocolItem, neutral = false): ReactNode | null {
+function detailContent(item: TaskChatProtocolItem, neutral = false, translate?: TaskChatActivityTranslator): ReactNode | null {
   switch (item.surface) {
     case "provider_activity": {
       const expandable = item.details.length > 0 || item.steps.length > 0 || item.links.length > 0 || item.children.length > 0 || Boolean(item.output) || Boolean(item.outputTruncated);
-      return expandable ? <ProviderDetails item={item} neutral={neutral} /> : null;
+      return expandable ? <ProviderDetails item={item} neutral={neutral} translate={translate} /> : null;
     }
     case "workspace_change": return <WorkspaceChangeDetails item={item} />;
     case "workspace_file": return <WorkspaceFileDetails item={item} />;
@@ -261,7 +271,11 @@ export function hasTaskChatProtocolActivityDetails(item: TaskChatProtocolItem): 
 }
 
 export function TaskChatProtocolActivityDetails({ item, neutral = false }: { item: TaskChatProtocolItem; neutral?: boolean }) {
-  const detail = detailContent(item, neutral);
+  const { t, i18n } = useTranslation();
+  const translate: TaskChatActivityTranslator | undefined = i18n.resolvedLanguage === "pt-BR"
+    ? (key, options) => t(key, options)
+    : undefined;
+  const detail = detailContent(item, neutral, translate);
   if (item.surface === "resource") {
     const href = safeActivityHref(item.href);
     return href ? <a href={href} className="text-foreground underline">{item.title}</a> : <p>{item.title}</p>;
@@ -276,36 +290,44 @@ function itemStatus(item: TaskChatProtocolItem): "running" | "completed" | "fail
 }
 
 export function TaskChatProtocolActivityRow({ item }: { item: TaskChatProtocolItem }) {
+  const { t, i18n } = useTranslation();
+  const translate: TaskChatActivityTranslator | undefined = i18n.resolvedLanguage === "pt-BR"
+    ? (key, options) => t(key, options)
+    : undefined;
   const [open, setOpen] = useState(false);
   const detailId = `task-chat-protocol-activity-${useId().replaceAll(":", "")}`;
-  const presentation = protocolActivityPresentation(item);
+  const presentation = protocolActivityPresentation(item, translate);
   if (!presentation) return null;
   if (item.surface === "provider_activity" && item.family === "provider_notice") {
     const NoticeIcon = presentation.icon;
     const severity = providerNoticeSeverity(item);
     const summary = item.summary
       ?? item.details.find((entry) => entry.label === "Summary")?.value
-      ?? "The provider reported a notice without a message.";
+      ?? t("taskDetail.chatTranscript.providerActivity.experimental.notice.emptySummary");
     return (
       <div className="flex min-w-0 flex-col gap-1.5 py-1 text-xs" data-testid="task-chat-protocol-activity-row" data-activity-family="provider_notice">
         <div className="flex items-center gap-2 text-muted-foreground">
           <NoticeIcon className="size-(--sz-protocol-notice-icon) shrink-0" aria-hidden data-testid="task-chat-protocol-activity-icon" />
-          <span className="font-medium">{severity === "error" ? "Error" : severity === "info" ? "Provider update" : "Warning"}</span>
+          <span className="font-medium">{severity === "error"
+            ? t("taskDetail.chatTranscript.providerActivity.experimental.notice.error")
+            : severity === "info"
+              ? t("taskDetail.chatTranscript.providerActivity.experimental.notice.update")
+              : t("taskDetail.chatTranscript.providerActivity.experimental.notice.warning")}</span>
         </div>
         <p className="min-w-0 whitespace-pre-wrap break-words text-foreground">{summary}</p>
         {item.details.some(detail => detail.label !== "Summary") ? (
           <details className="text-muted-foreground">
-            <summary className="cursor-pointer">Details</summary>
-            <DetailList details={item.details.filter(detail => detail.label !== "Summary")} />
+            <summary className="cursor-pointer">{t("taskDetail.chatTranscript.providerActivity.experimental.notice.details")}</summary>
+            <DetailList details={item.details.filter(detail => detail.label !== "Summary")} translate={translate} />
           </details>
         ) : null}
       </div>
     );
   }
-  const detail = detailContent(item);
+  const detail = detailContent(item, false, translate);
   const expandable = detail !== null;
   const Icon = presentation.icon;
-  const label = protocolActivityLabel(item, presentation);
+  const label = protocolActivityLabel(item, presentation, translate);
   const active = protocolActivityIsRunning(item);
   const status = itemStatus(item);
   const row = (

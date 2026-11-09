@@ -7,6 +7,7 @@ import { registerAdapterCommands } from "../commands/client/adapter.js";
 import { registerAssetCommands } from "../commands/client/asset.js";
 import { registerCompanyCommands, resolveExportOutputPath } from "../commands/client/company.js";
 import { registerSkillCommands } from "../commands/client/skill.js";
+import { setCliLocale } from "../localization/index.js";
 
 const COMPANY_ID = "22222222-2222-4222-8222-222222222222";
 const SKILL_ID = "33333333-3333-4333-8333-333333333333";
@@ -45,6 +46,7 @@ describe("admin, asset, and skill parity commands", () => {
 
   afterEach(async () => {
     vi.restoreAllMocks();
+    setCliLocale("pt-BR");
     await rm(tempDir, { recursive: true, force: true });
   });
 
@@ -137,6 +139,7 @@ describe("admin, asset, and skill parity commands", () => {
   });
 
   it("rejects portable export paths outside the output directory", async () => {
+    setCliLocale("en");
     expect(() => resolveExportOutputPath(tempDir, "../outside.md")).toThrow("outside output directory");
   });
 

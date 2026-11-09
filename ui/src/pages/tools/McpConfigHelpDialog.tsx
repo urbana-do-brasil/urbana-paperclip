@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { MCP_CONFIG_HELP_INSTRUCTIONS, MCP_CONFIG_HELP_PROMPT } from "@paperclipai/shared";
+import { useTranslation } from "@/i18n";
 
 /**
  * Compact question-mark help beside the Paste-a-config copy (PAP-17087, plan 3A).
@@ -21,6 +21,13 @@ import { MCP_CONFIG_HELP_INSTRUCTIONS, MCP_CONFIG_HELP_PROMPT } from "@paperclip
  * anything the operator has typed.
  */
 export function McpConfigHelpDialog() {
+  const { t } = useTranslation();
+  const prompt = t("toolsAdmin.pasteConfig.help.prompt");
+  const instructions = [
+    t("toolsAdmin.pasteConfig.help.instruction1"),
+    t("toolsAdmin.pasteConfig.help.instruction2"),
+    t("toolsAdmin.pasteConfig.help.instruction3"),
+  ];
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -29,34 +36,33 @@ export function McpConfigHelpDialog() {
           variant="ghost"
           size="icon"
           className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label="Get help creating an MCP config"
+          aria-label={t("toolsAdmin.pasteConfig.help.trigger")}
         >
           <HelpCircle className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-(--sz-85vh) overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Ask an agent for an MCP config</DialogTitle>
+          <DialogTitle>{t("toolsAdmin.pasteConfig.help.title")}</DialogTitle>
           <DialogDescription>
-            Don't know the URL or headers a tool needs? Hand this request to an agent and paste back what it
-            gives you.
+            {t("toolsAdmin.pasteConfig.help.description")}
           </DialogDescription>
         </DialogHeader>
 
         <ol className="list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
-          {MCP_CONFIG_HELP_INSTRUCTIONS.map((instruction) => (
+          {instructions.map((instruction) => (
             <li key={instruction}>{instruction}</li>
           ))}
         </ol>
 
         <div className="space-y-2">
           <label htmlFor="mcp-config-help-prompt" className="text-sm font-medium text-foreground">
-            Prompt to send
+            {t("toolsAdmin.pasteConfig.help.promptLabel")}
           </label>
           <Textarea
             id="mcp-config-help-prompt"
             readOnly
-            value={MCP_CONFIG_HELP_PROMPT}
+            value={prompt}
             rows={12}
             spellCheck={false}
             onFocus={(event) => event.currentTarget.select()}
@@ -66,10 +72,10 @@ export function McpConfigHelpDialog() {
 
         <div>
           <AgentSetupPrompt
-            prompt={MCP_CONFIG_HELP_PROMPT}
-            label="Get a config with an agent"
-            title="MCP configuration"
-            description="Paste this into your agent to create an MCP config, then paste its JSON reply back into Paperclip."
+            prompt={prompt}
+            label={t("toolsAdmin.pasteConfig.help.setupLabel")}
+            title={t("toolsAdmin.pasteConfig.help.setupTitle")}
+            description={t("toolsAdmin.pasteConfig.help.setupDescription")}
           />
         </div>
       </DialogContent>

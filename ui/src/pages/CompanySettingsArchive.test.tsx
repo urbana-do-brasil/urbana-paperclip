@@ -5,6 +5,8 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryKeys } from "@/lib/queryKeys";
 import { CompanySettings } from "./CompanySettings";
@@ -128,7 +130,8 @@ async function waitForAssertion(assertion: () => void) {
 describe("CompanySettings archive departure", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockCompaniesApi.archive.mockResolvedValue({ id: ARCHIVING_COMPANY.id, status: "archived" });
@@ -136,11 +139,12 @@ describe("CompanySettings archive departure", () => {
     observedPath = "";
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.restoreAllMocks();
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   function render(health: unknown) {
@@ -166,9 +170,9 @@ describe("CompanySettings archive departure", () => {
     return root;
   }
 
-  function clickArchive() {
+  function clickArchive(label = "Archive organization") {
     const button = Array.from(container.querySelectorAll("button")).find(
-      (element) => element.textContent?.trim() === "Archive organization",
+      (element) => element.textContent?.trim() === label,
     );
     expect(button).toBeDefined();
     flushSync(() => {
@@ -227,6 +231,26 @@ describe("CompanySettings archive departure", () => {
         }),
       );
       expect(mockNavigateTopLevel).not.toHaveBeenCalled();
+    });
+    flushSync(() => root.unmount());
+  });
+
+  it("localizes archive confirmation and toast without changing the departure route", async () => {
+    await i18n.changeLanguage("pt-BR");
+    companyState.companies = [ARCHIVING_COMPANY, SIBLING_COMPANY];
+    const root = render(SELF_HOSTED_HEALTH);
+    clickArchive("Arquivar organização");
+
+    await waitForAssertion(() => {
+      expect(window.confirm).toHaveBeenCalledWith(
+        'Arquivar a organização "Old Co"? Ela ficará oculta na barra lateral.',
+      );
+      expect(mockSetSelectedCompanyId).toHaveBeenCalledWith(SIBLING_COMPANY.id);
+      expect(observedPath).toBe("/PAP/dashboard");
+      expect(mockPushToast).toHaveBeenCalledWith(expect.objectContaining({
+        title: "Old Co foi arquivada",
+        body: "Organização alterada para Paperclip.",
+      }));
     });
     flushSync(() => root.unmount());
   });

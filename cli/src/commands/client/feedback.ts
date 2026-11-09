@@ -3,6 +3,8 @@ import path from "node:path";
 import pc from "picocolors";
 import { Command } from "commander";
 import type { Company, FeedbackTrace, FeedbackTraceBundle } from "@paperclipai/shared";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
+import { feedbackOperationErrorMessage, feedbackOperationMessage } from "../../localization/feedback-operations.js";
 import {
   addCommonClientOptions,
   apiPath,
@@ -209,9 +211,7 @@ export async function resolveFeedbackCompanyId(
   const companies = (await ctx.api.get<Company[]>("/api/companies")) ?? [];
   const companyId = companies[0]?.id?.trim();
   if (!companyId) {
-    throw new Error(
-      "Company ID is required. Pass --company-id, set PAPERCLIP_COMPANY_ID, or configure a CLI context default.",
-    );
+    throw new Error(feedbackOperationErrorMessage("companyIdRequired"));
   }
   return companyId;
 }
@@ -295,35 +295,38 @@ export function renderFeedbackReport(input: {
   traces: FeedbackTrace[];
   summary: FeedbackSummary;
   includePayloads: boolean;
+  locale?: SupportedLocale;
 }): string {
+  const message = (id: Parameters<typeof feedbackOperationMessage>[0], values?: Readonly<Record<string, string | number>>) =>
+    feedbackOperationMessage(id, values, input.locale);
   const lines: string[] = [];
   lines.push("");
-  lines.push(pc.bold(pc.magenta("Paperclip Feedback Report")));
+  lines.push(pc.bold(pc.magenta(message("reportTitle"))));
   lines.push(pc.dim(new Date().toISOString()));
   lines.push(horizontalRule());
-  lines.push(`${pc.dim("Server:")}  ${input.apiBase}`);
-  lines.push(`${pc.dim("Company:")} ${input.companyId}`);
+  lines.push(`${pc.dim(message("serverLabel"))}  ${input.apiBase}`);
+  lines.push(`${pc.dim(message("organizationLabel"))} ${input.companyId}`);
   lines.push("");
 
   if (input.traces.length === 0) {
-    lines.push(pc.yellow("[!!] No feedback traces found."));
+    lines.push(pc.yellow(message("noTraces")));
     lines.push("");
     return lines.join("\n");
   }
 
-  lines.push(pc.bold(pc.cyan("Summary")));
+  lines.push(pc.bold(pc.cyan(message("summary"))));
   lines.push(horizontalRule());
-  lines.push(`  ${pc.green(pc.bold(String(input.summary.thumbsUp)))}  thumbs up`);
-  lines.push(`  ${pc.red(pc.bold(String(input.summary.thumbsDown)))}  thumbs down`);
-  lines.push(`  ${pc.yellow(pc.bold(String(input.summary.withReason)))}  downvotes with a reason`);
-  lines.push(`  ${pc.bold(String(input.summary.total))}  total traces`);
+  lines.push(`  ${pc.green(pc.bold(String(input.summary.thumbsUp)))}  ${message("positiveVotes")}`);
+  lines.push(`  ${pc.red(pc.bold(String(input.summary.thumbsDown)))}  ${message("negativeVotes")}`);
+  lines.push(`  ${pc.yellow(pc.bold(String(input.summary.withReason)))}  ${message("downvotesWithReason")}`);
+  lines.push(`  ${pc.bold(String(input.summary.total))}  ${message("totalTraces")}`);
   lines.push("");
-  lines.push(pc.dim("Export status:"));
+  lines.push(pc.dim(message("exportStatus")));
   for (const status of ["pending", "sent", "local_only", "failed"]) {
     lines.push(`  ${padRight(status, 10)} ${input.summary.statuses[status] ?? 0}`);
   }
   lines.push("");
-  lines.push(pc.bold(pc.cyan("Trace Details")));
+  lines.push(pc.bold(pc.cyan(message("traceDetails"))));
   lines.push(horizontalRule());
 
   for (const trace of input.traces) {
@@ -337,20 +340,20 @@ export function renderFeedbackReport(input: {
       `  ${voteColor(voteIcon)} ${pc.bold(issueRef)} ${pc.dim(compactText(trace.issueTitle, 64))}`,
     );
     lines.push(
-      `    ${pc.dim("Trace:")} ${trace.id.slice(0, 8)}  ${pc.dim("Status:")} ${trace.status}  ${pc.dim("Date:")} ${formatTimestamp(trace.createdAt)}`,
+      `    ${pc.dim(message("traceLabel"))} ${trace.id.slice(0, 8)}  ${pc.dim(message("statusLabel"))} ${trace.status}  ${pc.dim(message("dateLabel"))} ${formatTimestamp(trace.createdAt)}`,
     );
-    lines.push(`    ${pc.dim("Target:")} ${label}`);
+    lines.push(`    ${pc.dim(message("targetLabel"))} ${label}`);
     if (excerpt) {
-      lines.push(`    ${pc.dim("Excerpt:")} ${excerpt}`);
+      lines.push(`    ${pc.dim(message("excerptLabel"))} ${excerpt}`);
     }
     if (reason) {
-      lines.push(`    ${pc.yellow(pc.bold("Reason:"))} ${pc.yellow(reason)}`);
+      lines.push(`    ${pc.yellow(pc.bold(message("reasonLabel")))} ${pc.yellow(reason)}`);
     }
     lines.push("");
   }
 
   if (input.includePayloads) {
-    lines.push(pc.bold(pc.cyan("Raw Payloads")));
+    lines.push(pc.bold(pc.cyan(message("rawPayloads"))));
     lines.push(horizontalRule());
     for (const trace of input.traces) {
       if (!trace.payloadSnapshot) continue;
@@ -365,7 +368,7 @@ export function renderFeedbackReport(input: {
   }
 
   lines.push(horizontalRule());
-  lines.push(pc.dim(`Report complete. ${input.traces.length} trace(s) displayed.`));
+  lines.push(pc.dim(message("reportComplete", { count: input.traces.length })));
   lines.push("");
   return lines.join("\n");
 }

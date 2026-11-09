@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { i18n } from "../i18n";
 
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
@@ -34,7 +35,8 @@ describe("AgentMultiSelect", () => {
   let container: HTMLDivElement;
   let root: Root | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;

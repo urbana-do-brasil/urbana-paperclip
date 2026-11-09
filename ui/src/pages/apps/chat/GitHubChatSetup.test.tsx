@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { GitHubChatSetup, gitHubAppManifestAction } from "./GitHubChatSetup";
 import { defaultGitHubReviewPolicy } from "@paperclipai/shared";
 import { ChatEndpointDetail } from "./ChatEndpointDetail";
@@ -19,6 +20,7 @@ const fixture = vi.hoisted(() => ({
   agents: [] as any[],
   endpoint: null as any,
   setBreadcrumbs: vi.fn(),
+  saveExitLabel: "Save & exit",
 }));
 vi.mock("@/lib/router", async () => import("react-router-dom"));
 vi.mock("@/context/CompanyContext", () => ({
@@ -38,10 +40,14 @@ vi.mock("@/context/ToastContext", () => ({
   useToast: () => ({ pushToast: vi.fn() }),
 }));
 vi.mock("@/components/SetupWizard", () => ({
-  SetupWizardNavigation: () => null,
+  SetupWizardNavigation: ({ labels, ariaLabel }: any) => (
+    <nav aria-label={ariaLabel ?? "Setup progress"}>
+      <ol>{labels?.map((label: string) => <li key={label}>{label}</li>)}</ol>
+    </nav>
+  ),
   SetupWizardFooter: ({ children, onSaveExit }: any) => (
     <footer>
-      <button type="button" onClick={onSaveExit}>Save &amp; exit</button>
+      <button type="button" onClick={onSaveExit}>{fixture.saveExitLabel}</button>
       {children}
     </footer>
   ),
@@ -109,8 +115,10 @@ describe("GitHub App wizard", () => {
   let root: Root;
   let container: HTMLDivElement;
   let client: QueryClient;
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await i18n.changeLanguage("en");
+    fixture.saveExitLabel = i18n.t("common.saveAndExit");
     fixture.agents = [
       {
         id: "reviewer",
@@ -321,6 +329,14 @@ describe("GitHub App wizard", () => {
     } finally {
       window.history.replaceState(null, "", prior);
     }
+  });
+  it("localizes agent selection and preserves the selected agent during trust changes", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render();
+    expect(container.querySelector("h1")?.textContent).toBe("Escolher agente");
+    expect(container.textContent).toContain("Reviewer não está configurado para revisão com baixa confiança");
+    await click("Alterar Reviewer para um agente de baixa confiança");
+    expect(agentsApi.updatePermissions).toHaveBeenCalledWith("reviewer", expect.objectContaining({ trustPreset: "low_trust_review" }), "company-1");
   });
   it("starts with agent selection and saves the low-trust repair before removing its warning", async () => {
     await render();
@@ -719,6 +735,17 @@ describe("GitHub App wizard", () => {
     expect(githubChatApi.saveDraft).not.toHaveBeenCalled();
     expect(chatEndpointsApi.create).not.toHaveBeenCalled();
   });
+  it("localizes completion in Portuguese while preserving the GitHub mention", async () => {
+    await i18n.changeLanguage("pt-BR");
+    fixture.endpoint = { ...fixture.endpoint, status: "active", setup: { step: "complete" }, botUsername: "actual-agent[bot]" };
+    vi.mocked(githubChatApi.advance).mockResolvedValue({ endpointId: "draft-1", state: "connected" });
+    await render("resume=draft-1");
+    expect(document.querySelector('[role="dialog"] h2')?.textContent).toBe("GitHub conectado");
+    expect(document.body.textContent).toContain("1 repositório habilitado");
+    await click("Copiar menção");
+    expect(copyTextToClipboard).toHaveBeenCalledWith("@actual-agent review this pull request");
+    expect(document.body.textContent).toContain("Copiado");
+  });
   it("reports copy failure without undoing the completed connection", async () => {
     fixture.endpoint = { ...fixture.endpoint, status: "active", setup: { step: "complete" }, botUsername: "actual-agent[bot]" };
     vi.mocked(githubChatApi.advance).mockResolvedValue({ endpointId: "draft-1", state: "connected" });
@@ -741,11 +768,15 @@ describe("GitHub App wizard", () => {
     expect(document.querySelector('[role="dialog"] a[href="/apps/chat/draft-1/access"]')).not.toBeNull();
   });
 
-  it("does not flash App creation controls while checking a resumed connection", async () => {
+  it.each([
+    { locale: "en", checking: "Checking your GitHub connection…" },
+    { locale: "pt-BR", checking: "Verificando a conexão com o GitHub…" },
+  ])("localizes the pending connection status and hides App creation controls in $locale", async ({ locale, checking }) => {
+    await i18n.changeLanguage(locale);
     fixture.endpoint = { ...fixture.endpoint, status: "active", setup: { step: "complete" }, botUsername: "actual-agent[bot]" };
     vi.mocked(githubChatApi.advance).mockReturnValue(new Promise(() => {}));
     await render("resume=draft-1");
-    expect(container.textContent).toContain("Checking your GitHub connection");
+    expect(container.querySelector('[role="status"]')?.textContent).toBe(checking);
     expect(container.querySelector("#github-app-name")).toBeNull();
     expect(container.textContent).not.toContain("I already have an App");
     expect(container.textContent).not.toContain("GitHub connected");

@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 
-import { act } from "react";
+import { act, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { queryKeys } from "@/lib/queryKeys";
 import { OrgChart } from "./OrgChart";
+import { OrgChart as ProductionOrgChart } from "./OrgChart.production";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 
 const navigateMock = vi.fn();
 const orgMock = vi.fn();
@@ -132,7 +135,8 @@ describe("OrgChart mobile gestures", () => {
   let viewportWidth: number;
   let viewportHeight: number;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     queryClient = new QueryClient({
@@ -193,14 +197,15 @@ describe("OrgChart mobile gestures", () => {
     document.body.innerHTML = "";
     vi.restoreAllMocks();
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
-  async function renderOrgChart() {
+  async function renderOrgChart(Chart: ComponentType = OrgChart) {
     root = createRoot(container);
     await act(async () => {
       root.render(
         <QueryClientProvider client={queryClient}>
-          <OrgChart />
+          <Chart />
         </QueryClientProvider>,
       );
     });
@@ -294,5 +299,41 @@ describe("OrgChart mobile gestures", () => {
 
     expect(container.textContent).not.toContain("Import organization");
     expect(container.textContent).toContain("Export organization");
+  });
+
+  it.each([
+    ["streamlined", OrgChart],
+    ["production", ProductionOrgChart],
+  ] as const)("localizes the %s org chart and exposes keyboard-accessible agent cards", async (_variant, Chart) => {
+    await i18n.changeLanguage("pt-BR");
+    await renderOrgChart(Chart);
+
+    expect(container.querySelector('button[aria-label="Aumentar zoom"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Reduzir zoom"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Ajustar gráfico à tela"]')).not.toBeNull();
+    expect(container.textContent).toContain("Importar organização");
+    expect(container.textContent).toContain("Exportar organização");
+
+    const card = container.querySelector<HTMLElement>("[data-org-card]");
+    expect(card?.getAttribute("role")).toBe("link");
+    expect(card?.getAttribute("tabindex")).toBe("0");
+    expect(card?.getAttribute("aria-label")).toContain("Abrir o perfil do agente CEO");
+    expect(card?.getAttribute("aria-label")).toContain("ocioso");
+
+    await act(async () => {
+      card?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    });
+    expect(navigateMock).toHaveBeenCalledWith("/agents/ceo");
+  });
+
+  it.each([
+    ["streamlined", OrgChart],
+    ["production", ProductionOrgChart],
+  ] as const)("localizes the empty hierarchy in the %s org chart", async (_variant, Chart) => {
+    await i18n.changeLanguage("pt-BR");
+    orgMock.mockResolvedValue([]);
+    await renderOrgChart(Chart);
+
+    expect(container.textContent).toContain("Nenhuma hierarquia organizacional foi definida.");
   });
 });

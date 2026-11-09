@@ -1,14 +1,118 @@
 // @vitest-environment node
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { parseAcpxStdoutLine } from "@paperclipai/adapter-utils/acpx-engine/ui";
 import { buildTranscript, type RunLogChunk, type TranscriptEntry } from "../../adapters";
 import type { ToolRunDecision } from "@paperclipai/shared";
 import { ThemeProvider } from "../../context/ThemeContext";
+import { i18n } from "../../i18n";
 import { RunTranscriptView, keyTranscriptBlocks, normalizeTranscript } from "./RunTranscriptView";
 
 describe("RunTranscriptView", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  afterEach(async () => {
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("localizes transcript chrome while preserving run and workspace data", () => {
+    const html = renderToStaticMarkup(
+      <ThemeProvider>
+        <RunTranscriptView
+          streaming
+          entries={[
+          { kind: "assistant", ts: "2026-08-21T12:00:00.000Z", text: "Resposta", delta: true },
+          { kind: "user", ts: "2026-08-21T12:00:01.000Z", text: "Pergunta privada" },
+          {
+            kind: "workspace_change",
+            ts: "2026-08-21T12:00:02.000Z",
+            changeSetId: "change-1",
+            revision: 4,
+            source: "runner_verified",
+            complete: true,
+            files: [],
+            totals: { files: 2, additions: 3, deletions: 1 },
+            patchArtifactRef: null,
+          },
+          {
+            kind: "result",
+            ts: "2026-08-21T12:00:03.000Z",
+            text: "",
+            inputTokens: 0,
+            outputTokens: 0,
+            cachedTokens: 0,
+            costUsd: 0,
+            subtype: "error",
+            isError: true,
+            errors: [],
+          },
+          ]}
+        />
+      </ThemeProvider>,
+    );
+
+    expect(html).toContain("Usuário");
+    expect(html).toContain("Em transmissão");
+    expect(html).toContain("Pergunta privada");
+    expect(html).toContain("Diferenças do espaço de trabalho");
+    expect(html).toContain("2 arquivos alterados");
+    expect(html).toContain("Verificado no espaço de trabalho");
+    expect(html).toContain("A execução falhou");
+  });
+
+  it("localizes tool group labels without changing tool names or input", () => {
+    const html = renderToStaticMarkup(
+      <RunTranscriptView
+        entries={[
+          {
+            kind: "tool_call",
+            ts: "2026-08-21T12:00:00.000Z",
+            name: "read",
+            toolUseId: "tool-1",
+            input: { query: "README-PRIVATE.md" },
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain("Usando Read");
+    expect(html).toContain("README-PRIVATE.md");
+    expect(html).toContain("Expandir detalhes da ferramenta");
+  });
+
+  it("keeps raw tool protocol names, arguments, and results unchanged", () => {
+    const html = renderToStaticMarkup(
+      <ThemeProvider>
+        <RunTranscriptView
+          mode="raw"
+          entries={[
+            {
+              kind: "tool_call",
+              ts: "2026-08-21T12:00:00.000Z",
+              name: "mcp__docs__read_file",
+              input: { path: "private/raw/path.md" },
+            },
+            {
+              kind: "tool_result",
+              ts: "2026-08-21T12:00:01.000Z",
+              toolUseId: "tool-raw",
+              content: "RAW_PROTOCOL_RESULT",
+              isError: false,
+            },
+          ]}
+        />
+      </ThemeProvider>,
+    );
+
+    expect(html).toContain("tool_call");
+    expect(html).toContain("mcp__docs__read_file");
+    expect(html).toContain("private/raw/path.md");
+    expect(html).toContain("RAW_PROTOCOL_RESULT");
+  });
+
   it("renders provider activity semantically without dumping the payload", () => {
     const html = renderToStaticMarkup(<RunTranscriptView entries={[{ kind: "provider_activity", ts: "2026-08-21T12:00:00.000Z", family: "plan", eventType: "plan.updated", status: "completed", title: "Plan", summary: "Plan completed", payload: { steps: [{ stepId: "s1", body: "Validate schemas", status: "completed" }], hiddenSecret: "must-not-render" } }]} />);
     expect(html).toContain("Plan");
@@ -213,7 +317,7 @@ describe("RunTranscriptView", () => {
     expect(html).not.toContain("result");
   });
 
-  it("links tool rows to pending governed action decisions", () => {
+  it("links tool rows to pending governed action decisions in both locales", async () => {
     const invocationId = "11111111-1111-4111-8111-111111111111";
     const actionRequestId = "22222222-2222-4222-8222-222222222222";
     const decision: ToolRunDecision = {
@@ -306,8 +410,21 @@ describe("RunTranscriptView", () => {
       </ThemeProvider>,
     );
 
-    expect(html).toContain("Needs approval");
-    expect(html).toContain(`Action request ${actionRequestId.slice(0, 8)}`);
+    expect(html).toContain("Aguardando aprovação");
+    expect(html).toContain(`Solicitação de ação ${actionRequestId.slice(0, 8)}`);
+
+    await i18n.changeLanguage("en");
+    const englishHtml = renderToStaticMarkup(
+      <ThemeProvider>
+        <RunTranscriptView
+          density="compact"
+          entries={[{ kind: "tool_call", ts: "2026-03-12T00:00:00.000Z", name: "send_email", invocationId, input: { to: "redacted@example.com" } }]}
+          toolDecisions={[decision]}
+        />
+      </ThemeProvider>,
+    );
+    expect(englishHtml).toContain("Needs approval");
+    expect(englishHtml).toContain(`Action request ${actionRequestId.slice(0, 8)}`);
   });
 
   it("windows large raw transcripts instead of rendering every entry at once", () => {

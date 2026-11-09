@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Db } from "@paperclipai/db";
-import { agents, agentWakeupRequests, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRunEvents, heartbeatRuns, issues } from "@paperclipai/db";
+import { agents, agentWakeupRequests, authUsers, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRunEvents, heartbeatRuns, issues, userLocalePreferences } from "@paperclipai/db";
 import { and, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { HttpError } from "../../errors.js";
@@ -214,6 +214,21 @@ describePostgres("heartbeat retry module database wiring", () => {
     await db.update(issues).set({ executionRunId: run.id, checkoutRunId: run.id }).where(eq(issues.id, issue.id));
     return { companyId, agent, issue, run };
   }
+
+  it("preserves the captured language in an actual scheduled retry after the requester's preference changes", async () => {
+    const { run, agent, issue, companyId } = await fixture();
+    const userId = `retry-locale-${randomUUID()}`;
+    await db.insert(authUsers).values({ id: userId, name: userId, email: `${userId}@example.test`, createdAt: now, updatedAt: now });
+    await db.insert(userLocalePreferences).values({ userId, locale: "en" });
+    const [original] = await db.update(heartbeatRuns).set({ contextSnapshot: { issueId: issue.id, communicationLocale: "en", communicationLocaleSource: "user" } }).where(eq(heartbeatRuns.id, run.id)).returning();
+    await db.update(userLocalePreferences).set({ locale: "pt-BR" }).where(eq(userLocalePreferences.userId, userId));
+    const result = await boundRetries().retries.scheduleBoundedRetryForRun(original, agent, { now, random: () => 0 });
+    expect(result.outcome).toBe("scheduled");
+    const [successor] = await db.select().from(heartbeatRuns).where(and(eq(heartbeatRuns.companyId, companyId), eq(heartbeatRuns.retryOfRunId, run.id)));
+    expect(successor).toMatchObject({ responsibleUserId: "retry-user", contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "user" } });
+    const [locked] = await db.select().from(issues).where(eq(issues.id, issue.id));
+    expect(locked.executionRunId).toBe(successor.id);
+  });
 
   it("reuses one successor across concurrent factories and keeps writes committed before callbacks", async () => {
     const { run, agent, issue, companyId } = await fixture();

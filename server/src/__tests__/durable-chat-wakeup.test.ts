@@ -11,6 +11,7 @@ import {
 } from "vitest";
 import {
   agents,
+  authUsers,
   companies,
   createDb,
   heartbeatRuns,
@@ -26,6 +27,7 @@ import {
   issues,
   toolApplications,
   toolConnections,
+  userLocalePreferences,
 } from "@paperclipai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { heartbeatService } from "../services/heartbeat.js";
@@ -474,6 +476,8 @@ describe("durable inbound chat scheduler receipts", () => {
 
   it("preserves exact retry provenance and a deeply frozen server-only selector", async () => {
     const f = await retryFixture();
+    const [failed] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.failedRunId));
+    await db.update(heartbeatRuns).set({ contextSnapshot: { ...failed.contextSnapshot, communicationLocale: "en", communicationLocaleSource: "user" } }).where(eq(heartbeatRuns.id, f.failedRunId));
     f.register();
     expect(Object.isFrozen(f.request.failedRunRetry)).toBe(true);
     const run = await f.wake();
@@ -483,6 +487,9 @@ describe("durable inbound chat scheduler receipts", () => {
       wakeupRequestId: f.actionId,
       contextSnapshot: f.context,
     });
+    // The requester has no saved English preference; this is the same
+    // interaction and retains the source run's language rather than defaulting.
+    expect(run?.contextSnapshot).toMatchObject({ communicationLocale: "en", communicationLocaleSource: "user" });
     expect(f.authority).toHaveBeenCalledTimes(1);
     expect(f.authority.mock.calls[0][1]).toMatchObject({ phase: "admission" });
     await f.wake();
@@ -1019,10 +1026,19 @@ describe("durable inbound chat scheduler receipts", () => {
     expect(f.authorize).toHaveBeenCalledTimes(1);
   });
 
-  it("records a stable receipt when merging into a deferred wake and never merges the replay twice", async () => {
+  it("keeps deferred human messages in their own locale-bound receipts and does not merge a replay twice", async () => {
     const f = await fixture(true);
     const first = f.request(),
-      second = f.request();
+      second = f.request(randomUUID(), "english-user");
+    const now = new Date();
+    await db.insert(authUsers).values({
+      id: "english-user",
+      name: "English User",
+      email: "english-user@example.test",
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(userLocalePreferences).values({ userId: "english-user", locale: "en" });
     await f.wake(first);
     await f.wake(second);
     await f.wake(second);
@@ -1033,11 +1049,37 @@ describe("durable inbound chat scheduler receipts", () => {
     expect(rows).toHaveLength(2);
     expect(rows.find((row) => row.id === first.id)).toMatchObject({
       status: "deferred_issue_execution",
-      coalescedCount: 1,
+      coalescedCount: 0,
+      requestedByActorId: "board-user",
+      payload: {
+        wakeCommentId: first.commentId,
+        _paperclipWakeContext: {
+          wakeCommentId: first.commentId,
+          wakeCommentIds: [first.commentId],
+          communicationLocale: "pt-BR",
+          communicationLocaleSource: "default",
+          communicationLocaleByCommentId: {
+            [first.commentId]: { communicationLocale: "pt-BR", communicationLocaleSource: "default" },
+          },
+        },
+      },
     });
     expect(rows.find((row) => row.id === second.id)).toMatchObject({
-      status: "coalesced",
-      payload: { coalescedIntoWakeupRequestId: first.id },
+      status: "deferred_issue_execution",
+      coalescedCount: 0,
+      requestedByActorId: "english-user",
+      payload: {
+        wakeCommentId: second.commentId,
+        _paperclipWakeContext: {
+          wakeCommentId: second.commentId,
+          wakeCommentIds: [second.commentId],
+          communicationLocale: "en",
+          communicationLocaleSource: "user",
+          communicationLocaleByCommentId: {
+            [second.commentId]: { communicationLocale: "en", communicationLocaleSource: "user" },
+          },
+        },
+      },
     });
     expect(
       await db

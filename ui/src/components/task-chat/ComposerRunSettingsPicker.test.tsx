@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Agent } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { agentsApi } from "@/api/agents";
+import { i18n } from "@/i18n";
 import { ComposerRunSettingsPicker } from "./ComposerRunSettingsPicker";
 import { getLastComposerEffort, rememberComposerEffort } from "@/lib/recent-composer-effort";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -49,13 +50,17 @@ function render(onAssigneeChange: (value: string) => void, onSettingsChange: () 
   flushSync(() => root!.render(insideDialog ? <Dialog defaultOpen><DialogContent aria-describedby={undefined}><DialogTitle>New task</DialogTitle>{picker}</DialogContent></Dialog> : picker));
 }
 
-beforeEach(() => localStorage.clear());
-afterEach(() => {
+beforeEach(async () => {
+  localStorage.clear();
+  await i18n.changeLanguage("en");
+});
+afterEach(async () => {
   vi.restoreAllMocks();
   flushSync(() => root?.unmount());
   root = null;
   container?.remove();
   container = null;
+  await i18n.changeLanguage("pt-BR");
 });
 
 describe("composer assignee picker", () => {

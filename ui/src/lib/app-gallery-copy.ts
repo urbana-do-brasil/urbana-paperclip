@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+
 /**
  * Prosumer copy for the Apps surface (PAP-10856).
  *
@@ -154,14 +156,18 @@ const GENERIC: AppCopy = {
 };
 
 /** Curated, gate-safe copy for a gallery app. */
-export function appCopyFor(key: string, fallbackTagline?: string | null): AppCopy {
+export function appCopyFor(key: string, fallbackTagline?: string | null, t?: TFunction): AppCopy {
   const curated = APP_COPY[key];
-  if (curated) return curated;
+  if (curated) return t
+    ? { tagline: t(`apps.browse.copy.${key}.tagline`), short: t(`apps.browse.copy.${key}.short`) }
+    : curated;
   if (fallbackTagline) {
     const cleaned = sanitizeProsumerCopy(fallbackTagline);
     if (cleaned) return { tagline: cleaned, short: cleaned };
   }
-  return GENERIC;
+  return t
+    ? { tagline: t("apps.browse.genericCopy.tagline"), short: t("apps.browse.genericCopy.short") }
+    : GENERIC;
 }
 
 /**

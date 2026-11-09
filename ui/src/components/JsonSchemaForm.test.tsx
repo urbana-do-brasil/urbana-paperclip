@@ -3,6 +3,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import {
   JsonSchemaForm,
   type JsonSchemaNode,
@@ -39,38 +40,48 @@ vi.mock("./SecretBindingPicker", () => ({
     value,
     onChange,
     disabled,
+    placeholder,
+    emptyHint,
   }: {
     value: { secretId: string } | null;
     onChange: (next: { secretId: string } | null) => void;
     disabled?: boolean;
+    placeholder?: string;
+    emptyHint?: string;
   }) => (
-    <select
-      data-testid="secret-binding-picker"
-      value={value?.secretId ?? ""}
-      onChange={(event) => {
-        const next = event.target.value;
-        onChange(next ? { secretId: next } : null);
-      }}
-      disabled={disabled}
-    >
-      <option value="">none</option>
-      <option value="11111111-1111-4111-8111-111111111111">existing-secret</option>
-    </select>
+    <>
+      <select
+        aria-label={placeholder}
+        data-testid="secret-binding-picker"
+        value={value?.secretId ?? ""}
+        onChange={(event) => {
+          const next = event.target.value;
+          onChange(next ? { secretId: next } : null);
+        }}
+        disabled={disabled}
+      >
+        <option value="">{placeholder}</option>
+        <option value="11111111-1111-4111-8111-111111111111">existing-secret</option>
+      </select>
+      {emptyHint ? <span>{emptyHint}</span> : null}
+    </>
   ),
 }));
 
 describe("JsonSchemaForm secret-ref rendering", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage("en");
   });
 
   it("renders multiline secret-ref fields as textareas alongside the picker", async () => {
@@ -133,6 +144,38 @@ describe("JsonSchemaForm secret-ref rendering", () => {
     // No raw input or textarea is visible while a secret is bound.
     expect(container.querySelector('input[type="password"]')).toBeNull();
     expect(container.querySelector("textarea")).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("localizes the secret-ref guidance and masked raw value without exposing the value", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <JsonSchemaForm
+          schema={{
+            type: "object",
+            properties: {
+              apiKey: { type: "string", format: "secret-ref", maxLength: 4096 },
+            },
+          }}
+          values={{ apiKey: "super-secret-value" }}
+          onChange={() => {}}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain("Selecione um segredo existente");
+    expect(container.textContent).toContain("o Paperclip o armazenará como segredo ao salvar");
+    expect(container.querySelector("button .sr-only")?.textContent).toBe("Mostrar segredo");
+    const hiddenValue = container.querySelector("textarea");
+    expect(hiddenValue?.value).toContain("Sensível");
+    expect(hiddenValue?.value).toContain("caracteres ocultos");
+    expect(container.textContent).not.toContain("super-secret-value");
 
     await act(async () => {
       root.unmount();

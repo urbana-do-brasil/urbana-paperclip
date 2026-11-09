@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryKeys } from "@/lib/queryKeys";
 import { NewAgent } from "./NewAgent";
 import { ApiError } from "@/api/client";
+import { i18n } from "@/i18n";
 
 const api = vi.hoisted(() => ({
   get: vi.fn(),
@@ -155,7 +156,8 @@ const pass = {
   ],
   testedAt: "2026-09-07T00:00:00Z",
 };
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.clearAllMocks();
   managedApi.list.mockResolvedValue({ currentUserId: "user-1", canManageConnections: true, connections: [] });
   container = document.createElement("div");
@@ -196,10 +198,37 @@ beforeEach(() => {
 });
 afterEach(async () => {
   await act(async () => root.unmount());
+  await i18n.changeLanguage("en");
   cache.clear();
   container.remove();
 });
 describe("New agent setup", () => {
+  it("localizes the initial agent wizard in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    state.params = new URLSearchParams();
+    await act(async () =>
+      root.render(
+        <QueryClientProvider client={cache}>
+          <TooltipProvider><NewAgent /></TooltipProvider>
+        </QueryClientProvider>,
+      ),
+    );
+    await settle();
+    expect(document.body.textContent).toContain("Conheça seu próximo agente");
+    expect(document.body.textContent).toContain("Nome do agente");
+    expect(document.body.querySelector('[aria-label="Progresso da criação do agente"]')).toBeTruthy();
+    expect(document.body.textContent).toContain("Escolher adaptador");
+  });
+
+  it("localizes runtime configuration and its test card in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render();
+    expect(container.textContent).toContain("Configure seu agente");
+    expect(container.textContent).toContain("Teste seu agente");
+    expect(container.querySelector('[aria-label="Teste do runtime"]')).toBeTruthy();
+    expect(container.textContent).toContain("Executar teste");
+  });
+
   it("creates Dot through its independent choice without CLI or model setup, then routes to pairing", async () => {
     settings.getExperimental.mockResolvedValue({ enableNativeRunner: false, enableOpenAiDot: true, enablePublicMcp: true });
     await render("paperclip_runner", "openai_dot");

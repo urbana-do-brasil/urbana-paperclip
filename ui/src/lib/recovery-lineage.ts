@@ -1,5 +1,6 @@
 import type { IssueRecoveryAction, IssueScheduledRetry } from "@paperclipai/shared";
 import { formatMonitorOffset } from "./issue-monitor";
+import type { RecoveryTranslator } from "./recovery-display";
 
 /**
  * Which bounded retry budget the server is currently spending on a recovery action.
@@ -204,9 +205,15 @@ export function readRecoveryRetryLineage(
 }
 
 /** "Attempt 2 of 5", or null when the server did not record a bounded budget. */
-export function formatRecoveryAttemptLabel(lineage: RecoveryRetryLineage): string | null {
+export function formatRecoveryAttemptLabel(
+  lineage: RecoveryRetryLineage,
+  translate?: RecoveryTranslator,
+): string | null {
   if (lineage.maxAttempts === null) return null;
-  return `Attempt ${Math.min(lineage.attempt, lineage.maxAttempts)} of ${lineage.maxAttempts}`;
+  const attempt = Math.min(lineage.attempt, lineage.maxAttempts);
+  return translate
+    ? translate("taskCollection.rows.recovery.attempt", { attempt, maxAttempts: lineage.maxAttempts })
+    : `Attempt ${attempt} of ${lineage.maxAttempts}`;
 }
 
 /** "in 3m" / "now" / "3m ago" for the stored next attempt, or null when none is stored. */
@@ -219,25 +226,69 @@ export function formatRecoveryRetryOffset(lineage: RecoveryRetryLineage): string
   }
 }
 
+/** Localizable next-step copy for the lane, separated from its attempt budget label. */
+export function formatRecoveryLineageStatus(
+  lineage: RecoveryRetryLineage,
+  translate?: RecoveryTranslator,
+): string | null {
+  if (lineage.liveRunId) {
+    return translate?.("taskCollection.rows.recovery.attemptRunning") ?? "attempt running now";
+  }
+  const rawOffset = formatRecoveryRetryOffset(lineage);
+  if (lineage.retryExpired) {
+    if (rawOffset && translate) {
+      const duration = localizedRetryDuration(rawOffset.replace(/^(?:in )|(?: ago)$/g, ""), translate);
+      return translate("taskCollection.rows.recovery.retryMissedIn", { duration });
+    }
+    return rawOffset ? `retry missed ${rawOffset}` : "retry missed";
+  }
+  if (rawOffset) {
+    if (translate) {
+      return rawOffset === "now"
+        ? translate("taskCollection.rows.recovery.nextTryNow")
+        : translate("taskCollection.rows.recovery.nextTryIn", {
+          duration: localizedRetryDuration(rawOffset.replace(/^in /, ""), translate),
+        });
+    }
+    return rawOffset === "now" ? "next try now" : `next try ${rawOffset}`;
+  }
+  if (lineage.exhausted) {
+    return translate?.("taskCollection.rows.recovery.retriesUsed") ?? "retries used up";
+  }
+  return null;
+}
+
 /**
  * One compact sentence fragment shared by the card and the blocker chips so every surface
  * reports the same attempt count and due time.
  */
-export function formatRecoveryLineageSummary(lineage: RecoveryRetryLineage): string | null {
+function localizedRetryDuration(value: string, translate: RecoveryTranslator): string {
+  const unitKeys: Record<string, string> = {
+    s: "durationSeconds",
+    m: "durationMinutes",
+    h: "durationHours",
+    d: "durationDay",
+  };
+  const parts = Array.from(value.matchAll(/(\d+)([smhd])/g));
+  if (parts.length === 0) return value;
+  return parts.map(([token, countText, unit]) => {
+    const count = Number(countText);
+    const key = unitKeys[unit];
+    if (!key) return token;
+    return translate(`taskCollection.rows.recovery.${key}`, { count });
+  }).join(" ");
+}
+
+export function formatRecoveryLineageSummary(
+  lineage: RecoveryRetryLineage,
+  translate?: RecoveryTranslator,
+): string | null {
   const parts: string[] = [];
-  const attempt = formatRecoveryAttemptLabel(lineage);
+  const attempt = formatRecoveryAttemptLabel(lineage, translate);
   if (attempt) parts.push(attempt);
-  const offset = formatRecoveryRetryOffset(lineage);
-  if (lineage.liveRunId) {
-    parts.push("attempt running now");
-  } else if (lineage.retryExpired) {
-    // Never "next try 5m ago": a due time in the past is a missed attempt, and phrasing it as
-    // an upcoming one is exactly the false healthy state this helper exists to prevent.
-    parts.push(offset ? `retry missed ${offset}` : "retry missed");
-  } else if (offset) {
-    parts.push(offset === "now" ? "next try now" : `next try ${offset}`);
-  } else if (lineage.exhausted) {
-    parts.push("retries used up");
-  }
+  // Never "next try 5m ago": a due time in the past is a missed attempt, and phrasing it as
+  // an upcoming one is exactly the false healthy state this helper exists to prevent.
+  const status = formatRecoveryLineageStatus(lineage, translate);
+  if (status) parts.push(status);
   return parts.length > 0 ? parts.join(" · ") : null;
 }

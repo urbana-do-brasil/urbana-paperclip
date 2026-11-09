@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IssueFiltersPopover } from "./IssueFiltersPopover";
 import { defaultIssueFilterState } from "../lib/issue-filters";
+import { i18n } from "../i18n";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -43,13 +44,15 @@ vi.mock("./PriorityIcon", () => ({
 describe("IssueFiltersPopover", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     document.body.innerHTML = "";
+    await i18n.changeLanguage("en");
   });
 
   it("uses a scrollable popover and a three-column desktop grid", () => {
@@ -226,6 +229,74 @@ describe("IssueFiltersPopover", () => {
     act(() => clearButton?.click());
     expect(onChange).toHaveBeenCalledWith(defaultIssueFilterState);
     expect(onClear).toHaveBeenCalledTimes(1);
+
+    act(() => root.unmount());
+  });
+
+  it("localizes filter labels and search controls in Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const onCategoryChange = vi.fn();
+    const onApprovalStatusChange = vi.fn();
+
+    act(() => {
+      root.render(
+        <IssueFiltersPopover
+          presentation="streamlined"
+          state={defaultIssueFilterState}
+          onChange={vi.fn()}
+          activeFilterCount={2}
+          iconOnly
+          agents={Array.from({ length: 7 }, (_, index) => ({
+            id: `agent-${index + 1}`,
+            name: `Agent ${index + 1}`,
+          }))}
+          currentUserId="user-1"
+          creators={[{ id: "agent:agent-1", label: "Agent One", kind: "agent" }]}
+          projects={Array.from({ length: 7 }, (_, index) => ({
+            id: `project-${index + 1}`,
+            name: `Project ${index + 1}`,
+          }))}
+          labels={Array.from({ length: 7 }, (_, index) => ({
+            id: `label-${index + 1}`,
+            name: `Label ${index + 1}`,
+            color: "#ff0000",
+          }))}
+          enableExternalObjectFilters
+          enableRoutineVisibilityFilter
+          inboxScopeFilters={{
+            category: "approvals",
+            approvalStatus: "actionable",
+            showApprovalStatus: true,
+            onCategoryChange,
+            onApprovalStatusChange,
+            onClear: vi.fn(),
+          }}
+        />,
+      );
+    });
+
+    expect(container.querySelector('button[aria-label="Filtros: 2"]')).not.toBeNull();
+    expect(container.textContent).toContain("Filtros rápidos");
+    expect(container.textContent).toContain("Em andamento");
+    expect(container.textContent).toContain("Sem responsável");
+    expect(container.textContent).toContain("Responsável");
+    expect(container.textContent).toContain("Criador");
+    expect(container.textContent).toContain("Projeto");
+    expect(container.textContent).toContain("Etiquetas");
+    expect(container.textContent).toContain("Status dos objetos externos");
+    expect(container.textContent).toContain("Ocultar execuções de rotina");
+    expect(container.textContent).toContain("Todas as categorias");
+    expect(container.textContent).toContain("Requer ação");
+    expect(container.querySelector('input[aria-label="Buscar responsável"]')).not.toBeNull();
+    expect(container.querySelector('input[aria-label="Buscar projetos"]')).not.toBeNull();
+    expect(container.querySelector('input[aria-label="Buscar etiquetas"]')).not.toBeNull();
+    expect(container.querySelector('input[aria-label="Buscar criadores..."]')).not.toBeNull();
+
+    const joinRequestsButton = Array.from(container.querySelectorAll("button"))
+      .find((button) => button.textContent?.includes("Solicitações para entrar"));
+    act(() => joinRequestsButton?.click());
+    expect(onCategoryChange).toHaveBeenCalledWith("join_requests");
 
     act(() => root.unmount());
   });

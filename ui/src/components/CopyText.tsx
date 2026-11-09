@@ -12,6 +12,8 @@ interface CopyTextProps {
   title?: string;
   /** Tooltip message shown after copying. Default: "Copied!" */
   copiedLabel?: string;
+  /** Tooltip message shown when copying fails. Default: "Copy failed". */
+  failedLabel?: string;
 }
 
 export function CopyText({
@@ -22,6 +24,7 @@ export function CopyText({
   ariaLabel,
   title,
   copiedLabel = "Copied!",
+  failedLabel = "Copy failed",
 }: CopyTextProps) {
   const [visible, setVisible] = useState(false);
   const [label, setLabel] = useState(copiedLabel);
@@ -35,12 +38,12 @@ export function CopyText({
       await copyTextToClipboard(text);
       setLabel(copiedLabel);
     } catch {
-      setLabel("Copy failed");
+      setLabel(failedLabel);
     }
     clearTimeout(timerRef.current);
     setVisible(true);
     timerRef.current = setTimeout(() => setVisible(false), 1500);
-  }, [copiedLabel, text]);
+  }, [copiedLabel, failedLabel, text]);
 
   return (
     <span className={cn("relative inline-flex", containerClassName)}>

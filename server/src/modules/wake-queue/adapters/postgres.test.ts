@@ -175,6 +175,34 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
     return id;
   }
 
+  it.each(["review", "immediate"] as const)("preserves the finishing run locale in %s recovery under the issue lock", async (kind) => {
+    const companyId = await seedCompany();
+    const agentId = await seedAgent({ companyId });
+    const issueId = await seedIssue({ companyId, assigneeAgentId: agentId });
+    const runId = await seedRun({ companyId, agentId, status: "succeeded", contextSnapshot: {
+      issueId, communicationLocale: "en", communicationLocaleSource: "user", secretNotToCopy: "private",
+    } });
+    await db.update(issues).set({ executionRunId: runId, responsibleUserId: "responsible-user" }).where(eq(issues.id, issueId));
+    const adapter = createPostgresWakeQueueAdapter(db, stubDeps);
+    let successorId = "";
+    await adapter.withIssueExecutionLock({ companyId, runId, now: new Date() }, async (locked, ports) => {
+      const recoveryAgent = await ports.transaction.findInvokableAgent({ companyId, agentId });
+      expect(recoveryAgent).not.toBeNull();
+      const common = { companyId, issue: locked.primaryIssue, finishingRun: locked.run, recoveryAgent: recoveryAgent!, sessionBefore: null, now: new Date() };
+      const successor = kind === "review"
+        ? await ports.transaction.queueReviewParticipantRecoveryRun(common)
+        : await ports.transaction.queueImmediateRecoveryRun({ ...common, reason: "issue_recovery", contextSnapshot: { issueId, communicationLocale: "pt-BR", communicationLocaleSource: "explicit" }, responsibleUserId: "responsible-user" });
+      successorId = successor.id;
+      return { outcome: { kind: "released" as const }, postCommitEffects: [] };
+    });
+    const [successor] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, successorId));
+    const [issue] = await db.select().from(issues).where(eq(issues.id, issueId));
+    expect(successor).toMatchObject({ companyId, agentId, retryOfRunId: runId, contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "user" } });
+    expect(successor.contextSnapshot?.secretNotToCopy).toBeUndefined();
+    expect(issue.executionRunId).toBe(successorId);
+    expect(issue.responsibleUserId).toBe("responsible-user");
+  });
+
   it.each([
     "completed", "multiple_comments", "repeated_reference", "parent_reference", "mixed_issue_references", "mixed_foreign_references", "mixed_unknown_references", "no_comments", "missing_comment",
     "human_comment", "other_run_comment", "foreign_comment", "other_issue_comment", "deleted_comment",

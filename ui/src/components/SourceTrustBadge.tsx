@@ -2,8 +2,8 @@ import type { SourceTrustMetadata } from "@paperclipai/shared";
 import { BadgeCheck, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { sourceTrustLabel } from "../lib/trust-policy-ui";
-import { cn } from "../lib/utils";
+import { cn, formatDateTime } from "../lib/utils";
+import { useTranslation } from "@/i18n";
 
 export function SourceTrustBadge({
   sourceTrust,
@@ -14,13 +14,22 @@ export function SourceTrustBadge({
   artifactLabel?: "comment" | "document" | "work product" | "content";
   className?: string;
 }) {
-  const label = sourceTrustLabel(sourceTrust);
+  const { t } = useTranslation();
+  const label = !sourceTrust || sourceTrust.preset !== "low_trust_review"
+    ? null
+    : sourceTrust.disposition === "promoted"
+      ? t("trustPolicy.promotedLabel")
+      : t("trustPolicy.lowTrustLabel");
   if (!label) return null;
 
   const promoted = sourceTrust?.disposition === "promoted";
   const tooltip = promoted
-    ? `Promoted from low-trust${sourceTrust.promotedAt ? ` on ${new Date(sourceTrust.promotedAt).toLocaleString()}` : ""}.`
-    : `Authored by a low-trust review agent. Raw ${artifactLabel} is not auto-shared with higher-trust agents.`;
+    ? sourceTrust.promotedAt
+      ? t("trustPolicy.promotedAt", { date: formatDateTime(sourceTrust.promotedAt) })
+      : t("trustPolicy.promoted")
+    : t("trustPolicy.rawArtifact", {
+      artifact: t(`trustPolicy.artifacts.${artifactLabel === "work product" ? "workProduct" : artifactLabel}`),
+    });
 
   return (
     <Tooltip>

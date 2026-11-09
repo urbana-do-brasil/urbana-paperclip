@@ -3,12 +3,18 @@
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CONNECTABLE_APP_DEFINITIONS, GOOGLE_WORKSPACE_CONNECTOR_PROFILES, getAppStoreDefinition } from "@paperclipai/shared";
+import { CONNECTABLE_APP_DEFINITIONS, GOOGLE_WORKSPACE_CONNECTOR_PROFILES, aiConnectionRouterAppDefinition, getAppStoreDefinition } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
+import { i18n } from "@/i18n";
 import { aiConnectionsApi } from "@/api/ai-connections";
 import { queryKeys } from "@/lib/queryKeys";
-import { ConnectionSetupFlow } from "@/features/connections/ConnectionSetupFlow";
+import {
+  accessSummaryLines,
+  ConnectionSetupCompletionScreen,
+  ConnectionSetupFlow,
+  connectionDefaultSummarySentence,
+} from "@/features/connections/ConnectionSetupFlow";
 import { rememberSkillSourceReturn, skillSourceReturnPath } from "@/lib/skill-source-connect-return";
 import { AppsConnect } from "./AppsConnect";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -287,7 +293,8 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   let container: HTMLDivElement;
   let mountedRoot: Root | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.resetAllMocks();
     experimentalMock.mockResolvedValue({ enableChatConnectors: false });
     window.sessionStorage.clear();
@@ -378,6 +385,153 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await flushReact();
     return root;
   }
+
+  it("localizes the app selection shell in Brazilian Portuguese and preserves app names", async () => {
+    await i18n.changeLanguage("pt-BR");
+
+    await render();
+
+    expect(container.querySelector("h1")?.textContent).toBe("Conectar seu próprio servidor MCP");
+    expect(container.querySelector<HTMLInputElement>('input[placeholder="Buscar apps…"]')).toBeTruthy();
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="URL do servidor MCP"]')).toBeTruthy();
+    expect(container.textContent).toContain("Zapier");
+    expect(container.textContent).toContain("Conectar →");
+    expect(container.textContent).toContain("Conectar com um link");
+    expect(container.textContent).toContain("Escolha o app que você quer disponibilizar para seus agentes.");
+  });
+
+  it.each([
+    ["en", "Select a company to continue."],
+    ["pt-BR", "Selecione uma organização para continuar."],
+  ] as const)("localizes the missing organization state in %s", async (locale, message) => {
+    await i18n.changeLanguage(locale);
+    mockCompany.value = { selectedCompanyId: undefined, selectedCompany: null };
+
+    await render(undefined, false, <ConnectionSetupFlow />);
+
+    expect(container.textContent?.trim()).toBe(message);
+  });
+
+  it("localizes the completed connection summary while preserving identity, counts, and the done action", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const summaryInput = {
+      grantKind: "organization" as const,
+      authKind: "oauth" as const,
+      installChoice: "specific" as const,
+      installCount: 2,
+      enabledCount: 3,
+    };
+    const onDone = vi.fn();
+    await render(undefined, false, (
+      <ConnectionSetupCompletionScreen
+        appName="GitHub"
+        summary={accessSummaryLines(summaryInput)}
+        statedDefault={connectionDefaultSummarySentence(summaryInput)}
+        onDone={onDone}
+      />
+    ));
+
+    expect(container.querySelector("h2")?.textContent).toBe("GitHub está pronto.");
+    expect(container.textContent).toContain("Conecta para toda a organização, disponível para 2 agentes selecionados.");
+    expect(Array.from(container.querySelectorAll("dt")).map((node) => node.textContent)).toEqual([
+      "Identidade", "Disponível para", "Ações",
+    ]);
+    expect(Array.from(container.querySelectorAll("dd")).map((node) => node.textContent)).toEqual([
+      "Identidade da organização", "2 agentes selecionados", "3 ações ativadas",
+    ]);
+    expect(buttonByText("Ver conexão")).toBeTruthy();
+
+    await act(async () => buttonByText("Ver conexão")?.click());
+    expect(onDone).toHaveBeenCalledOnce();
+  });
+
+  it("localizes custom MCP authentication choices and validation while preserving header names", async () => {
+    mockSearch.value = "link=https%3A%2F%2Fmcp.example.test%2Fmcp";
+    await i18n.changeLanguage("pt-BR");
+
+    await render();
+    expect(container.textContent).toContain("Autenticação avançada");
+    await act(async () => buttonByText("Autenticação avançada")?.click());
+
+    for (const label of [
+      "Deixar o Paperclip verificar",
+      "Não precisa entrar",
+      "Chave ou token",
+      "Cabeçalhos personalizados",
+      "Entrar pelo navegador",
+    ]) {
+      expect(container.textContent).toContain(label);
+    }
+
+    await act(async () => buttonByText("Cabeçalhos personalizados")?.click());
+    const headerName = container.querySelector<HTMLInputElement>('input[aria-label="Nome do cabeçalho"]')!;
+    await act(async () => setInputValue(headerName, "Host"));
+    await flushReact();
+    expect(container.textContent).toContain('O Paperclip gerencia o cabeçalho "Host"');
+
+    await act(async () => setInputValue(headerName, "X-Api-Key"));
+    await flushReact();
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Valor para X-Api-Key"]')).toBeTruthy();
+
+    await act(async () => buttonByText("Entrar pelo navegador")?.click());
+    expect(container.querySelector<HTMLInputElement>("#generic-mcp-client-id")).toBeTruthy();
+    expect(container.querySelector<HTMLInputElement>("#generic-mcp-client-secret")).toBeTruthy();
+    expect(container.textContent).not.toContain("Advanced authentication");
+  });
+
+  it("localizes the shared Zapier MCP setup and URL validation", async () => {
+    mockSearch.value = "source=zapier";
+    await i18n.changeLanguage("pt-BR");
+
+    await render();
+
+    expect(container.querySelector('[data-remote-mcp-provider="zapier"]')).toBeTruthy();
+    expect(container.textContent).toContain("Crie um servidor MCP no Zapier e escolha Other como cliente.");
+    expect(container.textContent).toContain("A URL completa do servidor pode conter um token secreto.");
+    expect(buttonByText("Salvar e sair")).toBeTruthy();
+    const urlInput = container.querySelector<HTMLInputElement>('input[placeholder="Cole a URL completa fornecida pelo Zapier"]')!;
+    expect(container.textContent).toContain("URL do servidor MCP");
+    expect(buttonByText("Conectar Zapier")).toBeTruthy();
+    await act(async () => buttonByText("Change")?.click());
+    await flushReact();
+    expect(container.textContent).toContain("Método de login");
+    expect(container.textContent).toContain("Token bearer");
+    expect(container.textContent).toContain("Cabeçalhos personalizados");
+    expect(container.textContent).toContain("Sem autenticação adicional");
+
+    await act(async () => setInputValue(urlInput, "not a URL"));
+    await act(async () => buttonByText("Conectar Zapier")?.click());
+    await flushReact();
+    expect(container.textContent).toContain("Informe uma URL MCP válida");
+    expect(container.textContent).toContain("O endereço de um painel não é um endpoint MCP.");
+  });
+
+  it("localizes known generic MCP connection guidance", async () => {
+    mockSearch.value = "link=https%3A%2F%2Fmcp.example.test%2Fmcp";
+    connectAppMock.mockRejectedValueOnce(new ApiError("Invalid MCP URL", 400, {
+      error: "Invalid MCP URL",
+      details: { code: "mcp_remote_url_invalid" },
+    }));
+    await i18n.changeLanguage("pt-BR");
+
+    await render();
+    await act(async () => buttonByText("Verificar link")?.click());
+    await flushReact();
+    await flushReact();
+
+    expect(container.textContent).toContain("Este endereço não parece ser o endereço de um servidor");
+    expect(container.textContent).toContain("Cole o endereço completo, começando com https://");
+
+    connectAppMock.mockRejectedValueOnce(new ApiError("Upstream said no.", 502, {
+      error: "Upstream said no.",
+      details: { code: "provider_error" },
+    }));
+    await act(async () => buttonByText("Verificar link")?.click());
+    await flushReact();
+    await flushReact();
+    expect(container.textContent).toContain("O Paperclip não conseguiu conectar");
+    expect(container.textContent).toContain("Upstream said no.");
+  });
 
   it("keeps Honcho setup blocked until the provider workspace is supplied", async () => {
     const honcho = CONNECTABLE_APP_DEFINITIONS.find((app) => app.slug === "honcho")!;
@@ -667,6 +821,48 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(startOAuthMock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["en", "The request could not be completed. Details: Composio account lookup failed", "Try again"],
+    ["pt-BR", "Não foi possível concluir a solicitação. Detalhes: Composio account lookup failed", "Tentar novamente"],
+  ] as const)("localizes Composio saved-account lookup failure in %s and preserves its detail", async (locale, message, retry) => {
+    await i18n.changeLanguage(locale);
+    mockSearch.value = "source=composio&targetToolkit=circleback_mcp";
+    listConnectionsMock.mockRejectedValue(new Error("Composio account lookup failed"));
+
+    await render();
+
+    await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain(message));
+    expect(buttonByText(retry)).toBeTruthy();
+    expect(buttonByText(locale === "en" ? "Cancel" : "Cancelar")).toBeTruthy();
+    expect(connectAppMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["en", "The request could not be completed. Details: AI account lookup failed"],
+    ["pt-BR", "Não foi possível concluir a solicitação. Detalhes: AI account lookup failed"],
+  ] as const)("localizes AI account reconnect failure in %s and preserves its detail", async (locale, message) => {
+    await i18n.changeLanguage(locale);
+    mockSearch.value = "source=openai&reconnect=connection-to-restore";
+    vi.spyOn(aiConnectionsApi, "list").mockRejectedValue(new Error("AI account lookup failed"));
+
+    await render();
+
+    await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain(message));
+  });
+
+  it.each([
+    ["en", "The request could not be completed. Details: Router catalog unavailable"],
+    ["pt-BR", "Não foi possível concluir a solicitação. Detalhes: Router catalog unavailable"],
+  ] as const)("localizes AI router lookup failure in %s and preserves its detail", async (locale, message) => {
+    await i18n.changeLanguage(locale);
+    mockSearch.value = `source=${aiConnectionRouterAppDefinition("example/router", { name: "Example router", description: "Example" }).slug}`;
+    listGalleryMock.mockRejectedValue(new Error("Router catalog unavailable"));
+
+    await render();
+
+    await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain(message));
+  });
+
   it("retains explicit new-account setup even when Composio is saved", async () => {
     mockSearch.value = "source=composio&targetToolkit=circleback_mcp&new=1";
     listConnectionsMock.mockResolvedValue({ connections: [{ id: "saved-composio", status: "active", enabled: true, transport: "mcp_remote", config: { sourceTemplateKey: "composio", url: "https://connect.composio.dev/mcp" } }] });
@@ -739,6 +935,43 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await vi.waitFor(() => expect(container.textContent).toContain("Connection cancelled. Your setup details are preserved"));
     expect(buttonByText("Try again")).toBeTruthy();
     expect(connectAppMock).not.toHaveBeenCalled();
+  });
+
+  it("localizes OAuth return recovery in Brazilian Portuguese and keeps the provider name", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const draft = {
+      id: "conn-oauth-denied-pt",
+      applicationId: "app-notion",
+      status: "draft",
+      authKind: "oauth",
+      credentialPolicy: "shared",
+      config: { sourceTemplateKey: "notion", connectionMethodKey: "mcp-oauth" },
+      transportConfig: {},
+    };
+    mockSearch.value = `source=notion&resume=${draft.id}&oauth=denied&code=oauth_authorization_denied`;
+    listGalleryMock.mockResolvedValueOnce({ apps: [NOTION] });
+    listApplicationsMock.mockResolvedValueOnce({
+      applications: [{ id: "app-notion", status: "draft", metadata: { sourceTemplateKey: "notion" } }],
+    });
+    listConnectionsMock.mockResolvedValueOnce({ connections: [draft] });
+    startOAuthMock.mockResolvedValueOnce({
+      connectionId: draft.id,
+      provider: "notion",
+      authorizationUrl: "https://mcp.notion.com/authorize?state=retry",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+    });
+
+    await render();
+    await vi.waitFor(() => expect(container.textContent).toContain("Não foi possível conectar Notion"));
+    expect(container.textContent).toContain(
+      "A autorização foi cancelada ou recusada. A conexão salva não foi alterada.",
+    );
+    expect(buttonByText("Tentar novamente")).toBeTruthy();
+    expect(container.textContent).toContain("Login MCP seguro");
+
+    await act(async () => buttonByText("Tentar novamente")!.click());
+    await vi.waitFor(() => expect(startOAuthMock).toHaveBeenCalledWith(draft.id, { asCurrentUser: false }));
+    expect(navigateTopLevelMock).toHaveBeenCalledWith("https://mcp.notion.com/authorize?state=retry");
   });
 
   it.each([
@@ -1253,6 +1486,40 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     }));
   });
 
+  it("localizes manual OAuth credentials while preserving the provider and callback values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listGalleryMock.mockResolvedValue({
+      apps: [BOX],
+      oauthCallbackUrl: "https://paperclip.example.test/api/tools/oauth/callback",
+    });
+    mockParams.appKey = "box";
+    await render();
+    await passAccessStep();
+
+    expect(container.textContent).toContain("Box exige um app OAuth próprio");
+    expect(container.textContent).toContain("Abrir configurações do app Box");
+    expect(container.textContent).toContain("URL de callback do Paperclip");
+    expect(container.textContent).toContain("https://paperclip.example.test/api/tools/oauth/callback");
+    expect(container.querySelector('label[for="curated-oauth-client-id"]')?.textContent).toBe("ID do cliente");
+    expect(container.querySelector('label[for="curated-oauth-client-secret"]')?.textContent).toBe("Segredo do cliente");
+    expect(container.querySelector<HTMLInputElement>("#curated-oauth-client-id")?.placeholder).toBe("Obrigatório");
+    expect(buttonByText("Continuar para entrar")?.disabled).toBe(true);
+
+    await act(async () => {
+      setInputValue(container.querySelector<HTMLInputElement>("#curated-oauth-client-id")!, "box-client-id");
+      setInputValue(container.querySelector<HTMLInputElement>("#curated-oauth-client-secret")!, "box-client-secret");
+    });
+    await flushReact();
+    expect(buttonByText("Continuar para entrar")?.disabled).toBe(false);
+    await act(async () => buttonByText("Continuar para entrar")?.click());
+    await flushReact();
+
+    expect(connectAppMock).toHaveBeenCalledWith("company-1", expect.objectContaining({
+      galleryKey: "box",
+      oauthClient: { clientId: "box-client-id", clientSecret: "box-client-secret" },
+    }));
+  });
+
   it("connects Asana through the shared app without client credentials", async () => {
     listGalleryMock.mockResolvedValue({ apps: [ASANA_MANAGED] });
     mockParams.appKey = "asana";
@@ -1593,6 +1860,31 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     const continueButton = buttonByText("Continue to Notion");
     expect(continueButton).toBeDefined();
     expect(continueButton?.querySelector(".lucide-arrow-up-right")).not.toBeNull();
+  });
+
+  it("localizes the OAuth handoff and shows the exact authorization host in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockSearch.value = "source=notion";
+    listGalleryMock.mockResolvedValue({ apps: [NOTION] });
+    connectAppMock.mockResolvedValue({
+      connectionId: "conn-notion",
+      application: { id: "app-notion", name: "Notion" },
+      connection: { id: "conn-notion", credentialPolicy: "shared" },
+      actions: { readOnly: [], canMakeChanges: [] },
+      catalog: [],
+      suggestedDefaults: {},
+      auth: { kind: "oauth" },
+    });
+
+    await render();
+    expect(buttonByText("Continuar para Notion")).toBeTruthy();
+    await act(async () => buttonByText("Continuar para Notion")?.click());
+    await vi.waitFor(() => expect(navigateTopLevelMock).toHaveBeenCalledWith(
+      "https://mcp.notion.com/authorize?state=resumed",
+    ));
+
+    expect(container.textContent).toContain("Abrindo Notion");
+    expect(container.textContent).toContain("Continue em mcp.notion.com para escolher um espaço de trabalho e aprovar o acesso.");
   });
 
   it("keeps GitHub's personal identity defaults while its managed method awaits enrollment", async () => {
@@ -3805,6 +4097,37 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await flushReact();
 
     expect(container.textContent).toContain("That doesn't look like a Google Sheets link.");
+    expect(connectAppMock).not.toHaveBeenCalled();
+  });
+
+  it("localizes Google Sheets credential instructions and invalid-link feedback", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listGalleryMock.mockResolvedValueOnce({
+      apps: [
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+      ],
+    });
+    await render();
+
+    await act(async () => buttonContaining("Google Sheets")?.click());
+    await flushReact();
+    await openAccessAdvanced();
+    await act(async () => buttonContaining("Share selected sheets")?.click());
+    await flushReact();
+
+    expect(container.textContent).toContain("Compartilhe cada planilha com este e-mail");
+    expect(container.textContent).toContain("No Google Sheets, clique em Compartilhar e adicione este e-mail como Editor.");
+    expect(container.textContent).toContain("Cole os links das planilhas compartilhadas");
+    expect(container.textContent).toContain("robot@paperclip.iam.gserviceaccount.com");
+    const links = container.querySelector<HTMLTextAreaElement>("textarea")!;
+    await act(async () => setTextareaValue(links, "https://docs.google.com/spreadsheets/d/sheet-id/edit"));
+    await flushReact();
+    expect(container.textContent).toContain("1 planilha pronta para conectar.");
+
+    await act(async () => setTextareaValue(links, "https://example.com/not-a-sheet"));
+    await act(async () => buttonByText("Conectar")?.click());
+    await flushReact();
+    expect(container.textContent).toContain("Este link não parece ser de uma planilha do Google Sheets.");
     expect(connectAppMock).not.toHaveBeenCalled();
   });
 

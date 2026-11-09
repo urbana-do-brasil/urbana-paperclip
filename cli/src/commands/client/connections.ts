@@ -1,13 +1,20 @@
 import { Command } from "commander";
 import {
-  CONNECTION_INTENT_AGENT_GUIDANCE,
   connectionRequestInputSchema,
   connectionsSearchInputSchema,
 } from "@paperclipai/shared";
+import { cliMessage, getCliLocale, isCliJsonRequested } from "../../localization/index.js";
 
 interface RuntimeConnectionOptions {
   retryProviderChoice?: boolean;
   json?: boolean;
+}
+
+function connectionErrorMessage(
+  key: "connectionRuntimeRequired" | "connectionRuntimeRequestFailedStatus",
+  values?: Readonly<Record<string, string | number>>,
+): string {
+  return cliMessage(key, values, isCliJsonRequested() ? "en" : getCliLocale());
 }
 
 async function callRuntimeConnectionTool(
@@ -17,7 +24,7 @@ async function callRuntimeConnectionTool(
   const endpoint = process.env[endpointEnv]?.trim();
   const token = process.env.PAPERCLIP_RUNTIME_TOOLS_TOKEN?.trim();
   if (!endpoint || !token) {
-    throw new Error("This command requires the runtime connection environment from an active heartbeat run");
+    throw new Error(connectionErrorMessage("connectionRuntimeRequired"));
   }
   const response = await fetch(endpoint, {
     method: "POST",
@@ -33,7 +40,7 @@ async function callRuntimeConnectionTool(
   if (!response.ok) {
     const message = parsed && typeof parsed === "object" && "error" in parsed
       ? String((parsed as { error: unknown }).error)
-      : `Runtime connection request failed with ${response.status}`;
+      : connectionErrorMessage("connectionRuntimeRequestFailedStatus", { status: response.status });
     throw new Error(message);
   }
   return parsed;
@@ -47,7 +54,7 @@ export function registerConnectionIntentCommands(program: Command) {
   const connections = program
     .command("connections")
     .description("Search or request connections from an active heartbeat run")
-    .addHelpText("after", `\n${CONNECTION_INTENT_AGENT_GUIDANCE}\n`);
+    .addHelpText("after", `\n${cliMessage("connectionGuidance")}\n`);
 
   connections
     .command("search")

@@ -20,14 +20,48 @@ const build = (value: unknown = wake, previousIssue = issue) => buildNativeConti
 describe("native continuation event projection", () => {
   it("sends a new comment once without the unchanged brief, objective, history or summary", () => {
     const text = build()!;
-    expect(text.split(message.body)).toHaveLength(2);
+    const events = JSON.parse(text);
+    expect(events.messages).toEqual([message]);
+    expect(events.communicationGuidance).toContain("Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR).");
     for (const old of [issue.description, issue.title, "OLD_HISTORY", "OLD_SUMMARY", "OLD_ANSWER"]) expect(text).not.toContain(old);
-    expect(JSON.parse(text).messages[0]).toMatchObject({ authorType: "user", body: message.body });
-    expect(text.length).toBeLessThan(600);
+    expect(text.length).toBeLessThan(1_000);
+  });
+  it.each([
+    {
+      communicationLocale: "en",
+      simplifiedEnglishInteractions: true,
+      required: "ASD-STE100 Simplified Technical English",
+      forbidden: "Brazilian Portuguese (pt-BR)",
+    },
+    {
+      communicationLocale: "pt-BR",
+      simplifiedEnglishInteractions: true,
+      required: "keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR)",
+      forbidden: "ASD-STE100 Simplified Technical English",
+    },
+  ])("refreshes only the current communication policy on compact continuation: $communicationLocale", (locale) => {
+    const text = build({ ...wake, ...locale })!;
+    const events = JSON.parse(text);
+    expect(events.communicationGuidance).toContain(locale.required);
+    expect(events.communicationGuidance).not.toContain(locale.forbidden);
+    expect(events.messages).toEqual([message]);
+    expect(Object.keys(events)).toEqual(["communicationGuidance", "messages"]);
+    expect(text).not.toContain("OLD_HISTORY");
+    expect(text).not.toContain(issue.description);
   });
   it("only uses a delta whose base matches the actual previous run", () => {
     expect(build({ ...wake, executionContinuation: { ...wake.executionContinuation, resumeDelta: { baseRunId: "different", messages: [message] } } })).toBeNull();
     expect(build({ ...wake, executionContinuation: null })).toBeNull();
+  });
+  it("does not start a locale-only compact continuation when the current delta is empty", () => {
+    expect(build({
+      ...wake,
+      comments: [],
+      executionContinuation: {
+        ...wake.executionContinuation,
+        resumeDelta: { baseRunId: "prior", messages: [] },
+      },
+    })).toBeNull();
   });
   it("delivers the current authenticated answer once, not all prior answers", () => {
     const text = build({ ...wake, interactionId: "new-question", executionContinuation: { ...wake.executionContinuation, resumeDelta: { baseRunId: "prior", messages: [] }, humanResponses: [...wake.executionContinuation.humanResponses, { id: "new-question", kind: "ask_user_questions", status: "answered", resolvedByUserId: "board", result: { answer: "NEW_ANSWER" } }] } })!;
@@ -66,10 +100,14 @@ describe("plain-text Slack continuation projection", () => {
   it("sends the new message once without prior titles, history or instructions", () => {
     const text = buildChat()!;
     expect(text).not.toBeNull();
-    expect(JSON.parse(text)).toEqual({ messages: [message] });
+    expect(JSON.parse(text)).toMatchObject({
+      communicationGuidance: expect.stringContaining("Brazilian Portuguese (pt-BR)"),
+      messages: [message],
+    });
+    expect(Object.keys(JSON.parse(text))).toEqual(["communicationGuidance", "messages"]);
     expect(text).not.toContain("OLD_EXACT_REPLY");
     expect(text).not.toContain("OLD_HISTORY");
-    expect(text.length).toBeLessThan(600);
+    expect(text.length).toBeLessThan(800);
   });
   it("excludes edited history and prior agent output outside the current Slack delivery", () => {
     const text = buildChat({ ...slackWake, executionContinuation: {

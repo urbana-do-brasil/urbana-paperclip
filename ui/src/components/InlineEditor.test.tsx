@@ -3,6 +3,7 @@
 import { act, forwardRef, useImperativeHandle, useRef, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
 
 vi.mock("./MarkdownEditor", () => ({
   MarkdownEditor: forwardRef<
@@ -68,13 +69,55 @@ function flushDoubleRequestAnimationFrame(): Promise<void> {
 describe("InlineEditor", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("updates its default edit affordance and accessible label when the language changes", async () => {
+    const root = createRoot(container);
+    act(() => {
+      root.render(<InlineEditor value="" onSave={vi.fn()} />);
+    });
+    expect(container.textContent).toContain("Click to edit...");
+
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+    });
+    expect(container.textContent).toContain("Clique para editar...");
+
+    const display = container.querySelector("span");
+    act(() => {
+      display?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    const input = container.querySelector("textarea");
+    expect(input?.getAttribute("aria-label")).toBe("Clique para editar...");
+    expect(input?.getAttribute("placeholder")).toBe("Clique para editar...");
+    act(() => root.unmount());
+  });
+
+  it("keeps a display-only label out of the editable value", () => {
+    const onSave = vi.fn();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(<InlineEditor as="h2" value="Wiki Ingest" displayValue="Ingestão do Wiki" onSave={onSave} />);
+    });
+    const display = container.querySelector("h2");
+    expect(display?.textContent).toBe("Ingestão do Wiki");
+
+    act(() => {
+      display?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(container.querySelector("textarea")?.value).toBe("Wiki Ingest");
+    expect(onSave).not.toHaveBeenCalled();
+    act(() => root.unmount());
   });
 
   it("calls onSave with empty string when nullable and the field is cleared (single-line)", () => {

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -51,6 +52,34 @@ function dryRunJson(args, envOverrides = {}) {
 
 const SHARD_COUNT = 12;
 const SERIALIZED_SHARD_COUNT = 9;
+
+test("the runner places child fixtures under the caller's TMPDIR", { skip: process.platform === "win32" }, () => {
+  const fixtureRoot = mkdtempSync(path.join(os.tmpdir(), "paperclip-runner-tmp-test-"));
+  try {
+    const chosenTmp = path.join(fixtureRoot, "chosen");
+    const binDir = path.join(fixtureRoot, "bin");
+    const captureFile = path.join(fixtureRoot, "captured.txt");
+    mkdirSync(chosenTmp);
+    mkdirSync(binDir);
+    const fakePnpm = path.join(binDir, "pnpm");
+    writeFileSync(fakePnpm, '#!/bin/sh\nprintf "%s\\n" "$TMPDIR" >> "$PAPERCLIP_TEST_TMP_CAPTURE"\n');
+    chmodSync(fakePnpm, 0o755);
+    const result = spawnSync(process.execPath, [script, "--mode", "general", "--group", "general-workspaces-a"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: workflowEnv({ TMPDIR: chosenTmp, PAPERCLIP_TEST_TMP_CAPTURE: captureFile, PATH: `${binDir}${path.delimiter}${process.env.PATH}` }),
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const captured = readFileSync(captureFile, "utf8").trim().split("\n");
+    assert.ok(captured.length >= 1);
+    for (const childTmp of captured) {
+      assert.ok(childTmp.startsWith(`${realpathSync(chosenTmp)}${path.sep}pv-`), childTmp);
+      assert.equal(path.basename(childTmp), "t");
+    }
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
 
 
 test("the serialized shards form a complete, non-overlapping partition", () => {

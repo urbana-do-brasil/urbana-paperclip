@@ -3,11 +3,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Project, ProjectCodebase } from "@paperclipai/shared";
 import type { ReactNode } from "react";
+import { act as reactAct } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectProperties } from "./ProjectProperties";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { queryKeys } from "../lib/queryKeys";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -58,6 +61,8 @@ function makeProject(codebase: ProjectCodebase): Project {
     name: "Test project",
     description: "",
     status: "in_progress",
+    createdAt: new Date("2026-01-01T00:00:00Z"),
+    updatedAt: new Date("2026-05-01T00:00:00Z"),
     goalIds: [],
     goals: [],
     env: null,
@@ -71,16 +76,18 @@ function makeProject(codebase: ProjectCodebase): Project {
 let container: HTMLDivElement;
 let root: Root;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await reactAct(async () => { await i18n.changeLanguage("en"); });
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
   container.remove();
   vi.clearAllMocks();
+  await reactAct(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 });
 
 /** Pass `null` for `experimentalSettings` to render with the policy unresolved. */
@@ -162,5 +169,17 @@ describe("ProjectProperties — local folder under the managed-sandbox-only poli
 
     const pathInput = container.querySelector('input[placeholder="/absolute/path/to/workspace"]');
     expect(pathInput).toBeNull();
+  });
+
+  it("localizes codebase controls in Brazilian Portuguese while preserving the configured path", async () => {
+    await reactAct(async () => { await i18n.changeLanguage("pt-BR"); });
+    render(makeProject(makeCodebase()), { enableIsolatedWorkspaces: true });
+
+    expect(container.textContent).toContain("Base de código");
+    expect(container.textContent).toContain("Pasta local");
+    expect(container.textContent).toContain(LOCAL_FOLDER);
+    expect(buttonLabels()).toContain("Alterar pasta local");
+    expect(container.querySelector('button[aria-label="Limpar pasta local"]')).not.toBeNull();
+    expect(container.querySelector('section[aria-label="Repositórios"]')).not.toBeNull();
   });
 });

@@ -7,6 +7,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IssueAttachmentsSection } from "./IssueAttachmentsSection";
+import { i18n } from "@/i18n";
 
 vi.mock("./MarkdownBody", () => ({
   MarkdownBody: ({ children, className }: { children: string; className?: string }) => (
@@ -91,7 +92,8 @@ describe("IssueAttachmentsSection", () => {
   let queryClient: QueryClient;
   let fetchSpy: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -114,6 +116,7 @@ describe("IssueAttachmentsSection", () => {
     queryClient.clear();
     container.remove();
     vi.unstubAllGlobals();
+    await i18n.changeLanguage("pt-BR");
   });
 
   it("renders markdown attachments with the document markdown presentation", async () => {
@@ -350,5 +353,31 @@ describe("IssueAttachmentsSection", () => {
     expect(container.querySelector('a[aria-label="Download stored-report.pdf"]')).toBeTruthy();
     expect(container.querySelector('button[title="Delete attachment"]')).toBeNull();
     expect(container.textContent).not.toContain("Delete this attachment?");
+  });
+
+  it("localizes attachment actions and labels in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const attachment = makeAttachment({
+      originalFilename: "relatorio.pdf",
+      contentType: "application/pdf",
+    });
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <IssueAttachmentsSection
+            attachments={[attachment]}
+            onDelete={vi.fn()}
+            onImageClick={vi.fn()}
+          />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    expect(container.textContent).toContain("Anexos");
+    expect(container.querySelector('a[aria-label="Abrir relatorio.pdf"]')).toBeTruthy();
+    expect(container.querySelector('a[aria-label="Baixar relatorio.pdf"]')).toBeTruthy();
+    expect(container.querySelector('button[title="Excluir anexo"]')).toBeTruthy();
   });
 });

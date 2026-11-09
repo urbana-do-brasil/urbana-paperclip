@@ -16,6 +16,7 @@ export interface IssueAssignmentWakeupDeps {
       allowRunCoalescing?: boolean;
       requestedByActorType?: "user" | "agent" | "system";
       requestedByActorId?: string | null;
+      communicationOriginRunId?: string | null;
       contextSnapshot?: Record<string, unknown>;
       durableChatRequest?: DurableChatWakeupRequest;
     },
@@ -30,6 +31,8 @@ export function queueIssueAssignmentWakeup(input: {
   contextSource: string;
   requestedByActorType?: "user" | "agent" | "system";
   requestedByActorId?: string | null;
+  /** Authenticated initiating run, never an ID from a wake payload. */
+  communicationOriginRunId?: string | null;
   taskKey?: string | null;
   /** Latest issue comment that caused this wakeup. Included in both payload
    * and context so the heartbeat can build the exact turn that was requested. */
@@ -55,6 +58,7 @@ export function queueIssueAssignmentWakeup(input: {
       },
       requestedByActorType: input.requestedByActorType,
       requestedByActorId: input.requestedByActorId ?? null,
+      ...(input.communicationOriginRunId ? { communicationOriginRunId: input.communicationOriginRunId } : {}),
       ...(input.durableChatRequest
         ? { durableChatRequest: input.durableChatRequest }
         : {}),

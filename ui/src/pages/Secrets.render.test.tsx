@@ -14,9 +14,18 @@ import type {
   UserSecretDefinition,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
 import { ProviderVaultsTab, Secrets } from "./Secrets";
 import { ApiError } from "../api/client";
 import { queryKeys } from "../lib/queryKeys";
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 const mockSecretsApi = vi.hoisted(() => ({
   list: vi.fn(),
@@ -341,9 +350,15 @@ function setSelectValue(select: HTMLSelectElement, value: string) {
   select.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-async function openAwsVaultDialog() {
+async function openAwsVaultDialog({
+  providerTabLabel = "Provider vaults",
+  addVaultLabel = "Add vault",
+}: {
+  providerTabLabel?: string;
+  addVaultLabel?: string;
+} = {}) {
   const vaultTabButton = [...document.querySelectorAll("button")].find(
-    (button) => button.textContent?.includes("Provider vaults"),
+    (button) => button.textContent?.includes(providerTabLabel),
   ) as HTMLButtonElement | undefined;
   await act(async () => {
     vaultTabButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
@@ -353,7 +368,7 @@ async function openAwsVaultDialog() {
   await flushReact();
 
   const addVaultButtons = [...document.querySelectorAll("button")].filter(
-    (button) => button.textContent?.includes("Add vault"),
+    (button) => button.textContent?.includes(addVaultLabel),
   ) as HTMLButtonElement[];
   await act(async () => {
     addVaultButtons[1]?.click();
@@ -395,6 +410,138 @@ describe("Secrets page layout", () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+  });
+
+  it("localizes the organization secret inventory while preserving user supplied names and keys", async () => {
+    await i18n.changeLanguage("pt-BR");
+    window.localStorage.setItem("paperclip.secrets.viewMode", "folders");
+    mockSecretsApi.list.mockResolvedValue([
+      makeCompanySecret({
+        id: "secret-localized-inventory",
+        name: "API token - produção",
+        key: "CLIENTE_API_TOKEN",
+      }),
+    ]);
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    expect(container.querySelector("h1")?.textContent).toBe("Segredos");
+    expect(container.querySelector('input[aria-label="Buscar segredos"]')).not.toBeNull();
+    expect(container.querySelector('[role="group"][aria-label="Modo de visualização"]')).not.toBeNull();
+    expect(container.querySelector('[role="table"][aria-label="Segredos"]')).not.toBeNull();
+    expect(container.textContent).toContain("Meus segredos");
+    expect(container.querySelector('button[aria-label="Filtrar"]')).not.toBeNull();
+    expect(container.textContent).toContain("API token - produção");
+    expect(container.textContent).toContain("CLIENTE_API_TOKEN");
+    expect(container.textContent).toContain("Ativo");
+    expect(container.textContent).toContain("Organização");
+    expect(container.textContent).toContain("Use segredos vinculando-os a variáveis de ambiente do runtime.");
+    expect(container.querySelector('button[aria-label="Ações para API token - produção"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label*="Gerenciado pelo Paperclip"]')).not.toBeNull();
+
+    const newFolderButton = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Nova pasta",
+    ) as HTMLButtonElement;
+    await act(async () => newFolderButton.click());
+    await flushReact();
+    const createFolderButton = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Criar pasta",
+    ) as HTMLButtonElement;
+    await act(async () => createFolderButton.click());
+    await flushReact();
+    expect(container.textContent).toContain("Informe um nome para a pasta.");
+
+    await act(async () => root.unmount());
+    await i18n.changeLanguage("en");
+  });
+
+  it("localizes external secret creation while preserving the provider reference payload", async () => {
+    await i18n.changeLanguage("pt-BR");
+    window.localStorage.setItem("paperclip.secrets.viewMode", "flat");
+    mockSecretsApi.create.mockResolvedValue(
+      makeCompanySecret({ id: "created-external", name: "Token da integração", key: "token-da-integracao" }),
+    );
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    const newSecretButton = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Novo segredo",
+    ) as HTMLButtonElement;
+    await act(async () => newSecretButton.click());
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Escolha quem fornece o valor.");
+    expect(document.body.textContent).toContain("Valor gerenciado");
+    expect(document.body.textContent).toContain("Referência externa");
+    expect(document.body.querySelector('label[for="new-secret-name"]')?.textContent).toBe("Nome");
+    expect(document.body.querySelector('label[for="new-secret-value"]')?.textContent).toBe("Valor");
+    expect(document.body.querySelector('label[for="new-secret-key"]')?.textContent).toBe("Chave");
+
+    const externalModeButton = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Referência externa",
+    ) as HTMLButtonElement;
+    await act(async () => {
+      externalModeButton.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      externalModeButton.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      externalModeButton.click();
+    });
+    await flushReact();
+
+    expect(document.body.querySelector('label[for="new-secret-ref"]')?.textContent).toBe("Referência externa");
+    expect(document.body.textContent).toContain("Segredos existentes no provedor são apenas resolvidos pelo Paperclip.");
+    await act(async () => {
+      setInputValue(document.getElementById("new-secret-name") as HTMLInputElement, "Token da integração");
+      setInputValue(
+        document.getElementById("new-secret-ref") as HTMLInputElement,
+        "arn:aws:secretsmanager:us-east-1:000000000000:secret:token",
+      );
+    });
+    await flushReact();
+
+    const linkButton = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent?.trim() === "Vincular referência",
+    ) as HTMLButtonElement;
+    await act(async () => linkButton.click());
+    await flushReact();
+    await flushReact();
+
+    expect(mockSecretsApi.create).toHaveBeenCalledWith(
+      "company-1",
+      expect.objectContaining({
+        name: "Token da integração",
+        managedMode: "external_reference",
+        externalRef: "arn:aws:secretsmanager:us-east-1:000000000000:secret:token",
+      }),
+    );
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Segredo criado", body: "Token da integração" }),
+    );
+    await act(async () => root.unmount());
+    await i18n.changeLanguage("en");
   });
 
   it("uses the shared search/filter/tab affordances and keeps vault sections quiet", async () => {
@@ -458,6 +605,45 @@ describe("Secrets page layout", () => {
     });
   });
 
+  it("localizes provider vault administration and keeps stable field IDs in pt-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+    await openAwsVaultDialog({
+      providerTabLabel: "Cofres de provedores",
+      addVaultLabel: "Adicionar cofre",
+    });
+
+    expect(document.body.textContent).toContain("Criar cofre de provedor");
+    expect(document.body.textContent).toContain("Nome de exibição");
+    expect(document.body.textContent).toContain("Região da AWS");
+    expect(document.body.textContent).toContain("Verificar saúde");
+    expect(document.body.textContent).toContain("AWS production");
+    expect(document.body.textContent).toContain("Desativar");
+    expect(document.body.textContent).toContain("Definir como padrão");
+    expect(document.getElementById("provider-vault-aws-region")).not.toBeNull();
+    expect(document.getElementById("provider-vault-secret-name-prefix")).not.toBeNull();
+    expect(document.body.textContent).not.toContain("Create provider vault");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("refreshes existing AWS secrets from a provider vault card", async () => {
     const root = createRoot(container);
     const queryClient = new QueryClient({
@@ -511,6 +697,7 @@ describe("Secrets page layout", () => {
   });
 
   it("warns that removing a provider vault only removes Paperclip config", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockSecretsApi.removeProviderConfig.mockResolvedValueOnce(providerConfigs[1]);
     const root = createRoot(container);
     const queryClient = new QueryClient({
@@ -530,7 +717,7 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const vaultTabButton = [...document.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Provider vaults"),
+      (button) => button.textContent?.includes("Cofres de provedores"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       vaultTabButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
@@ -540,20 +727,20 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const removeButtons = [...document.querySelectorAll("button")].filter(
-      (button) => button.textContent?.trim() === "Remove",
+      (button) => button.textContent?.trim() === "Remover",
     ) as HTMLButtonElement[];
     await act(async () => {
       removeButtons[1]?.click();
     });
     await flushReact();
 
-    expect(document.body.textContent).toContain("Remove provider vault");
-    expect(document.body.textContent).toContain("from Paperclip only");
-    expect(document.body.textContent).toContain("does not delete");
+    expect(document.body.textContent).toContain("Remover cofre do provedor");
+    expect(document.body.textContent).toContain("somente do Paperclip");
+    expect(document.body.textContent).toContain("não exclui");
     expect(document.body.textContent).toContain("AWS Secrets Manager");
 
     const confirmButton = [...document.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Remove from Paperclip"),
+      (button) => button.textContent?.includes("Remover do Paperclip"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       confirmButton?.click();
@@ -566,9 +753,11 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("keeps references reachable from the compact secrets row and detail drawer", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockSecretsApi.list.mockResolvedValue([makeCompanySecret()]);
     mockSecretsApi.usage.mockResolvedValue({
       secretId: "secret-openai",
@@ -595,6 +784,32 @@ describe("Secrets page layout", () => {
         },
       ],
     });
+    mockSecretsApi.accessEvents.mockResolvedValue([
+      {
+        id: "access-event-1",
+        companyId: "company-1",
+        secretId: "secret-openai",
+        userSecretDefinitionId: null,
+        secretScope: "company",
+        version: 1,
+        provider: "local_encrypted",
+        responsibleUserId: null,
+        credentialOwnerUserId: null,
+        credentialSubjectType: null,
+        credentialSubjectId: null,
+        actorType: "agent",
+        actorId: "agent-1",
+        consumerType: "agent_api",
+        consumerId: "run-abc123",
+        configPath: "access.OPENAI_API_KEY",
+        issueId: null,
+        heartbeatRunId: null,
+        pluginId: null,
+        outcome: "success",
+        errorCode: null,
+        createdAt: new Date("2026-10-29T00:00:00.000Z"),
+      },
+    ]);
 
     const root = createRoot(container);
     const queryClient = new QueryClient({
@@ -614,7 +829,7 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const referencesButton = container.querySelector(
-      'button[aria-label="Actions for OPENAI_API_KEY"]',
+      'button[aria-label="Ações para OPENAI_API_KEY"]',
     ) as HTMLButtonElement | null;
     expect(referencesButton).not.toBeNull();
 
@@ -626,9 +841,12 @@ describe("Secrets page layout", () => {
     });
     await flushReact();
 
-    await waitForReact(() => document.body.textContent?.includes("View in Usage") ?? false);
+    await waitForReact(() => document.body.textContent?.includes("Ver no uso") ?? false);
+    expect(document.body.textContent).toContain("Modo de gerenciamento");
+    expect(document.body.textContent).toContain("Referências");
+    expect(document.body.textContent).toContain("O Paperclip nunca volta a exibir valores armazenados.");
     const viewUsageButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("View in Usage"),
+      (button) => button.textContent?.includes("Ver no uso"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       viewUsageButton?.click();
@@ -638,10 +856,27 @@ describe("Secrets page layout", () => {
     expect(mockSecretsApi.usage).toHaveBeenCalledWith("secret-openai");
     expect(document.body.textContent).toContain("CodexCoder");
     expect(document.body.textContent).toContain("env.OPENAI_API_KEY");
+    expect(document.body.textContent).toContain("Variável de ambiente");
+    expect(document.body.textContent).toContain("obrigatório");
+
+    const accessEventsTab = Array.from(document.body.querySelectorAll('[role="tab"]')).find(
+      (tab) => tab.textContent?.trim() === "Eventos de acesso",
+    ) as HTMLButtonElement | undefined;
+    expect(accessEventsTab).not.toBeUndefined();
+    await act(async () => {
+      accessEventsTab?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      accessEventsTab?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      accessEventsTab?.click();
+    });
+    await flushReact();
+    expect(document.body.textContent).toContain("API do agente");
+    expect(document.body.textContent).toContain("Sucesso");
+    expect(document.body.textContent).toContain("run-abc123");
 
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("opens the secret detail sheet from a ?secret= deep link", async () => {
@@ -680,6 +915,7 @@ describe("Secrets page layout", () => {
   });
 
   it("writes a new value through the provider for external reference secrets", async () => {
+    await i18n.changeLanguage("pt-BR");
     const externalSecret = makeCompanySecret({
       id: "secret-neon",
       key: "neon_admin_api_key",
@@ -713,7 +949,7 @@ describe("Secrets page layout", () => {
 
     // AWS supports write-through, so the primary action is a value update.
     const updateValueButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Update value",
+      (button) => button.textContent?.trim() === "Atualizar valor",
     ) as HTMLButtonElement | undefined;
     expect(updateValueButton).not.toBeUndefined();
     await act(async () => {
@@ -721,9 +957,11 @@ describe("Secrets page layout", () => {
     });
     await flushReact();
 
-    // Both modes are offered; "Write new value" is the default.
-    expect(document.body.textContent).toContain("Write new value");
-    expect(document.body.textContent).toContain("Change reference");
+    // Both localized modes are offered; "Gravar novo valor" is the default.
+    expect(document.body.textContent).toContain("Gravar novo valor");
+    expect(document.body.textContent).toContain("Alterar referência");
+    expect(document.body.textContent).toContain("Atualizar valor do segredo");
+    expect(document.body.textContent).toContain("Cofre do provedor");
 
     const valueTextarea = document.getElementById("rotate-value") as HTMLTextAreaElement | null;
     expect(valueTextarea).not.toBeNull();
@@ -732,7 +970,7 @@ describe("Secrets page layout", () => {
 
     const dialog = valueTextarea!.closest("[role='dialog']") as HTMLElement;
     const submitButton = Array.from(dialog.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Update value",
+      (button) => button.textContent?.trim() === "Atualizar valor",
     ) as HTMLButtonElement | undefined;
     expect(submitButton?.disabled).toBe(false);
     await act(async () => {
@@ -745,9 +983,184 @@ describe("Secrets page layout", () => {
       providerConfigId: "vault-aws",
     });
 
+    const reopenedUpdateButton = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Atualizar valor",
+    ) as HTMLButtonElement | undefined;
+    expect(reopenedUpdateButton).not.toBeUndefined();
+    await act(async () => reopenedUpdateButton?.click());
+    await flushReact();
+
+    const changeReferenceButton = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Alterar referência",
+    ) as HTMLButtonElement | undefined;
+    expect(changeReferenceButton).not.toBeUndefined();
+    await act(async () => {
+      changeReferenceButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      changeReferenceButton?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      changeReferenceButton?.click();
+    });
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Atualizar referência externa");
+    expect(document.body.textContent).toContain("Faça a rotação do valor no provedor");
+    const referenceInput = document.getElementById("rotate-ref") as HTMLInputElement | null;
+    expect(referenceInput).not.toBeNull();
+    await act(async () => setInputValue(referenceInput!, "arn:aws:secretsmanager:us-east-1:123456789012:secret:neon/admin-api-key-v2"));
+    await flushReact();
+
+    const referenceDialog = referenceInput!.closest("[role='dialog']") as HTMLElement;
+    const updateReferenceButton = Array.from(referenceDialog.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Atualizar referência",
+    ) as HTMLButtonElement | undefined;
+    expect(updateReferenceButton?.disabled).toBe(false);
+    await act(async () => updateReferenceButton?.click());
+    await flushReact();
+
+    expect(mockSecretsApi.rotate).toHaveBeenLastCalledWith("secret-neon", {
+      externalRef: "arn:aws:secretsmanager:us-east-1:123456789012:secret:neon/admin-api-key-v2",
+      providerConfigId: "vault-aws",
+    });
+
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("localizes company secret status transitions and delete confirmation", async () => {
+    await i18n.changeLanguage("pt-BR");
+    let secret = makeCompanySecret({ id: "secret-lifecycle", name: "credencial-deploy" });
+    mockSecretsApi.list.mockImplementation(async () => [secret]);
+    mockSecretsApi.disable.mockImplementation(async (id: string) => {
+      secret = { ...secret, id, status: "disabled" };
+      return secret;
+    });
+    mockSecretsApi.enable.mockImplementation(async (id: string) => {
+      secret = { ...secret, id, status: "active" };
+      return secret;
+    });
+    mockSecretsApi.archive.mockImplementation(async (id: string) => {
+      secret = { ...secret, id, status: "archived" };
+      return secret;
+    });
+    mockSecretsApi.remove.mockResolvedValue({ id: secret.id });
+
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={["/company/settings/secrets?secret=secret-lifecycle"]}>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    async function openMoreActions() {
+      const moreButton = Array.from(document.body.querySelectorAll("button")).find(
+        (button) => button.textContent?.trim() === "Mais",
+      ) as HTMLButtonElement | undefined;
+      expect(moreButton).not.toBeUndefined();
+      await act(async () => {
+        moreButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+        moreButton?.click();
+      });
+      await flushReact();
+    }
+
+    async function selectAction(label: string) {
+      const action = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find(
+        (item) => item.textContent?.trim() === label,
+      ) as HTMLElement | undefined;
+      expect(action).not.toBeUndefined();
+      await act(async () => action?.click());
+      await flushReact();
+      await flushReact();
+    }
+
+    await openMoreActions();
+    await selectAction("Desativar");
+    expect(mockSecretsApi.disable).toHaveBeenCalledWith("secret-lifecycle");
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Status do segredo alterado para Desativado", body: "credencial-deploy" }),
+    );
+
+    await openMoreActions();
+    await selectAction("Ativar");
+    expect(mockSecretsApi.enable).toHaveBeenCalledWith("secret-lifecycle");
+
+    await openMoreActions();
+    await selectAction("Arquivar");
+    const archiveDialog = Array.from(document.body.querySelectorAll('[role="dialog"]')).find(
+      (dialog) => dialog.textContent?.includes("Arquivar credencial-deploy?"),
+    ) as HTMLElement | undefined;
+    expect(archiveDialog?.textContent).toContain("indisponível para vínculos de execução");
+    expect(mockSecretsApi.archive).not.toHaveBeenCalled();
+    const confirmArchive = Array.from(archiveDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Arquivar",
+    ) as HTMLButtonElement | undefined;
+    await act(async () => confirmArchive?.click());
+    await flushReact();
+    expect(mockSecretsApi.archive).toHaveBeenCalledWith("secret-lifecycle");
+
+    await openMoreActions();
+    await selectAction("Remover do arquivo");
+    const restoreDialog = Array.from(document.body.querySelectorAll('[role="dialog"]')).find(
+      (dialog) => dialog.textContent?.includes("Restaurar credencial-deploy"),
+    ) as HTMLElement | undefined;
+    expect(restoreDialog?.textContent).toContain("para o status ativo");
+    expect(mockSecretsApi.enable).toHaveBeenCalledTimes(1);
+    const confirmRestore = Array.from(restoreDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Restaurar",
+    ) as HTMLButtonElement | undefined;
+    await act(async () => confirmRestore?.click());
+    await flushReact();
+    expect(mockSecretsApi.enable).toHaveBeenCalledTimes(2);
+
+    mockSecretsApi.disable.mockRejectedValueOnce(new Error("Status denied by provider"));
+    mockPushToast.mockClear();
+    await openMoreActions();
+    await selectAction("Desativar");
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Falha ao atualizar o status",
+        body: "Status denied by provider",
+        tone: "error",
+      }),
+    );
+
+    await openMoreActions();
+    await selectAction("Excluir segredo");
+    const deleteDialog = Array.from(document.body.querySelectorAll('[role="dialog"]')).find(
+      (dialog) => dialog.textContent?.includes("Remove permanentemente credencial-deploy."),
+    ) as HTMLElement | undefined;
+    expect(deleteDialog?.textContent).toContain("Os vínculos ativos deixarão de funcionar");
+    const confirmDelete = Array.from(deleteDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Excluir segredo",
+    ) as HTMLButtonElement | undefined;
+    expect(confirmDelete).not.toBeUndefined();
+    mockSecretsApi.remove.mockRejectedValueOnce(null);
+    await act(async () => confirmDelete?.click());
+    await flushReact();
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Falha ao excluir", body: "Tentar novamente", tone: "error" }),
+    );
+
+    const retryDelete = Array.from(deleteDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Excluir segredo",
+    ) as HTMLButtonElement | undefined;
+    await act(async () => retryDelete?.click());
+    await flushReact();
+
+    expect(mockSecretsApi.remove).toHaveBeenCalledTimes(2);
+    expect(mockSecretsApi.remove).toHaveBeenLastCalledWith("secret-lifecycle");
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Segredo excluído", tone: "info" }),
+    );
+    await act(async () => root.unmount());
+    await i18n.changeLanguage("en");
   });
 
   it("merges company secrets and each-user definitions into the Secrets list", async () => {
@@ -774,7 +1187,8 @@ describe("Secrets page layout", () => {
     expect(container.textContent).toContain("Personal GitHub token");
     expect(container.textContent).toContain("Organization");
     expect(container.textContent).toContain("Each user");
-    expect(container.textContent).toContain("3/5 set");
+    expect(container.textContent).toContain("3/5 with value");
+    expect(container.textContent).toContain("2 missing");
     expect(container.textContent).not.toContain("User secret definitions");
 
     const listContainer = container.querySelector('[data-testid="secrets-list-container"]');
@@ -970,8 +1384,8 @@ describe("Secrets page layout", () => {
     });
     await flushReact();
 
-    expect(document.body.textContent).toContain("3 of 5 set");
-    expect(document.body.textContent).toContain("Secret values are never shown here");
+    expect(document.body.textContent).toContain("3 of 5 members have set a value.");
+    expect(document.body.textContent).toContain("Coverage shows counts only. Secret values are never shown.");
 
     const setValueButton = Array.from(document.body.querySelectorAll("button")).find(
       (button) => button.textContent?.includes("Set my value"),
@@ -987,6 +1401,264 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("localizes user-secret definition details and preserves member-authored guidance on edit", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const definition = makeUserSecretDefinition();
+    mockSecretsApi.listUserSecretDefinitions.mockResolvedValue([definition]);
+    mockSecretsApi.listMyUserSecrets.mockResolvedValue([{ definition, secret: null }]);
+    mockSecretsApi.updateUserSecretDefinition.mockResolvedValue({
+      ...definition,
+      description: "Descrição atualizada pela equipe",
+      usageGuidance: "Crie um token com acesso de leitura ao repositório.",
+    });
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+
+    const definitionRow = Array.from(container.querySelectorAll("[role='row']")).find(
+      (row) => row.textContent?.includes(definition.name),
+    ) as HTMLElement | undefined;
+    await act(async () => definitionRow?.click());
+    await waitForReact(() => document.body.textContent?.includes("Orientações de uso") ?? false);
+
+    expect(document.body.textContent).toContain("Definição de segredo fornecido por usuário");
+    expect(document.body.textContent).toContain("Fornecido por");
+    expect(document.body.textContent).toContain("Cada usuário");
+    expect(document.body.textContent).toContain("Ativo");
+    expect(document.body.textContent).toContain(definition.description);
+    expect(document.body.textContent).toContain(definition.usageGuidance);
+    expect(document.body.textContent).toContain(
+      "Nenhum valor é armazenado nesta definição administrativa.",
+    );
+
+    const detailSheet = document.body.querySelector('[role="dialog"]');
+    const usageTab = Array.from(detailSheet?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? []).find(
+      (button) => button.textContent?.trim() === "Uso",
+    );
+    await act(async () => {
+      usageTab?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, pointerType: "mouse" }));
+      usageTab?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      usageTab?.click();
+    });
+    await flushReact();
+    expect(document.body.textContent).toContain(
+      "Vincule variáveis de ambiente do runtime a este segredo selecionando",
+    );
+    expect(document.body.textContent).toContain("Segredo do usuário");
+    expect(document.body.textContent).toContain(definition.usageGuidance);
+
+    const eventsTab = Array.from(detailSheet?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? []).find(
+      (button) => button.textContent?.trim() === "Eventos de acesso",
+    );
+    await act(async () => {
+      eventsTab?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, pointerType: "mouse" }));
+      eventsTab?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      eventsTab?.click();
+    });
+    await flushReact();
+    expect(document.body.textContent).toContain(
+      "Os eventos de acesso são registrados no valor armazenado por cada membro",
+    );
+
+    const moreButton = document.body.querySelector<HTMLButtonElement>(
+      'button[aria-label="Ações para Personal GitHub token"]',
+    );
+    expect(moreButton).not.toBeNull();
+    await act(async () => {
+      moreButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+      moreButton?.click();
+    });
+    await flushReact();
+    const editAction = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find(
+      (item) => item.textContent?.trim() === "Editar definição",
+    ) as HTMLElement | undefined;
+    expect(editAction).not.toBeUndefined();
+    await act(async () => editAction?.click());
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Editar segredo do usuário");
+    const descriptionInput = document.getElementById("new-secret-description") as HTMLInputElement;
+    const usageInput = document.getElementById("new-secret-usage-guidance") as HTMLTextAreaElement;
+    await act(async () => {
+      setInputValue(descriptionInput, "Descrição atualizada pela equipe");
+      setTextareaValue(usageInput, "Crie um token com acesso de leitura ao repositório.");
+    });
+    const saveButton = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Salvar alterações",
+    ) as HTMLButtonElement | undefined;
+    expect(saveButton).not.toBeUndefined();
+    await act(async () => saveButton?.click());
+    await flushReact();
+
+    expect(mockSecretsApi.updateUserSecretDefinition).toHaveBeenCalledWith(
+      "company-1",
+      definition.id,
+      {
+        name: definition.name,
+        description: "Descrição atualizada pela equipe",
+        usageGuidance: "Crie um token com acesso de leitura ao repositório.",
+      },
+    );
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Segredo do usuário atualizado", tone: "success" }),
+    );
+
+    await act(async () => root.unmount());
+  });
+
+  it("localizes user-secret coverage counts and never displays member values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const definition = makeUserSecretDefinition();
+    const coverageWithInactiveMembers = { ...userSecretCoverage, inactiveCount: 1 };
+    mockSecretsApi.listUserSecretDefinitions.mockResolvedValue([definition]);
+    mockSecretsApi.listMyUserSecrets.mockResolvedValue([{ definition, secret: null }]);
+    mockSecretsApi.userSecretDefinitionCoverage.mockResolvedValue(coverageWithInactiveMembers);
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+    expect(container.textContent).toContain("3/6 com valor");
+    expect(container.textContent).toContain("2 faltando");
+
+    const definitionRow = Array.from(container.querySelectorAll("[role='row']")).find(
+      (row) => row.textContent?.includes(definition.name),
+    ) as HTMLElement | undefined;
+    await act(async () => definitionRow?.click());
+    await waitForReact(() => document.body.querySelector('[role="dialog"] [role="tab"]') !== null);
+    const detailSheet = document.body.querySelector('[role="dialog"]');
+    const coverageTab = Array.from(detailSheet?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? []).find(
+      (tab) => tab.textContent?.trim() === "Cobertura",
+    );
+    expect(coverageTab).not.toBeUndefined();
+    await act(async () => {
+      coverageTab?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, pointerType: "mouse" }));
+      coverageTab?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      coverageTab?.click();
+    });
+    await flushReact();
+
+    expect(document.body.textContent).toContain("3 de 6 membros configuraram um valor.");
+    expect(document.body.textContent).toContain("Configurados");
+    expect(document.body.textContent).toContain("Sem valor");
+    expect(document.body.textContent).toContain("Inativos");
+    expect(document.body.textContent).toContain(
+      "A cobertura mostra somente contagens. Os valores dos segredos nunca são exibidos.",
+    );
+    expect(document.body.textContent).not.toContain("secret-value");
+
+    await act(async () => root.unmount());
+  });
+
+  it("localizes user-secret status and delete actions without changing API states", async () => {
+    await i18n.changeLanguage("pt-BR");
+    let definition = makeUserSecretDefinition();
+    mockSecretsApi.listUserSecretDefinitions.mockImplementation(async () => [definition]);
+    mockSecretsApi.listMyUserSecrets.mockResolvedValue([{ definition, secret: null }]);
+    mockSecretsApi.updateUserSecretDefinition.mockImplementation(
+      async (_companyId: string, id: string, input: Partial<UserSecretDefinition>) => {
+        definition = { ...definition, ...input, id };
+        return definition;
+      },
+    );
+    mockSecretsApi.removeUserSecretDefinition.mockResolvedValue({ id: definition.id });
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <QueryClientProvider client={queryClient}>
+            <Secrets />
+          </QueryClientProvider>
+        </MemoryRouter>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+    const definitionRow = Array.from(container.querySelectorAll("[role='row']")).find(
+      (row) => row.textContent?.includes(definition.name),
+    ) as HTMLElement | undefined;
+    await act(async () => definitionRow?.click());
+    await waitForReact(
+      () => document.body.querySelector('[role="dialog"] button[aria-label="Ações para Personal GitHub token"]') !== null,
+    );
+
+    async function openMoreActions() {
+      const detailSheet = document.body.querySelector('[role="dialog"]');
+      const moreButton = detailSheet?.querySelector<HTMLButtonElement>(
+        'button[aria-label="Ações para Personal GitHub token"]',
+      );
+      expect(moreButton).not.toBeNull();
+      await act(async () => {
+        moreButton?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+        moreButton?.click();
+      });
+      await flushReact();
+    }
+
+    async function selectAction(label: string) {
+      const action = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find(
+        (item) => item.textContent?.trim() === label,
+      ) as HTMLElement | undefined;
+      expect(action).not.toBeUndefined();
+      await act(async () => action?.click());
+      await flushReact();
+      await flushReact();
+    }
+
+    await openMoreActions();
+    await selectAction("Desativar");
+    expect(mockSecretsApi.updateUserSecretDefinition).toHaveBeenCalledWith(
+      "company-1",
+      "def-github",
+      { status: "disabled" },
+    );
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Status da definição alterado para Desativado", tone: "info" }),
+    );
+
+    await openMoreActions();
+    await selectAction("Excluir definição");
+    const deleteDialog = Array.from(document.body.querySelectorAll('[role="dialog"]')).find(
+      (dialog) => dialog.textContent?.includes("Excluir definição de segredo fornecido por usuário?"),
+    ) as HTMLElement | undefined;
+    expect(deleteDialog?.textContent).toContain(definition.name);
+    expect(deleteDialog?.textContent).toContain("Os valores existentes dos membros ficarão sem referência");
+    const confirmDelete = Array.from(deleteDialog!.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Excluir definição",
+    ) as HTMLButtonElement | undefined;
+    await act(async () => confirmDelete?.click());
+    await flushReact();
+
+    expect(mockSecretsApi.removeUserSecretDefinition).toHaveBeenCalledWith("company-1", "def-github");
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Definição de segredo fornecido por usuário removida", tone: "info" }),
+    );
+
+    await act(async () => root.unmount());
   });
 
   it("keeps the new secret value textarea width-constrained for long tokens", async () => {
@@ -1029,6 +1701,7 @@ describe("Secrets page layout", () => {
   });
 
   it("explains AWS managed secret creation failures with actionable safe details", async () => {
+    await i18n.changeLanguage("pt-BR");
     const rawProviderMessage =
       "AccessDeniedException: arn:aws:sts::123456789012:assumed-role/prod/Paperclip is not authorized";
     mockSecretsApi.create.mockRejectedValueOnce(
@@ -1066,7 +1739,7 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const newSecretButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("New secret"),
+      (button) => button.textContent?.includes("Novo segredo"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       newSecretButton?.click();
@@ -1081,7 +1754,7 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const createButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Create secret",
+      (button) => button.textContent?.trim() === "Criar segredo",
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       createButton?.click();
@@ -1090,9 +1763,11 @@ describe("Secrets page layout", () => {
     await flushReact();
 
     const errorBanner = document.querySelector('[data-testid="secret-create-error"]');
-    expect(errorBanner?.textContent).toContain("AWS secret creation needs CreateSecret permission");
+    expect(errorBanner?.textContent).toContain("A criação de segredos na AWS exige a permissão CreateSecret");
     expect(errorBanner?.textContent).toContain("secretsmanager:CreateSecret");
     expect(errorBanner?.textContent).toContain("us-east-1");
+    expect(errorBanner?.textContent).toContain("Detalhes seguros da solicitação/erro");
+    expect(errorBanner?.textContent).toContain("Copiar");
     expect(errorBanner?.textContent).toContain("link it as an external reference");
     expect(errorBanner?.textContent).toContain("vault-aws");
     expect(errorBanner?.textContent).not.toContain(rawProviderMessage);
@@ -1101,6 +1776,7 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("renders generic secret creation failures with a stable selector", async () => {
@@ -1154,6 +1830,7 @@ describe("Secrets page layout", () => {
   });
 
   it("discovers AWS provider vault candidates and applies selected values as prefill", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockSecretsApi.providerConfigDiscoveryPreview.mockResolvedValueOnce(makeDiscoveryPreview());
     const root = createRoot(container);
     const queryClient = new QueryClient({
@@ -1171,7 +1848,13 @@ describe("Secrets page layout", () => {
     });
     await flushReact();
     await flushReact();
-    await openAwsVaultDialog();
+    await openAwsVaultDialog({
+      providerTabLabel: "Cofres de provedores",
+      addVaultLabel: "Adicionar cofre",
+    });
+
+    expect(document.body.textContent).toContain("Descoberta na AWS");
+    expect(document.body.textContent).toContain("Buscar valores existentes na AWS");
 
     const discoveryButton = document.querySelector(
       '[data-testid="aws-vault-discovery-button"]',
@@ -1211,7 +1894,7 @@ describe("Secrets page layout", () => {
     expect(document.body.textContent).toContain("AWS production");
 
     const useValuesButton = [...document.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Use values"),
+      (button) => button.textContent?.includes("Usar valores"),
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       useValuesButton?.click();
@@ -1229,6 +1912,7 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("shows AWS discovery errors without replacing manual vault form values", async () => {
@@ -1434,6 +2118,7 @@ describe("Secrets page layout", () => {
   });
 
   it("grants and revokes agent access from the secret detail sheet", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockSecretsApi.list.mockResolvedValue([makeCompanySecret()]);
     mockSecretsApi.usage.mockResolvedValue({ secretId: "secret-openai", bindings: [] });
     mockSecretsApi.accessEvents.mockResolvedValue([]);
@@ -1485,7 +2170,7 @@ describe("Secrets page layout", () => {
     await waitForReact(() => document.body.textContent?.includes("Reviewer") ?? false);
 
     // Existing access is listed right in the Details tab.
-    expect(document.body.textContent).toContain("Agent access");
+    expect(document.body.textContent).toContain("Acesso dos agentes");
     expect(document.body.textContent).toContain("Reviewer");
 
     const agentSelect = document.getElementById("agent-access-agent") as HTMLButtonElement;
@@ -1499,15 +2184,15 @@ describe("Secrets page layout", () => {
 
     // Agents that already have access are not offered again.
     expect(document.body.textContent).toContain("CodexCoder");
-    expect(document.body.querySelector('[aria-label="Select Reviewer"]')).toBeNull();
+    expect(document.body.querySelector('[aria-label="Selecionar Reviewer"]')).toBeNull();
 
     await act(async () => {
-      (document.body.querySelector('[aria-label="Select CodexCoder"]') as HTMLButtonElement | null)?.click();
+      (document.body.querySelector('[aria-label="Selecionar CodexCoder"]') as HTMLButtonElement | null)?.click();
     });
     await flushReact();
 
     const addButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Add",
+      (button) => button.textContent?.trim() === "Adicionar",
     ) as HTMLButtonElement | undefined;
     await act(async () => {
       addButton?.click();
@@ -1527,7 +2212,7 @@ describe("Secrets page layout", () => {
     );
 
     const revokeButton = document.body.querySelector(
-      'button[aria-label="Remove access for Reviewer"]',
+      'button[aria-label="Remover acesso de Reviewer"]',
     ) as HTMLButtonElement | null;
     expect(revokeButton).not.toBeNull();
     await act(async () => {
@@ -1545,6 +2230,7 @@ describe("Secrets page layout", () => {
     await act(async () => {
       root.unmount();
     });
+    await i18n.changeLanguage("en");
   });
 
   it("shows an empty AWS discovery result without blocking manual entry", async () => {

@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { pendingRequestConfirmationInteraction } from "../fixtures/issueThreadInteractionFixtures";
+import { afterEach, describe, expect, it } from "vitest";
+import { i18n } from "@/i18n";
+import {
+  pendingAskUserQuestionsInteraction,
+  pendingRequestCheckboxConfirmationInteraction,
+  pendingRequestConfirmationInteraction,
+  pendingConnectionIntentInteraction,
+} from "../fixtures/issueThreadInteractionFixtures";
 import {
   buildAnsweredQuestionsDeliveryText,
   buildIssueThreadInteractionSummary,
@@ -8,6 +14,7 @@ import {
   countSuggestedTaskNodes,
   getCheckboxConfirmationSelectedLabels,
   getItemVerdictProgress,
+  getItemVerdictLabelKey,
   getRequestConfirmationTargetHref,
   getQuestionAnswerLabels,
   interactionReplacesComposerSkip,
@@ -23,6 +30,10 @@ import type {
   IssueThreadInteraction,
   RequestItemVerdictsInteraction,
 } from "./issue-thread-interactions";
+
+afterEach(async () => {
+  await i18n.changeLanguage("pt-BR");
+});
 
 // The open default every interaction now inherits when its creator omits
 // `resolverPolicy` (PAP-17277 contract).
@@ -102,7 +113,8 @@ describe("issue thread interaction helpers", () => {
     } as IssueThreadInteraction)).toBe(false);
   });
 
-  it("formats successor-turn answer delivery with canonical prompts and labels", () => {
+  it.each(["en", "pt-BR"] as const)("localizes generated question history labels in %s while preserving answers", async (language) => {
+    await i18n.changeLanguage(language);
     const interaction = {
       id: "interaction-answers",
       companyId: "company-1",
@@ -139,13 +151,68 @@ describe("issue thread interaction helpers", () => {
       },
     } satisfies AskUserQuestionsInteraction;
 
-    expect(buildAnsweredQuestionsDeliveryText(interaction)).toBe([
-      "Answered questions",
+    const translate = (key: string) => String(i18n.t(key));
+    expect(buildAnsweredQuestionsDeliveryText(interaction, translate)).toBe([
+      language === "pt-BR" ? "Perguntas respondidas" : "Questions answered",
       "",
       "- Purpose — What is it for?: Internal API",
       "- Runtime — Which runtime?: Node.js",
       "- Features — Which features?: Request logs, Metrics",
     ].join("\n"));
+
+    const unanswered = {
+      ...interaction,
+      result: { version: 1 as const, answers: [{ questionId: "runtime", optionIds: [] }] },
+    };
+    expect(buildAnsweredQuestionsDeliveryText(unanswered, translate)).toContain(
+      `- Runtime — Which runtime?: ${language === "pt-BR" ? "Sem resposta" : "No answer"}`,
+    );
+  });
+
+  it.each(["en", "pt-BR"] as const)("localizes compact question and confirmation history in %s", async (language) => {
+    await i18n.changeLanguage(language);
+    const translate = (
+      key: string,
+      options?: { count?: number; created?: number; total?: number; label?: string },
+    ) => String(i18n.t(key, options as never));
+    const portuguese = language === "pt-BR";
+
+    expect(buildIssueThreadInteractionSummary({
+      ...pendingRequestConfirmationInteraction,
+      status: "accepted",
+      result: { version: 1, outcome: "accepted" },
+    }, translate)).toBe(portuguese ? "Solicitação confirmada" : "Confirmed request");
+
+    const rejectedConfirmation = {
+      ...pendingRequestConfirmationInteraction,
+      status: "rejected",
+      payload: { ...pendingRequestConfirmationInteraction.payload, rejectLabel: "Continue work" },
+      result: { version: 1, outcome: "rejected" },
+    } satisfies IssueThreadInteraction;
+    expect(buildIssueThreadInteractionSummary(rejectedConfirmation, translate)).toBe(
+      portuguese ? "Selecionou “Continue work”" : "Selected “Continue work”",
+    );
+
+    expect(buildIssueThreadInteractionSummary({
+      ...pendingRequestCheckboxConfirmationInteraction,
+      status: "accepted",
+      result: { version: 1, outcome: "accepted", selectedOptionIds: ["draft-march-report"] },
+    }, translate)).toBe(portuguese ? "Confirmou 1 de 4 opções" : "Confirmed 1 of 4 options");
+
+    const questionCount = pendingAskUserQuestionsInteraction.payload.questions.length;
+    expect(buildIssueThreadInteractionSummary(pendingAskUserQuestionsInteraction, translate)).toBe(
+      portuguese
+        ? `Foram feitas ${questionCount} perguntas`
+        : `Asked ${questionCount} questions`,
+    );
+    expect(buildIssueThreadInteractionSummary({
+      ...pendingAskUserQuestionsInteraction,
+      status: "answered",
+    }, translate)).toBe(
+      portuguese
+        ? `${questionCount} perguntas respondidas`
+        : `Answered ${questionCount} questions`,
+    );
   });
 
   it("summarizes task and question interactions", () => {
@@ -479,6 +546,17 @@ describe("per-item verdict helpers", () => {
     expect(progress.pendingItemIds).toEqual(["b"]);
   });
 
+  it("maps only known verdicts to labels and leaves unknown values untouched", () => {
+    expect(getItemVerdictLabelKey("approve")).toBe(
+      "taskDetail.interactionConfirmations.itemVerdicts.verdict.approve",
+    );
+    expect(getItemVerdictLabelKey("reject", true)).toBe(
+      "taskDetail.interactionConfirmations.itemVerdicts.resolved.reject",
+    );
+    expect(getItemVerdictLabelKey("future_verdict")).toBeNull();
+    expect(getItemVerdictLabelKey("constructor")).toBeNull();
+  });
+
   it("summarizes pending, complete, and superseded verdict cards", () => {
     expect(buildIssueThreadInteractionSummary(verdictInteraction())).toBe("0 of 3 decided");
 
@@ -505,6 +583,88 @@ describe("per-item verdict helpers", () => {
         items: [],
       },
     }))).toBe("Verdicts expired after comment");
+  });
+
+  it.each(["en", "pt-BR"] as const)("localizes verdict and connection summaries in %s and follows language changes", async (language) => {
+    await i18n.changeLanguage(language);
+    const translate = (
+      key: string,
+      options?: { count?: number; created?: number; total?: number; label?: string; service?: string },
+    ) => String(i18n.t(key, options as never));
+    const portuguese = language === "pt-BR";
+
+    const pendingVerdicts = verdictInteraction();
+    expect(buildIssueThreadInteractionSummary(pendingVerdicts, translate)).toBe(
+      portuguese ? "0 de 3 decididos" : "0 of 3 decided",
+    );
+
+    const answeredVerdicts = verdictInteraction({
+      status: "answered",
+      result: {
+        version: 1,
+        outcome: "resolved",
+        complete: true,
+        items: [
+          { id: "a", verdict: "approve", resolvedByUserId: "u", resolvedAt: "2026-04-06T12:01:00.000Z" },
+          { id: "b", verdict: "approve", resolvedByUserId: "u", resolvedAt: "2026-04-06T12:01:00.000Z" },
+          { id: "c", verdict: "reject", resolvedByUserId: "u", resolvedAt: "2026-04-06T12:01:00.000Z" },
+        ],
+      },
+    });
+    expect(buildIssueThreadInteractionSummary(answeredVerdicts, translate)).toBe(
+      portuguese
+        ? "3 decididos · 2 aprovados · 1 rejeitado"
+        : "3 decided · 2 approved · 1 rejected",
+    );
+    expect(buildIssueThreadInteractionSummary(verdictInteraction({
+      status: "expired",
+      result: { version: 1, outcome: "superseded_by_comment", complete: false, items: [] },
+    }), translate)).toBe(
+      portuguese ? "Decisões expiraram após um comentário" : "Verdicts expired after comment",
+    );
+
+    const connection = pendingConnectionIntentInteraction;
+    expect(buildIssueThreadInteractionSummary(connection, translate)).toBe(
+      portuguese ? "Conectar Notion" : "Connect Notion",
+    );
+    expect(buildIssueThreadInteractionSummary({
+      ...connection,
+      status: "accepted",
+      result: { version: 1, outcome: "connected" },
+    }, translate)).toBe(
+      portuguese ? "Conexão com Notion estabelecida" : "Notion connected",
+    );
+    expect(buildIssueThreadInteractionSummary({
+      ...connection,
+      status: "rejected",
+      result: { version: 1, outcome: "declined" },
+    }, translate)).toBe(
+      portuguese ? "Conexão com Notion recusada" : "Notion declined",
+    );
+    expect(buildIssueThreadInteractionSummary({
+      ...connection,
+      status: "expired",
+      result: { version: 1, outcome: "superseded" },
+    }, translate)).toBe(
+      portuguese
+        ? "Solicitação de conexão com Notion substituída"
+        : "Notion request superseded",
+    );
+    expect(buildIssueThreadInteractionSummary({
+      ...connection,
+      status: "expired",
+      result: { version: 1, outcome: "expired" },
+    }, translate)).toBe(
+      portuguese ? "Solicitação de conexão com Notion expirada" : "Notion request expired",
+    );
+
+    await i18n.changeLanguage(portuguese ? "en" : "pt-BR");
+    expect(buildIssueThreadInteractionSummary(pendingVerdicts, translate)).toBe(
+      portuguese ? "0 of 3 decided" : "0 de 3 decididos",
+    );
+    expect(buildIssueThreadInteractionSummary(connection, translate)).toBe(
+      portuguese ? "Connect Notion" : "Conectar Notion",
+    );
   });
 });
 

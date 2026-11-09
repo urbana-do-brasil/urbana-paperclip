@@ -48,6 +48,19 @@ export default defineConfig({
     headless: true,
     screenshot: "only-on-failure",
     trace: "on-first-retry",
+    // The product default is PT-BR. These specs predate localization and
+    // assert English labels/copy, so pin their browser contexts to English
+    // explicitly. PT-BR journeys live in tests/localization-browser and in
+    // localization-experimental.spec.ts, which opt into Portuguese.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: BASE_URL,
+          localStorage: [{ name: "paperclip.locale.local", value: "en" }],
+        },
+      ],
+    },
   },
   projects: [
     {

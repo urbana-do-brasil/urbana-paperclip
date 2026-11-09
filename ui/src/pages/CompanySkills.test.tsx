@@ -2,10 +2,13 @@
 
 import { act as reactAct, type ComponentProps, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { CatalogSkill, CompanySkillDetail, CompanySkillListItem, CompanySkillVersion, FolderListResult } from "@paperclipai/shared";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import type { CatalogSkill, CompanySkillDetail, CompanySkillFileDetail, CompanySkillListItem, CompanySkillVersion, FolderListResult } from "@paperclipai/shared";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import {
   DiscoveryGrid,
+  CatalogDetailPane,
   InstallPreviewDialog,
   SkillDetailPage,
   buildDiscoveryCards,
@@ -15,6 +18,12 @@ import {
   withDiscoveryTab,
   skillDetailBreadcrumbs,
 } from "./CompanySkills";
+import {
+  CatalogDetailPane as ProductionCatalogDetailPane,
+  DiscoveryGrid as ProductionDiscoveryGrid,
+  InstallPreviewDialog as ProductionInstallPreviewDialog,
+  SkillDetailPage as ProductionSkillDetailPage,
+} from "./CompanySkills.production";
 import { skillStudioNewRoute } from "../lib/company-skill-routes";
 
 vi.mock("@/lib/router", () => ({
@@ -115,6 +124,14 @@ afterEach(() => {
   container = null;
 });
 
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
+  await i18n.changeLanguage(DEFAULT_LOCALE);
+});
+
 function makeVersion(revisionNumber: number, content: string): CompanySkillVersion {
   return {
     id: `version-${revisionNumber}`,
@@ -187,15 +204,17 @@ function makeDetail(currentVersion: CompanySkillVersion, overrides: Partial<Comp
 async function renderSkillDetail(
   versions: CompanySkillVersion[],
   props: Partial<ComponentProps<typeof SkillDetailPage>> = {},
+  Component: typeof SkillDetailPage = SkillDetailPage,
 ) {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
   const detail = props.detail ?? makeDetail(versions[0]!);
+  const DetailPage = Component;
 
   await act(async () => {
     root?.render(
-      <SkillDetailPage
+      <DetailPage
         detail={detail}
         loading={false}
         activeTab={props.activeTab ?? "versions"}
@@ -266,6 +285,47 @@ async function renderDiscoveryGrid(props: Partial<ComponentProps<typeof Discover
         onImport={vi.fn()}
         onImportFromProject={vi.fn()}
         onBrowseDiscover={vi.fn()}
+        onScan={vi.fn()}
+        scanPending={false}
+        scanStatus={null}
+        {...props}
+      />,
+    );
+  });
+
+  return container;
+}
+
+async function renderProductionDiscoveryGrid(
+  props: Partial<ComponentProps<typeof ProductionDiscoveryGrid>> = {},
+) {
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+
+  await act(async () => {
+    root?.render(
+      <ProductionDiscoveryGrid
+        tab="all"
+        tabCounts={{ all: 0, installed: 0, catalog: 0, bundled: 0 }}
+        onTabChange={vi.fn()}
+        categories={[]}
+        categoryTotal={0}
+        activeCategory={null}
+        onCategoryChange={vi.fn()}
+        search=""
+        onSearchChange={vi.fn()}
+        sort="agents"
+        onSortChange={vi.fn()}
+        cards={[]}
+        onOpenCard={vi.fn()}
+        loading={false}
+        error={null}
+        totalCount={0}
+        onCreate={vi.fn()}
+        onImport={vi.fn()}
+        onImportFromProject={vi.fn()}
+        onBrowseCatalog={vi.fn()}
         onScan={vi.fn()}
         scanPending={false}
         scanStatus={null}
@@ -373,6 +433,120 @@ describe("getSkillVersionDiffSelection", () => {
 });
 
 describe("DiscoveryGrid IA presentation", () => {
+  it("localizes the streamlined discovery grid and keeps remote skill metadata intact", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const localCard = {
+      key: "local-skill",
+      skillId: "local-1",
+      catalogRef: null,
+      name: "Security audit",
+      slug: "security-audit",
+      author: "Equipe Azul",
+      version: null,
+      tagline: null,
+      description: "Review repository permissions.",
+      categories: ["Security"],
+      iconUrl: null,
+      color: null,
+      starCount: 0,
+      agentCount: 1,
+      forkCount: 0,
+      installed: true,
+      required: false,
+      forkedFrom: true,
+      updatedAt: 0,
+      sourceBadge: "local" as const,
+    } satisfies ComponentProps<typeof DiscoveryGrid>["cards"][number];
+    const remoteCard = {
+      ...localCard,
+      key: "remote-skill",
+      skillId: null,
+      catalogRef: "remote-1",
+      name: "API threat review",
+      slug: "api-threat-review",
+      author: "Acme Security",
+      description: "Inspect endpoints for common threats.",
+      categories: ["Threat Modeling"],
+      agentCount: 0,
+      installed: false,
+      forkedFrom: false,
+      sourceBadge: "github" as const,
+      sourceLabel: "acme/security-skills",
+    };
+    const node = await renderDiscoveryGrid({
+      tab: "discover",
+      categories: [{ slug: "Security", count: 1 }],
+      categoryTotal: 2,
+      cards: [localCard, remoteCard],
+      totalCount: 2,
+    });
+
+    expect(node.querySelector('input[aria-label="Buscar skills disponíveis para descoberta"]')).not.toBeNull();
+    expect(node.textContent).toContain("Ordenar");
+    expect(node.textContent).toContain("Mais agentes");
+    expect(node.textContent).toContain("Todas as origens");
+    expect(node.textContent).toContain("2 skills");
+    expect(node.textContent).toContain("Ativada para 1 agente");
+    expect(node.textContent).toContain("Pasta");
+    expect(node.textContent).toContain("por Equipe Azul");
+    expect(node.textContent).toContain("acme/security-skills");
+    expect(node.textContent).toContain("API threat review");
+    expect(node.textContent).toContain("Inspect endpoints for common threats.");
+    expect(node.textContent).toContain("Threat Modeling");
+    expect(node.textContent).toContain("Derivada");
+  });
+
+  it("localizes the production catalog tabs, source labels, and empty state", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const node = await renderProductionDiscoveryGrid();
+
+    expect(node.textContent).toContain("Loja de skills");
+    expect(node.textContent).toContain("Descubra, instale, derive e compartilhe");
+    expect(node.textContent).toContain("Todas");
+    expect(node.textContent).toContain("Instaladas");
+    expect(node.textContent).toContain("Catálogo");
+    expect(node.textContent).toContain("Incluídas");
+    expect(node.textContent).toContain("Ainda não há skills. Crie uma ou instale uma pelo catálogo.");
+    expect(node.textContent).toContain("Explorar catálogo");
+    expect(node.textContent).toContain("Importar do GitHub");
+  });
+
+  it("preserves remote names and descriptions in the production card presentation", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const remoteCard = {
+      key: "remote-skill",
+      skillId: null,
+      catalogRef: "remote-1",
+      name: "API threat review",
+      slug: "api-threat-review",
+      author: "Acme Security",
+      version: null,
+      tagline: null,
+      description: "Inspect endpoints for common threats.",
+      categories: ["Threat Modeling"],
+      iconUrl: null,
+      color: null,
+      starCount: 0,
+      agentCount: 2,
+      forkCount: 0,
+      installed: false,
+      required: false,
+      forkedFrom: false,
+      updatedAt: 0,
+      sourceBadge: "github" as const,
+      sourceLabel: "acme/security-skills",
+    } satisfies ComponentProps<typeof ProductionDiscoveryGrid>["cards"][number];
+    const node = await renderProductionDiscoveryGrid({ cards: [remoteCard], totalCount: 1 });
+
+    expect(node.querySelector('input[aria-label="Buscar skills, autores ou categorias…"]')).not.toBeNull();
+    expect(node.textContent).toContain("2 agentes");
+    expect(node.textContent).toContain("API threat review");
+    expect(node.textContent).toContain("por Acme Security");
+    expect(node.textContent).toContain("Inspect endpoints for common threats.");
+    expect(node.textContent).toContain("Threat Modeling");
+    expect(node.querySelector('[aria-label="De acme/security-skills"]')).not.toBeNull();
+  });
+
   it("makes the search scope explicit for Installed and Discover", async () => {
     let node = await renderDiscoveryGrid({ tab: "installed" });
     expect(node.querySelector('input[aria-label="Search installed skills"]')).not.toBeNull();
@@ -758,6 +932,348 @@ describe("skillStudioNewRoute", () => {
   });
 });
 
+async function verifyLocalizedSkillDetailVariant(Component: typeof SkillDetailPage) {
+  await act(async () => { await i18n.changeLanguage("pt-BR"); });
+  const version = makeVersion(1, "# Demo Skill");
+  const detail = makeDetail(version, {
+    description: "Review repository permissions.",
+    authorName: "Equipe Azul",
+    sourceBadge: "local",
+    sourceLabel: null,
+    sourceRef: "1234567890abcdef",
+    folderPath: "my/ada/code-review",
+    metadata: {
+      skillSourceId: "source-1",
+      skillSourceState: "removed",
+      skillSourcePath: "acme/security-skills",
+    },
+  });
+
+  let node = await renderSkillDetail([version], { activeTab: "overview", detail }, Component);
+
+  expect(node.textContent).toContain("Visão geral");
+  expect(node.textContent).toContain("Arquivos");
+  expect(node.textContent).toContain("Sobre");
+  expect(node.textContent).toContain("Chave");
+  expect(node.textContent).toContain("Origem");
+  expect(node.textContent).toContain("Versão");
+  expect(node.textContent).toContain("Modo");
+  expect(node.textContent).toContain("Minhas skills / Ada / Code Review");
+  expect(node.textContent).toContain("Removida da origem · última versão instalada mantida");
+  expect(node.textContent).toContain("acme/security-skills · 12345678");
+  expect(node.textContent).toContain("Demo Skill");
+  expect(node.textContent).toContain("Review repository permissions.");
+
+  await act(async () => { root?.unmount(); });
+  root = null;
+  container?.remove();
+  container = null;
+
+  const file: CompanySkillFileDetail = {
+    skillId: detail.id,
+    path: "docs/Review Guide.md",
+    kind: "skill",
+    content: "# Review checklist",
+    language: "markdown",
+    markdown: true,
+    editable: false,
+  };
+  node = await renderSkillDetail([version], {
+    activeTab: "files",
+    detail,
+    selectedPath: file.path,
+    file,
+  }, Component);
+
+  expect(node.textContent).toContain("Visualizar");
+  expect(node.textContent).toContain("Código");
+  expect(node.textContent).toContain("docs/Review Guide.md");
+  expect(node.textContent).toContain("Review checklist");
+}
+
+async function verifyLocalizedSkillOperationsVariant(Component: typeof SkillDetailPage) {
+  await act(async () => { await i18n.changeLanguage("pt-BR"); });
+  const v1 = makeVersion(1, "# Demo Skill\n\nFirst revision");
+  const v2 = makeVersion(2, "# Demo Skill\n\nSecond revision");
+
+  const onToggleStar = vi.fn();
+  const onFork = vi.fn();
+  const onCheckUpdates = vi.fn();
+  const onInstallUpdate = vi.fn();
+  let node = await renderSkillDetail([v2, v1], {
+    activeTab: "overview",
+    detail: makeDetail(v2, {
+      sourceType: "github",
+      sourceBadge: "github",
+      sourceLabel: "GitHub",
+      sourceRef: "abcdef1234567",
+      starredByCurrentActor: true,
+      starCount: 4,
+      forkCount: 2,
+    }),
+    updateStatus: {
+      supported: true,
+      reason: null,
+      trackingRef: "main",
+      currentRef: "abcdef1234567",
+      latestRef: "1234567890abcdef",
+      hasUpdate: true,
+      installedHash: null,
+      originHash: null,
+      userModifiedAt: null,
+      updateHoldReason: null,
+      auditVerdict: null,
+      auditCodes: [],
+    },
+    onToggleStar,
+    onFork,
+    onCheckUpdates,
+    onInstallUpdate,
+  }, Component);
+
+  expect(node.textContent).toContain("Favoritada");
+  expect(node.textContent).toContain("Criar uma cópia");
+  expect(node.textContent).toContain("Verificar atualizações");
+  expect(node.textContent).toContain("Instalar atualização 1234567");
+  await click(node.querySelector('button[title="Desfavoritar esta skill"]') as HTMLButtonElement);
+  const forkButton = Array.from(node.querySelectorAll("button")).find((button) => button.textContent?.includes("Criar uma cópia"));
+  await click(forkButton as HTMLButtonElement);
+  await click(buttonsNamed(node, "Verificar atualizações")[0] as HTMLButtonElement);
+  const updateButton = Array.from(node.querySelectorAll("button")).find((button) => button.textContent?.includes("Instalar atualização 1234567"));
+  await click(updateButton as HTMLButtonElement);
+  expect(onToggleStar).toHaveBeenCalledOnce();
+  expect(onFork).toHaveBeenCalledOnce();
+  expect(onCheckUpdates).toHaveBeenCalledOnce();
+  expect(onInstallUpdate).toHaveBeenCalledOnce();
+
+  await act(async () => { root?.unmount(); });
+  root = null;
+  node.remove();
+  container = null;
+
+  node = await renderSkillDetail([v2, v1], { activeTab: "versions" }, Component);
+  expect(node.textContent).toContain("2 versões");
+  expect(node.textContent).toContain("Comparar");
+  expect(node.textContent).toContain("Ver diferenças");
+
+  await click(buttonsNamed(node, "Comparar")[0] as HTMLButtonElement);
+  expect(node.textContent).toContain("Comparação · arquivos da skill");
+  expect(node.textContent).toContain("Anterior");
+  expect(node.textContent).toContain("Novo");
+  expect(node.textContent).toContain("Inicial");
+  expect(node.textContent).toContain("Second revision");
+
+  await act(async () => { root?.unmount(); });
+  root = null;
+  node.remove();
+  container = null;
+
+  const attachedDetail = makeDetail(v2, {
+    usedByAgents: [{
+      id: "agent-engineering",
+      name: "Backend lead",
+      urlKey: "backend-lead",
+      adapterType: "openai_codex",
+      desired: true,
+      actualState: null,
+      versionId: v2.id,
+    }],
+    attachedAgentCount: 1,
+  });
+  const onUpdateSettings = vi.fn();
+  node = await renderSkillDetail([v2, v1], {
+    activeTab: "agents",
+    detail: attachedDetail,
+    attachAgents: [{
+      id: "agent-engineering",
+      name: "Backend lead",
+      adapterType: "openai_codex",
+      supportsSkills: true,
+      required: false,
+      icon: null,
+      paused: true,
+    }],
+    onUpdateSettings,
+  }, Component);
+
+  expect(node.textContent).toContain("1 agente associado");
+  expect(node.textContent).toContain("Adicionar a agente");
+  expect(node.textContent).toContain("Backend lead");
+  expect(node.textContent).toContain("openai_codex");
+  expect(node.textContent).toContain("Pausado");
+  expect(node.textContent).toContain("Visualizar");
+
+  await click(buttonsNamed(node, "Configurações")[0] as HTMLButtonElement);
+  const dialog = node.querySelector('[role="dialog"]') as HTMLElement;
+  expect(dialog.textContent).toContain("Configurações da skill");
+  expect(dialog.textContent).toContain("Defina como Demo Skill é categorizada e compartilhada.");
+  expect(dialog.textContent).toContain("Categorias");
+  expect(dialog.textContent).toContain("Compartilhamento");
+  expect(dialog.textContent).toContain("Organização — visível nesta organização");
+  expect(dialog.textContent).toContain("Privada — visível apenas na sua biblioteca");
+  expect(dialog.textContent).toContain("Zona de risco");
+  expect(dialog.textContent).toContain("Remova esta skill da biblioteca da organização.");
+
+  const categoryInput = dialog.querySelector("input") as HTMLInputElement;
+  await inputValue(categoryInput, "security-review, privacy");
+  await selectValue(dialog.querySelector("select") as HTMLSelectElement, "company");
+  await click(buttonsNamed(dialog, "Salvar configurações")[0] as HTMLButtonElement);
+  expect(onUpdateSettings).toHaveBeenCalledWith({
+    sharingScope: "company",
+    categories: ["security-review", "privacy"],
+  });
+
+  await act(async () => { root?.unmount(); });
+  root = null;
+  node.remove();
+  container = null;
+
+  const file: CompanySkillFileDetail = {
+    skillId: "skill-1",
+    path: "docs/Review Guide.md",
+    kind: "skill",
+    content: "# Review guide\n\nOriginal copy.",
+    language: "markdown",
+    markdown: true,
+    editable: true,
+  };
+  const onSave = vi.fn();
+  const setDraft = vi.fn();
+  const setEditMode = vi.fn();
+  node = await renderSkillDetail([v2, v1], {
+    activeTab: "files",
+    detail: makeDetail(v2),
+    selectedPath: file.path,
+    file,
+    editMode: true,
+    draft: "# Review guide\n\nUpdated copy.",
+    setDraft,
+    setEditMode,
+    onSave,
+  }, Component);
+
+  expect(node.textContent).toContain("docs/Review Guide.md");
+  expect(node.textContent).toContain("Alterações não salvas");
+  expect(buttonsNamed(node, "Cancelar").length).toBeGreaterThan(0);
+  expect(buttonsNamed(node, "Descartar")).toHaveLength(1);
+  expect(buttonsNamed(node, "Salvar alterações")).toHaveLength(1);
+  expect((node.querySelector("textarea") as HTMLTextAreaElement).value).toContain("Updated copy.");
+
+  await click(buttonsNamed(node, "Salvar")[0] as HTMLButtonElement);
+  expect(onSave).toHaveBeenCalledOnce();
+  await click(buttonsNamed(node, "Descartar")[0] as HTMLButtonElement);
+  expect(setDraft).toHaveBeenCalledWith(file.content);
+  expect(setEditMode).toHaveBeenCalledWith(false);
+}
+
+describe("Skill detail localization", () => {
+  it("localizes the streamlined detail and file browser while preserving skill metadata", async () => {
+    await verifyLocalizedSkillDetailVariant(SkillDetailPage);
+  });
+
+  it("localizes the production detail and file browser while preserving skill metadata", async () => {
+    await verifyLocalizedSkillDetailVariant(ProductionSkillDetailPage);
+  });
+});
+
+describe("Skill detail operations localization", () => {
+  it("localizes streamlined versions, agent association, sharing, and editing while preserving values", async () => {
+    await verifyLocalizedSkillOperationsVariant(SkillDetailPage);
+  });
+
+  it("localizes production versions, agent association, sharing, and editing while preserving values", async () => {
+    await verifyLocalizedSkillOperationsVariant(ProductionSkillDetailPage);
+  });
+});
+
+async function verifyLocalizedCatalogDetailVariant(Component: typeof CatalogDetailPane) {
+  await act(async () => { await i18n.changeLanguage("pt-BR"); });
+  const skill: CatalogSkill = {
+    id: "catalog-security-audit",
+    key: "paperclipai/optional/engineering/security-audit",
+    kind: "optional",
+    category: "engineering",
+    slug: "security-audit",
+    name: "Security audit",
+    description: "Review repository permissions.",
+    path: "catalog/optional/engineering/security-audit",
+    entrypoint: "SKILL.md",
+    trustLevel: "markdown_only",
+    compatibility: "compatible",
+    defaultInstall: false,
+    recommendedForRoles: ["Engineering"],
+    requires: ["git"],
+    tags: ["security-review"],
+    files: [{ path: "SKILL.md", kind: "skill", sizeBytes: 128, sha256: "abc123" }],
+    contentHash: "sha256:abc12345678901234567890123456789",
+  };
+  const node = await renderCatalogDetail(Component, {
+    skill,
+    packageName: "Paperclip",
+    packageVersion: "2.0.0",
+    installedSkill: null,
+    installedSkillId: null,
+    fileQuery: {
+      data: {
+        catalogSkillId: skill.id,
+        path: "guides/Checklist.md",
+        kind: "skill",
+        content: "# External guide\n\nPreserve this heading.",
+        language: "markdown",
+        markdown: true,
+      },
+      isLoading: false,
+      error: null,
+    },
+    selectedPath: "guides/Checklist.md",
+    onInstall: vi.fn(),
+    onUpdate: vi.fn(),
+    onOpenInstalled: vi.fn(),
+    loadingPrimaryAction: false,
+  });
+
+  expect(node.textContent).toContain("Security audit");
+  expect(node.textContent).toContain("Review repository permissions.");
+  expect(node.textContent).toContain("Instalar skill nesta organização");
+  expect(node.textContent).toContain("Opcional");
+  expect(node.textContent).toContain("Requisitos: git");
+  expect(node.textContent).toContain("Funções: Engineering");
+  expect(node.textContent).toContain("Tags: security-review");
+  expect(node.textContent).toContain("Chave");
+  expect(node.textContent).toContain(skill.key);
+  expect(node.textContent).toContain("Hash");
+  expect(node.textContent).toContain("Somente Markdown");
+  expect(node.textContent).toContain("Instalada do catálogo incluído no aplicativo.");
+  expect(node.textContent).toContain("guides/Checklist.md");
+  expect(node.textContent).toContain("External guide");
+  expect(node.textContent).toContain("Preserve this heading.");
+}
+
+async function renderCatalogDetail(
+  Component: typeof CatalogDetailPane,
+  props: ComponentProps<typeof CatalogDetailPane>,
+) {
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+
+  await act(async () => {
+    root?.render(<Component {...props} />);
+  });
+
+  return container as ParentNode;
+}
+
+describe("catalog skill detail localization", () => {
+  it("localizes catalog details and file navigation while preserving catalog content", async () => {
+    await verifyLocalizedCatalogDetailVariant(CatalogDetailPane);
+  });
+
+  it("localizes production catalog details and file navigation while preserving catalog content", async () => {
+    await verifyLocalizedCatalogDetailVariant(ProductionCatalogDetailPane);
+  });
+});
+
 describe("SkillDetailPage versions tab", () => {
   it("opens per-row version diffs for newest and oldest revisions", async () => {
     const v1 = makeVersion(1, "# Demo Skill\n\nFirst line");
@@ -1011,6 +1527,66 @@ describe("install-time agent enablement", () => {
     };
   }
 
+  async function verifyLocalizedInstallPreview(Component: typeof InstallPreviewDialog) {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    const onConfirm = vi.fn();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+
+    await act(async () => {
+      root?.render(
+        <Component
+          open
+          onOpenChange={vi.fn()}
+          skill={makeCatalogSkill()}
+          packageName="Paperclip"
+          packageVersion="2.0.0"
+          conflict={null}
+          defaultSlug="wireframe"
+          defaultForce={false}
+          defaultAction="install"
+          agents={agentOptions}
+          isPending={false}
+          error={null}
+          onConfirm={onConfirm}
+        />,
+      );
+    });
+
+    const node = container as ParentNode;
+    expect(node.textContent).toContain("Instalar skill · wireframe");
+    expect(node.textContent).toContain("Incluída");
+    expect(node.textContent).toContain("product");
+    expect(node.textContent).toContain("Confiança");
+    expect(node.textContent).toContain("Seguro");
+    expect(node.textContent).toContain("Compatibilidade");
+    expect(node.textContent).toContain("Compatível");
+    expect(node.textContent).toContain("Procedência");
+    expect(node.textContent).toContain("Arquivos (1)");
+    expect(node.textContent).toContain("SKILL.md");
+    expect(node.textContent).toContain("sha256:abc");
+    expect(node.textContent).toContain("Ativar para agentes");
+    expect(node.textContent).toContain("2 agentes selecionados");
+
+    await click(buttonsNamed(node, "Avançado")[0] as HTMLButtonElement);
+    expect(node.textContent).toContain("Substituição do slug");
+    expect(node.textContent).toContain("Forçar a substituição da skill com a mesma chave");
+
+    await click(buttonsNamed(node, "Instalar skill")[0] as HTMLButtonElement);
+    expect(onConfirm).toHaveBeenCalledWith({
+      slug: "wireframe",
+      force: false,
+      agentIds: expect.arrayContaining(["agent-ceo", "agent-designer"]),
+    });
+    expect(onConfirm.mock.calls[0][0].agentIds).toHaveLength(2);
+
+    await act(async () => { root?.unmount(); });
+    root = null;
+    container?.remove();
+    container = null;
+  }
+
   it("defaults to every skills-capable, non-required agent", () => {
     expect(defaultInstallAgentSelection(agentOptions)).toEqual(new Set(["agent-ceo", "agent-designer"]));
   });
@@ -1122,5 +1698,13 @@ describe("install-time agent enablement", () => {
     await click(buttonsNamed(node, "Install update")[0] as HTMLButtonElement);
 
     expect(onConfirm).toHaveBeenCalledWith({ slug: "wireframe", force: false, agentIds: [] });
+  });
+
+  it("localizes the streamlined install preview while preserving skill data and selected agent IDs", async () => {
+    await verifyLocalizedInstallPreview(InstallPreviewDialog);
+  });
+
+  it("localizes the production install preview while preserving skill data and selected agent IDs", async () => {
+    await verifyLocalizedInstallPreview(ProductionInstallPreviewDialog);
   });
 });

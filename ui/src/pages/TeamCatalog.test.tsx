@@ -16,6 +16,8 @@ import {
   teamRoute,
 } from "./TeamCatalog";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 const mockTeamCatalogApi = vi.hoisted(() => ({
   catalogList: vi.fn(),
@@ -237,8 +239,10 @@ function findButton(label: string): HTMLButtonElement | undefined {
 
 describe("TeamCatalog install preview path", () => {
   let container: HTMLDivElement;
+  let mountedRoot: ReturnType<typeof createRoot> | null = null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     mockAdapterAvailability.disabled = new Set(["paperclip_runner"]);
     mockAdapterAvailability.loaded = true;
     container = document.createElement("div");
@@ -262,14 +266,20 @@ describe("TeamCatalog install preview path", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await act(async () => {
+      mountedRoot?.unmount();
+    });
+    mountedRoot = null;
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   async function renderPage() {
     const root = createRoot(container);
+    mountedRoot = root;
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     await act(async () => {
       root.render(
@@ -283,6 +293,125 @@ describe("TeamCatalog install preview path", () => {
     await flushReact();
     return root;
   }
+
+  it("localizes the catalog and detail in Portuguese without translating package content", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderPage();
+
+    expect(document.body.textContent).toContain("Equipes");
+    expect(document.body.textContent).toContain("Agentes");
+    expect(document.body.textContent).toContain("Skills obrigatórias");
+    expect(document.body.textContent).toContain("A starter executive team.");
+    expect(document.querySelector('input[placeholder="Buscar equipes"]')).toBeTruthy();
+    expect(findButton("Instalar equipe")).toBeTruthy();
+  });
+
+  it("localizes the install flow in Portuguese while preserving API options", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderPage();
+
+    const detailInstall = findButton("Instalar equipe");
+    expect(detailInstall).toBeTruthy();
+    await act(async () => {
+      detailInstall!.click();
+    });
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Resumo");
+    expect(mockTeamCatalogApi.preview).toHaveBeenCalledWith(
+      "company-1",
+      "team-no-deps",
+      expect.objectContaining({
+        collisionStrategy: "rename",
+        sourcePolicy: {
+          allowExternalSources: false,
+          allowUnpinnedOptionalSources: false,
+          allowLocalPathSources: false,
+        },
+      }),
+    );
+
+    const submit = Array.from(document.querySelectorAll("button")).filter((button) =>
+      (button.textContent ?? "").includes("Instalar equipe"),
+    ).at(-1) as HTMLButtonElement;
+    await act(async () => {
+      submit.click();
+    });
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Equipe instalada");
+    expect(mockTeamCatalogApi.install).toHaveBeenCalledWith(
+      "company-1",
+      "team-no-deps",
+      expect.objectContaining({
+        collisionStrategy: "rename",
+        sourcePolicy: {
+          allowExternalSources: false,
+          allowUnpinnedOptionalSources: false,
+          allowLocalPathSources: false,
+        },
+      }),
+    );
+  });
+
+  it("localizes manager and external-source policy steps without changing source references", async () => {
+    const team = makeTeam({
+      rootAgentSlugs: ["ceo"],
+      recommendedForCompanyTypes: ["company-root"],
+      sourceRefs: [{ type: "github", ref: "github.com/example/skills@abc123", pinned: false }],
+    });
+    mockTeamCatalogApi.catalogList.mockResolvedValue([team]);
+    mockAgentsApi.list.mockResolvedValue([
+      {
+        id: "agent-1",
+        companyId: "company-1",
+        name: "Founder",
+        urlKey: "founder",
+        role: "ceo",
+        title: null,
+        icon: null,
+        status: "active",
+        reportsTo: null,
+        capabilities: null,
+        adapterType: "claude_local",
+        adapterConfig: {},
+        runtimeConfig: {},
+        budgetMonthlyCents: 0,
+        spentMonthlyCents: 0,
+        pauseReason: null,
+        pausedAt: null,
+        permissions: {},
+        lastHeartbeatAt: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+    await i18n.changeLanguage("pt-BR");
+    await renderPage();
+
+    await act(async () => {
+      findButton("Instalar equipe")!.click();
+    });
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Os agentes raiz desta equipe precisam de um gerente");
+    expect(document.body.textContent).toContain("Agentes raiz");
+    expect(document.body.textContent).toContain("Gerente de destino");
+    const fullOrganization = document.querySelector('input[type="radio"]') as HTMLInputElement;
+    await act(async () => {
+      fullOrganization.click();
+    });
+    await act(async () => {
+      findButton("Continuar")!.click();
+    });
+    await flushReact();
+
+    expect(document.body.textContent).toContain("Esta equipe referencia 1 fonte externa.");
+    expect(document.body.textContent).toContain("Permitir fontes externas");
+    expect(document.body.textContent).toContain("github.com/example/skills@abc123");
+    expect(document.body.textContent).toContain("referência sem versão fixada");
+  });
 
   it("renders the detail pane for the selected team", async () => {
     await renderPage();

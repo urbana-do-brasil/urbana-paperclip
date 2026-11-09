@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 
 import { flushSync } from "react-dom";
+import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BuiltInBundlePanel } from "./BuiltInBundlePanel";
+import { i18n } from "@/i18n";
 import type {
   BuiltInAgentState,
   BuiltInManagedResourceState,
@@ -55,14 +57,14 @@ function makeState(
         instructions: { entryFile: "AGENTS.md", files: ["AGENTS.md"] },
         skill: {
           skillKey: "reflection-coach",
-          displayName: "reflection-coach",
+          displayName: "Reflection Coach",
           slug: "reflection-coach",
           canonicalKey: "paperclipai/bundled/paperclip-operations/reflection-coach",
           files: ["reflection-coach/SKILL.md"],
         },
         routine: {
           routineKey: "recent-agent-reflection",
-          title: "Recent agent reflection",
+          title: "Review recent agent trajectories for coaching proposals",
           status: "paused",
           triggerCount: 1,
           scheduleLabel: "Weekly · Mon 09:00 UTC",
@@ -119,17 +121,19 @@ describe("BuiltInBundlePanel (PAP-13099)", () => {
     });
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root?.unmount());
     root = null;
     container.remove();
     // Radix portals dialog content onto body; clear leftovers between tests.
     document.body.querySelectorAll("[data-slot='alert-dialog-portal']").forEach((node) => node.remove());
+    await i18n.changeLanguage("en");
   });
 
   it("renders four resource rows with ready + schedule-off chips when healthy", () => {
@@ -145,7 +149,48 @@ describe("BuiltInBundlePanel (PAP-13099)", () => {
     expect(text).toContain("Schedule off");
     expect(text).toContain("Ready");
     expect(text).toContain("Run once");
-    expect(text).toContain("Enable weekly");
+    expect(text).toContain("Enable schedule");
+  });
+
+  it("localizes owned panel copy and verified bundle metadata while preserving schedule values and paths", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("pt-BR");
+    });
+    render(makeState("ready", [
+      resource("skill", "stock_current"),
+      resource("instructions", "stock_current"),
+      resource("routine", "stock_current", {
+        scheduleEnabled: true,
+        pendingUpdateInteractionId: "interaction-1",
+        pendingUpdateIssueId: "issue-1",
+        pendingUpdateIssueIdentifier: "PAP-42",
+      }),
+    ]));
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("Estado do pacote");
+    expect(text).toContain("Agente de reflexão");
+    expect(text).toContain("Revisar trajetórias recentes de agentes e propor melhorias de instruções");
+    expect(text).toContain("Weekly · Mon 09:00 UTC");
+    expect(text).toContain("Proposta pendente");
+    expect(Array.from(container.querySelectorAll("a")).map((link) => link.getAttribute("href"))).toContain("/agents/reflectioncoach/skills");
+    expect(Array.from(container.querySelectorAll("a")).map((link) => link.getAttribute("href"))).toContain("/agents/reflectioncoach/instructions");
+
+    expect(Array.from(container.querySelectorAll("button")).map((button) => button.textContent)).toContain("Executar uma vez");
+  });
+
+  it("keeps customized bundle resource metadata in the operator's own words", () => {
+    const state = makeState("ready", READY_RESOURCES);
+    state.definition.displayName = "Operations Coach";
+    state.definition.bundle!.skill.displayName = "Custom reflection notes";
+    state.definition.bundle!.routine.title = "Review our custom playbook";
+
+    render(state);
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("Custom reflection notes");
+    expect(text).toContain("Review our custom playbook");
+    expect(text).not.toContain("Agente de reflexão");
   });
 
   it("shows the active weekly schedule and disable action when enabled", () => {
@@ -180,7 +225,7 @@ describe("BuiltInBundlePanel (PAP-13099)", () => {
     render(makeState("needs_setup", READY_RESOURCES));
     const text = container.textContent ?? "";
     expect(text).toContain("Needs setup");
-    expect(text).toContain("Pick an adapter this coach can run on");
+    expect(text).toContain("Pick an adapter this agent can run on");
   });
 
   it("surfaces an update-available chip and Update action for unedited stock drift", () => {

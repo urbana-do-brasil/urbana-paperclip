@@ -17,31 +17,35 @@ export type AgentLocalDetailView = Exclude<AgentDetailView, "run-detail">;
 
 export const AGENT_DETAIL_NAVIGATION: ReadonlyArray<{
   label: string;
-  items: ReadonlyArray<{ value: AgentLocalDetailView; label: string }>;
+  translationKey: string;
+  items: ReadonlyArray<{ value: AgentLocalDetailView; label: string; translationKey: string }>;
 }> = [
   {
     label: "Agent",
+    translationKey: "agentDetailNavigation.sections.agent",
     items: [
-      { value: "overview", label: "Overview" },
-      { value: "instructions", label: "Instructions" },
-      { value: "skills", label: "Skills" },
+      { value: "overview", label: "Overview", translationKey: "agentDetailNavigation.items.overview" },
+      { value: "instructions", label: "Instructions", translationKey: "agentDetailNavigation.items.instructions" },
+      { value: "skills", label: "Skills", translationKey: "agentDetailNavigation.items.skills" },
     ],
   },
   {
     label: "Runtime",
+    translationKey: "agentDetailNavigation.sections.runtime",
     items: [
-      { value: "runtime", label: "Harness / Runtime" },
-      { value: "secrets", label: "Secrets" },
-      { value: "tools", label: "Tools" },
-      { value: "channels", label: "Channels" },
+      { value: "runtime", label: "Harness / Runtime", translationKey: "agentDetailNavigation.items.runtime" },
+      { value: "secrets", label: "Secrets", translationKey: "agentDetailNavigation.items.secrets" },
+      { value: "tools", label: "Tools", translationKey: "agentDetailNavigation.items.tools" },
+      { value: "channels", label: "Channels", translationKey: "agentDetailNavigation.items.channels" },
     ],
   },
   {
     label: "Governance",
+    translationKey: "agentDetailNavigation.sections.governance",
     items: [
-      { value: "permissions", label: "Permissions / Trust" },
-      { value: "api-keys", label: "API Keys" },
-      { value: "revisions", label: "Revisions" },
+      { value: "permissions", label: "Permissions / Trust", translationKey: "agentDetailNavigation.items.permissions" },
+      { value: "api-keys", label: "API Keys", translationKey: "agentDetailNavigation.items.apiKeys" },
+      { value: "revisions", label: "Revisions", translationKey: "agentDetailNavigation.items.revisions" },
     ],
   },
 ] as const;

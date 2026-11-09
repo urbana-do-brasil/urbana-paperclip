@@ -4,9 +4,11 @@ import { Link } from "@/lib/router";
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
+  type Announcements,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
@@ -15,9 +17,11 @@ import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useTranslation } from "react-i18next";
 import { StatusIcon } from "./StatusIcon";
 import { PriorityIcon } from "./PriorityIcon";
 import { SHOW_TASK_PRIORITY_UI } from "../lib/ui-flags";
@@ -47,6 +51,16 @@ export const boardStatuses = [
   "done",
   "cancelled",
 ] as const satisfies readonly IssueStatus[];
+
+const KANBAN_STATUS_LABEL_KEYS = {
+  backlog: "taskCollection.filters.status.backlog",
+  todo: "taskCollection.filters.status.todo",
+  in_progress: "taskCollection.filters.status.inProgress",
+  in_review: "taskCollection.filters.status.inReview",
+  blocked: "taskCollection.filters.status.blocked",
+  done: "taskCollection.filters.status.done",
+  cancelled: "taskCollection.filters.status.cancelled",
+} as const satisfies Record<IssueStatus, string>;
 
 const defaultKanbanColumnTone = {
   rail: "border-border bg-muted/20",
@@ -131,10 +145,6 @@ export function getKanbanColumnTone(status: IssueStatus) {
   return kanbanColumnTones[status] ?? defaultKanbanColumnTone;
 }
 
-function statusLabel(status: string): string {
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 export function resolveKanbanTargetStatus(overId: string, issues: Issue[]): IssueStatus | null {
   if ((boardStatuses as readonly string[]).includes(overId)) {
     return overId as IssueStatus;
@@ -145,6 +155,13 @@ export function resolveKanbanTargetStatus(overId: string, issues: Issue[]): Issu
 interface Agent {
   id: string;
   name: string;
+}
+
+interface KanbanCardText {
+  needsNextStepLabel: string;
+  needsNextStepTitle: string;
+  liveLabel: string;
+  liveDescendants: (count: number) => string;
 }
 
 interface KanbanBoardProps {
@@ -162,6 +179,7 @@ interface KanbanBoardProps {
 
 function KanbanColumn({
   status,
+  statusName,
   issues,
   agents,
   liveIssueIds,
@@ -170,9 +188,13 @@ function KanbanColumn({
   collapsed = false,
   visibleCount,
   revealIncrement,
+  showMoreLabel,
+  showingLabel,
+  cardText,
   onShowMore,
 }: {
   status: IssueStatus;
+  statusName: string;
   issues: Issue[];
   agents?: Agent[];
   liveIssueIds?: Set<string>;
@@ -181,11 +203,13 @@ function KanbanColumn({
   collapsed?: boolean;
   visibleCount: number;
   revealIncrement: number;
+  showMoreLabel: string;
+  showingLabel: string;
+  cardText: KanbanCardText;
   onShowMore: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
-  const isEmpty = issues.length === 0;
   const visibleIssues = collapsed ? [] : issues.slice(0, visibleCount);
   const hiddenCount = Math.max(issues.length - visibleIssues.length, 0);
   const nextRevealCount = Math.min(revealIncrement, hiddenCount);
@@ -200,11 +224,11 @@ function KanbanColumn({
           tone.rail,
           isOver && tone.railOver,
         )}
-        title={`${statusLabel(status)}: ${issues.length}`}
+        title={`${statusName}: ${issues.length}`}
       >
         <StatusIcon status={status} />
         <span className={cn("mt-2 [writing-mode:vertical-rl] rotate-180 text-(length:--text-nano) font-semibold uppercase tracking-wide", tone.header)}>
-          {statusLabel(status)}
+          {statusName}
         </span>
         <Badge variant="ghost" className={cn("mt-auto bg-background px-1.5 text-(length:--text-nano) tabular-nums", tone.header)}>
           {issues.length}
@@ -218,7 +242,7 @@ function KanbanColumn({
       <div className="flex items-center gap-2 px-3 py-2 mb-1">
         <StatusIcon status={status} />
         <span className={cn("text-xs font-semibold uppercase tracking-wide", tone.header)}>
-          {statusLabel(status)}
+          {statusName}
         </span>
         <span className={cn("ml-auto text-xs tabular-nums", tone.count)}>
           {issues.length}
@@ -245,6 +269,7 @@ function KanbanColumn({
               subtreeLiveCount={subtreeLiveCounts?.get(issue.id) ?? 0}
               compact={compactCards}
               className={tone.card}
+              cardText={cardText}
             />
           ))}
         </SortableContext>
@@ -254,12 +279,12 @@ function KanbanColumn({
             className="mt-1 flex w-full items-center justify-center rounded-md border border-dashed border-border bg-background/70 px-2 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
             onClick={onShowMore}
           >
-            Show {nextRevealCount} more
+            {showMoreLabel}
           </button>
         ) : null}
         {issues.length > 0 && (hiddenCount > 0 || issues.length >= visibleCount) ? (
           <p className="px-1 pt-1 text-(length:--text-micro) text-muted-foreground">
-            Showing {visibleIssues.length} of {issues.length}
+            {showingLabel}
           </p>
         ) : null}
       </div>
@@ -277,6 +302,7 @@ function KanbanCard({
   isOverlay,
   compact = false,
   className,
+  cardText,
 }: {
   issue: Issue;
   agents?: Agent[];
@@ -285,6 +311,7 @@ function KanbanCard({
   isOverlay?: boolean;
   compact?: boolean;
   className?: string;
+  cardText: KanbanCardText;
 }) {
   const {
     attributes,
@@ -335,29 +362,30 @@ function KanbanCard({
           {isSuccessfulRunHandoffRequired(issue) ? (
             <Badge variant="outline"
               className="border-amber-400/45 bg-amber-50/60 px-1.5 text-(length:--text-nano) text-amber-700 dark:border-amber-300/35 dark:bg-amber-400/10 dark:text-amber-300"
-              title="This task needs a next step"
-              aria-label="Needs next step"
+              title={cardText.needsNextStepTitle}
+              aria-label={cardText.needsNextStepLabel}
             >
               <AlertTriangle className="h-3 w-3" />
-              Next step
+              {cardText.needsNextStepLabel}
             </Badge>
           ) : null}
           {isLive && (
-            <span className="inline-flex shrink-0 items-center gap-1 text-(length:--text-nano) font-medium text-blue-600 dark:text-blue-400">
+            <span aria-label={cardText.liveLabel} title={cardText.liveLabel} className="inline-flex shrink-0 items-center gap-1 text-(length:--text-nano) font-medium text-blue-600 dark:text-blue-400">
               <span className="relative flex h-2 w-2">
                 <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
               </span>
-              {compact ? "Live" : null}
+              {compact ? cardText.liveLabel : null}
             </span>
           )}
           {!isLive && subtreeLiveCount > 0 && (
             <Badge variant="outline"
               className="border-border px-1.5 text-(length:--text-nano) text-muted-foreground"
-              title={`${subtreeLiveCount} sub-task${subtreeLiveCount === 1 ? "" : "s"} running below`}
+              title={cardText.liveDescendants(subtreeLiveCount)}
+              aria-label={cardText.liveDescendants(subtreeLiveCount)}
             >
               <span className="h-2 w-2 shrink-0 rounded-full border border-muted-foreground/60" aria-hidden="true" />
-              {subtreeLiveCount} live below
+              {cardText.liveDescendants(subtreeLiveCount)}
             </Badge>
           )}
         </div>
@@ -393,6 +421,7 @@ export function KanbanBoard({
   revealIncrement = KANBAN_COLUMN_REVEAL_INCREMENT,
   onUpdateIssue,
 }: KanbanBoardProps) {
+  const { t } = useTranslation();
   const [activeId, setActiveId] = useState<string | null>(null);
   const paginationKey = `${initialVisibleCount}:${revealIncrement}`;
   const [visibleState, setVisibleState] = useState<{
@@ -403,7 +432,8 @@ export function KanbanBoard({
   const collapsedStatusSet = useMemo(() => new Set(collapsedStatuses), [collapsedStatuses]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const columnIssues = useMemo(() => {
@@ -428,6 +458,42 @@ export function KanbanBoard({
     () => collectSubtreeLiveCounts(issues, liveIssueIds ?? new Set<string>()),
     [issues, liveIssueIds],
   );
+
+  const getStatusName = (status: IssueStatus) => String(t(KANBAN_STATUS_LABEL_KEYS[status]));
+  const getTaskLabel = (id: string) => {
+    const issue = issues.find((candidate) => candidate.id === id);
+    if (!issue) return id;
+    return issue.identifier ? `${issue.identifier} — ${issue.title}` : issue.title || id;
+  };
+  const cardText: KanbanCardText = {
+    needsNextStepLabel: String(t("taskCollection.hierarchy.needsNextStep")),
+    needsNextStepTitle: String(t("taskCollection.hierarchy.needsNextStepTitle")),
+    liveLabel: String(t("taskCollection.rows.live")),
+    liveDescendants: (count) => String(t("taskCollection.rows.liveDescendants", { count })),
+  };
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => String(t("taskCollection.kanban.dragStart", { task: getTaskLabel(String(active.id)) })),
+    onDragOver: ({ active, over }) => {
+      if (!over) return undefined;
+      const status = resolveKanbanTargetStatus(String(over.id), issues);
+      return status
+        ? String(t("taskCollection.kanban.dragOver", {
+          task: getTaskLabel(String(active.id)),
+          status: getStatusName(status),
+        }))
+        : undefined;
+    },
+    onDragEnd: ({ active, over }) => {
+      const issue = issues.find((candidate) => candidate.id === String(active.id));
+      const status = over ? resolveKanbanTargetStatus(String(over.id), issues) : null;
+      if (!issue || !status) return String(t("taskCollection.kanban.dragNotDropped", { task: getTaskLabel(String(active.id)) }));
+      const task = getTaskLabel(String(active.id));
+      return status === issue.status
+        ? String(t("taskCollection.kanban.dragUnchanged", { task, status: getStatusName(status) }))
+        : String(t("taskCollection.kanban.dragDropped", { task, status: getStatusName(status) }));
+    },
+    onDragCancel: ({ active }) => String(t("taskCollection.kanban.dragCancelled", { task: getTaskLabel(String(active.id)) })),
+  };
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);
@@ -456,48 +522,78 @@ export function KanbanBoard({
   }
 
   return (
+    <>
+    {issues.length === 0 && (
+      <p role="status" className="mb-2 text-sm text-muted-foreground">
+        {t("taskCollection.kanban.empty")}
+      </p>
+    )}
     <DndContext
       sensors={sensors}
+      accessibility={{
+        announcements,
+        screenReaderInstructions: { draggable: String(t("taskCollection.kanban.dragInstructions")) },
+      }}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2">
-        {boardStatuses.map((status) => (
-          <KanbanColumn
-            key={status}
-            status={status}
-            issues={columnIssues[status] ?? []}
-            agents={agents}
-            liveIssueIds={liveIssueIds}
-            subtreeLiveCounts={subtreeLiveCounts}
-            compactCards={compactCards}
-            // Compact mode (any lane explicitly collapsed) also collapses
-            // empty lanes to the same labeled rail, so an empty In Progress
-            // reads like the other rails instead of a lone expanded column.
-            collapsed={collapsedStatusSet.has(status) || (collapsedStatusSet.size > 0 && columnIssues[status].length === 0)}
-            visibleCount={visibleCountByStatus[status] ?? initialVisibleCount}
-            revealIncrement={revealIncrement}
-            onShowMore={() => {
-              setVisibleState((current) => {
-                const counts = current.paginationKey === paginationKey ? current.counts : {};
-                return {
-                  paginationKey,
-                  counts: {
-                    ...counts,
-                    [status]: (counts[status] ?? initialVisibleCount) + revealIncrement,
-                  },
-                };
-              });
-            }}
-          />
-        ))}
+        {boardStatuses.map((status) => {
+          const statusIssues = columnIssues[status] ?? [];
+          const visibleCount = visibleCountByStatus[status] ?? initialVisibleCount;
+          const remainingCount = Math.max(statusIssues.length - visibleCount, 0);
+          const showMoreCount = Math.min(revealIncrement, remainingCount);
+          return (
+            <KanbanColumn
+              key={status}
+              status={status}
+              statusName={getStatusName(status)}
+              issues={statusIssues}
+              agents={agents}
+              liveIssueIds={liveIssueIds}
+              subtreeLiveCounts={subtreeLiveCounts}
+              compactCards={compactCards}
+              cardText={cardText}
+              // Compact mode (any lane explicitly collapsed) also collapses
+              // empty lanes to the same labeled rail, so an empty In Progress
+              // reads like the other rails instead of a lone expanded column.
+              collapsed={collapsedStatusSet.has(status) || (collapsedStatusSet.size > 0 && statusIssues.length === 0)}
+              visibleCount={visibleCount}
+              revealIncrement={revealIncrement}
+              showMoreLabel={String(t("taskCollection.kanban.showMore", { count: showMoreCount }))}
+              showingLabel={String(t("taskCollection.kanban.showingCount", {
+                shown: Math.min(visibleCount, statusIssues.length),
+                total: statusIssues.length,
+              }))}
+              onShowMore={() => {
+                setVisibleState((current) => {
+                  const counts = current.paginationKey === paginationKey ? current.counts : {};
+                  return {
+                    paginationKey,
+                    counts: {
+                      ...counts,
+                      [status]: (counts[status] ?? initialVisibleCount) + revealIncrement,
+                    },
+                  };
+                });
+              }}
+            />
+          );
+        })}
       </div>
       <DragOverlay>
         {activeIssue ? (
-          <KanbanCard issue={activeIssue} agents={agents} isOverlay compact={compactCards} />
+          <KanbanCard
+            issue={activeIssue}
+            agents={agents}
+            isOverlay
+            compact={compactCards}
+            cardText={cardText}
+          />
         ) : null}
       </DragOverlay>
     </DndContext>
+    </>
   );
 }

@@ -359,6 +359,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup Node.js for pnpm bootstrap
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -402,6 +403,11 @@ jobs:
             pnpm install --resolution-only --ignore-scripts --no-frozen-lockfile
             pnpm install --frozen-lockfile
           fi
+
+      - name: Check localization catalogs, source literals, help links, and CLI contracts
+        env:
+          PAPERCLIP_LOCALIZATION_BASE: ${{ github.event.pull_request.base.sha }}
+        run: pnpm check:localization
 
       # typecheck:build-gaps builds @paperclipai/server, whose build script
       # rebuilds the Runner release binary; without the shared Rust cache that

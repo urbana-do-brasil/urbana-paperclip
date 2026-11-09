@@ -2,7 +2,11 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import {
+  createCommunicationLocalePromptFixture,
+  createPromptContextFixture,
+} from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import type { AdapterInvocationMeta } from "@paperclipai/adapter-utils";
 
 const {
   runChildProcess,
@@ -777,4 +781,94 @@ describe("pi remote execution", () => {
     expect(userPrompt).not.toContain("CUSTOM POLICY run-instructions-policy");
     expect(userPrompt).not.toContain("Execution contract:");
   });
+
+  it.each(["pt-BR", "en"] as const)(
+    "carries communication locale through the Pi CLI prompt on fresh and resumed turns (%s)",
+    async (locale) => {
+      const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-locale-"));
+      cleanupDirs.push(rootDir);
+      const workspaceDir = path.join(rootDir, "workspace");
+      const paperclipHome = path.join(rootDir, "paperclip-home");
+      await mkdir(workspaceDir, { recursive: true });
+      const previousPaperclipHome = process.env.PAPERCLIP_HOME;
+      process.env.PAPERCLIP_HOME = paperclipHome;
+      const prompts: string[] = [];
+      const promptTemplate = "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.";
+      const context = createCommunicationLocalePromptFixture(locale);
+
+      try {
+        const first = await execute({
+          runId: `run-pi-locale-${locale}-fresh`,
+          agent: {
+            id: "agent-1",
+            companyId: "company-1",
+            name: "Pi Builder",
+            adapterType: "pi_local",
+            adapterConfig: {},
+          },
+          runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
+          config: { command: "pi", model: "openai/gpt-5.4-mini", cwd: workspaceDir, env: {}, promptTemplate },
+          context,
+          onLog: async () => {},
+          onMeta: async (meta: AdapterInvocationMeta) => { prompts.push(String(meta.prompt ?? "")); },
+        } as never);
+
+        const sessionPath = String(first.sessionParams?.sessionId ?? "");
+        expect(sessionPath).not.toBe("");
+        await writeFile(sessionPath, `${JSON.stringify({ type: "session", cwd: workspaceDir })}\n`, "utf8");
+
+        await execute({
+          runId: `run-pi-locale-${locale}-resume`,
+          agent: {
+            id: "agent-1",
+            companyId: "company-1",
+            name: "Pi Builder",
+            adapterType: "pi_local",
+            adapterConfig: {},
+          },
+          runtime: {
+            sessionId: sessionPath,
+            sessionParams: { sessionId: sessionPath, cwd: workspaceDir },
+            sessionDisplayId: sessionPath,
+            taskKey: null,
+          },
+          config: { command: "pi", model: "openai/gpt-5.4-mini", cwd: workspaceDir, env: {}, promptTemplate },
+          context,
+          onLog: async () => {},
+          onMeta: async (meta: AdapterInvocationMeta) => { prompts.push(String(meta.prompt ?? "")); },
+        } as never);
+
+        const languageDirective = locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+        expect(prompts).toHaveLength(2);
+        for (const [index, prompt] of prompts.entries()) {
+          const call = runChildProcess.mock.calls[index] as unknown as
+            [string, string, string[], { stdin?: string }] | undefined;
+          const args = call?.[2] ?? [];
+          const systemPrompt = args[args.indexOf("--append-system-prompt") + 1] ?? "";
+          expect(args.at(-1)).toBe(prompt);
+          expect(systemPrompt).toContain(
+            "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.",
+          );
+          expect(prompt).toContain("## Human communication language");
+          expect(prompt).toContain(languageDirective);
+          expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+          expect(prompt).toContain("`X-Trace-Mode: RAW`");
+          expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        }
+        expect(prompts[0]).toContain("## Owned assignment");
+        expect(prompts[1]).toContain("## Compact assignment");
+        if (locale === "pt-BR") {
+          expect(prompts[0]).toContain("Do not switch these interactions to English.");
+          expect(prompts[0]).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompts[0]).toContain("ASD-STE100 Simplified Technical English");
+        }
+      } finally {
+        if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
+        else process.env.PAPERCLIP_HOME = previousPaperclipHome;
+      }
+    },
+  );
 });

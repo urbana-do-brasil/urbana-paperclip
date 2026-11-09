@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { i18n } from "@/i18n";
 import { MemoryRouter } from "@/lib/router";
 import type { TaskChatProtocolItem, TaskChatProviderActivityItem } from "./task-chat-model";
 import { TaskChatProtocolActivityRow, TaskChatProtocolActivityDetails } from "./TaskChatProtocolActivityRow";
@@ -12,15 +13,17 @@ describe("TaskChatProtocolActivityRow", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     act(() => root.unmount());
     container.remove();
+    await i18n.changeLanguage("en");
   });
 
   function render(item: TaskChatProtocolItem) {
@@ -86,6 +89,57 @@ describe("TaskChatProtocolActivityRow", () => {
     const showMore = Array.from(detail?.querySelectorAll("button") ?? []).find((button) => button.textContent?.includes("Show 1 more result"));
     act(() => showMore?.click());
     expect(detail?.querySelectorAll('ol[aria-label="Research sources"] li')).toHaveLength(6);
+  });
+
+  it("localizes provider activity while preserving provider metadata and snippets", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const item: TaskChatProviderActivityItem = {
+      id: "research-pt-br",
+      kind: "protocol",
+      surface: "provider_activity",
+      family: "research",
+      eventType: "research.completed",
+      status: "completed",
+      title: "Research",
+      summary: "provider-authored search snippet",
+      details: [
+        { label: "Action", value: "search" },
+        { label: "Status", value: "completed" },
+        { label: "Query", value: "original user query", mono: true },
+        { label: "Provider Extension", value: "raw extension metadata" },
+      ],
+      steps: [],
+      links: Array.from({ length: 6 }, (_, index) => ({
+        label: `provider result ${index + 1}`,
+        href: `https://example.com/result-${index + 1}`,
+        description: `original snippet ${index + 1}`,
+      })),
+      children: [],
+    };
+    render(item);
+
+    const row = container.querySelector<HTMLButtonElement>(
+      '[data-testid="task-chat-protocol-activity-row"] button',
+    );
+    expect(row?.textContent).toContain("Pesquisou na web");
+    expect(row?.textContent).toContain("provider-authored search snippet");
+    act(() => row?.click());
+
+    const detail = container.querySelector('[data-testid="task-chat-protocol-activity-detail"]');
+    expect(detail?.textContent).toContain("Consulta");
+    expect(detail?.textContent).toContain("6 resultados");
+    expect(detail?.textContent).toContain("original user query");
+    expect(detail?.textContent).toContain("Provider Extension");
+    expect(detail?.textContent).toContain("raw extension metadata");
+    expect(detail?.textContent).toContain("Mostrar mais 1 resultado");
+    expect(detail?.textContent).toContain("original snippet 1");
+    expect(detail?.textContent).not.toContain("Show 1 more result");
+
+    const showMore = Array.from(detail?.querySelectorAll("button") ?? []).find(
+      (button) => button.textContent?.includes("Mostrar mais 1 resultado"),
+    );
+    act(() => showMore?.click());
+    expect(detail?.querySelectorAll('ol[aria-label="Fontes da pesquisa"] li')).toHaveLength(6);
   });
 
   it("summarizes workspace files without rendering inline diff bodies", () => {

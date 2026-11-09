@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ToolMcpGatewayWithTokens, ToolProfileWithDetails } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { EditGatewayDialog } from "./EditGatewayDialog";
 
 const updateGatewayMock = vi.hoisted(() => vi.fn());
@@ -102,16 +103,37 @@ describe("EditGatewayDialog", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.clearAllMocks();
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root.unmount());
     container.remove();
+    await i18n.changeLanguage("en");
+  });
+
+  it("localizes the editor in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const existing = gateway();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    flushSync(() => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <EditGatewayDialog companyId="company-1" gateway={existing} profiles={[profile("profile-1", "Original")]} open onOpenChange={vi.fn()} />
+        </QueryClientProvider>,
+      );
+    });
+
+    expect(container.textContent).toContain("Editar gateway");
+    expect(container.textContent).toContain("Altere o nome ou o perfil de acesso");
+    expect(container.textContent).toContain("Salvar alterações");
+    expect(container.querySelector("select")?.value).toBe("profile-1");
   });
 
   it("updates an editable gateway name, description, and access profile", async () => {

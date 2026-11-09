@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 
 import { flushSync } from "react-dom";
+import { act as reactAct } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { StarToggle } from "./StarToggle";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +23,8 @@ describe("StarToggle", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot> | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await reactAct(async () => { await i18n.changeLanguage("en"); });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
@@ -33,6 +37,7 @@ describe("StarToggle", () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await reactAct(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
   });
 
   async function render(node: React.ReactElement) {
@@ -97,7 +102,7 @@ describe("StarToggle", () => {
     const btn = button();
     expect(btn?.textContent).toBe("");
     expect(btn?.getAttribute("data-variant")).toBe("ghost");
-    expect(btn?.getAttribute("title")).toBe("Couldn't save — retry");
+    expect(btn?.getAttribute("title")).toBe("Couldn’t save — retry");
   });
 
   it("renders the unstarred detail variant as an unfilled icon without an outline", async () => {

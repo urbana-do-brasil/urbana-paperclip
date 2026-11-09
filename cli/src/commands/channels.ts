@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import pc from "picocolors";
 import { resolvePublishedVersion, type CommandRunner } from "./install.js";
 import { packageVersion } from "../version.js";
+import { channelPresentation, channelsMessage } from "../localization/channels-operations.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -98,22 +99,22 @@ export async function channelsCommand(
     return;
   }
 
-  console.log(pc.bold("Paperclip release channels"));
+  console.log(pc.bold(channelsMessage("title")));
   console.log("");
   for (const entry of state) {
-    const version = entry.version ?? pc.yellow("unavailable");
+    const version = entry.version ?? pc.yellow(channelsMessage("unavailable"));
+    const copy = channelPresentation(entry.channel, entry);
     console.log(`  ${pc.bold(entry.channel.padEnd(8))} ${version}`);
-    console.log(`  ${" ".repeat(8)} ${pc.dim(`${entry.cadence} — ${entry.audience}`)}`);
+    const detail = pc.dim(`${copy.cadence} — ${copy.audience}`);
+    console.log(`  ${" ".repeat(8)} ${detail}`);
     console.log(`  ${" ".repeat(8)} ${pc.dim(`npx paperclipai@${entry.distTag} onboard`)}`);
     console.log("");
   }
 
   if (currentChannel === "unknown") {
-    console.log(
-      `This install reports version ${pc.bold(packageVersion)}, which does not map to a published channel (source checkouts report the repository placeholder).`,
-    );
+    console.log(channelsMessage("unknown", { version: pc.bold(packageVersion) }));
   } else {
-    console.log(`This install is version ${pc.bold(packageVersion)} on the ${pc.bold(currentChannel)} channel.`);
+    console.log(channelsMessage("current", { version: pc.bold(packageVersion), channel: pc.bold(currentChannel) }));
   }
-  console.log(`Docker images use the same names: ghcr.io/paperclipai/paperclip:{latest,beta,nightly,canary}`);
+  console.log(channelsMessage("docker"));
 }

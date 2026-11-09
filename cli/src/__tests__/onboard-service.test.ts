@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   handleOnboardService,
   handoffToOnboardedService,
@@ -6,6 +6,10 @@ import {
   resolveOnboardServiceDashboardUrl,
   shouldOfferForegroundStart,
 } from "../onboard-service.js";
+import { setupMessage } from "../localization/setup.js";
+import { setCliLocale } from "../localization/index.js";
+
+afterEach(() => setCliLocale("pt-BR"));
 
 function dashboardConfig(overrides: {
   host?: string;
@@ -55,6 +59,41 @@ function supportedDetection() {
 }
 
 describe("onboard service policy", () => {
+  it.each(["pt-BR", "en"] as const)("localizes onboarding service messages in %s", async (locale) => {
+    setCliLocale(locale);
+    const info = vi.fn();
+    await handleOnboardService(
+      { yes: true },
+      { detect: vi.fn(async () => supportedDetection()), isInteractive: () => false, info },
+    );
+    expect(info).toHaveBeenCalledWith(setupMessage("onboardServiceOptIn"));
+
+    const detection = supportedDetection();
+    const success = vi.fn();
+    await handleOnboardService(
+      { yes: true, installService: true },
+      {
+        detect: vi.fn(async () => detection),
+        isInteractive: () => false,
+        ensureServiceShim: vi.fn(async () => ({ ok: true, installedNow: true })),
+        success,
+      },
+    );
+    expect(success).toHaveBeenCalledWith(setupMessage("onboardServicePayloadInstalled"));
+    expect(success).toHaveBeenCalledWith(setupMessage("onboardServiceInstalled", { serviceName: "paperclipai.service" }));
+
+    const warn = vi.fn();
+    await handoffToOnboardedService(dashboardConfig(), {
+      isInteractive: () => false,
+      waitUntilReady: vi.fn(async () => null),
+      openDashboard: vi.fn(async () => false),
+      info,
+      warn,
+    });
+    expect(info).toHaveBeenCalledWith(setupMessage("onboardDashboardTitle", { url: "http://127.0.0.1:3100" }));
+    expect(warn).toHaveBeenCalledWith(setupMessage("onboardDashboardNotReady", { url: "http://127.0.0.1:3100" }));
+  });
+
   it("does not install during --yes onboarding without opt-in", async () => {
     const detection = supportedDetection();
     const info = vi.fn();
@@ -129,7 +168,8 @@ describe("onboard service policy", () => {
 
     expect(installed).toBe(true);
     expect(ensureServiceShim).toHaveBeenCalledOnce();
-    expect(success).toHaveBeenCalledWith(expect.stringContaining("managed paperclipai payload"));
+    expect(success).toHaveBeenCalledWith(setupMessage("onboardServicePayloadInstalled"));
+    expect(success).toHaveBeenCalledWith(setupMessage("onboardServiceInstalled", { serviceName: "paperclipai.service" }));
     expect(detection.manager.install).toHaveBeenCalledWith({ startNow: true, startOnLogin: true });
   });
 
@@ -149,8 +189,7 @@ describe("onboard service policy", () => {
 
     expect(installed).toBe(false);
     expect(detection.manager.install).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("npm exploded"));
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("paperclipai install"));
+    expect(warn).toHaveBeenCalledWith(setupMessage("onboardServiceInstallFailed", { reason: "npm exploded" }));
   });
 
 });
@@ -199,7 +238,7 @@ describe("onboarded service dashboard handoff", () => {
       info,
     });
 
-    expect(info).toHaveBeenCalledWith(expect.stringContaining("http://127.0.0.1:3100"));
+    expect(info).toHaveBeenCalledWith(setupMessage("onboardDashboardTitle", { url: "http://127.0.0.1:3100" }));
     expect(waitUntilReady).toHaveBeenCalledOnce();
     expect(openDashboard).not.toHaveBeenCalled();
   });
@@ -227,7 +266,7 @@ describe("onboarded service dashboard handoff", () => {
 
     expect(waitUntilReady).toHaveBeenCalledOnce();
     expect(openDashboard).toHaveBeenCalledWith("http://127.0.0.1:3101");
-    expect(success).toHaveBeenCalledWith(expect.stringContaining("Sent"));
+    expect(success).toHaveBeenCalledWith(setupMessage("onboardDashboardOpened"));
   });
 
   it("keeps the manual link and warns when service health does not become ready", async () => {
@@ -243,7 +282,7 @@ describe("onboarded service dashboard handoff", () => {
     });
 
     expect(openDashboard).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("paperclipai service logs"));
+    expect(warn).toHaveBeenCalledWith(setupMessage("onboardDashboardNotReady", { url: "http://127.0.0.1:3100" }));
   });
 });
 

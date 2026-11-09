@@ -1,11 +1,15 @@
+import type { ApiErrorMessage } from "@paperclipai/shared/api-error-messages";
+
 export class HttpError extends Error {
   status: number;
   details?: unknown;
+  declare presentation?: ApiErrorMessage;
 
-  constructor(status: number, message: string, details?: unknown) {
+  constructor(status: number, message: string, details?: unknown, presentation?: ApiErrorMessage) {
     super(message);
     this.status = status;
     this.details = details;
+    if (presentation !== undefined) this.presentation = presentation;
   }
 }
 

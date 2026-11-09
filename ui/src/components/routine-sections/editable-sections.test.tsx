@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import type { RoutineDetail, RoutineTrigger } from "@paperclipai/shared";
 import { BreadcrumbProvider } from "@/context/BreadcrumbContext";
 import { queryKeys } from "@/lib/queryKeys";
@@ -41,7 +42,8 @@ async function render(secretMessage?: SecretMessage, contextRoutine?: RoutineDet
     <QueryClientProvider client={client}><BreadcrumbProvider><Harness secretMessage={secretMessage} contextRoutine={contextRoutine} /></BreadcrumbProvider></QueryClientProvider>
   </MemoryRouter>));
 }
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.clearAllMocks();
   sessionStorage.clear();
   container = document.createElement("div");
@@ -62,6 +64,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   await act(async () => root.unmount());
+  await i18n.changeLanguage("en");
   client.clear();
   container.remove();
 });
@@ -93,6 +96,23 @@ describe("TriggersSection", () => {
     await click("Finish without checking");
     expect(api.updateTrigger).toHaveBeenCalledWith("trigger-1", { setupPending: false });
     expect(button("Add trigger")).toBeTruthy();
+    expect(container.textContent).not.toContain("one-time-secret");
+  });
+
+  it("preserves webhook creation and activation contracts in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render();
+    await click("Adicionar gatilho");
+    await choose("Quando outro app enviar um webhook");
+    await click("Continuar");
+    expect(api.createTrigger).toHaveBeenCalledWith("routine-1", { kind: "webhook", signingMode: "app_webhook", setupPending: true });
+    expect(container.textContent).toContain("one-time-secret");
+    expect(button("Copiar para o agente")).toBeTruthy();
+    expect(JSON.stringify(Object.values(sessionStorage))).not.toContain("one-time-secret");
+    await click("Verificar conexão");
+    expect(api.updateTrigger).not.toHaveBeenCalled();
+    await click("Concluir sem verificar");
+    expect(api.updateTrigger).toHaveBeenCalledWith("trigger-1", { setupPending: false });
     expect(container.textContent).not.toContain("one-time-secret");
   });
 
@@ -159,5 +179,68 @@ describe("TriggersSection", () => {
     expect(container.textContent).toContain("Use exactly 5 fields");
     expect(button("Save schedule").disabled).toBe(true);
     expect(api.updateTrigger).not.toHaveBeenCalled();
+  });
+
+  it("localizes the trigger list, schedule settings, and schedule update in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    routine.triggers = [{
+      id: "schedule-1",
+      kind: "schedule",
+      enabled: true,
+      cronExpression: "0 14 * * 1-5",
+      timezone: "America/Sao_Paulo",
+    }] as RoutineTrigger[];
+    await render();
+
+    expect(container.textContent).toContain("1 gatilho");
+    expect(container.textContent).toContain("Dias úteis às 14:00");
+    await click("Editar agendamento");
+    expect(container.textContent).toContain("Fuso horário");
+    expect(button("Salvar agendamento")).toBeTruthy();
+    expect(button("Cancelar")).toBeTruthy();
+    await click("Salvar agendamento");
+    expect(api.updateTrigger).toHaveBeenCalledWith("schedule-1", {
+      cronExpression: "0 14 * * 1-5",
+      timezone: "America/Sao_Paulo",
+    });
+  });
+
+  it("localizes webhook connection and key controls without changing delivery data", async () => {
+    await i18n.changeLanguage("pt-BR");
+    routine.triggers = [{
+      id: "webhook-1",
+      kind: "webhook",
+      enabled: true,
+      setupPending: false,
+      signingMode: "bearer",
+      webhookUrl: "https://paperclip.example/webhook",
+    }] as RoutineTrigger[];
+    await render();
+
+    await click("Editar webhook");
+    expect(container.textContent).toContain("A chave secreta está oculta.");
+    expect(button("Trocar chave")).toBeTruthy();
+    expect(button("Verificar conexão")).toBeTruthy();
+    await click("Verificar conexão");
+    expect(document.body.textContent).toContain("Este webhook já está ativo.");
+    expect(document.body.textContent).toContain("Aguardando um evento do app…");
+  });
+
+  it("localizes pause and enable controls while preserving the trigger update contract", async () => {
+    await i18n.changeLanguage("pt-BR");
+    routine.triggers = [{
+      id: "webhook-1",
+      kind: "webhook",
+      enabled: true,
+      setupPending: false,
+      signingMode: "bearer",
+      webhookUrl: "https://paperclip.example/webhook",
+    }] as RoutineTrigger[];
+    await render();
+
+    await click("Editar webhook");
+    expect(button("Pausar gatilho")).toBeTruthy();
+    await click("Pausar gatilho");
+    expect(api.updateTrigger).toHaveBeenCalledWith("webhook-1", { enabled: false });
   });
 });

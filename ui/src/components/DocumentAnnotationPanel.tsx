@@ -30,6 +30,7 @@ import type { PendingAnchor } from "./DocumentAnnotationLayer";
 import type { Agent } from "@paperclipai/shared";
 import type { CompanyUserProfile } from "@/lib/company-members";
 import { useDocumentAnnotationMutations } from "@/hooks/useDocumentAnnotationMutations";
+import { useTranslation } from "react-i18next";
 
 export interface AnnotationPanelProps {
   open: boolean;
@@ -65,6 +66,7 @@ export interface AnnotationPanelProps {
 }
 
 export function DocumentAnnotationPanel(props: AnnotationPanelProps) {
+  const { t } = useTranslation();
   if (props.isMobile) {
     return (
       <Sheet open={props.open} onOpenChange={props.onOpenChange}>
@@ -74,7 +76,10 @@ export function DocumentAnnotationPanel(props: AnnotationPanelProps) {
           className="paperclip-doc-annotation-sheet z-(--z-60) flex max-h-(--sz-88vh) flex-col rounded-none border-t border-border bg-popover p-0 text-popover-foreground shadow-2xl"
         >
           <SheetTitle className="sr-only">
-            Comments on {props.documentKey} revision {props.documentRevisionNumber}
+            {t("documentAnnotations.panelTitle", {
+              document: props.documentKey,
+              revision: props.documentRevisionNumber,
+            })}
           </SheetTitle>
           <div className="mx-auto mt-2 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/30" aria-hidden="true" />
           <AnnotationPanelBody {...props} />
@@ -88,7 +93,10 @@ export function DocumentAnnotationPanel(props: AnnotationPanelProps) {
   return (
     <aside
       role="complementary"
-      aria-label={`Annotations for ${props.documentKey.toUpperCase()}, revision ${props.documentRevisionNumber}`}
+      aria-label={t("documentAnnotations.panelAriaLabel", {
+        document: props.documentKey.toUpperCase(),
+        revision: props.documentRevisionNumber,
+      })}
       data-testid="document-annotation-panel"
       className={cn(
         "isolate flex h-full max-h-(--sz-80vh) shrink-0 flex-col overflow-hidden rounded-none border border-border bg-popover text-popover-foreground shadow-xl",
@@ -103,6 +111,7 @@ export function DocumentAnnotationPanel(props: AnnotationPanelProps) {
 }
 
 export function AnnotationPanelBody(props: AnnotationPanelProps) {
+  const { t } = useTranslation();
   const copyAnnotationLink = useCopyAnnotationLink();
   const [composerValue, setComposerValue] = useState("");
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
@@ -178,7 +187,7 @@ export function AnnotationPanelBody(props: AnnotationPanelProps) {
         className="flex items-center justify-end gap-1 border-b border-border bg-popover px-2 py-1.5"
       >
         <span className="text-(length:--text-micro) tabular-nums text-muted-foreground">
-          rev {props.documentRevisionNumber}
+          {t("documentAnnotations.revision", { revision: props.documentRevisionNumber })}
         </span>
         <Button
           type="button"
@@ -189,7 +198,7 @@ export function AnnotationPanelBody(props: AnnotationPanelProps) {
             props.onFocusThread(null);
             props.onOpenChange(false);
           }}
-          aria-label="Close annotation panel"
+          aria-label={t("documentAnnotations.closePanel")}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -279,7 +288,7 @@ export function AnnotationPanelBody(props: AnnotationPanelProps) {
                 }
               }
             }}
-            placeholder="Write a comment…"
+            placeholder={t("documentAnnotations.writeComment")}
             disabled={props.newCommentDisabled}
             className="resize-y rounded-none text-sm"
           />
@@ -293,7 +302,7 @@ export function AnnotationPanelBody(props: AnnotationPanelProps) {
                 setComposerValue("");
               }}
             >
-              Cancel
+              {t("documentAnnotations.cancel")}
             </Button>
             <Button
               type="button"
@@ -306,7 +315,9 @@ export function AnnotationPanelBody(props: AnnotationPanelProps) {
               }
               onClick={() => createThread.mutate(composerValue.trim())}
             >
-              {createThread.isPending ? "Posting…" : "Comment"}
+              {createThread.isPending
+                ? t("documentAnnotations.posting")
+                : t("documentAnnotations.comment")}
             </Button>
           </div>
         </div>
@@ -330,6 +341,7 @@ export function ThreadCard(props: {
   agentMap?: ReadonlyMap<string, Pick<Agent, "id" | "name"> & Partial<Pick<Agent, "icon" | "appearance">>>;
   userProfileMap?: ReadonlyMap<string, CompanyUserProfile>;
 }) {
+  const { t } = useTranslation();
   const { thread } = props;
   const latestComment = thread.comments[thread.comments.length - 1];
 
@@ -383,7 +395,7 @@ export function ThreadCard(props: {
                   }
                 }
               }}
-              placeholder="Reply…"
+              placeholder={t("documentAnnotations.reply")}
               className="resize-y rounded-none text-sm"
               disabled={props.pendingReply}
             />
@@ -398,11 +410,11 @@ export function ThreadCard(props: {
               >
                 {thread.status === "resolved" ? (
                   <>
-                    <RotateCcw className="h-3 w-3" /> Reopen
+                    <RotateCcw className="h-3 w-3" /> {t("documentAnnotations.reopen")}
                   </>
                 ) : (
                   <>
-                    <Check className="h-3 w-3" /> Resolve
+                    <Check className="h-3 w-3" /> {t("documentAnnotations.resolve")}
                   </>
                 )}
               </Button>
@@ -412,7 +424,9 @@ export function ThreadCard(props: {
                 disabled={!props.replyDraft.trim() || props.pendingReply}
                 onClick={props.onSubmitReply}
               >
-                {props.pendingReply ? "Sending…" : "Reply"}
+                {props.pendingReply
+                  ? t("documentAnnotations.sending")
+                  : t("documentAnnotations.reply")}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -421,8 +435,8 @@ export function ThreadCard(props: {
                     variant="ghost"
                     size="icon-xs"
                     className="text-muted-foreground"
-                    title="More actions"
-                    aria-label="More thread actions"
+                    title={t("documentAnnotations.moreActions")}
+                    aria-label={t("documentAnnotations.moreThreadActions")}
                   >
                     <MoreHorizontal className="h-3.5 w-3.5" />
                   </Button>
@@ -435,7 +449,7 @@ export function ThreadCard(props: {
                     }}
                   >
                     <Copy className="h-3.5 w-3.5" />
-                    Copy link
+                    {t("documentAnnotations.copyLink")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -444,7 +458,7 @@ export function ThreadCard(props: {
         ) : (
           <p className="px-3 py-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">
-              {thread.comments.length} comment{thread.comments.length === 1 ? "" : "s"}
+              {t("documentAnnotations.comments", { count: thread.comments.length })}
             </span>
             {latestComment ? <span className="ml-1">· {truncate(latestComment.body, 120)}</span> : null}
           </p>
@@ -465,7 +479,15 @@ function CommentRow({
   agentMap?: ReadonlyMap<string, Pick<Agent, "id" | "name"> & Partial<Pick<Agent, "icon" | "appearance">>>;
   userProfileMap?: ReadonlyMap<string, CompanyUserProfile>;
 }) {
-  const author = resolveAuthor(comment, { agentMap, userProfileMap });
+  const { t } = useTranslation();
+  const author = resolveAuthor(comment, {
+    agentMap,
+    userProfileMap,
+    fallbackLabels: {
+      agent: t("documentAnnotations.agentFallback"),
+      board: t("documentAnnotations.boardFallback"),
+    },
+  });
   return (
     <div
       id={`comment-${comment.id}`}
@@ -484,7 +506,7 @@ function CommentRow({
           </Avatar>)}
           <span className="truncate font-medium text-foreground">{author.name}</span>
           {author.role === "agent" ? (
-            <span className="text-muted-foreground">· agent</span>
+            <span className="text-muted-foreground">· {t("documentAnnotations.agent")}</span>
           ) : null}
         </span>
         <span className="shrink-0 text-muted-foreground">{relativeTime(comment.createdAt)}</span>
@@ -504,6 +526,7 @@ function resolveAuthor(
   maps: {
     agentMap?: ReadonlyMap<string, Pick<Agent, "id" | "name"> & Partial<Pick<Agent, "icon" | "appearance">>>;
     userProfileMap?: ReadonlyMap<string, CompanyUserProfile>;
+    fallbackLabels: { agent: string; board: string };
   },
 ): { name: string; role: "board" | "agent"; agentIcon?: Agent["icon"]; agent?: import("./AgentAvatar").AvatarAgent; imageUrl?: string | null } {
   if (comment.authorAgentId) {
@@ -523,7 +546,10 @@ function resolveAuthor(
       imageUrl: profile?.image ?? null,
     };
   }
-  return { name: comment.authorType === "agent" ? "Agent" : "Board", role: comment.authorType === "agent" ? "agent" : "board" };
+  return {
+    name: comment.authorType === "agent" ? maps.fallbackLabels.agent : maps.fallbackLabels.board,
+    role: comment.authorType === "agent" ? "agent" : "board",
+  };
 }
 
 export function truncate(value: string, limit: number) {
@@ -538,14 +564,18 @@ export function truncate(value: string, limit: number) {
  * toast rather than an inline state nobody would still be looking at.
  */
 export function useCopyAnnotationLink() {
+  const { t } = useTranslation();
   const copyWithToast = useCopyToast();
   return useCallback(
     (documentKey: string, threadId: string) => {
       if (typeof window === "undefined") return;
       const { pathname } = window.location;
       const hash = `#document-${encodeURIComponent(documentKey)}&thread=${encodeURIComponent(threadId)}`;
-      void copyWithToast(`${window.location.origin}${pathname}${hash}`, "Link copied");
+      void copyWithToast(
+        `${window.location.origin}${pathname}${hash}`,
+        t("documentAnnotations.copyLinkToast"),
+      );
     },
-    [copyWithToast],
+    [copyWithToast, t],
   );
 }

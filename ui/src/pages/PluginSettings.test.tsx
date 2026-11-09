@@ -3,7 +3,9 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { queryKeys } from "../lib/queryKeys";
 import { PluginSettings } from "./PluginSettings";
 
@@ -12,6 +14,7 @@ const mockPluginsApi = vi.hoisted(() => ({
   health: vi.fn(),
   dashboard: vi.fn(),
   logs: vi.fn(),
+  listBundled: vi.fn(),
   getConfig: vi.fn(),
   listLocalFolders: vi.fn(),
   configureLocalFolder: vi.fn(),
@@ -48,7 +51,21 @@ vi.mock("@/plugins/slots", () => ({
 }));
 
 vi.mock("@/components/PageTabBar", () => ({
-  PageTabBar: () => null,
+  PageTabBar: ({
+    items,
+    onValueChange,
+  }: {
+    items: Array<{ value: string; label: React.ReactNode }>;
+    onValueChange: (value: string) => void;
+  }) => (
+    <div>
+      {items.map((item) => (
+        <button key={item.value} type="button" onClick={() => onValueChange(item.value)}>
+          {item.label}
+        </button>
+      ))}
+    </div>
+  ),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -147,11 +164,17 @@ async function renderSettings(
 describe("PluginSettings", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  afterAll(async () => {
+    await i18n.changeLanguage(DEFAULT_LOCALE);
+  });
+
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
 
     mockPluginsApi.get.mockResolvedValue(basePlugin());
+    mockPluginsApi.listBundled.mockResolvedValue([]);
     mockPluginsApi.dashboard.mockResolvedValue(null);
     mockPluginsApi.health.mockResolvedValue({ pluginId: "plugin-1", status: "ready", healthy: true, checks: [] });
     mockPluginsApi.logs.mockResolvedValue([]);
@@ -176,6 +199,90 @@ describe("PluginSettings", () => {
     expect(container.textContent).toContain("secret bindings still resolve through the selected organization context");
     const link = container.querySelector('a[href="/company/settings/instance/environments"]');
     expect(link?.textContent).toContain("Open Environments");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["pt-BR", "Automação", "Interface"],
+    ["en", "Automation", "UI"],
+  ])("localizes fixed categories for a verified first-party plugin in %s", async (locale, automation, uiCategory) => {
+    const bundlePath = "/app/packages/plugins/sandbox-providers/e2b";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "@paperclipai/plugin-e2b",
+      packagePath: bundlePath,
+      categories: ["automation", "ui", "vendor-category"],
+      manifestJson: {
+        id: "paperclip.e2b-sandbox-provider",
+        displayName: "E2B Sandbox Provider",
+        version: "0.1.0",
+        description: "E2B environments for Paperclip.",
+        author: "Paperclip",
+        categories: ["automation", "ui"],
+        capabilities: ["environment.drivers.register"],
+        environmentDrivers: [],
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      packageName: "@paperclipai/plugin-e2b",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      displayName: "E2B Sandbox Provider",
+      description: "First-party E2B sandbox provider.",
+      localPath: bundlePath,
+      tag: "first-party",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    await i18n.changeLanguage(locale);
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain(automation);
+    expect(container.textContent).toContain(uiCategory);
+    expect(container.textContent).toContain("vendor-category");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("preserves plugin categories for an external package that reuses a first-party key", async () => {
+    const bundlePath = "/app/packages/plugins/sandbox-providers/e2b";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "vendor/compatible-e2b",
+      packagePath: "/custom/vendor/compatible-e2b",
+      categories: ["automation"],
+      manifestJson: {
+        id: "paperclip.e2b-sandbox-provider",
+        displayName: "Vendor E2B",
+        version: "1.0.0",
+        description: "Vendor-owned description.",
+        author: "Vendor",
+        categories: ["automation"],
+        capabilities: [],
+        environmentDrivers: [],
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      packageName: "@paperclipai/plugin-e2b",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      displayName: "E2B Sandbox Provider",
+      description: "First-party E2B sandbox provider.",
+      localPath: bundlePath,
+      tag: "first-party",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    await i18n.changeLanguage("pt-BR");
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain("automation");
+    expect(container.textContent).not.toContain("Automação");
 
     await act(async () => {
       root.unmount();
@@ -212,6 +319,123 @@ describe("PluginSettings", () => {
     expect(container.textContent).toContain("No local folder path is configured.");
     expect(container.textContent).toContain("Missing directories: raw, wiki");
     expect(container.textContent).toContain("Missing files: WIKI.md, index.md");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("localizes the managed LLM Wiki folder metadata only for the matching bundled package", async () => {
+    const declaration = {
+      folderKey: "wiki-root",
+      displayName: "Wiki root",
+      description: "Company-scoped local folder that stores raw sources, wiki pages, Paperclip project standups under wiki/projects/, AGENTS.md, IDEA.md, wiki/index.md, and wiki/log.md.",
+      access: "readWrite" as const,
+      requiredDirectories: ["raw", "wiki", "wiki/sources"],
+      requiredFiles: ["AGENTS.md", "IDEA.md", "wiki/index.md", "wiki/log.md"],
+    };
+    const bundlePath = "/app/packages/plugins/plugin-llm-wiki";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      packageName: "@paperclipai/plugin-llm-wiki",
+      packagePath: bundlePath,
+      status: "ready",
+      manifestJson: {
+        id: "paperclipai.plugin-llm-wiki",
+        displayName: "LLM Wiki",
+        version: "0.1.0",
+        description: "Local-file LLM Wiki plugin.",
+        author: "Paperclip",
+        capabilities: ["local.folders"],
+        localFolders: [declaration],
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      packageName: "@paperclipai/plugin-llm-wiki",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      displayName: "LLM Wiki",
+      description: "Local-file LLM Wiki plugin.",
+      localPath: bundlePath,
+      tag: "first-party",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    mockPluginsApi.listLocalFolders.mockResolvedValue({
+      pluginId: "plugin-1",
+      companyId: "company-1",
+      declarations: [declaration],
+      folders: [folderStatus({
+        requiredDirectories: declaration.requiredDirectories,
+        requiredFiles: declaration.requiredFiles,
+        missingDirectories: declaration.requiredDirectories,
+        missingFiles: declaration.requiredFiles,
+      })],
+    });
+    await i18n.changeLanguage("pt-BR");
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain("Pasta raiz da Wiki");
+    expect(container.textContent).toContain("Pasta local da organização que armazena fontes brutas");
+    expect(container.textContent).toContain("wiki-root");
+    expect(container.textContent).toContain("wiki/index.md");
+    expect(container.textContent).toContain("AGENTS.md");
+    expect(mockPluginsApi.listBundled).toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("preserves managed-folder metadata when an external package reuses the LLM Wiki plugin key", async () => {
+    const declaration = {
+      folderKey: "wiki-root",
+      displayName: "Vendor Wiki root",
+      description: "Vendor-owned folder metadata stays in its source language.",
+      access: "readWrite" as const,
+      requiredDirectories: ["raw", "wiki"],
+      requiredFiles: ["WIKI.md", "index.md"],
+    };
+    const externalPath = "/custom/vendor/plugin-llm-wiki";
+    const bundledPath = "/app/packages/plugins/plugin-llm-wiki";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      packageName: "vendor/compatible-wiki",
+      packagePath: externalPath,
+      status: "ready",
+      manifestJson: {
+        id: "paperclipai.plugin-llm-wiki",
+        displayName: "Vendor Wiki",
+        version: "1.0.0",
+        description: "External plugin description.",
+        author: "Vendor",
+        capabilities: ["local.folders"],
+        localFolders: [declaration],
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      packageName: "@paperclipai/plugin-llm-wiki",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      displayName: "LLM Wiki",
+      description: "Local-file LLM Wiki plugin.",
+      localPath: bundledPath,
+      tag: "first-party",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    mockPluginsApi.listLocalFolders.mockResolvedValue({
+      pluginId: "plugin-1",
+      companyId: "company-1",
+      declarations: [declaration],
+      folders: [folderStatus()],
+    });
+    await i18n.changeLanguage("pt-BR");
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain("Vendor Wiki root");
+    expect(container.textContent).toContain("Vendor-owned folder metadata stays in its source language.");
+    expect(container.textContent).not.toContain("Pasta raiz da Wiki");
 
     await act(async () => {
       root.unmount();
@@ -370,6 +594,278 @@ describe("PluginSettings", () => {
     expect(container.textContent).toContain("WritableYes");
     expect(container.textContent).toContain("Present");
     expect(container.textContent).not.toContain("Validation problems");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("uses PT-BR as the default UI locale for plugin settings", async () => {
+    expect(DEFAULT_LOCALE).toBe("pt-BR");
+    await i18n.changeLanguage(DEFAULT_LOCALE);
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      status: "future-lifecycle-state",
+      manifestJson: {
+        displayName: "External plugin name",
+        version: "0.1.0",
+        description: "Manifest-owned description stays as provided.",
+        author: "Plugin author",
+        capabilities: ["example.permission"],
+      },
+    }));
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain("Sobre");
+    expect(container.textContent).toContain("Descrição");
+    expect(container.textContent).toContain("Configurações");
+    expect(container.textContent).toContain("External plugin name");
+    expect(container.textContent).toContain("Manifest-owned description stays as provided.");
+    expect(container.textContent).toContain("Plugin author");
+    expect(container.textContent).toContain("future-lifecycle-state");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["pt-BR", "Sobre", "Descrição", "Configurações"],
+    ["en", "About", "Description", "Settings"],
+  ])("localizes host-owned configuration labels in %s while preserving manifest content", async (locale, about, description, settings) => {
+    await i18n.changeLanguage(locale);
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      manifestJson: {
+        displayName: "Plugin-defined display name",
+        version: "0.1.0",
+        description: "Plugin-defined description.",
+        author: "Plugin-defined author",
+        capabilities: [],
+      },
+    }));
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain(about);
+    expect(container.textContent).toContain(description);
+    expect(container.textContent).toContain(settings);
+    expect(container.textContent).toContain("Plugin-defined display name");
+    expect(container.textContent).toContain("Plugin-defined description.");
+    expect(container.textContent).toContain("Plugin-defined author");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["pt-BR", "Mostrar Arquivos na barra lateral", "Adiciona o link Arquivos abaixo de cada projeto na barra lateral.", "Links de arquivos em comentários"],
+    ["en", "Show Files in Sidebar", "Adds the Files link under each project in the sidebar.", "Comment File Links"],
+  ] as const)("localizes the verified bundled File Browser config form in %s", async (
+    locale,
+    sidebarTitle,
+    sidebarDescription,
+    commentTitle,
+  ) => {
+    await i18n.changeLanguage(locale);
+    const pluginKey = "paperclip-file-browser-example";
+    const packageName = "@paperclipai/plugin-file-browser-example";
+    const bundlePath = "/app/packages/plugins/examples/plugin-file-browser-example";
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      pluginKey,
+      packageName,
+      packagePath: bundlePath,
+      manifestJson: {
+        id: pluginKey,
+        displayName: "File Browser (Example)",
+        version: "0.2.0",
+        description: "Example plugin that adds a Files link under each project in the sidebar.",
+        author: "Paperclip",
+        capabilities: ["ui.sidebar.register"],
+        instanceConfigSchema: {
+          type: "object",
+          properties: {
+            showFilesInSidebar: {
+              type: "boolean",
+              title: "Show Files in Sidebar",
+              default: false,
+              description: "Adds the Files link under each project in the sidebar.",
+            },
+            commentAnnotationMode: {
+              type: "string",
+              title: "Comment File Links",
+              enum: ["annotation", "contextMenu", "both", "none"],
+              default: "both",
+              description: "Controls which comment extensions are active: 'annotation' shows file links below each comment, 'contextMenu' adds an \"Open in Files\" action to the comment menu, 'both' enables both, 'none' disables comment features.",
+            },
+          },
+        },
+      },
+    }));
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      pluginKey,
+      packageName,
+      localPath: bundlePath,
+      displayName: "File Browser (Example)",
+      description: "Example plugin that adds a Files link under each project in the sidebar.",
+      tag: "example",
+      experimental: false,
+      hasBuiltEntrypoints: true,
+    }]);
+    mockPluginsApi.getConfig.mockResolvedValue({
+      configJson: { showFilesInSidebar: true, commentAnnotationMode: "contextMenu" },
+    });
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain(sidebarTitle);
+    expect(container.textContent).toContain(sidebarDescription);
+    expect(container.textContent).toContain(commentTitle);
+    expect(container.textContent).toContain(locale === "pt-BR"
+      ? "Controla quais extensões de comentários ficam ativas"
+      : "Controls which comment extensions are active");
+    expect(mockPluginsApi.listBundled).toHaveBeenCalled();
+    expect(mockPluginsApi.getConfig).toHaveBeenCalledWith("plugin-1", "company-1");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["pt-BR", "Pastas locais", "Requer atenção", "Pastas ausentes", "Arquivos ausentes", "/caminho/absoluto/da/pasta"],
+    ["en", "Local folders", "Needs attention", "Missing directories", "Missing files", "/absolute/path/to/folder"],
+  ])("localizes host-owned folder controls in %s and preserves external diagnostics", async (locale, folderTitle, attention, missingDirectories, missingFiles, pathPlaceholder) => {
+    await i18n.changeLanguage(locale);
+    const declaration = wikiFolderDeclaration();
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      status: "ready",
+      manifestJson: {
+        displayName: "Folder plugin",
+        version: "0.1.0",
+        description: "External manifest description.",
+        author: "Plugin author",
+        capabilities: ["local.folders"],
+        localFolders: [declaration],
+      },
+    }));
+    mockPluginsApi.listLocalFolders.mockResolvedValue({
+      pluginId: "plugin-1",
+      companyId: "company-1",
+      declarations: [declaration],
+      folders: [folderStatus({
+        problems: [{ code: "not_configured", message: "External validation diagnostic." }],
+      })],
+    });
+
+    const root = await renderSettings(container);
+
+    expect(container.textContent).toContain(folderTitle);
+    expect(container.textContent).toContain(attention);
+    expect(container.textContent).toContain(missingDirectories);
+    expect(container.textContent).toContain(missingFiles);
+    expect(container.textContent).toContain("External validation diagnostic.");
+    expect(container.textContent).toContain("Company-scoped local folder that stores wiki files.");
+    expect(container.textContent).toContain("External manifest description.");
+    expect(container.querySelector("input")?.getAttribute("placeholder")).toBe(pathPlaceholder);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it.each([
+    ["pt-BR", "Painel do runtime", "Processo de trabalho", "Status de integridade", "Permissões", "Pronto", "Em execução", "Concluída", "Agendado", "Manual", "Nova tentativa"],
+    ["en", "Runtime Dashboard", "Worker Process", "Health Status", "Permissions", "Ready", "Running", "Succeeded", "Scheduled", "Manual", "Retry"],
+  ])("localizes the status and diagnostics surface in %s", async (locale, runtimeDashboard, workerProcess, healthStatus, permissions, readyStatus, runningStatus, succeededStatus, scheduledTrigger, manualTrigger, retryTrigger) => {
+    await i18n.changeLanguage(locale);
+    mockPluginsApi.get.mockResolvedValue(basePlugin({
+      status: "ready",
+      manifestJson: {
+        displayName: "Diagnostic plugin",
+        version: "0.1.0",
+        description: "Plugin-owned description.",
+        author: "Plugin author",
+        capabilities: ["plugin.capability.value"],
+      },
+    }));
+    const makeJobRun = (id: string, trigger: string, status: string, jobKey: string) => ({
+      id,
+      jobId: `job-${id}`,
+      jobKey,
+      trigger,
+      status,
+      durationMs: 1000,
+      error: null,
+      startedAt: new Date().toISOString(),
+      finishedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+    const dashboardData = {
+      pluginId: "plugin-1",
+      worker: {
+        status: "running",
+        pid: 42,
+        uptime: 60000,
+        consecutiveCrashes: 0,
+        totalCrashes: 0,
+        pendingRequests: 1,
+        lastCrashAt: null,
+        nextRestartAt: null,
+      },
+      recentJobRuns: [
+        makeJobRun("run-manual", "manual", "succeeded", "plugin-job-key"),
+        makeJobRun("run-scheduled", "schedule", "pending", "plugin-job-scheduled"),
+        makeJobRun("run-retry", "retry", "failed", "plugin-job-retry"),
+        makeJobRun("run-future", "future-trigger", "queued", "plugin-job-future"),
+      ],
+      recentWebhookDeliveries: [{
+        id: "delivery-1",
+        webhookKey: "manifest-webhook-key",
+        status: "success",
+        durationMs: 1000,
+        error: null,
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      }],
+      health: { pluginId: "plugin-1", status: "ready", healthy: true, checks: [] },
+      checkedAt: new Date().toISOString(),
+    };
+    mockPluginsApi.dashboard.mockResolvedValue(dashboardData);
+    const root = await renderSettings(container);
+    const statusTab = [...container.querySelectorAll("button")].find((button) =>
+      button.textContent === i18n.t("pluginSettings.tabs.status"),
+    );
+    expect(statusTab).toBeDefined();
+
+    await act(async () => {
+      statusTab!.click();
+    });
+    await flushReact();
+
+    expect(container.textContent).toContain(runtimeDashboard);
+    expect(container.textContent).toContain(workerProcess);
+    expect(container.textContent).toContain(healthStatus);
+    expect(container.textContent).toContain(permissions);
+    expect(container.textContent).toContain("Diagnostic plugin");
+    expect(container.textContent).toContain(readyStatus);
+    expect(container.textContent).toContain(runningStatus);
+    expect(container.textContent).toContain("plugin.capability.value");
+    expect(container.textContent).toContain("plugin-job-key");
+    expect(container.textContent).toContain("manifest-webhook-key");
+    expect(container.textContent).toContain(scheduledTrigger);
+    expect(container.textContent).toContain(manualTrigger);
+    expect(container.textContent).toContain(retryTrigger);
+    expect(container.textContent).toContain("future-trigger");
+    expect(dashboardData.recentJobRuns.map(({ trigger }) => trigger)).toEqual([
+      "manual",
+      "schedule",
+      "retry",
+      "future-trigger",
+    ]);
+    expect(container.querySelector(`[title="${succeededStatus}"]`)).toBeDefined();
+    expect(container.querySelectorAll(`[title="${succeededStatus}"]`)).toHaveLength(2);
 
     await act(async () => {
       root.unmount();

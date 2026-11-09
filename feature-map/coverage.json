@@ -260,7 +260,9 @@
         "ui/src/pages/audit/AuditRuns.tsx",
         "ui/src/pages/audit/CompanyActivity.production.tsx",
         "ui/src/pages/audit/CompanyActivity.tsx",
-        "ui/src/pages/audit/RoutineAuditActivity.tsx"
+        "ui/src/pages/audit/RoutineAuditActivity.tsx",
+        "ui/src/components/RoutineActivityRow.tsx",
+        "ui/src/components/PageTabBar.tsx"
       ]
     },
     {

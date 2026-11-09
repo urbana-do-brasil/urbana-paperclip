@@ -7,7 +7,9 @@ import {
   type ClipboardEvent as ReactClipboardEvent,
   type ReactNode,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { formatUiError } from "@/api/error-presentation";
 import { useComposerStop } from "@/hooks/useComposerStop";
 import { useStreamlinedTaskChatPresentation } from "./presentation-mode";
 import {
@@ -412,6 +414,7 @@ export function TaskChatComposer({
   onRunnerGoalCommand,
   onRunnerGoalReassign,
 }: TaskChatComposerProps) {
+  const { t } = useTranslation();
   const streamlined = useStreamlinedTaskChatPresentation();
   const stopControl = useComposerStop(onStop, stopPending);
   const [localBody, setBody] = useState(() => (draftKey ? loadDraft(draftKey) : ""));
@@ -644,7 +647,7 @@ export function TaskChatComposer({
   const assigneeName =
     assigneeLabel === "Unassigned" ? "the agent" : assigneeLabel;
   const effectivePlaceholder = queuedEdit
-    ? "Edit queued message…"
+    ? t("taskDetail.chatComposer.editQueuedMessagePlaceholder")
     : (placeholder ?? modePlaceholder(pendingMode, assigneeName, mobile));
   const goalUnavailable = runnerGoalCapability?.availability !== "available";
   const goalCommandOption: ActionCommandOption = {
@@ -719,7 +722,9 @@ export function TaskChatComposer({
             ? {
                 ...item,
                 status: "error",
-                error: err instanceof Error ? err.message : "Upload failed",
+                error: err instanceof Error
+                  ? err.message === "Upload did not return a file URL" ? t("taskComposer.attachments.uploadFailed") : formatUiError(err)
+                  : t("taskComposer.attachments.uploadFailed"),
               }
             : item,
         ),
@@ -743,7 +748,7 @@ export function TaskChatComposer({
               ? {
                   ...item,
                   status: "error",
-                  error: "This file type cannot be attached here",
+                  error: t("taskComposer.attachments.unsupported"),
                 }
               : item,
           ),
@@ -774,7 +779,9 @@ export function TaskChatComposer({
             ? {
                 ...item,
                 status: "error",
-                error: err instanceof Error ? err.message : "Upload failed",
+                error: err instanceof Error
+                  ? err.message === "Upload did not return a file URL" ? t("taskComposer.attachments.uploadFailed") : formatUiError(err)
+                  : t("taskComposer.attachments.uploadFailed"),
               }
             : item,
         ),
@@ -893,7 +900,7 @@ export function TaskChatComposer({
       try {
         await creation.onSubmit(bodyRef.current, pendingMode, runSettings);
       } catch (error) {
-        setActionError(error instanceof Error ? error.message : "Failed to create task. Try again.");
+        setActionError(error instanceof Error ? formatUiError(error) : t("taskComposer.createFailed"));
       } finally {
         submittingRef.current = false;
         setSubmitting(false);
@@ -1256,7 +1263,7 @@ export function TaskChatComposer({
           className="flex h-11 min-w-0 items-center gap-2 px-2.5"
           data-testid="task-chat-composer-context"
           role="group"
-          aria-label="Task project and worktrees"
+          aria-label={t("taskComposer.contextBar")}
         >
           {creation.contextBar}
         </TaskChatComposerBar>
@@ -1423,9 +1430,9 @@ export function TaskChatComposer({
                       </AttachmentTitle>
                       <AttachmentDescription className="max-w-48">
                         {attachment.status === "uploading"
-                          ? "Uploading…"
+                          ? t("taskComposer.attachments.uploading")
                           : attachment.status === "error"
-                            ? (attachment.error ?? "Upload failed")
+                            ? (attachment.error ?? t("taskComposer.attachments.uploadFailed"))
                             : [kind.label, sizeLabel]
                                 .filter(Boolean)
                                 .join(" · ")}
@@ -1433,7 +1440,7 @@ export function TaskChatComposer({
                     </AttachmentContent>
                     <AttachmentActions>
                       <AttachmentAction
-                        aria-label={`Remove ${attachment.name}`}
+                        aria-label={t("taskComposer.attachments.remove", { name: attachment.name })}
                         disabled={!!uncertainSubmission}
                         onClick={() =>
                           setAttachments((prev) =>
@@ -1477,8 +1484,8 @@ export function TaskChatComposer({
             {queuedEdit ? (
               <span className="px-1 text-xs font-medium text-muted-foreground">
                 {queuedEdit.stale
-                  ? "Queued message changed"
-                  : "Editing queued message"}
+                  ? t("taskDetail.chatComposer.queuedMessageChanged")
+                  : t("taskDetail.chatComposer.editingQueuedMessage")}
               </span>
             ) : (
               <ComposerModeChip mode={pendingMode} onRemove={onWorkModeChange ? () => changeMode("standard") : undefined}
@@ -1566,7 +1573,7 @@ export function TaskChatComposer({
                 disabled={submitting}
                 className="h-8 shrink-0 rounded-md px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
               >
-                Cancel
+                {t("taskDetail.chatComposer.cancelQueuedEdit")}
               </button>
             ) : null}
             <button
@@ -1587,28 +1594,34 @@ export function TaskChatComposer({
               title={
                 showStop
                   ? stopControl.stopping
-                    ? "Stopping…"
-                    : "Stop response"
+                    ? t("taskDetail.chatComposer.stopping")
+                    : t("taskDetail.chatComposer.stopResponse")
+                  : creation && submitting
+                    ? t("taskComposer.submit.creating")
                   : queuedEdit
                     ? queuedEdit.stale
-                      ? "Queue as new message"
-                      : "Save queued message"
+                      ? t("taskDetail.chatComposer.queueAsNewMessage")
+                      : t("taskDetail.chatComposer.saveQueuedMessage")
                     : uploadPending
-                      ? "Waiting for upload to finish"
+                      ? t("taskDetail.chatComposer.waitingForUpload")
                       : uploadFailed
-                        ? "Remove the failed attachment to send"
-                        : creation ? `${creation.submitLabel} (⌘+Enter)` : "Send (⌘+Enter)"
+                        ? t("taskDetail.chatComposer.removeFailedAttachmentToSend")
+                        : t("taskDetail.chatComposer.sendWithShortcut", {
+                            label: creation ? creation.submitLabel : t("taskDetail.chatComposer.send"),
+                          })
               }
               aria-label={
                 showStop
                   ? stopControl.stopping
-                    ? "Stopping…"
-                    : "Stop"
+                    ? t("taskDetail.chatComposer.stopping")
+                    : t("taskDetail.chatComposer.stop")
                   : queuedEdit
                     ? queuedEdit.stale
-                      ? "Queue as new message"
-                      : "Save queued message"
-                    : creation?.submitLabel ?? "Send"
+                      ? t("taskDetail.chatComposer.queueAsNewMessage")
+                      : t("taskDetail.chatComposer.saveQueuedMessage")
+                    : creation
+                      ? submitting ? t("taskComposer.submit.creating") : creation.submitLabel
+                      : t("taskDetail.chatComposer.send")
               }
               aria-busy={submitting}
               className={cn(

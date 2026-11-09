@@ -5,6 +5,8 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ApprovalPayloadRenderer, approvalLabel } from "./ApprovalPayload";
 import { ThemeProvider } from "../context/ThemeContext";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -17,18 +19,27 @@ describe("approvalLabel", () => {
       }),
     ).toBe("Board Approval: Reply with an ASCII frog");
   });
+
+  it("localizes the approval type while keeping the subject unchanged", async () => {
+    await i18n.changeLanguage("pt-BR");
+    expect(
+      approvalLabel("hire_agent", { name: "Designer" }, i18n.t),
+    ).toBe("Contratação de agente: Designer");
+  });
 });
 
 describe("ApprovalPayloadRenderer", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("renders request_board_approval payload fields without falling back to raw JSON", () => {
@@ -204,6 +215,41 @@ describe("ApprovalPayloadRenderer", () => {
 
     expect(container.textContent).toContain("Board asked for approval before posting the frog.");
     expect(container.textContent).not.toContain("TitleReply with an ASCII frog");
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("localizes owned board-approval labels and preserves authored payload text", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <ThemeProvider>
+          <ApprovalPayloadRenderer
+            type="request_board_approval"
+            payload={{
+              summary: "The board should publish this exact message.",
+              recommendedAction: "Approve the authored recommendation.",
+              nextActionOnApproval: "Publish the provided comment.",
+              risks: ["Keep the original risk wording."],
+              proposedComment: "Do not rewrite this comment.",
+            }}
+          />
+        </ThemeProvider>,
+      );
+    });
+
+    expect(container.textContent).toContain("Resumo");
+    expect(container.textContent).toContain("Ação recomendada");
+    expect(container.textContent).toContain("Após a aprovação");
+    expect(container.textContent).toContain("Riscos");
+    expect(container.textContent).toContain("Comentário proposto");
+    expect(container.textContent).toContain("The board should publish this exact message.");
+    expect(container.textContent).toContain("Approve the authored recommendation.");
+    expect(container.textContent).toContain("Do not rewrite this comment.");
 
     act(() => {
       root.unmount();

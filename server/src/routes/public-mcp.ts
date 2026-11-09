@@ -7,6 +7,7 @@ import { type PublicMcpEvents } from "../services/public-mcp/events.js";
 import type { PublicMcpToolExtension } from "../services/public-mcp/dot-runner.js";
 import { McpEventError } from "../services/public-mcp/event-webhooks.js";
 import { DOT_RUNNER_MCP_PATH, DOT_RUNNER_MCP_SCOPES, PUBLIC_MCP_SCOPES, mcpConsentSchema, mcpInvitation, mcpSetupUrl } from "@paperclipai/shared";
+import { DEFAULT_USER_LOCALE, resolveLocale } from "@paperclipai/shared/localization";
 import { renderMcpSetup, mcpSetupMarkdown } from "../services/public-mcp/setup.js";
 import { DEVICE_GRANT, McpOAuthError, type PublicMcpOAuth } from "../services/public-mcp/oauth.js";
 import { McpApiError, McpCapabilityError, publicMcpCapabilities, type createPublicMcpExecutor } from "../services/public-mcp/capabilities.js";
@@ -52,14 +53,15 @@ export function publicMcpIngressRoutes(oauth: PublicMcpOAuth, execute: ReturnTyp
     await oauth.assertEnabled();
     const company = z.uuid().optional().safeParse(req.query.company);
     if (!company.success) throw new McpOAuthError("invalid_request", "Invalid organization hint.");
+    const locale = resolveLocale(req.query.locale);
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Referrer-Policy", "no-referrer");
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Content-Security-Policy", "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
     res.vary("Accept");
     if (req.path.endsWith(".md") || req.accepts(["html", "text/markdown"]) === "text/markdown") {
-      res.type("text/markdown").send(mcpSetupMarkdown(resource, company.data));
-    } else res.type("html").send(renderMcpSetup(resource, company.data));
+      res.type("text/markdown").send(mcpSetupMarkdown(resource, company.data, locale));
+    } else res.type("html").send(renderMcpSetup(resource, company.data, locale));
   });
   router.use([oauthPath, endpoint], (_req, res, next) => {
     res.setHeader("Cache-Control", "no-store");
@@ -250,7 +252,8 @@ export function publicMcpManagementRoutes(oauth: PublicMcpOAuth, agentOAuth?: Pu
   });
   router.get("/mcp/setup", realUser, async (_req, res) => res.json({
     enabled: await oauth.isEnabled(), serverUrl: oauth.config.resource,
-    invitationUrl: mcpSetupUrl(oauth.config.resource), invitation: mcpInvitation(oauth.config.resource),
+    invitationUrl: mcpSetupUrl(oauth.config.resource, undefined, DEFAULT_USER_LOCALE),
+    invitation: mcpInvitation(oauth.config.resource, undefined, DEFAULT_USER_LOCALE),
   }));
   router.get("/mcp/connections", realUser, async (req, res) => res.json(await oauth.listConnections(req.actor.userId!)));
   router.delete("/mcp/connections/:id", realUser, sameOrigin, async (req, res) => {

@@ -1,5 +1,6 @@
 import type { ProviderQuotaResult } from "@paperclipai/shared";
-import { formatDateTime } from "../lib/utils";
+import { formatDateTime, formatNumber } from "../lib/utils";
+import { useTranslation } from "../i18n";
 import { QuotaBar } from "./QuotaBar";
 import { quotaUnavailableMessage } from "../lib/quota-refresh";
 
@@ -10,6 +11,7 @@ export function AccountQuotaPanels({
   accounts: ProviderQuotaResult[];
   failed?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       {accounts.map((account) => (
@@ -18,22 +20,25 @@ export function AccountQuotaPanels({
           key={account.accountKey ?? account.provider}
         >
           <p className="text-sm font-medium">
-            {account.accountLabel ?? "Subscription account"}
+            {account.accountLabel ?? t("costs.quota.subscriptionAccount")}
           </p>
           {(failed || !account.ok) && (
             <p className="text-sm text-muted-foreground">
               {account.errorFamily === "credentials_unavailable"
-                ? "Connect or reconnect a subscription in AI connections to view its quota."
+                ? t("costs.quota.credentialsUnavailable")
                 : quotaUnavailableMessage(account.windows.length > 0)}
             </p>
+          )}
+          {account.windows.length === 0 && account.ok && (
+            <p className="text-sm text-muted-foreground">{t("costs.quota.noWindows")}</p>
           )}
           {account.windows.map((window, index) => window.usedPercent == null ? (
             <div key={`${window.label}:${index}`} className="space-y-1 text-sm">
               <div className="flex justify-between gap-3">
                 <span>{window.label}</span>
-                <span className="font-mono text-muted-foreground">{window.valueLabel ?? "Usage not reported"}</span>
+                <span className="font-mono text-muted-foreground">{window.valueLabel ?? t("costs.quota.usageNotReported")}</span>
               </div>
-              {window.resetsAt && <p className="text-xs font-mono text-muted-foreground">Resets {formatDateTime(window.resetsAt)}</p>}
+              {window.resetsAt && <p className="text-xs font-mono text-muted-foreground">{t("costs.quota.resetsAt", { date: formatDateTime(window.resetsAt, { includeYear: false, timeZoneName: "short" }) })}</p>}
             </div>
           ) : (
             <QuotaBar
@@ -44,19 +49,19 @@ export function AccountQuotaPanels({
               leftLabel={
                 window.valueLabel ??
                 (window.usedPercent === null
-                  ? "Usage not reported"
-                  : `${window.usedPercent}% used`)
+                  ? t("costs.quota.usageNotReported")
+                  : t("costs.quota.percentUsed", { percent: formatNumber(window.usedPercent) }))
               }
               rightLabel={
                 window.resetsAt
-                  ? `Resets ${formatDateTime(window.resetsAt)}`
+                  ? t("costs.quota.resetsAt", { date: formatDateTime(window.resetsAt, { includeYear: false, timeZoneName: "short" }) })
                   : undefined
               }
             />
           ))}
           {account.capturedAt && (
             <p className="text-xs font-mono text-muted-foreground">
-              Last checked {formatDateTime(account.capturedAt)}
+              {t("costs.quota.lastChecked", { date: formatDateTime(account.capturedAt, { includeYear: false, timeZoneName: "short" }) })}
             </p>
           )}
         </section>

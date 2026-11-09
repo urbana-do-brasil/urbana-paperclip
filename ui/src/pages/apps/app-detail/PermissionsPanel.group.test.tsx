@@ -56,7 +56,7 @@ describe("Permissions group control", () => {
       ),
     );
 
-    const select = container.querySelector<HTMLSelectElement>('select[aria-label="Set every action in Write (3)"]');
+    const select = container.querySelector<HTMLSelectElement>('select[aria-label="Definir todas as ações em Alteração (3)"]');
     expect(select).toBeTruthy();
     expect(select!.value).toBe("");
     flushSync(() => {

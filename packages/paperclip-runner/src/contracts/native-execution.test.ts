@@ -155,6 +155,20 @@ describe("NativeExecutionInputV1", () => {
     expect(JSON.stringify(delta)).not.toContain(input.task.title);
     expect(JSON.stringify(delta)).not.toContain(input.completionContract.contract.objective);
     expect(JSON.stringify(delta)).not.toContain("opaque-binding");
+    const communicationGuidance = "Write human-facing replies in English; preserve technical instructions and quoted content as written.";
+    const localizedDelta = buildNativeModelEnvelope(parseNativeExecutionInput({
+      ...current,
+      continuationPrompt: JSON.stringify({
+        communicationGuidance,
+        messages: [{ authorType: "user", body: "Just this new comment" }],
+      }),
+    }), { resumedSession: true });
+    expect(localizedDelta).toMatchObject({
+      schema: "paperclip.native-continuation.v1",
+      events: '{"messages":[{"authorType":"user","body":"Just this new comment"}]}',
+      communicationGuidance,
+    });
+    expect(localizedDelta.events).not.toContain(communicationGuidance);
     const withGuidance = parseNativeExecutionInput({ ...current, initialCommunicationGuidance: "Saved Slack instructions" });
     expect(buildNativeModelEnvelope(withGuidance).task.prompt).toBe(`Saved Slack instructions\n\n${current.task.prompt}`);
     // Structured question/approval resumes may use a full envelope rather than

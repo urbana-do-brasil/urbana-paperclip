@@ -6,6 +6,7 @@ import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useToast } from "@/context/ToastContext";
 import { cn } from "@/lib/utils";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { useTranslation } from "@/i18n";
 import {
   activeTokenCount,
   allowedToolsLabel,
@@ -34,6 +35,7 @@ export function OverviewPanel({
   onToggle: () => void;
 }) {
   const { pushToast } = useToast();
+  const { t } = useTranslation();
   const endpoint = `${typeof window !== "undefined" ? window.location.origin : ""}${gateway.endpointPath}`;
   const active = activeTokenCount(gateway);
   const expiring = expiringTokenCount(gateway);
@@ -54,9 +56,9 @@ export function OverviewPanel({
   async function copy(value: string, label: string) {
     try {
       await copyTextToClipboard(value);
-      pushToast({ title: "Copied", body: label, tone: "success" });
+      pushToast({ title: t("apps.gateways.overview.copied"), body: label, tone: "success" });
     } catch {
-      pushToast({ title: "Copy failed", body: "Clipboard access is unavailable.", tone: "error" });
+      pushToast({ title: t("apps.gateways.overview.copyFailed"), body: t("apps.gateways.overview.clipboardUnavailable"), tone: "error" });
     }
   }
 
@@ -64,45 +66,45 @@ export function OverviewPanel({
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-border p-4">
-          <div className="text-xs font-medium text-muted-foreground">{on ? "On" : "Off"}</div>
+          <div className="text-xs font-medium text-muted-foreground">{on ? t("apps.gateways.overview.on") : t("apps.gateways.overview.off")}</div>
           <div className="mt-2">
-            <ToggleSwitch checked={on} disabled={toggleDisabled} onCheckedChange={onToggle} aria-label="Toggle gateway" />
+            <ToggleSwitch checked={on} disabled={toggleDisabled} onCheckedChange={onToggle} aria-label={t("apps.gateways.overview.toggleAria")} />
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">Toggle the whole gateway off here.</p>
+          <p className="mt-2 text-xs text-muted-foreground">{t("apps.gateways.overview.toggleHelp")}</p>
         </div>
-        <StatCard label="Apps">
-          {apps.length} {apps.length === 1 ? "app" : "apps"}
-          {profile ? ` · ${allowedToolsLabel(profile)}` : ""}
+        <StatCard label={t("apps.gateways.overview.apps")}>
+          {t("apps.gateways.overview.appsCount", { count: apps.length })}
+          {profile ? ` · ${allowedToolsLabel(profile, t)}` : ""}
         </StatCard>
-        <StatCard label="Tokens">
-          {active} active{expiring > 0 ? ` · ${expiring} expiring` : ""}
+        <StatCard label={t("apps.gateways.overview.tokens")}>
+          {t("apps.gateways.overview.activeTokens", { count: active })}{expiring > 0 ? ` · ${t("apps.gateways.overview.expiringTokens", { count: expiring })}` : ""}
         </StatCard>
-        <StatCard label="Health">
-          {needsAttention.length === 0 ? "All green" : `${needsAttention.length} needs attention`}
+        <StatCard label={t("apps.gateways.overview.health")}>
+          {needsAttention.length === 0 ? t("apps.gateways.overview.allGreen") : t("apps.gateways.overview.appsNeedAttention", { count: needsAttention.length })}
         </StatCard>
       </div>
 
       <section className="rounded-lg border border-border p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Who can use it</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("apps.gateways.overview.whoCanUse")}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Anyone holding an active token below, restricted by the rules in the bound profile.
+              {t("apps.gateways.overview.allowedTokenNotice")}
             </p>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Chip>Scope · {formatScope(gateway, projectNames, agentNames)}</Chip>
-          <Chip>Profile · {profile?.name ?? "Unavailable"}</Chip>
-          <Chip>{active} active {active === 1 ? "token" : "tokens"}</Chip>
+          <Chip>{t("apps.gateways.overview.scope")} · {formatScope(gateway, projectNames, agentNames, t)}</Chip>
+          <Chip>{t("apps.gateways.overview.profile")} · {profile?.name ?? t("apps.gateways.overview.unavailable")}</Chip>
+          <Chip>{t("apps.gateways.overview.activeTokenCount", { count: active })}</Chip>
         </div>
       </section>
 
       <section className="rounded-lg border border-border p-4">
-        <h3 className="text-sm font-semibold text-foreground">Apps in this gateway</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t("apps.gateways.overview.appsInGateway")}</h3>
         {apps.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">
-            This gateway’s profile doesn’t include any apps yet.
+            {t("apps.gateways.overview.noApps")}
           </p>
         ) : (
           <ul className="mt-3 divide-y divide-border">
@@ -115,10 +117,10 @@ export function OverviewPanel({
 
       <section className="rounded-lg border border-border bg-muted/30 p-4">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-foreground">How clients connect</h3>
-          <Button variant="outline" size="sm" onClick={() => void copy(snippet, "Client config")}>
+          <h3 className="text-sm font-semibold text-foreground">{t("apps.gateways.overview.clientsConnect")}</h3>
+          <Button variant="outline" size="sm" onClick={() => void copy(snippet, t("apps.gateways.overview.clientConfig"))}>
             <Copy className="mr-1 h-3.5 w-3.5" />
-            Copy
+            {t("apps.gateways.overview.copyConfig")}
           </Button>
         </div>
         <pre className="mt-3 overflow-auto whitespace-pre-wrap break-words rounded bg-background p-3 font-mono text-xs text-muted-foreground">
@@ -147,6 +149,7 @@ function Chip({ children }: { children: React.ReactNode }) {
 }
 
 function AppRow({ app }: { app: GatewayAppRow }) {
+  const { t } = useTranslation();
   const href = app.connection
     ? `/apps/${app.connection.id}/permissions`
     : `/apps/app/${app.application.id}/permissions`;
@@ -157,8 +160,8 @@ function AppRow({ app }: { app: GatewayAppRow }) {
           {gatewayAppDisplayName(app)}
         </Link>
         <div className="text-xs text-muted-foreground">
-          {app.toolCount} {app.toolCount === 1 ? "tool" : "tools"}
-          {app.needsAttention && app.attentionReason ? ` · ${app.attentionReason}` : ""}
+          {t("apps.gateways.overview.toolsCount", { count: app.toolCount })}
+          {app.needsAttention ? ` · ${t("apps.gateways.overview.signInExpired")}` : ""}
         </div>
       </div>
       <span
@@ -169,7 +172,7 @@ function AppRow({ app }: { app: GatewayAppRow }) {
             : "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
         )}
       >
-        {app.needsAttention ? "Needs attention" : "Healthy"}
+        {app.needsAttention ? t("apps.gateways.overview.needsAttention") : t("apps.gateways.overview.healthy")}
       </span>
     </li>
   );

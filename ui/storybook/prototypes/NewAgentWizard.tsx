@@ -3,7 +3,8 @@ import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { ArrowLeft, ArrowRight, Check, ChevronRight, Plus, RotateCcw, Settings2, Users } from "lucide-react";
 import { getAdapterDisplay } from "@/adapters/adapter-display-registry";
 import { AdapterMark as AgentAdapterMark } from "@/components/new-agent/AgentBasicsDialog";
-import { setupEfforts, SETUP_CREDENTIAL_KEYS, SETUP_LOGIN_HINTS } from "@/lib/agent-setup-fields";
+import { setupEfforts, SETUP_CREDENTIAL_KEYS, SETUP_LOGIN_HINT_KEYS } from "@/lib/agent-setup-fields";
+import { useTranslation } from "@/i18n";
 import { isNewAgentAdapterAllowed } from "@/lib/new-agent-adapters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,6 +103,7 @@ export function NewAgentWizard({ initialScreen = "name", initialAdapter = null, 
   initialRunnerProvider?: RunnerProvider; initialConnectionMethod?: ConnectionMethod; initialConnectionWaiting?: boolean;
   initialTestState?: TestState; testOutcome?: TestOutcome; testDelayMs?: number;
 }) {
+  const { t } = useTranslation();
   const { openNewIssue, closeNewIssue } = useDialog();
   const { setSelectedCompanyId } = useCompany();
   const queryClient = useQueryClient();
@@ -341,7 +343,7 @@ export function NewAgentWizard({ initialScreen = "name", initialAdapter = null, 
               </div>}
               {!isRunner && setupEfforts(selected, draft.model).length > 0 && <SelectField label="Thinking effort" value={draft.effort} onChange={effort => setDraft({ effort })} options={["Auto", ...setupEfforts(selected, draft.model)]} />}
             </div>
-            {SETUP_LOGIN_HINTS[selected] && <p className="text-sm text-muted-foreground">{SETUP_LOGIN_HINTS[selected]}</p>}
+            {SETUP_LOGIN_HINT_KEYS[selected] && <p className="text-sm text-muted-foreground">{t(SETUP_LOGIN_HINT_KEYS[selected])}</p>}
             {SETUP_CREDENTIAL_KEYS[selected] && <>
               <TextField type="password" label={SETUP_CREDENTIAL_KEYS[selected]} required={selected === "cursor_cloud"} value={draft.apiKey} onChange={apiKey => setDraft({ apiKey })} />
               {selected === "cursor_cloud" && <a href="https://cursor.com/dashboard/api?section=user-keys#user-api-keys" target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground">get api key</a>}

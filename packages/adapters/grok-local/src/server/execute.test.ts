@@ -4,7 +4,10 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AdapterExecutionContext } from "@paperclipai/adapter-utils";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import {
+  createCommunicationLocalePromptFixture,
+  createPromptContextFixture,
+} from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
 
 // Bundles the remote-lane mock state and every mocked execution-target
 // function behind one hoisted object, so the `vi.mock` factory below (which
@@ -1103,6 +1106,143 @@ describe("grok_local execute", () => {
       );
       expect(deliveredPrompt).toContain("Change the final scope to the launch checklist.");
     });
+
+    it.each(["pt-BR", "en"] as const)(
+      "starts a new Grok --single turn with the selected locale and technical content (%s)",
+      async (locale) => {
+        const root = await makeTempRoot();
+        const promptTemplate = "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.";
+        const ctx = await makeCtx(`run-grok-first-locale-${locale}`, root);
+        ctx.authToken = undefined;
+        ctx.config = { cwd: root, engine: "cli", env: {}, promptTemplate };
+        ctx.context = createCommunicationLocalePromptFixture(locale);
+        runProcessMock.mockResolvedValue(makeSuccessfulRunResult({ sessionId: "first-session" }));
+
+        const result = await execute(ctx);
+
+        expect(result.exitCode).toBe(0);
+        expect(result.sessionParams?.sessionId).toBe("first-session");
+        expect(ctx.runtime.sessionId).toBeNull();
+        expect(runProcessMock).toHaveBeenCalledTimes(1);
+        const args = runProcessMock.mock.calls[0]?.[3] as string[];
+        expect(args).not.toContain("--resume");
+        const prompt = args[args.indexOf("--single") + 1] ?? "";
+        expect(prompt).toContain("## Human communication language");
+        expect(prompt).toContain(locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        expect(prompt).toContain(promptTemplate);
+        if (locale === "pt-BR") {
+          expect(prompt).toContain("Do not switch these interactions to English.");
+          expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+        }
+      },
+    );
+
+    it.each(["pt-BR", "en"] as const)(
+      "retains communication locale and exact technical content through Grok --single on resume fallback (%s)",
+      async (locale) => {
+        const root = await makeTempRoot();
+        const prompts: string[] = [];
+        const promptTemplate = "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.";
+        runProcessMock.mockImplementation(async (_runId, _target, _command, args) => {
+          prompts.push(String(args.at(-1) ?? ""));
+          if (prompts.length === 1) {
+            return { exitCode: 1, signal: null, timedOut: false, stdout: "", stderr: "unknown session sess-stale" };
+          }
+          return makeSuccessfulRunResult();
+        });
+
+        const ctx = await makeCtx(`run-grok-locale-${locale}`, root);
+        ctx.authToken = undefined;
+        ctx.config = { cwd: root, engine: "cli", env: {}, promptTemplate };
+        ctx.runtime = {
+          sessionId: "sess-stale",
+          sessionParams: { sessionId: "sess-stale", cwd: root },
+          sessionDisplayId: "sess-stale",
+          taskKey: null,
+        };
+        ctx.context = createCommunicationLocalePromptFixture(locale);
+        const result = await execute(ctx);
+
+        const languageDirective = locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+        expect(result.exitCode).toBe(0);
+        expect(prompts).toHaveLength(2);
+        for (const [index, prompt] of prompts.entries()) {
+          const args = runProcessMock.mock.calls[index]?.[3] as string[];
+          expect(args[args.indexOf("--single") + 1]).toBe(prompt);
+          expect(prompt).toContain("## Human communication language");
+          expect(prompt).toContain(languageDirective);
+          expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+          expect(prompt).toContain("`X-Trace-Mode: RAW`");
+          expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        }
+        expect(prompts[0]).toContain("## Compact assignment");
+        expect(prompts[1]).toContain("## Owned assignment");
+        expect(prompts[0]).not.toContain("Configured agent instruction:");
+        expect(prompts[1]).toContain(
+          "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.",
+        );
+        if (locale === "pt-BR") {
+          expect(prompts[0]).toContain("Do not switch these interactions to English.");
+          expect(prompts[0]).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompts[0]).toContain("ASD-STE100 Simplified Technical English");
+        }
+      },
+    );
+
+    it.each(["pt-BR", "en"] as const)(
+      "keeps communication locale in the prompt for a stable Grok session resume (%s)",
+      async (locale) => {
+        const root = await makeTempRoot();
+        const ctx = await makeCtx(`run-grok-stable-locale-${locale}`, root);
+        ctx.authToken = undefined;
+        ctx.config = {
+          cwd: root,
+          engine: "cli",
+          env: {},
+          promptTemplate: "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.",
+        };
+        ctx.runtime = {
+          sessionId: "sess-stable",
+          sessionParams: { sessionId: "sess-stable", cwd: root },
+          sessionDisplayId: "sess-stable",
+          taskKey: null,
+        };
+        ctx.context = createCommunicationLocalePromptFixture(locale);
+        runProcessMock.mockResolvedValue(makeSuccessfulRunResult({ sessionId: "sess-stable" }));
+
+        const result = await execute(ctx);
+
+        expect(result.exitCode).toBe(0);
+        expect(runProcessMock).toHaveBeenCalledTimes(1);
+        const args = runProcessMock.mock.calls[0]?.[3] as string[];
+        expect(args.slice(args.indexOf("--resume"), args.indexOf("--resume") + 2)).toEqual([
+          "--resume",
+          "sess-stable",
+        ]);
+        const prompt = args[args.indexOf("--single") + 1] ?? "";
+        expect(prompt).toContain(locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        if (locale === "pt-BR") {
+          expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+        }
+      },
+    );
 
     it("retries a stale session with the full assignment and wake context", async () => {
       const root = await makeTempRoot();

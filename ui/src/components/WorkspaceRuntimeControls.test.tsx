@@ -15,6 +15,7 @@ import {
   WorkspaceRuntimeControls,
 } from "./WorkspaceRuntimeControls";
 import { queryKeys } from "@/lib/queryKeys";
+import { i18n } from "@/i18n";
 
 const mockInstanceSettingsApi = vi.hoisted(() => ({
   getExperimental: vi.fn(),
@@ -173,7 +174,7 @@ describe("buildWorkspaceRuntimeControlSections", () => {
         statusLabel: "running",
         command: "pnpm dev",
         runtimeServiceId: "service-web",
-        disabledReason: "This runtime service no longer matches a configured workspace command.",
+        disabledReasonKey: "untrackedService",
       }),
     ]);
   });
@@ -211,7 +212,7 @@ describe("buildWorkspaceRuntimeControlSections", () => {
         statusLabel: "running",
         command: "pnpm dev",
         runtimeServiceId: "service-web",
-        disabledReason: "This runtime service no longer matches a configured workspace command.",
+        disabledReasonKey: "untrackedService",
       }),
     ]);
   });
@@ -249,7 +250,7 @@ describe("buildWorkspaceRuntimeControlSections", () => {
         statusLabel: "running",
         command: "pnpm dev",
         runtimeServiceId: "service-web",
-        disabledReason: "This runtime service no longer matches a configured workspace command.",
+        disabledReasonKey: "untrackedService",
       }),
     ]);
   });
@@ -284,15 +285,17 @@ describe("buildWorkspaceRuntimeControlItems", () => {
 describe("WorkspaceRuntimeControls", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({});
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage("en");
   });
 
   it("shows the service working directory when the managed-sandbox-only policy is off", () => {
@@ -411,6 +414,36 @@ describe("WorkspaceRuntimeControls", () => {
     expect(buttons).toEqual(["Stop", "Restart", "Run"]);
     expect(container.textContent).toContain("Services");
     expect(container.textContent).toContain("Jobs");
+
+    act(() => root.unmount());
+  });
+
+  it("localizes service and job controls while preserving configured commands", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const sections = buildWorkspaceRuntimeControlSections({
+      runtimeConfig: {
+        commands: [
+          { id: "web", name: "web", kind: "service", command: "pnpm dev" },
+          { id: "db-migrate", name: "db:migrate", kind: "job", command: "pnpm db:migrate" },
+        ],
+      },
+      runtimeServices: [createRuntimeService({ serviceName: "web", status: "running", healthStatus: "healthy" })],
+      canStartServices: true,
+      canRunJobs: true,
+    });
+    const root = createRoot(container);
+    act(() => {
+      root.render(withQueryClient(<WorkspaceRuntimeControls sections={sections} onAction={vi.fn()} />));
+    });
+
+    expect(container.textContent).toContain("Comandos do espaço de trabalho");
+    expect(container.textContent).toContain("Serviços");
+    expect(container.textContent).toContain("Jobs");
+    expect(container.textContent).toContain("Operacional");
+    expect(container.textContent).toContain("pnpm dev");
+    expect(container.textContent).toContain("pnpm db:migrate");
+    expect(Array.from(container.querySelectorAll("button"), (button) => button.textContent?.trim()))
+      .toEqual(["Parar", "Reiniciar", "Executar"]);
 
     act(() => root.unmount());
   });
@@ -692,7 +725,7 @@ describe("buildWorkspaceServiceControlEntries", () => {
         url: "http://localhost:3100",
         port: 3100,
         healthStatus: "healthy",
-        failureDetail: null,
+        failureTimeAgo: null,
       }),
     ]);
   });
@@ -795,7 +828,7 @@ describe("buildWorkspaceServiceControlEntries", () => {
     });
 
     expect(entries[0].state).toBe("failed");
-    expect(entries[0].failureDetail).toMatch(/^Service failed · /);
+    expect(entries[0].failureTimeAgo).toBeTruthy();
   });
 
   it("surfaces HTTPS failure independently while the backend remains running", () => {
@@ -824,8 +857,7 @@ describe("buildWorkspaceServiceControlEntries", () => {
 
     expect(entry.state).toBe("running");
     expect(entry.exposureState).toBe("failed");
-    expect(entry.exposureDetail).toMatch(/^HTTPS unavailable/);
-    expect(entry.exposureDetail).not.toContain("cli_error");
+    expect(entry.exposureError).toBe("cli_error");
   });
 
   it("carries the verified HTTPS URL into the launch entry, and no HTTP fallback while pending", () => {
@@ -865,9 +897,8 @@ describe("buildWorkspaceServiceControlEntries", () => {
     expect(ready.state).toBe("running");
     expect(ready.url).toBe(httpsUrl);
     expect(ready.exposureState).toBe("ready");
-    // A ready exposure reports plainly and never as a remediation prompt.
-    expect(ready.exposureDetail).toBe("HTTPS ready");
-    expect(ready.exposureDetail).not.toMatch(/unavailable|cleanup|Check the/i);
+    expect(ready.exposureState).toBe("ready");
+    expect(ready.exposureError).toBeNull();
 
     const pending = buildEntry(createRuntimeService({
       status: "running",
@@ -886,7 +917,8 @@ describe("buildWorkspaceServiceControlEntries", () => {
       },
     }));
     expect(pending.url ?? null).toBeNull();
-    expect(pending.exposureDetail).toBe("Provisioning HTTPS…");
+    expect(pending.exposureState).toBe("pending");
+    expect(pending.exposureError).toBeNull();
     expect(JSON.stringify(pending)).not.toContain("http://");
   });
 });

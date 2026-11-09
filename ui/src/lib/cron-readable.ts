@@ -77,3 +77,71 @@ export function describeCron(expression: string | null | undefined): string | nu
 
   return null;
 }
+
+export type CronTranslator = (
+  key: string,
+  options?: Record<string, string | number>,
+) => string;
+
+/** Localized version for UI surfaces; omitting the translator preserves the
+ * original English helper contract for callers and tests that need a fallback. */
+export function describeCronLocalized(
+  expression: string | null | undefined,
+  translate: CronTranslator,
+  locale: string,
+): string | null {
+  if (!expression) return null;
+  const fields = expression.trim().split(/\s+/);
+  if (fields.length !== 5) return null;
+  const [minute, hour, dom, month, dow] = fields;
+
+  const everyMinutes = minute.match(/^\*\/(\d+)$/);
+  if (everyMinutes && hour === "*" && dom === "*" && month === "*" && dow === "*") {
+    return translate("routines.detail.triggers.cron.everyMinutes", { count: Number(everyMinutes[1]) });
+  }
+
+  const everyHours = hour.match(/^\*\/(\d+)$/);
+  if (everyHours && /^\d+$/.test(minute) && dom === "*" && month === "*" && dow === "*") {
+    return translate("routines.detail.triggers.cron.everyHoursAtMinute", {
+      count: Number(everyHours[1]),
+      minute: pad2(Number(minute)),
+    });
+  }
+
+  if (/^\d+$/.test(minute) && hour === "*" && dom === "*" && month === "*" && dow === "*") {
+    return translate("routines.detail.triggers.cron.everyHourAtMinute", { minute: pad2(Number(minute)) });
+  }
+
+  if (/^\d+$/.test(minute) && /^\d+$/.test(hour) && month === "*") {
+    const time = describeTime(minute, hour);
+    if (!time) return null;
+    if (dom === "*" && (dow === "*" || dow === "?")) {
+      return translate("routines.detail.triggers.cron.everyDayAt", { time });
+    }
+    if (dom === "*") {
+      if (dow === "1-5") return translate("routines.detail.triggers.cron.weekdaysAt", { time });
+      if (["0,6", "6,0", "0,7"].includes(dow)) {
+        return translate("routines.detail.triggers.cron.weekendsAt", { time });
+      }
+      const dayValues = dow.split(",").map((part) => part.trim());
+      const dayNames = dayValues.map((part) => {
+        const numeric = Number(part);
+        if (!Number.isInteger(numeric)) return null;
+        const index = numeric % 7;
+        return new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" })
+          .format(new Date(Date.UTC(2020, 0, 5 + index)));
+      });
+      if (dayNames.some((name) => name === null)) return null;
+      if (dayNames.length === 1) {
+        return translate("routines.detail.triggers.cron.weekdayAt", { day: dayNames[0]!, time });
+      }
+      const days = new Intl.ListFormat(locale, { style: "long", type: "conjunction" }).format(dayNames as string[]);
+      return translate("routines.detail.triggers.cron.selectedWeekdaysAt", { days, time });
+    }
+    if (/^\d+$/.test(dom) && (dow === "*" || dow === "?")) {
+      return translate("routines.detail.triggers.cron.dayOfMonthAt", { day: Number(dom), time });
+    }
+  }
+
+  return null;
+}

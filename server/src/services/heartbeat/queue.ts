@@ -1,4 +1,7 @@
 import { isAgentAwaitingSetup } from "../../modules/agent-lifecycle/index.js";
+import { DEFAULT_USER_LOCALE } from "@paperclipai/shared/localization";
+import { getExplicitCommunicationLocale, getLocalCommunicationLocale } from "../../middleware/communication-locale.js";
+import { readCommunicationLocaleSnapshot, resolveCommunicationLocaleSnapshot } from "./communication-locale.js";
 import { normalizeAgentNameKey } from "./retries.js";
 import { publishActiveDotComment } from "../dot-assignment-follow-up.js";
 import {
@@ -2115,10 +2118,6 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
       triggerDetail,
       payload,
     });
-    // Keep each request's own server-derived origin, including coalesced wakes.
-    // A run's merged context cannot establish which caller authored one receipt.
-    // Overwrite caller-supplied nested context rather than trusting it.
-    payload = { ...payload, [DEFERRED_WAKE_CONTEXT_KEY]: { ...enrichedContextSnapshot } };
     let issueId =
       readNonEmptyString(enrichedContextSnapshot.issueId) ?? issueIdFromPayload;
     if (executionReconciliationWake && !issueId) return null;
@@ -2128,8 +2127,10 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
     // Mentions only annotate comments. Ignore legacy callers before creating
     // a run or deferred request; assignment and review have their own wakes.
     if (reason === "issue_comment_mentioned" || enrichedContextSnapshot.wakeReason === "issue_comment_mentioned") return null;
+    let originRunId: string | null = opts.communicationOriginRunId ?? null;
     if (issueId) {
       const conversation = await getIssueExecutionContext(agent.companyId, issueId);
+      originRunId = originRunId ?? conversation?.originRunId ?? null;
       if (reason === "issue_children_completed" && conversation?.originKind === "onboarding_first_task") enrichedContextSnapshot.onboardingCompletion = true;
       if (isConversation(conversation)) {
         if (opts.manualUserWake && conversation!.conversationUserId !== opts.requestedByActorId) {
@@ -2141,6 +2142,51 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
         if (!wakeCommentId && isWaitingConversation(conversation) && !hasInteractionContinuationWakeContext(enrichedContextSnapshot) && reason !== CHAT_COMPLETION_WAKE_REASON) return null;
       }
     }
+    let deferredLocale: unknown;
+    if (executionWaitRequestId) {
+      // Only this server-owned, company/agent-scoped receipt may restore a
+      // previous preference. Never trust the caller's nested payload.
+      const [receipt] = await db.select({ payload: agentWakeupRequests.payload }).from(agentWakeupRequests).where(and(
+        eq(agentWakeupRequests.id, executionWaitRequestId), eq(agentWakeupRequests.companyId, agent.companyId),
+        eq(agentWakeupRequests.agentId, agentId), eq(agentWakeupRequests.status, "deferred_issue_execution"),
+      ));
+      if (receipt) {
+        const saved = parseObject(parseObject(receipt.payload)[DEFERRED_WAKE_CONTEXT_KEY]);
+        // Legacy receipts lack a snapshot; never infer their historical
+        // language from the user's current preference during replay.
+        deferredLocale = readCommunicationLocaleSnapshot(saved) ?? {
+          communicationLocale: DEFAULT_USER_LOCALE, communicationLocaleSource: "default",
+        };
+      }
+    }
+    const durableRequest = opts.durableChatRequest;
+    if (durableRequest) {
+      // Only the branded, scope-bound server request may select a chat retry.
+      // Transactional retry authorization remains mandatory below.
+      assertDurableChatWakeupRequest(durableRequest, {
+        agentId, companyId: agent.companyId, issueId, commentId: wakeCommentId ?? null,
+        requestedByActorType: opts.requestedByActorType, requestedByActorId: opts.requestedByActorId,
+      });
+    }
+    const retryRunId = opts.failedRunId ?? durableRequest?.failedRunRetry?.failedRunId ?? (source === "automation" && opts.requestedByActorType === "system"
+      ? readNonEmptyString(enrichedContextSnapshot.retryOfRunId) : null);
+    const localeSnapshot = await resolveCommunicationLocaleSnapshot(db, {
+      companyId: agent.companyId, agentId, requesterType: opts.requestedByActorType,
+      requesterId: opts.requestedByActorId, explicitLocale: opts.communicationLocale ?? (opts.requestedByActorType === "user" ? getExplicitCommunicationLocale(opts.requestedByActorId) ?? undefined : undefined),
+      localLocale: getLocalCommunicationLocale(opts.requestedByActorId), originRunId,
+      retryRunId, deferredSnapshot: deferredLocale,
+    });
+    // Incoming contexts are not authority for language. Overwrite all public
+    // fields and persist the request's own snapshot with its durable receipt.
+    delete enrichedContextSnapshot.communicationLocaleByCommentId;
+    Object.assign(enrichedContextSnapshot, localeSnapshot);
+    if (wakeCommentId && opts.requestedByActorType === "user") {
+      enrichedContextSnapshot.communicationLocaleByCommentId = { [wakeCommentId]: localeSnapshot };
+    }
+    payload = { ...payload, [DEFERRED_WAKE_CONTEXT_KEY]: { ...enrichedContextSnapshot } };
+    const hasLanguageOrigin = opts.requestedByActorType === "user" || localeSnapshot.communicationLocaleSource === "origin" || localeSnapshot.communicationLocaleSource === "explicit";
+    const matchesIncomingLocale = (snapshot: unknown) =>
+      (readCommunicationLocaleSnapshot(snapshot)?.communicationLocale ?? DEFAULT_USER_LOCALE) === localeSnapshot.communicationLocale;
     if (agent.adapterType === "paperclip_runner") {
       const oldConfig = parseObject(agent.adapterConfig);
       const nextConfig = normalizeLegacyRunnerProvider(oldConfig);
@@ -2189,16 +2235,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
       }
     }
 
-    const durableRequest = opts.durableChatRequest;
     if (durableRequest) {
-      assertDurableChatWakeupRequest(durableRequest, {
-        agentId,
-        companyId: agent.companyId,
-        issueId,
-        commentId: wakeCommentId ?? null,
-        requestedByActorType: opts.requestedByActorType,
-        requestedByActorId: opts.requestedByActorId,
-      });
       opts = { ...opts, idempotencyKey: durableRequest.idempotencyKey };
     }
     if (
@@ -3659,6 +3696,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
             const dotFollowUp = agent.adapterType === "paperclip_runner" && parseObject(agent.adapterConfig).provider === "openai_dot"
                 && dotBindingId && activeExecutionRun.agentId === agentId && issue.assigneeAgentId === agentId
                 && reason === "issue_commented" && wakeCommentId && opts.allowRunCoalescing !== false
+                && (!hasLanguageOrigin || matchesIncomingLocale(activeExecutionRun.contextSnapshot))
                 && enrichedContextSnapshot.forceFreshSession !== true && !explicitResumeSession && !opts.manualUserWake
                 && !enrichedContextSnapshot.interactionId && !payload?.interactionId && !receiptRequest
                 ? await publishActiveDotComment(tx as unknown as Db, { companyId: agent.companyId, agentId,
@@ -3668,11 +3706,15 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
                 eq(agentWakeupRequests.companyId, agent.companyId), eq(agentWakeupRequests.agentId, agentId),
                 isNull(agentWakeupRequests.runId), eq(agentWakeupRequests.status, "deferred_issue_execution"),
                 sql`${agentWakeupRequests.payload}->>'dotAssignmentFollowUp' = ${dotFollowUp.assignmentId}`,
+                sql`coalesce(${agentWakeupRequests.payload}->${DEFERRED_WAKE_CONTEXT_KEY}->>'communicationLocale', 'pt-BR') = ${localeSnapshot.communicationLocale}`,
                 opts.requestedByActorType ? eq(agentWakeupRequests.requestedByActorType, opts.requestedByActorType) : isNull(agentWakeupRequests.requestedByActorType),
                 opts.requestedByActorId ? eq(agentWakeupRequests.requestedByActorId, opts.requestedByActorId) : isNull(agentWakeupRequests.requestedByActorId),
               )).for("update").limit(1);
               if (pending) await tx.update(agentWakeupRequests).set({
-                payload: withQueuedCommentIdsInWakePayload(pending.payload,
+                payload: withQueuedCommentIdsInWakePayload({ ...parseObject(pending.payload),
+                  [DEFERRED_WAKE_CONTEXT_KEY]: mergeCoalescedContextSnapshot(
+                    parseObject(parseObject(pending.payload)[DEFERRED_WAKE_CONTEXT_KEY]), enrichedContextSnapshot,
+                  ) },
                   [...new Set([...queuedCommentIdsFromWakePayload(pending.payload), wakeCommentId!])]),
                 coalescedCount: pending.coalescedCount + 1, updatedAt: new Date(),
               }).where(and(eq(agentWakeupRequests.id, pending.id), eq(agentWakeupRequests.companyId, agent.companyId),
@@ -3708,7 +3750,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
                   contextSnapshot: activeExecutionRun.contextSnapshot,
                   wakeupRequestId: activeExecutionRun.wakeupRequestId,
                 },
-                allowRunCoalescing: isConversation(issue) ? false : opts.allowRunCoalescing,
+                allowRunCoalescing: isConversation(issue) || (hasLanguageOrigin && !matchesIncomingLocale(activeExecutionRun.contextSnapshot)) ? false : opts.allowRunCoalescing,
                 durableReceipt: receiptRequest
                   ? {
                       id: receiptRequest.id,
@@ -3990,12 +4032,14 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
                   .orderBy(asc(agentWakeupRequests.requestedAt))
               : [];
           const adoptedComments = pendingComments.filter((wake) => {
-            if (wake.id === executionWaitRequestId) return true;
-            if (wake.id === opts.queuedCommentInterruptId || wake.id === opts.queuedCommentRequestId) return true;
             const deferredPayload = parseObject(wake.payload);
             const deferredContext = parseObject(
               deferredPayload[DEFERRED_WAKE_CONTEXT_KEY],
             );
+            // Leave a different-language receipt durable for the next run.
+            if (!matchesIncomingLocale(deferredContext)) return false;
+            if (wake.id === executionWaitRequestId) return true;
+            if (wake.id === opts.queuedCommentInterruptId || wake.id === opts.queuedCommentRequestId) return true;
             // Dedicated interaction wakes carry their own source and session
             // contract. ID-only adoption must not erase that continuation.
             return (
@@ -4020,6 +4064,12 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
             adoptedCommentIds = await undeliveredLegacyUserCommentIds(tx as unknown as Db,
               agent.companyId, issueId, agentId, adoptedCommentIds);
           }
+          const commentLocaleMap = { ...parseObject(enrichedContextSnapshot.communicationLocaleByCommentId) };
+          for (const wake of adoptedComments) {
+            const deferredContext = parseObject(parseObject(wake.payload)[DEFERRED_WAKE_CONTEXT_KEY]);
+            Object.assign(commentLocaleMap, parseObject(deferredContext.communicationLocaleByCommentId));
+          }
+          if (Object.keys(commentLocaleMap).length) enrichedContextSnapshot.communicationLocaleByCommentId = commentLocaleMap;
           const newRun = await tx
             .insert(heartbeatRuns)
             .values({
@@ -4186,8 +4236,9 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
             ? null
             : (sameScopeRunningRun ?? null)));
 
+    const compatibleTarget = rawCoalescedTarget && hasLanguageOrigin && !matchesIncomingLocale(rawCoalescedTarget.contextSnapshot) ? null : rawCoalescedTarget;
     const coalescedTargetRun = filterZombieCoalesceTarget(
-      rawCoalescedTarget,
+      compatibleTarget,
       liveRunExecutions,
     );
 

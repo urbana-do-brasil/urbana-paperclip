@@ -14,6 +14,7 @@ import type {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Issue, IssueDocument } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
 import { getLastProjectId } from "../lib/recent-projects";
 import { IssueProperties } from "./IssueProperties";
 import { queryKeys } from "../lib/queryKeys";
@@ -582,7 +583,8 @@ describe("IssueProperties", () => {
     act(() => root.unmount());
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     mockSidebarState.isMobile = false;
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -628,8 +630,27 @@ describe("IssueProperties", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     document.body.innerHTML = "";
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("localizes the editable task properties in Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = renderProperties(container, {
+      issue: createIssue(),
+      childIssues: [],
+      onUpdate: vi.fn(),
+      inline: true,
+    });
+
+    expect(container.textContent).toContain("Trabalho");
+    expect(container.textContent).toContain("Responsável");
+    expect(container.textContent).toContain("Nenhum");
+    expect(container.textContent).toContain("Relações");
+    expect(container.textContent).toContain("Tarefa pai");
+    expect(container.textContent).toContain("Bloqueada por");
+    act(() => root.unmount());
   });
 
   it("marks the task-detail property typography and section rhythm", () => {
@@ -1308,6 +1329,64 @@ describe("IssueProperties", () => {
     act(() => root.unmount());
   });
 
+  it("localizes watchdog configuration while preserving instructions and task links", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockAgentsApi.list.mockResolvedValue([watchdogAgent]);
+    const instructions = "Keep the tree moving.";
+    const issue = createIssue({
+      watchdog: createWatchdogSummary({
+        status: "disabled",
+        instructions,
+        watchdogIssueId: "watchdog-task",
+      }),
+    });
+    const generatedTask = createIssue({ id: "watchdog-task", identifier: "PAP-9", title: "Generated monitor task" });
+    const root = renderProperties(container, {
+      issue,
+      childIssues: [generatedTask],
+      onUpdate: vi.fn(),
+      inline: true,
+    });
+    await flush();
+
+    const watchdogTrigger = findRowTrigger(container, "Monitor de execução");
+    expect(watchdogTrigger?.textContent).toContain("desativado");
+    expect(watchdogTrigger?.textContent).toContain(instructions);
+    expect(container.querySelector('[aria-label="Abrir tarefa do monitor de execução"]')?.getAttribute("href"))
+      .toBe("/issues/watchdog-task");
+
+    await act(async () => {
+      watchdogTrigger!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await flush();
+
+    const instructionsInput = container.querySelector<HTMLTextAreaElement>(
+      'textarea[placeholder="O que o monitor deve observar e como deve manter o trabalho avançando?"]',
+    );
+    expect(container.textContent).toContain("Agente do monitor de execução");
+    expect(container.textContent).toContain("Instruções (opcional)");
+    expect(container.textContent).toContain("Tarefa do monitor de execução:");
+    expect(instructionsInput?.value).toBe(instructions);
+    const generatedTaskLink = Array.from(container.querySelectorAll('a[href="/issues/watchdog-task"]'))
+      .find((link) => link.textContent === "PAP-9");
+    expect(generatedTaskLink).toBeTruthy();
+
+    const updateButton = Array.from(container.querySelectorAll("button"))
+      .find((button) => button.textContent === "Atualizar");
+    expect(updateButton).toBeTruthy();
+    await act(async () => {
+      updateButton!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await flush();
+
+    expect(mockIssuesApi.upsertWatchdog).toHaveBeenCalledWith("issue-1", {
+      agentId: "agent-1",
+      instructions,
+    });
+
+    act(() => root.unmount());
+  });
+
   it("passes blocker attention to the sidebar status icon", async () => {
     const root = renderProperties(container, {
       issue: createIssue({
@@ -1941,6 +2020,7 @@ describe("IssueProperties", () => {
   });
 
   it("shows a green service link above the workspace row for a live non-main workspace", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockProjectsApi.list.mockResolvedValue([createProject()]);
     const serviceUrl = "http://127.0.0.1:62475";
     const updatedWorkspace = createExecutionWorkspace({
@@ -1980,10 +2060,10 @@ describe("IssueProperties", () => {
     expect(serviceLink).not.toBeNull();
     expect(serviceLink?.className).toContain("sm:self-start");
     expect(serviceLink?.className).not.toContain("sm:self-end");
-    expect((container.textContent ?? "").indexOf("Workspace")).toBeLessThan(
-      (container.textContent ?? "").indexOf("Service"),
+    expect((container.textContent ?? "").indexOf("Espaço de trabalho")).toBeLessThan(
+      (container.textContent ?? "").indexOf("Serviço"),
     );
-    const stopButton = container.querySelector<HTMLButtonElement>('button[aria-label="Stop"]');
+    const stopButton = container.querySelector<HTMLButtonElement>('button[aria-label="Parar"]');
     expect(stopButton).not.toBeUndefined();
     expect(stopButton?.getAttribute("data-size")).toBe("icon-xs");
     expect(stopButton?.getAttribute("data-variant")).toBe("outline");
@@ -1998,7 +2078,7 @@ describe("IssueProperties", () => {
       "stop",
       expect.objectContaining({ action: "stop", runtimeServiceId: "service-1" }),
     );
-    expect(container.textContent).toContain("Workspace service stopped.");
+    expect(container.textContent).toContain("Serviço do espaço de trabalho parado.");
 
     act(() => root.unmount());
   });
@@ -2748,6 +2828,89 @@ describe("IssueProperties", () => {
     expect(findRowTrigger(container, "Reviewers")?.textContent).toContain("None");
     expect(findRowTrigger(container, "Approvers")?.textContent).toContain("None");
     expect(container.querySelector('[data-testid="monitor-row-trigger"]')).not.toBeNull();
+
+    act(() => root.unmount());
+  });
+
+  it("localizes execution policy and monitor controls in Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(new Date("2026-04-11T10:00:00.000Z").getTime());
+    const root = renderProperties(container, {
+      issue: createIssue({
+        reviewPolicy: "human_only",
+        executionPolicy: createExecutionPolicy({
+          monitor: {
+            nextCheckAt: "2026-04-11T12:30:00.000Z",
+            notes: "Verificar deploy",
+            scheduledBy: "board",
+            serviceName: "vercel-deploy",
+          },
+        }),
+      }),
+      childIssues: [],
+      onUpdate: vi.fn(),
+      inline: true,
+    });
+    await flush();
+
+    expect(container.textContent).toContain("Execução");
+    expect(container.textContent).toContain("Revisores");
+    expect(container.textContent).toContain("Aprovadores");
+    expect(container.textContent).toContain("Somente pessoas");
+    expect(container.textContent).toContain("Em 2 h 30 min");
+
+    const monitorTrigger = findRowTrigger(container, "Monitoramento");
+    expect(monitorTrigger).toBeTruthy();
+    await act(async () => {
+      monitorTrigger!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await flush();
+
+    expect(container.querySelector('input[placeholder="O que o agente deve verificar novamente?"]')).not.toBeNull();
+    expect(container.querySelector('input[placeholder="Serviço externo"]')).not.toBeNull();
+    expect(container.textContent).toContain("Agendar");
+    expect(container.textContent).toContain("Remover");
+
+    act(() => root.unmount());
+    dateNowSpy.mockRestore();
+  });
+
+  it("localizes scheduled retry details while preserving run identifiers and error text", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = renderProperties(container, {
+      issue: createIssue({
+        scheduledRetry: {
+          runId: "run-new-1234",
+          status: "scheduled_retry",
+          agentId: "agent-1",
+          agentName: "ClaudeCoder",
+          retryOfRunId: "run-old-5678",
+          scheduledRetryAt: "2026-04-11T12:00:00.000Z",
+          scheduledRetryAttempt: 2,
+          scheduledRetryReason: "transient_failure",
+          error: "Connection reset ECONNRESET",
+        },
+      }),
+      childIssues: [],
+      onUpdate: vi.fn(),
+      inline: true,
+    });
+    await flush();
+
+    const retryTrigger = findRowTrigger(container, "Nova tentativa agendada");
+    expect(retryTrigger).toBeTruthy();
+    await act(async () => {
+      retryTrigger!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await flush();
+
+    expect(container.textContent).toContain("Falha temporária");
+    expect(container.textContent).toContain("Próxima tentativa");
+    expect(container.textContent).toContain("Substitui a execução");
+    expect(container.textContent).toContain("Último erro");
+    expect(container.textContent).toContain("Connection reset ECONNRESET");
+    expect(container.textContent).toContain("Tentar novamente agora");
+    expect(container.textContent).toContain("run-old-");
 
     act(() => root.unmount());
   });
@@ -3754,6 +3917,7 @@ describe("IssueProperties", () => {
   });
 
   it("searches reusable workspaces and saves the selected workspace", async () => {
+    await i18n.changeLanguage("pt-BR");
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: true });
     mockProjectsApi.list.mockResolvedValue([createProject({
       executionWorkspacePolicy: { enabled: true, defaultMode: "shared_workspace" },
@@ -3781,14 +3945,15 @@ describe("IssueProperties", () => {
       inline: true,
     });
 
-    await waitForAssertion(() => expect(findRowTrigger(container, "Execution")).toBeDefined());
-    act(() => findRowTrigger(container, "Execution")!.click());
+    await waitForAssertion(() => expect(findRowTrigger(container, "Execução")).toBeDefined());
+    act(() => findRowTrigger(container, "Execução")!.click());
     const reuseOption = Array.from(container.querySelectorAll("button"))
-      .find((button) => button.textContent?.includes("Reuse existing workspace"));
+      .find((button) => button.textContent?.includes("Reutilizar espaço de trabalho existente"));
     act(() => reuseOption!.click());
 
     await waitForAssertion(() => {
-      expect(container.textContent).toContain("Recent");
+      expect(container.textContent).toContain("Recentes");
+      expect(container.textContent).toContain("Todos os espaços de trabalho");
       expect(container.textContent).toContain("Alpha workspace");
       expect(container.textContent).toContain("Beta workspace");
     });
@@ -3798,7 +3963,7 @@ describe("IssueProperties", () => {
       reuseEligible: true,
     });
 
-    const search = container.querySelector('input[aria-label="Search reusable workspaces"]') as HTMLInputElement;
+    const search = container.querySelector('input[aria-label="Buscar espaços de trabalho para reutilizar"]') as HTMLInputElement;
     await act(async () => {
       const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
       nativeSetter?.call(search, "Beta");

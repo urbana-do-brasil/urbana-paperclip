@@ -3,9 +3,10 @@
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { AnchorHTMLAttributes } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { CaseActivityFeed } from "./CaseActivityFeed";
 import type { CaseEvent } from "@/api/cases";
+import { i18n } from "@/i18n";
 
 function act(callback: () => void) {
   flushSync(callback);
@@ -38,7 +39,11 @@ function event(overrides: Partial<CaseEvent>): CaseEvent {
 
 describe("CaseActivityFeed", () => {
   let container: HTMLDivElement;
-  beforeEach(() => {
+  let previousLanguage = "pt-BR";
+  beforeAll(() => { previousLanguage = i18n.language; });
+  afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -102,7 +107,7 @@ describe("CaseActivityFeed", () => {
       event({ kind: "status_changed", payload: { previousStatus: "draft", status: "in_review" } }),
     ]);
     // The status-transition detail only appears in the status_changed row.
-    expect(container.textContent).toContain("draft → in_review");
+    expect(container.textContent).toContain("Draft → In review");
 
     // Open the activity filter dropdown and choose "created"; only created
     // rows remain, so the status-transition detail disappears.
@@ -116,7 +121,44 @@ describe("CaseActivityFeed", () => {
     );
     expect(createdItem).toBeTruthy();
     act(() => createdItem!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-    expect(container.textContent).not.toContain("draft → in_review");
+    expect(container.textContent).not.toContain("Draft → In review");
+    act(() => root.unmount());
+  });
+
+  it("localizes activity while preserving actors, links, and unknown values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = render([
+      event({
+        kind: "status_changed", actorType: "agent", actorAgentName: "USER AGENT",
+        payload: { previousStatus: "draft", status: "in_review" },
+        issue: { id: "i1", identifier: "PAP-42", title: "USER TASK", status: "todo" },
+      }),
+      event({ kind: "future_event" as CaseEvent["kind"], actorType: "system" }),
+      event({ kind: "status_changed", payload: { previousStatus: "future_status", status: "done" } }),
+    ]);
+    expect(container.textContent).toContain("status alterado");
+    expect(container.textContent).toContain("Rascunho → Em revisão");
+    expect(container.textContent).toContain("future_status → Concluído");
+    expect(container.textContent).toContain("future_event");
+    expect(container.textContent).toContain("USER AGENT");
+    expect(container.textContent).toContain("Sistema");
+    expect(container.querySelector('a[href="/issues/PAP-42"]')?.textContent).toContain("USER TASK");
+    expect(container.textContent).toContain("3 de 3 eventos");
+    act(() => root.unmount());
+  });
+
+  it("distinguishes loading and failure from empty activity and invokes retry", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const retry = vi.fn();
+    const root = createRoot(container);
+    act(() => root.render(<CaseActivityFeed events={[]} loading />));
+    expect(container.textContent).toContain("Carregando atividade...");
+    expect(container.textContent).not.toContain("Ainda não há atividade.");
+    act(() => root.render(<CaseActivityFeed events={[]} error onRetry={retry} />));
+    expect(container.textContent).toContain("Não foi possível carregar a atividade.");
+    const button = Array.from(container.querySelectorAll("button")).find((item) => item.textContent === "Tentar novamente");
+    act(() => button!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(retry).toHaveBeenCalledOnce();
     act(() => root.unmount());
   });
 });

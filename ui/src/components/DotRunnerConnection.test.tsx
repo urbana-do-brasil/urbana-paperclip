@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { DotRunnerConnection } from "./DotRunnerConnection";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { i18n } from "@/i18n";
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), delete: vi.fn() }));
 vi.mock("../api/client", () => ({ api }));
@@ -25,12 +26,34 @@ async function render() {
   await act(async () => root.render(<QueryClientProvider client={client}><Form /></QueryClientProvider>));
   await flush();
 }
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
   api.get.mockResolvedValue({ enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", binding: null });
 });
-afterEach(async () => { await act(async () => root.unmount()); client.clear(); container.remove(); vi.resetAllMocks(); });
+afterEach(async () => { await act(async () => root.unmount()); await i18n.changeLanguage("en"); client.clear(); container.remove(); vi.resetAllMocks(); });
+
+it("localizes Dot security guidance and connection state in Portuguese", async () => {
+  await i18n.changeLanguage("pt-BR");
+  api.get.mockResolvedValue({
+    enabled: false,
+    resourceUrl: "https://paperclip.example/mcp/runner",
+    binding: { ...binding, status: "ready", subscriptionVerified: false, hasPendingChallenge: true,
+      assignment: { status: "offered", attentionRequired: true } },
+  });
+  await render();
+
+  expect(container.textContent).toContain("O Dot gerencia o próprio modelo e as ferramentas externas.");
+  expect(container.textContent).toContain("Ative o OpenAI Dot e as conexões com assistentes (MCP)");
+  expect(container.textContent).toContain("URL MCP privada do plugin:");
+  expect(container.textContent).toContain("Conexão: pronta.");
+  expect(container.textContent).toContain("Assinatura de eventos: necessária.");
+  expect(container.textContent).toContain("Atribuição: aguardando o Dot aceitar.");
+  expect(container.textContent).toContain("O Dot não informa atividade útil há 15 minutos.");
+  expect(container.textContent).toContain("Aguardando o Dot ler e confirmar o desafio simples da caixa postal.");
+  expect(Array.from(container.querySelectorAll("button")).map(button => button.textContent)).toContain("Revogar conexão");
+});
 
 it("restores the server binding when the form is reopened after pairing without saving", async () => {
   api.post.mockImplementation(async () => {
@@ -93,6 +116,24 @@ it("shows event testing when a connected Dot subscribes without a manual refresh
   } finally { vi.useRealTimers(); }
 });
 
+it("matches the Portuguese labels in the copied Dot setup prompt", async () => {
+  await i18n.changeLanguage("pt-BR");
+  const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
+  api.post.mockImplementation(async () => {
+    api.get.mockResolvedValue({ enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", binding: { ...binding, status: "pairing", connected: false, subscriptionVerified: false } });
+    return { bindingId: binding.id, pairingCode: "fresh-one-use-pairing-code", expiresAt };
+  });
+  vi.mocked(copyTextToClipboard).mockResolvedValue(undefined);
+  await render();
+  await act(async () => Array.from(container.querySelectorAll("button")).find(button => button.textContent === "Parear o Dot")!.click());
+  await flush();
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Configurar com o Dot"]')!.click());
+  const prompt = vi.mocked(copyTextToClipboard).mock.calls[0][0];
+  expect(prompt).toContain('Paperclip’s "Código de pareamento" field');
+  expect(prompt).toContain('click "Conectar o Dot com o código de pareamento"');
+  expect(prompt).toContain("paperclip_dot_inbox");
+  expect(prompt).toContain("fresh-one-use-pairing-code");
+});
 
 it("copies the complete Dot setup with its server URL, one-use code and event instructions", async () => {
   const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();

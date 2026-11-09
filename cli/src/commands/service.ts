@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import * as p from "@clack/prompts";
+import { adminOperationMessage } from "../localization/admin-operations.js";
 import type { Command } from "commander";
 import { readConfig, resolveConfigPath } from "../config/store.js";
 import { resolvePaperclipInstanceId, resolvePaperclipInstanceRoot } from "../config/home.js";
@@ -47,7 +48,10 @@ async function waitForHealth(instanceId: string, expectedVersion: string | null,
     if (last.ok && (!expectedVersion || last.serverVersion === expectedVersion)) return last;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error(`Paperclip service did not become healthy${expectedVersion ? ` at version ${expectedVersion}` : ""}: ${last.error ?? `reported ${last.serverVersion ?? "no version"}`}`);
+  throw new Error(adminOperationMessage(expectedVersion ? "serviceNotHealthyVersion" : "serviceNotHealthy", {
+    version: expectedVersion ?? "",
+    detail: last.error ?? `reported ${last.serverVersion ?? "no version"}`,
+  }));
 }
 
 export function resolveRestartExpectedVersion(expectedVersion: string | null | undefined): string | null {
@@ -94,10 +98,7 @@ export async function withHotRestartLock<T>(
         throw readError;
       }
       if (Date.now() >= deadline) {
-        throw new Error(
-          `Another restart for instance ${instanceId} is still running. ` +
-          `If no restart process is active, remove the stale lock at ${lockPath} and retry.`,
-        );
+        throw new Error(adminOperationMessage("serviceRestartBusy", { instance: instanceId, path: lockPath }));
       }
       await new Promise((resolve) => setTimeout(resolve, pollMs));
     }
@@ -117,7 +118,7 @@ export async function withHotRestartLock<T>(
 }
 
 async function writeHotRestartIntent(status: ServiceStatus, instanceId: string, drainRequired: boolean): Promise<{ requestedAt: string }> {
-  if (!status.pid) throw new Error(`Cannot restart ${status.serviceName}: supervisor did not report a server pid.`);
+  if (!status.pid) throw new Error(adminOperationMessage("serviceRestartPid", { name: status.serviceName }));
   const health = await probeHealth(instanceId);
   const instanceRoot = resolvePaperclipInstanceRoot(instanceId);
   const requestedAt = new Date().toISOString();
@@ -177,7 +178,7 @@ export function registerServiceCommands(program: Command): void {
       if (manager.enableLinger) {
         let consent = opts.enableLinger === true;
         if (!consent && process.stdin.isTTY && process.stdout.isTTY) {
-          consent = await p.confirm({ message: "Allow Paperclip to run without an active login session? This runs 'loginctl enable-linger' for your user and may request system authorization.", initialValue: false }) === true;
+          consent = await p.confirm({ message: adminOperationMessage("serviceLingerQuestion"), initialValue: false }) === true;
         }
         if (consent) { await manager.enableLinger(); lingerEnabled = true; }
       }
@@ -188,7 +189,7 @@ export function registerServiceCommands(program: Command): void {
     const manager = await resolveManager(opts); if (!manager) return;
     await manager.uninstall();
     const status = await manager.status();
-    if (status.installed || status.active) throw new Error(`${manager.serviceName} is still loaded after uninstall.`);
+    if (status.installed || status.active) throw new Error(adminOperationMessage("serviceStillLoaded", { name: manager.serviceName }));
     output({ uninstalled: true, serviceName: manager.serviceName }, opts.json);
   });
 
@@ -217,7 +218,7 @@ export function registerServiceCommands(program: Command): void {
     .action(async (opts) => {
       const manager = await resolveManager(opts); if (!manager) return;
       const lines = Number.parseInt(opts.lines, 10);
-      if (!Number.isInteger(lines) || lines < 1) throw new Error("--lines must be a positive integer.");
+      if (!Number.isInteger(lines) || lines < 1) throw new Error(adminOperationMessage("serviceLinesInvalid"));
       await manager.logs(opts.follow, lines);
     });
 }

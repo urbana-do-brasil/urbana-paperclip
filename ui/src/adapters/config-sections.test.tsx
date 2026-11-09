@@ -4,7 +4,9 @@ import { act } from "react";
 import type { ReactNode } from "react";
 
 import type { ComponentType } from "react";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { TooltipProvider } from "../components/ui/tooltip";
 import type { AdapterConfigFieldsProps, AdapterConfigSection } from "./types";
 import { CodexLocalConfigFields } from "./codex-local/config-fields";
@@ -14,7 +16,11 @@ import { ProcessConfigFields } from "./process/config-fields";
 import { OpenClawGatewayConfigFields } from "./openclaw-gateway/config-fields";
 import { HermesGatewayConfigFields } from "./hermes-gateway/config-fields";
 
-beforeAll(() => { Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); });
+beforeAll(async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  await i18n.changeLanguage("en");
+});
+afterAll(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
 
 async function renderMarkup(node: ReactNode, expand?: string): Promise<string> {
   const container = document.createElement("div");
@@ -82,7 +88,7 @@ describe("adapter configuration sections", () => {
       "runPolicy",
       config,
     );
-    expect(adapter).toContain('aria-label="Harness"');
+    expect(adapter).toContain('aria-label="Execution provider"');
     expect(adapter).not.toContain("Runner lifecycle");
     expect(configuration).not.toContain("Permission mode");
     expect(configuration).not.toContain("Runner lifecycle");

@@ -3,6 +3,7 @@ import {
   describeResponsibleUserDenial,
   type ResponsibleUserDenialCode,
 } from "@paperclipai/shared";
+import { useTranslation } from "@/i18n";
 import { cn } from "../lib/utils";
 
 /**
@@ -10,10 +11,10 @@ import { cn } from "../lib/utils";
  * denial. Distinct from a plain agent-lacks-permission failure: here the agent
  * may be allowed, but the human the run acts for is not (or is unavailable).
  *
- * Copy comes from the shared `describeResponsibleUserDenial` contract so every
- * surface stays consistent. Callers should only render this when the failure
- * code is one of the responsible-user denial codes; other denials keep their
- * existing generic error copy.
+ * The shared denial contract supplies the stable denial tone; display copy is
+ * translated here so this notice follows the user's selected interface locale.
+ * Callers should only render it for responsible-user denial codes; other
+ * denials keep their existing generic error copy.
  */
 export function ResponsibleUserDenialNotice({
   code,
@@ -26,6 +27,9 @@ export function ResponsibleUserDenialNotice({
 }) {
   const copy = describeResponsibleUserDenial(code, { userName });
   const isUnavailable = copy.tone === "unavailable";
+  const { t } = useTranslation();
+  const copyKey = isUnavailable ? "unavailable" : "unauthorized";
+  const user = userName?.trim() || t("agentRuns.responsibleUserDenial.unknownResponsibleUser");
   const Icon = isUnavailable ? UserX : ShieldX;
 
   const tone = isUnavailable
@@ -49,9 +53,11 @@ export function ResponsibleUserDenialNotice({
       <div className="flex items-start gap-2">
         <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", iconTone)} aria-hidden="true" />
         <div className="min-w-0 space-y-1">
-          <p className="font-medium leading-5">{copy.title}</p>
-          <p className="leading-5">{copy.description}</p>
-          <p className={cn("text-xs leading-5", actionTone)}>{copy.recommendedAction}</p>
+          <p className="font-medium leading-5">{t(`agentRuns.responsibleUserDenial.${copyKey}.title`)}</p>
+          <p className="leading-5">{t(`agentRuns.responsibleUserDenial.${copyKey}.description`, { user })}</p>
+          <p className={cn("text-xs leading-5", actionTone)}>
+            {t(`agentRuns.responsibleUserDenial.${copyKey}.recommendedAction`, { user })}
+          </p>
         </div>
       </div>
     </div>

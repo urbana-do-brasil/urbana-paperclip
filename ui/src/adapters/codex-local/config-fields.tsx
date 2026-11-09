@@ -1,5 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { AdapterMark } from "../../components/AdapterMark";
+import { useTranslation } from "@/i18n";
 import { DotRunnerConnection } from "../../components/DotRunnerConnection";
 import { configFieldsForSection } from "../config-sections";
 import type { AdapterConfigFieldsProps } from "../types";
@@ -8,7 +9,6 @@ import {
   ToggleField,
   DraftInput,
   DraftNumberInput,
-  help,
 } from "../../components/agent-config-primitives";
 import { ChoosePathButton } from "../../components/PathInstructionsModal";
 import { LocalWorkspaceRuntimeFields } from "../local-workspace-runtime-fields";
@@ -32,8 +32,6 @@ import {
 
 const inputClass =
   "w-full rounded-md border border-border px-2.5 py-1.5 bg-transparent outline-none text-sm font-mono placeholder:text-muted-foreground/40";
-const instructionsFileHint =
-  "Absolute path to a markdown file (e.g. AGENTS.md) that defines this agent's behavior. Injected into the system prompt at runtime. Note: Codex may still auto-apply repo-scoped AGENTS.md files from the workspace.";
 const defaultOpenCodeRunnerModel = "openrouter/deepseek/deepseek-v4-flash-0731";
 const defaultAcpxClaudeModel = "claude-sonnet-5";
 const defaultClaudeManagedModel = "claude-sonnet-5";
@@ -63,6 +61,7 @@ export function CodexLocalConfigFields({
   hideInstructionsFile,
   managedSandboxOnly,
 }: AdapterConfigFieldsProps) {
+  const { t } = useTranslation();
   const runnerManaged = adapterType === "paperclip_runner";
   // The execution engine picks which binary runs on the execution host, and the
   // ACP sub-fields below name host paths. The platform-managed environment owns
@@ -81,6 +80,8 @@ export function CodexLocalConfigFields({
     : "codex";
   const runnerPermissionCapability =
     PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES[runnerProvider];
+  const runnerPermissionModeOptionLabel = (mode: string) =>
+    t(`agentConfiguration.runner.permissionModes.${runnerProvider}.${mode}`);
   const configuredRunnerPermissionMode =
     runnerManaged && runnerPermissionCapability.configurable
       ? isCreate
@@ -164,17 +165,17 @@ export function CodexLocalConfigFields({
   const supportedModelsLabel =
     CODEX_LOCAL_FAST_MODE_SUPPORTED_MODELS.join(", ");
   const fastModeMessage = fastModeManualModel
-    ? "Fast mode will be passed through for this manual model. If Codex rejects it, turn the toggle off."
+    ? t("agentConfiguration.codex.fastModeManual")
     : fastModeSupported
-      ? "Fast mode consumes credits/tokens much faster than standard Codex runs."
-      : `Fast mode currently only works on ${supportedModelsLabel} or manual model IDs. Paperclip will ignore this toggle until the model is switched.`;
+      ? t("agentConfiguration.codex.fastModeSupported")
+      : t("agentConfiguration.codex.fastModeUnsupported", { models: supportedModelsLabel });
 
   return configFieldsForSection(section, (
     <>
       {!hideEngineChoice && (
         <Field
-          label="Execution engine"
-          hint="Default uses ACP. If ACP is unavailable, the run fails with a setup error. Choose CLI explicitly to use it."
+          label={t("agentConfiguration.codex.executionEngine")}
+          hint={t("agentConfiguration.codex.executionEngineHint")}
         >
           <select
             className={inputClass}
@@ -195,16 +196,16 @@ export function CodexLocalConfigFields({
                   );
             }}
           >
-            <option value="auto">Default (ACP)</option>
-            <option value="cli">Codex CLI</option>
+            <option value="auto">{t("agentConfiguration.codex.executionEngineDefault")}</option>
+            <option value="cli">{t("agentConfiguration.codex.executionEngineCli")}</option>
             <option value="acp">ACP</option>
           </select>
         </Field>
       )}
       {runnerManaged && runnerProvider !== "openai_dot" && (
         <Field configSection="adapter"
-          label="Harness"
-          hint="Choose the agent harness that runs your tasks."
+          label={t("agentConfiguration.runner.provider")}
+          hint={t("agentConfiguration.runner.providerHint")}
         >
           <Select
             value={runnerProvider === "acpx" && runnerSchemaValue("acpxAgent", "claude") === "grok" ? "grok" : runnerProvider}
@@ -251,12 +252,12 @@ export function CodexLocalConfigFields({
               }
             }}
           >
-            <SelectTrigger className="w-full" aria-label="Harness"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full" aria-label={t("agentConfiguration.runner.provider")}><SelectValue /></SelectTrigger>
             <SelectContent>
               {runnerHarnessOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   <AdapterMark type={option.adapter} className="size-4" />
-                  {option.label}
+                  {option.value === "acpx" ? t("agentConfiguration.runner.acpAgents") : option.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -264,18 +265,18 @@ export function CodexLocalConfigFields({
         </Field>
       )}
       {runnerManaged && runnerProvider === "openai_dot" && <>
-        <Field configSection="adapter" label="Dot connection" hint="A verified event round trip is required before assigning work.">
+        <Field configSection="adapter" label={t("agentConfiguration.runner.dot.connection")} hint={t("agentConfiguration.runner.dot.connectionHint")}>
           <DotRunnerConnection companyId={companyId} agentId={agentId} bindingId={String(runnerSchemaValue("dotBindingId", ""))} onBinding={id => updateRunnerSchemaValue("dotBindingId", id)} />
         </Field>
-        <ToggleField label="Read task attachments" hint="Let Dot read files attached to its current assigned task. File contents are sent to OpenAI. Does not require workspace command access; off by default."
+        <ToggleField label={t("agentConfiguration.runner.dot.readTaskAttachments")} hint={t("agentConfiguration.runner.dot.readTaskAttachmentsHint")}
           checked={runnerSchemaValue("dotAttachmentAccess", false) === true} onChange={value => updateRunnerSchemaValue("dotAttachmentAccess", value)} />
-        <ToggleField label="Workspace files and commands" hint="Let Dot read and write its assigned workspace and publish files. Requires a local Runner. Commands are available only on Linux with bubblewrap; they cannot read your home directory or use injected credentials."
+        <ToggleField label={t("agentConfiguration.runner.dot.workspaceFilesAndCommands")} hint={t("agentConfiguration.runner.dot.workspaceFilesAndCommandsHint")}
           checked={runnerSchemaValue("dotWorkspaceAccess", false) === true} onChange={value => updateRunnerSchemaValue("dotWorkspaceAccess", value)} />
-        <ToggleField label="Allow externally billed provider" hint="Dot does not report token usage or cost. Paperclip cannot enforce a provider spend ceiling; known company and agent budget limits still apply."
+        <ToggleField label={t("agentConfiguration.runner.dot.allowExternallyBilledProvider")} hint={t("agentConfiguration.runner.dot.externallyBilledProviderHint")}
           checked={runnerSchemaValue("allowUnmeteredProvider", false) === true} onChange={value => updateRunnerSchemaValue("allowUnmeteredProvider", value)} />
       </>}
       {runnerManaged && runnerProvider === "acpx" && runnerSchemaValue("acpxAgent", "claude") !== "grok" && (
-        <Field configSection="adapter" label="ACP agent" hint="Cursor uses Paperclip questions; per-run cost is unavailable. Pi accepts any provider/model ID. GitHub Copilot awaits qualification.">
+        <Field configSection="adapter" label={t("agentConfiguration.runner.acpAgent")} hint={t("agentConfiguration.runner.acpAgentHint")}>
           <Select
             value={String(isCreate ? values!.adapterSchemaValues?.acpxAgent ?? "claude" : eff("adapterConfig", "acpxAgent", config.acpxAgent ?? "claude"))}
             onValueChange={(value) => {
@@ -287,12 +288,12 @@ export function CodexLocalConfigFields({
                 adapterSchemaValues: { ...values!.adapterSchemaValues, acpxAgent: profile.value, acpxSessionMode, piThinkingLevel } });
               else { mark("adapterConfig", "acpxAgent", profile.value); mark("adapterConfig", "acpxSessionMode", acpxSessionMode); mark("adapterConfig", "piThinkingLevel", piThinkingLevel); mark("adapterConfig", "model", profile.value === "claude" ? defaultAcpxClaudeModel : ""); }
             }}>
-            <SelectTrigger className="w-full" aria-label="ACP agent"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full" aria-label={t("agentConfiguration.runner.acpAgent")}><SelectValue /></SelectTrigger>
             <SelectContent>
               {PAPERCLIP_RUNNER_ACPX_PROFILES.map(profile => (
                 <SelectItem key={profile.value} value={profile.value} disabled={!profile.qualified}>
                   <AdapterMark type={profile.value === "cursor" ? "cursor" : `${profile.value}_local`} className="size-4" />
-                  {profile.label}{profile.qualified ? "" : " — qualification pending"}
+                  {profile.label}{profile.qualified ? "" : ` — ${t("agentConfiguration.runner.qualificationPending")}`}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -300,33 +301,33 @@ export function CodexLocalConfigFields({
         </Field>
       )}
       {runnerManaged && runnerProvider === "acpx" && runnerSchemaValue("acpxAgent", "claude") === "cursor" && (
-        <Field configSection="adapter" label="Cursor mode" hint="Select Cursor's session mode. Permissions and company approval rules still apply.">
-          <select className={inputClass} aria-label="Cursor mode"
+        <Field configSection="adapter" label={t("agentConfiguration.runner.cursorMode")} hint={t("agentConfiguration.runner.cursorModeHint")}>
+          <select className={inputClass} aria-label={t("agentConfiguration.runner.cursorMode")}
             value={String(runnerSchemaValue("acpxSessionMode", "agent"))}
             onChange={(event) => updateRunnerSchemaValue("acpxSessionMode", event.target.value)}>
             {!["agent", "plan", "ask"].includes(String(runnerSchemaValue("acpxSessionMode", "agent"))) && (
-              <option value={String(runnerSchemaValue("acpxSessionMode", "agent"))} disabled>Unsupported saved mode — select Agent, Plan, or Ask</option>
+              <option value={String(runnerSchemaValue("acpxSessionMode", "agent"))} disabled>{t("agentConfiguration.runner.cursorUnsupportedMode")}</option>
             )}
-            <option value="agent">Agent</option>
-            <option value="plan">Plan</option>
-            <option value="ask">Ask</option>
+            <option value="agent">{t("agentConfiguration.runner.cursorAgent")}</option>
+            <option value="plan">{t("agentConfiguration.runner.cursorPlan")}</option>
+            <option value="ask">{t("agentConfiguration.runner.cursorAsk")}</option>
           </select>
         </Field>
       )}
       {runnerManaged && runnerProvider === "acpx" && runnerSchemaValue("acpxAgent", "claude") === "pi" && (
-        <Field configSection="adapter" label="Pi thinking level" hint="The runner verifies this exact level before each session can prompt. Changing it starts a new session.">
-          <select className={inputClass} aria-label="Pi thinking level" value={String(runnerSchemaValue("piThinkingLevel", "low"))}
+        <Field configSection="adapter" label={t("agentConfiguration.runner.piThinkingLevel")} hint={t("agentConfiguration.runner.piThinkingLevelHint")}>
+          <select className={inputClass} aria-label={t("agentConfiguration.runner.piThinkingLevel")} value={String(runnerSchemaValue("piThinkingLevel", "low"))}
             onChange={(event) => updateRunnerSchemaValue("piThinkingLevel", event.target.value)}>
-            {!["off", "low", "high", "max"].includes(String(runnerSchemaValue("piThinkingLevel", "low"))) && <option value={String(runnerSchemaValue("piThinkingLevel", "low"))} disabled>Unsupported saved thinking level</option>}
-            <option value="off">Off</option><option value="low">Low</option><option value="high">High</option><option value="max">Max</option>
+            {!["off", "low", "high", "max"].includes(String(runnerSchemaValue("piThinkingLevel", "low"))) && <option value={String(runnerSchemaValue("piThinkingLevel", "low"))} disabled>{t("agentConfiguration.runner.unsupportedThinkingLevel")}</option>}
+            <option value="off">{t("agentConfiguration.runner.thinkingOff")}</option><option value="low">{t("agentConfiguration.runner.thinkingLow")}</option><option value="high">{t("agentConfiguration.runner.thinkingHigh")}</option><option value="max">{t("agentConfiguration.runner.thinkingMax")}</option>
           </select>
         </Field>
       )}
       {runnerManaged && runnerProvider === "claude_managed" && (
         <>
           <Field
-            label="Managed Agent profile"
-            hint="Company-scoped qualified profile ID or key. Remote resource identity is loaded from the stored profile, not this agent config."
+            label={t("agentConfiguration.runner.claudeManaged.profile")}
+            hint={t("agentConfiguration.runner.claudeManaged.profileHint")}
           >
             <DraftInput
               value={String(runnerSchemaValue("managedProfileId", ""))}
@@ -339,8 +340,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field
-            label="Session spend ceiling (USD)"
-            hint="Optional per-agent hard ceiling. Leave 1.00 to use a conservative default."
+            label={t("agentConfiguration.runner.claudeManaged.sessionSpendCeiling")}
+            hint={t("agentConfiguration.runner.claudeManaged.sessionSpendCeilingHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("maxSessionListCostUsd", 1))}
@@ -353,8 +354,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <ToggleField
-            label="Acknowledge managed retention"
-            hint="Claude Managed is a stateful beta service and is not eligible for ZDR or HIPAA modes."
+            label={t("agentConfiguration.runner.claudeManaged.acknowledgeRetention")}
+            hint={t("agentConfiguration.runner.claudeManaged.retentionHint")}
             checked={
               runnerSchemaValue("managedAgentsRetentionAcknowledged", false) ===
               true
@@ -371,8 +372,8 @@ export function CodexLocalConfigFields({
       {runnerManaged && runnerProvider === "aws_agentcore" && (
         <>
           <Field
-            label="AgentCore profile"
-            hint="Company-scoped qualified profile ID or key. Harness, Memory, IAM, and context-store identity come from the stored profile."
+            label={t("agentConfiguration.runner.awsAgentCore.profile")}
+            hint={t("agentConfiguration.runner.awsAgentCore.profileHint")}
           >
             <DraftInput
               value={String(runnerSchemaValue("agentCoreProfileId", ""))}
@@ -385,8 +386,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field
-            label="Estimated session ceiling (USD)"
-            hint="Paperclip estimate; AWS does not provide a per-session currency hard stop."
+            label={t("agentConfiguration.runner.awsAgentCore.estimatedSessionCeiling")}
+            hint={t("agentConfiguration.runner.awsAgentCore.estimatedSessionCeilingHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("maxEstimatedSessionCostUsd", 1))}
@@ -399,8 +400,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field
-            label="Maximum iterations"
-            hint="Qualified range is 1–8. Invalid values fail closed to 8."
+            label={t("agentConfiguration.runner.awsAgentCore.maximumIterations")}
+            hint={t("agentConfiguration.runner.awsAgentCore.maximumIterationsHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("maxIterations", 8))}
@@ -414,8 +415,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field
-            label="Maximum output tokens"
-            hint="Qualified range is 1–4096."
+            label={t("agentConfiguration.runner.awsAgentCore.maximumOutputTokens")}
+            hint={t("agentConfiguration.runner.awsAgentCore.maximumOutputTokensHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("maxOutputTokens", 4_096))}
@@ -429,8 +430,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <Field configSection="runPolicy"
-            label="Invocation timeout (seconds)"
-            hint="Qualified range is 1–300 seconds."
+            label={t("agentConfiguration.runner.awsAgentCore.invocationTimeout")}
+            hint={t("agentConfiguration.runner.awsAgentCore.invocationTimeoutHint")}
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("timeoutSeconds", 300))}
@@ -444,8 +445,8 @@ export function CodexLocalConfigFields({
             />
           </Field>
           <ToggleField
-            label="Acknowledge 90-day Memory retention"
-            hint="The qualified AgentCore profile retains short-term Memory events for exactly 90 days."
+            label={t("agentConfiguration.runner.awsAgentCore.acknowledgeRetention")}
+            hint={t("agentConfiguration.runner.awsAgentCore.retentionHint")}
             checked={
               runnerSchemaValue("agentCoreRetentionAcknowledged", false) ===
               true
@@ -458,8 +459,8 @@ export function CodexLocalConfigFields({
       )}
       {runnerManaged && runnerPermissionCapability.configurable && (runnerPermissionCapability.options.length > 1 || runnerPermissionModeUnsupported) && (
         <Field
-          label="Permission mode"
-          hint={`${runnerPermissionCapability.description} The selected mode does not widen Paperclip's workspace, network, credential, or planning boundaries.`}
+          label={t("agentConfiguration.runner.permissionMode")}
+          hint={t(`agentConfiguration.runner.permissionModeHints.${runnerProvider}`)}
         >
           <Select
             value={
@@ -488,38 +489,39 @@ export function CodexLocalConfigFields({
               }
             }}
           >
-            <SelectTrigger aria-label="Permission mode" className="w-full font-sans">
+            <SelectTrigger aria-label={t("agentConfiguration.runner.permissionMode")} className="w-full font-sans">
               <SelectValue>
                 {runnerPermissionModeUnsupported
-                  ? "Unsupported saved mode — select a qualified mode"
-                  : runnerPermissionCapability.options.find((option) => option.value === runnerPermissionMode)?.label}
+                  ? t("agentConfiguration.runner.unsupportedPermissionMode")
+                  : runnerPermissionModeOptionLabel(runnerPermissionMode)}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {runnerPermissionModeUnsupported && (
                 <SelectItem value="__unsupported__" disabled>
-                  Unsupported saved mode — select a qualified mode
+                  {t("agentConfiguration.runner.unsupportedPermissionMode")}
                 </SelectItem>
               )}
               {runnerPermissionCapability.options.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  {runnerPermissionModeOptionLabel(option.value)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {runnerPermissionModeUnsupported && runnerProvider === "codex" && (
             <p className="mt-1 text-xs text-destructive" role="alert">
-              This saved Codex mode cannot start or recover a Paperclip Runner
-              run. Select Automatic (isolated) to remediate it.
+              {t("agentConfiguration.runner.unsupportedCodexPermissionMode", {
+                mode: t("agentConfiguration.runner.permissionModes.codex.never"),
+              })}
             </p>
           )}
         </Field>
       )}
       {runnerManaged && runnerProvider !== "openai_dot" && (
         <Field configSection="runPolicy"
-          label="Runner lifecycle"
-          hint="Turn by turn suspends after each run. Warm keeps the same provider process available between governed runs."
+          label={t("agentConfiguration.runner.lifecycle")}
+          hint={t("agentConfiguration.runner.lifecycleHint")}
         >
           <select
             className={inputClass}
@@ -531,15 +533,15 @@ export function CodexLocalConfigFields({
                 : mark("adapterConfig", "lifecycleMode", value);
             }}
           >
-            <option value="per_turn">Turn by turn</option>
-            <option value="warm">Warm session</option>
+            <option value="per_turn">{t("agentConfiguration.runner.turnByTurn")}</option>
+            <option value="warm">{t("agentConfiguration.runner.warmSession")}</option>
           </select>
         </Field>
       )}
       {runnerManaged && runnerProvider !== "openai_dot" && runnerLifecycleMode === "warm" && (
         <Field configSection="runPolicy"
-          label="Warm idle timeout (ms)"
-          hint="After this much inactivity, runnerd checkpoints and suspends the provider session. The maximum is 24 hours."
+          label={t("agentConfiguration.runner.warmIdleTimeout")}
+          hint={t("agentConfiguration.runner.warmIdleTimeoutHint")}
         >
           {isCreate ? (
             <input
@@ -579,8 +581,8 @@ export function CodexLocalConfigFields({
         <>
           {!managedSandboxOnly && (
             <Field configSection="advanced"
-              label="ACP server command"
-              hint="Optional override for the Codex ACP server command. Defaults to the package-local codex-acp binary."
+              label={t("agentConfiguration.codex.acpServerCommand")}
+              hint={t("agentConfiguration.codex.acpServerCommandHint")}
             >
               <DraftInput
                 value={
@@ -604,8 +606,8 @@ export function CodexLocalConfigFields({
             </Field>
           )}
           <Field configSection="runPolicy"
-            label="ACP session mode"
-            hint="Persistent keeps ACP session state between runs. One-shot starts fresh each run."
+            label={t("agentConfiguration.codex.acpSessionMode")}
+            hint={t("agentConfiguration.codex.acpSessionModeHint")}
           >
             <select
               className={inputClass}
@@ -626,13 +628,13 @@ export function CodexLocalConfigFields({
                   : mark("adapterConfig", "mode", value);
               }}
             >
-              <option value="persistent">Persistent</option>
-              <option value="oneshot">One-shot</option>
+              <option value="persistent">{t("agentConfiguration.codex.persistent")}</option>
+              <option value="oneshot">{t("agentConfiguration.codex.oneShot")}</option>
             </select>
           </Field>
           <Field
-            label="ACP non-interactive permissions"
-            hint="Fallback if the ACP agent asks for input outside an interactive session."
+            label={t("agentConfiguration.codex.acpNonInteractivePermissions")}
+            hint={t("agentConfiguration.codex.acpNonInteractivePermissionsHint")}
           >
             <select
               className={inputClass}
@@ -652,14 +654,14 @@ export function CodexLocalConfigFields({
                   : mark("adapterConfig", "nonInteractivePermissions", value);
               }}
             >
-              <option value="deny">Deny</option>
-              <option value="fail">Fail</option>
+              <option value="deny">{t("agentConfiguration.codex.deny")}</option>
+              <option value="fail">{t("agentConfiguration.codex.fail")}</option>
             </select>
           </Field>
           {!managedSandboxOnly && (
             <Field
-              label="ACP state directory"
-              hint="Optional ACP session state directory. Defaults to Paperclip-managed organization/agent scoped storage."
+              label={t("agentConfiguration.codex.acpStateDirectory")}
+              hint={t("agentConfiguration.codex.acpStateDirectoryHint")}
             >
               <div className="flex items-center gap-2">
                 <DraftInput
@@ -686,8 +688,8 @@ export function CodexLocalConfigFields({
             </Field>
           )}
           <Field configSection="runPolicy"
-            label="ACP warm process idle ms"
-            hint="Defaults to 0, which closes the ACP process after each run while retaining persistent session state."
+            label={t("agentConfiguration.codex.acpWarmProcessIdle")}
+            hint={t("agentConfiguration.codex.acpWarmProcessIdleHint")}
           >
             {isCreate ? (
               <input
@@ -716,7 +718,7 @@ export function CodexLocalConfigFields({
         </>
       )}
       {!runnerManaged && !hideInstructionsFile && (
-        <Field label="Agent instructions file" hint={instructionsFileHint}>
+        <Field label={t("agentConfiguration.codex.instructionsFile")} hint={t("agentConfiguration.codex.instructionsFileHint")}>
           <div className="flex items-center gap-2">
             <DraftInput
               value={
@@ -748,8 +750,8 @@ export function CodexLocalConfigFields({
       {!runnerManaged && (
         <>
           <ToggleField
-            label="Bypass sandbox"
-            hint={help.dangerouslyBypassSandbox}
+            label={t("agentConfiguration.codex.bypassSandbox")}
+            hint={t("agentConfiguration.codex.bypassSandboxHint")}
             checked={
               isCreate
                 ? values!.dangerouslyBypassSandbox
@@ -770,8 +772,8 @@ export function CodexLocalConfigFields({
             }
           />
           <ToggleField
-            label="Enable search"
-            hint={help.search}
+            label={t("agentConfiguration.codex.enableSearch")}
+            hint={t("agentConfiguration.codex.enableSearchHint")}
             checked={
               isCreate
                 ? values!.search
@@ -784,8 +786,8 @@ export function CodexLocalConfigFields({
             }
           />
           <ToggleField
-            label="Fast mode"
-            hint={help.fastMode}
+            label={t("agentConfiguration.codex.fastMode")}
+            hint={t("agentConfiguration.codex.fastModeHint")}
             checked={fastModeEnabled}
             onChange={(v) =>
               isCreate

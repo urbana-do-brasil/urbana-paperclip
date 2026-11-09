@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { describeRunRetryState, formatRetryReason } from "./runRetryState";
+import { i18n } from "../i18n";
 
 describe("runRetryState", () => {
   it("formats internal retry reasons for operators", () => {
@@ -56,6 +57,24 @@ describe("runRetryState", () => {
       badgeLabel: "Retry exhausted",
       detail: "Attempt 4 · Transient failure · Automatic retries exhausted",
       secondary: "Bounded retry exhausted after 4 scheduled attempts; no further automatic retry will be queued Manual intervention required.",
+    });
+  });
+
+  it("uses localized retry labels while retaining the raw exhaustion diagnostic", () => {
+    const translate = (key: string, options?: { count?: number; reason?: string; date?: string }) =>
+      i18n.t(key, { ...options, lng: "pt-BR" });
+    const summary = describeRunRetryState({
+      status: "failed",
+      retryOfRunId: "run-1",
+      scheduledRetryAttempt: 4,
+      scheduledRetryReason: "transient_failure",
+      retryExhaustedReason: "Retry limit reached after 4 attempts",
+    }, translate);
+
+    expect(summary).toMatchObject({
+      badgeLabel: "Tentativas esgotadas",
+      detail: "Tentativa 4 · Falha temporária · Tentativas automáticas esgotadas",
+      secondary: "Retry limit reached after 4 attempts É necessária intervenção manual.",
     });
   });
 });

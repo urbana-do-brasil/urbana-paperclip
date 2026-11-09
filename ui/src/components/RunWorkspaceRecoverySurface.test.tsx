@@ -7,7 +7,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { HeartbeatRun, Issue, IssueRecoveryAction } from "@paperclipai/shared";
 import { RunWorkspaceRecoverySurface } from "./RunWorkspaceRecoverySurface";
-import { ToastProvider } from "../context/ToastContext";
+import { ToastProvider, useToastState } from "../context/ToastContext";
+import { i18n } from "../i18n";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 const issueGetMock = vi.hoisted(() => vi.fn());
@@ -15,6 +16,11 @@ const issueCreateMock = vi.hoisted(() => vi.fn());
 const resolveRecoveryMock = vi.hoisted(() => vi.fn());
 const reconcileMock = vi.hoisted(() => vi.fn());
 const boardAccessMock = vi.hoisted(() => vi.fn());
+const isolationControls = vi.hoisted(() => ({ visible: true, loaded: true }));
+
+vi.mock("@/hooks/useWorkspaceIsolationControls", () => ({
+  useWorkspaceIsolationControls: () => isolationControls,
+}));
 
 vi.mock("@/lib/router", () => ({
   useNavigate: () => navigateMock,
@@ -149,6 +155,15 @@ function buildIssue(action: IssueRecoveryAction | null): Issue {
   } as unknown as Issue;
 }
 
+function ToastInspector() {
+  const toasts = useToastState();
+  return (
+    <div data-testid="toast-inspector">
+      {toasts.map((toast) => <span key={toast.id}>{toast.title} {toast.body}</span>)}
+    </div>
+  );
+}
+
 async function renderSurface(run: HeartbeatRun) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -161,6 +176,7 @@ async function renderSurface(run: HeartbeatRun) {
       <QueryClientProvider client={client}>
         <ToastProvider>
           <RunWorkspaceRecoverySurface run={run} />
+          <ToastInspector />
         </ToastProvider>
       </QueryClientProvider>,
     );
@@ -205,6 +221,7 @@ describe("RunWorkspaceRecoverySurface", () => {
   });
 
   it("wires the repair confirm to reconcile in quarantine_restore mode against the pinned workspace", async () => {
+    await i18n.changeLanguage("pt-BR");
     issueGetMock.mockResolvedValue(buildIssue(buildRecoveryAction()));
     boardAccessMock.mockResolvedValue({ source: "local_implicit", companyIds: ["company-1"] });
     reconcileMock.mockResolvedValue({ id: "ws-1" });
@@ -213,5 +230,36 @@ describe("RunWorkspaceRecoverySurface", () => {
     click(document.body.querySelector("[data-testid='recovery-action-repair-confirm']"));
     await flush();
     expect(reconcileMock).toHaveBeenCalledWith("ws-1", { mode: "quarantine_restore" });
+    expect(node.querySelector("[data-testid='toast-inspector']")?.textContent).toContain("Workspace reparado");
+    expect(node.querySelector("[data-testid='toast-inspector']")?.textContent).toContain("a branch registrada foi restaurada");
+  });
+
+  it("creates a localized isolated re-issue while preserving branch refs and task content", async () => {
+    await i18n.changeLanguage("pt-BR");
+    issueGetMock.mockResolvedValue(buildIssue(buildRecoveryAction()));
+    boardAccessMock.mockResolvedValue({ source: "local_implicit", companyIds: ["company-1"] });
+    issueCreateMock.mockResolvedValue({ id: "issue-2", identifier: "PAP-1406" });
+    const node = await renderSurface(buildRun());
+
+    click(node.querySelector("[data-testid='recovery-action-reissue-trigger']"));
+    click(document.body.querySelector("[data-testid='recovery-action-reissue-confirm']"));
+    await flush();
+
+    expect(issueCreateMock).toHaveBeenCalledOnce();
+    const [companyId, payload] = issueCreateMock.mock.calls[0] as [string, Record<string, unknown>];
+    expect(companyId).toBe("company-1");
+    expect(payload.title).toBe("Nova tarefa isolada: Do the thing");
+    expect(payload.description).toContain("Criada a partir de PAP-1405 em um worktree Git isolado");
+    expect(payload.description).toContain("- Referência base (branch atual): `live-branch`");
+    expect(payload.description).toContain("- Branch registrada: `PAP-1405-recorded`");
+    expect(payload.description).toContain("body");
+    expect(payload.executionWorkspacePreference).toBe("isolated_workspace");
+    expect(payload.executionWorkspaceSettings).toEqual({
+      mode: "isolated_workspace",
+      workspaceStrategy: { type: "git_worktree", baseRef: "live-branch" },
+    });
+    expect(node.querySelector("[data-testid='toast-inspector']")?.textContent).toContain("Nova tarefa isolada criada");
+    expect(node.querySelector("[data-testid='toast-inspector']")?.textContent).toContain("PAP-1406 será executada em um novo workspace isolado.");
+    expect(navigateMock).toHaveBeenCalledWith("/issues/PAP-1406");
   });
 });

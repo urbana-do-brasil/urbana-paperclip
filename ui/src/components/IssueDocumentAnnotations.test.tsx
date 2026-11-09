@@ -8,6 +8,7 @@ import type {
   IssueDocument,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import {
   DocumentAnnotationsCountChip,
   IssueDocumentAnnotations,
@@ -334,7 +335,8 @@ function Harness({
 describe("IssueDocumentAnnotations", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     vi.clearAllMocks();
@@ -343,6 +345,7 @@ describe("IssueDocumentAnnotations", () => {
   afterEach(async () => {
     await unmountActiveRoots();
     container.remove();
+    await i18n.changeLanguage("pt-BR");
   });
 
   it("renders the open count chip and opens the panel on click", async () => {
@@ -379,6 +382,62 @@ describe("IssueDocumentAnnotations", () => {
     expect(anchor?.className).not.toContain("fixed");
     expect(anchor?.className).toContain("lg:block");
     expect(anchor?.querySelector(".sticky")).not.toBeNull();
+  });
+
+  it("localizes annotation controls while preserving the source selection and document target", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockAnnotationsApi.list.mockResolvedValue([makeThread()]);
+    mockAnnotationsApi.create.mockResolvedValue(makeThread({ id: "created-pt" }));
+    const root = createRoot(container);
+    const queryClient = makeQueryClient();
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <Harness doc={makeDoc()} initialPanelOpen />
+        </QueryClientProvider>,
+      );
+    });
+    await flush();
+    await flush();
+
+    const panel = container.querySelector('[data-testid="document-annotation-panel"]');
+    expect(panel?.getAttribute("aria-label")).toBe("Anotações de PLAN, revisão 4");
+    expect(container.querySelector('[aria-label="Fechar painel de anotações"]')).not.toBeNull();
+    expect(container.textContent).toContain("Revisão 4");
+    const countChip = container.querySelector<HTMLButtonElement>(
+      '[data-testid="document-annotation-count-plan"]',
+    );
+    expect(countChip?.getAttribute("aria-label")).toBe("Abrir 1 comentário não resolvido em plan");
+    expect(countChip?.textContent).toContain("1");
+    expect(countChip?.textContent).toContain("comentário");
+    expect(container.textContent).toContain("Please clarify this assumption.");
+
+    await act(async () => {
+      (container.querySelector('[data-testid="mock-annotation-selection"]') as HTMLButtonElement).click();
+    });
+    const composer = container.querySelector<HTMLTextAreaElement>(
+      '[data-testid="document-annotation-composer"]',
+    );
+    expect(composer?.placeholder).toBe("Escreva um comentário…");
+    expect(container.textContent).toContain("should keep the editor");
+    await act(async () => setTextareaValue(composer!, "  Comentário fornecido pela pessoa.  "));
+
+    const submit = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Comentar",
+    );
+    expect(submit).toBeTruthy();
+    await act(async () => submit!.click());
+    await waitFor(() => expect(mockAnnotationsApi.create).toHaveBeenCalledWith(
+      "issue-1",
+      "plan",
+      {
+        baseRevisionId: "rev-4",
+        baseRevisionNumber: 4,
+        selector: mockPendingAnchor.selector,
+        body: "Comentário fornecido pela pessoa.",
+      },
+    ));
   });
 
   it("stacks an inline panel below the document instead of floating over its host", async () => {

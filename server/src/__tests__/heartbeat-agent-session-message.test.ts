@@ -73,16 +73,30 @@ describe("agent session wake messages", () => {
     expect(renderPaperclipWakePrompt(wakePayload)).toContain("hello");
   });
 
-  it("leaves a normal context-only wake without a renderable payload", async () => {
-    await expect(
-      buildPaperclipWakePayload({
-        db: {} as never,
-        companyId: "company-1",
-        contextSnapshot: {
-          wakeReason: "timer",
-        },
-      }),
-    ).resolves.toBeNull();
+  it("keeps a normal context-only wake task-free while carrying the default communication locale", async () => {
+    const wakePayload = await buildPaperclipWakePayload({
+      db: {} as never,
+      companyId: "company-1",
+      contextSnapshot: {
+        wakeReason: "timer",
+      },
+    });
+
+    expect(wakePayload).toMatchObject({
+      reason: "timer",
+      communicationLocale: "pt-BR",
+      simplifiedEnglishInteractions: false,
+      issue: null,
+      comments: [],
+      commentIds: [],
+      commentWindow: { requestedCount: 0, includedCount: 0, missingCount: 0 },
+      agentMessage: null,
+    });
+    const prompt = renderPaperclipWakePrompt(wakePayload);
+    expect(prompt).toContain("Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR).");
+    expect(prompt).not.toContain("## Issue");
+    expect(prompt).not.toContain("## Comments");
+    expect(prompt).not.toContain('"id":"issue-');
   });
 
   it("redacts and bounds session messages before materializing the wake payload", async () => {

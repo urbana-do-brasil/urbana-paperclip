@@ -2,14 +2,25 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
-import { expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { decisionModelsApi } from "@/api/decision-models";
+import type { DecisionResult } from "@paperclipai/shared";
 import { DecisionModelSettingsSection, DecisionModelSettingsView } from "./DecisionModelSettings";
 import { choices, configured, result } from "../../../storybook/stories/decision-models/fixtures";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
+import { i18n } from "@/i18n";
 
 vi.mock("@/context/CompanyContext", () => ({ useCompany: () => ({ selectedCompanyId: "company-storybook" }) }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
+  await i18n.changeLanguage(DEFAULT_LOCALE);
+});
 
 it("consumes an added connection once and preserves a later choice across refetches", async () => {
   const container = document.createElement("div"); document.body.appendChild(container);
@@ -55,4 +66,39 @@ it("clears test feedback when another manager changes the saved configuration", 
     });
     expect(container.textContent).not.toContain("Decision model is working");
   } finally { act(() => root.unmount()); client.clear(); test.mockRestore(); container.remove(); }
+});
+
+it("localizes decision settings while retaining provider, model and connection names", async () => {
+  await i18n.changeLanguage("pt-BR");
+  const container = document.createElement("div"); document.body.appendChild(container);
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<MemoryRouter><DecisionModelSettingsView
+      settings={configured} choices={choices} onSave={vi.fn()} onTest={vi.fn()} onAdd={vi.fn()}
+    /></MemoryRouter>));
+    expect(container.textContent).toContain("Modelo de decisão");
+    expect(container.textContent).toContain("Ver uso");
+    expect(container.textContent).toContain("Company OpenAI");
+    expect(container.textContent).toContain("gpt-6-luna · Conectada");
+    expect(container.textContent).toContain("Ativar decisões");
+    expect(container.textContent).toContain("Executar teste");
+  } finally { act(() => root.unmount()); container.remove(); }
+});
+
+it("translates owned decision failure codes and preserves provider error details", async () => {
+  await i18n.changeLanguage("pt-BR");
+  const container = document.createElement("div"); document.body.appendChild(container);
+  const root = createRoot(container);
+  const failure: DecisionResult = {
+    status: "failed", invocationId: "failure-fixture", errorCode: "provider_auth_failed",
+    usage: { inputTokens: 1, outputTokens: 0, costCents: "0", costStatus: "estimated" },
+  };
+  try {
+    await act(async () => root.render(<MemoryRouter><DecisionModelSettingsView
+      settings={configured} choices={choices} result={failure} error="Detalhe original do provedor"
+      onSave={vi.fn()} onTest={vi.fn()} onAdd={vi.fn()}
+    /></MemoryRouter>));
+    expect(container.textContent).toContain("O provedor rejeitou a conexão. Reconecte-a e tente novamente.");
+    expect(container.textContent).toContain("Detalhe original do provedor");
+  } finally { act(() => root.unmount()); container.remove(); }
 });

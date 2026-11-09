@@ -7,6 +7,7 @@ import {
 import { Router } from "express";
 import { subscriptionPriceSchema, mergeSubscriptionsSchema } from "@paperclipai/shared";
 import { z } from "zod";
+import { localePreferenceSchema, updateLocalePreferenceSchema } from "@paperclipai/shared/locale-preference";
 import {
   gitHubRepositoryPageQuerySchema,
   toggleAllGitHubRepositoriesSchema,
@@ -1412,6 +1413,7 @@ const BOARD_ONLY_OPERATIONS = new Set([
   "POST /api/companies/{companyId}/members/{memberId}/archive",
   "PATCH /api/companies/{companyId}/members/{memberId}/permissions",
   "GET /api/companies/{companyId}/user-directory",
+  "GET /api/companies/{companyId}/managed-resource-attributions",
   "GET /api/companies/{companyId}/managed-agent-profiles",
   "POST /api/companies/{companyId}/managed-agent-profiles",
   "GET /api/companies/{companyId}/remote-agent-profiles",
@@ -7112,6 +7114,25 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
+  path: "/api/auth/locale-preference",
+  tags: ["auth"],
+  summary: "Get the authenticated user's language preference",
+  description: "Personal, instance-wide preference. Defaults to pt-BR without creating a row. Requires a real authenticated board user, without requiring organization membership. Does not accept account selectors or query parameters.",
+  responses: { 200: r.ok(localePreferenceSchema), 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden },
+});
+
+registry.registerPath({
+  method: "put",
+  path: "/api/auth/locale-preference",
+  tags: ["auth"],
+  summary: "Save the authenticated user's language preference",
+  description: "Accepts only pt-BR or en for the caller. Session mutations require a trusted browser origin. Preference and private personal audit commit atomically; repeated values do not produce additional events. Never publishes into organization activity feeds.",
+  request: { body: jsonBody(updateLocalePreferenceSchema) },
+  responses: { 200: r.ok(localePreferenceSchema), 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden },
+});
+
+registry.registerPath({
+  method: "get",
   path: "/api/auth/get-session",
   tags: ["auth"],
   summary: "Get current session",
@@ -7153,6 +7174,21 @@ registry.registerPath({
   summary: "List Claude Managed Agent profiles for a company",
   request: { params: z.object({ companyId: z.string() }) },
   responses: { 200: r.ok(), 401: r.unauthorized, 403: r.forbidden },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/companies/{companyId}/managed-resource-attributions",
+  tags: ["plugins"],
+  summary: "Read plugin attribution for visible company resources",
+  request: {
+    params: z.object({ companyId: z.string() }),
+    query: z.object({
+      resourceKind: z.enum(["agent", "project", "routine", "skill"]),
+      resourceId: z.array(z.string().uuid()).min(1).max(250),
+    }),
+  },
+  responses: { 200: r.ok(), 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden },
 });
 
 registry.registerPath({

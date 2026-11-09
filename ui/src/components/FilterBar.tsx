@@ -12,9 +12,10 @@ interface FilterBarProps {
   filters: FilterValue[];
   onRemove: (key: string) => void;
   onClear: () => void;
+  clearAllLabel?: string;
 }
 
-export function FilterBar({ filters, onRemove, onClear }: FilterBarProps) {
+export function FilterBar({ filters, onRemove, onClear, clearAllLabel = "Clear all" }: FilterBarProps) {
   if (filters.length === 0) return null;
 
   return (
@@ -32,7 +33,7 @@ export function FilterBar({ filters, onRemove, onClear }: FilterBarProps) {
         </Badge>
       ))}
       <Button variant="ghost" size="sm" className="text-xs h-6" onClick={onClear}>
-        Clear all
+        {clearAllLabel}
       </Button>
     </div>
   );

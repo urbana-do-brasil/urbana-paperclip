@@ -17,6 +17,8 @@ import { queryKeys } from "@/lib/queryKeys";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { gitHubAppSettingsUrl, gitHubBotMention } from "./GitHubAppIdentity";
 import type { ChatEndpoint } from "@/api/chatEndpoints";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
+import { i18n } from "@/i18n";
 
 const mocks = vi.hoisted(() => ({
   tab: "settings",
@@ -197,6 +199,7 @@ describe("GitHub bot management", () => {
     client.clear();
     container.remove();
     vi.unstubAllGlobals();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
   async function render(tab = mocks.tab) {
     mocks.tab = tab;
@@ -305,7 +308,23 @@ describe("GitHub bot management", () => {
     await vi.waitFor(() => expect(container.querySelectorAll('[role="region"] [role="switch"]')).toHaveLength(40));
     expect(mocks.repositoryPage).toHaveBeenLastCalledWith("bot", { offset: 20, limit: 20, search: "" });
   });
-  it("shows the verified custom App mention and its own organization branding settings", async () => {
+  it.each([
+    {
+      locale: "en",
+      copyMentionLabel: "Copy GitHub mention",
+      editBrandingLabel: "Edit App name and logo on GitHub",
+    },
+    {
+      locale: "pt-BR",
+      copyMentionLabel: "Copiar menção do GitHub",
+      editBrandingLabel: "Editar nome e logo do App no GitHub",
+    },
+  ])("shows the verified custom App mention and organization branding in $locale", async ({
+    locale,
+    copyMentionLabel,
+    editBrandingLabel,
+  }) => {
+    await i18n.changeLanguage(locale);
     const branded: ChatEndpoint = {
       ...endpoint,
       provider: "github",
@@ -326,12 +345,12 @@ describe("GitHub bot management", () => {
     mocks.get.mockResolvedValue(branded);
     await render();
     expect(
-      container.querySelector('button[aria-label="Copy GitHub mention"]')
+      container.querySelector(`button[aria-label="${copyMentionLabel}"]`)
         ?.textContent,
     ).toBe("@maya-reviews");
     expect(container.textContent).toContain("Maya Reviews");
     const branding = [...container.querySelectorAll("a")].find((a) =>
-      a.getAttribute("aria-label") === "Edit App name and logo on GitHub",
+      a.getAttribute("aria-label") === editBrandingLabel,
     );
     expect(branding?.href).toBe(
       "https://github.com/organizations/acme/settings/apps/maya-reviews",

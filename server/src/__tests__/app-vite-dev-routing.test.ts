@@ -13,6 +13,7 @@ describe("shouldServeViteDevHtml", () => {
   it("serves HTML shell for document requests", () => {
     expect(shouldServeViteDevHtml(createRequest("/", "html"))).toBe(true);
     expect(shouldServeViteDevHtml(createRequest("/issues/abc", "html"))).toBe(true);
+    expect(shouldServeViteDevHtml(createRequest("/help/pt-BR/start/quickstart", "html"))).toBe(true);
   });
 
   it("skips public assets even when the client accepts */*", () => {

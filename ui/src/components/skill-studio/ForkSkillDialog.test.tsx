@@ -11,6 +11,8 @@ import type {
   CompanySkillUsageAgent,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { ForkSkillDialog } from "./ForkSkillDialog";
 
 const mockNavigate = vi.hoisted(() => vi.fn());
@@ -184,7 +186,8 @@ function makeForkSummary(over: Partial<CompanySkillForkSummary> = {}): CompanySk
   };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   mockCompanySkillsApi.forkPrecheck.mockResolvedValue(makePrecheck());
   mockCompanySkillsApi.fork.mockResolvedValue({
     skill: { id: "fork-new" },
@@ -196,12 +199,24 @@ beforeEach(() => {
   mockPushToast.mockReset();
 });
 
-afterEach(() => {
+afterEach(async () => {
   teardown();
   vi.clearAllMocks();
+  await i18n.changeLanguage(DEFAULT_LOCALE);
 });
 
 describe("ForkSkillDialog", () => {
+  it("localizes the copy and reassignment flow in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderNode(
+      <ForkSkillDialog companyId="company-1" skill={makeSkill()} open onOpenChange={() => {}} />,
+    );
+
+    expect(document.body.textContent).toContain("Editar uma cópia de Deep Research");
+    expect(document.body.textContent).toContain("Nenhum agente usa esta skill no momento");
+    expect(document.body.textContent).toContain("Criar cópia");
+  });
+
   it("shows the agent count prominently and forks with reassignment ON by default", async () => {
     const agents = [makeAgent({ id: "a1", name: "Reviewer" }), makeAgent({ id: "a2", name: "Planner" })];
     mockCompanySkillsApi.forkPrecheck.mockResolvedValue(

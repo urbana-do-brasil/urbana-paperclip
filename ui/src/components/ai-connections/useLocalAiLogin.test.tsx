@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { useLocalAiLogin } from "./useLocalAiLogin";
 import { LocalProviderLoginInstructions } from "../AdapterLoginChrome";
 
@@ -10,7 +11,8 @@ const api = vi.hoisted(() => ({ startLocalLogin: vi.fn(), checkLocalLogin: vi.fn
 vi.mock("@/api/ai-connections", () => ({ aiConnectionsApi: api }));
 let root: ReturnType<typeof createRoot>;
 let host: HTMLDivElement;
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.resetAllMocks();
   api.startLocalLogin.mockImplementation(async () => ({ sessionId: "attempt-1", expiresAt: "2099-01-01T00:00:00Z" }));
   api.checkLocalLogin.mockResolvedValue({ status: "sign_in_required", authorizationUrl: "https://auth.openai.com/codex/device", code: "ABCD-12345" });

@@ -4,6 +4,7 @@ import { act, createRef } from "react";
 import { createRoot } from "react-dom/client";
 import type { DocumentAnnotationThreadWithComments } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { DocumentAnnotationPopover } from "./DocumentAnnotationPopover";
 
 // Required for `act` to flush passive effects rather than warn.
@@ -58,7 +59,8 @@ describe("DocumentAnnotationPopover", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.clearAllMocks();
     host = document.createElement("div");
     container = document.createElement("div");
@@ -71,6 +73,7 @@ describe("DocumentAnnotationPopover", () => {
   afterEach(async () => {
     await vi.waitFor(() => root.unmount());
     host.remove();
+    await i18n.changeLanguage("pt-BR");
   });
 
   const render = async (overrides: Partial<React.ComponentProps<typeof DocumentAnnotationPopover>> = {}) => {
@@ -122,6 +125,22 @@ describe("DocumentAnnotationPopover", () => {
     await vi.waitFor(() => expect(commentButton.disabled).toBe(false));
     textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", metaKey: true, bubbles: true }));
     await vi.waitFor(() => expect(mutations.create).toHaveBeenCalledWith("Looks good"));
+  });
+
+  it("localizes the annotation popover and keeps the selected text unchanged", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render();
+
+    const card = container.querySelector('[data-testid="document-annotation-popover"]');
+    expect(card?.getAttribute("aria-label")).toBe("Adicionar comentário à anotação");
+    expect(card?.textContent).toContain("selected plan text");
+    expect(container.querySelector("textarea")?.placeholder).toBe("Escreva um comentário…");
+    expect(Array.from(container.querySelectorAll("button")).some(
+      (button) => button.textContent?.trim() === "Cancelar",
+    )).toBe(true);
+    expect(Array.from(container.querySelectorAll("button")).some(
+      (button) => button.textContent?.trim() === "Comentar",
+    )).toBe(true);
   });
 
   it("dismisses on Escape and outside pointer down", async () => {

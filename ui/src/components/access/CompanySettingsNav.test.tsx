@@ -4,6 +4,8 @@ import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { queryKeys } from "@/lib/queryKeys";
 import { CompanySettingsNav, getCompanySettingsTab } from "./CompanySettingsNav";
 
@@ -53,16 +55,18 @@ async function act(callback: () => void | Promise<void>) {
 describe("CompanySettingsNav", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     currentPathname = "/company/settings";
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   it("maps company settings routes to the expected shared tab value", () => {
@@ -147,6 +151,29 @@ describe("CompanySettingsNav", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("localizes visible setting tabs while keeping tab values and destinations", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+
+    await act(async () => {
+      renderNav(root);
+    });
+
+    expect(pageTabBarMock).toHaveBeenCalledWith(expect.objectContaining({
+      items: expect.arrayContaining([
+        { value: "general", label: "Geral" },
+        { value: "instance-profile", label: "Perfil" },
+        { value: "members", label: "Membros" },
+        { value: "secrets", label: "Segredos" },
+        { value: "instance-environments", label: "Ambientes" },
+      ]),
+    }));
+    expect(pageTabBarMock.mock.calls.at(-1)?.[0]?.items?.map((item: { value: string }) => item.value)).toContain("general");
+    expect(getCompanySettingsTab("/PAP/company/settings/instance/profile")).toBe("instance-profile");
+
+    await act(async () => root.unmount());
   });
 
   it("filters operator-hidden tabs out of the tab bar", async () => {

@@ -2,6 +2,7 @@ import { useRef, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { cn } from "../../lib/utils";
+import { useTranslation } from "@/i18n";
 import {
   SOURCE_EXIT_FADE,
   SOURCE_COLLAPSE_MOVE,
@@ -32,12 +33,6 @@ export type ModelSource = {
   credentialMode?: ModelConnectionMode | null;
 };
 
-const CREDENTIAL_TAG_LABEL: Record<ModelConnectionMode, string> = {
-  subscription: "Subscription",
-  api: "API key",
-  advanced: "Custom Gateway",
-};
-
 /**
  * The credential tag, swapping in a fixed-height slot.
  *
@@ -48,6 +43,12 @@ const CREDENTIAL_TAG_LABEL: Record<ModelConnectionMode, string> = {
  * tile's padding and over the row below.
  */
 export function CredentialTag({ mode }: { mode: ModelConnectionMode }) {
+  const { t } = useTranslation();
+  const labels: Record<ModelConnectionMode, string> = {
+    subscription: t("onboarding.credentials.subscription"),
+    api: t("onboarding.credentials.apiKey"),
+    advanced: t("onboarding.credentials.customGateway"),
+  };
   return (
     <span className="relative flex h-4 w-full items-center justify-center overflow-hidden text-(length:--text-micro) text-muted-foreground">
       <AnimatePresence initial={false} mode="sync">
@@ -58,7 +59,7 @@ export function CredentialTag({ mode }: { mode: ModelConnectionMode }) {
           animate={{ opacity: 1, y: 0, transition: TAG_SWAP_ENTER }}
           exit={{ opacity: 0, y: TAG_SWAP_TRAVEL, transition: TAG_SWAP_EXIT }}
         >
-          {CREDENTIAL_TAG_LABEL[mode]}
+          {labels[mode]}
         </motion.span>
       </AnimatePresence>
     </span>

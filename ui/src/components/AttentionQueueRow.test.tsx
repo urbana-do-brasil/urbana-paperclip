@@ -4,13 +4,14 @@ import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { useState, type AnchorHTMLAttributes, type ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AttentionItem, AttentionSourceKind } from "@paperclipai/shared";
 import { approvalsApi } from "../api/approvals";
 import { ApiError } from "../api/client";
 import { issuesApi } from "../api/issues";
 import { ToastViewport } from "./ToastViewport";
 import { ToastProvider } from "../context/ToastContext";
+import { i18n } from "../i18n";
 import { AttentionQueueRow } from "./AttentionQueueRow";
 
 vi.mock("@/lib/router", () => ({
@@ -62,6 +63,10 @@ afterEach(() => {
   container?.remove();
   container = null;
   vi.clearAllMocks();
+});
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
 });
 
 function render(element: ReactElement) {

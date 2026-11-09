@@ -33,6 +33,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { pickTextColorForPillBg } from "@/lib/color-contrast";
 import {
   Link,
@@ -56,6 +57,7 @@ import {
 import { ApiError } from "../api/client";
 import { issuesApi } from "../api/issues";
 import { CommentSubmissionUnknownError } from "../lib/comment-submit-result";
+import { interactionResolutionErrorMessage } from "../lib/interaction-resolution-error";
 import { approvalsApi } from "../api/approvals";
 import { activityApi, type RunForIssue } from "../api/activity";
 import {
@@ -305,7 +307,6 @@ import { openSkillPanelState, shouldSuppressTaskPanelUntilPlan } from "../lib/ta
 import {
   interactionReadinessRefetchInterval,
   buildAnsweredQuestionsDeliveryText,
-  buildIssueThreadInteractionSummary,
 } from "../lib/issue-thread-interactions";
 import { resolveIssueDocumentDeepLink, sameIssueDocumentHash } from "../lib/issue-document-deep-link";
 import {
@@ -436,10 +437,18 @@ function isPlanConfirmationInteraction(
 
 function buildPlanDecisionResponseText(
   interaction: RequestConfirmationInteraction,
+  translate?: (key: string) => string,
 ) {
-  if (interaction.status === "accepted") return "Approved plan";
+  if (interaction.status === "accepted") {
+    return translate
+      ? translate("taskDetail.interactionConfirmations.summary.planApproved")
+      : "Approved plan";
+  }
   const reason = interaction.result?.reason?.trim();
-  return reason ? `Requested changes\n\n${reason}` : "Requested changes";
+  const heading = translate
+    ? translate("taskDetail.interactionConfirmations.summary.planChangesRequested")
+    : "Requested changes";
+  return reason ? `${heading}\n\n${reason}` : heading;
 }
 
 const FEEDBACK_TERMS_URL =
@@ -715,19 +724,27 @@ function AttributionAvatar({
   actor,
   via,
 }: {
-  label: "Assignee" | "Originating";
+  label: "assignee" | "originating";
   actor: AttributionActor;
   via?: string | null;
 }) {
+  const { t } = useTranslation();
+  const translatedLabel = t(`taskDetail.attribution.${label}`);
   const accessibleLabel = via
-    ? `${label}: ${actor.name} · via ${via}`
-    : `${label}: ${actor.name}`;
-  const testIdLabel = label.toLowerCase();
+    ? t("taskDetail.attribution.accessibleVia", {
+        role: translatedLabel,
+        name: actor.name,
+        via,
+      })
+    : t("taskDetail.attribution.accessible", {
+        role: translatedLabel,
+        name: actor.name,
+      });
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span aria-label={accessibleLabel} data-testid={`issue-${testIdLabel}-avatar`}>
+        <span aria-label={accessibleLabel} data-testid={`issue-${label}-avatar`}>
           {actor.kind === "agent" ? <AgentAvatar agent={actor} size={20} /> : (
             <Avatar size="xs" className="ring-2 ring-background">
               {actor.avatarUrl ? <AvatarImage src={actor.avatarUrl} alt="" /> : null}
@@ -739,7 +756,7 @@ function AttributionAvatar({
       <TooltipContent side="top" sideOffset={6} className="px-2 py-1.5">
         <div
           className="flex items-center gap-2"
-          data-testid={`issue-${testIdLabel}-tooltip`}
+          data-testid={`issue-${label}-tooltip`}
         >
           {actor.kind === "agent" ? <AgentAvatar agent={actor} size={32} /> : (
             <Avatar size="sm" className="ring-1 ring-background/30">
@@ -749,14 +766,14 @@ function AttributionAvatar({
           )}
           <div className="min-w-0">
             <div className="text-(length:--text-nano) font-medium uppercase leading-none text-background/70">
-              {label}
+              {translatedLabel}
             </div>
             <div className="max-w-48 truncate text-xs font-medium leading-4 text-background">
               {actor.name}
             </div>
             {via ? (
               <div className="max-w-48 truncate text-(length:--text-nano) leading-3 text-background/60">
-                via {via}
+                {t("taskDetail.attribution.via", { name: via })}
               </div>
             ) : null}
           </div>
@@ -780,6 +797,7 @@ function IssueAttributionByline({
   >;
   userLabelMap: ReadonlyMap<string, string>;
 }) {
+  const { t } = useTranslation();
   const assignee: AttributionActor | null = issue.assigneeAgentId
     ? {
         kind: "agent",
@@ -796,7 +814,7 @@ function IssueAttributionByline({
           name:
             formatUserLabel(issue.assigneeUserId, userLabelMap) ??
             userProfileMap.get(issue.assigneeUserId)?.label ??
-            "User",
+            t("taskDetail.attribution.user"),
           avatarUrl: userProfileMap.get(issue.assigneeUserId)?.image ?? null,
         }
       : null;
@@ -817,7 +835,7 @@ function IssueAttributionByline({
           name:
             formatUserLabel(originatingActor.id, userLabelMap) ??
             userProfileMap.get(originatingActor.id)?.label ??
-            "User",
+            t("taskDetail.attribution.user"),
           avatarUrl: userProfileMap.get(originatingActor.id)?.image ?? null,
         }
     : null;
@@ -832,15 +850,15 @@ function IssueAttributionByline({
     <TooltipProvider>
       <AvatarGroup
         className="-space-x-1.5"
-        aria-label="Task people"
+        aria-label={t("taskDetail.attribution.taskPeople")}
         data-testid="issue-attribution-avatar-stack"
       >
         {assignee ? (
-          <AttributionAvatar label="Assignee" actor={assignee} />
+          <AttributionAvatar label="assignee" actor={assignee} />
         ) : null}
         {originator ? (
           <AttributionAvatar
-            label="Originating"
+            label="originating"
             actor={originator}
             via={originatorVia}
           />
@@ -972,6 +990,7 @@ function IssueDetailLoadingState({
 }: {
   headerSeed: ReturnType<typeof readIssueDetailHeaderSeed>;
 }) {
+  const { t } = useTranslation();
   const identifier =
     headerSeed?.identifier ?? headerSeed?.id.slice(0, 8) ?? null;
   const { taskChatShellEnabled } = useTaskDetailInterfaceMode();
@@ -1008,10 +1027,10 @@ function IssueDetailLoadingState({
                 <Badge
                   variant="outline"
                   className="border-violet-500/30 bg-violet-500/10 text-(length:--text-nano) text-violet-600 dark:text-violet-400"
-                  title={`Routine execution from routine ${headerSeed.originId}`}
+                  title={t("taskDetail.header.routineExecutionTitle", { identifier: headerSeed.originId })}
                 >
                   <Repeat className="h-3 w-3" />
-                  Routine
+                  {t("taskDetail.header.routine")}
                 </Badge>
               ) : null}
               {/* Seeded header — same anatomy as the resolved one below, so the
@@ -1026,7 +1045,7 @@ function IssueDetailLoadingState({
               ) : (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground opacity-50 px-1 -mx-1 py-0.5">
                   <ProjectTile size="xs" />
-                  No project
+                  {t("taskDetail.header.noProject")}
                 </span>
               )}
             </>
@@ -1108,6 +1127,7 @@ function InboxMobileToolbar({
   onProperties,
   onHide,
 }: InboxMobileToolbarProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -1126,7 +1146,7 @@ function InboxMobileToolbar({
             navigate(backHref);
           }
         }}
-        aria-label="Back to inbox"
+        aria-label={t("taskDetail.header.backToInbox")}
       >
         <ArrowLeft className="h-5 w-5" />
       </Button>
@@ -1138,7 +1158,7 @@ function InboxMobileToolbar({
             size="icon-sm"
             onClick={onArchive}
             disabled={archivePending}
-            aria-label="Archive from inbox"
+            aria-label={t("taskDetail.header.archiveFromInbox")}
           >
             <Archive className="h-5 w-5" />
           </Button>
@@ -1146,7 +1166,7 @@ function InboxMobileToolbar({
 
         <Popover open={menuOpen} onOpenChange={setMenuOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label="More actions">
+            <Button variant="ghost" size="icon-sm" aria-label={t("taskDetail.header.moreActions")}>
               <MoreVertical className="h-5 w-5" />
             </Button>
           </PopoverTrigger>
@@ -1159,7 +1179,7 @@ function InboxMobileToolbar({
               }}
             >
               <Copy className="h-3 w-3" />
-              Copy as markdown
+              {t("taskDetail.header.copyAsMarkdown")}
             </button>
             <button
               className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50"
@@ -1169,7 +1189,7 @@ function InboxMobileToolbar({
               }}
             >
               <SlidersHorizontal className="h-3 w-3" />
-              Properties
+              {t("taskDetail.header.properties")}
             </button>
             {issueIdProp && (
               <button
@@ -1180,7 +1200,7 @@ function InboxMobileToolbar({
                 }}
               >
                 <EyeOff className="h-3 w-3" />
-                Hide this task
+                {t("taskDetail.header.hideTask")}
               </button>
             )}
           </PopoverContent>
@@ -1446,6 +1466,7 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
   externalReferences,
   linkCaseReferences,
 }: IssueDetailChatTabProps) {
+  const { t } = useTranslation();
   // Preserve master's Classic Task Interface seam: Streamlined UI changes the
   // TaskChatThread presentation but never swaps it for IssueChatThread.
   const { classicTaskInterfaceEnabled, streamlinedTaskDetailEnabled } =
@@ -1981,9 +2002,9 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
               : null;
           const body =
             interaction.kind === "ask_user_questions"
-              ? buildAnsweredQuestionsDeliveryText(interaction)
+              ? buildAnsweredQuestionsDeliveryText(interaction, (key) => String(t(key)))
               : isPlanConfirmationInteraction(interaction)
-                ? buildPlanDecisionResponseText(interaction)
+                ? buildPlanDecisionResponseText(interaction, (key) => String(t(key)))
                 : "";
           return [
             {
@@ -2028,6 +2049,7 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
     resolvedActivity,
     resolvedLinkedRuns,
     interruptibleIssueRun,
+    t,
   ]);
   const effectiveQueuedCommentQueue = useMemo(() => {
     if (!queuedCommentQueueEnabled) return null;
@@ -2560,8 +2582,8 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
                 ? (runId) => onPauseWorkRun(runId).catch(() => undefined)
                 : undefined
             }
-            stopRunLabel="Pause work"
-            stoppingRunLabel="Pausing..."
+            stopRunLabel={t("taskDetail.chatTranscript.pauseWork")}
+            stoppingRunLabel={t("taskDetail.chatTranscript.pausingWork")}
             stopRunVariant="pause"
             runFinalizationActions={runFinalizationActions}
             onAcceptInteraction={onAcceptInteraction}
@@ -2981,6 +3003,7 @@ export function IssueDetail({ tasksTab }: { tasksTab?: TaskSidePanelProps["tasks
 export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskSidePanelProps["tasksTab"]; conversation?: {
   agent: Agent; issue: Issue | null; ensureIssue: () => Promise<Issue>;
 } }) {
+  const { t } = useTranslation();
   const { issueId: routeIssueId, companyPrefix } = useParams<{ issueId: string; companyPrefix: string }>();
   const issueId = conversation ? conversation.issue?.id : routeIssueId;
   const [draftWorkMode, setDraftWorkMode] = useState<IssueWorkMode>("standard");
@@ -3516,7 +3539,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
     () =>
       issuePluginDetailSlots.map((slot) => ({
         value: `plugin:${slot.pluginKey}:${slot.id}`,
-        label: slot.displayName,
+        label: slot.hostDisplayName ?? slot.displayName,
         slot,
       })),
     [issuePluginDetailSlots],
@@ -4247,11 +4270,11 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
     },
     onError: (err) => {
       pushToast({
-        title: "Recovery resolution failed",
+        title: t("taskDetail.execution.recoveryCard.feedback.resolveFailedTitle"),
         body:
           err instanceof Error
             ? err.message
-            : "Unable to resolve recovery action",
+            : t("taskDetail.execution.recoveryCard.feedback.resolveFailedBody"),
         tone: "error",
       });
     },
@@ -4885,25 +4908,39 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
         interaction.kind === "suggest_tasks"
           ? (interaction.result?.skippedClientKeys?.length ?? 0)
           : 0;
+      const successTitle =
+        interaction.kind === "request_confirmation"
+          ? t("taskDetail.interactionResolutionToast.acceptedRequestConfirmation")
+          : interaction.kind === "request_checkbox_confirmation"
+            ? t("taskDetail.interactionResolutionToast.acceptedCheckboxConfirmation")
+            : interaction.kind === "suggest_tasks"
+              ? skippedCount > 0
+                ? t("taskDetail.interactionSuggestedTasks.resolution.createdWithSkipped", {
+                    created: createdCount,
+                    count: interaction.payload.tasks.length,
+                    skipped: skippedCount,
+                  })
+                : t("taskDetail.interactionSuggestedTasks.toast.accepted")
+              : t("taskDetail.interactionResolutionToast.acceptedGeneric");
       pushToast({
-        title:
-          interaction.kind === "request_confirmation"
-            ? "Request confirmed"
-            : interaction.kind === "request_checkbox_confirmation"
-              ? "Selection confirmed"
-              : skippedCount > 0
-                ? `Accepted ${createdCount} draft${createdCount === 1 ? "" : "s"} and skipped ${skippedCount}`
-                : "Suggested tasks accepted",
+        title: successTitle,
         tone: "success",
       });
     },
-    onError: (err) => {
+    onError: (err, variables) => {
+      const isSuggestedTasks = variables.interaction.kind === "suggest_tasks";
       pushToast({
-        title: "Accept failed",
-        body:
-          err instanceof Error
-            ? err.message
-            : "Unable to accept the suggested tasks",
+        title: isSuggestedTasks
+          ? t("taskDetail.interactionSuggestedTasks.toast.acceptFailed")
+          : t("taskDetail.interactionResolutionToast.acceptFailed"),
+        body: interactionResolutionErrorMessage(
+          err,
+          undefined,
+          t(isSuggestedTasks
+            ? "taskDetail.interactionSuggestedTasks.toast.acceptUnavailable"
+            : "taskDetail.interactionResolutionToast.acceptUnavailable"),
+          t("taskDetail.interactionResolutionToast.retrySuffix"),
+        ),
         tone: "error",
       });
     },
@@ -4920,21 +4957,40 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       upsertInteractionInCache(interaction);
       invalidateIssueDetail();
       invalidateIssueCollections();
+      const rejectLabel =
+        interaction.kind === "request_confirmation"
+          ? interaction.payload.rejectLabel?.trim()
+          : undefined;
       pushToast({
         title:
           interaction.kind === "request_confirmation"
-            ? buildIssueThreadInteractionSummary(interaction)
-            : "Suggestion rejected",
+            ? rejectLabel
+              ? t("taskDetail.interactionResolutionToast.rejectedRequestWithLabel", {
+                  label: rejectLabel,
+                })
+              : t("taskDetail.interactionResolutionToast.rejectedRequest")
+            : interaction.kind === "request_checkbox_confirmation"
+              ? t("taskDetail.interactionResolutionToast.rejectedCheckboxConfirmation")
+            : interaction.kind === "suggest_tasks"
+              ? t("taskDetail.interactionSuggestedTasks.toast.rejected")
+              : t("taskDetail.interactionResolutionToast.rejectedGeneric"),
         tone: "success",
       });
     },
-    onError: (err) => {
+    onError: (err, variables) => {
+      const isSuggestedTasks = variables.interaction.kind === "suggest_tasks";
       pushToast({
-        title: "Reject failed",
-        body:
-          err instanceof Error
-            ? err.message
-            : "Unable to reject the suggested tasks",
+        title: isSuggestedTasks
+          ? t("taskDetail.interactionSuggestedTasks.toast.rejectFailed")
+          : t("taskDetail.interactionResolutionToast.rejectFailed"),
+        body: interactionResolutionErrorMessage(
+          err,
+          undefined,
+          t(isSuggestedTasks
+            ? "taskDetail.interactionSuggestedTasks.toast.rejectUnavailable"
+            : "taskDetail.interactionResolutionToast.rejectUnavailable"),
+          t("taskDetail.interactionResolutionToast.retrySuffix"),
+        ),
         tone: "error",
       });
     },
@@ -4952,15 +5008,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       invalidateIssueDetail();
       invalidateIssueCollections();
       pushToast({
-        title: "Answers submitted",
+        title: t("taskDetail.interactionQuestions.answersSubmitted"),
         tone: "success",
-      });
-    },
-    onError: (err) => {
-      pushToast({
-        title: "Submit failed",
-        body: err instanceof Error ? err.message : "Unable to submit answers",
-        tone: "error",
       });
     },
   });
@@ -4989,16 +5038,20 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
           : false;
       pushToast({
         title: complete
-          ? "All verdicts applied"
-          : `Applied ${applied} decision${applied === 1 ? "" : "s"}`,
+          ? t("taskDetail.interactionConfirmations.itemVerdicts.toast.allApplied")
+          : t("taskDetail.interactionConfirmations.itemVerdicts.toast.applied", {
+              count: applied,
+            }),
         tone: "success",
       });
     },
     onError: (err) => {
       pushToast({
-        title: "Apply failed",
+        title: t("taskDetail.interactionConfirmations.itemVerdicts.toast.applyFailed"),
         body:
-          err instanceof Error ? err.message : "Unable to apply the verdicts",
+          err instanceof Error
+            ? err.message
+            : t("taskDetail.interactionConfirmations.itemVerdicts.toast.applyUnavailable"),
         tone: "error",
       });
     },
@@ -5305,16 +5358,16 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       invalidateIssueCollections();
       invalidateIssueDocumentAnnotationState();
       pushToast({
-        title: "Comment deleted",
-        body: "The thread now shows a deleted-comment marker.",
+        title: t("taskDetail.chatTranscript.commentDeleted"),
+        body: t("taskDetail.chatTranscript.commentDeletedToastBody"),
         tone: "success",
       });
     },
     onError: (err) => {
       pushToast({
-        title: "Delete failed",
+        title: t("taskDetail.chatTranscript.deleteFailed"),
         body:
-          err instanceof Error ? err.message : "Unable to delete the comment",
+          err instanceof Error ? err.message : t("taskDetail.chatTranscript.unableToDeleteComment"),
         tone: "error",
       });
     },
@@ -6674,14 +6727,14 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
     mutationFn: async (
       request: import("../components/IssueRecoveryActionCard").RecoveryReissueRequest,
     ) => {
-      if (!issue) throw new Error("Task is not loaded yet.");
-      const sourceLabel = issue.identifier ?? "the stalled task";
+      if (!issue) throw new Error(t("taskDetail.execution.recoveryCard.feedback.taskNotLoaded"));
+      const sourceLabel = issue.identifier ?? t("taskDetail.execution.recoveryCard.feedback.stalledTaskFallback");
       const descriptionLines = [
-        `Re-issued from ${sourceLabel} on an isolated git worktree after a workspace branch divergence.`,
+        t("taskDetail.execution.recoveryCard.feedback.generatedDescriptionIntro", { sourceLabel }),
         "",
-        `- Base ref (live branch): \`${request.baseRef}\``,
+        t("taskDetail.execution.recoveryCard.feedback.baseRefBullet", { baseRef: request.baseRef }),
         ...(request.expectedBranch
-          ? [`- Recorded branch: \`${request.expectedBranch}\``]
+          ? [t("taskDetail.execution.recoveryCard.feedback.recordedBranchBullet", { branch: request.expectedBranch })]
           : []),
         "",
         "---",
@@ -6689,7 +6742,9 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
         issue.description ?? "",
       ];
       return issuesApi.create(issue.companyId, {
-        title: `Re-issue (isolated): ${issue.title ?? sourceLabel}`,
+        title: t("taskDetail.execution.recoveryCard.feedback.generatedTitle", {
+          title: issue.title ?? sourceLabel,
+        }),
         description: descriptionLines.join("\n"),
         priority: issue.priority,
         projectId: issue.projectId ?? null,
@@ -6709,10 +6764,10 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
     onSuccess: (created) => {
       invalidateIssueCollections();
       pushToast({
-        title: "Isolated re-issue created",
+        title: t("taskDetail.execution.recoveryCard.feedback.reissueCreatedTitle"),
         body: created.identifier
-          ? `${created.identifier} will run on a fresh isolated workspace.`
-          : "A fresh isolated re-issue was created.",
+          ? t("taskDetail.execution.recoveryCard.feedback.reissueCreatedWithIdentifier", { identifier: created.identifier })
+          : t("taskDetail.execution.recoveryCard.feedback.reissueCreatedBody"),
         tone: "success",
       });
       if (created.identifier) {
@@ -6721,11 +6776,11 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
     },
     onError: (err) => {
       pushToast({
-        title: "Re-issue failed",
+        title: t("taskDetail.execution.recoveryCard.feedback.reissueFailedTitle"),
         body:
           err instanceof Error
             ? err.message
-            : "Unable to create an isolated re-issue.",
+            : t("taskDetail.execution.recoveryCard.feedback.reissueFailedBody"),
         tone: "error",
       });
     },
@@ -6765,24 +6820,24 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       pushToast(
         variables.mode === "quarantine_restore"
           ? {
-              title: "Workspace repaired",
-              body: "Dirty changes were quarantined onto a rescue branch and the recorded branch restored; the task will resume.",
+              title: t("taskDetail.execution.recoveryCard.feedback.workspaceRepairedTitle"),
+              body: t("taskDetail.execution.recoveryCard.feedback.workspaceRepairedBody"),
               tone: "success",
             }
           : {
-              title: "Workspace branch reconciled",
-              body: "The recorded branch now matches the live branch; the task will resume.",
+              title: t("taskDetail.execution.recoveryCard.feedback.workspaceReconciledTitle"),
+              body: t("taskDetail.execution.recoveryCard.feedback.workspaceReconciledBody"),
               tone: "success",
             },
       );
     },
     onError: (err) => {
       pushToast({
-        title: "Reconcile failed",
+        title: t("taskDetail.execution.recoveryCard.feedback.reconcileFailedTitle"),
         body:
           err instanceof Error
             ? err.message
-            : "Unable to reconcile the workspace branch.",
+            : t("taskDetail.execution.recoveryCard.feedback.reconcileFailedBody"),
         tone: "error",
       });
     },
@@ -6800,8 +6855,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
   const handleReconcileForwardRecoveryAction = useCallback(() => {
     if (!reconcileExecutionWorkspaceId) {
       pushToast({
-        title: "Reconcile failed",
-        body: "This task has no execution workspace to reconcile.",
+        title: t("taskDetail.execution.recoveryCard.feedback.reconcileFailedTitle"),
+        body: t("taskDetail.execution.recoveryCard.feedback.noWorkspaceToReconcile"),
         tone: "error",
       });
       return;
@@ -6819,8 +6874,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
     (reason: string) => {
       if (!reconcileExecutionWorkspaceId) {
         pushToast({
-          title: "Reconcile failed",
-          body: "This task has no execution workspace to reconcile.",
+          title: t("taskDetail.execution.recoveryCard.feedback.reconcileFailedTitle"),
+          body: t("taskDetail.execution.recoveryCard.feedback.noWorkspaceToReconcile"),
           tone: "error",
         });
         return;
@@ -6842,8 +6897,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
   const handleQuarantineRestoreRecoveryAction = useCallback(() => {
     if (!reconcileExecutionWorkspaceId) {
       pushToast({
-        title: "Repair failed",
-        body: "This task has no execution workspace to repair.",
+        title: t("taskDetail.execution.recoveryCard.feedback.repairFailedTitle"),
+        body: t("taskDetail.execution.recoveryCard.feedback.noWorkspaceToRepair"),
         tone: "error",
       });
       return;
@@ -6998,7 +7053,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
   const previewAffectedAgentCount =
     treeControlPreview?.totals.affectedAgents ?? 0;
   const reopenComposerHint = closedIsolatedWorkspaceReopenPending
-    ? "This issue's isolated workspace was archived. Your next comment or resume reopens it and rebuilds the worktree."
+    ? t("taskDetail.chatComposer.archivedWorkspaceHint")
     : null;
   const composerHint = activePauseHold ? null : reopenComposerHint;
   const queuedCommentReason: "hold" | "active_run" | "other" = activePauseHold
@@ -7054,6 +7109,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
           "flex items-center gap-1 text-xs text-muted-foreground flex-wrap",
           shellSectionClass,
         )}
+        aria-label={t("taskDetail.relations.parentHierarchy")}
       >
         {[...ancestors].reverse().map((ancestor, i) => (
           <span key={ancestor.id} className="flex items-center gap-1">
@@ -7168,7 +7224,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
               <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
             </span>
-            Live
+            {t("taskDetail.header.live")}
           </Badge>
         )}
 
@@ -7176,10 +7232,10 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
           <Link
             to={`/routines/${issue.originId}`}
             className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 border border-violet-500/30 px-2 py-0.5 text-(length:--text-nano) font-medium text-violet-600 dark:text-violet-400 shrink-0 hover:bg-violet-500/20 transition-colors"
-            title={`Routine execution from routine ${issue.originId}`}
+            title={t("taskDetail.header.routineExecutionTitle", { identifier: issue.originId })}
           >
             <Repeat className="h-3 w-3" />
-            Routine
+            {t("taskDetail.header.routine")}
           </Link>
         )}
 
@@ -7187,10 +7243,10 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
           <Badge
             variant="outline"
             className="border-sky-500/40 bg-sky-500/10 text-(length:--text-nano) text-sky-700 dark:text-sky-300"
-            title="This task is a generated watchdog task. It verifies whether stopped work in the watched task tree is legitimate."
+            title={t("taskDetail.header.watchdogTitle")}
           >
             <ScanEye className="h-3 w-3" />
-            Watchdog
+            {t("taskDetail.header.watchdog")}
           </Badge>
         ) : null}
 
@@ -7210,10 +7266,16 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                     "text-(length:--text-nano)",
                     workModeMeta.classes.badge,
                   )}
-                  title={`This task is in ${workModeMeta.label.toLowerCase()}.`}
+                  title={t("taskDetail.header.workModeTitle", {
+                    mode: issue.workMode === "ask"
+                      ? t("taskDetail.header.askMode").toLowerCase()
+                      : t("taskDetail.header.planningMode").toLowerCase(),
+                  })}
                 >
                   <WorkModeIcon className="h-3 w-3" aria-hidden />
-                  {workModeMeta.label}
+                  {issue.workMode === "ask"
+                    ? t("taskDetail.header.askMode")
+                    : t("taskDetail.header.planningMode")}
                 </Badge>
               );
             })()
@@ -7224,10 +7286,10 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
             variant="outline"
             data-testid="issue-detail-parked-blocker"
             className="border-amber-500/60 bg-amber-500/15 text-(length:--text-nano) text-amber-700 dark:text-amber-300"
-            title="Blocked by parked work — at least one assigned blocker is in backlog and will not wake its assignee."
+            title={t("taskDetail.header.parkedBlockerTitle")}
           >
             <Flag className="h-3 w-3" />
-            Blocked by parked work
+            {t("taskDetail.header.parkedBlocker")}
           </Badge>
         ) : null}
 
@@ -7256,7 +7318,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
         ) : (
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground opacity-50 px-1 -mx-1 py-0.5">
             <ProjectTile size="xs" />
-            No project
+            {t("taskDetail.header.noProject")}
           </span>
         )}
 
@@ -7297,7 +7359,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
               variant="ghost"
               size="icon-xs"
               onClick={copyIssueToClipboard}
-              title="Copy task as markdown"
+              title={t("taskDetail.header.copyTaskAsMarkdown")}
             >
               {copied ? (
                 <Check className="h-4 w-4 text-green-500" />
@@ -7309,7 +7371,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
               variant="ghost"
               size="icon-xs"
               onClick={() => setMobilePropsOpen(true)}
-              title="Properties"
+              title={t("taskDetail.header.properties")}
             >
               <SlidersHorizontal className="h-4 w-4" />
             </Button>
@@ -7326,8 +7388,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                   archiveFromInbox.mutate(issue.id);
               }}
               disabled={archivePending}
-              title="Archive from inbox"
-              aria-label="Archive from inbox"
+              title={t("taskDetail.header.archiveFromInbox")}
+              aria-label={t("taskDetail.header.archiveFromInbox")}
             >
               <Archive className="h-4 w-4" />
             </Button>
@@ -7337,8 +7399,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
               variant="ghost"
               size="icon-xs"
               onClick={() => setFileViewerPromptOpen(true)}
-              title="Open file... (g f)"
-              aria-label="Open file in this issue"
+              title={t("taskDetail.header.openFileTitle")}
+              aria-label={t("taskDetail.header.openFile")}
             >
               <FileCode2 className="h-4 w-4" />
             </Button>
@@ -7348,7 +7410,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
               variant="ghost"
               size="icon-xs"
               onClick={copyIssueToClipboard}
-              title="Copy task as markdown"
+              title={t("taskDetail.header.copyTaskAsMarkdown")}
             >
               {copied ? (
                 <Check className="h-4 w-4 text-green-500" />
@@ -7390,8 +7452,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                   variant="ghost"
                   size="icon-xs"
                   className="shrink-0"
-                  aria-label="More task actions"
-                  title="More task actions"
+                  aria-label={t("taskDetail.header.moreTaskActions")}
+                  title={t("taskDetail.header.moreTaskActions")}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
@@ -7413,7 +7475,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                       }}
                     >
                       <Plus className="h-3 w-3" />
-                      Add subtask
+                      {t("taskDetail.header.addSubtask")}
                     </button>
                     <button
                       className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-accent/50"
@@ -7427,7 +7489,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                       ) : (
                         <Copy className="h-3 w-3" />
                       )}
-                      Copy as markdown
+                      {t("taskDetail.header.copyAsMarkdown")}
                     </button>
                     {canArchiveFromInbox ? (
                       <button
@@ -7440,7 +7502,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                         }}
                       >
                         <Archive className="h-3 w-3" />
-                        Archive from inbox
+                        {t("taskDetail.header.archiveFromInbox")}
                       </button>
                     ) : null}
                   </>
@@ -7499,7 +7561,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                   }}
                 >
                   <EyeOff className="h-3 w-3" />
-                  Hide this task
+                  {t("taskDetail.header.hideTask")}
                 </button>
               </PopoverContent>
             </Popover>
@@ -7542,7 +7604,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
           onSave={(description) => updateIssue.mutateAsync({ description })}
           as="p"
           className="text-sm leading-7 text-foreground"
-          placeholder="Add a description..."
+          placeholder={t("taskDetail.header.addDescription")}
           multiline
           foldable
           mentions={mentionOptions}
@@ -8132,7 +8194,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                     } : undefined,
                     resumeHref: !activePauseHold.isRoot ? createIssueDetailPath(activePauseHoldRoot?.identifier ?? activePauseHold.rootIssueId) : undefined,
                   } : null}
-                  composerDisabledReason={issue.conversationAgentId && !instanceExperimentalSettings?.enableAgentChat ? "Agent Chat is disabled in Experimental settings." : treeControlStateError ? "Couldn’t check whether this task is paused. Refresh to try again." : null}
+                  composerDisabledReason={issue.conversationAgentId && !instanceExperimentalSettings?.enableAgentChat ? t("taskDetail.chatComposer.agentChatDisabled") : treeControlStateError ? t("taskDetail.chatComposer.taskPauseStatusUnavailable") : null}
                   composerHint={composerHint}
                   queuedCommentReason={queuedCommentReason}
                   onVote={handleCommentVote}
@@ -8442,8 +8504,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                   <SheetHeader>
                     <SheetTitle className="text-sm">
                       {documentDeepLink?.documentKey === "plan"
-                        ? "Plan"
-                        : "Properties"}
+                        ? t("taskDetail.header.plan")
+                        : t("taskDetail.header.properties")}
                     </SheetTitle>
                   </SheetHeader>
                   <ScrollArea className="flex-1 overflow-y-auto">

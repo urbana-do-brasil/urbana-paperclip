@@ -783,8 +783,11 @@ describe("shared ACPX engine runtime behavior", () => {
   });
 
   it.each([
-    ["claude", false], ["codex", false], ["claude", true], ["codex", true],
-  ] as const)("keeps %s ACP conversation policy on fresh, resumed, and reset turns (custom=%s)", async (agent, custom) => {
+    ["claude", false, "en"], ["codex", false, "en"],
+    ["claude", true, "en"], ["codex", true, "en"],
+    ["claude", false, "pt-BR"], ["codex", false, "pt-BR"],
+    ["claude", true, "pt-BR"], ["codex", true, "pt-BR"],
+  ] as const)("keeps %s ACP conversation policy on fresh, resumed, and reset turns (custom=%s, locale=%s)", async (agent, custom, locale) => {
     const root = await makeTempRoot();
     const config = { agent, cwd: root, stateDir: path.join(root, "state"), mode: "persistent",
       ...(custom ? { promptTemplate: "Custom agent instructions." } : {}),
@@ -801,6 +804,8 @@ describe("shared ACPX engine runtime behavior", () => {
         issue: { id: "chat-1", workMode: "planning", status: "in_progress" },
         interactionKind: "request_confirmation",
         interactionStatus: "accepted",
+        communicationLocale: locale,
+        simplifiedEnglishInteractions: true,
         comments: [],
         commentWindow: { requestedCount: 0, includedCount: 0, missingCount: 0 },
         fallbackFetchNeeded: false,
@@ -818,13 +823,23 @@ describe("shared ACPX engine runtime behavior", () => {
       expect(String(run.meta[0]?.prompt).match(/Frozen Slack communication preference\./g)).toHaveLength(1);
     }
     expect(String(resumed.meta[0]?.prompt)).not.toContain("Frozen Slack communication preference.");
-    for (const { meta } of [fresh, resumed, reset]) {
+    for (const { meta, turnInputs } of [fresh, resumed, reset]) {
       const prompt = String(meta[0]?.prompt ?? "");
       expect(prompt).toContain(chatDirective);
+      expect(prompt).toContain(locale === "pt-BR"
+        ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+        : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+      if (locale === "pt-BR") {
+        expect(prompt).toContain("keep structured human interactions brief and clear in Brazilian Portuguese (pt-BR)");
+        expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+      } else {
+        expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+      }
       expect(prompt).not.toContain("Execution contract:");
       expect(prompt).not.toContain("clear final disposition");
       expect(prompt).not.toContain("Create child issues");
       expect(prompt).not.toContain("Use child issues");
+      expect(String(turnInputs[0]?.text ?? "")).toContain("## Human communication language");
     }
     expect(String(fresh.meta[0]?.prompt)).toContain(custom ? "Custom agent instructions." : "You are agent agent-1");
     expect(String(reset.meta[0]?.prompt)).toContain(custom ? "Custom agent instructions." : "You are agent agent-1");

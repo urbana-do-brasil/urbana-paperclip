@@ -4,7 +4,8 @@ import { getStoredBoardCredential, loginBoardCli } from "../../client/board-auth
 import { buildCliCommandLabel } from "../../client/command-label.js";
 import { readConfig } from "../../config/store.js";
 import { readContext, resolveProfile, type ClientContextProfile } from "../../client/context.js";
-import { ApiRequestError, PaperclipApiClient } from "../../client/http.js";
+import { ApiRequestError, PaperclipApiClient, formatApiRequestError } from "../../client/http.js";
+import { cliMessage, getCliLocale, isCliJsonRequested } from "../../localization/index.js";
 
 export interface BaseClientOptions {
   config?: string;
@@ -202,7 +203,7 @@ export function printOutput(data: unknown, opts: { json?: boolean; label?: strin
 
   if (Array.isArray(data)) {
     if (data.length === 0) {
-      console.log(pc.dim("(empty)"));
+      console.log(pc.dim(cliMessage("emptyList")));
       return;
     }
     for (const item of data) {
@@ -228,21 +229,25 @@ export function printOutput(data: unknown, opts: { json?: boolean; label?: strin
   console.log(String(data));
 }
 
-export function formatInlineRecord(record: Record<string, unknown>): string {
+export function formatInlineRecord(
+  record: Record<string, unknown>,
+  options: { labels?: Readonly<Record<string, string>> } = {},
+): string {
   const keyOrder = ["identifier", "id", "name", "status", "priority", "title", "action"];
   const seen = new Set<string>();
   const parts: string[] = [];
+  const labelFor = (key: string) => options.labels?.[key] ?? key;
 
   for (const key of keyOrder) {
     if (!(key in record)) continue;
-    parts.push(`${key}=${renderValue(record[key])}`);
+    parts.push(`${labelFor(key)}=${renderValue(record[key])}`);
     seen.add(key);
   }
 
   for (const [key, value] of Object.entries(record)) {
     if (seen.has(key)) continue;
     if (typeof value === "object") continue;
-    parts.push(`${key}=${renderValue(value)}`);
+    parts.push(`${labelFor(key)}=${renderValue(value)}`);
   }
 
   return parts.join(" ");
@@ -288,7 +293,10 @@ function readKeyFromProfileEnv(profile: ClientContextProfile): string | undefine
 export function handleCommandError(error: unknown): never {
   if (error instanceof ApiRequestError) {
     const detailSuffix = error.details !== undefined ? ` details=${JSON.stringify(error.details)}` : "";
-    console.error(pc.red(`API error ${error.status}: ${error.message}${detailSuffix}`));
+    const structured = isCliJsonRequested();
+    const label = structured ? "API error" : cliMessage("apiError");
+    const message = structured ? error.message : formatApiRequestError(error, getCliLocale());
+    console.error(pc.red(`${label} ${error.status}: ${message}${detailSuffix}`));
     process.exit(1);
   }
 

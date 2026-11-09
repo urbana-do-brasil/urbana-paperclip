@@ -4,6 +4,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompanySecret, EnvSecretRefBinding } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 
 const mockSecretPickerRender = vi.hoisted(() => vi.fn());
 
@@ -105,16 +106,18 @@ describe("AgentSecretAccessEditor component", () => {
   let container: HTMLDivElement;
   let root: Root | null = null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root?.unmount());
     root = null;
     container.remove();
     vi.clearAllMocks();
+    await i18n.changeLanguage("en");
   });
 
   function render(node: React.ReactNode) {
@@ -175,6 +178,31 @@ describe("AgentSecretAccessEditor component", () => {
     expect(last).toEqual({ STRIPE: { type: "secret_ref", secretId: "s1", version: "latest" } });
   });
 
+  it("localizes agent secret access controls without changing the alias binding contract", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const emitted: Array<Record<string, EnvSecretRefBinding>> = [];
+    render(
+      <AgentSecretAccessEditor config={{}} secrets={secrets} onChange={(next) => emitted.push(next)} />,
+    );
+
+    expect(container.textContent).toContain("Ainda não há segredos vinculados a este agente");
+    expect(container.textContent).toContain("Acesso à API (sem variável de ambiente)");
+    const addButton = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent?.includes("Adicionar acesso à API"),
+    )!;
+    flushSync(() => addButton.click());
+
+    const aliasInput = container.querySelector<HTMLInputElement>('input[aria-label="Alias de acesso"]')!;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+    setter.call(aliasInput, "STRIPE");
+    flushSync(() => aliasInput.dispatchEvent(new Event("input", { bubbles: true })));
+    flushSync(() => container.querySelector<HTMLButtonElement>('[data-testid="pick-secret"]')!.click());
+
+    expect(emitted.at(-1)).toEqual({
+      STRIPE: { type: "secret_ref", secretId: "s1", version: "latest" },
+    });
+  });
+
   it("keeps the create form open when focus returns to the shared picker anchor", async () => {
     vi.useFakeTimers();
     try {
@@ -203,7 +231,7 @@ describe("AgentSecretAccessEditor component", () => {
     }
   });
 
-  it("renders pending binding proposals as Proposed rows with approve/reject", () => {
+  it("renders pending binding proposals as Proposed rows with approve/reject", async () => {
     const approved: string[] = [];
     const rejected: string[] = [];
     const proposal = {
@@ -263,5 +291,15 @@ describe("AgentSecretAccessEditor component", () => {
     )!;
     flushSync(() => rejectButton.click());
     expect(rejected).toEqual(["prop-1"]);
+
+    await i18n.changeLanguage("pt-BR");
+    flushSync(() => {});
+    expect(container.textContent).toContain("Acesso proposto");
+    expect(container.textContent).toContain("Proposto por ClaudeCoder");
+    expect(container.textContent).toContain("Bind Stripe for the billing agent.");
+    expect([...container.querySelectorAll("button")].map((button) => button.textContent?.trim()))
+      .toContain("Aprovar");
+    expect([...container.querySelectorAll("button")].map((button) => button.textContent?.trim()))
+      .toContain("Recusar");
   });
 });

@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
 import { InlineEntitySelector } from "./InlineEntitySelector";
+import { i18n } from "@/i18n";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -21,7 +22,8 @@ describe("InlineEntitySelector", () => {
   let container: HTMLDivElement;
   let originalMatchMedia: typeof window.matchMedia;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     originalMatchMedia = window.matchMedia;
     container = document.createElement("div");
     document.body.appendChild(container);

@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getAppStoreDefinition } from "@paperclipai/shared";
 import type { AggregatorAppSnapshot, AggregatorAppsResponse } from "@paperclipai/shared/aggregator-apps";
+import { ApiError } from "@/api/client";
+import { i18n } from "@/i18n";
 import { queryKeys } from "@/lib/queryKeys";
 import { rememberSkillSourceReturn, skillSourceReturnPath } from "@/lib/skill-source-connect-return";
 import { AppDetail } from "./AppDetail";
@@ -351,7 +353,8 @@ describe("AppDetail", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     sessionStorage.clear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -488,6 +491,29 @@ describe("AppDetail", () => {
       config: { sourceTemplateKey: "composio", connectionMethodKey: "mcp" } }));
     listApplicationsMock.mockResolvedValue({ applications: [{ id: "app-1", applicationKey: "composio", name: "Composio", metadata: { sourceTemplateKey: "composio" } }] });
   }
+
+  it("localizes connected-account inventory while preserving provider and app names", async () => {
+    useComposioConnection();
+    const observed = aggregatorApps([observedApp("notion", "Notion", {
+      accounts: [
+        { id: "account-1", alias: null, status: "ACTIVE", isDefault: true },
+        { id: "account-2", alias: null, status: "ACTIVE", isDefault: false },
+      ],
+    })]);
+    listAggregatorAppsMock.mockResolvedValue(observed);
+    syncAggregatorAppsMock.mockResolvedValue(observed);
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    await vi.waitFor(() => expect(container.textContent).toContain("Apps atualizados."));
+    expect(container.querySelector('h2#connected-aggregator-apps-heading')?.textContent).toBe("Apps conectados");
+    expect(container.querySelector<HTMLButtonElement>('button[aria-label="Atualizar Composio"]')).toBeTruthy();
+    const list = container.querySelector('ul[aria-label="Apps conectados do Composio"]')!;
+    expect(list.textContent).toContain("Notion");
+    expect(list.textContent).toContain("2 contas");
+    expect(list.textContent).toContain("Conectado");
+  });
 
   it("refreshes connected apps on first load, shows progress, and exposes the completed inventory", async () => {
     useComposioConnection();
@@ -673,6 +699,91 @@ describe("AppDetail", () => {
     expect(container.textContent).toContain(expectedText);
     expect(container.textContent).not.toContain("Setup");
     expect(container.querySelector("section.bg-card")).toBeNull();
+  });
+
+  it("localizes the app detail header in Brazilian Portuguese while preserving the provider name", async () => {
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    expect(container.textContent).toContain("GitHub");
+    expect(container.textContent).toContain("Conectada");
+    expect(container.textContent).toContain("2 ações disponíveis");
+    expect(container.querySelector<HTMLButtonElement>('button[aria-label="Renomear app"]')).toBeTruthy();
+  });
+
+  it.each([
+    ["en", "The submitted data is invalid. Check the fields and try again.", "Retry"],
+    ["pt-BR", "Os dados enviados são inválidos. Revise os campos e tente novamente.", "Tentar novamente"],
+  ] as const)("localizes connection load failures and retries without losing the app in %s", async (locale, expectedError, retryLabel) => {
+    await i18n.changeLanguage(locale);
+    getConnectionMock
+      .mockRejectedValueOnce(new ApiError("Validation error", 400, {
+        error: "Validation error",
+        messageKey: "validation",
+      }))
+      .mockResolvedValueOnce(connection());
+
+    await renderAppDetail();
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe(expectedError);
+    expect(findButton(retryLabel)).toBeTruthy();
+
+    await act(async () => {
+      findButton(retryLabel)?.click();
+      await vi.waitFor(() => expect(container.querySelector('[role="alert"]')).toBeNull());
+    });
+
+    expect(getConnectionMock.mock.calls.length).toBeGreaterThan(1);
+    expect(container.textContent).toContain("GitHub");
+  });
+
+  it("localizes its connection failure wrapper while preserving provider detail", async () => {
+    await i18n.changeLanguage("pt-BR");
+    getConnectionMock.mockRejectedValueOnce(new ApiError(
+      "Vendor: access token expired",
+      502,
+      { error: "Vendor: access token expired" },
+    ));
+
+    await renderAppDetail();
+
+    expect(container.querySelector('[role="alert"]')?.textContent)
+      .toBe("Não foi possível concluir a solicitação. Detalhes: Vendor: access token expired");
+  });
+
+  it("localizes a missing connection and returns to the connector list", async () => {
+    await i18n.changeLanguage("pt-BR");
+    getConnectionMock.mockRejectedValueOnce(new ApiError("Connection not found", 404, {
+      error: "Connection not found",
+    }));
+
+    await renderAppDetail();
+
+    expect(container.querySelector('[role="alert"]')?.textContent)
+      .toBe("Não foi possível encontrar esse app.");
+    expect(findButton("Voltar aos conectores")).toBeTruthy();
+
+    await act(async () => findButton("Voltar aos conectores")?.click());
+    expect(mockNavigate).toHaveBeenCalledWith("/apps");
+  });
+
+  it("localizes generic reconnect guidance and credential controls while preserving provider health text", async () => {
+    await i18n.changeLanguage("pt-BR");
+    getConnectionMock.mockResolvedValue(connection({
+      healthStatus: "error",
+      healthMessage: "Token expired.",
+      requiresReauthorization: true,
+    }));
+
+    await renderAppDetail();
+
+    expect(container.textContent).toContain("Este app precisa ser reconectado");
+    expect(container.textContent).toContain("Token expired.");
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Chave do app"]')).toBeTruthy();
+    expect(Array.from(container.querySelectorAll("button")).some(
+      (button) => button.textContent?.trim() === "Verificar e reconectar",
+    )).toBe(true);
   });
 
   it("counts only active catalog entries as available actions", async () => {
@@ -940,6 +1051,34 @@ describe("AppDetail", () => {
     expect(container.querySelector("section.bg-card")).toBeNull();
   });
 
+  it("localizes connection access and action permission controls in Brazilian Portuguese", async () => {
+    mockParams.tab = "permissions";
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    expect(container.textContent).toContain("Quais agentes podem usar esta conexão?");
+    expect(container.textContent).toContain("Somente os agentes que eu escolher");
+    expect(container.textContent).toContain("Qualquer agente");
+    expect(container.textContent).toContain("Ações");
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Buscar uma ação"]')).toBeTruthy();
+    expect(container.textContent).toContain("Leitura (1)");
+    expect(container.textContent).toContain("Alteração (1)");
+
+    const askFirst = container.querySelector<HTMLButtonElement>('button[aria-label="Read repo: Perguntar antes"]');
+    expect(askFirst).toBeTruthy();
+    await act(async () => {
+      askFirst!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await flushReact();
+
+    expect(finishAppMock).toHaveBeenCalledWith("company-1", "conn-1", {
+      enabledCatalogEntryIds: expect.arrayContaining(["catalog-read", "catalog-write"]),
+      askFirstCatalogEntryIds: expect.arrayContaining(["catalog-read", "catalog-write"]),
+      access: "all_agents",
+    });
+  });
+
   it("opens an action test modal with agent selection, inputs, and result-ready chrome", async () => {
     mockParams.tab = "permissions";
     listTestAgentsMock.mockResolvedValue({
@@ -1064,6 +1203,30 @@ describe("AppDetail", () => {
     expect(container.textContent).not.toContain("Additional agent access");
     expect(finishAppMock).not.toHaveBeenCalled();
     expect(putConnectionInstallsMock).not.toHaveBeenCalled();
+  });
+
+  it("localizes additional agent grants in Brazilian Portuguese", async () => {
+    listProfilesMock.mockResolvedValue({ profiles: [{
+      id: "task-grant", status: "active", profileKey: "connection-intent:conn-1:agent-1",
+      metadata: { source: "connection_intent", connectionId: "conn-1", agentId: "agent-1" },
+      bindings: [{ targetType: "agent", targetId: "agent-1" }],
+      entries: [{ effect: "include", catalogEntryId: "catalog-write" }],
+    }] });
+    listPoliciesMock.mockResolvedValue({ policies: [{
+      enabled: true, policyType: "require_approval",
+      selectors: { catalogEntryId: "catalog-write" },
+      config: { source: "connection_intent", connectionId: "conn-1", agentId: "agent-1" },
+    }] });
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    const section = Array.from(container.querySelectorAll("section"))
+      .find((candidate) => candidate.textContent?.includes("Acesso adicional de agentes"))!;
+    expect(section.textContent).toContain("Estes agentes podem usar as ações listadas");
+    expect(section.textContent).toContain("Perguntar antes");
+    expect(Array.from(section.querySelectorAll("button")).map((button) => button.textContent?.trim()))
+      .toContain("Remover concessão");
   });
 
   it("keeps the task grant visible when removal fails", async () => {
@@ -1213,7 +1376,8 @@ describe("AppDetail", () => {
     }
   });
 
-  it("redirects legacy connection activity to the filtered company Audit feed", async () => {
+  it.each(["en", "pt-BR"] as const)("redirects legacy activity to the company-wide tool feed in %s", async (locale) => {
+    await i18n.changeLanguage(locale);
     mockParams.tab = "activity";
     listConnectionActivityMock.mockResolvedValue({
       events: [
@@ -1257,6 +1421,10 @@ describe("AppDetail", () => {
       to: "/activity?action=tool_",
       replace: true,
     });
+    const destination = new URL(navigateComponentMock.mock.calls.at(-1)?.[0]?.to as string, "https://paperclip.test");
+    expect(destination.searchParams.get("action")).toBe("tool_");
+    expect(destination.searchParams.has("connectionId")).toBe(false);
+    expect(listConnectionActivityMock).not.toHaveBeenCalled();
   });
 
   it("removes the per-connection activity surface", async () => {
@@ -1589,6 +1757,61 @@ describe("AppDetail", () => {
     return Array.from(container.querySelectorAll("button"))
       .find((button) => button.textContent?.trim() === label);
   }
+
+  it("localizes identity audience controls while preserving member IDs", async () => {
+    listConnectionGrantsMock.mockResolvedValue({
+      connection: { id: "conn-1", uid: "conn-1" },
+      grants: [organizationGrant({
+        providerTenant: { name: "Acme workspace" },
+        members: [{ id: "member-1", companyId: "company-1", grantId: "grant-org", subjectType: "user", subjectId: "user-1", createdAt: new Date() }],
+      })],
+      capabilities: fullCapabilities(),
+      currentUserId: "user-1",
+      members: [{ userId: "user-1", name: "Dotta", email: "dotta@example.com" }],
+    });
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    expect(container.textContent).toContain("Quais pessoas podem usar esta credencial?");
+    expect(container.textContent).toContain("Qualquer pessoa da organização");
+    await act(async () => findButton("Gerenciar acesso")?.click());
+    await flushReact();
+
+    const dialog = document.body.querySelector<HTMLElement>('[role="dialog"]')!;
+    expect(dialog.textContent).toContain("Quem pode usar esta identidade");
+    expect(dialog.textContent).toContain("Acme workspace");
+    expect(dialog.textContent).toContain("Todas as pessoas da organização");
+    expect(dialog.textContent).toContain("1 pessoa selecionada");
+    await act(async () => {
+      Array.from(dialog.querySelectorAll("button"))
+        .find((button) => button.textContent?.trim() === "Salvar seleção")?.click();
+    });
+    await flushReact();
+
+    expect(replaceConnectionGrantMembersMock).toHaveBeenCalledWith("conn-1", "grant-org", ["user-1"]);
+  });
+
+  it("localizes the GitHub identity permission warning in Brazilian Portuguese", async () => {
+    getConnectionMock.mockResolvedValue(connection({ credentialPolicy: "per_agent" }));
+    listConnectionGrantsMock.mockResolvedValue({
+      connection: { id: "conn-1", uid: "conn-1" },
+      grants: [dedicatedGitHubGrant()],
+      capabilities: fullCapabilities(),
+      currentUserId: "user-1",
+      members: [],
+    });
+    await i18n.changeLanguage("pt-BR");
+
+    await renderAppDetail();
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('button[aria-label="Read repo: Permitida"]')
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(container.textContent).toContain("O shell, o Git e o gh usam esta conta durante a execução");
+  });
 
   it("does not label a revoked AI credential as Connected", async () => {
     getConnectionMock.mockResolvedValue(connection({ connectionPurpose: "ai", transport: "runtime_auth", healthStatus: "ok", config: { provider: "openai", method: "api_key" } }));

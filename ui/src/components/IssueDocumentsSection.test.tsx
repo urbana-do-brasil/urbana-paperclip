@@ -9,7 +9,9 @@ import type { DocumentRevision, Issue, IssueDocument } from "@paperclipai/shared
 import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IssueDocumentsSection } from "./IssueDocumentsSection";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryKeys } from "../lib/queryKeys";
+import { i18n } from "@/i18n";
 
 const mockIssuesApi = vi.hoisted(() => ({
   listDocuments: vi.fn(),
@@ -286,7 +288,8 @@ function createIssue(): Issue {
 describe("IssueDocumentsSection", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     ensureLocalStorageMock();
@@ -295,8 +298,9 @@ describe("IssueDocumentsSection", () => {
     markdownEditorMockState.emitMountEmptyChange = false;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
+    await i18n.changeLanguage("pt-BR");
   });
 
   it("keeps system handoff documents out of the normal document surface", async () => {
@@ -578,7 +582,7 @@ describe("IssueDocumentsSection", () => {
     await flush();
 
     const revisionButton = Array.from(container.querySelectorAll("button"))
-      .find((button) => button.textContent?.includes("rev 4"));
+      .find((button) => button.textContent?.includes("Revision 4"));
     expect(revisionButton).toBeTruthy();
 
     await act(async () => {
@@ -648,7 +652,7 @@ describe("IssueDocumentsSection", () => {
     expect(container.textContent).not.toContain("Restored plan body");
 
     const revisionButtons = Array.from(container.querySelectorAll("button"));
-    const historicalRevisionButton = revisionButtons.find((button) => button.textContent?.includes("rev 3"));
+    const historicalRevisionButton = revisionButtons.find((button) => button.textContent?.includes("Revision 3"));
     expect(historicalRevisionButton).toBeTruthy();
 
     await act(async () => {
@@ -725,7 +729,7 @@ describe("IssueDocumentsSection", () => {
     expect(container.textContent).toContain("Current plan body");
 
     const revisionButtons = Array.from(container.querySelectorAll("button"));
-    const historicalRevisionButton = revisionButtons.find((button) => button.textContent?.includes("rev 3"));
+    const historicalRevisionButton = revisionButtons.find((button) => button.textContent?.includes("Revision 3"));
     expect(historicalRevisionButton).toBeTruthy();
 
     await act(async () => {
@@ -736,7 +740,7 @@ describe("IssueDocumentsSection", () => {
     expect(container.textContent).toContain("Historical plan body");
 
     const currentRevisionButton = Array.from(container.querySelectorAll("button"))
-      .find((button) => button.textContent?.includes("rev 4"));
+      .find((button) => button.textContent?.includes("Revision 4"));
     expect(currentRevisionButton).toBeTruthy();
 
     await act(async () => {
@@ -804,7 +808,7 @@ describe("IssueDocumentsSection", () => {
     expect(container.textContent).toContain("Current plan body");
 
     const revisionButtons = Array.from(container.querySelectorAll("button"));
-    const historicalRevisionButton = revisionButtons.find((button) => button.textContent?.includes("rev 2"));
+    const historicalRevisionButton = revisionButtons.find((button) => button.textContent?.includes("Revision 2"));
     expect(historicalRevisionButton).toBeTruthy();
 
     await act(async () => {
@@ -815,7 +819,7 @@ describe("IssueDocumentsSection", () => {
     expect(container.textContent).toContain("Original plan body");
 
     const currentRevisionButton = Array.from(container.querySelectorAll("button"))
-      .find((button) => button.textContent?.includes("rev 3"));
+      .find((button) => button.textContent?.includes("Revision 3"));
     expect(currentRevisionButton).toBeTruthy();
 
     await act(async () => {
@@ -1047,6 +1051,107 @@ describe("IssueDocumentsSection", () => {
 
     expect(setDocumentLock).toHaveBeenCalledWith("body", true);
     expect(container.querySelector('button[title="Unlock document"]')).toBeTruthy();
+
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    await flush();
+    expect(container.querySelector('button[title="Desbloquear documento"]')).toBeTruthy();
+    expect(container.textContent).toContain("Reusable case document body");
+    expect(container.textContent).toContain("body");
+
+    await act(async () => {
+      root.unmount();
+    });
+    queryClient.clear();
+  });
+
+  it("previews and restores a case document revision across a language switch", async () => {
+    const current = createIssueDocument({ id: "case-document-1", issueId: "case-1", key: "body", title: "USER TITLE", body: "USER CURRENT BODY", latestRevisionId: "case-revision-2", latestRevisionNumber: 2 });
+    const restored = { ...current, body: "USER OLD BODY", latestRevisionId: "case-revision-3", latestRevisionNumber: 3 };
+    const revisions = [
+      createRevision({ id: "case-revision-2", issueId: "case-1", documentId: current.id, key: "body", revisionNumber: 2, body: current.body }),
+      createRevision({ id: "case-revision-1", issueId: "case-1", documentId: current.id, key: "body", revisionNumber: 1, body: "USER OLD BODY" }),
+    ];
+    const listDocuments = vi.fn().mockResolvedValueOnce([current]).mockResolvedValue([restored]);
+    const restoreDocumentRevision = vi.fn().mockResolvedValue(restored);
+    const root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    queryClient.setQueryData(["cases", "revisions", "case-1", "body"], revisions);
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <IssueDocumentsSection subject={{
+            id: "case-1",
+            documentsQueryKey: ["cases", "documents", "case-1"],
+            idleDocumentRevisionsQueryKey: ["cases", "revisions", "case-1", "__idle__"],
+            documentRevisionsQueryKey: (key) => ["cases", "revisions", "case-1", key],
+            listDocuments,
+            listDocumentRevisions: vi.fn().mockResolvedValue(revisions),
+            getDocument: vi.fn().mockResolvedValue(current),
+            upsertDocument: vi.fn().mockResolvedValue(current),
+            deleteDocument: vi.fn().mockResolvedValue({ ok: true }),
+            restoreDocumentRevision,
+            setDocumentLock: vi.fn().mockResolvedValue(current),
+            hideSystemDocuments: false,
+            legacyPlanDocument: null,
+            annotations: null,
+          }} canDeleteDocuments canManageDocumentLocks />
+        </QueryClientProvider>,
+      );
+    });
+    await flush();
+    await flush();
+    const older = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("Revision 1"));
+    expect(older).toBeTruthy();
+    await act(async () => { older!.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
+    expect(container.textContent).toContain("USER OLD BODY");
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    await flush();
+    expect(container.textContent).toContain("Visualizando a revisão 1");
+    const restore = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("Restaurar esta revisão"));
+    expect(restore).toBeTruthy();
+    await act(async () => { restore!.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
+    await flush();
+    expect(restoreDocumentRevision).toHaveBeenCalledWith("body", "case-revision-1");
+    expect(container.textContent).toContain("USER OLD BODY");
+    await act(async () => root.unmount());
+    queryClient.clear();
+  });
+
+  it("localizes document section labels and accessible controls in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const document = createIssueDocument({
+      body: "Conteúdo do plano",
+      updatedByAgentId: "agent-1",
+      updatedByUserId: null,
+      sourceTrust: { preset: "low_trust_review", disposition: "quarantined", sourceAgentId: "agent-1" },
+    });
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    mockIssuesApi.listDocuments.mockResolvedValue([document]);
+
+    await act(async () => {
+      root.render(
+        <TooltipProvider>
+          <QueryClientProvider client={queryClient}>
+            <IssueDocumentsSection issue={createIssue()} canDeleteDocuments={false} onVote={vi.fn().mockResolvedValue(undefined)} />
+          </QueryClientProvider>
+        </TooltipProvider>,
+      );
+    });
+    await flush();
+    await flush();
+
+    expect(container.textContent).toContain("Documentos");
+    expect(container.textContent).toContain("Novo documento");
+    expect(container.textContent).toContain("Útil");
+    expect(container.textContent).toContain("Precisa de ajustes");
+    expect(container.textContent).toContain("Fonte de baixa confiabilidade");
+    expect(container.querySelector('button[aria-label="Recolher documento plan"]')).toBeTruthy();
 
     await act(async () => {
       root.unmount();

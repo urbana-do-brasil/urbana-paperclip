@@ -18,9 +18,36 @@ import {
 import { queryKeys } from "@/lib/queryKeys";
 import { Link, useSearchParams } from "@/lib/router";
 import { relativeTime } from "@/lib/utils";
+import { formatUiError } from "@/api/error-presentation";
+import { useTranslation } from "react-i18next";
 
 const ALL = "__all";
 const RUN_LIMIT = 200;
+const RUN_SOURCE_KEYS: Record<string, string> = {
+  on_demand: "agentRuns.sources.onDemand",
+  timer: "agentRuns.sources.timer",
+  assignment: "agentRuns.sources.assignment",
+  automation: "agentRuns.sources.automation",
+  schedule: "routineActivity.sources.schedule",
+  manual: "routineActivity.sources.manual",
+  api: "routineActivity.sources.api",
+  webhook: "routineActivity.sources.webhook",
+};
+const RUN_STATUS_KEYS: Record<string, string> = {
+  queued: "agentRuns.status.queued",
+  scheduled_retry: "agentRuns.status.scheduled_retry",
+  running: "agentRuns.status.running",
+  succeeded: "agentRuns.status.succeeded",
+  interrupted: "agentRuns.status.interrupted",
+  failed: "agentRuns.status.failed",
+  cancelled: "agentRuns.status.cancelled",
+  timed_out: "agentRuns.status.timed_out",
+  received: "routineActivity.status.received",
+  coalesced: "routineActivity.status.coalesced",
+  skipped: "routineActivity.status.skipped",
+  issue_created: "routineActivity.status.issueCreated",
+  completed: "routineActivity.status.completed",
+};
 
 function runSummary(run: HeartbeatRun) {
   const result = run.resultJson as { summary?: unknown; result?: unknown } | null;
@@ -33,17 +60,28 @@ function runDuration(run: HeartbeatRun) {
   const end = run.finishedAt ? new Date(run.finishedAt).getTime() : null;
   if (start == null || end == null || !Number.isFinite(start) || !Number.isFinite(end)) return null;
   const seconds = Math.max(0, Math.round((end - start) / 1000));
-  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 60) return { key: "agentRuns.detail.durationSeconds", values: { seconds } };
   const minutes = Math.floor(seconds / 60);
-  return `${minutes}m ${seconds % 60}s`;
+  return {
+    key: "agentRuns.detail.durationMinutesSeconds",
+    values: { minutes, seconds: seconds % 60 },
+  };
 }
 
 function readableSource(source: string) {
   return source.replaceAll("_", " ");
 }
 
-function routineRunTitle(run: RoutineRunSummary) {
-  return run.linkedIssue?.title ?? run.trigger?.label ?? "Routine run";
+function runSourceLabel(source: string, t: (key: string) => string) {
+  return RUN_SOURCE_KEYS[source] ? t(RUN_SOURCE_KEYS[source]) : readableSource(source);
+}
+
+function runStatusLabel(status: string, t: (key: string) => string) {
+  return RUN_STATUS_KEYS[status] ? t(RUN_STATUS_KEYS[status]) : readableSource(status);
+}
+
+function routineRunTitle(run: RoutineRunSummary, fallback: string) {
+  return run.linkedIssue?.title ?? run.trigger?.label ?? fallback;
 }
 
 function RoutineScopedRuns({
@@ -57,10 +95,11 @@ function RoutineScopedRuns({
   error: Error | null;
   onRetry: () => void;
 }) {
+  const { t } = useTranslation();
   if (isLoading) {
     return (
       <div className="border-y border-border py-14 text-center text-sm text-muted-foreground">
-        Loading routine runs…
+        {t("auditHub.loadingRoutineRuns")}
       </div>
     );
   }
@@ -68,39 +107,41 @@ function RoutineScopedRuns({
   if (error) {
     return (
       <div className="flex flex-col items-center gap-3 border-y border-border py-14 text-center">
-        <p className="text-sm text-muted-foreground">{error.message}</p>
-        <Button variant="outline" size="sm" onClick={onRetry}>Try again</Button>
+        <p className="text-sm text-muted-foreground">{formatUiError(error)}</p>
+        <Button variant="outline" size="sm" onClick={onRetry}>{t("auditHub.retry")}</Button>
       </div>
     );
   }
 
   if (runs.length === 0) {
-    return <EmptyState icon={Activity} message="No routine runs yet." />;
+    return <EmptyState icon={Activity} message={t("auditHub.noRoutineRuns")} />;
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Routine runs</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("auditHub.routineRunsTitle")}</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Executions created by this routine, newest first.
+          {t("auditHub.routineRunsDescription")}
         </p>
       </div>
-      <ul className="divide-y divide-border border-y border-border" aria-label="Routine runs">
+      <ul className="divide-y divide-border border-y border-border" aria-label={t("auditHub.routineRunsTitle")}>
         {runs.map((run) => {
           const content = (
             <>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-foreground">{routineRunTitle(run)}</span>
-                  <StatusBadge status={run.status} />
+                  <span className="font-medium text-foreground">
+                    {routineRunTitle(run, t("auditHub.routineRunFallback"))}
+                  </span>
+                  <StatusBadge status={run.status} label={runStatusLabel(run.status, t)} />
                 </div>
                 <p className="mt-1 truncate text-sm text-muted-foreground">
-                  {run.trigger?.label ?? readableSource(run.source)}
+                  {run.trigger?.label ?? runSourceLabel(run.source, t)}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground sm:justify-end">
-                <span className="capitalize">{readableSource(run.source)}</span>
+                <span>{runSourceLabel(run.source, t)}</span>
                 <time dateTime={new Date(run.triggeredAt).toISOString()}>
                   {relativeTime(run.triggeredAt)}
                 </time>
@@ -121,12 +162,15 @@ function RoutineScopedRuns({
           );
         })}
       </ul>
-      <p className="text-xs text-muted-foreground">Showing the {RUN_LIMIT} most recent routine runs.</p>
+      <p className="text-xs text-muted-foreground">
+        {t("auditHub.showingRecentRoutineRuns", { count: RUN_LIMIT })}
+      </p>
     </div>
   );
 }
 
 export function AuditRuns({ companyId, routineId }: { companyId: string; routineId?: string }) {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const agentId = searchParams.get("agentId") ?? ALL;
   const status = searchParams.get("runStatus") ?? ALL;
@@ -201,22 +245,21 @@ export function AuditRuns({ companyId, routineId }: { companyId: string; routine
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Runs</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("auditHub.sections.runs")}</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Recent agent executions across the organization. Open a run to inspect its transcript,
-          output, and task context.
+          {t("auditHub.runsDescription")}
         </p>
       </div>
 
       <div className="flex flex-wrap items-end gap-3 border-y border-border py-3">
         <label className="grid gap-1 text-(length:--text-micro) font-medium text-muted-foreground">
-          <span>Agent</span>
+          <span>{t("auditHub.agentFilter")}</span>
           <Select value={agentId} onValueChange={(value) => updateFilter("agentId", value)}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="All agents" />
+              <SelectValue placeholder={t("auditHub.allAgents")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All agents</SelectItem>
+              <SelectItem value={ALL}>{t("auditHub.allAgents")}</SelectItem>
               {(agents.data ?? []).map((agent) => (
                 <SelectItem key={agent.id} value={agent.id}>
                   {agent.name}
@@ -226,16 +269,16 @@ export function AuditRuns({ companyId, routineId }: { companyId: string; routine
           </Select>
         </label>
         <label className="grid gap-1 text-(length:--text-micro) font-medium text-muted-foreground">
-          <span>Status</span>
+          <span>{t("auditHub.statusFilter")}</span>
           <Select value={status} onValueChange={(value) => updateFilter("runStatus", value)}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="All statuses" />
+              <SelectValue placeholder={t("auditHub.allStatuses")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All statuses</SelectItem>
+              <SelectItem value={ALL}>{t("auditHub.allStatuses")}</SelectItem>
               {statuses.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {readableSource(value)}
+                  {runStatusLabel(value, t)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -243,31 +286,31 @@ export function AuditRuns({ companyId, routineId }: { companyId: string; routine
         </label>
         {agentId !== ALL || status !== ALL ? (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear filters
+            {t("auditHub.clearFilters")}
           </Button>
         ) : null}
       </div>
 
       {runs.isLoading ? (
         <div className="border-y border-border py-14 text-center text-sm text-muted-foreground">
-          Loading runs…
+          {t("auditHub.loadingRuns")}
         </div>
       ) : runs.error ? (
         <div className="flex flex-col items-center gap-3 border-y border-border py-14 text-center">
           <p className="text-sm text-muted-foreground">
-            {runs.error instanceof Error ? runs.error.message : "Failed to load runs."}
+            {runs.error instanceof Error ? formatUiError(runs.error) : t("auditHub.loadRunsFailed")}
           </p>
           <Button variant="outline" size="sm" onClick={() => runs.refetch()}>
-            Try again
+            {t("auditHub.retry")}
           </Button>
         </div>
       ) : visibleRuns.length === 0 ? (
         <EmptyState
           icon={agentId !== ALL || status !== ALL ? CircleDotDashed : Activity}
-          message={agentId !== ALL || status !== ALL ? "No runs match these filters." : "No runs yet."}
+          message={agentId !== ALL || status !== ALL ? t("auditHub.noRunsMatchFilters") : t("auditHub.noRuns")}
         />
       ) : (
-        <ul className="divide-y divide-border border-y border-border" aria-label="Recent runs">
+        <ul className="divide-y divide-border border-y border-border" aria-label={t("auditHub.recentRuns")}>
           {visibleRuns.map((run) => {
             const agent = agentById.get(run.agentId);
             const summary = runSummary(run);
@@ -281,20 +324,22 @@ export function AuditRuns({ companyId, routineId }: { companyId: string; routine
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium text-foreground">
-                        {agent?.name ?? "Unknown agent"}
+                        {agent?.name ?? t("auditHub.unknownAgent")}
                       </span>
                       <span className="font-mono text-(length:--text-micro) text-muted-foreground">
                         {run.id.slice(0, 8)}
                       </span>
-                      <StatusBadge status={run.status} />
+                      <StatusBadge status={run.status} label={runStatusLabel(run.status, t)} />
                     </div>
                     <p className="mt-1 truncate text-sm text-muted-foreground">
-                      {summary ?? `${readableSource(run.invocationSource)} run`}
+                      {summary ?? t("auditHub.runSummaryFallback", {
+                        source: runSourceLabel(run.invocationSource, t),
+                      })}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground sm:justify-end">
-                    <span className="capitalize">{readableSource(run.invocationSource)}</span>
-                    {duration ? <span>{duration}</span> : null}
+                    <span>{runSourceLabel(run.invocationSource, t)}</span>
+                    {duration ? <span>{t(duration.key, duration.values)}</span> : null}
                     <time dateTime={new Date(run.createdAt).toISOString()}>
                       {relativeTime(run.createdAt)}
                     </time>
@@ -306,7 +351,9 @@ export function AuditRuns({ companyId, routineId }: { companyId: string; routine
         </ul>
       )}
 
-      <p className="text-xs text-muted-foreground">Showing the {RUN_LIMIT} most recent runs.</p>
+      <p className="text-xs text-muted-foreground">
+        {t("auditHub.showingRecentRuns", { count: RUN_LIMIT })}
+      </p>
     </div>
   );
 }

@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/client";
 import type { CompanyImportJobAccepted } from "../api/companies";
 import { CompanyImport } from "./CompanyImport";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 // jsdom's crypto has no SubtleCrypto; the chunked transfer path hashes parts
 // with WebCrypto, so back the global with Node's implementation.
@@ -53,6 +55,7 @@ const mockSidebarPreferencesApi = vi.hoisted(() => ({
 }));
 const mockPushToast = vi.hoisted(() => vi.fn());
 const mockSetSelectedCompanyId = vi.hoisted(() => vi.fn());
+const mockSetBreadcrumbs = vi.hoisted(() => vi.fn());
 const mockReadZipArchive = vi.hoisted(() => vi.fn());
 
 vi.mock("../api/companies", () => ({
@@ -95,7 +98,7 @@ vi.mock("../api/sidebarPreferences", () => ({
 }));
 
 vi.mock("../context/BreadcrumbContext", () => ({
-  useBreadcrumbs: () => ({ setBreadcrumbs: vi.fn() }),
+  useBreadcrumbs: () => ({ setBreadcrumbs: mockSetBreadcrumbs }),
 }));
 
 vi.mock("../context/CompanyContext", () => ({
@@ -156,6 +159,81 @@ const previewFiles = {
   "agents/coder/AGENTS.md": "---\nname: Coder\n---\n\nYou write code.\n",
   "tasks/weekly-report/TASK.md": "---\nname: Weekly Report\nrecurring: true\n---\n\nSend the report.\n",
 };
+
+const companyImportLocaleCases = [
+  {
+    locale: "en",
+    sourceTitle: "Import source",
+    githubRepo: "GitHub repo",
+    githubHint: "Repo tree path or blob URL",
+    githubUrlLabel: "GitHub URL",
+    targetLabel: "Target",
+    newOrganizationNameLabel: "New organization name",
+    collisionStrategyLabel: "Collision strategy",
+    selectFileLabel: "Select file {{name}}",
+    selectFolderLabel: "Select folder {{name}}",
+    renameInputLabel: "New name for {{name}}",
+    adapterSelectLabel: "Adapter for {{agent}}",
+    localZip: "Local zip",
+    zipHelp: "Upload a .zip exported directly from Paperclip.",
+    zipPackageSummary: "organization-backup.zip with 2 files",
+    packageReadTitle: "Package read failed",
+    zipRequired: "Select a .zip organization package.",
+    previewTitle: "Import preview",
+    selectedFiles: "3 of 3 files selected",
+    conflictCount: "1 conflict",
+    collapseAgentsLabel: "Collapse folder agents",
+    conflictTitle: "Renames",
+    agentKind: "agent",
+    confirmRename: "confirm rename",
+    confirmed: "confirmed",
+    importButton: "Import 3 files",
+    completeTitle: "Import complete",
+    summary: "Imported Test: 1 agent, 0 skills, 0 projects, and 1 routine processed.",
+    activateSelected: "Activate selected",
+    activationErrorPrefix: "failed: external runtime said no",
+    activationErrorTitle: "Some items were not activated",
+    activationErrorToast: "1 item failed to activate; the rest were activated.",
+    importErrorPrefix: "Import failed: storage gateway returned 403",
+    importErrorGuidance: "Check the target organization before retrying.",
+  },
+  {
+    locale: "pt-BR",
+    sourceTitle: "Fonte da importação",
+    githubRepo: "Repositório do GitHub",
+    githubHint: "Caminho da árvore do repositório",
+    githubUrlLabel: "URL do GitHub",
+    targetLabel: "Destino",
+    newOrganizationNameLabel: "Nome da nova organização",
+    collisionStrategyLabel: "Estratégia de conflito",
+    selectFileLabel: "Selecionar arquivo {{name}}",
+    selectFolderLabel: "Selecionar pasta {{name}}",
+    renameInputLabel: "Novo nome para {{name}}",
+    adapterSelectLabel: "Adaptador para {{agent}}",
+    localZip: "Arquivo ZIP local",
+    zipHelp: "Envie um arquivo .zip exportado diretamente do Paperclip.",
+    zipPackageSummary: "organization-backup.zip com 2 arquivos",
+    packageReadTitle: "Falha ao ler o pacote",
+    zipRequired: "Selecione um pacote de organização em formato .zip.",
+    previewTitle: "Pré-visualização da importação",
+    selectedFiles: "3 de 3 arquivos selecionados",
+    conflictCount: "1 conflito",
+    collapseAgentsLabel: "Recolher pasta agents",
+    conflictTitle: "Renomeações",
+    agentKind: "agente",
+    confirmRename: "confirmar renomeação",
+    confirmed: "confirmado",
+    importButton: "Importar 3 arquivos",
+    completeTitle: "Importação concluída",
+    summary: "Imported Test: 1 agente, 0 skills, 0 projetos e 1 rotina processados.",
+    activateSelected: "Ativar seleção",
+    activationErrorPrefix: "falha: external runtime said no",
+    activationErrorTitle: "Alguns itens não foram ativados",
+    activationErrorToast: "1 item falhou ao ser ativado; os demais foram ativados.",
+    importErrorPrefix: "Falha na importação: storage gateway returned 403",
+    importErrorGuidance: "Confira a organização de destino antes de tentar novamente.",
+  },
+] as const;
 
 function buildPreviewResult(): CompanyPortabilityPreviewResult {
   return {
@@ -271,7 +349,8 @@ describe("CompanyImport", () => {
   let container: HTMLDivElement;
   let root: Root | null = null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     sessionStorage.clear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -313,6 +392,7 @@ describe("CompanyImport", () => {
     document.body.innerHTML = "";
     sessionStorage.clear();
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   function findButton(matches: (text: string) => boolean) {
@@ -358,8 +438,18 @@ describe("CompanyImport", () => {
     await flushReact();
   }
 
+  async function setTextInputValue(input: HTMLInputElement, value: string) {
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      setter.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await flushReact();
+  }
+
   async function chooseLocalZip(file: File) {
-    await clickButton((text) => text.includes("Local zip"));
+    const localZipLabel = i18n.t("companyImport.source.localZip");
+    await clickButton((text) => text.includes(localZipLabel));
     const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
     expect(fileInput).toBeTruthy();
     Object.defineProperty(fileInput!, "files", { value: [file], configurable: true });
@@ -710,9 +800,7 @@ describe("CompanyImport", () => {
     // controls are locked (and explained), so nothing can replace or unmount
     // the plan the import started from.
     expect(findButton((text) => text === "Preview import")?.disabled).toBe(true);
-    expect(container.textContent).toContain(
-      "Import in progress — the package and settings unlock when it finishes.",
-    );
+    expect(container.textContent).toContain(i18n.t("companyImport.progress.formLocked"));
     const lockedUrlInput = container.querySelector<HTMLInputElement>(
       'input[placeholder="https://github.com/owner/repo/tree/main/company"]',
     );
@@ -745,7 +833,7 @@ describe("CompanyImport", () => {
 
     expect(container.textContent).not.toContain("Import running on the server");
     expect(container.textContent).toContain("Import failed: connection reset");
-    expect(container.textContent).toContain("check the target company before retrying.");
+    expect(container.textContent).toContain("Check the target organization before retrying.");
     expect(mockPushToast).toHaveBeenCalledWith(expect.objectContaining({ tone: "error" }));
 
     // The new-company name feeds the request payload too: editing it clears
@@ -1074,6 +1162,173 @@ describe("CompanyImport", () => {
     return call![0] as { adapterOverrides?: Record<string, { adapterType: string; adapterConfig?: Record<string, unknown> }> };
   }
 
+  it.each(companyImportLocaleCases)("localizes source and ZIP guidance in $locale", async (localeCase) => {
+    await i18n.changeLanguage(localeCase.locale);
+    mockReadZipArchive.mockResolvedValue({
+      rootPath: "organization-backup",
+      files: {
+        "COMPANY.md": "# Example company\n",
+        "agents/coder/AGENTS.md": "# Coder\n",
+      },
+    });
+    await renderPage();
+
+    expect(container.textContent).toContain(localeCase.sourceTitle);
+    expect(container.textContent).toContain(localeCase.githubRepo);
+    expect(container.textContent).toContain(localeCase.githubHint);
+    const sourceFields = [
+      { label: localeCase.githubUrlLabel, id: "company-import-github-url", tagName: "INPUT" },
+      { label: localeCase.targetLabel, id: "company-import-target", tagName: "SELECT" },
+      { label: localeCase.newOrganizationNameLabel, id: "company-import-new-organization-name", tagName: "INPUT" },
+      { label: localeCase.collisionStrategyLabel, id: "company-import-collision-strategy", tagName: "SELECT" },
+    ];
+    for (const field of sourceFields) {
+      const label = Array.from(container.querySelectorAll<HTMLLabelElement>("label"))
+        .find((candidate) => candidate.textContent?.trim() === field.label);
+      expect(label?.htmlFor).toBe(field.id);
+      expect(container.querySelector(`#${field.id}`)?.tagName).toBe(field.tagName);
+    }
+    expect(findButton((text) => text === i18n.t("companyImport.source.previewButton"))?.disabled).toBe(true);
+    await clickButton((text) => text === localeCase.localZip);
+    expect(container.textContent).toContain(localeCase.zipHelp);
+
+    const packageFile = new File(["stub zip bytes"], "organization-backup.zip", { type: "application/zip" });
+    Object.defineProperty(packageFile, "arrayBuffer", { value: async () => new ArrayBuffer(0) });
+    await chooseLocalZip(packageFile);
+
+    expect(container.textContent).toContain(localeCase.zipPackageSummary);
+    expect(container.textContent).not.toContain(localeCase.zipHelp);
+    expect(findButton((text) => text === i18n.t("companyImport.source.previewButton"))?.disabled).toBe(false);
+
+    const invalidPackage = new File(["not a package"], "notes.txt", { type: "text/plain" });
+    await chooseLocalZip(invalidPackage);
+    expect(mockPushToast).toHaveBeenCalledWith(expect.objectContaining({
+      tone: "error",
+      title: localeCase.packageReadTitle,
+      body: localeCase.zipRequired,
+    }));
+  });
+
+  it.each(companyImportLocaleCases)(
+    "localizes preview, conflict confirmation, result, and activation errors in $locale",
+    async (localeCase) => {
+      const preview = buildPreviewResult();
+      preview.plan.agentPlans[0] = {
+        ...preview.plan.agentPlans[0]!,
+        plannedName: "Coder from package",
+        existingAgentId: "existing-coder",
+      };
+      preview.warnings = ["Upstream note: source metadata v7 was retained."];
+      mockCompaniesApi.importPreview.mockResolvedValue(preview);
+      mockAgentsApi.resume.mockRejectedValue(new Error("external runtime said no"));
+
+      await i18n.changeLanguage(localeCase.locale);
+      await renderPage();
+      const importUrl = "https://github.com/acme/starter/tree/main/company";
+      await enterGithubUrl(importUrl);
+
+      const organizationNameInput = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="text"]'))
+        .find((input) => input.placeholder === i18n.t("companyImport.source.newOrganizationNamePlaceholder"));
+      expect(organizationNameInput).toBeTruthy();
+      await setTextInputValue(organizationNameInput!, "Imported by locale test");
+
+      await clickButton((text) => text === i18n.t("companyImport.source.previewButton"));
+      expect(container.textContent).toContain(localeCase.previewTitle);
+      expect(container.textContent).toContain(localeCase.selectedFiles);
+      expect(container.textContent).toContain(localeCase.conflictCount);
+      expect(container.querySelector(`[aria-label="${localeCase.collapseAgentsLabel}"]`)).not.toBeNull();
+      expect(container.textContent).toContain("Upstream note: source metadata v7 was retained.");
+      expect(container.textContent).toContain(localeCase.conflictTitle);
+      expect(container.textContent).toContain(localeCase.agentKind);
+      const checkboxLabels = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'))
+        .map((input) => input.getAttribute("aria-label"));
+      expect(checkboxLabels).toContain(i18n.t("companyImport.preview.selectFile", { name: ".paperclip.yaml" }));
+      expect(checkboxLabels).toContain(i18n.t("companyImport.preview.selectFolder", { name: "agents" }));
+
+      const renamedAgentInputLabel = i18n.t("companyImport.conflicts.renameInputLabel", { name: "Coder" });
+      const renamedAgentInput = Array.from(container.querySelectorAll<HTMLInputElement>("input:not([type='file'])"))
+        .find((input) => input.getAttribute("aria-label") === renamedAgentInputLabel);
+      expect(renamedAgentInput).toBeTruthy();
+      const adapterSelectLabel = i18n.t("companyImport.adapters.selectForAgent", { agent: "Coder" });
+      expect(Array.from(container.querySelectorAll<HTMLSelectElement>("select"))
+        .some((select) => select.getAttribute("aria-label") === adapterSelectLabel)).toBe(true);
+      await setTextInputValue(renamedAgentInput!, "Coder North");
+      await clickButton((text) => text === localeCase.confirmRename);
+      expect(container.textContent).toContain(localeCase.confirmed);
+      expect(container.textContent).toContain("Coder North");
+
+      await clickButton((text) => text === localeCase.importButton);
+      await settle();
+
+      expect(mockCompaniesApi.importBundleAsync).toHaveBeenCalledWith(expect.objectContaining({
+        source: { type: "github", url: importUrl },
+        include: { company: true, agents: true, projects: true, issues: true },
+        target: { mode: "new_company", newCompanyName: "Imported by locale test" },
+        collisionStrategy: "rename",
+        nameOverrides: { coder: "Coder North" },
+        pauseAutomations: true,
+      }));
+      expect(container.textContent).toContain(localeCase.completeTitle);
+      expect(container.textContent).toContain(localeCase.summary);
+      expect(container.textContent).toContain("Imported Test");
+
+      await clickButton((text) => text.startsWith(localeCase.activateSelected));
+      expect(container.textContent).toContain(localeCase.activationErrorPrefix);
+      expect(mockPushToast).toHaveBeenCalledWith(expect.objectContaining({
+        tone: "error",
+        title: localeCase.activationErrorTitle,
+        body: localeCase.activationErrorToast,
+      }));
+      expect(mockRoutinesApi.update).toHaveBeenCalledWith("routine-1", { status: "active" });
+    },
+  );
+
+  it.each(companyImportLocaleCases)("localizes import failure guidance and preserves external detail in $locale", async (localeCase) => {
+    mockCompaniesApi.importBundleAsync.mockRejectedValue(new Error("storage gateway returned 403"));
+    await i18n.changeLanguage(localeCase.locale);
+    await renderPage();
+    await enterGithubUrl();
+    await clickButton((text) => text === i18n.t("companyImport.source.previewButton"));
+    await clickButton((text) => text === localeCase.importButton);
+    await settle();
+
+    expect(container.textContent).toContain(localeCase.importErrorPrefix);
+    expect(container.textContent).toContain(localeCase.importErrorGuidance);
+    expect(container.textContent).not.toContain("Import complete");
+    expect(mockPushToast).toHaveBeenCalledWith(expect.objectContaining({
+      tone: "error",
+      body: "storage gateway returned 403",
+    }));
+  });
+
+  it("localizes import breadcrumbs across PT-BR/en and Runner flag states", async () => {
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableNativeRunner: false, enableOpenAiDot: false });
+    await i18n.changeLanguage("pt-BR");
+    await renderPage();
+
+    expect(mockSetBreadcrumbs.mock.calls.at(-1)?.[0]).toEqual([
+      { label: "Paperclip", href: "/dashboard" },
+      { label: "Configurações", href: "/company/settings" },
+      { label: "Importar" },
+    ]);
+
+    await act(async () => {
+      root?.unmount();
+    });
+    root = null;
+    container.innerHTML = "";
+    mockSetBreadcrumbs.mockClear();
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableNativeRunner: true, enableOpenAiDot: false });
+    await i18n.changeLanguage("en");
+    await renderPage();
+
+    expect(mockSetBreadcrumbs.mock.calls.at(-1)?.[0]).toEqual([
+      { label: "Paperclip", href: "/dashboard" },
+      { label: "Settings", href: "/company/settings" },
+      { label: "Import" },
+    ]);
+  });
+
   it("keeps manifest adapters and sends no overrides when the user touches nothing", async () => {
     await previewMixedAdapterPackage();
 
@@ -1185,13 +1440,24 @@ describe("CompanyImport", () => {
     expect(mockCompaniesApi.importBundleAsync).not.toHaveBeenCalled();
     expect(container.textContent).toContain("OpenAI Dot requires acknowledgement of external billing");
 
-    const billingToggle = Array.from(container.querySelectorAll<HTMLButtonElement>('button[role="switch"]'))
-      .find((button) => button.closest("label")?.textContent?.includes("Allow externally billed provider")
-        || button.parentElement?.textContent?.includes("Allow externally billed provider"));
+    await i18n.changeLanguage("pt-BR");
+    await flushReact();
+    expect(container.textContent).toContain("Permitir provedor com cobrança externa");
+    const findBillingToggle = () => Array.from(container.querySelectorAll<HTMLButtonElement>('button[role="switch"]'))
+      .find((button) => button.getAttribute("aria-label") === "Permitir provedor com cobrança externa");
+    const billingToggle = findBillingToggle();
     expect(billingToggle).toBeTruthy();
     await act(async () => billingToggle!.click());
     await flushReact();
-    await clickButton((text) => text.startsWith("Import 3 file"));
+    await act(async () => findBillingToggle()!.click());
+    await flushReact();
+    await clickButton((text) => text.startsWith(i18n.t("companyImport.preview.importFileCount", { count: 3 })));
+    await settle();
+    expect(container.textContent).toContain("OpenAI Dot exige a confirmação de que a cobrança é externa");
+
+    await act(async () => findBillingToggle()!.click());
+    await flushReact();
+    await clickButton((text) => text.startsWith(i18n.t("companyImport.preview.importFileCount", { count: 3 })));
     await settle();
     expect(lastImportMeta().adapterOverrides?.coder).toEqual({
       adapterType: "paperclip_runner",
@@ -1219,7 +1485,7 @@ describe("CompanyImport", () => {
     mockAdaptersApi.list.mockResolvedValue([{ type: "claude_local", disabled: false }]);
     await previewMixedAdapterPackage();
 
-    expect(container.textContent).toContain("source adapter codex_local is not installed here");
+    expect(container.textContent).toContain("Source adapter codex_local is not installed here");
     expect(container.textContent).toContain("will use Claude Code");
     expect(findAdapterSelects().map((select) => select.value)).toEqual(["claude_local", "claude_local"]);
 
@@ -1240,7 +1506,7 @@ describe("CompanyImport", () => {
     mockAdaptersApi.list.mockResolvedValue([{ type: "gemini_local", disabled: false }]);
     await previewMixedAdapterPackage();
 
-    expect(container.textContent).toContain("source adapter codex_local is not installed here");
+    expect(container.textContent).toContain("Source adapter codex_local is not installed here");
     expect(findAdapterSelects().map((select) => select.value)).toEqual(["gemini_local", "gemini_local"]);
 
     await clickButton((text) => text.startsWith("Import 3 file"));

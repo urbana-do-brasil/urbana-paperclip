@@ -15,7 +15,7 @@ import {
   type PaperclipQuestionSet,
 } from "../../vendor/paperclip-runner/index.js";
 import { logger } from "../../middleware/logger.js";
-import { unprocessable } from "../../errors.js";
+import { HttpError } from "../../errors.js";
 import { logActivity } from "../activity-log.js";
 import { issueThreadInteractionService } from "../issue-thread-interactions.js";
 import { questionResponseDeliveryService } from "../question-response-delivery.js";
@@ -232,9 +232,11 @@ export async function validateNativeQuestionResponseInput(
   try {
     await parseQuestionInteractionAnswers(interaction.payload.questionSet, input.answers, interaction.payload.questions);
   } catch (error) {
-    throw unprocessable(
+    throw new HttpError(
+      422,
       error instanceof Error ? error.message : "Invalid native question response",
       { code: "invalid_question_response" },
+      { key: "validation" },
     );
   }
 }

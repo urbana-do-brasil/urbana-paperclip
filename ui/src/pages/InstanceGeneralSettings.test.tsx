@@ -4,6 +4,9 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
+import { i18n } from "@/i18n";
+import { DAILY_RETENTION_PRESETS } from "@paperclipai/shared";
 import { queryKeys } from "@/lib/queryKeys";
 import { InstanceGeneralSettings } from "./InstanceGeneralSettings";
 
@@ -26,6 +29,14 @@ vi.mock("../context/BreadcrumbContext", () => ({
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
+  await i18n.changeLanguage(DEFAULT_LOCALE);
+});
+
 const SELF_HOSTED_HEALTH = {
   status: "ok" as const,
   deploymentMode: "authenticated" as const,
@@ -43,6 +54,15 @@ const CLOUD_HEALTH = {
     stackSlug: "acme",
     cloudBaseUrl: "https://cloud.example.test",
   },
+};
+
+const PUBLIC_HEALTH = { ...SELF_HOSTED_HEALTH, deploymentExposure: "public" as const };
+const LOCAL_TRUSTED_HEALTH = {
+  ...SELF_HOSTED_HEALTH,
+  deploymentMode: "local_trusted" as const,
+  authReady: false,
+  bootstrapStatus: "bootstrap_pending" as const,
+  bootstrapInviteActive: true,
 };
 
 describe("InstanceGeneralSettings sign-out", () => {
@@ -71,7 +91,7 @@ describe("InstanceGeneralSettings sign-out", () => {
     vi.clearAllMocks();
   });
 
-  async function renderPage(health: typeof SELF_HOSTED_HEALTH | typeof CLOUD_HEALTH) {
+  async function renderPage(health: typeof SELF_HOSTED_HEALTH | typeof CLOUD_HEALTH | typeof PUBLIC_HEALTH | typeof LOCAL_TRUSTED_HEALTH) {
     mockHealthApi.get.mockResolvedValue(health);
     queryClient.setQueryData(queryKeys.health, health);
     root = createRoot(container);
@@ -82,13 +102,14 @@ describe("InstanceGeneralSettings sign-out", () => {
         </QueryClientProvider>,
       );
     });
-    await vi.waitFor(() => expect(container.textContent).toContain("Deployment and auth"));
+    await vi.waitFor(() => expect(container.querySelector('[data-testid="instance-general-settings"]')).toBeTruthy());
     expect(container.querySelector('[data-slot="card"]')).toBeNull();
   }
 
   function signOutButton() {
-    return Array.from(container.querySelectorAll("button"))
-      .find((button) => button.textContent?.trim() === "Sign out");
+    return container.querySelector<HTMLButtonElement>(
+      '[data-testid="instance-general-sign-out"] button',
+    );
   }
 
   it("uses the Cloud-managed top-level logout without calling local auth", async () => {
@@ -203,6 +224,67 @@ describe("InstanceGeneralSettings sign-out", () => {
     resolveSettings?.();
     await vi.waitFor(() => expect(signOutButton()?.disabled).toBe(false));
   });
+
+  it("localizes instance preferences and persists the existing values in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderPage(SELF_HOSTED_HEALTH);
+
+    expect(container.textContent).toContain("Implantação e autenticação");
+    expect(container.textContent).toContain("Autenticado · privado");
+    expect(container.textContent).toContain("Ocultar nome de usuário nos logs");
+    expect(container.textContent).toContain("Retenção de backups");
+    expect(container.textContent).toContain("Compartilhamento de feedback sobre IA");
+    expect(container.textContent).toContain("Saia desta instância do Paperclip.");
+
+    const censorToggle = container.querySelector<HTMLButtonElement>(
+      '[aria-label="Alternar ocultação do nome de usuário nos logs"]',
+    );
+    flushSync(() => censorToggle?.click());
+    await vi.waitFor(() => expect(
+      mockInstanceSettingsApi.updateGeneral.mock.calls.map((call) => call[0]),
+    ).toContainEqual({ censorUsernameInLogs: true }));
+
+    const dailyDays = DAILY_RETENTION_PRESETS[0];
+    const dailyOption = Array.from(
+      container.querySelectorAll<HTMLButtonElement>(
+        '[data-testid="instance-general-backup-retention"] button',
+      ),
+    ).find((button) => button.textContent?.trim() === `${dailyDays} dias`);
+    flushSync(() => dailyOption?.click());
+    await vi.waitFor(() => expect(
+      mockInstanceSettingsApi.updateGeneral.mock.calls.map((call) => call[0]),
+    ).toContainEqual({ backupRetention: { dailyDays, weeklyWeeks: 4, monthlyMonths: 1 } }));
+
+    const allowFeedback = Array.from(
+      container.querySelectorAll<HTMLButtonElement>(
+        '[data-testid="instance-general-feedback-sharing"] button',
+      ),
+    ).find((button) => button.textContent?.includes("Permitir sempre"));
+    flushSync(() => allowFeedback?.click());
+    await vi.waitFor(() => expect(
+      mockInstanceSettingsApi.updateGeneral.mock.calls.map((call) => call[0]),
+    ).toContainEqual({ feedbackDataSharingPreference: "allowed" }));
+
+    flushSync(() => signOutButton()?.click());
+    await vi.waitFor(() => expect(mockAuthApi.signOut).toHaveBeenCalledOnce());
+  });
+
+  it("localizes public and local-trusted deployment states without changing their modes", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderPage(PUBLIC_HEALTH);
+    expect(container.textContent).toContain("Autenticado · público");
+    expect(container.textContent).toContain("O modo público autenticado exige autenticação");
+    expect(container.textContent).toContain("Pronto");
+
+    flushSync(() => root?.unmount());
+    root = null;
+    await renderPage(LOCAL_TRUSTED_HEALTH);
+    expect(container.textContent).toContain("Acesso local confiável");
+    expect(container.textContent).toContain("O modo local confiável é otimizado");
+    expect(container.textContent).toContain("Não pronto");
+    expect(container.textContent).toContain("Configuração necessária");
+    expect(container.textContent).toContain("Ativo");
+  });
 });
 
 describe("InstanceGeneralSettings operator-hidden sections", () => {
@@ -240,7 +322,7 @@ describe("InstanceGeneralSettings operator-hidden sections", () => {
         </QueryClientProvider>,
       );
     });
-    await vi.waitFor(() => expect(container.textContent).toContain("Backup retention"));
+    await vi.waitFor(() => expect(container.querySelector('[data-testid="instance-general-settings"]')).toBeTruthy());
   }
 
   it("hides an operator-hidden field-backed section and a UI-only section", async () => {

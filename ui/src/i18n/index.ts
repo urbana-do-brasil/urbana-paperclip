@@ -1,12 +1,12 @@
 import i18n, { type InitOptions, type TOptions } from "i18next";
 import { initReactI18next, useTranslation as useReactI18nextTranslation } from "react-i18next";
 
-import { DEFAULT_LOCALE, i18nextResources, supportedLocales } from "./locales";
+import { DEFAULT_LOCALE, FALLBACK_LOCALE, i18nextResources, supportedLocales } from "./locales";
 
 const i18nextOptions: InitOptions = {
   resources: i18nextResources,
   lng: DEFAULT_LOCALE,
-  fallbackLng: DEFAULT_LOCALE,
+  fallbackLng: FALLBACK_LOCALE,
   supportedLngs: supportedLocales,
   defaultNS: "translation",
   interpolation: { escapeValue: false },

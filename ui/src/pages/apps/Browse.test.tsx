@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Browse } from "./Browse";
 import { aiConnectionRouterAppDefinition, getAppStoreDefinition } from "@paperclipai/shared";
 import { queryKeys } from "@/lib/queryKeys";
+import { i18n } from "@/i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { AggregatorAppCatalogEntry } from "@paperclipai/shared/aggregator-app-catalog";
 
@@ -180,7 +181,8 @@ describe("Connectors landing page", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     accountIdentity.userId = "board-user"; accountIdentity.settled = true;
     assistantConnectionsMock.mockReset().mockResolvedValue([]);
     syncComposioAppsMock.mockReset().mockImplementation((...args) => listComposioAppsMock(...args));
@@ -281,6 +283,64 @@ describe("Connectors landing page", () => {
     await act(() => button!.click());
     expect(navigateMock).toHaveBeenCalledWith("/apps/assistant-connection");
     expect(chatSetupMock).not.toHaveBeenCalled();
+  });
+
+  it("localizes catalog search, filters, empty results, and custom setup while preserving routes", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await renderBrowse(false);
+
+    expect(setBreadcrumbsMock).toHaveBeenCalledWith([{ label: "Conectores" }]);
+    expect(container.querySelector('input[aria-label="Buscar conectores"]')).toBeTruthy();
+    expect(container.querySelector('nav[aria-label="Filtros de apps"]')?.textContent).toContain("Instalados");
+    expect(container.textContent).toContain("Conecte sua própria ferramenta");
+
+    const search = container.querySelector<HTMLInputElement>('input[aria-label="Buscar conectores"]')!;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+    setter?.call(search, "sem-resultados");
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+    await flushReact();
+    expect(container.textContent).toContain('Nenhum conector corresponde a “sem-resultados”.');
+    await clickButton("Limpar busca", container);
+
+    const customToggle = container.querySelector<HTMLButtonElement>('[data-app-slug="custom-mcp"] button')!;
+    await act(() => customToggle.click());
+    await flushReact();
+    expect(container.textContent).toContain("Conecte seu próprio servidor MCP");
+    const serverOption = Array.from(container.querySelectorAll<HTMLButtonElement>("button"))
+      .find((button) => button.textContent?.includes("Conecte seu próprio servidor MCP"))!;
+    await act(() => serverOption.click());
+    expect(navigateMock).toHaveBeenCalledWith("/apps/byo");
+  });
+
+  it("localizes inline account health and controls while preserving provider messages", async () => {
+    await i18n.changeLanguage("pt-BR");
+    listApplicationsMock.mockResolvedValue({ applications: [application()] });
+    listConnectionsMock.mockResolvedValue({
+      connections: [connection({ healthStatus: "error", healthMessage: "Token expired by provider" })],
+    });
+
+    await renderBrowse(false);
+
+    const card = container.querySelector('[data-app-slug="notion"]');
+    expect(card?.textContent).toContain("Requer atenção");
+    expect(card?.textContent).toContain("Token expired by provider");
+    expect(card?.textContent).toContain("Reconectar");
+    expect(card?.querySelector('button[aria-label="Abrir permissões de devinfoley@gmail.com"]')).toBeTruthy();
+    const menuTrigger = card?.querySelector<HTMLButtonElement>('button[aria-label="Gerenciar conexão devinfoley@gmail.com"]');
+    expect(menuTrigger).toBeTruthy();
+    await act(async () => {
+      menuTrigger?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    });
+    await flushReact();
+    const removeItem = Array.from(document.body.querySelectorAll<HTMLElement>('[role="menuitem"]'))
+      .find((item) => item.textContent?.trim() === "Remover conexão");
+    expect(removeItem).toBeTruthy();
+    await act(async () => {
+      removeItem?.dispatchEvent(new Event("click", { bubbles: true }));
+    });
+    await flushReact();
+    expect(document.body.textContent).toContain("Remover a conexão devinfoley@gmail.com?");
+    expect(document.body.textContent).toContain("As credenciais salvas serão excluídas");
   });
 
   it("keeps assistant setup in the Paperclip catalog when filtering connection sources", async () => {
@@ -578,6 +638,27 @@ describe("Connectors landing page", () => {
     expect(dialog.textContent).toContain("No connected Circleback accounts.");
     expect(manageComposioAppAccountMock).not.toHaveBeenCalled();
     expect(setupComposioAppMock).not.toHaveBeenCalled();
+  });
+
+  it("localizes the provider account manager while preserving links and refresh scope", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const snapshot = composioFixture();
+    const disconnected = { ...snapshot, status: "not_connected", accounts: [] };
+    refreshComposioAppsMock.mockResolvedValue({ apps: [disconnected] });
+    await renderBrowse(false);
+    await clickButton("Gerenciar", container);
+    const dialog = document.querySelector('[role="dialog"]')!;
+
+    expect(dialog.textContent).toContain("Gerenciar Circleback");
+    expect(dialog.textContent).toContain("As contas e o login são gerenciados no Composio.");
+    expect(dialog.textContent).toContain("Meeting notes");
+    expect(dialog.querySelector('a[href="/apps/conn-notion/permissions"]')).toBeTruthy();
+    expect(dialog.querySelector('a[href="https://dashboard.composio.dev/~/org/connect/apps"]')).toBeTruthy();
+
+    await clickButton("Atualizar", dialog);
+    expect(refreshComposioAppsMock).toHaveBeenCalledWith("conn-notion", ["circleback"]);
+    expect(dialog.textContent).toContain("Nenhuma conta de Circleback conectada.");
+    expect(manageComposioAppAccountMock).not.toHaveBeenCalled();
   });
 
   it("preserves failed observations with an unverified status and offers retry", async () => {

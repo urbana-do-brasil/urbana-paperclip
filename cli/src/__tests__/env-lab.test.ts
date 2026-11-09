@@ -1,13 +1,24 @@
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { Command } from "commander";
+import type { SupportedLocale } from "@paperclipai/shared/localization";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as p from "@clack/prompts";
+import * as sshFixture from "@paperclipai/adapter-utils/ssh";
 import {
   buildEnvLabCleanupCommand,
   collectEnvLabDoctorStatus,
+  envLabDownCommand,
   envLabDoctorCommand,
+  envLabStatusCommand,
+  envLabUpCommand,
   resolveEnvLabCliInvocation,
   resolveEnvLabSshStatePath,
+  registerEnvLabCommands,
 } from "../commands/env-lab.js";
+import { applyOperationHelpLocalization } from "../localization/operation-help.js";
+import { getCliLocale, setCliLocale } from "../localization/index.js";
 
 describe("env-lab command", () => {
   it("resolves the default SSH fixture state path under the instance root", () => {
@@ -232,6 +243,11 @@ describe("env-lab cleanup command hint", () => {
 
 describe("env-lab doctor cleanup hint instance", () => {
   const originalInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
+  const originalLocale = getCliLocale();
+
+  beforeEach(() => {
+    setCliLocale("en");
+  });
 
   afterEach(() => {
     if (originalInstanceId === undefined) {
@@ -239,6 +255,7 @@ describe("env-lab doctor cleanup hint instance", () => {
     } else {
       process.env.PAPERCLIP_INSTANCE_ID = originalInstanceId;
     }
+    setCliLocale(originalLocale);
     vi.restoreAllMocks();
   });
 
@@ -283,5 +300,194 @@ describe("env-lab doctor cleanup hint instance", () => {
     expect(cleanup).toContain("--instance");
     expect(cleanup).toContain("explicit-instance");
     expect(cleanup).not.toContain("env-selected-instance");
+  });
+});
+
+describe("env-lab localization", () => {
+  const originalEnv = { ...process.env };
+  const originalLocale = getCliLocale();
+  let tempHome: string;
+  let messages: string[];
+  let stdoutWriteSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-env-lab-l10n-"));
+    process.env = { ...originalEnv, PAPERCLIP_HOME: tempHome, PAPERCLIP_INSTANCE_ID: "l10n-fixture" };
+    messages = [];
+    stdoutWriteSpy = vi.spyOn(process.stdout, "write").mockImplementation((() => true) as never);
+    vi.spyOn(p.log, "message").mockImplementation((message?: string | string[]) => {
+      messages.push(Array.isArray(message) ? message.join("\n") : (message ?? ""));
+    });
+    vi.spyOn(p.log, "success").mockImplementation((message?: string | string[]) => {
+      messages.push(Array.isArray(message) ? message.join("\n") : (message ?? ""));
+    });
+    vi.spyOn(p.log, "warn").mockImplementation((message?: string | string[]) => {
+      messages.push(Array.isArray(message) ? message.join("\n") : (message ?? ""));
+    });
+    vi.spyOn(p.log, "info").mockImplementation((message?: string | string[]) => {
+      messages.push(Array.isArray(message) ? message.join("\n") : (message ?? ""));
+    });
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    setCliLocale(originalLocale);
+    vi.restoreAllMocks();
+    fs.rmSync(tempHome, { recursive: true, force: true });
+  });
+
+  it("localizes missing-fixture status and safe no-op shutdown while keeping JSON identical", async () => {
+    const instance = "l10n-fixture";
+    const statePath = resolveEnvLabSshStatePath(instance);
+    const statusJson: string[] = [];
+    const downJson: string[] = [];
+    const doctorJson: string[] = [];
+    const doctorHuman: string[] = [];
+
+    for (const locale of ["en", "pt-BR"] as const) {
+      setCliLocale(locale);
+      messages = [];
+      expect(fs.existsSync(statePath)).toBe(false);
+      await envLabStatusCommand({ instance });
+      expect(messages.join("\n")).toContain(locale === "en"
+        ? `SSH env-lab fixture is not running (${statePath}).`
+        : `O fixture SSH do env-lab não está em execução (${statePath}).`);
+      expect(fs.existsSync(statePath)).toBe(false);
+
+      stdoutWriteSpy.mockClear();
+      await envLabStatusCommand({ instance, json: true });
+      statusJson.push(stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])).join(""));
+
+      fs.mkdirSync(path.dirname(statePath), { recursive: true });
+      fs.writeFileSync(statePath, "{ invalid fixture state\n");
+      messages = [];
+      await envLabDownCommand({ instance });
+      expect(messages.join("\n")).toContain(locale === "en"
+        ? `No SSH env-lab fixture was running (${statePath}).`
+        : `Nenhum fixture SSH do env-lab estava em execução (${statePath}).`);
+      expect(fs.readFileSync(statePath, "utf8")).toBe("{ invalid fixture state\n");
+
+      stdoutWriteSpy.mockClear();
+      await envLabDownCommand({ instance, json: true });
+      downJson.push(stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])).join(""));
+      expect(fs.readFileSync(statePath, "utf8")).toBe("{ invalid fixture state\n");
+
+      messages = [];
+      await envLabDoctorCommand({ instance });
+      doctorHuman.push(messages.join("\n"));
+      expect(messages.join("\n")).toContain(locale === "en"
+        ? "SSH env-lab fixture is not running."
+        : "O fixture SSH do env-lab não está em execução.");
+      expect(messages.join("\n")).toContain(locale === "en" ? "Cleanup:" : "Limpeza:");
+      expect(fs.readFileSync(statePath, "utf8")).toBe("{ invalid fixture state\n");
+
+      stdoutWriteSpy.mockClear();
+      await envLabDoctorCommand({ instance, json: true });
+      doctorJson.push(stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])).join(""));
+      expect(fs.readFileSync(statePath, "utf8")).toBe("{ invalid fixture state\n");
+      fs.rmSync(statePath, { force: true });
+    }
+
+    expect(statusJson[0]).toBe(statusJson[1]);
+    expect(downJson[0]).toBe(downJson[1]);
+    expect(doctorJson[0]).toBe(doctorJson[1]);
+    expect(JSON.parse(statusJson[0]!)).toMatchObject({ running: false, state: null, environment: null, statePath });
+    expect(JSON.parse(downJson[0]!)).toEqual({ stopped: false, statePath });
+    expect(JSON.parse(doctorJson[0]!)).toMatchObject({
+      statePath,
+      ssh: { running: false, state: null, environment: null },
+    });
+    expect(doctorHuman[0]).not.toBe(doctorHuman[1]);
+  });
+
+  it("localizes successful startup details without changing its JSON payload", async () => {
+    const instance = "l10n-fixture";
+    const statePath = resolveEnvLabSshStatePath(instance);
+    const state: Awaited<ReturnType<typeof sshFixture.startSshEnvLabFixture>> = {
+      kind: "ssh_openbsd",
+      bindHost: "127.0.0.1",
+      host: "127.0.0.1",
+      port: 2222,
+      username: "fixture-user",
+      rootDir: path.dirname(statePath),
+      workspaceDir: path.join(path.dirname(statePath), "workspace"),
+      statePath,
+      pid: 12345,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      clientPrivateKeyPath: path.join(path.dirname(statePath), "client_key"),
+      clientPublicKeyPath: path.join(path.dirname(statePath), "client_key.pub"),
+      hostPrivateKeyPath: path.join(path.dirname(statePath), "host_key"),
+      hostPublicKeyPath: path.join(path.dirname(statePath), "host_key.pub"),
+      authorizedKeysPath: path.join(path.dirname(statePath), "authorized_keys"),
+      knownHostsPath: path.join(path.dirname(statePath), "known_hosts"),
+      sshdConfigPath: path.join(path.dirname(statePath), "sshd_config"),
+      sshdLogPath: path.join(path.dirname(statePath), "sshd.log"),
+    };
+    const environment: Awaited<ReturnType<typeof sshFixture.buildSshEnvLabFixtureConfig>> = {
+      host: state.host,
+      port: state.port,
+      username: state.username,
+      remoteWorkspacePath: state.workspaceDir,
+      privateKey: "fixture-private-key",
+      knownHosts: "fixture-known-hosts",
+      strictHostKeyChecking: true,
+    };
+    const startSpy = vi.spyOn(sshFixture, "startSshEnvLabFixture").mockResolvedValue(state);
+    vi.spyOn(sshFixture, "buildSshEnvLabFixtureConfig").mockResolvedValue(environment);
+    const jsonByLocale: string[] = [];
+
+    for (const locale of ["en", "pt-BR"] as const) {
+      setCliLocale(locale);
+      messages = [];
+      await envLabUpCommand({ instance });
+      const human = messages.join("\n");
+      for (const label of locale === "en"
+        ? ["SSH env-lab fixture is running.", "Host:", "User:", "Workspace:", "Log:", "State:"]
+        : ["O fixture SSH do env-lab está em execução.", "Host:", "Usuário:", "Diretório de trabalho:", "Arquivo de log:", "Estado:"]) {
+        expect(human).toContain(label);
+      }
+      expect(human).toContain(state.workspaceDir);
+
+      stdoutWriteSpy.mockClear();
+      await envLabUpCommand({ instance, json: true });
+      jsonByLocale.push(stdoutWriteSpy.mock.calls.map((call: unknown[]) => String(call[0])).join(""));
+    }
+
+    expect(startSpy).toHaveBeenCalledWith({ statePath });
+    expect(jsonByLocale[0]).toBe(jsonByLocale[1]);
+    expect(JSON.parse(jsonByLocale[0]!)).toEqual({ state, environment });
+  });
+
+  it("localizes env-lab help without changing command names, arguments, or flags", () => {
+    const commandShape = (command: Command): unknown => ({
+      name: command.name(),
+      args: command.registeredArguments.map((argument) => argument.name()),
+      options: command.options.map((option) => option.flags),
+      children: command.commands.map(commandShape),
+    });
+    const makeProgram = (locale: SupportedLocale) => {
+      setCliLocale(locale);
+      const program = new Command();
+      program.name("paperclipai");
+      registerEnvLabCommands(program);
+      applyOperationHelpLocalization(program, locale);
+      return program;
+    };
+
+    const en = makeProgram("en");
+    const pt = makeProgram("pt-BR");
+    expect(commandShape(pt)).toEqual(commandShape(en));
+    const paths = ["env-lab", "env-lab up", "env-lab status", "env-lab down", "env-lab doctor"];
+    for (const commandPath of paths) {
+      const parts = commandPath.split(" ");
+      const enCommand = en.commands.find((command) => command.name() === parts[0]);
+      const ptCommand = pt.commands.find((command) => command.name() === parts[0]);
+      const enTarget = parts.length === 2 ? enCommand?.commands.find((command) => command.name() === parts[1]) : enCommand;
+      const ptTarget = parts.length === 2 ? ptCommand?.commands.find((command) => command.name() === parts[1]) : ptCommand;
+      expect(enTarget, commandPath).toBeDefined();
+      expect(ptTarget, commandPath).toBeDefined();
+      expect(ptTarget?.description()).not.toBe(enTarget?.description());
+      expect(ptTarget?.helpInformation()).not.toBe(enTarget?.helpInformation());
+    }
   });
 });

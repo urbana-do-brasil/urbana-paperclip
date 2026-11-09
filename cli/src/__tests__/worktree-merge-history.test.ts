@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { getCliLocale, setCliLocale } from "../localization/index.js";
+import { worktreeMergeHistoryCommand, renderMergePlan } from "../commands/worktree.js";
 import { buildWorktreeMergePlan, parseWorktreeMergeScopes } from "../commands/worktree-merge-history-lib.js";
 
 function makeIssue(overrides: Record<string, unknown> = {}) {
@@ -488,5 +490,81 @@ describe("worktree merge history planner", () => {
       targetIssueCommentId: null,
       targetCreatedByAgentId: null,
     });
+  });
+
+  it("localizes the preview while preserving source identifiers, paths, counts, and titles", () => {
+    const originalLocale = getCliLocale();
+    const sourceIssue = makeIssue({
+      id: "issue-new",
+      identifier: "PAP-22",
+      title: "Title that must remain source data",
+      createdByUserId: "fixture-user",
+    });
+    const plan = buildWorktreeMergePlan({
+      companyId: "company-1",
+      companyName: "Fixture Company",
+      issuePrefix: "PAP",
+      previewIssueCounterStart: 500,
+      scopes: ["issues", "comments"],
+      sourceIssues: [sourceIssue],
+      targetIssues: [],
+      sourceComments: [],
+      targetComments: [],
+      targetAgents: [],
+      targetProjects: [],
+      targetProjectWorkspaces: [],
+      targetGoals: [{ id: "goal-1" }] as any,
+    });
+    const outputs: string[] = [];
+
+    try {
+      for (const locale of ["en", "pt-BR"] as const) {
+        setCliLocale(locale);
+        outputs.push(renderMergePlan(plan, {
+          sourcePath: "feature-source (/tmp/source-fixture)",
+          targetPath: "current (/tmp/target-fixture)",
+          unsupportedRunCount: 3,
+        }));
+      }
+    } finally {
+      setCliLocale(originalLocale);
+    }
+
+    expect(outputs[0]).not.toBe(outputs[1]);
+    expect(outputs[0]).toContain("Mode: preview");
+    expect(outputs[0]).toContain("Source: feature-source (/tmp/source-fixture)");
+    expect(outputs[0]).toContain("Company: Fixture Company (PAP)");
+    expect(outputs[0]).toContain("Planned issue imports");
+    expect(outputs[0]).toContain("PAP-22 -> PAP-501 (todo)");
+    expect(outputs[0]).toContain("Title that must remain source data");
+    expect(outputs[0]).toContain("- heartbeat runs: 3");
+
+    expect(outputs[1]).toContain("Modo: prévia");
+    expect(outputs[1]).toContain("Origem: feature-source (/tmp/source-fixture)");
+    expect(outputs[1]).toContain("Organização: Fixture Company (PAP)");
+    expect(outputs[1]).toContain("Tarefas que serão importadas");
+    expect(outputs[1]).toContain("PAP-22 -> PAP-501 (todo)");
+    expect(outputs[1]).toContain("Title that must remain source data");
+    expect(outputs[1]).toContain("- execuções de heartbeat: 3");
+  });
+
+  it("keeps the mutually exclusive apply/dry validation error stable and side-effect free", async () => {
+    const originalLocale = getCliLocale();
+    const errors: string[] = [];
+    try {
+      for (const locale of ["en", "pt-BR"] as const) {
+        setCliLocale(locale);
+        try {
+          await worktreeMergeHistoryCommand(undefined, { apply: true, dry: true });
+          throw new Error("expected --apply/--dry validation to fail");
+        } catch (error) {
+          errors.push(error instanceof Error ? error.message : String(error));
+        }
+      }
+    } finally {
+      setCliLocale(originalLocale);
+    }
+    expect(errors[0]).toBe("Use either --apply or --dry, not both.");
+    expect(errors[1]).toBe(errors[0]);
   });
 });

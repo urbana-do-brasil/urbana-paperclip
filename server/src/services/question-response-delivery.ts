@@ -1183,6 +1183,7 @@ export function questionResponseDeliveryService(
                 allowRunCoalescing: !externalChatBoundary,
                 requestedByActorType: actor.actorType,
                 requestedByActorId: actor.actorId,
+                communicationOriginRunId: interaction.sourceRunId ?? null,
                 contextSnapshot: {
                   issueId: issue.id,
                   taskId: issue.id,

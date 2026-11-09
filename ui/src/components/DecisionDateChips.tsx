@@ -1,4 +1,5 @@
 import { cloneElement, isValidElement, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CalendarRange } from "lucide-react";
 import {
   ATTENTION_DATE_RANGE_OPTIONS,
@@ -26,13 +27,14 @@ interface DecisionDateChipsProps {
  * filter on the client. "Custom" opens a from/to range picker.
  */
 export function DecisionDateChips({ value, custom, onChange }: DecisionDateChipsProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   return (
     <div className="flex flex-wrap items-center gap-1.5" data-decision-date-chips>
       {ATTENTION_DATE_RANGE_OPTIONS.map(([id, label]) => (
         <ChipButton key={id} active={value === id} onClick={() => onChange(id, custom)}>
-          {label}
+          {t(`attentionQueue.dateRanges.${id}`, { defaultValue: label })}
         </ChipButton>
       ))}
       <Popover open={open} onOpenChange={setOpen}>
@@ -42,17 +44,18 @@ export function DecisionDateChips({ value, custom, onChange }: DecisionDateChips
               <CalendarRange className="h-3.5 w-3.5" />
               {value === "custom" && (custom.from || custom.to)
                 ? `${custom.from ?? "…"} → ${custom.to ?? "…"}`
-                : "Custom"}
+                : t("attentionQueue.dateRanges.custom")}
             </button>
           </ChipButton>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-auto space-y-2 p-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-(length:--text-nano) font-medium uppercase tracking-wide text-muted-foreground">
-              From
+              {t("attentionQueue.dateRanges.from")}
             </label>
             <input
               type="date"
+              aria-label={t("attentionQueue.dateRanges.from")}
               value={custom.from ?? ""}
               max={custom.to ?? undefined}
               className="rounded-sm border border-border bg-background px-2 py-1 text-xs"
@@ -61,10 +64,11 @@ export function DecisionDateChips({ value, custom, onChange }: DecisionDateChips
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-(length:--text-nano) font-medium uppercase tracking-wide text-muted-foreground">
-              To
+              {t("attentionQueue.dateRanges.to")}
             </label>
             <input
               type="date"
+              aria-label={t("attentionQueue.dateRanges.to")}
               value={custom.to ?? ""}
               min={custom.from ?? undefined}
               className="rounded-sm border border-border bg-background px-2 py-1 text-xs"
@@ -81,7 +85,7 @@ export function DecisionDateChips({ value, custom, onChange }: DecisionDateChips
                 setOpen(false);
               }}
             >
-              Clear
+              {t("attentionQueue.toolbar.clear")}
             </Button>
           </div>
         </PopoverContent>

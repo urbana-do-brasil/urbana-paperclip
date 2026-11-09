@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${PAPERCLIP_SMOKE_DISPOSABLE:-}" != "1" ]]; then
+  echo "Refusing to run: this smoke creates persistent records and the API has no cleanup endpoint; set PAPERCLIP_SMOKE_DISPOSABLE=1 only for a throwaway instance/company." >&2
+  exit 1
+fi
+
 if ! command -v jq >/dev/null 2>&1; then
   echo "jq is required for the pipeline tutorial smoke." >&2
   exit 1
@@ -11,10 +16,18 @@ fi
 : "${PAPERCLIP_COMPANY_ID:?Set PAPERCLIP_COMPANY_ID for the target dev company.}"
 
 read -r -a PC_CMD <<< "${PAPERCLIPAI_CMD:-pnpm --silent paperclipai}"
-RUN_KEY="${PIPELINE_SMOKE_KEY:-$(date +%Y%m%d%H%M%S)}"
+RUN_KEY="${PIPELINE_SMOKE_KEY:-$(date +%Y%m%d%H%M%S)-$$-${RANDOM}}"
 RELEASE_PIPELINE="release-coverage-${RUN_KEY}"
 FEATURE_PIPELINE="feature-content-${RUN_KEY}"
 CONTENT_PIPELINE="content-production-${RUN_KEY}"
+FEATURE_UI_CASE_KEY="feature-pipelines-ui-${RUN_KEY}"
+FEATURE_WEBHOOKS_CASE_KEY="feature-routine-webhooks-${RUN_KEY}"
+BLOG_CASE_KEY="blog-post-${RUN_KEY}"
+CHANGELOG_CASE_KEY="changelog-entry-${RUN_KEY}"
+TWEET_CASE_KEY="launch-tweet-${RUN_KEY}"
+HERO_CASE_KEY="blog-hero-image-${RUN_KEY}"
+CARD_CASE_KEY="blog-social-card-${RUN_KEY}"
+ASSEMBLY_CASE_KEY="blog-assembly-package-${RUN_KEY}"
 TMP_DIR="$(mktemp -d)"
 
 cleanup() {
@@ -40,6 +53,41 @@ api_json() {
     curl -sS -X "$method" \
       -H "Authorization: Bearer $PAPERCLIP_API_KEY" \
       "${PAPERCLIP_API_URL%/}$path"
+  fi
+}
+
+api_capture_response() {
+  local method="$1"
+  local path="$2"
+  local body="${3:-}"
+  local response_file="$TMP_DIR/api-response.json"
+  if [[ -n "$body" ]]; then
+    API_STATUS_CODE="$(curl -sS -o "$response_file" -w '%{http_code}' -X "$method" \
+      -H "Authorization: Bearer $PAPERCLIP_API_KEY" \
+      -H "Content-Type: application/json" \
+      --data "$body" \
+      "${PAPERCLIP_API_URL%/}$path")"
+  else
+    API_STATUS_CODE="$(curl -sS -o "$response_file" -w '%{http_code}' -X "$method" \
+      -H "Authorization: Bearer $PAPERCLIP_API_KEY" \
+      "${PAPERCLIP_API_URL%/}$path")"
+  fi
+  API_RESPONSE_BODY="$(cat "$response_file")"
+}
+
+require_api_error() {
+  local status_code="$1"
+  local response_body="$2"
+  local expected_code="$3"
+  local message="$4"
+  local filter="$5"
+  shift 5
+  if [[ "$status_code" != "409" ]] || ! jq -e --arg expectedCode "$expected_code" "$@" "$filter" >/dev/null <<<"$response_body"; then
+    echo "$message (expected HTTP 409 with code=$expected_code; received HTTP $status_code)." >&2
+    if ! jq . >&2 <<<"$response_body"; then
+      echo "$response_body" >&2
+    fi
+    exit 1
   fi
 }
 
@@ -218,10 +266,10 @@ release="$(pc_json pipelines ingest "$RELEASE_PIPELINE" \
   --fields-json '{"release":"v0.pipeline-smoke","templateVersionConvention":"routine-prompt"}')"
 release_case_id="$(jq -r '.case.id' <<<"$release")"
 
-jq -n --arg parent "$release_case_id" '{
+jq -n --arg parent "$release_case_id" --arg featureUiKey "$FEATURE_UI_CASE_KEY" --arg featureWebhooksKey "$FEATURE_WEBHOOKS_CASE_KEY" '{
   items: [
     {
-      caseKey: "feature-pipelines-ui",
+      caseKey: $featureUiKey,
       title: "Feature: Pipelines UI",
       summary: "Worth a content package.",
       parentCaseId: $parent,
@@ -229,7 +277,7 @@ jq -n --arg parent "$release_case_id" '{
       fields: { releaseTag: "v0.pipeline-smoke", source: "release-notes" }
     },
     {
-      caseKey: "feature-routine-webhooks",
+      caseKey: $featureWebhooksKey,
       title: "Feature: Routine webhooks",
       summary: "Rejected by the gate for this release.",
       parentCaseId: $parent,
@@ -241,8 +289,8 @@ jq -n --arg parent "$release_case_id" '{
 
 features="$(pc_json pipelines ingest-batch "$FEATURE_PIPELINE" --file "$TMP_DIR/feature-cases.json")"
 require_json "$features" 'length == 2 and all(.ok == true)' "Feature batch ingest did not create two cases."
-feature_main="$(case_id "$features" feature-pipelines-ui)"
-feature_dropped="$(case_id "$features" feature-routine-webhooks)"
+feature_main="$(case_id "$features" "$FEATURE_UI_CASE_KEY")"
+feature_dropped="$(case_id "$features" "$FEATURE_WEBHOOKS_CASE_KEY")"
 
 jq -n --arg main "$feature_main" --arg dropped "$feature_dropped" '{
   items: [
@@ -255,10 +303,10 @@ require_json "$feature_review" '.results | length == 2 and all(.ok == true)' "Fe
 require_json "$(pc_json pipelines case get "$feature_main")" '.stage.key == "producing" and .case.version == 2' "Approved feature should enter Producing."
 require_json "$(pc_json pipelines case get "$feature_dropped")" '.stage.key == "cancelled" and .case.terminalKind == "cancelled"' "Rejected feature should be cancelled."
 
-jq -n --arg parent "$feature_main" '{
+jq -n --arg parent "$feature_main" --arg blogCaseKey "$BLOG_CASE_KEY" --arg changelogCaseKey "$CHANGELOG_CASE_KEY" --arg tweetCaseKey "$TWEET_CASE_KEY" '{
   items: [
     {
-      caseKey: "blog-post",
+      caseKey: $blogCaseKey,
       title: "Launch blog post",
       summary: "Draft the release narrative.",
       parentCaseId: $parent,
@@ -270,7 +318,7 @@ jq -n --arg parent "$feature_main" '{
       }
     },
     {
-      caseKey: "changelog-entry",
+      caseKey: $changelogCaseKey,
       title: "Product changelog",
       summary: "Compact changelog entry.",
       parentCaseId: $parent,
@@ -282,12 +330,12 @@ jq -n --arg parent "$feature_main" '{
       }
     },
     {
-      caseKey: "launch-tweet",
+      caseKey: $tweetCaseKey,
       title: "Launch tweet",
       summary: "Tweet after the blog is approved.",
       parentCaseId: $parent,
       stageKey: "drafting",
-      blockedByCaseKeys: ["blog-post"],
+      blockedByCaseKeys: [$blogCaseKey],
       fields: {
         contentType: "social",
         typedWorkRefs: { draftPath: "workspaces/release/tweet.md" },
@@ -299,19 +347,26 @@ jq -n --arg parent "$feature_main" '{
 
 content_cases="$(pc_json pipelines ingest-batch "$CONTENT_PIPELINE" --file "$TMP_DIR/content-cases.json")"
 require_json "$content_cases" 'length == 3 and all(.ok == true)' "Content batch ingest did not create three cases."
-blog_case="$(case_id "$content_cases" blog-post)"
-changelog_case="$(case_id "$content_cases" changelog-entry)"
-tweet_case="$(case_id "$content_cases" launch-tweet)"
+blog_case="$(case_id "$content_cases" "$BLOG_CASE_KEY")"
+changelog_case="$(case_id "$content_cases" "$CHANGELOG_CASE_KEY")"
+tweet_case="$(case_id "$content_cases" "$TWEET_CASE_KEY")"
 
 set +e
 blocked_output="$(pc_json pipelines case transition "$tweet_case" --to assets --expected-version 1 --reason "Try before upstream blog is published." 2>&1)"
-blocked_status=$?
+blocked_cli_exit=$?
 set -e
-if [[ "$blocked_status" -eq 0 || "$blocked_output" != *"code=blocked"* ]]; then
+if [[ "$blocked_cli_exit" -eq 0 || "$blocked_output" != *"API error 409:"* || "$blocked_output" != *"code=blocked"* ]]; then
   echo "Expected blocked transition to fail with code=blocked." >&2
   echo "$blocked_output" >&2
   exit 1
 fi
+blocked_request="$(jq -cn '{toStageKey:"assets",expectedVersion:1,reason:"Try before upstream blog is published."}')"
+api_capture_response POST "/api/cases/$tweet_case/transition" "$blocked_request"
+require_api_error "$API_STATUS_CODE" "$API_RESPONSE_BODY" "blocked" \
+  "Blocked transition response did not include the expected blocker." \
+  '.error == "Pipeline case is blocked" and .code == $expectedCode and .details.code == $expectedCode and any(.details.blockers[]; .id == $blockedCaseId and .caseKey == $blockedCaseKey)' \
+  --arg blockedCaseId "$blog_case" \
+  --arg blockedCaseKey "$BLOG_CASE_KEY"
 
 work_issue="$(pc_json issue create \
   --title "Smoke work issue for launch tweet $RUN_KEY" \
@@ -336,26 +391,31 @@ require_json "$comments" 'length >= 1 and (.[-1].body | contains("changed (v2"))
 
 set +e
 conflict_output="$(pc_json pipelines case edit "$blog_case" --expected-version 2 --title "Stale edit" 2>&1)"
-conflict_status=$?
+conflict_cli_exit=$?
 set -e
-if [[ "$conflict_status" -eq 0 || "$conflict_output" != *"code=version_conflict"* ]]; then
+if [[ "$conflict_cli_exit" -eq 0 || "$conflict_output" != *"API error 409:"* || "$conflict_output" != *"code=version_conflict"* || "$conflict_output" != *"currentVersion=3"* || "$conflict_output" != *"currentStage=assets"* ]]; then
   echo "Expected stale edit to fail with code=version_conflict." >&2
   echo "$conflict_output" >&2
   exit 1
 fi
+stale_edit_request='{"expectedVersion":2,"title":"Stale edit"}'
+api_capture_response PATCH "/api/cases/$blog_case" "$stale_edit_request"
+require_api_error "$API_STATUS_CODE" "$API_RESPONSE_BODY" "version_conflict" \
+  "Stale edit response did not include the current case version and stage." \
+  '.error == "Pipeline case version conflict" and .code == $expectedCode and .details.code == $expectedCode and .details.version == 3 and .details.stage.key == "assets" and .details.stage.kind == "working"'
 blog_version="$(case_version "$blog_case")"
 
-jq -n --arg parent "$feature_main" --argjson briefVersion "$blog_version" '{
+jq -n --arg parent "$feature_main" --argjson briefVersion "$blog_version" --arg heroCaseKey "$HERO_CASE_KEY" --arg cardCaseKey "$CARD_CASE_KEY" '{
   items: [
     {
-      caseKey: "blog-hero-image",
+      caseKey: $heroCaseKey,
       title: "Hero image",
       parentCaseId: $parent,
       stageKey: "assets",
       fields: { assetType: "image", briefedFromVersion: $briefVersion }
     },
     {
-      caseKey: "blog-social-card",
+      caseKey: $cardCaseKey,
       title: "Social card",
       parentCaseId: $parent,
       stageKey: "assets",
@@ -365,8 +425,8 @@ jq -n --arg parent "$feature_main" --argjson briefVersion "$blog_version" '{
 }' >"$TMP_DIR/asset-cases.json"
 asset_cases="$(pc_json pipelines ingest-batch "$CONTENT_PIPELINE" --file "$TMP_DIR/asset-cases.json")"
 require_json "$asset_cases" 'length == 2 and all(.ok == true)' "Asset batch ingest failed."
-asset_hero="$(case_id "$asset_cases" blog-hero-image)"
-asset_card="$(case_id "$asset_cases" blog-social-card)"
+asset_hero="$(case_id "$asset_cases" "$HERO_CASE_KEY")"
+asset_card="$(case_id "$asset_cases" "$CARD_CASE_KEY")"
 
 pc_json pipelines case transition "$asset_hero" --to published --expected-version 1 --reason "Hero image done." >/dev/null
 pc_json pipelines case transition "$asset_card" --to dropped --expected-version 1 --reason "Social card not needed." >/dev/null
@@ -374,10 +434,10 @@ blog_assets_version="$(case_version "$blog_case")"
 pc_json pipelines case transition "$blog_case" --to assembly --expected-version "$blog_assets_version" --reason "Assets complete; assemble the package." >/dev/null
 require_json "$(pc_json pipelines case get "$blog_case")" '.stage.key == "assembly"' "Blog should enter Assembly after assets are complete."
 
-jq -n --arg parent "$blog_case" '{
+jq -n --arg parent "$blog_case" --arg assemblyCaseKey "$ASSEMBLY_CASE_KEY" '{
   items: [
     {
-      caseKey: "blog-assembly-package",
+      caseKey: $assemblyCaseKey,
       title: "Assembled blog package",
       parentCaseId: $parent,
       stageKey: "assembly",
@@ -387,7 +447,7 @@ jq -n --arg parent "$blog_case" '{
 }' >"$TMP_DIR/assembly-cases.json"
 assembly_cases="$(pc_json pipelines ingest-batch "$CONTENT_PIPELINE" --file "$TMP_DIR/assembly-cases.json")"
 require_json "$assembly_cases" 'length == 1 and all(.ok == true)' "Assembly batch ingest failed."
-assembly_package="$(case_id "$assembly_cases" blog-assembly-package)"
+assembly_package="$(case_id "$assembly_cases" "$ASSEMBLY_CASE_KEY")"
 pc_json pipelines case transition "$assembly_package" --to published --expected-version 1 --reason "Assembly complete." >/dev/null
 require_json "$(pc_json pipelines case get "$blog_case")" '.stage.key == "final_review"' "Blog should auto-advance from Assembly to Final Review."
 
@@ -417,6 +477,9 @@ require_json "$rollup" '.complete == true and .done == 5 and .cancelled == 3 and
 
 events="$(pc_json pipelines case events "$changelog_case")"
 require_json "$events" '([.items[].type] | index("review_decided")) and ([.items[] | select(.type == "review_decided") | .payload.decision] | index("request_changes") and index("approve"))' "Changelog event history is missing request-changes and approval decisions."
+
+tweet_events="$(pc_json pipelines case events "$tweet_case")"
+require_json "$tweet_events" '[.items[] | select(.type == "review_decided" and .payload.decision == "reject" and .payload.reason == "Drop this tweet; blog already covers the announcement.")] | length > 0' "Tweet event history is missing the rejection and its reason."
 
 release_events="$(pc_json pipelines case events "$release_case_id")"
 require_json "$release_events" '.items | map(.type) | index("children_terminal") and index("transitioned")' "Release event history is missing rollup provenance."

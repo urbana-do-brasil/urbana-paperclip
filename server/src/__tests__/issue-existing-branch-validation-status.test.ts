@@ -43,6 +43,7 @@ describe("existingBranch issue create/update validation status", () => {
     }));
     expect(res.status).toBe(422);
     expect(res.body.error).toBe("Validation error");
+    expect(res.body.messageKey).toBe("validation");
     expect(res.body.details).toHaveLength(1);
     expect(res.body.details[0].path).toEqual(EXISTING_BRANCH_PATH);
     expect(res.body.details[0].message).toBe("existingBranch must be a valid git branch name");

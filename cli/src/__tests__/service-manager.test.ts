@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   assertForegroundRunAllowed,
   detectServiceManager,
@@ -12,10 +12,13 @@ import {
   type CommandRunner,
   type ServiceManager,
 } from "../services/service-manager.js";
+import { setCliLocale } from "../localization/index.js";
 
 const temporaryDirectories: string[] = [];
 
+beforeEach(() => setCliLocale("en"));
 afterEach(async () => {
+  setCliLocale("pt-BR");
   await Promise.all(temporaryDirectories.splice(0).map((directory) => fs.rm(directory, { recursive: true, force: true })));
   delete process.env.PAPERCLIP_SERVICE_MANAGED;
 });
@@ -192,6 +195,9 @@ describe("single-writer guard", () => {
   const detector = async () => ({ supported: true as const, manager: activeManager });
 
   it("refuses a second foreground writer", async () => {
+    setCliLocale("pt-BR");
+    await expect(assertForegroundRunAllowed("default", false, detector)).rejects.toThrow("já está em execução");
+    setCliLocale("en");
     await expect(assertForegroundRunAllowed("default", false, detector)).rejects.toThrow("already running");
   });
 
@@ -209,7 +215,8 @@ describe("single-writer guard", () => {
     const manager = new SystemdServiceManager("default", async () => ({ stdout: "", stderr: "" }), path.join(userHome, ".paperclip"), path.join(userHome, ".local/bin/paperclipai"), userHome);
     await fs.mkdir(path.dirname(manager.definitionPath), { recursive: true });
     const target = path.join(userHome, "target.service"); await fs.writeFile(target, "preserve\n"); await fs.symlink(target, manager.definitionPath);
-    await expect(manager.install({ startNow: false, startOnLogin: false })).rejects.toThrow("unsafe service definition");
+    setCliLocale("pt-BR");
+    await expect(manager.install({ startNow: false, startOnLogin: false })).rejects.toThrow("arquivo não é seguro");
     expect(await fs.readFile(target, "utf8")).toBe("preserve\n");
   });
 

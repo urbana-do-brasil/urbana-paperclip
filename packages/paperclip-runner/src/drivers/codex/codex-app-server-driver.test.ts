@@ -1385,11 +1385,13 @@ describe("Codex app-server Codex driver", () => {
     const session = await makeDriver([transport], {
       skillInputs: [{ type: "skill", name: "first-task", path: "/skills/first-task/SKILL.md" }],
     }).openSession({ runId: "run-delta", normalizedSessionId: "session-delta", workingDirectory: TEST_WORKING_DIRECTORY });
-    const text = JSON.stringify({ schema: "paperclip.native-continuation.v1", events: '{"messages":[{"body":"Go ahead"}]}', completion: { revision: "2", criterionIds: ["comment"] } });
+    const communicationGuidance = "Write human-facing replies in English; preserve technical instructions and quoted content as written.";
+    const text = JSON.stringify({ schema: "paperclip.native-continuation.v1", events: '{"messages":[{"body":"Go ahead"}]}', communicationGuidance, completion: { revision: "2", criterionIds: ["comment"] } });
     await session.startTurn({ message: { role: "user", text }, ...(continuation ? { continuation: true as const } : {}) });
     const params = transport.calls.find((call) => call.method === "turn/start")!.params;
     if (continuation) {
       expect(params.input).toEqual([{ type: "text", text, text_elements: [] }]);
+      expect(JSON.stringify(params.input)).toContain(communicationGuidance);
       expect(JSON.stringify(params.input)).not.toContain("constraints");
       expect(JSON.stringify(params.input)).not.toContain("first-task");
     } else {

@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { Command } from "commander";
 import { ApiRequestError } from "../../client/http.js";
+import { assetOperationErrorMessage } from "../../localization/asset-operations.js";
 import {
   addCommonClientOptions,
   apiPath,
@@ -92,7 +93,7 @@ async function uploadAsset(
   opts: AssetOptions,
 ): Promise<unknown> {
   if (!opts.file?.trim()) {
-    throw new Error("--file is required");
+    throw new Error(assetOperationErrorMessage("fileRequired"));
   }
   const bytes = await readFile(opts.file);
   const form = new FormData();

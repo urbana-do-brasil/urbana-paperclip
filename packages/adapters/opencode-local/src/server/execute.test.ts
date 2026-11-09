@@ -10,7 +10,10 @@ vi.mock("@paperclipai/adapter-utils/execution-target", async (importOriginal) =>
 
 import { ensureRemoteOpenCodeModelConfiguredAndAvailable, execute } from "./execute.js";
 import { runAdapterExecutionTargetProcess } from "@paperclipai/adapter-utils/execution-target";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import {
+  createCommunicationLocalePromptFixture,
+  createPromptContextFixture,
+} from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
 
 const runProcessMock = vi.mocked(runAdapterExecutionTargetProcess);
 
@@ -106,6 +109,69 @@ describe("OpenCode local skill injection", () => {
     expect(prompts[1]).toContain("You are agent agent-1 (OpenCode).");
     expect(prompts[1]).toContain("Connection tools:");
   });
+
+  it.each(["pt-BR", "en"] as const)(
+    "preserves locale and technical prompt content through OpenCode stdin on fresh and resumed turns (%s)",
+    async (locale) => {
+      const commandPath = path.join(configHome, "fake-opencode-locale");
+      await fs.writeFile(commandPath, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+      const prompts: string[] = [];
+      const promptTemplate = "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.";
+      runProcessMock.mockReset().mockResolvedValue(probeResult({
+        stdout: JSON.stringify({ type: "text", sessionID: "localized-session", part: { text: "done" } }),
+      }));
+
+      for (const sessionId of [null, "opencode-session-existing"] as const) {
+        await execute({
+          runId: `run-opencode-locale-${locale}-${sessionId ?? "fresh"}`,
+          agent: {
+            id: "agent-1",
+            companyId: "company-1",
+            name: "OpenCode",
+            adapterType: "opencode_local",
+            adapterConfig: {},
+          },
+          runtime: { sessionId, sessionParams: null, sessionDisplayId: null, taskKey: null },
+          config: {
+            command: commandPath,
+            cwd: configHome,
+            model: "openai/gpt-5",
+            env: { OPENCODE_ALLOW_ALL_MODELS: "1" },
+            promptTemplate,
+          },
+          context: createCommunicationLocalePromptFixture(locale),
+          onLog: async () => {},
+          onMeta: async (meta) => { prompts.push(String(meta.prompt ?? "")); },
+        });
+
+        const prompt = prompts.at(-1) ?? "";
+        const invocation = runProcessMock.mock.calls.at(-1);
+        expect(invocation?.[4].stdin).toBe(prompt);
+      }
+
+      const languageDirective = locale === "pt-BR"
+        ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+        : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+      expect(prompts).toHaveLength(2);
+      for (const prompt of prompts) {
+        expect(prompt).toContain("## Human communication language");
+        expect(prompt).toContain(languageDirective);
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+      }
+      expect(prompts[0]).toContain("Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.");
+      expect(prompts[0]).toContain("## Owned assignment");
+      expect(prompts[1]).toContain("## Compact assignment");
+      expect(prompts[1]).not.toContain("Configured agent instruction:");
+      if (locale === "pt-BR") {
+        expect(prompts[0]).toContain("Do not switch these interactions to English.");
+        expect(prompts[0]).not.toContain("ASD-STE100 Simplified Technical English");
+      } else {
+        expect(prompts[0]).toContain("ASD-STE100 Simplified Technical English");
+      }
+    },
+  );
 
   it("injects runtime skills into the configured child HOME", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-opencode-configured-home-"));

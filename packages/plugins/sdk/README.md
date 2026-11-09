@@ -714,6 +714,14 @@ export function IssueLinearLink({ context }: PluginDetailTabProps) {
 }
 ```
 
+`PluginHostContext` also has an optional `locale?: "pt-BR" | "en"` field.
+Current Paperclip hosts provide the effective UI language through
+`useHostContext()` and the slot component's `context` prop. The host updates
+this value on mounted plugin components when the user changes language, without
+remounting or reloading them. Use it to choose plugin-owned content; the host
+does not translate plugin UI or content returned by a plugin. The field stays
+optional so plugins remain compatible with older hosts.
+
 #### `useHostNavigation()`
 
 Routes Paperclip-internal plugin links through the host router without a full document reload. Use `linkProps()` for anchors so the browser still gets a real `href` for copy-link, modifier-click, middle-click, and open-in-new-tab behavior.
@@ -787,6 +795,13 @@ Paperclip surface:
 | `AssigneePicker` | Selecting an agent or board user with the same picker as the new issue pane |
 | `ProjectPicker` | Selecting a project with the same picker as the new issue pane |
 | `ManagedRoutinesList` | Showing plugin-managed routines in settings UI |
+
+`ManagedRoutinesList` accepts an optional `labels` object for plugin-owned copy
+(`configure`, `managedBy`, `schedule`, `missingRefs`, `defaultsCanBeRepaired`,
+`reconciling`, `reconcile`, `resetting`, and `reset`). The `managedBy` label
+may include `{name}` for the routine's plugin display name. Existing callers can
+omit `labels` and keep the host's English defaults. This only changes display
+copy; routine titles, resource keys, schedules, and action payloads stay intact.
 
 #### Shared Markdown Components
 

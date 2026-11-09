@@ -7,7 +7,10 @@ import {
   currentUserProfileSchema,
   updateCurrentUserProfileSchema,
 } from "@paperclipai/shared";
-import { unauthorized } from "../errors.js";
+import { HttpError, unauthorized } from "../errors.js";
+import { updateLocalePreferenceSchema } from "@paperclipai/shared/locale-preference";
+import { localePreferenceService } from "../services/locale-preference.js";
+import { boardMutationGuard } from "../middleware/board-mutation-guard.js";
 import { validate } from "../middleware/validate.js";
 import { resolveSentryDsns } from "../sentry-dsn.js";
 
@@ -35,8 +38,28 @@ async function loadCurrentUserProfile(db: Db, userId: string) {
   });
 }
 
-export function authRoutes(db: Db) {
+export function authRoutes(db: Db): Router {
   const router = Router();
+  const localePreferences = localePreferenceService(db);
+
+  router.use("/locale-preference", (req, res, next) => {
+    if (req.actor.type === "none") throw new HttpError(401, "Board authentication required", undefined, { key: "locale_auth_required" });
+    if (req.actor.type !== "board" || !req.actor.userId || req.actor.source === "local_implicit") {
+      throw new HttpError(403, "Authenticated user context required", undefined, { key: "locale_user_required" });
+    }
+    if (Object.keys(req.query).length) throw new HttpError(400, "Locale preference does not accept query parameters", undefined, { key: "locale_invalid_query" });
+    res.setHeader("Cache-Control", "private, no-store");
+    next();
+  }, boardMutationGuard());
+
+  router.get("/locale-preference", async (req, res) => {
+    res.json(await localePreferences.get(req.actor.userId!));
+  });
+
+  router.put("/locale-preference", validate(updateLocalePreferenceSchema), async (req, res) => {
+    const { locale } = updateLocalePreferenceSchema.parse(req.body);
+    res.json(await localePreferences.save(req.actor.userId!, locale));
+  });
 
   router.get("/get-session", async (req, res) => {
     if (req.actor.type !== "board" || !req.actor.userId) {

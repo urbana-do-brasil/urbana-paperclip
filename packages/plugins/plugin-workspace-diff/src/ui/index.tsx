@@ -25,6 +25,7 @@ import {
   type DiffPatchViewModel,
   type DiffRenderMode,
 } from "../diff-model.js";
+import { formatNumber, lineCountLabel, patchKindDisplayLabel, workspaceDiffMessages } from "./messages.js";
 import type { WorkspaceDiffResponse } from "../contracts.js";
 
 type WorkspaceDiffData = WorkspaceDiffResponse;
@@ -146,32 +147,23 @@ function useIsDesktopDiffLayout() {
   return isDesktop;
 }
 
-function warningText(file: DiffFileViewModel) {
-  if (file.binary) return "Binary file";
-  if (file.oversized) return "Too large to render";
-  if (file.truncated) return "Patch truncated";
-  if (file.warnings.length > 0) return file.warnings[0]?.message ?? "Diff warning";
-  if (file.patches.every((patch) => !patch.patch)) return "No text patch";
+function warningText(file: DiffFileViewModel, locale?: string) {
+  const messages = workspaceDiffMessages(locale);
+  if (file.binary) return messages.binaryFile;
+  if (file.oversized) return messages.tooLargeToRender;
+  if (file.truncated) return messages.patchTruncated;
+  if (file.warnings.length > 0) return file.warnings[0]?.message ?? messages.diffWarning;
+  if (file.patches.every((patch) => !patch.patch)) return messages.noTextPatch;
   return null;
 }
 
-const PATCH_KIND_LABELS: Record<DiffPatchViewModel["kind"], string> = {
-  staged: "Staged",
-  unstaged: "Unstaged",
-  head: "Head",
-  untracked: "Untracked",
-};
-
-function patchKindLabel(kind: DiffPatchViewModel["kind"]) {
-  return PATCH_KIND_LABELS[kind] ?? "Patch";
-}
-
-function patchWarningText(patch: DiffPatchViewModel) {
-  if (patch.binary) return "Binary file";
-  if (patch.oversized) return "Too large to render";
-  if (patch.truncated) return "Patch truncated";
-  if (patch.warnings.length > 0) return patch.warnings[0]?.message ?? "Diff warning";
-  if (!patch.patch) return "No text patch";
+function patchWarningText(patch: DiffPatchViewModel, locale?: string) {
+  const messages = workspaceDiffMessages(locale);
+  if (patch.binary) return messages.binaryFile;
+  if (patch.oversized) return messages.tooLargeToRender;
+  if (patch.truncated) return messages.patchTruncated;
+  if (patch.warnings.length > 0) return patch.warnings[0]?.message ?? messages.diffWarning;
+  if (!patch.patch) return messages.noTextPatch;
   return null;
 }
 
@@ -182,6 +174,7 @@ function FileRow({
   onSelect,
   onToggle,
   onCopy,
+  locale,
 }: {
   file: DiffFileViewModel;
   active: boolean;
@@ -189,10 +182,12 @@ function FileRow({
   onSelect: () => void;
   onToggle: () => void;
   onCopy: () => void;
+  locale: string | undefined;
 }) {
-  const warning = warningText(file);
-  const expandLabel = expanded ? "Collapse file" : "Expand file";
-  const fileAriaLabel = expanded ? `Collapse ${file.path}` : `Expand ${file.path}`;
+  const messages = workspaceDiffMessages(locale);
+  const warning = warningText(file, locale);
+  const expandLabel = expanded ? messages.collapseFile : messages.expandFile;
+  const fileAriaLabel = expanded ? messages.collapsePath(file.path) : messages.expandPath(file.path);
 
   return (
     <div
@@ -217,6 +212,7 @@ function FileRow({
           type="button"
           className="min-w-0 flex-1 text-left"
           onClick={onSelect}
+          aria-current={active ? "true" : undefined}
         >
           <div key="name" className="truncate text-sm font-medium text-foreground">{fileName(file.path)}</div>
           <div key="path" className="truncate font-mono text-[11px] text-muted-foreground">{file.path}</div>
@@ -226,16 +222,16 @@ function FileRow({
           type="button"
           className="text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
           onClick={onCopy}
-          title="Copy path"
-          aria-label={`Copy ${file.path}`}
+          title={messages.copyPath}
+          aria-label={messages.copyPathFor(file.path)}
         >
           ⧉
         </button>
       </div>
       <div key="meta" className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 pl-5 text-[11px] text-muted-foreground">
-        <span key="status">{statusLabel(file.status)}</span>
-        <span key="additions" className="font-mono text-emerald-700 dark:text-emerald-300">{`+${file.additions}`}</span>
-        <span key="deletions" className="font-mono text-red-700 dark:text-red-300">{`-${file.deletions}`}</span>
+        <span key="status">{statusLabel(file.status, locale)}</span>
+        <span key="additions" className="font-mono text-emerald-700 dark:text-emerald-300">{`+${formatNumber(file.additions, locale)}`}</span>
+        <span key="deletions" className="font-mono text-red-700 dark:text-red-300">{`-${formatNumber(file.deletions, locale)}`}</span>
         {warning ? <span key="warning" className="text-amber-700 dark:text-amber-300">{warning}</span> : null}
       </div>
     </div>
@@ -270,21 +266,23 @@ function WorkspacePatchDiff({
   return createElement(DIFFS_TAG_NAME, { ref });
 }
 
-function EmptyState() {
+function EmptyState({ locale }: { locale?: string }) {
+  const messages = workspaceDiffMessages(locale);
   return (
-    <div className="border border-dashed border-border bg-background px-4 py-8 text-center">
-      <div className="text-sm font-medium text-foreground">No workspace changes</div>
+    <div className="border border-dashed border-border bg-background px-4 py-8 text-center" role="status">
+      <div className="text-sm font-medium text-foreground">{messages.emptyTitle}</div>
       <div className="mt-1 text-sm text-muted-foreground">
-        The workspace matches its current comparison target.
+        {messages.emptyDescription}
       </div>
     </div>
   );
 }
 
-function LoadingState() {
+function LoadingState({ locale }: { locale?: string }) {
+  const messages = workspaceDiffMessages(locale);
   return (
-    <div className="border border-dashed border-border bg-background px-4 py-8 text-center text-sm text-muted-foreground">
-      Loading workspace changes…
+    <div className="border border-dashed border-border bg-background px-4 py-8 text-center text-sm text-muted-foreground" role="status" aria-live="polite">
+      {messages.loading}
     </div>
   );
 }
@@ -292,34 +290,37 @@ function LoadingState() {
 export function ErrorState({
   message,
   onRetry,
+  locale,
 }: {
   message: string;
   onRetry: () => void;
+  locale?: string;
 }) {
+  const messages = workspaceDiffMessages(locale);
   return (
     <div className="border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm" role="alert">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <div className="font-medium text-foreground">Unable to load workspace changes.</div>
+          <div className="font-medium text-foreground">{messages.errorTitle}</div>
           <div className="mt-1 text-muted-foreground">
-            Retry the request or open the details below for the technical error.
+            {messages.errorDescription}
           </div>
         </div>
         <button
           type="button"
           className={buttonClass(false)}
           onClick={onRetry}
-          aria-label="Retry loading workspace changes"
+          aria-label={messages.retryAccessible}
         >
-          Retry
+          {messages.retry}
         </button>
       </div>
       <details className="mt-3">
         <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground">
-          Troubleshooting details
+          {messages.troubleshootingDetails}
         </summary>
         <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words border border-border bg-background px-3 py-2 font-mono text-xs text-muted-foreground">
-          {message || "No error message was provided."}
+          {message || messages.noErrorMessage}
         </pre>
       </details>
     </div>
@@ -330,16 +331,19 @@ function FileDiffPanel({
   file,
   mode,
   lineWrap,
+  locale,
 }: {
   file: DiffFileViewModel;
   mode: DiffRenderMode;
   lineWrap: boolean;
+  locale: string | undefined;
 }) {
-  const warning = warningText(file);
+  const messages = workspaceDiffMessages(locale);
+  const warning = warningText(file, locale);
   if (warning) {
     return (
       <div className="border border-dashed border-border bg-background px-4 py-6 text-sm text-muted-foreground">
-        {warning ?? "No renderable patch is available for this file."}
+        {warning ?? messages.noRenderablePatch}
       </div>
     );
   }
@@ -347,19 +351,19 @@ function FileDiffPanel({
   return (
     <div className="space-y-3">
       {file.patches.map((patch, index) => {
-        const patchWarning = patchWarningText(patch);
+        const patchWarning = patchWarningText(patch, locale);
         return (
           <div key={`${patch.kind}:${index}`} className="overflow-hidden border border-border bg-background">
             {file.patches.length > 1 ? (
               <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">{patchKindLabel(patch.kind)}</span>
-                <span className="font-mono text-emerald-700 dark:text-emerald-300">{`+${patch.additions}`}</span>
-                <span className="font-mono text-red-700 dark:text-red-300">{`-${patch.deletions}`}</span>
+                <span className="font-medium text-foreground">{patchKindDisplayLabel(patch.kind, locale)}</span>
+                <span className="font-mono text-emerald-700 dark:text-emerald-300">{`+${formatNumber(patch.additions, locale)}`}</span>
+                <span className="font-mono text-red-700 dark:text-red-300">{`-${formatNumber(patch.deletions, locale)}`}</span>
               </div>
             ) : null}
             {patchWarning || !patch.patch ? (
               <div className="px-4 py-6 text-sm text-muted-foreground">
-                {patchWarning ?? "No renderable patch is available for this file."}
+                {patchWarning ?? messages.noRenderablePatch}
               </div>
             ) : (
               <WorkspacePatchDiff
@@ -382,14 +386,17 @@ function FileDiffPanel({
 function CollapsedFilePanel({
   file,
   onExpand,
+  locale,
 }: {
   file: DiffFileViewModel;
   onExpand: () => void;
+  locale: string | undefined;
 }) {
-  const title = file.longDiff ? "Large diff folded" : "Diff folded";
+  const messages = workspaceDiffMessages(locale);
+  const title = file.longDiff ? messages.largeDiffFolded : messages.diffFolded;
   const details = file.lineCount > 0
-    ? `${file.lineCount.toLocaleString()} lines`
-    : statusLabel(file.status);
+    ? lineCountLabel(file.lineCount, locale)
+    : statusLabel(file.status, locale);
 
   return (
     <div className="border border-dashed border-border bg-background px-4 py-5 text-sm text-muted-foreground">
@@ -402,9 +409,9 @@ function CollapsedFilePanel({
           type="button"
           className={buttonClass(false)}
           onClick={onExpand}
-          aria-label={`Show diff for ${file.path}`}
+          aria-label={messages.showDiffFor(file.path)}
         >
-          Show file
+          {messages.showFile}
         </button>
       </div>
     </div>
@@ -413,6 +420,8 @@ function CollapsedFilePanel({
 
 export function ChangesTab({ context }: PluginDetailTabProps) {
   const toast = usePluginToast();
+  const locale = context.locale;
+  const messages = workspaceDiffMessages(locale);
   const [mode, setMode] = useState<DiffRenderMode>("split");
   const [lineWrap, setLineWrap] = useState(false);
   const [view, setView] = useState<DiffViewMode>(() => readInitialView());
@@ -449,9 +458,9 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
 
   const { data, loading, error, refresh } = usePluginData<WorkspaceDiffData>("workspace-diff", params);
   const files = useMemo(() => toFileViewModels(data), [data]);
-  const summary = useMemo(() => diffSummary(data), [data]);
+  const summary = useMemo(() => diffSummary(data, locale), [data, locale]);
   const selectedFile = files.find((file) => file.path === selectedPath) ?? files[0] ?? null;
-  const compareLabel = `${data?.baseRef ? `base ${data.baseRef}` : "working tree"}${data?.headSha ? ` · ${data.headSha.slice(0, 12)}` : ""}`;
+  const compareLabel = `${data?.baseRef ? `${messages.baseRef} ${data.baseRef}` : messages.workingTree}${data?.headSha ? ` · ${data.headSha.slice(0, 12)}` : ""}`;
 
   const setFileSectionRef = useCallback((filePath: string) => (node: HTMLElement | null) => {
     if (node) fileSectionRefs.current.set(filePath, node);
@@ -597,9 +606,9 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
   const copyPath = async (filePath: string) => {
     try {
       await copyTextToClipboard(filePath);
-      toast({ title: "Path copied", body: filePath });
+      toast({ title: messages.pathCopied, body: filePath });
     } catch {
-      toast({ title: "Copy failed", body: filePath, tone: "error" });
+      toast({ title: messages.copyFailed, body: filePath, tone: "error" });
     }
   };
 
@@ -611,10 +620,10 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
             <span key="changed" className="font-medium text-foreground">{summary.changedLabel}</span>
             <span key="lines" className="font-mono text-xs text-muted-foreground">{summary.lineLabel}</span>
             {summary.truncated ? (
-              <span key="truncated" className="text-xs text-amber-700 dark:text-amber-300">Truncated</span>
+              <span key="truncated" className="text-xs text-amber-700 dark:text-amber-300">{messages.truncated}</span>
             ) : null}
             {summary.warningCount > 0 ? (
-              <span key="warnings" className="text-xs text-muted-foreground">{summary.warningCount} warnings</span>
+              <span key="warnings" className="text-xs text-muted-foreground">{messages.warnings(summary.warningCount)}</span>
             ) : null}
           </div>
           <div key="compare" className="mt-1 truncate font-mono text-xs text-muted-foreground">
@@ -623,12 +632,12 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
         </div>
 
         <div key="actions" className="flex flex-wrap items-center gap-2">
-          <div key="layout" className="inline-flex gap-1" aria-label="Diff layout">
-            <button key="split" type="button" className={buttonClass(mode === "split")} onClick={() => setMode("split")}>
-              Split
+          <div key="layout" className="inline-flex gap-1" role="group" aria-label={messages.diffLayout}>
+            <button key="split" type="button" className={buttonClass(mode === "split")} onClick={() => setMode("split")} aria-pressed={mode === "split"}>
+              {messages.split}
             </button>
-            <button key="unified" type="button" className={buttonClass(mode === "unified")} onClick={() => setMode("unified")}>
-              Unified
+            <button key="unified" type="button" className={buttonClass(mode === "unified")} onClick={() => setMode("unified")} aria-pressed={mode === "unified"}>
+              {messages.unified}
             </button>
           </div>
           <button
@@ -636,33 +645,35 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
             type="button"
             className={buttonClass(lineWrap)}
             onClick={() => setLineWrap((value) => !value)}
-            title={lineWrap ? "Disable line wrapping" : "Enable line wrapping"}
+            title={lineWrap ? messages.disableLineWrapping : messages.enableLineWrapping}
             aria-pressed={lineWrap}
           >
-            {lineWrap ? "Wrap on" : "Wrap lines"}
+            {lineWrap ? messages.wrapOn : messages.wrapLines}
           </button>
-          <div key="view" className="inline-flex gap-1" aria-label="Diff comparison">
+          <div key="view" className="inline-flex gap-1" role="group" aria-label={messages.diffComparison}>
             <button
               key="working-tree"
               type="button"
               className={buttonClass(effectiveView === "working-tree")}
+              aria-pressed={effectiveView === "working-tree"}
               onClick={() => {
                 viewTouchedRef.current = true;
                 setView("working-tree");
               }}
             >
-              Working tree
+              {messages.workingTree}
             </button>
             <button
               key="head"
               type="button"
               className={buttonClass(effectiveView === "head")}
+              aria-pressed={effectiveView === "head"}
               onClick={() => {
                 viewTouchedRef.current = true;
                 setView("head");
               }}
             >
-              Against ref
+              {messages.againstRef}
             </button>
           </div>
           {view === "head" ? (
@@ -675,7 +686,7 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
                 setBaseRef(event.target.value);
               }}
               placeholder="origin/master"
-              aria-label="Base ref"
+              aria-label={messages.baseRef}
             />
           ) : null}
           {view === "working-tree" ? (
@@ -684,8 +695,9 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
               type="button"
               className={buttonClass(includeUntracked)}
               onClick={() => setIncludeUntracked((value) => !value)}
+              aria-pressed={includeUntracked}
             >
-              {includeUntracked ? "Untracked shown" : "Show untracked"}
+              {includeUntracked ? messages.untrackedShown : messages.showUntracked}
             </button>
           ) : null}
           <button
@@ -693,8 +705,8 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
             type="button"
             className={iconButtonClass(false)}
             onClick={() => refresh()}
-            title="Refresh changes"
-            aria-label="Refresh changes"
+            title={messages.refreshChanges}
+            aria-label={messages.refreshChanges}
           >
             <RefreshCwIcon />
           </button>
@@ -702,20 +714,21 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
       </div>
 
       {loading ? (
-        <LoadingState />
+        <LoadingState locale={locale} />
       ) : error ? (
-        <ErrorState message={error.message} onRetry={refresh} />
+        <ErrorState message={error.message} onRetry={refresh} locale={locale} />
       ) : files.length === 0 ? (
-        <EmptyState />
+        <EmptyState locale={locale} />
       ) : (
         <div key="content" className="flex flex-col gap-3 lg:h-[70vh] lg:min-h-[560px] lg:max-h-[820px] lg:flex-row">
           <aside
             key="files"
             className="relative flex min-w-0 flex-col border border-border bg-background lg:h-full lg:shrink-0 lg:overflow-hidden"
             style={fileSidebarStyle}
+            aria-label={messages.files}
           >
-            <div key="heading" className="border-b border-border px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Files
+            <div className="border-b border-border px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              {messages.files}
             </div>
             <div key="list" className="max-h-[70vh] overflow-auto lg:max-h-none lg:flex-1">
               {files.map((file, index) => (
@@ -727,12 +740,16 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
                   onSelect={() => selectFile(file.path)}
                   onToggle={() => setExpandedFiles((current) => nextExpandedFileSet(current, file.path))}
                   onCopy={() => void copyPath(file.path)}
+                  locale={locale}
                 />
               ))}
             </div>
             <div
               role="separator"
-              aria-label="Resize file list"
+              aria-label={messages.resizeFileList}
+              aria-description={messages.resizeFileListInstructions}
+              aria-valuetext={messages.pixels(fileSidebarWidth)}
+              title={messages.resizeFileListInstructions}
               aria-orientation="vertical"
               aria-valuemin={MIN_FILE_SIDEBAR_WIDTH}
               aria-valuemax={MAX_FILE_SIDEBAR_WIDTH}
@@ -775,8 +792,9 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
                         key="collapse"
                         type="button"
                         className="mt-0.5 text-muted-foreground hover:text-foreground"
-                        title={expandedFiles.has(file.path) ? "Collapse file" : "Expand file"}
-                        aria-label={expandedFiles.has(file.path) ? `Collapse ${file.path}` : `Expand ${file.path}`}
+                        title={expandedFiles.has(file.path) ? messages.collapseFile : messages.expandFile}
+                        aria-label={expandedFiles.has(file.path) ? messages.collapsePath(file.path) : messages.expandPath(file.path)}
+                        aria-expanded={expandedFiles.has(file.path)}
                         onClick={() => setExpandedFiles((current) => nextExpandedFileSet(current, file.path))}
                       >
                         {expandedFiles.has(file.path) ? "−" : "+"}
@@ -790,7 +808,7 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
                         <div key="path" className="truncate text-sm font-medium">{file.path}</div>
                         {file.oldPath ? (
                           <div key="old-path" className="truncate font-mono text-[11px] text-muted-foreground">
-                            from {file.oldPath}
+                            {messages.fromPath(file.oldPath)}
                           </div>
                         ) : null}
                       </button>
@@ -800,8 +818,8 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
                         key="copy"
                         type="button"
                         className={iconButtonClass(false)}
-                        title="Copy path"
-                        aria-label={`Copy ${file.path}`}
+                        title={messages.copyPath}
+                        aria-label={messages.copyPathFor(file.path)}
                         onClick={() => void copyPath(file.path)}
                       >
                         ⧉
@@ -809,11 +827,12 @@ export function ChangesTab({ context }: PluginDetailTabProps) {
                     </div>
                   </div>
                   {expandedFiles.has(file.path) ? (
-                    <FileDiffPanel key="diff" file={file} mode={mode} lineWrap={lineWrap} />
+                    <FileDiffPanel key="diff" file={file} mode={mode} lineWrap={lineWrap} locale={locale} />
                   ) : (
                     <CollapsedFilePanel
                       key="collapsed"
                       file={file}
+                      locale={locale}
                       onExpand={() => setExpandedFiles((current) => nextExpandedFileSet(current, file.path))}
                     />
                   )}

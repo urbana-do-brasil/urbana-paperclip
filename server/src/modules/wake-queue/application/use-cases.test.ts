@@ -492,6 +492,7 @@ describe("releaseIssueExecution", () => {
     expect(result.outcome.kind).toBe("promoted");
     expect(finalizePromotedWake).toHaveBeenCalledTimes(1);
     const promotedContextSnapshot = finalizePromotedWake.mock.calls[0]![0].contextSnapshot;
+    expect(promotedContextSnapshot).toMatchObject({ communicationLocale: "pt-BR", communicationLocaleSource: "default" });
     // The rendered text is cleared; `executeRun` rebuilds it, with proper
     // trust-based redaction, from the current issue and comment rows before
     // the run dispatches.
@@ -808,6 +809,46 @@ function createFakeAdmissionHelpers(
 }
 
 describe("admitWakeBehindIssueExecution", () => {
+  it("does not merge a language-attributed continuation into an incompatible deferred receipt", async () => {
+    const writer = createFakeAdmissionWriter();
+    const reader = createFakeAdmissionReader({
+      isSameExecutionAgent: vi.fn(async () => false),
+      findExistingDeferredWake: vi.fn(async () => ({ id: "old", runId: null, payload: {},
+        deferredContext: { communicationLocale: "pt-BR", communicationLocaleSource: "user" }, coalescedCount: 0 })),
+    });
+    const admit = createAdmitWakeBehindIssueExecution({ reader, writer, helpers: createFakeAdmissionHelpers() });
+    await admit(SCOPE, admissionInput({ requestedByActorType: "agent", requestedByActorId: "delegating-agent",
+      contextSnapshot: { communicationLocale: "en", communicationLocaleSource: "origin" } }));
+    expect(writer.mergeIntoExistingDeferredWake).not.toHaveBeenCalled();
+    expect(writer.insertNewDeferredWake).toHaveBeenCalledOnce();
+  });
+  it("keeps a different-language human comment as its own durable receipt", async () => {
+    const writer = createFakeAdmissionWriter();
+    const reader = createFakeAdmissionReader();
+    const admit = createAdmitWakeBehindIssueExecution({ reader, writer, helpers: createFakeAdmissionHelpers() });
+    const incoming = { wakeReason: "issue_commented", communicationLocale: "en", communicationLocaleSource: "user", communicationLocaleByCommentId: { "comment-en": { communicationLocale: "en", communicationLocaleSource: "user" } } };
+    const result = await admit(SCOPE, admissionInput({
+      activeExecutionRun: { ...ACTIVE_EXECUTION_RUN, contextSnapshot: { communicationLocale: "pt-BR", communicationLocaleSource: "user" } },
+      contextSnapshot: incoming, wakeCommentId: "comment-en", requestedByActorId: "english-user",
+    }));
+    expect(result).toEqual({ kind: "deferred" });
+    expect(writer.coalesceIntoActiveExecutionRun).not.toHaveBeenCalled();
+    expect(reader.findExistingDeferredWake).not.toHaveBeenCalled();
+    expect(writer.insertNewDeferredWake).toHaveBeenCalledWith(SCOPE, expect.objectContaining({
+      requestedByActorId: "english-user", payload: expect.objectContaining({ _paperclipWakeContext: incoming }),
+    }));
+  });
+
+  it("does not merge a deferred human comment into a different person's receipt", async () => {
+    const writer = createFakeAdmissionWriter();
+    const reader = createFakeAdmissionReader();
+    const helpers = createFakeAdmissionHelpers({ shouldDeferFollowupWakeForSameIssue: vi.fn(() => true) });
+    const admit = createAdmitWakeBehindIssueExecution({ reader, writer, helpers });
+    const result = await admit(SCOPE, admissionInput({ wakeCommentId: "comment-two", requestedByActorId: "user-two" }));
+    expect(result).toEqual({ kind: "deferred" });
+    expect(reader.findExistingDeferredWake).not.toHaveBeenCalled();
+    expect(writer.insertNewDeferredWake).toHaveBeenCalledOnce();
+  });
   it.each(["running", "queued"])(
     "keeps a dedicated durable continuation separate from a %s execution and an existing deferred wake",
     async (status) => {

@@ -1,5 +1,5 @@
 import { checkMcpRemoteHeaderName, checkMcpRemoteHeaderValue, mcpRemoteHeaderRejectionMessage } from "@paperclipai/shared";
-import type { GenericMcpAuthMode } from "@paperclipai/shared";
+import type { GenericMcpAuthMode, McpRemoteHeaderRejection } from "@paperclipai/shared";
 
 /**
  * Logic behind the guided "Connect your own MCP server" flow (PAP-17087).
@@ -88,7 +88,21 @@ export interface GenericConnectGuidance {
   title: string;
   body: string;
   focus: GenericConnectFocus;
+  copyKey: GenericConnectGuidanceCopyKey;
+  bodyFromServer?: boolean;
 }
+
+export type GenericConnectGuidanceCopyKey =
+  | "invalidUrl"
+  | "privateNetwork"
+  | "hostNotFound"
+  | "headerRejected"
+  | "nameConflict"
+  | "credentialRequired"
+  | "manualClientRequired"
+  | "httpsRequired"
+  | "serverUnreachable"
+  | "genericFailure";
 
 /**
  * Turn an API failure into the specific corrective action the plan asks for:
@@ -102,6 +116,7 @@ export function genericConnectGuidance(
   message: string | null | undefined,
 ): GenericConnectGuidance {
   const fallback = message?.trim() || "Paperclip couldn't connect to that address. Check it and try again.";
+  const bodyFromServer = Boolean(message?.trim());
   switch (code) {
     case "mcp_remote_url_missing":
     case "mcp_remote_url_invalid":
@@ -109,36 +124,43 @@ export function genericConnectGuidance(
         title: "That doesn't look like a server address",
         body: "Paste the full address, starting with https:// — for example https://mcp.example.com/mcp.",
         focus: "url",
+        copyKey: "invalidUrl",
       };
     case "remote_http_private_endpoint":
       return {
         title: "That address is inside a private network",
         body: "This Paperclip is reachable from the internet, so it won't call addresses on your local network. Use the server's public address instead.",
         focus: "url",
+        copyKey: "privateNetwork",
       };
     case "remote_http_dns_failed":
       return {
         title: "We couldn't find that host",
         body: "The address didn't resolve. Check the spelling, or confirm the server is published on the internet.",
         focus: "url",
+        copyKey: "hostNotFound",
       };
     case "mcp_header_rejected":
       return {
         title: "Paperclip can't send that header",
         body: fallback,
         focus: "credentials",
+        copyKey: "headerRejected",
+        bodyFromServer,
       };
     case "tool_access_name_conflict":
       return {
         title: "Paperclip couldn’t name this connection",
         body: "Try connecting again.",
         focus: "none",
+        copyKey: "nameConflict",
       };
     case "oauth_challenge":
       return {
         title: "This server wants a credential",
         body: "It asked us to authenticate but didn't offer a sign-in Paperclip can complete on its own. Add the key or headers its docs list under Advanced authentication.",
         focus: "credentials",
+        copyKey: "credentialRequired",
       };
     case "oauth_manual_client_required":
     case "oauth_manual_client_rebinding_required":
@@ -146,6 +168,7 @@ export function genericConnectGuidance(
         title: "This server needs sign-in details you create yourself",
         body: "Register Paperclip in the provider's settings, then add the client ID and secret it gives you under Advanced authentication.",
         focus: "credentials",
+        copyKey: "manualClientRequired",
       };
     case "oauth_redirect_origin_unsupported":
     case "oauth_redirect_uri_invalid":
@@ -153,21 +176,30 @@ export function genericConnectGuidance(
         title: "This Paperclip needs a public HTTPS address first",
         body: "Sign-in sends the operator back to Paperclip, so this instance has to be reachable over HTTPS. Ask your Paperclip admin to configure it.",
         focus: "deployment",
+        copyKey: "httpsRequired",
       };
     case "runtime_error":
       return {
         title: "We couldn't reach that server",
         body: "Nothing answered at that address. Confirm the server is running and the address is right, then try again.",
         focus: "url",
+        copyKey: "serverUnreachable",
       };
     default:
       return {
         title: "Paperclip couldn't connect",
         body: fallback,
         focus: "none",
+        copyKey: "genericFailure",
+        bodyFromServer,
       };
   }
 }
+
+export type CustomHeaderIssue =
+  | { kind: "header_rejected"; name: string; reason: McpRemoteHeaderRejection }
+  | { kind: "missing_value"; name: string }
+  | { kind: "duplicate_name"; name: string };
 
 /**
  * First client-side complaint about the custom headers, or null when they're fine.
@@ -175,17 +207,26 @@ export function genericConnectGuidance(
  * round trip rather than after one.
  */
 export function customHeaderError(rows: CustomHeaderRow[]): string | null {
+  const issue = customHeaderIssue(rows);
+  if (!issue) return null;
+  if (issue.kind === "header_rejected") return mcpRemoteHeaderRejectionMessage(issue.name, issue.reason);
+  if (issue.kind === "missing_value") return `Add a value for "${issue.name}", or remove the row.`;
+  return `"${issue.name}" is listed twice.`;
+}
+
+/** Structured form of customHeaderError so the UI can localize its own copy. */
+export function customHeaderIssue(rows: CustomHeaderRow[]): CustomHeaderIssue | null {
   const seen = new Set<string>();
   for (const row of rows) {
     const name = row.name.trim();
     if (!name && !row.value.trim()) continue;
     const nameCheck = checkMcpRemoteHeaderName(name);
-    if (!nameCheck.ok) return mcpRemoteHeaderRejectionMessage(name, nameCheck.reason!);
+    if (!nameCheck.ok) return { kind: "header_rejected", name, reason: nameCheck.reason! };
     const valueCheck = checkMcpRemoteHeaderValue(row.value);
-    if (!valueCheck.ok) return mcpRemoteHeaderRejectionMessage(name, valueCheck.reason!);
-    if (!row.value.trim()) return `Add a value for "${name}", or remove the row.`;
+    if (!valueCheck.ok) return { kind: "header_rejected", name, reason: valueCheck.reason! };
+    if (!row.value.trim()) return { kind: "missing_value", name };
     const lower = name.toLowerCase();
-    if (seen.has(lower)) return `"${name}" is listed twice.`;
+    if (seen.has(lower)) return { kind: "duplicate_name", name };
     seen.add(lower);
   }
   return null;

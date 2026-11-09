@@ -3,7 +3,9 @@
 import { act as reactAct } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
+import { i18n } from "@/i18n";
 import {
   ISSUE_THREAD_INTERACTION_KINDS as INTERACTION_KINDS,
   type InteractionResolverGovernance,
@@ -54,13 +56,18 @@ function triggerText(host: HTMLElement, testId: string): string {
   return (trigger?.textContent ?? "").replace(/\s+/g, " ").trim();
 }
 
-afterEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
   if (root) {
     act(() => root?.unmount());
   }
   container?.remove();
   root = null;
   container = null;
+  await i18n.changeLanguage(DEFAULT_LOCALE);
 });
 
 describe("InteractionGovernancePanel", () => {
@@ -185,6 +192,18 @@ describe("InteractionGovernancePanel", () => {
       );
     });
     expect(container.textContent).toContain("Failed to save interaction governance");
+  });
+
+  it("shows translated governance labels in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const { host } = renderPanel({ request_confirmation: { defaultPolicy: "human_only" } });
+
+    expect(host.textContent).toContain("Governança das interações");
+    expect(host.textContent).toContain("Confirmações");
+    expect(triggerText(host, "governance-suggest_tasks-default")).toBe("Qualquer pessoa (padrão)");
+    expect(triggerText(host, "governance-request_confirmation-default")).toBe("Somente pessoas");
+    expect(host.querySelector('[data-testid="governance-request_confirmation-default"]')?.getAttribute("aria-label"))
+      .toBe("Público padrão de resolução para Confirmações");
   });
 });
 

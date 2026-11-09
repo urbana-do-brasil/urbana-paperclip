@@ -4,17 +4,26 @@ import * as ReactDOM from "react-dom";
 import * as ReactJsxRuntime from "react/jsx-runtime";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
+import { i18n } from "@/i18n";
+import { useHostContext as useSdkHostContext } from "../../../packages/plugins/sdk/src/ui/hooks";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   FileTree as SdkFileTree,
   ManagedRoutinesList as SdkManagedRoutinesList,
   MarkdownBlock as SdkMarkdownBlock,
   MarkdownEditor as SdkMarkdownEditor,
+  DataTable as SdkDataTable,
+  ErrorBoundary as SdkErrorBoundary,
+  Spinner as SdkSpinner,
+  AssigneePicker as SdkAssigneePicker,
+  ProjectPicker as SdkProjectPicker,
   type FileTreeNode as SdkFileTreeNode,
 } from "../../../packages/plugins/sdk/src/ui/components";
+import type { ManagedRoutinesListProps as SdkManagedRoutinesListProps } from "../../../packages/plugins/sdk/src/ui/index";
 import { SidebarProvider, useSidebar } from "@/context/SidebarContext";
 import {
   PluginBridgeContext,
@@ -25,6 +34,7 @@ import {
 } from "./bridge";
 import { initPluginBridge } from "./bridge-init";
 import { _createReactShimSourceForTests } from "./slots";
+import { queryKeys } from "@/lib/queryKeys";
 
 function clickEvent(
   overrides: Partial<ReactMouseEvent<HTMLAnchorElement>> = {},
@@ -43,8 +53,9 @@ function clickEvent(
   } as ReactMouseEvent<HTMLAnchorElement>;
 }
 
-afterEach(() => {
+afterEach(async () => {
   delete globalThis.__paperclipPluginBridge__;
+  await i18n.changeLanguage("en");
 });
 
 function act(callback: () => void) {
@@ -84,6 +95,50 @@ describe("plugin host navigation", () => {
     expect(
       shouldHandleHostNavigationClick(clickEvent(), "https://example.com/wiki"),
     ).toBe(false);
+  });
+});
+
+describe("plugin SDK host context bridge", () => {
+  it("updates the locale exposed by useHostContext when the bridge scope changes", () => {
+    initPluginBridge(React, ReactDOM);
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    function Probe() {
+      return React.createElement("output", { "data-testid": "plugin-locale" }, useSdkHostContext().locale);
+    }
+    function bridgeValue(locale: "pt-BR" | "en"): PluginBridgeContextValue {
+      return {
+        pluginId: "test-plugin",
+        hostContext: {
+          companyId: "co",
+          companyPrefix: "PAP",
+          projectId: null,
+          entityId: null,
+          entityType: null,
+          userId: null,
+          locale,
+        },
+      };
+    }
+    function render(locale: "pt-BR" | "en") {
+      act(() => root.render(
+        React.createElement(
+          PluginBridgeContext.Provider,
+          { value: bridgeValue(locale) },
+          React.createElement(Probe),
+        ),
+      ));
+    }
+
+    render("pt-BR");
+    expect(container.querySelector("output")?.textContent).toBe("pt-BR");
+    render("en");
+    expect(container.querySelector("output")?.textContent).toBe("en");
+
+    act(() => root.unmount());
+    container.remove();
   });
 });
 
@@ -316,6 +371,236 @@ describe("plugin SDK markdown component bridge", () => {
     expect(renderToStaticMarkup(React.createElement(SdkManagedRoutinesList, {
       routines: [{ key: "lint", title: "Run lint", status: "active" }],
     }))).toContain("Run lint");
+  });
+
+  it("forwards the optional managed-routine localization contract through the SDK bridge", () => {
+    const labels = {
+      configure: "Configurar",
+      managedBy: "Gerenciado por {name}",
+      schedule: "Agendamento",
+      missingRefs: "Ausente",
+      defaultsCanBeRepaired: "É possível reparar os padrões.",
+      reconcile: "Reconciliar",
+      reset: "Redefinir",
+    };
+    const props = {
+      routines: [{
+        key: "nightly-wiki-lint",
+        title: "Run LLM Wiki lint",
+        status: "active",
+        resourceKey: "plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint",
+      }],
+      labels,
+    } satisfies Pick<SdkManagedRoutinesListProps, "routines" | "labels">;
+
+    globalThis.__paperclipPluginBridge__ = {
+      react: React,
+      reactJsxRuntime: ReactJsxRuntime,
+      reactDom: ReactDOM,
+      sdkUi: {
+        ManagedRoutinesList: (received: Pick<SdkManagedRoutinesListProps, "routines" | "labels">) =>
+          React.createElement("section", { "data-schedule-label": received.labels?.schedule }, [
+            ...received.routines.flatMap((routine) => [routine.title, routine.resourceKey ?? ""]),
+            received.labels?.configure,
+            received.labels?.managedBy,
+            received.labels?.defaultsCanBeRepaired,
+          ].join("|")),
+      },
+    };
+
+    const markup = renderToStaticMarkup(React.createElement(SdkManagedRoutinesList, props));
+    expect(markup).toContain("Run LLM Wiki lint");
+    expect(markup).toContain("Configurar");
+    expect(markup).toContain("Gerenciado por {name}");
+    expect(markup).toContain("É possível reparar os padrões.");
+    expect(markup).toContain('data-schedule-label="Agendamento"');
+    expect(markup).toContain("plugin:paperclipai.plugin-llm-wiki:nightly-wiki-lint");
+  });
+});
+
+describe("plugin SDK host-owned fallback labels", () => {
+  it("localizes table and spinner defaults while preserving plugin-provided text and data", async () => {
+    initPluginBridge(React, ReactDOM);
+    const tableProps = {
+      columns: [
+        { key: "id", header: "Provider ID" },
+        { key: "name", header: "Provider column" },
+      ],
+      rows: [{ id: "provider-row-id", name: "Provider value" }],
+    };
+
+    await i18n.changeLanguage("en");
+    expect(renderToStaticMarkup(React.createElement(SdkDataTable, { columns: [], rows: [] }))).toContain("No rows.");
+    expect(renderToStaticMarkup(React.createElement(SdkDataTable, { ...tableProps, loading: true }))).toContain("Loading...");
+    expect(renderToStaticMarkup(React.createElement(SdkSpinner))).toContain('aria-label="Loading"');
+
+    await i18n.changeLanguage("pt-BR");
+    expect(renderToStaticMarkup(React.createElement(SdkDataTable, { columns: [], rows: [] }))).toContain("Nenhuma linha.");
+    expect(renderToStaticMarkup(React.createElement(SdkDataTable, { ...tableProps, loading: true }))).toContain("Carregando...");
+    expect(renderToStaticMarkup(React.createElement(SdkSpinner))).toContain('aria-label="Carregando"');
+
+    const customEmpty = renderToStaticMarkup(React.createElement(SdkDataTable, {
+      columns: [],
+      rows: [],
+      emptyMessage: "Plugin-provided empty state",
+    }));
+    const customSpinner = renderToStaticMarkup(React.createElement(SdkSpinner, { label: "Plugin-provided loading label" }));
+    const providerData = renderToStaticMarkup(React.createElement(SdkDataTable, tableProps));
+    expect(customEmpty).toContain("Plugin-provided empty state");
+    expect(customSpinner).toContain('aria-label="Plugin-provided loading label"');
+    expect(providerData).toContain("Provider column");
+    expect(providerData).toContain("Provider ID");
+    expect(providerData).toContain("Provider value");
+    expect(providerData).toContain("provider-row-id");
+  });
+
+  it("localizes the host error-boundary fallback and preserves a plugin fallback", async () => {
+    initPluginBridge(React, ReactDOM);
+    await i18n.changeLanguage("en");
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    function BrokenPluginUi(): React.ReactNode {
+      throw new Error("provider-owned diagnostic");
+    }
+    const broken = React.createElement(BrokenPluginUi);
+
+    try {
+      act(() => root.render(React.createElement(SdkErrorBoundary, { children: broken })));
+      expect(container.textContent).toBe("Plugin UI failed to render.");
+
+      await i18n.changeLanguage("pt-BR");
+      act(() => root.render(React.createElement(SdkErrorBoundary, { children: broken })));
+      expect(container.textContent).toBe("Falha ao renderizar a interface do plugin.");
+
+      act(() => root.render(React.createElement(SdkErrorBoundary, { children: broken, fallback: "Plugin-provided fallback" })));
+      expect(container.textContent).toBe("Plugin-provided fallback");
+    } finally {
+      act(() => root.unmount());
+      consoleError.mockRestore();
+      container.remove();
+    }
+  });
+
+  it("localizes picker defaults on language changes while preserving plugin labels", async () => {
+    initPluginBridge(React, ReactDOM);
+    const hostContext = {
+      companyId: null,
+      companyPrefix: null,
+      projectId: null,
+      entityId: null,
+      entityType: null,
+      userId: "user-1",
+      locale: "en",
+    } satisfies PluginBridgeContextValue["hostContext"];
+    const pickerCases = [
+      {
+        name: "assignee",
+        className: "sdk-assignee-picker",
+        english: { placeholder: "Responsible", none: "No responsible", search: "Search responsible...", empty: "No responsible found." },
+        portuguese: { placeholder: "Responsável", none: "Sem responsável", search: "Buscar responsáveis...", empty: "Nenhum responsável encontrado." },
+        external: { placeholder: "External assignee label", none: "External no-assignee label", search: "External assignee search", empty: "External assignee empty state" },
+        create: (custom: boolean) => React.createElement(SdkAssigneePicker, {
+          className: "sdk-assignee-picker",
+          value: "",
+          includeUsers: false,
+          ...(custom ? {
+            placeholder: "External assignee label",
+            noneLabel: "External no-assignee label",
+            searchPlaceholder: "External assignee search",
+            emptyMessage: "External assignee empty state",
+          } : {}),
+          onChange: () => undefined,
+        }),
+      },
+      {
+        name: "project",
+        className: "sdk-project-picker",
+        english: { placeholder: "Project", none: "No project", search: "Search projects...", empty: "No projects found." },
+        portuguese: { placeholder: "Projeto", none: "Sem projeto", search: "Buscar projetos...", empty: "Nenhum projeto encontrado." },
+        external: { placeholder: "External project label", none: "External no-project label", search: "External project search", empty: "External project empty state" },
+        create: (custom: boolean) => React.createElement(SdkProjectPicker, {
+          className: "sdk-project-picker",
+          value: "",
+          ...(custom ? {
+            placeholder: "External project label",
+            noneLabel: "External no-project label",
+            searchPlaceholder: "External project search",
+            emptyMessage: "External project empty state",
+          } : {}),
+          onChange: () => undefined,
+        }),
+      },
+    ];
+
+    for (const pickerCase of pickerCases) {
+      await React.act(async () => {
+        await i18n.changeLanguage("en");
+      });
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+      });
+      queryClient.setQueryData(queryKeys.auth.session, {
+        user: { id: "user-1" },
+        session: { userId: "user-1" },
+      });
+      const container = document.createElement("div");
+      document.body.appendChild(container);
+      const root = createRoot(container);
+      const renderPicker = (custom: boolean) => React.createElement(QueryClientProvider, { client: queryClient },
+        React.createElement(PluginBridgeContext.Provider, {
+          value: { pluginId: "picker-test", hostContext },
+        }, pickerCase.create(custom)),
+      );
+
+      try {
+        await React.act(() => root.render(renderPicker(false)));
+        const trigger = container.querySelector<HTMLButtonElement>(`.${pickerCase.className}`)!;
+        expect(trigger.textContent).toBe(pickerCase.english.placeholder);
+        await React.act(async () => {
+          trigger.focus();
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        const input = document.querySelector<HTMLInputElement>(`input[placeholder="${pickerCase.english.search}"]`)!;
+        expect(input).not.toBeNull();
+        expect(document.body.textContent).toContain(pickerCase.english.none);
+
+        const setSearch = async (value: string) => React.act(() => {
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        await setSearch("no matching value");
+        expect(document.body.textContent).toContain(pickerCase.english.empty);
+
+        await React.act(async () => {
+          await i18n.changeLanguage("pt-BR");
+        });
+        expect(trigger.textContent).toBe(pickerCase.portuguese.placeholder);
+        expect(input.placeholder).toBe(pickerCase.portuguese.search);
+        expect(document.body.textContent).toContain(pickerCase.portuguese.empty);
+        await setSearch("");
+        expect(document.body.textContent).toContain(pickerCase.portuguese.none);
+        await setSearch("no matching value");
+        expect(document.body.textContent).toContain(pickerCase.portuguese.empty);
+
+        await React.act(() => root.render(renderPicker(true)));
+        expect(trigger.textContent).toBe(pickerCase.external.placeholder);
+        expect(input.placeholder).toBe(pickerCase.external.search);
+        expect(document.body.textContent).toContain(pickerCase.external.empty);
+        await setSearch("");
+        expect(document.body.textContent).toContain(pickerCase.external.none);
+        await React.act(async () => {
+          await i18n.changeLanguage("en");
+        });
+        expect(trigger.textContent).toBe(pickerCase.external.placeholder);
+        expect(input.placeholder).toBe(pickerCase.external.search);
+      } finally {
+        await React.act(() => root.unmount());
+        queryClient.clear();
+        container.remove();
+      }
+    }
   });
 });
 

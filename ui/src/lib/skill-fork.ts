@@ -24,7 +24,13 @@ export function shortSha(ref: string | null | undefined): string | null {
   return /^[0-9a-f]{8,40}$/i.test(trimmed) ? trimmed.slice(0, 7) : trimmed;
 }
 
-function sourceTypeFallbackLabel(sourceType: CompanySkillSourceType): string {
+type SourceTypeFallbackTranslator = (sourceType: CompanySkillSourceType) => string;
+
+function sourceTypeFallbackLabel(
+  sourceType: CompanySkillSourceType,
+  translateFallback?: SourceTypeFallbackTranslator,
+): string {
+  if (translateFallback) return translateFallback(sourceType);
   switch (sourceType) {
     case "github":
       return "GitHub";
@@ -63,9 +69,9 @@ function prettyUrl(locator: string): string {
 export function formatForkSourceName(source: {
   sourceType: CompanySkillSourceType;
   sourceLocator: string | null;
-}): string {
+}, translateFallback?: SourceTypeFallbackTranslator): string {
   const locator = source.sourceLocator?.trim() ?? "";
-  if (!locator) return sourceTypeFallbackLabel(source.sourceType);
+  if (!locator) return sourceTypeFallbackLabel(source.sourceType, translateFallback);
   if (source.sourceType === "github") return githubOwnerRepo(locator) ?? locator;
   if (source.sourceType === "url") return prettyUrl(locator);
   return locator;
@@ -75,8 +81,11 @@ export function formatForkSourceName(source: {
  * The lineage chip label: `owner/repo @ <short-sha>` (the `@ sha` clause is
  * dropped when the source has no pinned ref, e.g. skills.sh / URL sources).
  */
-export function formatLineageLabel(original: CompanySkillOriginalSummary): string {
-  const name = formatForkSourceName(original);
+export function formatLineageLabel(
+  original: CompanySkillOriginalSummary,
+  translateFallback?: SourceTypeFallbackTranslator,
+): string {
+  const name = formatForkSourceName(original, translateFallback);
   const sha = shortSha(original.sourceRef);
   return sha ? `${name} @ ${sha}` : name;
 }

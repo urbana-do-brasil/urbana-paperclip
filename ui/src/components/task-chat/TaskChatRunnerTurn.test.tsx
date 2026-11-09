@@ -5,6 +5,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { i18n } from "@/i18n";
 import { MemoryRouter } from "@/lib/router";
 import { TaskChatRunnerTurn } from "./TaskChatRunnerTurn";
 import { transcriptToTaskChatItems } from "./transcript-adapter";
@@ -20,15 +21,17 @@ describe("TaskChatRunnerTurn", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     act(() => root.unmount());
     container.remove();
+    await i18n.changeLanguage("en");
   });
 
   const render = (

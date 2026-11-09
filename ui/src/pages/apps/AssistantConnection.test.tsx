@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AssistantConnection, AssistantConnectionCard } from "./AssistantConnection";
+import { i18n } from "@/i18n";
 const mocks = vi.hoisted(() => ({ setup: vi.fn(), connections: vi.fn(), revoke: vi.fn(), breadcrumbs: vi.fn(), copy: vi.fn() }));
 vi.mock("@/hooks/usePrefersReducedMotion", () => ({ usePrefersReducedMotion: () => true }));
 vi.mock("@/lib/clipboard", () => ({ copyTextToClipboard: mocks.copy }));
@@ -19,14 +20,15 @@ async function render(element: React.ReactNode = <AssistantConnection initialAss
   await act(async () => root.render(<QueryClientProvider client={client}>{element}</QueryClientProvider>));
   await flush();
 }
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   mocks.setup.mockResolvedValue({ enabled: true, serverUrl: "https://canonical.example/mcp/paperclip" });
   mocks.connections.mockResolvedValue([]);
   mocks.revoke.mockResolvedValue(undefined);
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
 });
-afterEach(async () => { await act(async () => root.unmount()); client.clear(); container.remove(); vi.clearAllMocks(); });
+afterEach(async () => { await act(async () => root.unmount()); await i18n.changeLanguage("en"); client.clear(); container.remove(); vi.clearAllMocks(); });
 describe("assistant setup from Connections", () => {
   it("copies a scoped instruction link with no credential and keeps manual configuration collapsed", async () => {
     await render();
@@ -38,6 +40,36 @@ describe("assistant setup from Connections", () => {
     expect(container.textContent).not.toContain("Copy link");
     expect(container.textContent).not.toContain("Open setup instructions");
     expect(mocks.revoke).not.toHaveBeenCalled();
+  });
+  it("localizes assistant setup and revocation in PT-BR while preserving identifiers and URLs", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mocks.connections.mockResolvedValue([grant]);
+    await render();
+
+    expect(container.textContent).toContain("Conexão de assistente (MCP)");
+    expect(container.textContent).toContain("Conecte seu assistente ao Paperclip.");
+    expect(container.textContent).toContain("Verifique `opencode --version` e a configuração existente.");
+    expect(container.textContent).toContain("Conectado como você · Leitura e gravação");
+    expect(container.textContent).toContain("Conexão OpenCode de Dotta");
+
+    const copyInvitation = container.querySelector<HTMLButtonElement>('[aria-label="Copiar convite"]');
+    expect(copyInvitation).not.toBeNull();
+    await act(async () => copyInvitation?.click());
+    const invitation = String(mocks.copy.mock.calls.at(-1)?.[0]);
+    expect(invitation).toContain("Conecte-se à minha organização Butter do Paperclip");
+    expect(invitation).toContain("locale=pt-BR");
+    expect(invitation).toContain("company=butter");
+    expect(invitation).toContain("https://canonical.example/mcp/setup");
+
+    const revoke = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Revogar",
+    );
+    mocks.connections.mockResolvedValue([]);
+    await act(async () => revoke?.click());
+    await flush();
+    expect(mocks.revoke).toHaveBeenCalledWith("grant", expect.anything());
+    expect(container.textContent).not.toContain("Conexão OpenCode de Dotta");
+    expect(container.textContent).toContain("Ainda não há assistentes conectados a Butter.");
   });
   it("surfaces catalog status failures and recovers without claiming there are no connections", async () => {
     mocks.connections.mockRejectedValue(new Error("offline"));

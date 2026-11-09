@@ -25,17 +25,20 @@ import {
   resolvePaperclipInstanceId,
 } from "../config/home.js";
 import { printPaperclipCliBanner } from "../utils/banner.js";
+import { setupMessage } from "../localization/setup.js";
 
 type Section = "llm" | "database" | "logging" | "server" | "storage" | "secrets";
 
-const SECTION_LABELS: Record<Section, string> = {
-  llm: "LLM Provider",
-  database: "Database",
-  logging: "Logging",
-  server: "Server",
-  storage: "Storage",
-  secrets: "Secrets",
-};
+function sectionLabels(): Record<Section, string> {
+  return {
+    llm: setupMessage("sectionLlm"),
+    database: setupMessage("sectionDatabase"),
+    logging: setupMessage("sectionLogging"),
+    server: setupMessage("sectionServer"),
+    storage: setupMessage("sectionStorage"),
+    secrets: setupMessage("sectionSecrets"),
+  };
+}
 
 function defaultConfig(): PaperclipConfig {
   const instanceId = resolvePaperclipInstanceId();
@@ -85,12 +88,13 @@ export async function configure(opts: {
   config?: string;
   section?: string;
 }): Promise<void> {
+  const labels = sectionLabels();
   printPaperclipCliBanner();
   p.intro(pc.bgCyan(pc.black(" paperclip configure ")));
   const configPath = resolveConfigPath(opts.config);
 
   if (!configExists(opts.config)) {
-    p.log.error("No config file found. Run `paperclipai onboard` first.");
+    p.log.error(setupMessage("noConfigFound"));
     p.outro("");
     process.exitCode = 1;
     return;
@@ -101,17 +105,17 @@ export async function configure(opts: {
   try {
     config = readConfig(opts.config) ?? defaultConfig();
     for (const warning of findPaperclipConfigKeyWarnings(config)) {
-      p.log.warn(`Unknown config key ${warning.path}; did you mean ${warning.suggestion}? It will be preserved.`);
+      p.log.warn(setupMessage("unknownConfigKey", { path: warning.path, suggestion: warning.suggestion }));
     }
   } catch (err) {
     const backupPath = backupInvalidConfig(opts.config);
     p.log.warn(
-      `Existing config is invalid. Preserved the original bytes at ${backupPath}.\n${err instanceof Error ? err.message : String(err)}`,
+      setupMessage("invalidConfigBackup", { backupPath, error: err instanceof Error ? err.message : String(err) }),
     );
 
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
       p.log.error(
-        `Refusing to replace ${configPath} without confirmation. Rerun interactively to repair from defaults; the original and ${backupPath} are unchanged.`,
+        setupMessage("invalidConfigNonInteractive", { configPath, backupPath }),
       );
       p.outro("");
       process.exitCode = 1;
@@ -119,11 +123,11 @@ export async function configure(opts: {
     }
 
     const repair = await p.confirm({
-      message: `Repair from defaults? The invalid original is backed up at ${backupPath}.`,
+      message: setupMessage("repairDefaults", { backupPath }),
       initialValue: false,
     });
     if (p.isCancel(repair) || !repair) {
-      p.cancel(`Configuration left unchanged. Invalid backup: ${backupPath}`);
+      p.cancel(setupMessage("configUnchangedBackup", { backupPath }));
       process.exitCode = 1;
       return;
     }
@@ -134,8 +138,8 @@ export async function configure(opts: {
 
   let section: Section | undefined = opts.section as Section | undefined;
 
-  if (section && !SECTION_LABELS[section]) {
-    p.log.error(`Unknown section: ${section}. Choose from: ${Object.keys(SECTION_LABELS).join(", ")}`);
+  if (section && !labels[section]) {
+    p.log.error(setupMessage("unknownSection", { section, sections: Object.keys(labels).join(", ") }));
     p.outro("");
     process.exitCode = 1;
     return;
@@ -146,22 +150,22 @@ export async function configure(opts: {
   while (continueLoop) {
     if (!section) {
       const choice = await p.select({
-        message: "Which section do you want to configure?",
-        options: Object.entries(SECTION_LABELS).map(([value, label]) => ({
+        message: setupMessage("chooseSection"),
+        options: Object.entries(labels).map(([value, label]) => ({
           value: value as Section,
           label,
         })),
       });
 
       if (p.isCancel(choice)) {
-        p.cancel("Configuration cancelled.");
+        p.cancel(setupMessage("configurationCancelled"));
         return;
       }
 
       section = choice;
     }
 
-    p.log.step(pc.bold(SECTION_LABELS[section]));
+    p.log.step(pc.bold(labels[section]));
 
     switch (section) {
       case "database":
@@ -197,13 +201,13 @@ export async function configure(opts: {
         {
           const keyResult = ensureLocalSecretsKeyFile(config, configPath);
           if (keyResult.status === "created") {
-            p.log.success(`Created local secrets key file at ${pc.dim(keyResult.path)}`);
+            p.log.success(setupMessage("createdSecretsKey", { path: pc.dim(keyResult.path) }));
           } else if (keyResult.status === "existing") {
-            p.log.message(pc.dim(`Using existing local secrets key file at ${keyResult.path}`));
+            p.log.message(pc.dim(setupMessage("usingSecretsKey", { path: keyResult.path })));
           } else if (keyResult.status === "skipped_provider") {
-            p.log.message(pc.dim("Skipping local key file management for non-local provider"));
+            p.log.message(pc.dim(setupMessage("skipLocalSecretsProvider")));
           } else {
-            p.log.message(pc.dim("Skipping local key file management because PAPERCLIP_SECRETS_MASTER_KEY is set"));
+            p.log.message(pc.dim(setupMessage("skipLocalSecretsEnv")));
           }
         }
         break;
@@ -217,9 +221,9 @@ export async function configure(opts: {
     });
     invalidBackupPath = undefined;
     if (written) {
-      p.log.success(`${SECTION_LABELS[section]} configuration updated.`);
+      p.log.success(setupMessage("sectionUpdated", { section: labels[section] }));
     } else {
-      p.log.message(pc.dim(`${SECTION_LABELS[section]} configuration unchanged.`));
+      p.log.message(pc.dim(setupMessage("sectionUnchanged", { section: labels[section] })));
     }
 
     // If section was provided via CLI flag, don't loop
@@ -227,7 +231,7 @@ export async function configure(opts: {
       continueLoop = false;
     } else {
       const another = await p.confirm({
-        message: "Configure another section?",
+        message: setupMessage("configureAnother"),
         initialValue: false,
       });
 
@@ -239,5 +243,5 @@ export async function configure(opts: {
     }
   }
 
-  p.outro("Configuration saved.");
+  p.outro(setupMessage("configurationSavedOutro"));
 }

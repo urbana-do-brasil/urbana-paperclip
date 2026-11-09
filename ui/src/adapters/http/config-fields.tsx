@@ -1,9 +1,9 @@
 import { configFieldsForSection } from "../config-sections";
+import { useTranslation } from "@/i18n";
 import type { AdapterConfigFieldsProps } from "../types";
 import {
   Field,
   DraftInput,
-  help,
 } from "../../components/agent-config-primitives";
 
 const inputClass =
@@ -18,8 +18,12 @@ export function HttpConfigFields({
   eff,
   mark,
 }: AdapterConfigFieldsProps) {
+  const { t } = useTranslation();
   return configFieldsForSection(section, (
-    <Field label="Webhook URL" hint={help.webhookUrl}>
+    <Field
+      label={t("agentConfiguration.http.webhookUrl")}
+      hint={t("agentConfiguration.http.webhookUrlHint")}
+    >
       <DraftInput
         value={
           isCreate

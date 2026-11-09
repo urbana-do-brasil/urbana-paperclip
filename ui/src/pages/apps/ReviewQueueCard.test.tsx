@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ReviewQueueCard } from "./ReviewQueueCard";
+import { i18n } from "@/i18n";
 
 const listActionRequestsMock = vi.hoisted(() => vi.fn());
 const approveActionRequestMock = vi.hoisted(() => vi.fn());
@@ -95,7 +96,8 @@ describe("ReviewQueueCard", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     listActionRequestsMock.mockResolvedValue({ actionRequests: [pendingRequest()] });
@@ -145,5 +147,29 @@ describe("ReviewQueueCard", () => {
     expect(approveActionRequestMock).toHaveBeenCalledWith("company-1", "request-1", true);
     expect(createTrustRuleFromActionRequestMock).not.toHaveBeenCalled();
     expect(pushToastMock).toHaveBeenCalledWith(expect.objectContaining({ title: "Always allowed" }));
+  });
+
+  it("localizes pending action decisions while preserving app and tool names", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render();
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("Aguardando sua aprovação");
+    expect(text).toContain("Send email");
+    expect(text).toContain("em Mail");
+    expect(text).toContain("Um agente quer executar esta ação");
+    expect(buttonContaining("Permitir uma vez")).toBeTruthy();
+    expect(buttonContaining("Permitir sempre")).toBeTruthy();
+    expect(buttonContaining("Recusar")).toBeTruthy();
+
+    await act(async () => {
+      buttonContaining("Permitir uma vez")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+    await flushReact();
+    expect(pushToastMock).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Permitida uma vez",
+      body: "Send email poderá ser executada desta vez.",
+    }));
   });
 });

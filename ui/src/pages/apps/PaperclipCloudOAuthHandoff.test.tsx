@@ -4,6 +4,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { savePendingCloudHandoff } from "@/lib/oauthHandoff";
+import { i18n } from "@/i18n";
 import { PaperclipCloudOAuthHandoffPage } from "./PaperclipCloudOAuthHandoff";
 
 const navigateTopLevel = vi.hoisted(() => vi.fn());
@@ -36,7 +37,8 @@ async function flushReact() {
 let container: HTMLDivElement;
 let root: Root;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   window.sessionStorage.clear();
   navigateTopLevel.mockReset();
   container = document.createElement("div");
@@ -44,10 +46,11 @@ beforeEach(() => {
   root = createRoot(container);
 });
 
-afterEach(() => {
-  act(() => root.unmount());
+afterEach(async () => {
+  await act(() => root.unmount());
   container.remove();
   vi.restoreAllMocks();
+  await i18n.changeLanguage("en");
 });
 
 describe("PaperclipCloudOAuthHandoffPage", () => {
@@ -96,6 +99,18 @@ describe("PaperclipCloudOAuthHandoffPage", () => {
     await flushReact();
 
     expect(container.textContent).toContain("Paperclip couldn’t refresh this sign-in. Try again to continue.");
+    expect(navigateTopLevel).not.toHaveBeenCalled();
+  });
+
+  it("localizes the expired sign-in recovery state in PT-BR", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await act(async () => root.render(<PaperclipCloudOAuthHandoffPage />));
+    await flushReact();
+
+    expect(container.textContent).toContain("Não foi possível continuar o login");
+    expect(container.textContent).toContain("Este login expirou.");
+    expect(Array.from(container.querySelectorAll("button")).map((button) => button.textContent?.trim()))
+      .toEqual(["Tentar novamente", "Voltar ao Paperclip"]);
     expect(navigateTopLevel).not.toHaveBeenCalled();
   });
 });

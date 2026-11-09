@@ -1,10 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { StatusCard, StatusCardRefreshPolicy } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 import {
   deriveStatusCardLifecycle,
   describeRefreshPolicy,
   STATUS_CARD_LIFECYCLE_PRESENTATION,
 } from "./status-card-state";
+
+let previousLanguage = "pt-BR";
+beforeAll(() => { previousLanguage = i18n.language; });
+beforeEach(async () => { await i18n.changeLanguage("en"); });
+afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
 
 type LifecycleInput = Pick<StatusCard, "state" | "archivedAt" | "generatingIssueId" | "pendingChangeCount">;
 
@@ -78,5 +84,12 @@ describe("describeRefreshPolicy", () => {
 
   it("describes a reactive policy", () => {
     expect(describeRefreshPolicy({ ...base, mode: "reactive", debounceSeconds: 60 })).toBe("on change (60s)");
+  });
+
+  it("localizes policy descriptions without changing policy values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    expect(describeRefreshPolicy(base)).toBe("manual");
+    expect(describeRefreshPolicy({ ...base, mode: "interval", intervalMinutes: 15 })).toBe("a cada 15 min se houver alterações");
+    expect(describeRefreshPolicy({ ...base, mode: "reactive", debounceSeconds: 60 })).toBe("ao alterar (60 s)");
   });
 });

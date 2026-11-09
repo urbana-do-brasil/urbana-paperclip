@@ -1,18 +1,23 @@
 import { getPageVisibility, getVisibilityHeaderValue } from "@/lib/page-visibility";
 import { tenantSessionRecovery } from "@/lib/tenant-session-recovery";
 import { readApiJson } from "./response";
+import { parseApiErrorMessage, type ApiErrorMessage } from "@paperclipai/shared/api-error-messages";
+import { isSupportedLocale } from "@paperclipai/shared/localization";
+import { i18n } from "../i18n";
 
 const BASE = "/api";
 
 export class ApiError extends Error {
   status: number;
   body: unknown;
+  presentation?: ApiErrorMessage;
 
   constructor(message: string, status: number, body: unknown) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.body = body;
+    this.presentation = parseApiErrorMessage(body);
   }
 }
 
@@ -50,6 +55,13 @@ export async function requestResponse(path: string, init?: RequestInit): Promise
     headers.set("Content-Type", "application/json");
   }
   applyObservabilityHeaders(headers);
+  // Only the local-trusted server consumes this presentation hint. It is not
+  // an identity or authorization header, and authenticated users continue to
+  // use their persisted server preference.
+  const method = (init?.method ?? "GET").toUpperCase();
+  if (!["GET", "HEAD", "OPTIONS"].includes(method) && isSupportedLocale(i18n.language) && !headers.has("X-Paperclip-Communication-Locale")) {
+    headers.set("X-Paperclip-Communication-Locale", i18n.language);
+  }
 
   const res = await fetch(`${BASE}${path}`, {
     credentials: "include",

@@ -1,30 +1,50 @@
 import { AlertTriangle, ChevronRight } from "lucide-react";
 import type { PipelineHealthWarning } from "@paperclipai/shared";
 import { Link } from "@/lib/router";
+import { useTranslation } from "@/i18n";
 import { cn } from "../lib/utils";
 
 /**
- * Setup-health warnings for pipelines, rendered in the same plain-language
- * prosumer voice as the rest of the pipelines UI. The copy comes straight from
- * `computePipelineHealth` — these components only handle layout.
+ * Setup-health warnings for pipelines. New warnings use semantic keys and
+ * localized templates here; `message` remains a fallback for older warning
+ * producers and snapshots that do not include a translation key.
  */
 
-function warningCount(count: number) {
-  return `${count} thing${count === 1 ? "" : "s"} to fix`;
+function warningCount(count: number, t: ReturnType<typeof useTranslation>["t"]) {
+  return t("pipelineManagement.health.warningCount", { count });
 }
 
 /** Board-bar caps its list so a busy pipeline doesn't render a wall of warnings. */
 const BOARD_WARNING_CAP = 5;
 
-function WarningMessage({ warning }: { warning: PipelineHealthWarning }) {
+function WarningMessage({
+  warning,
+  t,
+}: {
+  warning: PipelineHealthWarning;
+  t: ReturnType<typeof useTranslation>["t"];
+}) {
+  const params = { ...warning.translationParams };
+  if (
+    (warning.translationKey === "assignedAgentPaused" || warning.translationKey === "reviewApproverPaused") &&
+    !params.agentName
+  ) {
+    params.agentName = t("pipelineManagement.health.teammate");
+  }
+  const message = warning.translationKey
+    ? t(`pipelineManagement.health.warnings.${warning.translationKey}`, params)
+    : warning.message;
+  const linkLabel = warning.hrefLabelKey
+    ? t(`pipelineManagement.health.actions.${warning.hrefLabelKey}`)
+    : warning.hrefLabel ?? t("pipelineManagement.health.actions.open");
   return (
     <>
-      {warning.message}
+      {message}
       {warning.href ? (
         <>
           {" "}
           <Link to={warning.href} className="font-medium underline underline-offset-2">
-            {warning.hrefLabel ?? "Open"}
+            {linkLabel}
           </Link>
         </>
       ) : null}
@@ -45,9 +65,11 @@ export function PipelineHealthBar({
   onSelectStage?: (stageId: string) => void;
   className?: string;
 }) {
+  const { t } = useTranslation();
   if (warnings.length === 0) return null;
   const shown = warnings.slice(0, BOARD_WARNING_CAP);
   const overflow = warnings.length - shown.length;
+  const warningSummary = warningCount(warnings.length, t);
   return (
     <div
       role="region"
@@ -59,13 +81,13 @@ export function PipelineHealthBar({
     >
       <h2 id="pipeline-health-bar-heading" className="flex items-center gap-2 text-sm font-semibold">
         <AlertTriangle className="h-4 w-4 shrink-0" />
-        <span>Some steps won't run yet — {warningCount(warnings.length)}</span>
+        <span>{t("pipelineManagement.health.barTitle", { summary: warningSummary })}</span>
       </h2>
       <ul className="mt-1.5 space-y-1 pl-6 text-sm">
         {shown.map((warning, index) => {
           const body = (
             <>
-              <span className="font-medium">{warning.stageName}:</span> <WarningMessage warning={warning} />
+              <span className="font-medium">{warning.stageName}:</span> <WarningMessage warning={warning} t={t} />
             </>
           );
           return (
@@ -75,7 +97,7 @@ export function PipelineHealthBar({
               ) : onSelectStage ? (
                 <button
                   type="button"
-                  aria-label={`Open ${warning.stageName} settings`}
+                  aria-label={t("pipelineManagement.health.openStageSettings", { stageName: warning.stageName })}
                   className="group flex w-full items-start gap-1 text-left underline-offset-2 hover:underline"
                   onClick={() => onSelectStage(warning.stageId)}
                 >
@@ -91,7 +113,7 @@ export function PipelineHealthBar({
       </ul>
       {overflow > 0 ? (
         <p className="mt-1.5 pl-6 text-xs text-amber-800/80 dark:text-amber-200/70">
-          +{overflow} more in stage settings
+          {t("pipelineManagement.health.overflow", { count: overflow })}
         </p>
       ) : null}
     </div>
@@ -108,6 +130,7 @@ export function StageHealthWarnings({
   warnings: PipelineHealthWarning[];
   className?: string;
 }) {
+  const { t } = useTranslation();
   if (warnings.length === 0) return null;
   return (
     <div
@@ -124,15 +147,13 @@ export function StageHealthWarnings({
       >
         <AlertTriangle className="h-4 w-4 shrink-0" />
         <span>
-          {warnings.length === 1
-            ? "This step won't run yet"
-            : `This step won't run yet — ${warnings.length} things to fix`}
+          {t("pipelineManagement.health.stageTitle", { count: warnings.length })}
         </span>
       </h2>
       <ul className="mt-1.5 space-y-1 pl-6">
         {warnings.map((warning, index) => (
           <li key={`${warning.code}-${index}`} className="list-disc">
-            <WarningMessage warning={warning} />
+            <WarningMessage warning={warning} t={t} />
           </li>
         ))}
       </ul>

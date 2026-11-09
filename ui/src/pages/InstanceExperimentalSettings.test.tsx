@@ -9,7 +9,8 @@ import type {
   InstanceExperimentalSettings as InstanceExperimentalSettingsPayload,
   InstanceExperimentalSettingsWithManaged,
 } from "@paperclipai/shared";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { InstanceExperimentalSettings } from "./InstanceExperimentalSettings";
 import { queryKeys } from "../lib/queryKeys";
 
@@ -21,6 +22,10 @@ const mockInstanceSettingsApi = vi.hoisted(() => ({
 vi.mock("@/api/instanceSettings", () => ({
   instanceSettingsApi: mockInstanceSettingsApi,
 }));
+
+const initialLanguage = i18n.language;
+beforeEach(async () => { await i18n.changeLanguage("en"); });
+afterAll(async () => { await i18n.changeLanguage(initialLanguage); });
 
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({ selectedCompany: { id: "butter", issuePrefix: "BUT" } }),
@@ -183,7 +188,8 @@ describe("InstanceExperimentalSettings — Conference Room Chat card (PAP-11233)
     await flushReact();
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     currentExperimentalSettings = defaultExperimentalSettings();

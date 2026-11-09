@@ -88,6 +88,7 @@ let mockSearch = "";
 let mockAutoSelectFile: string | null = null;
 let mockNavigatedTo: string | null = null;
 let mockOverviewFolder: Record<string, unknown> | null = null;
+let mockManagedProjectId: string | null = "project-1";
 let mockSettingsFolder: Record<string, unknown> | null = null;
 let mockSettingsManagedAgent: Record<string, unknown> | null = null;
 let mockSettingsManagedRoutines: Array<Record<string, unknown>> = [];
@@ -115,6 +116,7 @@ beforeEach(() => {
   mockAutoSelectFile = null;
   mockNavigatedTo = null;
   mockOverviewFolder = null;
+  mockManagedProjectId = "project-1";
   mockSettingsFolder = null;
   mockSettingsManagedAgent = null;
   mockSettingsManagedRoutines = [];
@@ -147,7 +149,7 @@ beforeEach(() => {
                 checkedAt: new Date().toISOString(),
               },
               managedAgent: { status: "resolved", source: "managed", agentId: "agent-1", resourceKey: "wiki-maintainer", details: { name: "Wiki Maintainer", status: "idle", adapterType: "claude_local", icon: "book-open", urlKey: "wiki-maintainer" } },
-              managedProject: { status: "resolved", projectId: "project-1", details: { name: "LLM Wiki", status: "in_progress" } },
+              managedProject: { status: "resolved", projectId: mockManagedProjectId, details: { name: "LLM Wiki", status: "in_progress" } },
               managedSkills: DEFAULT_MANAGED_SKILLS,
               operationCount: 0,
               eventIngestion: {
@@ -344,6 +346,7 @@ beforeEach(() => {
         return { data: null, loading: false, error: null, refresh: () => undefined };
       },
       usePluginAction: () => async () => ({}),
+      usePluginStream: () => ({ connected: false, connecting: false, lastEvent: null }),
       usePluginToast: () => () => null,
       useHostNavigation: () => ({
         resolveHref: (to: string) => `/PAP${to.startsWith("/") ? to : `/${to}`}`,
@@ -823,6 +826,54 @@ describe("LLM Wiki plugin scaffold", () => {
     expect(markup).not.toContain(">Operations</h2>");
   });
 
+  it("localizes manual ingestion controls while preserving source destinations and original values", () => {
+    mockPathname = "/PAP/wiki/ingest";
+    const portugueseMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+
+    expect(portugueseMarkup).toContain("Adicionar conteúdo");
+    expect(portugueseMarkup).toContain("Capturar em default");
+    expect(portugueseMarkup).toContain("raw/");
+    expect(portugueseMarkup).toContain("Cole o conteúdo da fonte…");
+    expect(portugueseMarkup).toContain("https://example.com/article");
+    expect(portugueseMarkup).not.toContain("Capture into default");
+    expect(portugueseMarkup).not.toContain("Paste source content…");
+
+    const englishMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "en" },
+    } as never));
+    expect(englishMarkup).toContain("Add Content");
+    expect(englishMarkup).toContain("Capture into default");
+    expect(englishMarkup).toContain("Paste source content…");
+    expect(englishMarkup).not.toContain("Cole o conteúdo da fonte…");
+  });
+
+  it("localizes wiki query controls while leaving the agent prompt and operation history contract intact", () => {
+    mockPathname = "/PAP/wiki/query";
+    const portugueseQuery = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+    expect(portugueseQuery).toContain("Pergunte qualquer coisa ao Wiki");
+    expect(portugueseQuery).toContain('placeholder="Pergunte ao Wiki…"');
+    expect(portugueseQuery).toContain("INSTRUÇÃO DA CONSULTA");
+    expect(portugueseQuery).toContain("wiki-query skill");
+    expect(portugueseQuery).not.toContain('placeholder="Ask the wiki…"');
+
+    mockPathname = "/PAP/wiki/history";
+    const portugueseHistory = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+    expect(portugueseHistory).toContain("Issues table · project-1 · plugin:paperclipai.plugin-llm-wiki:operation");
+
+    mockManagedProjectId = null;
+    const missingProjectHistory = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+    expect(missingProjectHistory).toContain("O projeto de operações do LLM Wiki ainda não foi resolvido.");
+    expect(missingProjectHistory).not.toContain("Issues table");
+  });
+
   it("loads AGENTS.md from the Wiki page and exposes an edit affordance", () => {
     mockPathname = "/PAP/wiki/page/templates/AGENTS.md";
     const markup = renderToStaticMarkup(createElement(WikiPage, {
@@ -1111,12 +1162,12 @@ Duplicate headings receive stable suffixes.
       context: { companyId: COMPANY_ID, companyPrefix: "PAP" },
     } as never));
 
-    expect(markup).toContain("configuration errors detected, fix them all?");
+    expect(markup).toContain("Configuration errors detected. Fix them all?");
     expect(markup).toContain("Wiki root folder");
     expect(markup).toContain("Managed routines");
     expect(markup).toContain("need attention.");
     expect(markup).toContain("Fix them all");
-    expect(markup.indexOf("configuration errors detected")).toBeLessThan(markup.indexOf(">Base Folder</"));
+    expect(markup.indexOf("Configuration errors detected")).toBeLessThan(markup.indexOf(">Base Folder</"));
   });
 
   it("shows missing managed skills in setup health with a re-sync action", () => {
@@ -1137,7 +1188,7 @@ Duplicate headings receive stable suffixes.
     } as never));
 
     expect(markup).toContain("Managed Skills");
-    expect(markup).toContain("skill issue(s) need attention");
+    expect(markup).toContain("1 skill issue needs attention.");
     expect(markup).toContain("LLM Wiki Maintainer is not installed in the company skill library.");
     expect(markup).toContain("Re-sync skills");
   });
@@ -1160,7 +1211,7 @@ Duplicate headings receive stable suffixes.
       context: { companyId: COMPANY_ID, companyPrefix: "PAP" },
     } as never));
 
-    expect(markup).toContain("skill issue(s) need attention");
+    expect(markup).toContain("1 skill issue needs attention.");
     expect(markup).toContain("LLM Wiki Maintainer differs from the plugin default: SKILL.md.");
     expect(markup).toContain("Re-sync skills");
   });
@@ -1199,20 +1250,78 @@ Duplicate headings receive stable suffixes.
   it("renders space settings with health line styling and disabled access controls", () => {
     mockPathname = "/PAP/wiki/settings/spaces/default";
 
+    const portugueseMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+
+    expect(portugueseMarkup).toContain("Espaços compartilhados");
+    expect(portugueseMarkup).toContain("Nome de exibição");
+    expect(portugueseMarkup).toContain("Origem e integridade da pasta");
+    expect(portugueseMarkup).toContain("Pasta legível");
+    expect(portugueseMarkup).toContain("raw/ presente");
+    expect(portugueseMarkup).toContain("AGENTS.md presente");
+    expect(portugueseMarkup).toContain("default");
+    expect(portugueseMarkup).toContain("/tmp/company-wiki");
+    expect(portugueseMarkup).toContain("compartilhado");
+    expect(portugueseMarkup).not.toContain("Folder readable");
+    expect(portugueseMarkup).not.toContain(">raw/ present</span>");
+
     const markup = renderToStaticMarkup(createElement(WikiPage, {
       context: { companyId: COMPANY_ID, companyPrefix: "PAP" },
     } as never));
 
+    expect(markup).toContain("Shared Spaces");
+    expect(markup).toContain("Display name");
     expect(markup).toContain("Space folder health checklist");
     expect(markup).toContain("left:8px");
     expect(markup).toContain("background:oklch(0.38 0.09 145)");
     expect(markup).toContain("Folder readable");
     expect(markup).toContain("raw/ present");
+    expect(markup).toContain("AGENTS.md present");
+    expect(markup).toContain("/tmp/company-wiki");
     expect(markup).toContain("Access");
     expect(markup).toContain("Coming soon");
     expect(markup).not.toContain("Future enforcement");
     expect(markup).not.toContain("stored only");
     expect(markup).not.toContain("Permissions are stored but not enforced");
+  });
+
+  it("localizes wiki root setup while preserving the configured path and baseline filenames", () => {
+    mockOverviewFolder = {
+      configured: false,
+      path: "/tmp/custom-wiki-root",
+      realPath: null,
+      access: "readWrite",
+      readable: false,
+      writable: false,
+      requiredDirectories: ["raw", "wiki"],
+      requiredFiles: ["AGENTS.md", "IDEA.md", "wiki/index.md", "wiki/log.md"],
+      missingDirectories: ["raw", "wiki"],
+      missingFiles: ["AGENTS.md", "IDEA.md", "wiki/index.md", "wiki/log.md"],
+      healthy: false,
+      problems: [{ code: "missing_root", message: "Original root diagnostic" }],
+      checkedAt: new Date().toISOString(),
+    };
+
+    const portugueseMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "pt-BR" },
+    } as never));
+    expect(portugueseMarkup).toContain("Escolha uma pasta raiz para o Wiki");
+    expect(portugueseMarkup).toContain("/tmp/custom-wiki-root");
+    expect(portugueseMarkup).toContain("AGENTS.md");
+    expect(portugueseMarkup).toContain("IDEA.md");
+    expect(portugueseMarkup).toContain("wiki/index.md");
+    expect(portugueseMarkup).toContain("wiki/log.md");
+    expect(portugueseMarkup).toContain("Original root diagnostic");
+    expect(portugueseMarkup).toContain("Configurar e inicializar");
+    expect(portugueseMarkup).not.toContain("Configure & bootstrap");
+
+    const englishMarkup = renderToStaticMarkup(createElement(WikiPage, {
+      context: { companyId: COMPANY_ID, companyPrefix: "PAP", locale: "en" },
+    } as never));
+    expect(englishMarkup).toContain("Choose a wiki root folder");
+    expect(englishMarkup).toContain("/tmp/custom-wiki-root");
+    expect(englishMarkup).toContain("Configure &amp; bootstrap");
   });
 
   it("renders distillation settings with assigned-agent execution without budget controls", () => {
@@ -1253,6 +1362,8 @@ Duplicate headings receive stable suffixes.
     mockSettingsManagedRoutines = [{
       status: "resolved",
       routineId: "routine-1",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      resourceKind: "routine",
       resourceKey: "nightly-wiki-lint",
       routine: {
         id: "routine-1",
@@ -1332,6 +1443,8 @@ Duplicate headings receive stable suffixes.
     mockSettingsManagedRoutines = [{
       status: "resolved",
       routineId: "routine-1",
+      pluginKey: "paperclipai.plugin-llm-wiki",
+      resourceKind: "routine",
       resourceKey: "nightly-wiki-lint",
       routine: {
         id: "routine-1",

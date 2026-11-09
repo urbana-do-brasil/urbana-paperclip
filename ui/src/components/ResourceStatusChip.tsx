@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { brandChipBadge, type BrandChipColor } from "@/lib/status-colors";
+import { useTranslation } from "@/i18n";
 
 /**
  * The load-bearing visual grammar for the built-in bundle status panel
@@ -82,7 +83,10 @@ export function ResourceStatusChip({
   compact?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const spec = VARIANTS[variant];
+  const labelKey = `builtInBundle.status.${variant}.label`;
+  const titleKey = `builtInBundle.status.${variant}.title`;
   return (
     <Badge
       variant="outline"
@@ -92,10 +96,10 @@ export function ResourceStatusChip({
         compact && "px-1.5 py-0 text-(length:--text-nano)",
         className,
       )}
-      title={spec.title}
+      title={t(titleKey, { defaultValue: spec.title })}
     >
       <span aria-hidden="true">{spec.glyph}</span>
-      {label ?? spec.label}
+      {label ?? t(labelKey, { defaultValue: spec.label })}
     </Badge>
   );
 }

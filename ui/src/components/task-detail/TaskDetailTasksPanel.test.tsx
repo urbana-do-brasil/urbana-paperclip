@@ -2,7 +2,8 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import type { Issue, Project } from "@paperclipai/shared";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { TaskDetailTasksPanel } from "./TaskDetailTasksPanel";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -12,7 +13,8 @@ const task = (id: string, overrides: Partial<Issue> = {}) => ({ id, title: id, s
 const project = { id: "project-1", name: "Board UI", urlKey: "board-ui" } as Project;
 let container: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
-afterEach(() => { act(() => root?.unmount()); container?.remove(); });
+beforeEach(async () => { await i18n.changeLanguage("en"); });
+afterEach(async () => { act(() => root?.unmount()); container?.remove(); await i18n.changeLanguage("pt-BR"); });
 function render(props: React.ComponentProps<typeof TaskDetailTasksPanel>) {
   container = document.createElement("div"); document.body.append(container);
   root = createRoot(container);
@@ -117,6 +119,28 @@ describe("TaskDetailTasksPanel", () => {
     expect(note.querySelector('a')?.getAttribute("href")).toBe("/issues/PAP-168");
     expect(container.querySelector('section[aria-label="Ancestors"]')).toBeNull();
     expect(container.textContent).not.toContain("No tasks yet.");
+  });
+
+  it("localizes provenance and relationship groups in Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    render({
+      createdFrom: {
+        issue: { id: "source", identifier: "PAP-168", title: "Verify Tailscale fix", status: "in_progress" },
+        run: { id: "run-1", agentId: "qa" },
+        agent: { id: "qa", name: "Paperclip QA" },
+      },
+      ancestors,
+      subtasks: [],
+      createdTasks: [],
+      projects: [],
+      hasError: true,
+      onRetry: vi.fn(),
+    });
+
+    expect(container.querySelector('section[aria-label="Tarefas relacionadas"]')).not.toBeNull();
+    expect(container.querySelector('section[aria-label="Criada a partir de"]')?.textContent).toContain("por Paperclip QA");
+    expect(container.querySelector('section[aria-label="Tarefas ancestrais"]')).not.toBeNull();
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Não foi possível carregar todas as tarefas.");
   });
 
   it("omits the creation source when the viewer may not see it", () => {

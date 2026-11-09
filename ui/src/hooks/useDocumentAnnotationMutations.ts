@@ -5,6 +5,7 @@ import { authApi } from "@/api/auth";
 import { documentAnnotationsApi, type DocumentAnnotationTarget } from "@/api/document-annotations";
 import { queryKeys } from "@/lib/queryKeys";
 import type { PendingAnchor } from "@/components/DocumentAnnotationLayer";
+import { useTranslation } from "react-i18next";
 
 interface MutationOptions {
   target: DocumentAnnotationTarget;
@@ -17,6 +18,7 @@ interface MutationOptions {
 }
 
 export function useDocumentAnnotationMutations(options: MutationOptions) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [mutationError, setMutationError] = useState<string | null>(null);
   const { data: session } = useQuery({
@@ -26,9 +28,9 @@ export function useDocumentAnnotationMutations(options: MutationOptions) {
   });
   const currentUser = useMemo(() => ({
     id: session?.user?.id ?? null,
-    name: session?.user?.name?.trim() || session?.user?.email?.trim() || "You",
+    name: session?.user?.name?.trim() || session?.user?.email?.trim() || t("documentAnnotations.youFallback"),
     image: session?.user?.image ?? null,
-  }), [session]);
+  }), [session, t]);
   const queryKey = useMemo(() => options.target.kind === "routine"
     ? queryKeys.routines.documentAnnotations(options.target.routineId, options.target.documentKey, "all")
     : options.target.kind === "case"
@@ -43,8 +45,8 @@ export function useDocumentAnnotationMutations(options: MutationOptions) {
 
   const createThread = useMutation({
     mutationFn: async (body: string) => {
-      if (!options.pendingAnchor) throw new Error("No selection to anchor to.");
-      if (!options.baseRevisionId) throw new Error("Document has no revision yet.");
+      if (!options.pendingAnchor) throw new Error(t("documentAnnotations.errors.noSelection"));
+      if (!options.baseRevisionId) throw new Error(t("documentAnnotations.errors.noRevision"));
       return documentAnnotationsApi.createForTarget(options.target, {
         baseRevisionId: options.baseRevisionId,
         baseRevisionNumber: options.baseRevisionNumber,
@@ -64,7 +66,7 @@ export function useDocumentAnnotationMutations(options: MutationOptions) {
     },
     onError: (error, _body, context) => {
       if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
-      setMutationError(messageFor(error, "Failed to create comment."));
+      setMutationError(messageFor(error, t("documentAnnotations.errors.create")));
     },
     onSuccess: (thread, _body, context) => {
       queryClient.setQueryData<DocumentAnnotationThreadWithComments[]>(queryKey, (current) =>
@@ -89,7 +91,7 @@ export function useDocumentAnnotationMutations(options: MutationOptions) {
     },
     onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
-      setMutationError(messageFor(error, "Failed to add reply."));
+      setMutationError(messageFor(error, t("documentAnnotations.errors.reply")));
     },
     onSuccess: (_comment, variables) => {
       setMutationError(null);
@@ -109,7 +111,7 @@ export function useDocumentAnnotationMutations(options: MutationOptions) {
     },
     onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
-      setMutationError(messageFor(error, "Failed to update comment status."));
+      setMutationError(messageFor(error, t("documentAnnotations.errors.updateStatus")));
     },
     onSuccess: () => setMutationError(null),
     onSettled: invalidateAll,

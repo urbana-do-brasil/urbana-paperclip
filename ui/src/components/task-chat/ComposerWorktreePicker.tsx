@@ -1,4 +1,5 @@
 import { useMemo, type CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
 import { Folder, GitBranch, GitBranchPlus, Monitor } from "lucide-react";
 import type { ExecutionWorkspaceSummary } from "@paperclipai/shared";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/SearchableSelect";
@@ -24,36 +25,46 @@ interface ComposerWorktreePickerProps {
   selectedWorkspaceLabel?: string;
 }
 
-const MODE_OPTIONS: WorktreeOption[] = [
-  { key: "isolated_workspace", value: "isolated_workspace", mode: "isolated_workspace", label: "New worktree", description: "Start in an isolated checkout." },
-  { key: "shared_workspace", value: "shared_workspace", mode: "shared_workspace", label: "Project workspace", description: "Use the project's shared checkout." },
-  { key: "operator_branch", value: "operator_branch", mode: "operator_branch", label: "New branch", description: "Create a branch in the project workspace." },
-  { key: "agent_default", value: "agent_default", mode: "agent_default", label: "Agent default", description: "Let the agent choose its workspace." },
-  { key: "inherit", value: "inherit", mode: "inherit", label: "Project default", description: "Use the project's worktree settings." },
-];
+const MODE_OPTION_DEFINITIONS = [
+  { key: "isolated_workspace", value: "isolated_workspace", mode: "isolated_workspace", labelKey: "taskCreation.worktree.new", descriptionKey: "taskCreation.worktree.newDescription" },
+  { key: "shared_workspace", value: "shared_workspace", mode: "shared_workspace", labelKey: "taskCreation.worktree.project", descriptionKey: "taskCreation.worktree.projectDescription" },
+  { key: "operator_branch", value: "operator_branch", mode: "operator_branch", labelKey: "taskCreation.worktree.branch", descriptionKey: "taskCreation.worktree.branchDescription" },
+  { key: "agent_default", value: "agent_default", mode: "agent_default", labelKey: "taskCreation.worktree.agentDefault", descriptionKey: "taskCreation.worktree.agentDefaultDescription" },
+  { key: "inherit", value: "inherit", mode: "inherit", labelKey: "taskCreation.worktree.projectDefault", descriptionKey: "taskCreation.worktree.projectDefaultDescription" },
+] as const;
 
 /** Reuses the searchable selector and the existing workspace recency ordering. */
 export function ComposerWorktreePicker({
   mode, workspaceId, workspaces, onChange, loading, error, onRetry,
   disabled, mobile, contentStyle, selectedWorkspaceLabel,
 }: ComposerWorktreePickerProps) {
+  const { t } = useTranslation();
+  const modeOptions = useMemo(() => MODE_OPTION_DEFINITIONS.map(({
+    labelKey,
+    descriptionKey,
+    ...option
+  }): WorktreeOption => ({
+    ...option,
+    label: String(t(labelKey)),
+    description: String(t(descriptionKey)),
+  })), [t]);
   const groups = useMemo(() => [
-    { id: "new", options: [MODE_OPTIONS[0]!] },
+    { id: "new", options: [modeOptions[0]!] },
     {
-      id: "reuse", label: "Reuse a worktree",
+      id: "reuse", label: String(t("taskCreation.worktree.reuseGroup")),
       options: orderReusableExecutionWorkspaces(workspaces).map((workspace): WorktreeOption => ({
         key: `reuse:${workspace.id}`, value: `reuse:${workspace.id}`,
         workspaceId: workspace.id, mode: "reuse_existing", label: workspace.name,
-        description: workspace.branchName ?? "Existing workspace",
+        description: workspace.branchName ?? String(t("taskCreation.worktree.existing")),
         searchText: `${workspace.branchName ?? ""} ${workspace.id}`,
       })),
     },
     {
-      id: "other", label: "Other options",
-      options: MODE_OPTIONS.filter((option) => option.mode === "shared_workspace"
+      id: "other", label: String(t("taskCreation.worktree.otherGroup")),
+      options: modeOptions.filter((option) => option.mode === "shared_workspace"
         || (option.mode !== "isolated_workspace" && option.mode === mode)),
     },
-  ], [mode, workspaces]);
+  ], [mode, modeOptions, t, workspaces]);
 
   const value = mode === "reuse_existing" ? `reuse:${workspaceId}` : mode;
   return (
@@ -61,11 +72,11 @@ export function ComposerWorktreePicker({
       value={value}
       groups={groups}
       onValueChange={(_, option) => onChange(option.mode, option.workspaceId ?? "")}
-      placeholder="Worktrees"
-      triggerAriaLabel="Worktrees"
-      mobileTitle="Worktrees"
-      searchPlaceholder="Search worktrees..."
-      emptyMessage="No matching worktrees."
+      placeholder={String(t("taskCreation.worktree.label"))}
+      triggerAriaLabel={String(t("taskCreation.worktree.label"))}
+      mobileTitle={String(t("taskCreation.worktree.label"))}
+      searchPlaceholder={String(t("taskCreation.worktree.search"))}
+      emptyMessage={String(t("taskCreation.worktree.empty"))}
       disabled={disabled}
       modal={mobile}
       contentStyle={contentStyle}
@@ -76,8 +87,8 @@ export function ComposerWorktreePicker({
         <span className="flex min-w-0 items-center gap-1.5">
           <GitBranch className="size-3.5 shrink-0" aria-hidden />
           <span className="truncate">
-            <span className="hidden text-muted-foreground sm:inline">Worktrees · </span>
-            {option?.label ?? selectedWorkspaceLabel ?? "Select worktree"}
+            <span className="hidden text-muted-foreground sm:inline">{t("taskCreation.worktree.label")} · </span>
+            {option?.label ?? selectedWorkspaceLabel ?? t("taskCreation.worktree.select")}
           </span>
         </span>
       )}
@@ -96,12 +107,12 @@ export function ComposerWorktreePicker({
       }}
       listFooter={loading || error || workspaces.length === 0 ? (
         <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground" role="status">
-          {loading ? "Loading existing worktrees…" : error ? (
+          {loading ? t("taskCreation.worktree.loading") : error ? (
             <span className="flex items-center justify-between gap-2">
-              Couldn't load worktrees.
-              <button type="button" className="rounded px-2 py-1 text-foreground hover:bg-accent" onClick={onRetry}>Retry</button>
+              {t("taskCreation.worktree.loadError")}
+              <button type="button" className="rounded px-2 py-1 text-foreground hover:bg-accent" onClick={onRetry}>{t("taskCreation.worktree.retry")}</button>
             </span>
-          ) : "No existing worktrees yet. Choose New worktree to start one."}
+          ) : t("taskCreation.worktree.none")}
         </div>
       ) : undefined}
     />

@@ -11,6 +11,7 @@ import {
   stopSshEnvLabFixture,
 } from "@paperclipai/adapter-utils/ssh";
 import { resolvePaperclipInstanceId, resolvePaperclipInstanceRoot } from "../config/home.js";
+import { envLabMessage } from "../localization/env-lab-operations.js";
 
 export function resolveEnvLabSshStatePath(instanceId?: string): string {
   const resolvedInstanceId = resolvePaperclipInstanceId(instanceId);
@@ -33,10 +34,10 @@ function summarizeFixture(state: {
   workspaceDir: string;
   sshdLogPath: string;
 }) {
-  p.log.message(`Host: ${pc.cyan(state.host)}:${pc.cyan(String(state.port))}`);
-  p.log.message(`User: ${pc.cyan(state.username)}`);
-  p.log.message(`Workspace: ${pc.cyan(state.workspaceDir)}`);
-  p.log.message(`Log: ${pc.dim(state.sshdLogPath)}`);
+  p.log.message(`${envLabMessage("host")} ${pc.cyan(state.host)}:${pc.cyan(String(state.port))}`);
+  p.log.message(`${envLabMessage("user")} ${pc.cyan(state.username)}`);
+  p.log.message(`${envLabMessage("workspace")} ${pc.cyan(state.workspaceDir)}`);
+  p.log.message(`${envLabMessage("log")} ${pc.dim(state.sshdLogPath)}`);
 }
 
 export async function collectEnvLabDoctorStatus(opts: { instance?: string }) {
@@ -69,9 +70,9 @@ export async function envLabUpCommand(opts: { instance?: string; json?: boolean 
     return;
   }
 
-  p.log.success("SSH env-lab fixture is running.");
+  p.log.success(envLabMessage("fixtureRunning"));
   summarizeFixture(state);
-  p.log.message(`State: ${pc.dim(statePath)}`);
+  p.log.message(`${envLabMessage("state")} ${pc.dim(statePath)}`);
 }
 
 export async function envLabStatusCommand(opts: { instance?: string; json?: boolean }) {
@@ -85,13 +86,13 @@ export async function envLabStatusCommand(opts: { instance?: string; json?: bool
   }
 
   if (!status.state || !status.running) {
-    p.log.info(`SSH env-lab fixture is not running (${pc.dim(statePath)}).`);
+    p.log.info(envLabMessage("fixtureNotRunning", { statePath: pc.dim(statePath) }));
     return;
   }
 
-  p.log.success("SSH env-lab fixture is running.");
+  p.log.success(envLabMessage("fixtureRunning"));
   summarizeFixture(status.state);
-  p.log.message(`State: ${pc.dim(statePath)}`);
+  p.log.message(`${envLabMessage("state")} ${pc.dim(statePath)}`);
 }
 
 export async function envLabDownCommand(opts: { instance?: string; json?: boolean }) {
@@ -104,12 +105,12 @@ export async function envLabDownCommand(opts: { instance?: string; json?: boolea
   }
 
   if (!stopped) {
-    p.log.info(`No SSH env-lab fixture was running (${pc.dim(statePath)}).`);
+    p.log.info(envLabMessage("noFixtureRunning", { statePath: pc.dim(statePath) }));
     return;
   }
 
-  p.log.success("SSH env-lab fixture stopped.");
-  p.log.message(`State: ${pc.dim(statePath)}`);
+  p.log.success(envLabMessage("fixtureStopped"));
+  p.log.message(`${envLabMessage("state")} ${pc.dim(statePath)}`);
 }
 
 // Quote one argument for a POSIX shell. The env-lab cleanup hint is copyable, so
@@ -191,22 +192,24 @@ export async function envLabDoctorCommand(opts: { instance?: string; json?: bool
   }
 
   if (status.ssh.supported) {
-    p.log.success("SSH fixture prerequisites are installed.");
+    p.log.success(envLabMessage("prerequisitesReady"));
   } else {
-    p.log.warn(`SSH fixture prerequisites are incomplete: ${status.ssh.reason ?? "unknown reason"}`);
+    p.log.warn(envLabMessage("prerequisitesIncomplete", {
+      reason: status.ssh.reason ?? envLabMessage("unknownReason"),
+    }));
   }
 
   if (status.ssh.state && status.ssh.running) {
-    p.log.success("SSH env-lab fixture is running.");
+    p.log.success(envLabMessage("fixtureRunning"));
     summarizeFixture(status.ssh.state);
-    p.log.message(`Private key: ${pc.dim(status.ssh.state.clientPrivateKeyPath)}`);
-    p.log.message(`Known hosts: ${pc.dim(status.ssh.state.knownHostsPath)}`);
+    p.log.message(`${envLabMessage("privateKey")} ${pc.dim(status.ssh.state.clientPrivateKeyPath)}`);
+    p.log.message(`${envLabMessage("knownHosts")} ${pc.dim(status.ssh.state.knownHostsPath)}`);
   } else if (status.ssh.state) {
-    p.log.warn("SSH env-lab fixture state exists, but the process is not running.");
-    p.log.message(`State: ${pc.dim(status.statePath)}`);
+    p.log.warn(envLabMessage("fixtureStateStale"));
+    p.log.message(`${envLabMessage("state")} ${pc.dim(status.statePath)}`);
   } else {
-    p.log.info("SSH env-lab fixture is not running.");
-    p.log.message(`State: ${pc.dim(status.statePath)}`);
+    p.log.info(envLabMessage("fixtureNotRunningSimple"));
+    p.log.message(`${envLabMessage("state")} ${pc.dim(status.statePath)}`);
   }
 
   // The cleanup hint runs the same CLI that prints it, so it stops the correct
@@ -221,7 +224,7 @@ export async function envLabDoctorCommand(opts: { instance?: string; json?: bool
   // in a shell without `PAPERCLIP_INSTANCE_ID` stops the diagnosed fixture, not
   // the default instance.
   const cleanupInstance = resolvePaperclipInstanceId(opts.instance);
-  p.log.message(`Cleanup: ${pc.dim(buildEnvLabCleanupCommand({ instance: cleanupInstance }))}`);
+  p.log.message(`${envLabMessage("cleanup")} ${pc.dim(buildEnvLabCleanupCommand({ instance: cleanupInstance }))}`);
 }
 
 export function registerEnvLabCommands(program: Command) {

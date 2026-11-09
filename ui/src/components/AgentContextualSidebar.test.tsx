@@ -3,9 +3,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentContextualSidebar } from "./AgentContextualSidebar";
 import { queryKeys } from "@/lib/queryKeys";
+import { i18n } from "@/i18n";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({ selectedCompanyId: "company-1" }),
@@ -34,6 +36,9 @@ vi.mock("./SidebarNavItem", () => ({
 }));
 
 describe("AgentContextualSidebar", () => {
+  beforeEach(async () => { await i18n.changeLanguage("pt-BR"); });
+  afterEach(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
+
   it.each([false, true])("keeps Channels available for default email regardless of the chat setting (%s)", (enabled) => {
     const client = new QueryClient();
     client.setQueryData(queryKeys.instance.experimentalSettings, { enableChatConnectors: enabled });
@@ -63,7 +68,27 @@ describe("AgentContextualSidebar", () => {
     expect(markup).toContain('href="/agents/codexcoder/api-keys"');
     expect(markup).toContain('href="/activity?mode=agents&amp;agentId=agent-1"');
     expect(markup).toContain('href="/activity/runs?agentId=agent-1"');
-    expect(markup).toContain("Harness / Runtime");
-    expect(markup).toContain("Permissions / Trust");
+    expect(markup).toContain("Ambiente de execução");
+    expect(markup).toContain("Permissões / confiança");
+    expect(markup).toContain("Auditoria");
+  });
+
+  it("renders agent navigation in the selected language while preserving destinations", async () => {
+    const queryClient = new QueryClient();
+    const render = () => renderToStaticMarkup(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={["/agents/codexcoder/runtime"]}>
+          <AgentContextualSidebar agentRef="codexcoder" agentId="agent-1" agentName="Codex Coder" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(render()).toContain("Ambiente de execução");
+    await i18n.changeLanguage("en");
+    const englishMarkup = render();
+    expect(englishMarkup).toContain("Harness / Runtime");
+    expect(englishMarkup).toContain("Permissions / Trust");
+    expect(englishMarkup).toContain('href="/agents/codexcoder/runtime"');
+    queryClient.clear();
   });
 });

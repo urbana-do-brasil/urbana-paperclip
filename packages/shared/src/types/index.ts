@@ -1088,6 +1088,10 @@ export type {
   PluginDatabaseNamespaceMode,
   PluginDatabaseNamespaceStatus,
 } from "./plugin.js";
+export type {
+  ManagedResourcePluginAttribution,
+  ManagedResourceAttributionEntry,
+} from "./managed-resource.js";
 export * from "./app-definition.js";
 export * from "./chat-channels.js";
 export * from "./chat-github.js";

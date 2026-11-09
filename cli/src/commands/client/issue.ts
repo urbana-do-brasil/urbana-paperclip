@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import pc from "picocolors";
 import { readFile, writeFile } from "node:fs/promises";
 import {
   addIssueCommentSchema,
@@ -42,6 +43,7 @@ import {
   normalizeFeedbackTraceExportFormat,
   serializeFeedbackTraces,
 } from "./feedback.js";
+import { cliMessage, cliMessageCatalog } from "../../localization/index.js";
 
 interface IssueBaseOptions extends BaseClientOptions {
   status?: string;
@@ -200,7 +202,7 @@ export function registerIssueCommands(program: Command): void {
           }
 
           if (filtered.length === 0) {
-            printOutput([], { json: false });
+            console.log(pc.dim(cliMessage("emptyList")));
             return;
           }
 
@@ -214,6 +216,16 @@ export function registerIssueCommands(program: Command): void {
                 assigneeAgentId: item.assigneeAgentId,
                 title: item.title,
                 projectId: item.projectId,
+              }, {
+                labels: {
+                  identifier: cliMessage("issueListIdentifier"),
+                  id: cliMessage("issueListId"),
+                  status: cliMessage("issueListStatus"),
+                  priority: cliMessage("issueListPriority"),
+                  assigneeAgentId: cliMessage("issueListAssigneeAgentId"),
+                  title: cliMessage("issueListTitle"),
+                  projectId: cliMessage("issueListProjectId"),
+                },
               }),
             );
           }
@@ -233,6 +245,10 @@ export function registerIssueCommands(program: Command): void {
         try {
           const ctx = resolveCommandContext(opts);
           const row = await ctx.api.get<Issue>(apiPath`/api/issues/${idOrIdentifier}`);
+          if (row === null && !ctx.json) {
+            console.log(pc.dim(cliMessage("emptyValue")));
+            return;
+          }
           printOutput(row, { json: ctx.json });
         } catch (err) {
           handleCommandError(err);
@@ -248,7 +264,13 @@ export function registerIssueCommands(program: Command): void {
       .option("--yes", "Confirm deletion")
       .action(async (issueId: string, opts: IssueDeleteOptions) => {
         try {
-          if (!opts.yes) throw new Error("Refusing to delete without --yes");
+          if (!opts.yes) {
+            throw new Error(
+              opts.json
+                ? cliMessageCatalog.en.issueDeleteNeedsYes
+                : cliMessage("issueDeleteNeedsYes"),
+            );
+          }
           const ctx = resolveCommandContext(opts);
           const deleted = await ctx.api.delete<Issue>(apiPath`/api/issues/${issueId}`);
           printOutput(deleted, { json: ctx.json });
@@ -296,7 +318,11 @@ export function registerIssueCommands(program: Command): void {
       .action(async (opts: IssueCreateOptions) => {
         try {
           if (opts.standalone && opts.parentId) {
-            throw new Error("--standalone cannot be combined with --parent-id");
+            throw new Error(
+              opts.json
+                ? cliMessageCatalog.en.issueCreateStandaloneParentConflict
+                : cliMessage("issueCreateStandaloneParentConflict"),
+            );
           }
           const ctx = resolveCommandContext(opts, { requireCompany: true });
           const payload = createIssueSchema.parse({
@@ -308,7 +334,7 @@ export function registerIssueCommands(program: Command): void {
             projectId: opts.projectId,
             goalId: opts.goalId,
             parentId: opts.standalone ? null : opts.parentId,
-            requestDepth: parseOptionalInt(opts.requestDepth),
+            requestDepth: parseOptionalInt(opts.requestDepth, ctx.json),
             billingCode: opts.billingCode,
           });
 
@@ -350,7 +376,7 @@ export function registerIssueCommands(program: Command): void {
             projectId: opts.projectId,
             goalId: opts.goalId,
             parentId: opts.parentId,
-            requestDepth: parseOptionalInt(opts.requestDepth),
+            requestDepth: parseOptionalInt(opts.requestDepth, ctx.json),
             billingCode: opts.billingCode,
             comment: opts.comment,
             hiddenAt: parseHiddenAt(opts.hiddenAt),
@@ -1371,13 +1397,20 @@ function parseJson(value: string): unknown {
   return JSON.parse(value) as unknown;
 }
 
-function parseOptionalInt(value: string | undefined): number | undefined {
+function parseOptionalInt(value: string | undefined, json: boolean): number | undefined {
   if (value === undefined) return undefined;
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed)) {
-    throw new Error(`Invalid integer value: ${value}`);
+    throw new Error(formatIssueInvalidIntegerMessage(value, json));
   }
   return parsed;
+}
+
+function formatIssueInvalidIntegerMessage(value: string, json: boolean): string {
+  const template = json
+    ? cliMessageCatalog.en.issueInvalidInteger
+    : cliMessage("issueInvalidInteger");
+  return template.replace("{value}", value);
 }
 
 function parseHiddenAt(value: string | undefined): string | null | undefined {

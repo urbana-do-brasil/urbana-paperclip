@@ -6,6 +6,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Agent, AgentInstructionsBundle, AgentInstructionsFileDetail, AgentInstructionsFileSummary } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { AgentFileRunNotice, PromptsTab } from "./AgentDetail";
 import { queryKeys } from "../lib/queryKeys";
 
@@ -225,7 +227,8 @@ describe("PromptsTab instruction editor", () => {
   let queryClient: QueryClient;
   let saveAction: (() => void) | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
@@ -261,6 +264,7 @@ describe("PromptsTab instruction editor", () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
   async function renderPromptsTab(
@@ -294,8 +298,13 @@ describe("PromptsTab instruction editor", () => {
   }
 
   async function selectInstructionMode(mode: "Read" | "Edit" | "Raw") {
+    const labels = {
+      Read: i18n.t("agentInstructions.view.read"),
+      Edit: i18n.t("agentInstructions.view.edit"),
+      Raw: i18n.t("agentInstructions.view.raw"),
+    };
     await act(async () => {
-      buttonByText(container, mode.toLowerCase()).click();
+      buttonByText(container, labels[mode]).click();
     });
     await flushReact();
   }
@@ -349,6 +358,37 @@ describe("PromptsTab instruction editor", () => {
         "company-1",
       );
     });
+  });
+
+  it("localizes the instruction editor while preserving file paths and prompt content", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const summary = makeSummary("AGENTS.md", "AGENTS.md");
+    const originalContent = "# Keep this prompt intact\n\nNever translate agent-owned instructions.";
+    await renderPromptsTab(
+      makeBundle("AGENTS.md", [summary], { warnings: ["This adapter does not implement skill sync yet."] }),
+      { "AGENTS.md": makeDetail(summary, originalContent) },
+    );
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-testid="markdown-body"]')?.textContent).toBe(originalContent);
+    });
+    expect(container.textContent).toContain("As instruções salvas afetam a próxima execução.");
+    expect(container.textContent).toContain("Este adaptador ainda não implementa a sincronização de habilidades.");
+    expect(container.textContent).toContain("Arquivos");
+    expect(container.textContent).toContain("AGENTS.md");
+    expect(container.querySelector('[aria-label="Adicionar arquivo do agente"]')).toBeTruthy();
+    expect(container.querySelector('[role="group"][aria-label="Visualização do arquivo de instruções"]')).toBeTruthy();
+
+    await selectInstructionMode("Edit");
+    const editor = container.querySelector<HTMLTextAreaElement>('[data-testid="markdown-editor"]');
+    expect(editor?.placeholder).toBe("# Instruções do agente");
+    expect(editor?.value).toBe(originalContent);
+
+    await act(async () => buttonByText(container, "Avançado").click());
+    await flushReact();
+    expect(container.textContent).toContain("Gerenciado");
+    expect(container.textContent).toContain("Caminho raiz");
+    expect(container.textContent).toContain("Arquivo de entrada");
   });
 
   it("loads preserved edits against the displayed head and retains their pinned base after a conflict", async () => {
@@ -409,15 +449,17 @@ describe("PromptsTab instruction editor", () => {
   });
 
   it("scopes sync warnings to the affected run and displays a storage warning only once", async () => {
+    await i18n.changeLanguage("pt-BR");
     root = createRoot(container);
     const render = async (instructionSave: Record<string, unknown>) => act(async () => {
       root?.render(<AgentFileRunNotice resultJson={{ instructionSave }} />);
     });
     await render({ contract: "agent_files", state: "unavailable", errorMessage: "This run's files were not saved." });
-    expect(container.textContent).toContain("Agent file sync failed for this run");
+    expect(container.textContent).toContain("Falha ao sincronizar arquivos do agente nesta execução");
     expect(container.textContent).toContain("This run's files were not saved.");
     await render({ contract: "agent_files", state: "unavailable", errorCode: "AGENT_FILES_LIMIT_EXCEEDED", errorMessage: "Save rejected", storageWarning: "Agent storage is full. Runs can continue." });
     expect(container.querySelectorAll('[role="note"]')).toHaveLength(1);
+    expect(container.textContent).toContain("Aviso de armazenamento do agente");
     expect(container.textContent).toContain("Runs can continue");
     expect(container.textContent).not.toContain("Save rejected");
     await render({ contract: "agent_files", state: "unavailable", errorCode: "AGENT_FILES_SAVE_FAILED", errorMessage: "An I/O failure prevented saving this run's files.", storageWarning: "Agent storage is full. Runs can continue." });
@@ -431,24 +473,25 @@ describe("PromptsTab instruction editor", () => {
   });
 
   it("keeps changed-entry preserved edits readable and copyable without enabling a save", async () => {
+    await i18n.changeLanguage("pt-BR");
     const summary = makeSummary("CURRENT.md", "CURRENT.md");
     const revision = { id: "current-head", entryFile: "CURRENT.md" } as NonNullable<AgentInstructionsFileDetail["revision"]>;
     const preserved = "# Original entry\nPreserve these exact edits.\n";
     mockAgentsApi.instructionCandidates.mockResolvedValue([{ runId: "old-entry-run", entryFile: "OLD.md", baseRevisionId: "old-head", baseHash: "base-hash", state: "conflict", candidateHash: "candidate-hash", content: preserved, errorCode: "INSTRUCTION_ENTRY_CHANGED", errorMessage: "The instruction entry changed", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }]);
     await renderPromptsTab(makeBundle("CURRENT.md", [summary]), { "CURRENT.md": makeDetail(summary, "Current instructions", { revision }) });
-    await waitFor(() => expect(buttonByText(container, "Review preserved edits").disabled).toBe(false));
-    await act(async () => { buttonByText(container, "Review preserved edits").click(); });
+    await waitFor(() => expect(buttonByText(container, "Revisar alterações preservadas").disabled).toBe(false));
+    await act(async () => { buttonByText(container, "Revisar alterações preservadas").click(); });
     const review = await waitFor(() => {
-      const region = container.querySelector<HTMLElement>('[aria-label="Preserved edits for OLD.md"]');
+      const region = container.querySelector<HTMLElement>('[aria-label="Alterações preservadas em OLD.md"]');
       expect(region?.querySelector("pre")?.textContent).toBe(preserved);
       return region!;
     });
-    expect(review.textContent).toContain("Read only");
+    expect(review.textContent).toContain("Somente leitura");
     expect(review.textContent).toContain("CURRENT.md");
     expect(review.querySelector("textarea, input, [contenteditable=true]")).toBeNull();
     expect(saveAction).toBeNull();
     expect(mockAgentsApi.instructionsFile.mock.calls.every((call) => call[1] === "CURRENT.md")).toBe(true);
-    await act(async () => { review.querySelector<HTMLButtonElement>('[aria-label="Copy preserved edits for OLD.md"]')!.click(); });
+    await act(async () => { review.querySelector<HTMLButtonElement>('[aria-label="Copiar alterações preservadas de OLD.md"]')!.click(); });
     expect(copyTextToClipboardMock).toHaveBeenCalledWith(preserved);
     expect(saveAction).toBeNull();
     expect(mockAgentsApi.resolveInstructionCandidate).not.toHaveBeenCalled();
@@ -481,18 +524,23 @@ describe("PromptsTab instruction editor", () => {
   });
 
   it("shows revision content and restores against the displayed current head", async () => {
+    await i18n.changeLanguage("pt-BR");
     const summary = makeSummary("AGENTS.md", "AGENTS.md");
     const revision = { id: "current-1", entryFile: "AGENTS.md" } as NonNullable<AgentInstructionsFileDetail["revision"]>;
     mockAgentsApi.instructionHistory.mockResolvedValue({ revisions: [{ id: "old-revision", source: "board", createdAt: "2026-01-01T00:00:00Z" }], nextCursor: null });
     mockAgentsApi.instructionDiff.mockResolvedValue({ from: { content: "old text" }, removed: "old", added: "new" });
     mockAgentsApi.restoreInstructions.mockResolvedValue(makeDetail(summary, "old text", { revision: { ...revision, id: "restored-1" } }));
     await renderPromptsTab(makeBundle("AGENTS.md", [summary]), { "AGENTS.md": makeDetail(summary, "new text", { revision }) });
-    await waitFor(() => expect(buttonByText(container, "History")).toBeDefined());
-    await act(async () => { buttonByText(container, "History").click(); });
+    await waitFor(() => expect(buttonByText(container, "Histórico")).toBeDefined());
+    await act(async () => { buttonByText(container, "Histórico").click(); });
     await waitFor(() => expect(buttonByText(container, "old-revi")).toBeDefined());
+    expect(container.textContent).toContain("Painel");
     await act(async () => { buttonByText(container, "old-revi").click(); });
-    await waitFor(() => expect(container.textContent).toContain("old text"));
-    await act(async () => { buttonByText(container, "Restore as new revision").click(); });
+    await waitFor(() => expect(container.textContent).toContain("Alterações da revisão selecionada para a atual"));
+    expect(container.textContent).toContain("Removido:");
+    expect(container.textContent).toContain("Adicionado:");
+    expect(container.textContent).toContain("old text");
+    await act(async () => { buttonByText(container, "Restaurar como nova revisão").click(); });
     await waitFor(() => expect(mockAgentsApi.restoreInstructions).toHaveBeenCalledWith("agent-1", { path: "AGENTS.md", revisionId: "old-revision", baseRevisionId: "current-1" }, "company-1"));
   });
 

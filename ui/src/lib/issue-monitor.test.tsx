@@ -35,6 +35,13 @@ describe("monitor time formatting", () => {
     expect(formatMonitorEta(new Date(now.getTime() - 12 * 60_000), now)).toBe("overdue by 12m");
   });
 
+  it("formats monitor countdowns and retry offsets in Brazilian Portuguese", () => {
+    expect(formatMonitorEta(new Date(now.getTime() + (2 * 60 + 12) * 60_000), now, "pt-BR")).toBe("em 2 h 12 min");
+    expect(formatMonitorEta(now, now, "pt-BR")).toBe("agora");
+    expect(formatMonitorEta(new Date(now.getTime() - 18 * 60_000), now, "pt-BR")).toBe("atrasado há 18 min");
+    expect(formatMonitorEtaLabel(new Date(now.getTime() + 5 * 60_000), now, "pt-BR")).toBe("Em 5 min");
+  });
+
   it("formats sentence-case ETA labels without slicing prefixes", () => {
     expect(formatMonitorEtaLabel(new Date(now.getTime() + (2 * 60 + 12) * 60_000), now)).toBe("In 2h 12m");
     expect(formatMonitorEtaLabel(now, now)).toBe("Due now");
@@ -46,6 +53,14 @@ describe("monitor time formatting", () => {
     expect(formatMonitorOffset(new Date(now.getTime() + 15 * 60_000))).toBe("in 15m");
     expect(formatMonitorOffset(new Date(now.getTime() + 10_000))).toBe("now");
     expect(formatMonitorOffset(now)).toBe("now");
+    dateNowSpy.mockRestore();
+  });
+
+  it("formats scheduled retry offsets in Brazilian Portuguese", () => {
+    const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now.getTime());
+    expect(formatMonitorOffset(new Date(now.getTime() + 15 * 60_000), "pt-BR")).toBe("em 15 min");
+    expect(formatMonitorOffset(new Date(now.getTime() - 15 * 60_000), "pt-BR")).toBe("há 15 min");
+    expect(formatMonitorOffset(now, "pt-BR")).toBe("agora");
     dateNowSpy.mockRestore();
   });
 
@@ -64,6 +79,7 @@ describe("monitor time formatting", () => {
     it("says Today when the check lands on the reference day", () => {
       const now = "2026-07-17T14:00:00.000Z"; // 9:00 AM Chicago, same day
       expect(formatMonitorAbsolute(timestamp, options, now)).toBe("Today, 4:08 PM");
+      expect(formatMonitorAbsolute(timestamp, { ...options, locale: "pt-BR", todayLabel: "Hoje" }, now)).toBe("Hoje, 16:08");
     });
 
     it("compares the day in the display time zone, not UTC", () => {

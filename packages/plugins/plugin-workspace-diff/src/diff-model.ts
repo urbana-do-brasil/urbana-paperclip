@@ -4,6 +4,7 @@ import type {
   WorkspaceDiffResponse,
   WorkspaceDiffWarning,
 } from "./contracts.js";
+import { fileCountLabel, fileStatusLabel, formatNumber } from "./ui/messages.js";
 
 export type DiffRenderMode = "unified" | "split";
 
@@ -43,21 +44,10 @@ export interface DiffSummaryViewModel {
   truncated: boolean;
 }
 
-const STATUS_LABELS: Record<WorkspaceDiffFile["status"], string> = {
-  added: "Added",
-  modified: "Modified",
-  deleted: "Deleted",
-  renamed: "Renamed",
-  copied: "Copied",
-  type_changed: "Type changed",
-  untracked: "Untracked",
-  unknown: "Changed",
-};
-
 export const LONG_DIFF_LINE_THRESHOLD = 400;
 
-export function statusLabel(status: WorkspaceDiffFile["status"]) {
-  return STATUS_LABELS[status] ?? "Changed";
+export function statusLabel(status: WorkspaceDiffFile["status"], locale?: string) {
+  return fileStatusLabel(status, locale);
 }
 
 export function fileName(filePath: string) {
@@ -113,7 +103,7 @@ export function toFileViewModels(diff: WorkspaceDiffResponse | null | undefined)
   });
 }
 
-export function diffSummary(diff: WorkspaceDiffResponse | null | undefined): DiffSummaryViewModel {
+export function diffSummary(diff: WorkspaceDiffResponse | null | undefined, locale?: string): DiffSummaryViewModel {
   const stats = diff?.stats;
   const fileCount = stats?.fileCount ?? 0;
   const additions = stats?.additions ?? 0;
@@ -121,8 +111,8 @@ export function diffSummary(diff: WorkspaceDiffResponse | null | undefined): Dif
   const warningCount = diff?.warnings.length ?? 0;
 
   return {
-    changedLabel: `${fileCount} ${fileCount === 1 ? "file" : "files"}`,
-    lineLabel: `+${additions} / -${deletions}`,
+    changedLabel: fileCountLabel(fileCount, locale),
+    lineLabel: `+${formatNumber(additions, locale)} / -${formatNumber(deletions, locale)}`,
     warningCount,
     truncated: Boolean(diff?.truncated),
   };

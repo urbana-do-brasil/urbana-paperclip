@@ -29,18 +29,45 @@ export type PipelineHealthWarningCode =
   | "breakdown_field_mismatch"
   | "unset_required_variable";
 
+export type PipelineHealthWarningTranslationKey =
+  | "assignedAgentMissing"
+  | "assignedAgentPaused"
+  | "assignedNoInstructions"
+  | "instructionsNoAgent"
+  | "stageNoAutomation"
+  | "reviewNoApprover"
+  | "reviewApproverPaused"
+  | "breakdownDestinationMissing"
+  | "breakdownDoesNotWait"
+  | "breakdownUnsafeEntry"
+  | "workflowDeleted"
+  | "stageDeleted"
+  | "automationFailed";
+
+export interface PipelineHealthWarningTranslationParams {
+  agentName?: string;
+  pieceNoun?: string;
+  pipelineName?: string;
+  caseTitle?: string;
+}
+
 export interface PipelineHealthWarning {
   /** Machine-readable reason; UI keys icons/grouping off this. */
   code: PipelineHealthWarningCode;
+  /** Stable UI message key. New warnings from computePipelineHealth always include it. */
+  translationKey?: PipelineHealthWarningTranslationKey;
+  /** Untranslated names and user-authored values required by the message template. */
+  translationParams?: PipelineHealthWarningTranslationParams;
   /** The stage the warning is anchored to. */
   stageId: string;
   stageKey: string;
   stageName: string;
-  /** Plain-language, prosumer-safe message ready to render as-is. */
+  /** Plain-language compatibility/API message; the UI uses it when no translation key is present. */
   message: string;
   /** Optional UI route for the next useful place to inspect or fix the warning. */
   href?: string;
   hrefLabel?: string;
+  hrefLabelKey?: "openItem";
 }
 
 export interface PipelineHealthReport {
@@ -208,12 +235,15 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
         warnings.push({
           ...anchor,
           code: "paused_agent",
+          translationKey: "assignedAgentMissing",
           message: `Assigned to a teammate who's no longer here. Pick someone else to run this step.`,
         });
       } else if (!isAgentStatusInvokable(agent.status)) {
         warnings.push({
           ...anchor,
           code: "paused_agent",
+          translationKey: "assignedAgentPaused",
+          translationParams: { agentName: agent?.name?.trim() ?? "" },
           message: `${agentLabel(agent)} is paused, so this step won't run until they're back. Reassign it if you can't wait.`,
         });
       }
@@ -224,6 +254,7 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
       warnings.push({
         ...anchor,
         code: "automation_no_instructions",
+        translationKey: "assignedNoInstructions",
         message: `Assigned to a teammate, but there are no instructions yet. Add instructions so this step doesn't stall.`,
       });
     }
@@ -233,6 +264,7 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
       warnings.push({
         ...anchor,
         code: "automation_no_agent",
+        translationKey: "instructionsNoAgent",
         message: `This step has instructions, but no agent is assigned. Add an agent to run this step, or make it a review step if a person should decide.`,
       });
     }
@@ -242,6 +274,7 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
       warnings.push({
         ...anchor,
         code: "stage_no_automation",
+        translationKey: "stageNoAutomation",
         message: `Nothing runs here automatically — items will sit until a person moves them. Add an agent to run this step, or make it a review step if a person should decide.`,
       });
     }
@@ -258,12 +291,15 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
           warnings.push({
             ...anchor,
             code: "review_no_approver",
+            translationKey: "reviewNoApprover",
             message: `No approver picked yet, so work will pile up here. Choose who approves.`,
           });
         } else if (!isAgentStatusInvokable(agent.status)) {
           warnings.push({
             ...anchor,
             code: "review_no_approver",
+            translationKey: "reviewApproverPaused",
+            translationParams: { agentName: agent.name?.trim() ?? "" },
             message: `${agentLabel(agent)} is the approver and they're paused, so nothing can be approved until they're back.`,
           });
         }
@@ -271,6 +307,7 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
         warnings.push({
           ...anchor,
           code: "review_no_approver",
+          translationKey: "reviewNoApprover",
           message: `No approver picked yet, so work will pile up here. Choose who approves.`,
         });
       }
@@ -287,6 +324,7 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
         warnings.push({
           ...anchor,
           code: "breakdown_target_missing",
+          translationKey: "breakdownDestinationMissing",
           message: `This step breaks work into another workflow, but that destination is missing. Pick where the pieces should go.`,
         });
       } else {
@@ -294,6 +332,8 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
           warnings.push({
             ...anchor,
             code: "breakdown_no_wait",
+            translationKey: "breakdownDoesNotWait",
+            translationParams: { pieceNoun: breakdown.pieceNoun },
             message: `This step creates ${breakdown.pieceNoun}s but does not wait for them before moving on. Turn on waiting if the next step depends on the pieces finishing.`,
           });
         }
@@ -309,6 +349,8 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
           warnings.push({
             ...anchor,
             code: "breakdown_target_not_entry_safe",
+            translationKey: "breakdownUnsafeEntry",
+            translationParams: { pieceNoun: breakdown.pieceNoun },
             message: `New ${breakdown.pieceNoun}s start in a destination step that may not accept new work cleanly. Choose the entry step for that workflow.`,
           });
         }
@@ -320,6 +362,7 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
           warnings.push({
             ...anchor,
             code: "missing_pipeline_reference",
+            translationKey: "workflowDeleted",
             message: `These instructions hand off to a workflow that's been deleted. Point them at one that exists.`,
           });
           continue;
@@ -328,6 +371,8 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
           warnings.push({
             ...anchor,
             code: "missing_stage_reference",
+            translationKey: "stageDeleted",
+            translationParams: { pipelineName: target.name },
             message: `These instructions hand off to a step that no longer exists in "${target.name}". Point them at one that does.`,
           });
         }
@@ -353,9 +398,12 @@ export function computePipelineHealth(input: PipelineHealthInput): PipelineHealt
       stageId: failure.stageId,
       stageKey: failure.stageKey,
       stageName: failure.stageName,
+      translationKey: "automationFailed",
+      translationParams: { caseTitle: failure.caseTitle },
       message: `Automation failed on "${failure.caseTitle}". Open the item to inspect the log and retry it.`,
       href: `/pipelines/${input.pipelineId}/items/${failure.caseId}`,
       hrefLabel: "Open item",
+      hrefLabelKey: "openItem",
     });
   }
 

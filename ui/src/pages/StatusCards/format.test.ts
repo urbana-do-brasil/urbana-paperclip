@@ -1,11 +1,56 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { StatusCardUpdate } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 
 import {
   estimateStatusCardCost,
+  formatCents,
+  formatTokenSplit,
+  formatTokens,
   rollupUpdates,
   rollupUpdatesToday,
+  updateKindLabel,
 } from "./format";
+
+let previousLanguage = "pt-BR";
+beforeAll(() => { previousLanguage = i18n.language; });
+beforeEach(async () => { await i18n.changeLanguage("en"); });
+afterAll(async () => { await i18n.changeLanguage(previousLanguage); });
+
+describe("status card number presentation", () => {
+  it("formats tokens and USD for the selected locale without converting currency", async () => {
+    expect(formatTokens(1100)).toBe("1.1k tok");
+    expect(formatCents(62)).toBe("$0.62");
+    expect(formatCents(0.6)).toBe("$0.006");
+    await i18n.changeLanguage("pt-BR");
+    expect(formatTokens(1100)).toBe("1,1k tok");
+    expect(formatCents(62)).toBe(new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(0.62));
+    expect(formatCents(0.6)).toBe(new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD", minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(0.006));
+    expect(formatCents(null)).toBeNull();
+  });
+});
+
+describe("status card history presentation", () => {
+  it("localizes token split labels while preserving compact token values", async () => {
+    expect(formatTokenSplit(1_500, 750)).toBe("1.5k in / 750 out");
+
+    await i18n.changeLanguage("pt-BR");
+    expect(formatTokenSplit(1_500, 750)).toBe("1,5k de entrada / 750 de saída");
+  });
+
+  it("localizes known update kinds and preserves unknown kinds", async () => {
+    expect(updateKindLabel("compile")).toBe("compile");
+    expect(updateKindLabel("full")).toBe("full rebuild");
+    expect(updateKindLabel("incremental")).toBe("incremental");
+    expect(updateKindLabel("future-kind" as StatusCardUpdate["kind"])).toBe("future-kind");
+
+    await i18n.changeLanguage("pt-BR");
+    expect(updateKindLabel("compile")).toBe("compilação");
+    expect(updateKindLabel("full")).toBe("reconstrução completa");
+    expect(updateKindLabel("incremental")).toBe("incremental");
+    expect(updateKindLabel("future-kind" as StatusCardUpdate["kind"])).toBe("future-kind");
+  });
+});
 
 function update(overrides: Partial<StatusCardUpdate>): StatusCardUpdate {
   return {
@@ -137,5 +182,26 @@ describe("estimateStatusCardCost", () => {
     // 12h window / 60min = 12 updates/day
     expect(est.primary).toContain("Up to ~12 updates/day");
     expect(est.primary).toContain("during active hours");
+  });
+
+  it("localizes the estimate in Brazilian Portuguese while keeping USD and quantities", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const manual = estimateStatusCardCost({ mode: "manual", triggers: {} as never });
+    expect(manual.primary).toContain("reconstrução");
+    expect(manual.note).toContain("Cartões manuais só consomem tokens");
+    expect(manual.cost).toBe(`${formatCents(3)} · ${formatTokens(4_500)}`);
+
+    const capped = estimateStatusCardCost({
+      mode: "interval",
+      intervalMinutes: 60,
+      dailyTokenCap: 10_000,
+      activeHours: { start: "08:00", end: "20:00", timezone: "America/Sao_Paulo" },
+      triggers: {} as never,
+    });
+    expect(capped.primary).toContain("Até ~5 atualizações/dia");
+    expect(capped.primary).toContain("a cada 60 min, durante o horário ativo");
+    expect(capped.primary).toContain(capped.cost);
+    expect(capped.cost).toBe(`${formatCents(5)} · ${formatTokens(10_000)}`);
+    expect(capped.note?.toLowerCase()).toContain("limite diário");
   });
 });

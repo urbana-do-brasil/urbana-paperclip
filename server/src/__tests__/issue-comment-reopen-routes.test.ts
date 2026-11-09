@@ -1050,7 +1050,7 @@ describe("issue comment reopen routes", () => {
         explanation: "Allowed by test grant.",
       }),
     );
-    const issue = makeIssue("done");
+    const issue = { ...makeIssue("done"), originRunId: "historical-run" };
     mockIssueService.getById.mockResolvedValue(issue);
     mockIssueService.update.mockImplementation(
       async (_id: string, patch: Record<string, unknown>) =>
@@ -1091,6 +1091,9 @@ describe("issue comment reopen routes", () => {
         }),
       }),
     );
+    await waitForWakeup(() => expect(mockHeartbeatService.wakeup).toHaveBeenCalledWith(
+      otherAgentId, expect.objectContaining({ reason: "issue_assigned", communicationOriginRunId: "run-other" }),
+    ));
   });
 
   it("moves assigned blocked issues back to todo via POST comments", async () => {
@@ -2388,6 +2391,7 @@ describe("issue comment reopen routes", () => {
     mockIssueService.getById.mockResolvedValue({
       ...makeIssue("todo"),
       assigneeAgentId: agentB,
+      originRunId: "historical-run",
     });
     let res = await request(await installActor(createApp(), agentActor(agentA)))
       .post("/api/issues/11111111-1111-4111-8111-111111111111/comments")
@@ -2400,6 +2404,7 @@ describe("issue comment reopen routes", () => {
           reason: "issue_commented",
           requestedByActorType: "agent",
           requestedByActorId: agentA,
+          communicationOriginRunId: "run-1",
         }),
       ),
     );

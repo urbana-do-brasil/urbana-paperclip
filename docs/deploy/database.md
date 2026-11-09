@@ -1,6 +1,6 @@
 ---
 title: Database
-summary: Embedded PGlite vs Docker Postgres vs hosted
+summary: Embedded PostgreSQL, local Docker PostgreSQL and hosted databases
 ---
 
 Paperclip uses PostgreSQL via Drizzle ORM. There are three ways to run the database.
@@ -26,11 +26,13 @@ The Docker quickstart also uses embedded PostgreSQL by default.
 
 ## 2. Local PostgreSQL (Docker)
 
-For a full PostgreSQL server locally:
+For a local PostgreSQL server, run this from the repository root:
 
 ```sh
-docker compose up -d
+BETTER_AUTH_SECRET=unused-for-db-only docker compose -f docker/docker-compose.yml up -d db
 ```
+
+The placeholder satisfies the Compose file while starting only the `db` service. Configure a real authentication secret separately before starting the Paperclip server.
 
 This starts PostgreSQL 17 on `localhost:5432`. Set the connection string:
 
@@ -39,11 +41,11 @@ cp .env.example .env
 # DATABASE_URL=postgres://paperclip:paperclip@localhost:5432/paperclip
 ```
 
-Push the schema:
+Apply the versioned migrations:
 
 ```sh
 DATABASE_URL=postgres://paperclip:paperclip@localhost:5432/paperclip \
-  npx drizzle-kit push
+  pnpm db:migrate
 ```
 
 ## 3. Hosted PostgreSQL (Supabase)

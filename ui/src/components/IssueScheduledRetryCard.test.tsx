@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { IssueRetryNowOutcome, IssueScheduledRetry } from "@paperclipai/shared";
 import { IssueScheduledRetryCard } from "./IssueScheduledRetryCard";
 import { ToastProvider } from "../context/ToastContext";
+import { i18n } from "../i18n";
 
 const retryNowMock = vi.hoisted(() => vi.fn());
 
@@ -96,7 +97,8 @@ function renderWithProviders(ui: ReactNode) {
   });
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(SYSTEM_NOW);
   retryNowMock.mockReset();
   container = document.createElement("div");
@@ -104,10 +106,11 @@ beforeEach(() => {
   root = createRoot(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
   container.remove();
   dateNowSpy?.mockRestore();
+  await i18n.changeLanguage("pt-BR");
 });
 
 function getCard() {
@@ -263,6 +266,31 @@ describe("IssueScheduledRetryCard", () => {
       expect(band).not.toBeNull();
       expect((band?.textContent ?? "")).toContain("Promotion suppressed");
       expect(getRetryNowButton()!.disabled).toBe(false);
+    });
+  });
+
+  it("localizes retry details while preserving diagnostics and run links", async () => {
+    await i18n.changeLanguage("pt-BR");
+    renderWithProviders(<IssueScheduledRetryCard issueId="issue-1" scheduledRetry={baseRetry} />);
+
+    const card = getCard()!;
+    expect(card.textContent).toContain("Nova tentativa agendada");
+    expect(card.textContent).toContain("Tentativa 4");
+    expect(card.textContent).toContain("Falha temporária");
+    expect(card.textContent).toContain("Nova tentativa automática em 15 min");
+    expect(card.textContent).toContain("A última tentativa falhou: Upstream provider rate limited.");
+    expect(card.querySelector("a")?.getAttribute("href")).toBe("/agents/agent-1/runs/run-prev-1234567");
+    expect(getRetryNowButton()?.textContent).toContain("Tentar novamente agora");
+
+    retryNowMock.mockResolvedValue({
+      outcome: "waiting",
+      message: "Waiting for execution cleanup. Paperclip will retry automatically once cleanup finishes.",
+      scheduledRetry: baseRetry,
+    });
+    act(() => getRetryNowButton()!.click());
+    await waitForUi(() => {
+      expect(card.textContent).toContain("Aguardando a limpeza da execução.");
+      expect(card.textContent).not.toContain("Waiting for execution cleanup");
     });
   });
 });

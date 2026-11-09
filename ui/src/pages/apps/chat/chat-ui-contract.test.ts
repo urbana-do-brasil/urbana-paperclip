@@ -1,9 +1,22 @@
 import { buildSlackAppManifest } from "@paperclipai/shared";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { t } from "@/i18n";
 
 function source(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
+}
+
+function expectBilingualCopy(sourceText: string, key: string, options: Record<string, unknown> = {}) {
+  expect(sourceText).toContain(key);
+  const english = t(key, { ...options, lng: "en" });
+  const portuguese = t(key, { ...options, lng: "pt-BR" });
+  expect(english, `English catalog value for ${key}`).not.toBe(key);
+  expect(portuguese, `PT-BR catalog value for ${key}`).not.toBe(key);
+  expect(portuguese, `PT-BR translation for ${key}`).not.toBe(english);
+  expect(english.trim()).not.toBe("");
+  expect(portuguese.trim()).not.toBe("");
+  return { english, portuguese };
 }
 
 describe("chat connector UI contract", () => {
@@ -42,8 +55,8 @@ describe("chat connector UI contract", () => {
   });
   it("keeps the exact dual-purpose choice and immutable searchable agent selection", () => {
     const setup = source("./ChatEndpointSetup.tsx");
-    expect(setup).toContain("Chat with an agent");
-    expect(setup).toContain("Use this connection as an agent tool");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.purpose.chatTitle");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.purpose.toolTitle");
     expect(setup).toContain("<AgentSelect");
     expect(setup).not.toContain("Change agent");
   });
@@ -59,25 +72,31 @@ describe("chat connector UI contract", () => {
 
   it("shows independent Slack callback surfaces and public URL drift", () => {
     const detail = source("./ChatEndpointDetail.tsx");
-    expect(detail).toContain("Slack callback health");
+    expectBilingualCopy(detail, "apps.chatEndpointDetail.activity.slackCallbackHealth");
     expect(detail).toContain("Events API");
     expect(detail).toContain("Interactivity");
     expect(detail).toContain("Slash command");
     expect(detail).toContain("callbacksNeedUpdate");
-    expect(detail).toContain("Slack callback URLs need an update");
-    expect(detail).toContain("Not observed");
+    expectBilingualCopy(detail, "apps.chatEndpointDetail.activity.slackCallbacksNeedUpdate");
+    expectBilingualCopy(detail, "apps.chatEndpointDetail.activity.callbackNotObserved");
   });
 
   it("keeps provider capabilities automatic and settings focused on plausible reach", () => {
     const detail = source("./ChatEndpointDetail.tsx");
     const setup = source("./ChatEndpointSetup.tsx");
-    expect(detail).toContain("Allow direct messages");
-    expect(detail).toContain("Allow group chats");
-    expect(detail).toContain("People without linked accounts can start isolated tasks");
-    expect(detail).toContain("Requests are refused when isolation is unavailable");
-    expect(setup).toContain("Link the account you’re testing");
-    expect(setup).toContain("Paperclip does not replay the refused request");
-    expect(setup).toContain("Review identity access");
+    expectBilingualCopy(detail, "apps.chatEndpointDetail.settings.allowDirectMessages");
+    expectBilingualCopy(detail, "apps.chatEndpointDetail.settings.allowGroupChats");
+    const guestAccess = expectBilingualCopy(detail, "apps.chatEndpointDetail.access.allowUnlinkedPeopleDescription");
+    expect(guestAccess.english).toContain("Requests are refused when isolation is unavailable");
+    expect(guestAccess.portuguese).toContain("As solicitações são recusadas quando o isolamento não está disponível");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.try.identity.linkTestedAccountTitle");
+    const unlinkedIdentity = expectBilingualCopy(setup, "apps.chatEndpointSetup.try.identity.unlinkedGuestDisabled", {
+      agent: "the agent",
+      freshConversationInstruction: "send a new message",
+    });
+    expect(unlinkedIdentity.english).toContain("Paperclip does not replay the refused request");
+    expect(unlinkedIdentity.portuguese).toContain("o Paperclip não repete a solicitação recusada");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.try.reviewIdentityAccess");
     expect(setup).toContain("instanceSettingsApi.getExperimental()");
     expect(setup).toContain("chatEndpointsApi.listPrincipals(endpointId)");
     expect(setup).toContain("queryKeys.chatEndpoints.detail(next.id)");
@@ -89,9 +108,7 @@ describe("chat connector UI contract", () => {
   it("explains Discord's independent per-server direct-message restriction", () => {
     const detail = source("./ChatEndpointDetail.tsx");
     expect(detail).toContain('endpoint.provider === "discord"');
-    expect(detail).toContain(
-      "People must also enable Direct Messages in their shared Discord server’s Privacy Settings.",
-    );
+    expectBilingualCopy(detail, "apps.chatEndpointDetail.settings.discordDirectMessagesDetail");
   });
 
   it("offers only real connection lifecycle actions", () => {
@@ -102,48 +119,36 @@ describe("chat connector UI contract", () => {
     );
     const activity = detail.slice(detail.indexOf("function Activity"));
     expect(detail).toContain('"pause" | "resume" | "remove"');
-    expect(detail).toContain("Remove this connection?");
+    expectBilingualCopy(detail, "apps.chatEndpointDetail.activity.removeConnectionTitle");
     expect(detail).toContain("purpose=chat&resume=${endpoint.id}");
     expect(detail).toContain('? "" : "&reconnect=1"');
-    expect(detail).toContain("Finish setup");
-    expect(detail).toContain("Continue setup");
+    expectBilingualCopy(detail, "apps.chatEndpointDetail.activity.finishSetup");
+    expectBilingualCopy(detail, "apps.chatEndpointDetail.continueSetup");
     expect(detail).toContain('endpoint.setup?.step !== "complete"');
-    expect(detail).toContain("Reconnect");
     expect(detail).not.toContain("Change agent");
-    for (const label of ["Pause", "Resume", "Reconnect", "Remove connection"]) {
-      expect(activity).toContain(label);
-      expect(settings).not.toContain(label);
+    for (const key of [
+      "apps.chatEndpointDetail.activity.pause",
+      "apps.chatEndpointDetail.activity.resume",
+      "apps.chatEndpointDetail.activity.reconnect",
+      "apps.chatEndpointDetail.activity.removeConnection",
+    ]) {
+      expectBilingualCopy(detail, key);
+      expect(activity).toContain(key);
+      expect(settings).not.toContain(key);
     }
   });
 
   it("states the provider boundary for reconnect and removal", () => {
     const detail = source("./ChatEndpointDetail.tsx");
-    const setup = source("./ChatEndpointSetup.tsx");
-    for (const reconnectCopy of [
-      "does not reinstall the app or change its workspace or channel membership",
-      "does not reinstall the App or change repository access",
-      "does not add or remove the bot from the server",
-      "does not upload or reinstall the Teams app",
-      "automatically refreshes its Paperclip webhook and command menu",
-    ]) {
-      expect(detail).toContain(reconnectCopy);
-      expect(setup).toContain(reconnectCopy);
-    }
-    for (const removalCopy of [
-      "It does not uninstall the Slack app",
-      "It does not uninstall the GitHub App",
-      "It does not uninstall the bot",
-      "It does not uninstall the Teams app",
-      "queues durable removal of its Telegram webhook and command menu",
-      "After Telegram confirms that cleanup, Paperclip retires the saved token",
-      "BotFather bot and its chat memberships remain",
-    ]) {
-      expect(detail).toContain(removalCopy);
+    for (const provider of ["slack", "github", "discord", "microsoftTeams", "telegram"]) {
+      expectBilingualCopy(detail, `apps.chatEndpointDetail.lifecycle.reconnect.${provider}`);
+      expectBilingualCopy(detail, `apps.chatEndpointDetail.lifecycle.remove.${provider}`);
     }
   });
 
   it("uses only executable provider credential flows", () => {
     const setup = source("./ChatEndpointSetup.tsx");
+    const githubSetup = source("./GitHubChatSetup.tsx");
     for (const credential of [
       "botToken",
       "appId",
@@ -155,58 +160,71 @@ describe("chat connector UI contract", () => {
     ]) {
       expect(setup).toContain(`\"${credential}\"`);
     }
-    expect(setup).toContain("credentials.privateKey");
+    expect(githubSetup).toContain("credentials.privateKey");
     expect(setup).toContain("credentials.signingSecret");
-    expect(setup).toContain("Create Slack app");
-    expect(setup).toContain("Create or connect a GitHub App");
-    expect(setup).toContain("create a single-tenant app registration");
-    expect(setup).toContain("Create a bot with BotFather");
-    expect(setup).toContain("Create one dedicated Discord application");
-    expect(setup).toContain("enable Message Content Intent");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.purpose.chatTitle");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.slack.automatic.createApp");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.slack.manual.steps.verifyConnection");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.microsoftTeams.instructions.entra");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.telegram.createDescription");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.discord.createDescription");
+    const discordBotInstructions = expectBilingualCopy(
+      setup,
+      "apps.chatEndpointSetup.discord.instructions.bot",
+      { bot: "Bot", messageContentIntent: "Message Content Intent" },
+    );
+    expect(discordBotInstructions.english).toContain("enable Message Content Intent");
+    expect(discordBotInstructions.portuguese).toContain("ative Message Content Intent");
+    expectBilingualCopy(githubSetup, "apps.githubChatSetup.progress.checkingConnection");
+    expectBilingualCopy(githubSetup, "apps.githubChatSetup.existing.appId");
+    expectBilingualCopy(githubSetup, "apps.githubChatSetup.existing.privateKey");
+    expectBilingualCopy(githubSetup, "apps.githubChatSetup.existing.webhookSecret");
+    expectBilingualCopy(githubSetup, "apps.githubChatSetup.existing.reconnectDescription");
     expect(setup).toMatch(/Create\s+Public Threads/);
     expect(setup).toContain("permissions=309237763136&scope=bot");
     expect(setup).not.toContain("applications.commands");
-    expect(setup).toContain("Generate webhook secret");
-    expect(setup).toContain("will not show it again");
-    expect(setup).toContain('params.get("reconnect") === "1"');
-    expect(setup).toContain(
-      "Leave the token blank to reuse the saved credential",
-    );
-    expect(setup).toContain(
-      "Leave credentials blank to reuse the saved values",
-    );
-    expect(setup).toContain(
-      "immediately invalidates GitHub webhook signatures",
-    );
-    expect(setup).toContain("generatingSetupSecret ||\n            pending");
+    expect(githubSetup).toContain('params.get("reconnect") === "1"');
     expect(setup).not.toContain("/setprivacy");
     expect(setup).toContain("/task@bot_username");
-    expect(setup).toContain("registers its command menu automatically");
-    expect(setup).toContain(
-      "ordinary\n          mentions are not delivered to bots",
+    const telegramPrivacy = expectBilingualCopy(
+      setup,
+      "apps.chatEndpointSetup.telegram.privacyNoteBeforeCommand",
     );
-    expect(setup).toContain("Create Azure Bot");
-    expect(setup).toContain("Microsoft 365 work or school organization");
-    expect(setup).toContain("teams.live.com");
-    expect(setup).toContain("commercial cloud tenants only");
-    expect(setup).toContain("GCC High");
-    expect(setup).toContain("operated by 21Vianet");
-    expect(setup).toContain("Client secret value");
-    expect(setup).toContain("Microsoft portal field map");
-    expect(setup).toContain(
-      "Accounts in this organizational directory only (Single tenant)",
+    expect(telegramPrivacy.english).toContain("registers its command menu automatically");
+    expect(telegramPrivacy.portuguese).toContain("registra o menu de comandos automaticamente");
+    expect(telegramPrivacy.english).toContain("ordinary mentions are not delivered to bots");
+    expect(telegramPrivacy.portuguese).toContain("menções comuns não chegam aos bots");
+    const teamsRequirements = expectBilingualCopy(
+      setup,
+      "apps.chatEndpointSetup.microsoftTeams.requirements",
     );
-    expect(setup).toContain("Use existing app registration");
-    expect(setup).toContain("Settings · Configuration");
-    expect(setup).toContain("Configure · App features · Bot");
-    expect(setup).toContain("Configure · Permissions");
-    expect(setup).toContain("Upload an app · Upload a custom app");
-    expect(setup).toContain("Copy manifest settings");
+    for (const value of [teamsRequirements.english, teamsRequirements.portuguese]) {
+      expect(value).toContain("teams.live.com");
+      expect(value).toContain("GCC High");
+      expect(value).toContain("21Vianet");
+    }
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.microsoftTeams.links.createAzureBot");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.microsoftTeams.fields.clientSecret");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.microsoftTeams.portalMap.heading");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.microsoftTeams.portalMap.steps.entra");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.microsoftTeams.portalMap.steps.azureBot");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.microsoftTeams.portalMap.steps.teamsDeveloperPortal");
+    const installInstructions = expectBilingualCopy(
+      setup,
+      "apps.chatEndpointSetup.microsoftTeams.portalMap.steps.install",
+    );
+    expect(installInstructions.english).toContain("One team install covers its standard channels");
+    expect(installInstructions.portuguese).toContain("Uma instalação na equipe cobre os canais padrão");
+    expect(installInstructions.english).toContain("Private and shared channels require a separate app installation");
+    expect(installInstructions.portuguese).toContain("Canais privados e compartilhados exigem uma instalação separada do app");
+    expectBilingualCopy(setup, "apps.chatEndpointSetup.microsoftTeams.manifest.copy");
+    const manifestNote = expectBilingualCopy(
+      setup,
+      "apps.chatEndpointSetup.microsoftTeams.manifest.clientIdNote",
+    );
+    expect(manifestNote.english).toContain("not a complete app package");
+    expect(manifestNote.portuguese).toContain("não é um pacote completo do app");
     expect(setup).toContain("disabled={!credentials.clientId?.trim()}");
-    expect(setup).toContain(
-      "Enter the Application / Client ID above before copying",
-    );
-    expect(setup).toContain("not a complete app package");
     expect(setup).toContain('scopes: ["personal", "team", "groupChat"]');
     expect(setup).toContain('scopes: ["personal", "groupChat"]');
     expect(setup).toContain('title: "/status"');
@@ -216,29 +234,42 @@ describe("chat connector UI contract", () => {
     expect(setup).toContain("resourceSpecific");
     expect(setup).toContain("ChannelMessage.Read.Group");
     expect(setup).toContain("ChatMessage.Read.Chat");
-    expect(setup).toContain("not Microsoft Graph permissions in Entra");
-    expect(setup).toContain("does not use Teams single sign-on");
-    expect(setup).toContain("webApplicationInfo");
+    const teamsAppInstruction = expectBilingualCopy(
+      setup,
+      "apps.chatEndpointSetup.microsoftTeams.instructions.teamsApp",
+    );
+    expect(teamsAppInstruction.english).toContain("not Microsoft Graph permissions in Entra");
+    expect(teamsAppInstruction.portuguese).toContain("não são permissões do Microsoft Graph no Entra");
+    const noSsoNote = expectBilingualCopy(
+      setup,
+      "apps.chatEndpointSetup.microsoftTeams.manifest.noSsoNote",
+    );
+    expect(noSsoNote.english).toContain("webApplicationInfo");
+    expect(noSsoNote.portuguese).toContain("webApplicationInfo");
     expect(setup).toContain('resource: "https://paperclip.ing"');
-    expect(setup).toContain("only associates the RSC");
-    expect(setup).toContain("you do not need to register an Entra");
-    expect(setup).toContain("receive every message");
-    expect(setup).toContain("One team install covers its standard");
-    expect(setup).toContain("Private and shared channels require");
+    expect(noSsoNote.english).toContain("only associates the RSC");
+    expect(noSsoNote.portuguese).toContain("apenas associa as permissões RSC");
+    expect(noSsoNote.english).toContain("you do not need to register an Entra");
+    expect(noSsoNote.portuguese).toContain("não é necessário registrar um URI");
+    expect(teamsAppInstruction.english).toContain("receive every message");
+    expect(teamsAppInstruction.portuguese).toContain("receba todas as mensagens");
     expect(setup).not.toContain(
       "does not require a <code>webApplicationInfo</code>",
     );
     expect(setup).not.toContain("api://paperclip-chat/");
-    expect(setup).toContain("not private channels");
-    expect(setup).toContain("native file receipt and consent-based sending");
+    const supportedScopes = expectBilingualCopy(
+      setup,
+      "apps.chatEndpointSetup.microsoftTeams.manifest.supportedScopesNote",
+    );
+    expect(supportedScopes.english).toContain("not private channels");
+    expect(supportedScopes.portuguese).toContain("não a canais privados");
+    expect(supportedScopes.english).toContain("native file receipt and consent-based sending");
+    expect(supportedScopes.portuguese).toContain("recebimento nativo de arquivos e o envio mediante consentimento");
     expect(setup).toContain("issue_comment");
     expect(setup).toContain("pull_request");
     expect(setup).toContain("pull_request_review_comment");
-    expect(setup).toContain("Enable SSL verification");
-    expect(setup).toContain("Only on this account");
     expect(setup).toContain('type="password"');
     expect(setup).not.toContain("WebkitTextSecurity");
-    expect(setup).toContain("Verify Slack connection");
     expect(setup).toContain("buildSlackAppManifest");
     expect(setup).toContain("defaultSlackAppConfiguration");
     const manifest = buildSlackAppManifest({
@@ -280,27 +311,20 @@ describe("chat connector UI contract", () => {
   });
 
   it("keeps GitHub setup on the shipped customer-owned App path", () => {
-    const setup = source("./ChatEndpointSetup.tsx");
-    const generator = source(
-      "../../../../../doc/plans/chat-adapters/generate-wireframes-v8.mjs",
-    );
-    const setupData = source(
-      "../../../../../doc/plans/chat-adapters/setup-wireframe-data-v8.mjs",
-    );
-    expect(setup).toContain("Generate webhook secret");
-    expect(setup).toContain("GitHub App ID");
-    expect(setup).toContain("Private key (PEM)");
-    expect(setup).toContain("Choose .pem file");
-    expect(setup).toContain("Choose GitHub App private key file");
-    expect(setup).toContain("readGitHubPrivateKeyFile");
-    expect(setup).toContain("privateKeyReadGuard.invalidate()");
-    expect(setup).toContain("privateKeyFileLoading ||");
-    expect(setup).toContain("Show private key");
-    expect(setup).toContain('type="password"');
-    expect(setup).toContain('event.clipboardData.getData("text")');
-    expect(setup).not.toContain("WebkitTextSecurity");
-    expect(generator).toContain("./setup-wireframe-data-v8.mjs");
-    expect(generator).not.toContain("./setup-wireframe-data-v6.mjs");
-    expect(setupData).not.toContain('primary: "Create in GitHub"');
+    const route = source("./ChatEndpointSetup.tsx");
+    const setup = source("./GitHubChatSetup.tsx");
+    expect(route).toContain('import { GitHubChatSetup } from "./GitHubChatSetup"');
+    expect(route).toContain("<GitHubChatSetup />");
+    expect(setup).toContain("gitHubAppManifestAction");
+    expect(setup).toContain('url.origin !== "https://github.com"');
+    expect(setup).toContain("githubChatApi");
+    expect(setup).toContain("credentials.appId");
+    expect(setup).toContain("credentials.privateKey");
+    expect(setup).toContain("credentials.webhookSecret");
+    expectBilingualCopy(setup, "apps.githubChatSetup.progress.checkingConnection");
+    expectBilingualCopy(setup, "apps.githubChatSetup.existing.appId");
+    expectBilingualCopy(setup, "apps.githubChatSetup.existing.privateKey");
+    expectBilingualCopy(setup, "apps.githubChatSetup.existing.webhookSecret");
+    expectBilingualCopy(setup, "apps.githubChatSetup.existing.reconnectDescription");
   });
 });

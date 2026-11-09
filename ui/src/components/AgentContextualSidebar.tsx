@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { agentsApi } from "@/api/agents";
 import { useCompany } from "@/context/CompanyContext";
+import { useTranslation } from "@/i18n";
 import { queryKeys } from "@/lib/queryKeys";
 import { ContextualSidebarFrame } from "./ContextualSidebarFrame";
 import { SidebarNavItem } from "./SidebarNavItem";
@@ -41,23 +42,24 @@ const localIcons = {
 } satisfies Record<AgentLocalDetailView, typeof Sparkles>;
 
 const auditItems = [
-  { section: "activity", label: "Activity", icon: Activity },
-  { section: "runs", label: "Runs", icon: PlayCircle },
-  { section: "costs", label: "Costs", icon: ReceiptText },
-  { section: "budgets", label: "Budgets", icon: BadgeDollarSign },
+  { section: "activity", label: "Activity", translationKey: "agentDetailNavigation.audit.activity", icon: Activity },
+  { section: "runs", label: "Runs", translationKey: "agentDetailNavigation.audit.runs", icon: PlayCircle },
+  { section: "costs", label: "Costs", translationKey: "agentDetailNavigation.audit.costs", icon: ReceiptText },
+  { section: "budgets", label: "Budgets", translationKey: "agentDetailNavigation.audit.budgets", icon: BadgeDollarSign },
 ] as const;
 
 export function AgentContextualSidebar({
   agentRef,
   agentId,
   agentName,
-  labels = { secrets: "Secrets & variables" },
+  labels = {},
 }: {
   agentRef: string;
   agentId?: string;
   agentName?: string;
   labels?: Partial<Record<AgentLocalDetailView, string>>;
 }) {
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const shouldResolveAgent = !agentId || !agentName;
   const { data: resolvedAgent } = useQuery({
@@ -66,7 +68,7 @@ export function AgentContextualSidebar({
     enabled: shouldResolveAgent && Boolean(agentRef && selectedCompanyId),
   });
   const resolvedId = agentId ?? resolvedAgent?.id;
-  const resolvedName = agentName ?? resolvedAgent?.name ?? "Agent";
+  const resolvedName = agentName ?? resolvedAgent?.name ?? t("agentDetailNavigation.agentFallback");
 
   return (
     <ContextualSidebarFrame
@@ -77,7 +79,7 @@ export function AgentContextualSidebar({
       className="border-r border-border bg-background"
     >
       <nav
-        aria-label={`${resolvedName} navigation`}
+        aria-label={t("agentDetailNavigation.navigationLabel", { agentName: resolvedName })}
         data-slot="contextual-sidebar-nav"
         className={contextualSidebarStyles.nav}
       >
@@ -91,7 +93,7 @@ export function AgentContextualSidebar({
               data-slot="contextual-sidebar-section-label"
               className={contextualSidebarStyles.sectionLabel}
             >
-              {section.label}
+              {t(section.translationKey)}
             </p>
             <div data-slot="contextual-sidebar-group" className={contextualSidebarStyles.group}>
               {section.items
@@ -101,7 +103,7 @@ export function AgentContextualSidebar({
                     <SidebarNavItem
                       key={item.value}
                       to={href}
-                      label={labels?.[item.value] ?? item.label}
+                      label={labels?.[item.value] ?? t(item.translationKey)}
                       icon={localIcons[item.value]}
                     />
                   );
@@ -115,18 +117,18 @@ export function AgentContextualSidebar({
             data-slot="contextual-sidebar-section-label"
             className={contextualSidebarStyles.sectionLabel}
           >
-            Audit
+            {t("agentDetailNavigation.audit.heading")}
           </p>
           <div data-slot="contextual-sidebar-group" className={contextualSidebarStyles.group}>
             {resolvedId ? auditItems.map((item) => (
               <SidebarNavItem
                 key={item.section}
                 to={agentScopedAuditHref(resolvedId, item.section)}
-                label={item.label}
+                label={t(item.translationKey)}
                 icon={item.icon}
               />
             )) : (
-              <p className="px-2 py-1.5 text-xs text-muted-foreground">Loading audit links…</p>
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">{t("agentDetailNavigation.audit.loading")}</p>
             )}
           </div>
         </div>

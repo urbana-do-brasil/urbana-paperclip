@@ -10,14 +10,20 @@ export function resolveIssueChatHumanAuthor(args: {
   authorUserId?: string | null;
   currentUserId?: string | null;
   userProfileMap?: ReadonlyMap<string, CompanyUserProfile> | null;
+  fallbackLabels?: { localBoard: string; currentUser: string; otherUser: string };
 }) {
   const { authorName, authorUserId, currentUserId, userProfileMap } = args;
+  const fallbackLabels = args.fallbackLabels ?? {
+    localBoard: "Board",
+    currentUser: "You",
+    otherUser: "User",
+  };
   const profile = authorUserId ? userProfileMap?.get(authorUserId) : null;
   const isCurrentUser = Boolean(authorUserId && currentUserId && authorUserId === currentUserId);
   return {
     isCurrentUser,
     authorName: profile?.label?.trim() || authorName?.trim() ||
-      (authorUserId === "local-board" ? "Board" : isCurrentUser ? "You" : "User"),
+      (authorUserId === "local-board" ? fallbackLabels.localBoard : isCurrentUser ? fallbackLabels.currentUser : fallbackLabels.otherUser),
     avatarUrl: profile?.image ?? null,
   };
 }

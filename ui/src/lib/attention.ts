@@ -9,6 +9,7 @@ import type {
   AttentionSourceKind,
   AttentionWorkspaceRef,
 } from "@paperclipai/shared";
+import type { TFunction } from "i18next";
 
 export type AttentionListOptions = AttentionFeedQuery;
 
@@ -187,7 +188,13 @@ function quote(text: string | null | undefined): string | null {
   return `“${trimmed}”`;
 }
 
-function countNoun(count: number, singular: string): string {
+function countNoun(
+  count: number,
+  singular: string,
+  t?: TFunction,
+  translationKey?: string,
+): string {
+  if (t && translationKey) return t(`attentionQueue.detail.${translationKey}`, { count });
   return `${count} ${count === 1 ? singular : `${singular}s`}`;
 }
 
@@ -198,7 +205,7 @@ function countNoun(count: number, singular: string): string {
  * Returns `null` when the detail carries nothing beyond the title, so the row
  * can fall back to `whyNow`.
  */
-export function attentionDetailLine(item: AttentionItem): string | null {
+export function attentionDetailLine(item: AttentionItem, t?: TFunction): string | null {
   const detail = item.detail;
   if (!detail) return null;
   switch (detail.kind) {
@@ -210,21 +217,22 @@ export function attentionDetailLine(item: AttentionItem): string | null {
       return quote(detail.promptExcerpt);
     case "checkbox_confirmation": {
       const q = quote(detail.promptExcerpt);
-      return q ? `${countNoun(detail.optionCount, "option")} — ${q}` : countNoun(detail.optionCount, "option");
+      const label = countNoun(detail.optionCount, "option", t, "options");
+      return q ? `${label} — ${q}` : label;
     }
     case "questions": {
       const q = quote(detail.firstQuestionText);
-      const label = countNoun(detail.questionCount, "question");
+      const label = countNoun(detail.questionCount, "question", t, "questions");
       return q ? `${label} — ${q}` : label;
     }
     case "suggested_tasks": {
       const q = quote(detail.firstTaskTitle);
-      const label = countNoun(detail.taskCount, "suggested task");
+      const label = countNoun(detail.taskCount, "suggested task", t, "suggestedTasks");
       return q ? `${label} — ${q}` : label;
     }
     case "item_verdicts": {
       const q = quote(detail.promptExcerpt);
-      const label = `${countNoun(detail.itemCount, "item")} to verdict`;
+      const label = countNoun(detail.itemCount, "item to verdict", t, "itemsToVerdict");
       return q ? `${label} — ${q}` : label;
     }
     case "failed_run":
@@ -237,10 +245,17 @@ export function attentionDetailLine(item: AttentionItem): string | null {
       const b = detail.blockingIssue;
       if (!b) return null;
       const id = b.identifier ? `${b.identifier} ` : "";
-      return b.title ? `Blocked by ${id}${b.title}` : b.identifier ? `Blocked by ${b.identifier}` : null;
+      const blocker = `${id}${b.title ?? ""}`.trim() || b.identifier;
+      return blocker ? (t ? t("attentionQueue.detail.blockedBy", { blocker }) : `Blocked by ${blocker}`) : null;
     }
-    case "budget":
-      return `${Math.round(detail.observedPercent)}% of budget used ($${detail.amountObserved} / $${detail.amountLimit})`;
+    case "budget": {
+      const percent = Math.round(detail.observedPercent);
+      const observed = `$${detail.amountObserved}`;
+      const limit = `$${detail.amountLimit}`;
+      return t
+        ? t("attentionQueue.detail.budgetUsed", { percent, observed, limit })
+        : `${percent}% of budget used (${observed} / ${limit})`;
+    }
     case "generic":
       return quote(detail.summaryExcerpt);
     default:
@@ -419,15 +434,19 @@ export const DECIDE_BY_OPTIONS: ReadonlyArray<[DecideByPreset, string]> = [
 ];
 
 /** Human label for any stored `decideBy` value (preset or `YYYY-MM-DD`). */
-export function decideByLabel(decideBy: string | null): string {
-  if (!decideBy) return "Not set";
-  if (decideBy === "today") return "Today";
-  if (decideBy === "this_week") return "This week";
-  if (decideBy === "whenever") return "Whenever";
+export function decideByLabel(decideBy: string | null, t?: TFunction, locale?: string): string {
+  if (!decideBy) return t?.("attentionQueue.decideBy.notSet", { defaultValue: "Not set" }) ?? "Not set";
+  if (decideBy === "today") return t?.("attentionQueue.decideBy.today", { defaultValue: "Today" }) ?? "Today";
+  if (decideBy === "this_week") {
+    return t?.("attentionQueue.decideBy.this_week", { defaultValue: "This week" }) ?? "This week";
+  }
+  if (decideBy === "whenever") {
+    return t?.("attentionQueue.decideBy.whenever", { defaultValue: "Whenever" }) ?? "Whenever";
+  }
   if (/^\d{4}-\d{2}-\d{2}$/.test(decideBy)) {
     const parsed = new Date(`${decideBy}T00:00:00.000Z`);
     return Number.isFinite(parsed.getTime())
-      ? parsed.toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" })
+      ? parsed.toLocaleDateString(locale, { month: "short", day: "numeric", timeZone: "UTC" })
       : decideBy;
   }
   return decideBy;

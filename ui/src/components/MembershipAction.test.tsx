@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from "react";
+import { act as reactAct } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { MembershipAction } from "./MembershipAction";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,7 +24,8 @@ describe("MembershipAction", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot> | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await reactAct(async () => { await i18n.changeLanguage("en"); });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
@@ -36,6 +40,7 @@ describe("MembershipAction", () => {
     }
     container.remove();
     document.body.innerHTML = "";
+    await reactAct(async () => { await i18n.changeLanguage(DEFAULT_LOCALE); });
   });
 
   async function renderAction(element: ReactNode) {
@@ -116,6 +121,6 @@ describe("MembershipAction", () => {
 
     expect(button().getAttribute("aria-busy")).toBe("true");
     expect(button().disabled).toBe(true);
-    expect(button().textContent).toContain("Joining...");
+    expect(button().textContent).toContain("Joining…");
   });
 });

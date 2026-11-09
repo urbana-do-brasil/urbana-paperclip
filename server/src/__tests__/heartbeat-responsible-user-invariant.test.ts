@@ -15,6 +15,8 @@ import {
   heartbeatRuns,
   issueComments,
   issues,
+  authUsers,
+  userLocalePreferences,
 } from "@paperclipai/db";
 import {
   getEmbeddedPostgresTestSupport,
@@ -159,9 +161,54 @@ describeEmbeddedPostgres("heartbeat responsible-user invariant", () => {
     return { companyId, ownerUserId, agentId };
   }
 
+  it("keeps different-language comments associated across deferred promotion without changing the issue lock", async () => {
+    const { companyId, agentId, ownerUserId } = await seedCompany();
+    const pt = `locale-pt-${randomUUID()}`, en = `locale-en-${randomUUID()}`;
+    const issueId = randomUUID(), ptComment = randomUUID(), enComment = randomUUID();
+    const now = new Date();
+    await db.insert(authUsers).values([pt, en].map(id => ({ id, name: id, email: `${id}@example.test`, createdAt: now, updatedAt: now })));
+    await db.insert(userLocalePreferences).values([{ userId: pt, locale: "pt-BR" }, { userId: en, locale: "en" }]);
+    await db.insert(issues).values({ id: issueId, companyId, title: "Multiple locales", status: "todo", assigneeAgentId: agentId, responsibleUserId: ownerUserId });
+    let finish!: () => void;
+    const blocked = new Promise<void>(resolve => { finish = resolve; });
+    const execute = mockAdapterExecute.getMockImplementation()!;
+    mockAdapterExecute.mockImplementationOnce(async () => { await blocked; return execute(); });
+    const first = await heartbeat.wakeup(agentId, { payload: { issueId }, requestedByActorType: "system" });
+    try {
+      await vi.waitFor(() => expect(mockAdapterExecute).toHaveBeenCalled(), { timeout: 5_000 });
+      await db.insert(issueComments).values([
+        { id: ptComment, companyId, issueId, authorUserId: pt, body: "Português" },
+        { id: enComment, companyId, issueId, authorUserId: en, body: "English" },
+      ]);
+      for (const [actor, commentId] of [[pt, ptComment], [en, enComment]]) {
+        await heartbeat.wakeup(agentId, { source: "on_demand", reason: "issue_commented", payload: { issueId, commentId }, requestedByActorType: "user", requestedByActorId: actor });
+      }
+      const deferred = await db.select().from(agentWakeupRequests).where(and(eq(agentWakeupRequests.companyId, companyId), eq(agentWakeupRequests.status, "deferred_issue_execution")));
+      const englishReceipt = deferred.find(receipt => receipt.requestedByActorId === en);
+      expect(englishReceipt?.payload?._paperclipWakeContext).toMatchObject({ communicationLocale: "en", communicationLocaleSource: "user" });
+      await db.update(userLocalePreferences).set({ locale: "pt-BR" }).where(eq(userLocalePreferences.userId, en));
+      const [locked] = await db.select().from(issues).where(eq(issues.id, issueId));
+      expect(locked.executionRunId).toBe(first!.id);
+      expect(locked.responsibleUserId).toBe(ownerUserId);
+    } finally { finish(); }
+    await drainHeartbeatRunsToQuiescence(db, heartbeat);
+    const runs = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.companyId, companyId));
+    for (const [commentId, locale] of [[ptComment, "pt-BR"], [enComment, "en"]]) {
+      const associated = runs.filter(run => Object.hasOwn((run.contextSnapshot?.communicationLocaleByCommentId ?? {}) as object, commentId));
+      expect(associated).toHaveLength(1);
+      expect(associated[0].contextSnapshot?.communicationLocale).toBe(locale);
+      expect((associated[0].contextSnapshot?.communicationLocaleByCommentId as Record<string, { communicationLocale: string }>)[commentId].communicationLocale).toBe(locale);
+    }
+    const comments = await db.select().from(issueComments).where(eq(issueComments.issueId, issueId));
+    expect(comments.find(comment => comment.id === ptComment)?.authorUserId).toBe(pt);
+    expect(comments.find(comment => comment.id === enComment)?.authorUserId).toBe(en);
+  });
+
   it("dispatches an interrupted queue under the clicking operator through the real startup path", async () => {
     const { companyId, agentId, ownerUserId } = await seedCompany();
     const operatorId = `operator-${randomUUID()}`, issueId = randomUUID(), commentId = randomUUID(), queueId = randomUUID();
+    await db.insert(authUsers).values({ id: operatorId, name: operatorId, email: `${operatorId}@example.test`, createdAt: new Date(), updatedAt: new Date() });
+    await db.insert(userLocalePreferences).values({ userId: operatorId, locale: "en" });
     await db.insert(companyMemberships).values({ companyId, principalType: "user", principalId: operatorId,
       membershipRole: "operator", status: "active" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Interrupted queue", status: "todo",
@@ -178,6 +225,7 @@ describeEmbeddedPostgres("heartbeat responsible-user invariant", () => {
     expect(receipt.status).toBe("coalesced");
     const completed = await waitForRun(db, receipt.runId!);
     expect(completed).toMatchObject({ status: "succeeded", responsibleUserId: operatorId });
+    expect(completed?.contextSnapshot).toMatchObject({ communicationLocale: "pt-BR", communicationLocaleSource: "default" });
     expect(completed?.activeIdentityContextId).toBeTruthy();
     expect(completed?.contextSnapshot?.originIdentityContextId).toBeUndefined();
     expect(completed?.contextSnapshot?.retryOfRunId).toBeUndefined();

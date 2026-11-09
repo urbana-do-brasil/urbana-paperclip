@@ -13,6 +13,7 @@ import {
   hasVisibleMonitorSurface,
 } from "./IssueMonitorBanner";
 import type { DerivedMonitorState } from "@/lib/issue-monitor";
+import { i18n } from "@/i18n";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -125,7 +126,8 @@ describe("buildMonitorSurfaceCopy", () => {
 describe("IssueMonitorBanner / IssueMonitorComposerStrip rendering", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
     container = document.createElement("div");
@@ -159,7 +161,7 @@ describe("IssueMonitorBanner / IssueMonitorComposerStrip rendering", () => {
     expect(onCancel).not.toHaveBeenCalled();
     open();
     await act(async () => { Array.from(document.querySelectorAll("button")).find(b => b.textContent === "Cancel monitor")!.click(); });
-    expect(document.querySelector('[role="alert"]')?.textContent).toBe("Unable to save monitor");
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain("Unable to save monitor");
     expect(document.querySelector('[role="alertdialog"]')).not.toBeNull();
     await act(async () => { Array.from(document.querySelectorAll("button")).find(b => b.textContent === "Cancel monitor")!.click(); });
     expect(onCancel).toHaveBeenCalledTimes(2);
@@ -328,6 +330,24 @@ describe("IssueMonitorBanner / IssueMonitorComposerStrip rendering", () => {
     render({ ...issue, status: "done" });
     expect(container.textContent).toBe("");
     expect(vi.getTimerCount()).toBe(0);
+    flushSync(() => root.unmount());
+  });
+
+  it("renders the monitor banner, actions, and reply hint in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = createRoot(container);
+    const issue = issueWithMonitor(new Date(NOW.getTime() + 2 * 60 * 60_000).toISOString());
+    flushSync(() => root.render(<>
+      <IssueMonitorBanner issue={issue} onCheckNow={vi.fn()} onCancelMonitor={vi.fn()} />
+      <IssueMonitorComposerStrip issue={issue} onCheckNow={vi.fn()} />
+    </>));
+
+    expect(container.textContent).toContain("Aguardando monitoramento — retoma em 2 h");
+    expect(container.textContent).toContain("Acompanhando: vercel-deploy");
+    expect(container.textContent).toContain("Enviar uma resposta desperta o agente agora");
+    expect(container.querySelector('[aria-label="Cancelar monitoramento"]')).not.toBeNull();
+    expect(Array.from(container.querySelectorAll("button")).some((button) => button.textContent?.includes("Verificar agora"))).toBe(true);
+
     flushSync(() => root.unmount());
   });
 });

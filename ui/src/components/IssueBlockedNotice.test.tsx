@@ -15,6 +15,7 @@ import type {
 import { IssueBlockedNotice } from "./IssueBlockedNotice";
 import { deriveRecoveryCardState } from "./IssueRecoveryActionCard";
 import { ToastProvider } from "../context/ToastContext";
+import { i18n } from "../i18n";
 
 const retryNowMock = vi.hoisted(() => vi.fn());
 
@@ -83,12 +84,13 @@ function buildRetryResponse(outcome: IssueRetryNowOutcome) {
   };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(SYSTEM_NOW);
   retryNowMock.mockReset();
 });
 
-afterEach(() => {
+afterEach(async () => {
   if (root) {
     act(() => root?.unmount());
   }
@@ -97,6 +99,7 @@ afterEach(() => {
   container = null;
   dateNowSpy?.mockRestore();
   dateNowSpy = null;
+  await i18n.changeLanguage("pt-BR");
 });
 
 function withProviders(node: ReactNode) {
@@ -879,7 +882,7 @@ describe("IssueBlockedNotice", () => {
       expect(chip?.getAttribute("data-recovery-state")).toBe("in_progress");
       expect(chip?.getAttribute("data-recovery-lane")).toBe("source_owner");
       expect(chip?.textContent).toContain("Recovery in progress · 2/5");
-      expect(chip?.getAttribute("title")).toContain("Attempt 2 of 5 · next try in 3m");
+      expect(chip?.getAttribute("title")).toContain("Attempt 2 of 5 · next try in 3 min.");
 
       // The card the blocker links to must not contradict the chip.
       const cardState = deriveRecoveryCardState(liveAction);
@@ -927,6 +930,24 @@ describe("IssueBlockedNotice", () => {
       expect(chip?.getAttribute("data-recovery-state")).toBe("needed");
       expect(chip?.textContent).toContain("Recovery needed");
       expect(deriveRecoveryCardState(exhaustedAction)).toBe("needed");
+    });
+
+    it("localizes blocker recovery badges and retry lineage", async () => {
+      await i18n.changeLanguage("pt-BR");
+      const action = buildDispositionRepairAction({
+        type: "bounded_owner_disposition_repair",
+        retryAgentId: "agent-owner",
+        attempt: 2,
+        maxAttempts: 5,
+        retryAt: "2026-04-18T20:03:00.000Z",
+        scheduledRunId: "run-b3",
+      });
+      const chip = renderBlockerChip(action);
+
+      expect(chip?.textContent).toContain("Recuperação em andamento · 2/5");
+      expect(chip?.getAttribute("title")).toContain("Tentativa 2 de 5 · próxima tentativa em 3 min.");
+      expect(chip?.getAttribute("title")).toContain("Abra a tarefa de origem para agir.");
+      expect(chip?.getAttribute("data-recovery-lane")).toBe("source_owner");
     });
   });
 });

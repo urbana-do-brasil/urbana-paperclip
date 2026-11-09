@@ -71,9 +71,12 @@ command.
 ## Agent Commands
 
 ```sh
+npx paperclipai agent me
 npx paperclipai agent list
 npx paperclipai agent get <agent-id>
 ```
+
+`agent me` shows the identity associated with the current API credentials.
 
 ## Skills Commands
 

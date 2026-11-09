@@ -54,6 +54,7 @@ export interface DerivedMonitorState {
 export interface MonitorDateTimeFormatOptions {
   locale?: Intl.LocalesArgument;
   timeZone?: string;
+  todayLabel?: string;
 }
 
 function toTimestamp(value: MonitorDate): number {
@@ -62,34 +63,44 @@ function toTimestamp(value: MonitorDate): number {
   return timestamp;
 }
 
-function formatDuration(durationMs: number): string {
+function formatDuration(durationMs: number, locale?: string): string {
+  const portuguese = locale?.toLowerCase().startsWith("pt") ?? false;
   if (durationMs < MINUTE_MS) {
-    return `${Math.max(1, Math.ceil(durationMs / SECOND_MS))}s`;
+    const seconds = Math.max(1, Math.ceil(durationMs / SECOND_MS));
+    return portuguese ? `${seconds} s` : `${seconds}s`;
   }
   if (durationMs < HOUR_MS) {
-    return `${Math.floor(durationMs / MINUTE_MS)}m`;
+    const minutes = Math.floor(durationMs / MINUTE_MS);
+    return portuguese ? `${minutes} min` : `${minutes}m`;
   }
   if (durationMs < DAY_MS) {
     const hours = Math.floor(durationMs / HOUR_MS);
     const minutes = Math.floor((durationMs % HOUR_MS) / MINUTE_MS);
-    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    return portuguese
+      ? minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`
+      : minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
   }
 
   const days = Math.floor(durationMs / DAY_MS);
   const hours = Math.floor((durationMs % DAY_MS) / HOUR_MS);
-  return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  return portuguese
+    ? hours > 0 ? `${days} d ${hours} h` : `${days} d`
+    : hours > 0 ? `${days}d ${hours}h` : `${days}d`;
 }
 
-export function formatMonitorEta(nextCheckAt: MonitorDate, now: MonitorDate = new Date()): string {
+export function formatMonitorEta(nextCheckAt: MonitorDate, now: MonitorDate = new Date(), locale?: string): string {
   const deltaMs = toTimestamp(nextCheckAt) - toTimestamp(now);
-  if (deltaMs > 0) return `in ${formatDuration(deltaMs)}`;
-  if (deltaMs > -DUE_NOW_GRACE_MS) return "due now";
-  return `overdue by ${formatDuration(Math.abs(deltaMs))}`;
+  const portuguese = locale?.toLowerCase().startsWith("pt") ?? false;
+  if (deltaMs > 0) return portuguese ? `em ${formatDuration(deltaMs, locale)}` : `in ${formatDuration(deltaMs, locale)}`;
+  if (deltaMs > -DUE_NOW_GRACE_MS) return portuguese ? "agora" : "due now";
+  return portuguese
+    ? `atrasado há ${formatDuration(Math.abs(deltaMs), locale)}`
+    : `overdue by ${formatDuration(Math.abs(deltaMs), locale)}`;
 }
 
-export function formatMonitorEtaLabel(nextCheckAt: MonitorDate, now: MonitorDate = new Date()): string {
-  const eta = formatMonitorEta(nextCheckAt, now);
-  return `${eta.charAt(0).toUpperCase()}${eta.slice(1)}`;
+export function formatMonitorEtaLabel(nextCheckAt: MonitorDate, now: MonitorDate = new Date(), locale?: string): string {
+  const eta = formatMonitorEta(nextCheckAt, now, locale);
+  return `${eta.charAt(0).toLocaleUpperCase(locale)}${eta.slice(1)}`;
 }
 
 function zonedYmd(
@@ -135,7 +146,7 @@ export function formatMonitorAbsolute(
     targetYmd.year === referenceYmd.year &&
     targetYmd.month === referenceYmd.month &&
     targetYmd.day === referenceYmd.day;
-  if (isToday) return `Today, ${time}`;
+  if (isToday) return `${options.todayLabel ?? "Today"}, ${time}`;
 
   const weekday = new Intl.DateTimeFormat(options.locale, {
     weekday: "short",
@@ -259,12 +270,14 @@ export function useMonitorCountdown(nextCheckAt: MonitorDate | null | undefined)
   return now;
 }
 
-export function formatMonitorOffset(nextCheckAt: MonitorDate): string {
+export function formatMonitorOffset(nextCheckAt: MonitorDate, locale?: string): string {
   const now = new Date(Date.now());
   const deltaMs = toTimestamp(nextCheckAt) - now.getTime();
-  if (Math.round(Math.abs(deltaMs) / MINUTE_MS) === 0) return "now";
-  const eta = formatMonitorEta(nextCheckAt, now);
-  if (eta === "due now") return "now";
+  const portuguese = locale?.toLowerCase().startsWith("pt") ?? false;
+  if (Math.round(Math.abs(deltaMs) / MINUTE_MS) === 0) return portuguese ? "agora" : "now";
+  const eta = formatMonitorEta(nextCheckAt, now, locale);
+  if (eta === "due now" || eta === "agora") return portuguese ? "agora" : "now";
   if (eta.startsWith("overdue by ")) return `${eta.slice("overdue by ".length)} ago`;
+  if (eta.startsWith("atrasado há ")) return eta.slice("atrasado ".length);
   return eta;
 }

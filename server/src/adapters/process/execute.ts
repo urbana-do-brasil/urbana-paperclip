@@ -1,6 +1,11 @@
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DEFAULT_USER_LOCALE } from "@paperclipai/shared/localization";
+import {
+  normalizePaperclipWakePayload,
+  renderPaperclipWakeCommunicationGuidance,
+} from "@paperclipai/adapter-utils/server-utils";
 import type { AdapterExecutionContext, AdapterExecutionResult } from "../types.js";
 import {
   asString,
@@ -47,6 +52,15 @@ async function executeProcess(ctx: AdapterExecutionContext): Promise<AdapterExec
     ...buildPaperclipEnv(agent, ctx.agentIdentity),
     ...buildRuntimeToolsEnv(ctx.runtimeTools),
   };
+  // The process adapter has no shared prompt channel. Export only the validated
+  // locale and a fixed, server-authored language policy; never serialize wake
+  // comments, issue text, or the retired full-wake JSON environment variable.
+  const wakePayload = normalizePaperclipWakePayload(ctx.context.paperclipWake);
+  const communicationLocale = wakePayload?.communicationLocale ?? DEFAULT_USER_LOCALE;
+  env.PAPERCLIP_COMMUNICATION_LOCALE = communicationLocale;
+  env.PAPERCLIP_COMMUNICATION_GUIDANCE = renderPaperclipWakeCommunicationGuidance(
+    wakePayload ?? { communicationLocale },
+  );
   for (const [k, v] of Object.entries(envConfig)) {
     if (typeof v !== "string") continue;
     // Runtime PAPERCLIP_* always wins over config, and PAPERCLIP_API_KEY is

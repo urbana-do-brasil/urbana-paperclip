@@ -1,5 +1,6 @@
 import { configFieldsForSection } from "../config-sections";
 import type { AdapterConfigFieldsProps } from "../types";
+import { useTranslation } from "@/i18n";
 import {
   DraftNumberInput,
   DraftInput,
@@ -9,9 +10,6 @@ import { ChoosePathButton } from "../../components/PathInstructionsModal";
 
 const inputClass =
   "w-full rounded-md border border-border px-2.5 py-1.5 bg-transparent outline-none text-sm font-mono placeholder:text-muted-foreground/40";
-const instructionsFileHint =
-  "Absolute path to a markdown file (e.g. AGENTS.md) that defines this agent's behavior. Prepended to the Gemini prompt at runtime.";
-
 export function GeminiLocalConfigFields({
   section,
   isCreate,
@@ -23,6 +21,7 @@ export function GeminiLocalConfigFields({
   hideInstructionsFile,
   managedSandboxOnly,
 }: AdapterConfigFieldsProps) {
+  const { t } = useTranslation();
   const rawEngine = isCreate
     ? values!.geminiEngine ?? "auto"
     : eff("adapterConfig", "engine", String(config.engine ?? "auto"));
@@ -36,7 +35,10 @@ export function GeminiLocalConfigFields({
         the ACP sub-fields below name host paths. The platform-managed
         environment owns both, so the managed-sandbox-only policy hides them.
       */}
-      {!managedSandboxOnly && <Field label="Execution engine" hint="Default uses ACP. If ACP is unavailable, the run fails with a setup error. Choose CLI explicitly to use it.">
+      {!managedSandboxOnly && <Field
+        label={t("agentConfiguration.localAdapters.executionEngine")}
+        hint={t("agentConfiguration.localAdapters.executionEngineHint")}
+      >
         <select
           className={inputClass}
           value={engine}
@@ -47,8 +49,8 @@ export function GeminiLocalConfigFields({
               : mark("adapterConfig", "engine", value === "auto" ? undefined : value);
           }}
         >
-          <option value="auto">Default (ACP)</option>
-          <option value="cli">Gemini CLI</option>
+          <option value="auto">{t("agentConfiguration.localAdapters.defaultAcp")}</option>
+          <option value="cli">{t("agentConfiguration.localAdapters.geminiCli")}</option>
           <option value="acp">ACP</option>
         </select>
       </Field>}
@@ -56,8 +58,8 @@ export function GeminiLocalConfigFields({
         <>
           {!managedSandboxOnly && (
             <Field configSection="advanced"
-              label="ACP server command"
-              hint="Optional override for the Gemini ACP server command. Defaults to gemini --acp."
+              label={t("agentConfiguration.localAdapters.acpServerCommand")}
+              hint={t("agentConfiguration.localAdapters.acpServerCommandHints.gemini")}
             >
               <DraftInput
                 value={
@@ -76,7 +78,10 @@ export function GeminiLocalConfigFields({
               />
             </Field>
           )}
-          <Field configSection="runPolicy" label="ACP session mode" hint="Persistent keeps ACP session state between runs. One-shot starts fresh each run.">
+          <Field configSection="runPolicy"
+            label={t("agentConfiguration.localAdapters.acpSessionMode")}
+            hint={t("agentConfiguration.localAdapters.acpSessionModeHint")}
+          >
             <select
               className={inputClass}
               value={
@@ -91,13 +96,13 @@ export function GeminiLocalConfigFields({
                   : mark("adapterConfig", "mode", value);
               }}
             >
-              <option value="persistent">Persistent</option>
-              <option value="oneshot">One-shot</option>
+              <option value="persistent">{t("agentConfiguration.localAdapters.persistent")}</option>
+              <option value="oneshot">{t("agentConfiguration.localAdapters.oneShot")}</option>
             </select>
           </Field>
           <Field
-            label="ACP non-interactive permissions"
-            hint="Fallback if the ACP agent asks for input outside an interactive session."
+            label={t("agentConfiguration.localAdapters.acpNonInteractivePermissions")}
+            hint={t("agentConfiguration.localAdapters.acpNonInteractivePermissionsHint")}
           >
             <select
               className={inputClass}
@@ -113,14 +118,14 @@ export function GeminiLocalConfigFields({
                   : mark("adapterConfig", "nonInteractivePermissions", value);
               }}
             >
-              <option value="deny">Deny</option>
-              <option value="fail">Fail</option>
+              <option value="deny">{t("agentConfiguration.localAdapters.deny")}</option>
+              <option value="fail">{t("agentConfiguration.localAdapters.fail")}</option>
             </select>
           </Field>
           {!managedSandboxOnly && (
             <Field
-              label="ACP state directory"
-              hint="Optional ACP session state directory. Defaults to Paperclip-managed organization/agent scoped storage."
+              label={t("agentConfiguration.localAdapters.acpStateDirectory")}
+              hint={t("agentConfiguration.localAdapters.acpStateDirectoryHint")}
             >
               <div className="flex items-center gap-2">
                 <DraftInput
@@ -143,8 +148,8 @@ export function GeminiLocalConfigFields({
             </Field>
           )}
           <Field configSection="runPolicy"
-            label="ACP warm process idle ms"
-            hint="Defaults to 0, which closes the ACP process after each run while retaining persistent session state."
+            label={t("agentConfiguration.localAdapters.acpWarmProcessIdle")}
+            hint={t("agentConfiguration.localAdapters.acpWarmProcessIdleHint")}
           >
             {isCreate ? (
               <input
@@ -169,7 +174,10 @@ export function GeminiLocalConfigFields({
         </>
       )}
       {!hideInstructionsFile && (
-        <Field label="Agent instructions file" hint={instructionsFileHint}>
+        <Field
+          label={t("agentConfiguration.localAdapters.instructionsFile")}
+          hint={t("agentConfiguration.localAdapters.instructionsFileHints.gemini")}
+        >
           <div className="flex items-center gap-2">
             <DraftInput
               value={

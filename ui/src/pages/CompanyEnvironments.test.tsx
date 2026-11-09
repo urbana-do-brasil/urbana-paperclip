@@ -4,9 +4,14 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CompanyEnvironments } from "./CompanyEnvironments";
 import { ApiError } from "@/api/client";
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 const xtermMocks = vi.hoisted(() => {
   class MockTerminal {
@@ -146,6 +151,7 @@ const mockEnvironmentsApi = vi.hoisted(() => ({
 const mockInstanceSettingsApi = vi.hoisted(() => ({
   get: vi.fn(),
   getExperimental: vi.fn(),
+  update: vi.fn(),
 }));
 const mockSecretsApi = vi.hoisted(() => ({
   list: vi.fn(),
@@ -153,6 +159,10 @@ const mockSecretsApi = vi.hoisted(() => ({
 const mockAgentsApi = vi.hoisted(() => ({
   list: vi.fn(),
   update: vi.fn(),
+}));
+const mockPluginsApi = vi.hoisted(() => ({
+  list: vi.fn(),
+  listBundled: vi.fn(),
 }));
 
 vi.mock("@/context/CompanyContext", () => ({
@@ -186,6 +196,10 @@ vi.mock("@/api/secrets", () => ({
 
 vi.mock("@/api/agents", () => ({
   agentsApi: mockAgentsApi,
+}));
+
+vi.mock("@/api/plugins", () => ({
+  pluginsApi: mockPluginsApi,
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -279,8 +293,8 @@ function findAction(root: ParentNode, label: string): HTMLElement | undefined {
   return Array.from(root.querySelectorAll<HTMLElement>("button,a")).find((element) => element.textContent?.trim() === label);
 }
 
-function editButtons(root: ParentNode): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>("button,a")).filter((element) => element.textContent?.trim() === "Edit");
+function editButtons(root: ParentNode, label = "Edit"): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>("button,a")).filter((element) => element.textContent?.trim() === label);
 }
 
 function click(element: Element | null | undefined) {
@@ -291,6 +305,12 @@ function setInputValue(input: HTMLInputElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
   setter?.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function setTextAreaValue(textarea: HTMLTextAreaElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+  setter?.call(textarea, value);
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function setSelectValue(select: HTMLSelectElement, value: string) {
@@ -461,7 +481,10 @@ describe("CompanyEnvironments — test provider button", () => {
     globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
     mockInstanceSettingsApi.get.mockResolvedValue({ defaultEnvironmentId: null });
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableEnvironments: true });
+    mockInstanceSettingsApi.update.mockResolvedValue({});
     mockEnvironmentsApi.capabilities.mockResolvedValue({ adapters: [], sandboxProviders: {} });
+    mockPluginsApi.list.mockResolvedValue([]);
+    mockPluginsApi.listBundled.mockResolvedValue([]);
     mockEnvironmentsApi.secretRefs.mockResolvedValue({ refs: [] });
     mockSecretsApi.list.mockResolvedValue([]);
     mockEnvironmentsApi.customImageTemplate.mockResolvedValue({
@@ -561,6 +584,182 @@ describe("CompanyEnvironments — test provider button", () => {
     vi.clearAllMocks();
   });
 
+  it.each([
+    ["pt-BR", "Chave de API", "Chave de API do Daytona específica do ambiente.", "Intervalo de parada automática (min)"],
+    ["en", "API key", "Environment-specific Daytona API key.", "Auto-stop interval (min)"],
+  ] as const)("localizes only verified bundled Daytona schema presentation in %s", async (locale, apiKeyLabel, apiKeyHelp, intervalLabel) => {
+    await i18n.changeLanguage(locale);
+    const bundlePath = "/app/packages/plugins/sandbox-providers/daytona";
+    const apiKeyDescription = "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted.";
+    const autoStopDescription = "Daytona auto-stop interval in minutes. `0` disables auto-stop. Defaults to 15 when unset.";
+    const sourceSchema = {
+      type: "object",
+      properties: {
+        apiKey: { type: "string", format: "secret-ref", description: apiKeyDescription },
+        autoStopInterval: { type: "number", default: 15, description: autoStopDescription },
+        customField: { type: "string", title: "Vendor-owned field", description: "Vendor-owned help text." },
+        target: { type: "string", description: "Changed first-party text stays as authored." },
+      },
+    };
+    mockPluginsApi.list.mockResolvedValue([{
+      id: "daytona-plugin-id",
+      pluginKey: "paperclip.daytona-sandbox-provider",
+      packageName: "@paperclipai/plugin-daytona",
+      packagePath: bundlePath,
+      manifestJson: { id: "paperclip.daytona-sandbox-provider" },
+    }]);
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      pluginKey: "paperclip.daytona-sandbox-provider",
+      packageName: "@paperclipai/plugin-daytona",
+      localPath: bundlePath,
+    }]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue({
+      adapters: [],
+      drivers: { local: "supported", ssh: "supported", sandbox: "supported", plugin: "unsupported" },
+      sandboxProviders: {
+        daytona: {
+          status: "supported",
+          supportsRunExecution: true,
+          displayName: "Daytona Sandbox",
+          description: "Provisions Daytona sandboxes with configurable image or snapshot selection, startup timeouts, and lease reuse.",
+          pluginId: "daytona-plugin-id",
+          pluginKey: "paperclip.daytona-sandbox-provider",
+          configSchema: sourceSchema,
+        },
+      },
+    });
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/new`)));
+    await waitForAssertion(() => expect(getEnvironmentFormPage()).toBeTruthy());
+
+    const dialog = getEnvironmentFormPage()!;
+    const driverSelect = Array.from(dialog.querySelectorAll("select")).find((select) =>
+      Array.from(select.options).some((option) => option.value === "sandbox"),
+    ) as HTMLSelectElement | undefined;
+    await waitForAssertion(() => expect(driverSelect).toBeTruthy());
+    await act(async () => setSelectValue(driverSelect!, "sandbox"));
+    await waitForAssertion(() => expect(dialog.textContent).toContain(apiKeyLabel));
+
+    expect(dialog.textContent).toContain(apiKeyHelp);
+    expect(dialog.textContent).toContain(intervalLabel);
+    expect(dialog.textContent).toContain("Vendor-owned field");
+    expect(dialog.textContent).toContain("Vendor-owned help text.");
+    expect(dialog.textContent).toContain("Changed first-party text stays as authored.");
+    expect(sourceSchema.properties.apiKey).not.toHaveProperty("title");
+    expect(sourceSchema.properties.apiKey.description).toBe(apiKeyDescription);
+    expect(sourceSchema.properties.autoStopInterval.description).toBe(autoStopDescription);
+    queryClient.clear();
+  });
+
+  it("preserves sandbox schema metadata when an external package reuses the bundled provider identity", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockPluginsApi.list.mockResolvedValue([{
+      id: "vendor-daytona-id",
+      pluginKey: "paperclip.daytona-sandbox-provider",
+      packageName: "vendor/compatible-daytona",
+      packagePath: "/custom/vendor/compatible-daytona",
+      manifestJson: { id: "paperclip.daytona-sandbox-provider" },
+    }]);
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      pluginKey: "paperclip.daytona-sandbox-provider",
+      packageName: "@paperclipai/plugin-daytona",
+      localPath: "/app/packages/plugins/sandbox-providers/daytona",
+    }]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue({
+      adapters: [],
+      drivers: { local: "supported", ssh: "supported", sandbox: "supported", plugin: "unsupported" },
+      sandboxProviders: {
+        daytona: {
+          status: "supported",
+          supportsRunExecution: true,
+          displayName: "Vendor Daytona",
+          description: "Vendor-owned provider description.",
+          pluginId: "vendor-daytona-id",
+          pluginKey: "paperclip.daytona-sandbox-provider",
+          configSchema: {
+            type: "object",
+            properties: {
+              apiKey: { type: "string", description: "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted." },
+            },
+          },
+        },
+      },
+    });
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/new`)));
+    await waitForAssertion(() => expect(getEnvironmentFormPage()).toBeTruthy());
+    const dialog = getEnvironmentFormPage()!;
+    const driverSelect = Array.from(dialog.querySelectorAll("select")).find((select) =>
+      Array.from(select.options).some((option) => option.value === "sandbox"),
+    ) as HTMLSelectElement | undefined;
+    await waitForAssertion(() => expect(driverSelect).toBeTruthy());
+    await act(async () => setSelectValue(driverSelect!, "sandbox"));
+    await waitForAssertion(() => expect(dialog.textContent).toContain("Environment-specific Daytona API key."));
+
+    expect(dialog.textContent).toContain("Api Key");
+    expect(dialog.textContent).toContain("Vendor-owned provider description.");
+    expect(dialog.textContent).not.toContain("Chave de API do Daytona");
+    queryClient.clear();
+  });
+
+  it("does not trust a bundled plugin id when the capability declares a different plugin key", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const e2bBundlePath = "/app/packages/plugins/sandbox-providers/e2b";
+    const daytonaApiKeyDescription = "Environment-specific Daytona API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to DAYTONA_API_KEY if omitted.";
+    mockPluginsApi.list.mockResolvedValue([{
+      id: "bundled-e2b-plugin-id",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "@paperclipai/plugin-e2b",
+      packagePath: e2bBundlePath,
+      manifestJson: { id: "paperclip.e2b-sandbox-provider" },
+    }]);
+    mockPluginsApi.listBundled.mockResolvedValue([{
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "@paperclipai/plugin-e2b",
+      localPath: e2bBundlePath,
+    }]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue({
+      adapters: [],
+      drivers: { local: "supported", ssh: "supported", sandbox: "supported", plugin: "unsupported" },
+      sandboxProviders: {
+        daytona: {
+          status: "supported",
+          supportsRunExecution: true,
+          displayName: "Daytona Sandbox",
+          description: "Provisions Daytona sandboxes with configurable image or snapshot selection, startup timeouts, and lease reuse.",
+          pluginId: "bundled-e2b-plugin-id",
+          pluginKey: "paperclip.daytona-sandbox-provider",
+          configSchema: {
+            type: "object",
+            properties: {
+              apiKey: { type: "string", description: daytonaApiKeyDescription },
+            },
+          },
+        },
+      },
+    });
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/new`)));
+    await waitForAssertion(() => expect(getEnvironmentFormPage()).toBeTruthy());
+    const dialog = getEnvironmentFormPage()!;
+    const driverSelect = Array.from(dialog.querySelectorAll("select")).find((select) =>
+      Array.from(select.options).some((option) => option.value === "sandbox"),
+    ) as HTMLSelectElement | undefined;
+    await waitForAssertion(() => expect(driverSelect).toBeTruthy());
+    await act(async () => setSelectValue(driverSelect!, "sandbox"));
+    await waitForAssertion(() => expect(dialog.textContent).toContain(daytonaApiKeyDescription));
+
+    expect(dialog.textContent).toContain("Daytona Sandbox");
+    expect(dialog.textContent).toContain("Api Key");
+    expect(dialog.textContent).toContain("Provisions Daytona sandboxes");
+    expect(dialog.textContent).not.toContain("Sandbox Daytona");
+    expect(dialog.textContent).not.toContain("Chave de API");
+    queryClient.clear();
+  });
+
   it("shows the testing state only on the clicked environment's button", async () => {
     root = createRoot(container);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -587,6 +786,160 @@ describe("CompanyEnvironments — test provider button", () => {
     expect(buttonsAfter[1].textContent?.trim()).toBe("Test provider");
     expect(buttonsAfter[1].disabled).toBe(false);
     expect(mockEnvironmentsApi.probe).toHaveBeenCalledExactlyOnceWith("env-1", "company-1");
+  });
+
+  it("localizes the environment list in English and Portuguese without changing IDs sent to APIs", async () => {
+    mockEnvironmentsApi.list.mockResolvedValue([
+      { id: "env-1", name: "Remote", driver: "ssh", description: null, config: {} },
+      { id: "env-2", name: "Alpha", driver: "sandbox", description: null, config: { provider: "e2b" } },
+    ]);
+    mockEnvironmentsApi.probe.mockResolvedValue({
+      ok: true,
+      driver: "sandbox",
+      summary: "ok",
+      details: null,
+    });
+
+    const cases = [
+      {
+        locale: "en",
+        defaultLabel: "Default",
+        ariaLabel: "Default environment",
+        addLabel: "Add environment",
+        connectionLabel: "Test connection",
+        providerLabel: "Test provider",
+        editLabel: "Edit",
+        sshFallback: "SSH host · user",
+        providerSummary: "e2b sandbox provider",
+        sshDriverLabel: "Remote · SSH",
+        sandboxOptionLabel: "Alpha · Sandbox",
+      },
+      {
+        locale: "pt-BR",
+        defaultLabel: "Padrão",
+        ariaLabel: "Ambiente padrão",
+        addLabel: "Adicionar ambiente",
+        connectionLabel: "Testar conexão",
+        providerLabel: "Testar provedor",
+        editLabel: "Editar",
+        sshFallback: "Host SSH · usuário",
+        providerSummary: "Provedor de sandbox e2b",
+        sshDriverLabel: "Remote · SSH",
+        sandboxOptionLabel: "Alpha · Sandbox",
+      },
+    ];
+
+    for (const testCase of cases) {
+      await act(async () => {
+        await i18n.changeLanguage(testCase.locale);
+      });
+      root = createRoot(container);
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+      await act(async () => {
+        root!.render(renderCompanyEnvironments(queryClient));
+      });
+      await waitForAssertion(() => {
+        expect(container.textContent).toContain(testCase.providerSummary);
+      });
+
+      expect(container.textContent).toContain(testCase.defaultLabel);
+      expect(container.textContent).toContain(testCase.sshDriverLabel);
+      expect(container.querySelector("select")?.getAttribute("aria-label")).toBe(testCase.ariaLabel);
+      const defaultEnvironmentSelect = container.querySelector("select") as HTMLSelectElement;
+      expect(
+        Array.from(defaultEnvironmentSelect.querySelectorAll("option")).map((option) => option.textContent?.trim()),
+      ).toContain(testCase.sandboxOptionLabel);
+      expect(
+        Array.from(defaultEnvironmentSelect.querySelectorAll("option")).find((option) => option.value === "env-2")?.textContent?.trim(),
+      ).toBe(testCase.sandboxOptionLabel);
+      expect(container.querySelector("a[aria-label]")?.getAttribute("aria-label")).toBe(testCase.addLabel);
+      expect(container.textContent).toContain(testCase.sshFallback);
+      expect(Array.from(container.querySelectorAll("button")).map((button) => button.textContent?.trim())).toContain(
+        testCase.connectionLabel,
+      );
+      expect(editButtons(container, testCase.editLabel).map((button) => button.textContent?.trim())).toEqual([
+        testCase.editLabel,
+        testCase.editLabel,
+      ]);
+
+      await act(async () => {
+        setSelectValue(defaultEnvironmentSelect, "env-2");
+        await flushReact();
+      });
+      expect(mockInstanceSettingsApi.update).toHaveBeenCalledWith({ defaultEnvironmentId: "env-2" });
+
+      const probeButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+        (button) => button.textContent?.trim() === testCase.providerLabel,
+      );
+      expect(probeButton).toBeTruthy();
+      await act(async () => {
+        click(probeButton);
+        await flushReact();
+      });
+      expect(container.textContent).toContain("ok");
+      expect(mockEnvironmentsApi.probe).toHaveBeenCalledWith("env-2", "company-1");
+
+      await act(async () => {
+        root?.unmount();
+      });
+      root = null;
+      container.replaceChildren();
+    }
+
+    expect(mockInstanceSettingsApi.update).toHaveBeenNthCalledWith(1, { defaultEnvironmentId: "env-2" });
+    expect(mockInstanceSettingsApi.update).toHaveBeenNthCalledWith(2, { defaultEnvironmentId: "env-2" });
+  });
+
+  it("localizes custom image setup controls while keeping provider and environment IDs intact", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockEnvironmentsApi.list.mockResolvedValue([
+      { id: "env-1", name: "Daytona", driver: "sandbox", description: null, config: { provider: "daytona" } },
+    ]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue(supportedDaytonaCapabilities());
+    mockEnvironmentsApi.customImageTemplate.mockResolvedValue({
+      activeTemplate: createTemplate({ id: "template-active" }),
+      activeTemplateMatchesConfig: false,
+      activeTemplateDrift: {
+        classification: "boot_source_drift",
+        driftedPaths: [{ path: "image", from: "base-a", to: "base-b" }],
+      },
+      activeSession: null,
+      latestSession: null,
+    });
+
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root!.render(renderCompanyEnvironments(queryClient));
+    });
+    await waitForAssertion(() => {
+      expect(editButtons(container, "Editar")[0]).toBeTruthy();
+    });
+    await act(async () => click(editButtons(container, "Editar")[0]));
+    await waitForAssertion(() => {
+      expect(getEnvironmentFormPage()).not.toBeNull();
+    });
+
+    await waitForAssertion(() => {
+      const page = getEnvironmentFormPage()!;
+      expect(page.textContent).toContain("Imagem personalizada");
+      expect(page.textContent).toContain("Inicie um sandbox de configuração");
+      expect(page.textContent).toContain("Modelo ativo");
+      expect(page.textContent).toContain("Fora de uso — A imagem-base mudou: image `base-a` -> `base-b`.");
+      expect(findButton(page, "Atualizar")).toBeTruthy();
+      expect(findButton(page, "Vincular novamente")).toBeTruthy();
+      expect(findButton(page, "Reverter")).toBeTruthy();
+      expect(findButton(page, "Desativar")).toBeTruthy();
+    });
+
+    await act(async () => click(findButton(getEnvironmentFormPage()!, "Vincular novamente")));
+    await waitForAssertion(() => {
+      expect(mockEnvironmentsApi.relinkCustomImageTemplate).toHaveBeenCalledExactlyOnceWith(
+        "env-1",
+        "company-1",
+      );
+    });
   });
 
   it("explains that successful sandbox provider tests use a temporary sandbox", async () => {
@@ -721,6 +1074,69 @@ describe("CompanyEnvironments — test provider button", () => {
     expect(getEnvironmentFormPage()).toBeNull();
   });
 
+  it("localizes SSH environment configuration and keeps the saved secret reference unchanged", async () => {
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
+    mockSecretsApi.list.mockResolvedValue([
+      { id: "ssh-key-secret", name: "Deploy key", scope: "company" },
+    ]);
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await act(async () => {
+      root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/new`));
+    });
+    await waitForAssertion(() => expect(getEnvironmentFormPage()).not.toBeNull());
+
+    const page = getEnvironmentFormPage()!;
+    expect(page.textContent).toContain("Adicionar ambiente");
+    expect(page.textContent).toContain("Caminho remoto do workspace");
+    expect(page.textContent).toContain("Chave privada");
+    expect(page.textContent).toContain("Nenhum segredo salvo");
+    expect(page.textContent).toContain("Hosts conhecidos");
+    expect(page.textContent).toContain("Verificação estrita da chave do host");
+    expect(page.textContent).not.toContain("Remote workspace path");
+    expect(page.textContent).not.toContain("Private key");
+
+    const textInputs = Array.from(page.querySelectorAll<HTMLInputElement>('input[type="text"]'));
+    await act(async () => {
+      setInputValue(textInputs[0]!, "Staging runner");
+      setInputValue(textInputs[1]!, "SSH execution target");
+      setInputValue(textInputs[2]!, "runner.example.invalid");
+      setInputValue(textInputs[3]!, "paperclip");
+      setInputValue(textInputs[4]!, "/srv/paperclip/workspace");
+      setInputValue(page.querySelector<HTMLInputElement>('input[type="number"]')!, "2222");
+      setTextAreaValue(
+        page.querySelectorAll<HTMLTextAreaElement>("textarea")[1]!,
+        "runner.example.invalid ssh-ed25519 AAAA",
+      );
+      setSelectValue(page.querySelectorAll<HTMLSelectElement>("select")[1]!, "ssh-key-secret");
+    });
+
+    await act(async () => click(findButton(page, "Criar ambiente")));
+    await flushReact();
+
+    expect(mockEnvironmentsApi.create).toHaveBeenCalledExactlyOnceWith("company-1", {
+      name: "Staging runner",
+      description: "SSH execution target",
+      driver: "ssh",
+      envVars: {},
+      config: {
+        host: "runner.example.invalid",
+        port: 2222,
+        username: "paperclip",
+        remoteWorkspacePath: "/srv/paperclip/workspace",
+        privateKey: null,
+        privateKeySecretRef: {
+          type: "secret_ref",
+          secretId: "ssh-key-secret",
+          version: "latest",
+        },
+        knownHosts: "runner.example.invalid ssh-ed25519 AAAA",
+        strictHostKeyChecking: true,
+      },
+    });
+  });
+
   it("opens the edit form on a standalone page with existing values and closes after save", async () => {
     root = createRoot(container);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -811,10 +1227,12 @@ describe("CompanyEnvironments — test provider button", () => {
     expect(confirmSpy).toHaveBeenCalledWith("Discard unsaved environment changes?");
     expect(getEnvironmentFormPage()).not.toBeNull();
 
+    await act(async () => { await i18n.changeLanguage("pt-BR"); });
     confirmSpy.mockReturnValue(true);
-    await act(async () => click(findButton(document.body, "Cancel")));
+    await act(async () => click(findButton(document.body, "Cancelar")));
     await flushReact();
 
+    expect(confirmSpy).toHaveBeenLastCalledWith("Descartar alterações não salvas no ambiente?");
     expect(getEnvironmentFormPage()).toBeNull();
   });
 
@@ -1368,6 +1786,44 @@ describe("CompanyEnvironments — test provider button", () => {
     );
   });
 
+  it.each([
+    { locale: "en", editLabel: "Edit", expectedDate: "Jun 25, 2026, 8:00:00 PM" },
+    { locale: "pt-BR", editLabel: "Editar", expectedDate: "25 de jun. de 2026, 20:00:00" },
+  ])("formats custom image dates in $locale while preserving provider metadata", async ({
+    locale,
+    editLabel,
+    expectedDate,
+  }) => {
+    await i18n.changeLanguage(locale);
+    mockEnvironmentsApi.list.mockResolvedValue([
+      { id: "env-1", name: "Daytona", driver: "sandbox", description: null, config: { provider: "daytona" } },
+    ]);
+    mockEnvironmentsApi.capabilities.mockResolvedValue(supportedDaytonaCapabilities());
+    mockEnvironmentsApi.customImageTemplate.mockResolvedValue({
+      activeTemplate: createTemplate(),
+      activeSession: null,
+      latestSession: null,
+    });
+
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root!.render(renderCompanyEnvironments(queryClient));
+    });
+    await waitForAssertion(() => {
+      expect(editButtons(container, editLabel)[0]).toBeTruthy();
+    });
+    await act(async () => click(editButtons(container, editLabel)[0]));
+    await waitForAssertion(() => {
+      expect(getEnvironmentFormPage()?.textContent).toContain(expectedDate);
+    });
+
+    const page = getEnvironmentFormPage()!;
+    expect(page.textContent).toContain("Daytona");
+    expect(page.textContent).toContain("redacted-template-ref");
+    expect(page.querySelector("[title*='template-1']")?.getAttribute("title")).toContain("template-1");
+  });
+
   it("shows an out-of-sync warning when the active template no longer matches the saved config", async () => {
     root = createRoot(container);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -1738,7 +2194,7 @@ describe("CompanyEnvironments — test provider button", () => {
     const optionLabels = Array.from(reassignSelect.querySelectorAll("option")).map((option) =>
       option.textContent?.trim(),
     );
-    expect(optionLabels).toEqual(["Default: Local", "Beta · sandbox"]);
+    expect(optionLabels).toEqual(["Default: Local", "Beta · Sandbox"]);
     await act(async () => setSelectValue(reassignSelect, "env-2"));
 
     await act(async () =>
@@ -1916,6 +2372,69 @@ describe("CompanyEnvironments — test provider button", () => {
     await waitForAssertion(() => {
       expect(getEnvironmentFormPage()).toBeNull();
     });
+  });
+
+  it("localizes environment deletion details without changing reassignment or delete API values", async () => {
+    await i18n.changeLanguage("pt-BR");
+    mockAgentsApi.list.mockResolvedValue([
+      { id: "agent-1", name: "Iris", status: "active", defaultEnvironmentId: "env-1" },
+    ]);
+    mockEnvironmentsApi.deleteBlastRadius.mockResolvedValue(
+      createDeleteBlastRadius({
+        staticReferences: {
+          agentDefaultCount: 2,
+          executionWorkspaceSelectionCount: 1,
+          issueSelectionCount: 1,
+          secretBindingCount: 1,
+        },
+        activeRuntimeUse: { hasActiveRuntimeUse: true },
+      }),
+    );
+
+    root = createRoot(container);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await act(async () => {
+      root!.render(renderCompanyEnvironments(queryClient, `${ENVIRONMENTS_PATH}/env-1/edit`));
+    });
+    await waitForAssertion(() => {
+      expect(getEnvironmentFormPage()?.textContent).toContain("Editar ambiente");
+    });
+
+    await act(async () =>
+      click(document.body.querySelector("[data-testid='environment-delete-button']")),
+    );
+    await waitForAssertion(() => {
+      const dialog = document.body.querySelector<HTMLElement>("[data-testid='environment-delete-dialog']");
+      expect(dialog?.textContent).toContain("Excluir Alpha?");
+      expect(dialog?.textContent).toContain("1 agente usa este ambiente como padrão");
+      expect(dialog?.textContent).toContain("2 seleções de ambiente");
+      expect(dialog?.textContent).toContain("1 vínculo de segredo será removido");
+      expect(dialog?.textContent).toContain("Execuções ativas ou locações de sandbox");
+    });
+
+    const dialog = document.body.querySelector<HTMLElement>("[data-testid='environment-delete-dialog']")!;
+    const reassignSelect = dialog.querySelector<HTMLSelectElement>(
+      "[data-testid='environment-delete-reassign-select']",
+    )!;
+    expect(reassignSelect.getAttribute("aria-label")).toBe("Transferir agentes para outro ambiente");
+    expect(Array.from(reassignSelect.querySelectorAll("option")).map((option) => option.textContent?.trim())).toEqual([
+      "Padrão: Local",
+      "Beta · Sandbox",
+    ]);
+    expect(dialog.textContent).toContain("Afetados: Iris");
+
+    await act(async () => setSelectValue(reassignSelect, "env-2"));
+    const confirm = dialog.querySelector<HTMLButtonElement>("[data-testid='environment-delete-confirm']")!;
+    expect(confirm.textContent?.trim()).toBe("Excluir ambiente");
+    await act(async () => click(confirm));
+    await flushReact();
+
+    expect(mockAgentsApi.update).toHaveBeenCalledExactlyOnceWith(
+      "agent-1",
+      { defaultEnvironmentId: "env-2" },
+      "company-1",
+    );
+    expect(mockEnvironmentsApi.remove).toHaveBeenCalledExactlyOnceWith("env-1");
   });
 
   it("does not offer delete on the add-environment page", async () => {

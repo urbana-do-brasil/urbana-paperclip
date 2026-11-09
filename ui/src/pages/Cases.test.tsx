@@ -4,20 +4,77 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { AnchorHTMLAttributes } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CaseSummary } from "@/api/cases";
+import { ApiError } from "@/api/client";
+import { i18n } from "@/i18n";
 import { Cases } from "./Cases";
 
 function act(callback: () => void) {
   flushSync(callback);
 }
 
-const companyState = vi.hoisted(() => ({ selectedCompanyId: "company-1" }));
+const companyState = vi.hoisted(() => ({ selectedCompanyId: "company-1" as string | null }));
 const mockCasesApi = vi.hoisted(() => ({ list: vi.fn() }));
 const mockProjectsApi = vi.hoisted(() => ({ list: vi.fn() }));
 const mockIssuesApi = vi.hoisted(() => ({ listLabels: vi.fn() }));
 const mockCopyTextToClipboard = vi.hoisted(() => vi.fn(() => Promise.resolve()));
 const mockNavigate = vi.hoisted(() => vi.fn());
+
+const caseCollectionMessages = {
+  en: {
+    caseManagement: {
+      collection: {
+        changeStatus: "Change case status",
+        search: { placeholder: "Search cases...", label: "Search cases" },
+        toolbar: { filters: "Filters", columns: "Columns", sort: "Sort", group: "Group", showFlatList: "Show flat case list", showTree: "Show parent/children tree" },
+        filters: {
+          search: "Search", type: "Type", status: "Status", project: "Project", label: "Label",
+          noProject: "No project", noTypes: "No types yet", allLabels: "All labels", clear: "Clear filters",
+          clearAll: "Clear all", all: "All", projectFallback: "Project", labelFallback: "Label",
+        },
+        statuses: {
+          draft: "Draft", inProgress: "In progress", inReview: "In review", approved: "Approved", done: "Done", cancelled: "Cancelled",
+        },
+        columns: {
+          id: "ID", key: "Key", title: "Title", status: "Status", updated: "Updated", created: "Created at",
+          type: "Type", project: "Project", parent: "Parent case",
+        },
+        sort: { updated: "Last updated", created: "Created at", title: "Title", status: "Status", id: "ID", type: "Type", project: "Project" },
+        groups: { type: "Type", project: "Project", status: "Status", none: "None" },
+        columnPicker: { desktopRows: "Desktop case rows", chooseVisible: "Choose visible columns", resetDefaults: "Reset defaults" },
+      },
+    },
+  },
+  "pt-BR": {
+    caseManagement: {
+      collection: {
+        changeStatus: "Alterar o status do caso",
+        search: { placeholder: "Buscar casos...", label: "Buscar casos" },
+        toolbar: { filters: "Filtros", columns: "Colunas", sort: "Ordenar", group: "Agrupar", showFlatList: "Mostrar lista simples de casos", showTree: "Mostrar árvore de casos" },
+        filters: {
+          search: "Busca", type: "Tipo", status: "Status", project: "Projeto", label: "Rótulo",
+          noProject: "Sem projeto", noTypes: "Ainda não há tipos", allLabels: "Todos os rótulos", clear: "Limpar filtros",
+          clearAll: "Limpar tudo", all: "Todos", projectFallback: "Projeto", labelFallback: "Rótulo",
+        },
+        statuses: {
+          draft: "Rascunho", inProgress: "Em andamento", inReview: "Em revisão", approved: "Aprovado", done: "Concluído", cancelled: "Cancelado",
+        },
+        columns: {
+          id: "ID", key: "Chave", title: "Título", status: "Status", updated: "Atualizado", created: "Criado em",
+          type: "Tipo", project: "Projeto", parent: "Caso pai",
+        },
+        sort: { updated: "Última atualização", created: "Data de criação", title: "Título", status: "Status", id: "ID", type: "Tipo", project: "Projeto" },
+        groups: { type: "Tipo", project: "Projeto", status: "Status", none: "Nenhum" },
+        columnPicker: { desktopRows: "Linhas de casos no desktop", chooseVisible: "Escolha as colunas visíveis", resetDefaults: "Restaurar padrão" },
+      },
+    },
+  },
+};
+
+let previousLanguage = "en";
+let previousEnglishTranslation: unknown;
+let previousPortugueseTranslation: unknown;
 
 vi.mock("@/context/CompanyContext", () => ({ useCompany: () => companyState }));
 vi.mock("@/context/BreadcrumbContext", () => ({ useBreadcrumbs: () => ({ setBreadcrumbs: vi.fn() }) }));
@@ -36,6 +93,24 @@ vi.mock("@/lib/router", () => ({
   useCaseHref: () => (...segments: string[]) =>
     `/PAP/${["cases", ...segments].filter(Boolean).join("/")}`,
 }));
+
+beforeAll(() => {
+  previousLanguage = i18n.language;
+  previousEnglishTranslation = i18n.getResourceBundle("en", "translation");
+  previousPortugueseTranslation = i18n.getResourceBundle("pt-BR", "translation");
+});
+
+afterAll(async () => {
+  i18n.removeResourceBundle("en", "translation");
+  i18n.removeResourceBundle("pt-BR", "translation");
+  if (previousEnglishTranslation !== undefined) {
+    i18n.addResourceBundle("en", "translation", previousEnglishTranslation as Record<string, unknown>, true, true);
+  }
+  if (previousPortugueseTranslation !== undefined) {
+    i18n.addResourceBundle("pt-BR", "translation", previousPortugueseTranslation as Record<string, unknown>, true, true);
+  }
+  await i18n.changeLanguage(previousLanguage);
+});
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -103,7 +178,11 @@ function renderPage(container: HTMLDivElement) {
 
 describe("Cases list", () => {
   let container: HTMLDivElement;
-  beforeEach(() => {
+  beforeEach(async () => {
+    i18n.addResourceBundle("en", "translation", caseCollectionMessages.en, true, true);
+    i18n.addResourceBundle("pt-BR", "translation", caseCollectionMessages["pt-BR"], true, true);
+    await i18n.changeLanguage("en");
+    companyState.selectedCompanyId = "company-1";
     window.localStorage.clear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -589,6 +668,270 @@ describe("Cases list", () => {
       expect(container.textContent).not.toContain("Blog cancelled");
     });
 
+    act(() => root.unmount());
+  });
+
+  it("localizes search and filters while keeping query and filter values unchanged", async () => {
+    mockCasesApi.list.mockResolvedValue([
+      createCase({ id: "a", identifier: "PAP-C1", title: "Active post", caseType: "blog_post" }),
+    ]);
+    const root = renderPage(container);
+
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Active post");
+    });
+
+    const search = container.querySelector<HTMLInputElement>("input[placeholder='Search cases...']");
+    expect(search?.getAttribute("aria-label")).toBe("Search cases");
+    act(() => {
+      const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      valueSetter?.call(search, "USER QUERY");
+      search!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await waitForAssertion(() => {
+      expect(mockCasesApi.list).toHaveBeenLastCalledWith("company-1", expect.objectContaining({ q: "USER QUERY", limit: 200 }));
+    });
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Clear all");
+    });
+
+    const filtersButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Filters"]');
+    expect(filtersButton).toBeTruthy();
+    act(() => filtersButton!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => {
+      expect(document.body.textContent).toContain("blog_post");
+      expect(document.body.textContent).toContain("All labels");
+    });
+
+    const typeOption = Array.from(document.body.querySelectorAll("label")).find((label) => label.textContent?.trim() === "blog_post");
+    const typeCheckbox = typeOption?.querySelector<HTMLButtonElement>('[data-slot="checkbox"]');
+    expect(typeCheckbox).toBeTruthy();
+    act(() => typeCheckbox!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => {
+      expect(mockCasesApi.list).toHaveBeenLastCalledWith("company-1", expect.objectContaining({
+        q: "USER QUERY",
+        types: ["blog_post"],
+        limit: 200,
+      }));
+    });
+
+    act(() => root.unmount());
+  });
+
+  it("localizes column, sort, and grouping controls without changing stored enum values", async () => {
+    mockCasesApi.list.mockResolvedValue([
+      createCase({ id: "a", identifier: "PAP-C1", title: "USER CASE TITLE", caseType: "blog_post" }),
+    ]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("USER CASE TITLE");
+      expect(container.textContent).toContain("Título");
+    });
+
+    const search = container.querySelector<HTMLInputElement>("input[placeholder='Buscar casos...']");
+    expect(search?.getAttribute("aria-label")).toBe("Buscar casos");
+    const statusPicker = document.body.querySelector<HTMLButtonElement>('button[aria-label="Alterar o status do caso"]');
+    expect(statusPicker?.textContent).toContain("Em andamento");
+    const treeButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Mostrar árvore de casos"]');
+    expect(treeButton).toBeTruthy();
+    act(() => treeButton!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => {
+      expect(document.body.querySelector('button[aria-label="Mostrar lista simples de casos"]')).toBeTruthy();
+      expect(JSON.parse(window.localStorage.getItem("paperclip:cases:company-1:view") ?? "{}").treeView).toBe(true);
+    });
+    const flatListButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Mostrar lista simples de casos"]');
+    act(() => flatListButton!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => expect(document.body.querySelector('button[aria-label="Mostrar árvore de casos"]')).toBeTruthy());
+    const filtersButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Filtros"]');
+    expect(filtersButton).toBeTruthy();
+    act(() => filtersButton!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => {
+      expect(document.body.textContent).toContain("Todos os rótulos");
+      expect(document.body.textContent).toContain("Concluído");
+      expect(document.body.textContent).toContain("Limpar filtros");
+    });
+    const typeOption = Array.from(document.body.querySelectorAll("label")).find((label) => label.textContent?.trim() === "blog_post");
+    const typeCheckbox = typeOption?.querySelector<HTMLButtonElement>('[data-slot="checkbox"]');
+    expect(typeCheckbox).toBeTruthy();
+    act(() => typeCheckbox!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => {
+      expect(mockCasesApi.list).toHaveBeenLastCalledWith("company-1", expect.objectContaining({ types: ["blog_post"], limit: 200 }));
+    });
+    await waitForAssertion(() => expect(document.body.textContent).toContain("Limpar tudo"));
+
+    const columnsButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Colunas"]');
+    expect(columnsButton).toBeTruthy();
+    act(() => columnsButton!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => {
+      expect(document.body.textContent).toContain("Linhas de casos no desktop");
+      expect(document.body.textContent).toContain("Escolha as colunas visíveis");
+      expect(document.body.textContent).toContain("Restaurar padrão");
+    });
+    const projectColumn = Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Projeto");
+    expect(projectColumn).toBeTruthy();
+    act(() => projectColumn!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(JSON.parse(window.localStorage.getItem("paperclip:cases:company-1:view") ?? "{}").columns).toContain("project");
+
+    const sortButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Ordenar"]');
+    expect(sortButton).toBeTruthy();
+    act(() => sortButton!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => expect(document.body.textContent).toContain("Última atualização"));
+    const titleSort = Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Título");
+    expect(titleSort).toBeTruthy();
+    act(() => titleSort!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(JSON.parse(window.localStorage.getItem("paperclip:cases:company-1:view") ?? "{}").sortField).toBe("title");
+
+    const groupButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Agrupar"]');
+    expect(groupButton).toBeTruthy();
+    act(() => groupButton!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => expect(document.body.textContent).toContain("Nenhum"));
+    const statusGroup = Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Status");
+    expect(statusGroup).toBeTruthy();
+    act(() => statusGroup!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(JSON.parse(window.localStorage.getItem("paperclip:cases:company-1:view") ?? "{}").groupBy).toBe("status");
+
+    act(() => root.unmount());
+  });
+
+  it.each([
+    { language: "en", emptyProjectLabel: "No project" },
+    { language: "pt-BR", emptyProjectLabel: "Sem projeto" },
+  ])("keeps an unassigned case separate from a project named like the empty-project group ($language)", async ({ language, emptyProjectLabel }) => {
+    window.localStorage.setItem("paperclip:cases:company-1:view", JSON.stringify({ groupBy: "project" }));
+    mockCasesApi.list.mockResolvedValue([
+      createCase({ id: "unassigned", identifier: "PAP-C1", title: "UNASSIGNED CASE", projectId: null }),
+      createCase({ id: "named-project", identifier: "PAP-C2", title: "NAMED PROJECT CASE", projectId: "project-1" }),
+    ]);
+    mockProjectsApi.list.mockResolvedValue([
+      { id: "project-1", name: emptyProjectLabel, archivedAt: null },
+    ]);
+    await i18n.changeLanguage(language);
+    const root = renderPage(container);
+
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("UNASSIGNED CASE");
+      expect(container.textContent).toContain("NAMED PROJECT CASE");
+    });
+
+    const matchingGroups = Array.from(container.querySelectorAll<HTMLButtonElement>('button[aria-expanded="true"]'))
+      .filter((button) => button.textContent?.trim() === emptyProjectLabel);
+    expect(matchingGroups).toHaveLength(2);
+    const groupContents = matchingGroups.map((button) =>
+      button.parentElement?.parentElement?.parentElement?.textContent ?? "",
+    );
+    expect(groupContents.some((text) => text.includes("UNASSIGNED CASE") && !text.includes("NAMED PROJECT CASE"))).toBe(true);
+    expect(groupContents.some((text) => text.includes("NAMED PROJECT CASE") && !text.includes("UNASSIGNED CASE"))).toBe(true);
+
+    act(() => root.unmount());
+  });
+
+  it("localizes the onboarding and preserves the example's technical fields", async () => {
+    mockCasesApi.list.mockResolvedValue([]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Ainda não há casos");
+      expect(container.textContent).toContain("Crie um caso do tipo blog_post");
+      expect(container.textContent).toContain("{slug, target_audience, publish_url}");
+      expect(container.textContent).toContain("<release>/<slug>");
+      expect(container.textContent).toContain("references/cases.md");
+      expect(container.textContent).toContain("enableCases");
+    });
+    act(() => root.unmount());
+  });
+
+  it("shows a localized load error and retries instead of presenting onboarding", async () => {
+    mockCasesApi.list.mockRejectedValueOnce(new Error("backend detail"))
+      .mockResolvedValueOnce([createCase({ id: "a", title: "USER CASE" })]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("Não foi possível carregar os casos.");
+      expect(container.textContent).not.toContain("Ainda não há casos");
+      expect(container.textContent).not.toContain("backend detail");
+    });
+    const retry = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Tentar novamente");
+    expect(retry).toBeTruthy();
+    act(() => retry!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await waitForAssertion(() => expect(container.textContent).toContain("USER CASE"));
+    act(() => root.unmount());
+  });
+
+  it("localizes the 403 explanation while preserving the Cases API denial detail", async () => {
+    const denial = "Cases are disabled";
+    mockCasesApi.list.mockRejectedValueOnce(new ApiError(denial, 403, { error: denial }));
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain(`Não foi possível concluir a solicitação. Detalhes: ${denial}`);
+      expect(container.textContent).toContain("Tentar novamente");
+    });
+
+    await i18n.changeLanguage("en");
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain(`The request could not be completed. Details: ${denial}`);
+      expect(container.textContent).toContain("Try again");
+    });
+    act(() => root.unmount());
+  });
+
+  it("preserves the collapsed status group when the language changes", async () => {
+    window.localStorage.setItem("paperclip:cases:company-1:view", JSON.stringify({ groupBy: "status" }));
+    mockCasesApi.list.mockResolvedValue([createCase({ id: "a", title: "USER CASE", status: "in_progress" })]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("1 caso");
+      expect(container.textContent).toContain("USER CASE");
+    });
+    const group = Array.from(container.querySelectorAll("button[aria-expanded='true']"))
+      .find((button) => button.textContent?.trim() === "Em andamento");
+    expect(group).toBeTruthy();
+    act(() => group!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(container.textContent).not.toContain("USER CASE");
+    await i18n.changeLanguage("en");
+    await waitForAssertion(() => {
+      const englishGroup = Array.from(container.querySelectorAll("button[aria-expanded='false']"))
+        .find((button) => button.textContent?.trim() === "In progress");
+      expect(englishGroup).toBeTruthy();
+      expect(container.textContent).toContain("1 case");
+      expect(container.textContent).not.toContain("USER CASE");
+    });
+    act(() => root.unmount());
+  });
+
+  it("localizes tree and copy controls without changing identifiers", async () => {
+    window.localStorage.setItem("paperclip:cases:company-1:view", JSON.stringify({ treeView: true }));
+    mockCasesApi.list.mockResolvedValue([
+      createCase({ id: "parent", identifier: "PAP-C1", title: "USER PARENT" }),
+      createCase({ id: "child", identifier: "PAP-C2", title: "USER CHILD", parentCaseId: "parent" }),
+    ]);
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    await waitForAssertion(() => expect(container.textContent).toContain("USER CHILD"));
+    const collapse = container.querySelector<HTMLButtonElement>('button[aria-label="Recolher USER PARENT"]');
+    expect(collapse).toBeTruthy();
+    const copy = container.querySelector<HTMLButtonElement>('button[aria-label="Copiar ID do caso PAP-C1"]');
+    expect(copy).toBeTruthy();
+    act(() => copy!.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+    await waitForAssertion(() => {
+      expect(mockCopyTextToClipboard).toHaveBeenCalledWith("PAP-C1");
+      expect(copy!.parentElement?.textContent).toContain("Copiado");
+    });
+    act(() => collapse!.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+    expect(container.textContent).not.toContain("USER CHILD");
+    expect(container.querySelector('button[aria-label="Expandir USER PARENT"]')).toBeTruthy();
+    act(() => root.unmount());
+  });
+
+  it("asks for an organization without querying cases", async () => {
+    companyState.selectedCompanyId = null;
+    await i18n.changeLanguage("pt-BR");
+    const root = renderPage(container);
+    expect(container.textContent).toContain("Selecione uma organização para ver os casos.");
+    expect(mockCasesApi.list).not.toHaveBeenCalled();
     act(() => root.unmount());
   });
 });

@@ -1,6 +1,15 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { i18n } from "../i18n";
 import { DecisionBundleHeader, decisionHistoryCount, decisionHistoryQueryEnabled } from "./WhatNeedsMe";
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 describe("WhatNeedsMe decision history", () => {
   it("defers terminal-history queries until their curtain opens", () => {
@@ -28,5 +37,15 @@ describe("WhatNeedsMe decision history", () => {
     expect(multiple).toContain("Planner proposed 2 decisions");
     expect(single).not.toContain("cleanup");
     expect(multiple).not.toContain("cleanup");
+  });
+
+  it("localizes bundle summaries in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const markup = renderToStaticMarkup(
+      <DecisionBundleHeader agentName="Planejador" title={null} originIssue={null} count={2} />,
+    );
+
+    expect(markup).toContain("Planejador propôs 2 decisões");
+    expect(markup).toContain("2 pendentes");
   });
 });

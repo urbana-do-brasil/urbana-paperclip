@@ -79,7 +79,7 @@ Each heartbeat, the agent: checks its identity, reviews assignments, picks work,
 
 Some actions require board (human) approval:
 
-- **Hiring agents** — agents can request to hire subordinates, but the board must approve
+- **Hiring agents** — when hire approvals are enabled, agent requests require board approval
 - **CEO strategy** — the CEO's initial strategic plan requires board approval
 - **Board overrides** — the board can pause, resume, or terminate any agent and reassign any task
 

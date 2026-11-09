@@ -38,3 +38,31 @@ if (typeof window !== "undefined" && window.localStorage !== globalThis.localSto
 if (typeof Element !== "undefined" && typeof Element.prototype.scrollIntoView !== "function") {
   Element.prototype.scrollIntoView = function scrollIntoView() {};
 }
+
+// The product default is PT-BR. These legacy suites assert English copy and
+// predate the localization change; keep them explicit without forcing English
+// on the localization suites, which set their own language.
+import { beforeEach, expect } from "vitest";
+const LEGACY_ENGLISH_TEST_FILES = [
+  "src/App.test.tsx",
+  "src/components/ai-connections/AiProviderSetup.test.tsx",
+  "src/components/artifacts/ArtifactCard.test.tsx",
+  "src/components/IssueContinuationHandoff.test.tsx",
+  "src/components/SidebarAgents.test.tsx",
+  "src/components/SidebarStarredProjects.test.tsx",
+  "src/pages/apps/agent-selector-contract.test.ts",
+  "src/pages/TeamCard.test.tsx",
+  "src/pages/tools/profiles/WizardToolsStep.test.tsx",
+  "src/adapters/managed-sandbox-only-config-fields.test.tsx",
+  "src/components/AnimatedPaperclipIcon.test.tsx",
+  "src/components/CommentAttributionChip.test.tsx",
+  "src/components/NewProjectDialog.managed-sandbox.test.tsx",
+  "src/components/RunInvocationCard.test.tsx",
+  "storybook/fixtures/routineWebhookFields.test.tsx",
+];
+beforeEach(async () => {
+  const testPath = expect.getState().testPath ?? "";
+  if (!LEGACY_ENGLISH_TEST_FILES.some((suffix) => testPath.endsWith(suffix))) return;
+  const { i18n } = await import("./src/i18n");
+  await i18n.changeLanguage("en");
+});

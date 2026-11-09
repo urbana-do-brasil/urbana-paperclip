@@ -45,6 +45,7 @@ import {
   lowTrustBoundaryHasScope,
 } from "@/lib/trust-policy-ui";
 import { queryKeys } from "@/lib/queryKeys";
+import { useTranslation } from "@/i18n";
 import type {
   AgentPermissions,
   EmailEndpointSummary,
@@ -85,11 +86,13 @@ function readEmailSetupDraft(key: string): Partial<EmailSetupDraft> {
 export function EmailEndpointSetup() {
   const { selectedCompanyId } = useCompany();
   const [params] = useSearchParams();
-  if (!selectedCompanyId) return <p role="status" className="p-6 text-sm text-muted-foreground">Loading email setup…</p>;
+  const { t } = useTranslation();
+  if (!selectedCompanyId) return <p role="status" className="p-6 text-sm text-muted-foreground">{t("apps.chatEndpointSetup.agentmail.loadingSetup")}</p>;
   return <EmailEndpointSetupForm key={`${selectedCompanyId}:${params.get("resume") ?? params.get("setupId") ?? params.get("connectionId") ?? "new"}:${params.get("agentId") ?? "choose"}`} companyId={selectedCompanyId} />;
 }
 
 function EmailEndpointSetupForm({ companyId }: { companyId: string }) {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const cache = useQueryClient();
@@ -294,8 +297,8 @@ function EmailEndpointSetupForm({ companyId }: { companyId: string }) {
       .map(suffix => `${username.slice(0, 64 - suffix.length)}${suffix}`)
       .filter(name => !knownAddresses.has(`${name}@${domain}`)) : [];
   const assignedInbox = addressMode === "existing" && inboxes.data?.some(i => i.id !== requestId && i.address === address && i.status !== "archived");
-  const addressError = addressTaken ? "This email address is already in use. Choose a different address."
-    : assignedInbox ? "This inbox is already assigned to an agent." : null;
+  const addressError = addressTaken ? t("apps.chatEndpointSetup.agentmail.address.taken")
+    : assignedInbox ? t("apps.chatEndpointSetup.agentmail.address.assigned") : null;
   const error = connect.error ?? (!addressTaken ? setup.error : null) ?? resumeAccount.error ?? inspected.error ?? agents.error;
   const busy = connect.isPending || setup.isPending;
   const identityReady = inboxes.isSuccess && (!resumeId || requestId !== resumeId || !!pendingEndpoint) && (!pendingEndpoint || pendingEndpoint.assignedAgentId === agentId);
@@ -324,55 +327,57 @@ function EmailEndpointSetupForm({ companyId }: { companyId: string }) {
   };
   return <div className="mx-auto max-w-xl space-y-6 p-6">
     <header className="space-y-2">
-      <h1 className="text-xl font-bold">{step === 2 ? "Your agent’s email is ready" : "Give an agent an email address"}</h1>
+      <h1 className="text-xl font-bold">{step === 2 ? t("apps.chatEndpointSetup.agentmail.success.heading") : t("apps.chatEndpointSetup.agentmail.heading")}</h1>
     </header>
     {step < 2 && inboxes.isError && <div role="alert" className="space-y-2 text-sm">
-      <p className="text-destructive">Could not load email setup progress. {inboxes.error.message}</p>
+      <p className="text-destructive">{t("apps.chatEndpointSetup.agentmail.errors.loadProgress")} {inboxes.error.message}</p>
       <Button type="button" variant="outline" size="sm" disabled={busy || inboxes.isFetching} onClick={() => { void inboxes.refetch(); }}>
-        {inboxes.isFetching ? "Loading…" : "Retry loading inboxes"}
+        {inboxes.isFetching ? t("apps.chatEndpointSetup.agentmail.loading") : t("apps.chatEndpointSetup.agentmail.retryInboxes")}
       </Button>
     </div>}
-    {step < 2 && resumeId === requestId && inboxes.isSuccess && !pendingEndpoint && <p role="alert" className="text-sm text-destructive">This email setup could not be found. Return to Connectors and start a new connection.</p>}
-    {step < 2 && <ChatSetupNavigation labels={["Agent", "Email address"]} step={step}
+    {step < 2 && resumeId === requestId && inboxes.isSuccess && !pendingEndpoint && <p role="alert" className="text-sm text-destructive">{t("apps.chatEndpointSetup.agentmail.errors.resumeNotFound")}</p>}
+    {step < 2 && <ChatSetupNavigation labels={[t("apps.chatEndpointSetup.agentmail.steps.agent"), t("apps.chatEndpointSetup.agentmail.steps.emailAddress")]} step={step}
       availableStep={step} disabled={busy} onSelect={index => { setup.reset(); setStep(index as 0 | 1); }} />}
     {step === 0 && <form className="space-y-6" onSubmit={event => { event.preventDefault(); if (canContinue) connect.mutate(); }}>
       <div className="space-y-2">
-        <Label htmlFor="email-agent">Agent</Label>
+        <Label htmlFor="email-agent">{t("apps.chatEndpointSetup.agentmail.agent.label")}</Label>
         <AgentSelect id="email-agent" value={agentId} disabled={busy || agents.isPending || !inboxes.isSuccess || !!pendingEndpoint}
-          placeholder="Choose an agent" emptyMessage="No agents found." triggerClassName="h-10"
+          placeholder={t("apps.chatEndpointSetup.agentmail.agent.choose")} emptyMessage={t("apps.chatEndpointSetup.agentmail.agent.noneFound")} triggerClassName="h-10"
           agents={(agents.data ?? []).filter(a => !["terminated", "pending_approval"].includes(a.status))}
           onChange={id => { setAgentId(id); setUsername((agents.data?.find(a => a.id === id)?.name ?? "").toLowerCase().replace(/[^a-z0-9._-]+/g, "-").slice(0, 64)); }} />
       </div>
       {!pendingAddress && <AgentMailCredentialField companyId={companyId} connectionId={selectedCredentialId}
         onConnectionChange={selectCredential} value={apiKey} onChange={value => { setApiKey(value); connect.reset(); }} disabled={busy} />}
       {restrictedInbox && <div className="space-y-2 text-sm">
-        <p className="text-muted-foreground">That key only connects {restrictedInbox}. Choose a saved account key or enter one to create a new address.</p>
+        <p className="text-muted-foreground">{t("apps.chatEndpointSetup.agentmail.credentials.inboxKeyOnly", { address: restrictedInbox })}</p>
         <Button type="button" variant="link" size="sm" className="h-auto p-0" disabled={busy || !(selectedCredentialId || apiKey.trim())}
-          onClick={() => { setAllowInboxKey(true); setRestrictedInbox(""); connect.reset(); }}>Use the existing inbox instead</Button>
+          onClick={() => { setAllowInboxKey(true); setRestrictedInbox(""); connect.reset(); }}>{t("apps.chatEndpointSetup.agentmail.credentials.useExistingInbox")}</Button>
       </div>}
       {lowTrust && !scoped && <div role="alert" className="space-y-2 text-sm">
-        <p>This agent needs a work boundary before it can receive email.</p>
-        <Button type="button" variant="outline" size="sm" onClick={openTrust}>Configure work boundary</Button>
+        <p>{t("apps.chatEndpointSetup.agentmail.trust.boundaryRequired")}</p>
+        <Button type="button" variant="outline" size="sm" onClick={openTrust}>{t("apps.chatEndpointSetup.agentmail.trust.configureBoundary")}</Button>
       </div>}
       {error && <p role="alert" className="text-sm text-destructive">{error.message}</p>}
       <div className="flex items-center justify-between gap-3 border-t border-border pt-5">
-        <Button type="button" variant="ghost" disabled={busy} onClick={cancel}>Cancel</Button>
-        <Button disabled={!canContinue}>{connect.isPending ? "Connecting…" : "Continue"}<ArrowRight className="size-4" /></Button>
+        <Button type="button" variant="ghost" disabled={busy} onClick={cancel}>{t("common.cancel")}</Button>
+        <Button disabled={!canContinue}>{connect.isPending ? t("apps.chatEndpointSetup.agentmail.connecting") : t("apps.chatEndpointSetup.agentmail.continue")}<ArrowRight className="size-4" /></Button>
       </div>
     </form>}
     {step === 1 && <form className="space-y-6" onSubmit={event => { event.preventDefault(); if (canCreate) setup.mutate(); }}>
       <div className="space-y-2">
-        <Label htmlFor={addressMode === "new" ? "email-name" : "email-existing"}>{chosen?.name}’s email address</Label>
+        <Label htmlFor={addressMode === "new" ? "email-name" : "email-existing"}>{t("apps.chatEndpointSetup.agentmail.address.heading", { agent: chosen?.name })}</Label>
         {pendingAddress ? <>
           <p className="text-sm font-medium">{pendingAddress}</p>
-          <p className="text-sm text-muted-foreground">This address was created in AgentMail. Finish connecting it to {chosen?.name}{scopedKey ? "." : ", or choose a different address. The original inbox will stay in AgentMail."}</p>
-          {!scopedKey && <Button type="button" variant="link" size="sm" className="h-auto p-0" disabled={busy} onClick={chooseAnotherAddress}>Choose a different address</Button>}
+          <p className="text-sm text-muted-foreground">{t(scopedKey
+            ? "apps.chatEndpointSetup.agentmail.address.reservedScoped"
+            : "apps.chatEndpointSetup.agentmail.address.reservedOrganization", { agent: chosen?.name })}</p>
+          {!scopedKey && <Button type="button" variant="link" size="sm" className="h-auto p-0" disabled={busy} onClick={chooseAnotherAddress}>{t("apps.chatEndpointSetup.agentmail.address.chooseDifferent")}</Button>}
         </> : addressMode === "new" ? <>
           <div className="flex items-center gap-2">
             <Input id="email-name" className="min-w-0" value={username} maxLength={64} autoComplete="off" spellCheck={false} disabled={busy}
               aria-invalid={!!addressError} aria-describedby={addressError ? "email-address-error" : "email-address-status"}
               onChange={event => { setUsername(event.target.value.toLowerCase()); setup.reset(); }} />
-            <select id="email-domain" aria-label="Email domain" className={`${selectClass} max-w-1/2 shrink-0`} value={domain}
+            <select id="email-domain" aria-label={t("apps.chatEndpointSetup.agentmail.address.domain")} className={`${selectClass} max-w-1/2 shrink-0`} value={domain}
               disabled={busy || !inspected.data} onChange={event => { setDomainSelected(true); setDomain(event.target.value); setup.reset(); }}>
               {[...new Set([...customDomains, "agentmail.to", domain])]
                 .map(value => <option key={value} value={value}>@{value}</option>)}
@@ -381,77 +386,76 @@ function EmailEndpointSetupForm({ companyId }: { companyId: string }) {
         </> : <select id="email-existing" className={selectClass} value={pendingAddress ?? inboxId} disabled={busy || scopedKey || !!pendingAddress}
           aria-invalid={!!addressError} aria-describedby={addressError ? "email-address-error" : undefined}
           onChange={event => { setInboxId(event.target.value); setup.reset(); }}>
-          <option value="">Choose an inbox</option>
+          <option value="">{t("apps.chatEndpointSetup.agentmail.address.chooseInbox")}</option>
           {inspected.data?.inboxes.map(i => {
             const assigned = inboxes.data?.some(e => e.id !== requestId && e.address === i.inbox_id && e.status !== "archived");
-            return <option key={i.inbox_id} value={i.inbox_id} disabled={assigned}>{i.inbox_id}{assigned ? " — already assigned" : ""}</option>;
+            return <option key={i.inbox_id} value={i.inbox_id} disabled={assigned}>{i.inbox_id}{assigned ? ` — ${t("apps.chatEndpointSetup.agentmail.address.alreadyAssigned")}` : ""}</option>;
           })}
         </select>}
         {scopedKey && !pendingAddress && <Button type="button" variant="link" size="sm" className="h-auto p-0" disabled={busy}
-          onClick={() => { setAllowInboxKey(false); setStep(0); }}>Choose a key for a new address</Button>}
+          onClick={() => { setAllowInboxKey(false); setStep(0); }}>{t("apps.chatEndpointSetup.agentmail.credentials.chooseNewAddressKey")}</Button>}
         {addressError && <p id="email-address-error" role="alert" className="text-sm text-destructive">{addressError}</p>}
         {checkingNewAddress && !addressError && <p id="email-address-status" role="status" className="text-sm text-muted-foreground">
-          {addressCheck.checking ? "Checking address…" : addressCheck.error ? `Could not check this address. ${addressCheck.error}`
-            : addressCheck.result?.status === "unknown" ? "AgentMail confirms availability when you create the address." : null}
+          {addressCheck.checking ? t("apps.chatEndpointSetup.agentmail.address.checking") : addressCheck.error ? `${t("apps.chatEndpointSetup.agentmail.address.checkFailed")} ${addressCheck.error}`
+            : addressCheck.result?.status === "unknown" ? t("apps.chatEndpointSetup.agentmail.address.availableOnCreate") : null}
         </p>}
-        {suggestions.length > 0 && <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm" aria-label="Suggested email addresses">
-          <span className="text-muted-foreground">Try:</span>
+        {suggestions.length > 0 && <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm" aria-label={t("apps.chatEndpointSetup.agentmail.address.suggestionsAria")}>
+          <span className="text-muted-foreground">{t("apps.chatEndpointSetup.agentmail.address.trySuggestion")}</span>
           {suggestions.map(name => <Button key={name} type="button" variant="link" size="sm" className="h-auto p-0" disabled={busy}
             onClick={() => { setUsername(name); setup.reset(); }}>{name}@{domain}</Button>)}
         </div>}
         {!scopedKey && !pendingAddress && <Button type="button" variant="link" size="sm" className="h-auto p-0" disabled={busy}
           onClick={() => { setAddressMode(addressMode === "new" ? "existing" : "new"); setup.reset(); }}>
-          {addressMode === "new" ? "Use an existing inbox" : "Create a new address"}
+          {addressMode === "new" ? t("apps.chatEndpointSetup.agentmail.address.useExisting") : t("apps.chatEndpointSetup.agentmail.address.createNew")}
         </Button>}
       </div>
       <Card className="py-4">
         <CardHeader className="px-4">
-          <h2 className="text-sm font-medium">How it Works</h2>
-          <CardDescription>Incoming email creates tasks for {chosen?.name}. Replies stay in the same task.</CardDescription>
+          <h2 className="text-sm font-medium">{t("apps.chatEndpointSetup.agentmail.howItWorks.heading")}</h2>
+          <CardDescription>{t("apps.chatEndpointSetup.agentmail.howItWorks.description", { agent: chosen?.name })}</CardDescription>
         </CardHeader>
       </Card>
       <details className="space-y-4">
-        <summary className="cursor-pointer text-sm text-muted-foreground">Advanced options</summary>
+        <summary className="cursor-pointer text-sm text-muted-foreground">{t("apps.chatEndpointSetup.agentmail.advanced.heading")}</summary>
         <div className="space-y-4">
           {addressMode === "new" && <div className="space-y-2">
-            <a className="text-sm underline" href="https://docs.agentmail.to/custom-domains" target="_blank" rel="noreferrer">Set up a custom domain ↗</a>
+            <a className="text-sm underline" href="https://docs.agentmail.to/custom-domains" target="_blank" rel="noreferrer">{t("apps.chatEndpointSetup.agentmail.advanced.customDomain")}</a>
           </div>}
           <div className="space-y-2">
-            <Label htmlFor="email-mode">Receiving</Label>
+            <Label htmlFor="email-mode">{t("apps.chatEndpointSetup.agentmail.advanced.receiving")}</Label>
             <select id="email-mode" value={mode} disabled={busy} className={selectClass} onChange={event => setMode(event.target.value as typeof mode)}>
-              <option value="websocket">Live connection</option><option value="webhook">Webhook</option>
+              <option value="websocket">{t("apps.chatEndpointSetup.agentmail.advanced.liveConnection")}</option><option value="webhook">{t("apps.chatEndpointSetup.agentmail.advanced.webhook")}</option>
             </select>
           </div>
           <EmailSafetyNotice />
           <div className="space-y-2 text-sm">
-            <p>{lowTrust && scoped ? "Low-trust review configured" : "Manage which tasks and tools this agent can access."}</p>
-            <Button type="button" variant="outline" size="sm" onClick={openTrust}>Review trust settings</Button>
+            <p>{lowTrust && scoped ? t("apps.chatEndpointSetup.agentmail.trust.lowTrustConfigured") : t("apps.chatEndpointSetup.agentmail.trust.manageAccess")}</p>
+            <Button type="button" variant="outline" size="sm" onClick={openTrust}>{t("apps.chatEndpointSetup.agentmail.trust.reviewSettings")}</Button>
           </div>
         </div>
       </details>
       {error && <p role="alert" className="text-sm text-destructive">{error.message}</p>}
-      {inspected.isPending && <p role="status" className="text-sm text-muted-foreground">Loading email options…</p>}
+      {inspected.isPending && <p role="status" className="text-sm text-muted-foreground">{t("apps.chatEndpointSetup.agentmail.address.loadingOptions")}</p>}
       <div className="flex items-center justify-between gap-3 border-t border-border pt-5">
-        <Button type="button" variant="ghost" disabled={busy} onClick={() => { setup.reset(); setStep(0); }}><ArrowLeft className="size-4" />Back</Button>
+        <Button type="button" variant="ghost" disabled={busy} onClick={() => { setup.reset(); setStep(0); }}><ArrowLeft className="size-4" />{t("apps.chatEndpointSetup.agentmail.back")}</Button>
         <Button disabled={!canCreate}>
-          {setup.isPending ? "Connecting…" : pendingAddress ? "Finish connecting" : addressMode === "new" ? "Create email address" : "Connect email address"}<ArrowRight className="size-4" />
+          {setup.isPending ? t("apps.chatEndpointSetup.agentmail.connecting") : pendingAddress ? t("apps.chatEndpointSetup.agentmail.address.finishConnecting") : addressMode === "new" ? t("apps.chatEndpointSetup.agentmail.address.createAddress") : t("apps.chatEndpointSetup.agentmail.address.connectAddress")}<ArrowRight className="size-4" />
         </Button>
       </div>
     </form>}
     {step === 2 && <div className="space-y-6">
       <div className="space-y-2"><p className="flex items-center gap-2 font-medium"><Check className="size-4" />{setup.data?.address}</p>
-        <p className="text-sm text-muted-foreground">{chosen?.name} can now receive email at this address.</p></div>
+        <p className="text-sm text-muted-foreground">{t("apps.chatEndpointSetup.agentmail.success.description", { agent: chosen?.name })}</p></div>
       <div className="flex items-center justify-between gap-3 border-t border-border pt-5">
-        <Button variant="ghost" onClick={leave}>Email settings</Button><Button onClick={() => navigate("/apps")}>Done</Button>
+        <Button variant="ghost" onClick={leave}>{t("apps.chatEndpointSetup.agentmail.success.settings")}</Button><Button onClick={() => navigate("/apps")}>{t("apps.chatEndpointSetup.agentmail.success.done")}</Button>
       </div>
     </div>}
       <Dialog open={trustOpen} onOpenChange={setTrustOpen}>
         <DialogContent className="max-h-screen overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Trust settings · {chosen?.name}</DialogTitle>
+            <DialogTitle>{t("apps.chatEndpointSetup.agentmail.trust.title", { agent: chosen?.name })}</DialogTitle>
             <DialogDescription>
-              Changes apply to all of this agent’s work. Use a dedicated email
-              agent if its other tasks need broader access.
+              {t("apps.chatEndpointSetup.agentmail.trust.description")}
             </DialogDescription>
           </DialogHeader>
           <TrustPresetSection
@@ -470,8 +474,7 @@ function EmailEndpointSetupForm({ companyId }: { companyId: string }) {
             candidatesLoading={projects.isPending || boundaryIssues.isPending}
           />
           <p className="text-xs text-muted-foreground">
-            Low trust limits Paperclip access; it does not sandbox the runtime.
-            Review filesystem, tool, and secret access separately.
+            {t("apps.chatEndpointSetup.agentmail.trust.boundaryNote")}
           </p>
           {(trust.error || projects.error || boundaryIssues.error) && (
             <p role="alert" className="text-sm text-destructive">
@@ -480,7 +483,7 @@ function EmailEndpointSetupForm({ companyId }: { companyId: string }) {
           )}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setTrustOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               disabled={
@@ -492,7 +495,7 @@ function EmailEndpointSetupForm({ companyId }: { companyId: string }) {
               }
               onClick={() => trust.mutate()}
             >
-              Save trust settings
+              {t("apps.chatEndpointSetup.agentmail.trust.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

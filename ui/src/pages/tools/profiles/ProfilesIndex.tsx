@@ -23,12 +23,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/context/ToastContext";
+import { useTranslation } from "@/i18n";
 import { EffectiveAgentPanel } from "../ProfilesTab";
 import { ErrorState, LoadingState, RelativeTime, ToolsPageHeader } from "../shared";
 import { ProfileActionDialog, type ProfileActionDialogKind } from "./ProfileActionDialog";
 import { TEMPLATES, type TemplateKey } from "./profile-model";
 import { useProfilesData } from "./useProfilesData";
-import { allowsLabel, assignedLabel, isDraft, STATUS_LABEL } from "./profile-summary";
+import { isDraft } from "./profile-summary";
 
 /** The wizard route for a fresh profile, optionally seeded with a template. */
 function newProfileHref(template?: TemplateKey): string {
@@ -52,6 +53,7 @@ export function ProfilesIndex({
   initialStatusFilter?: "active" | "archived";
   initialResolverOpen?: boolean;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { pushToast } = useToast();
@@ -78,60 +80,84 @@ export function ProfilesIndex({
   };
 
   const errorBody = (error: unknown) => String((error as Error)?.message ?? error);
+  const localizedAllowsLabel = (summary: ToolProfileWithDetails["summary"]) => {
+    if (summary.accessMode === "all_except") {
+      return summary.excludedToolCount === 0
+        ? t("toolsAdmin.profiles.index.allTools")
+        : t("toolsAdmin.profiles.index.allExceptTools", { count: summary.excludedToolCount });
+    }
+    const parts = [t("toolsAdmin.profiles.index.toolCount", { count: summary.allowedToolCount })];
+    if (summary.allowedApplicationCount > 0) {
+      parts.push(t("toolsAdmin.profiles.index.appCount", { count: summary.allowedApplicationCount }));
+    }
+    return parts.join(" · ");
+  };
+  const localizedAssignedLabel = (summary: ToolProfileWithDetails["summary"]) => {
+    if (summary.isCompanyDefault) return { text: t("toolsAdmin.profiles.index.organizationDefault"), unassigned: false };
+    if (summary.appliesToAgentCount > 0) {
+      return { text: t("toolsAdmin.profiles.index.agentCount", { count: summary.appliesToAgentCount }), unassigned: false };
+    }
+    if (summary.assignmentCount > 0) {
+      return { text: t("toolsAdmin.profiles.index.assignmentCount", { count: summary.assignmentCount }), unassigned: false };
+    }
+    return { text: t("toolsAdmin.profiles.index.notAssigned"), unassigned: true };
+  };
+  const profileStatusLabel = (status: ToolProfileWithDetails["status"]) =>
+    t(`toolsAdmin.profiles.index.status${status[0].toUpperCase()}${status.slice(1)}`);
 
   const duplicate = useMutation({
     mutationFn: (profile: ToolProfileWithDetails) =>
-      toolsApi.duplicateProfile(profile.id, { name: `${profile.name} (copy)` }),
+      toolsApi.duplicateProfile(profile.id, { name: `${profile.name} ${t("toolsAdmin.profiles.index.copySuffix")}` }),
     onSuccess: () => {
-      pushToast({ title: "Profile duplicated", body: "The copy is not assigned to anyone yet.", tone: "success" });
+      pushToast({ title: t("toolsAdmin.profiles.actions.duplicated"), body: t("toolsAdmin.profiles.actions.duplicateSuccessBody"), tone: "success" });
       invalidate();
     },
     onError: (error: unknown) =>
-      pushToast({ title: "Could not duplicate", body: errorBody(error), tone: "error" }),
+      pushToast({ title: t("toolsAdmin.profiles.actions.duplicateFailed"), body: errorBody(error), tone: "error" }),
   });
 
   const archive = useMutation({
     mutationFn: (profile: ToolProfileWithDetails) =>
       toolsApi.updateProfile(profile.id, { status: "archived" }),
     onSuccess: () => {
-      pushToast({ title: "Profile archived", tone: "success" });
+      pushToast({ title: t("toolsAdmin.profiles.actions.archived"), tone: "success" });
       invalidate();
     },
-    onError: (error: unknown) => pushToast({ title: "Could not archive", body: errorBody(error), tone: "error" }),
+    onError: (error: unknown) => pushToast({ title: t("toolsAdmin.profiles.actions.archiveFailed"), body: errorBody(error), tone: "error" }),
   });
 
   const restore = useMutation({
     mutationFn: (profile: ToolProfileWithDetails) =>
       toolsApi.updateProfile(profile.id, { status: "active" }),
     onSuccess: () => {
-      pushToast({ title: "Profile restored", tone: "success" });
+      pushToast({ title: t("toolsAdmin.profiles.actions.restored"), tone: "success" });
       invalidate();
     },
-    onError: (error: unknown) => pushToast({ title: "Could not restore", body: errorBody(error), tone: "error" }),
+    onError: (error: unknown) => pushToast({ title: t("toolsAdmin.profiles.actions.restoreFailed"), body: errorBody(error), tone: "error" }),
   });
 
   const remove = useMutation({
     mutationFn: (profile: ToolProfileWithDetails) => toolsApi.deleteProfile(profile.id),
     onSuccess: () => {
-      pushToast({ title: "Profile deleted", tone: "success" });
+      pushToast({ title: t("toolsAdmin.profiles.actions.deleted"), tone: "success" });
       invalidate();
     },
-    onError: (error: unknown) => pushToast({ title: "Could not delete", body: errorBody(error), tone: "error" }),
+    onError: (error: unknown) => pushToast({ title: t("toolsAdmin.profiles.actions.deleteFailed"), body: errorBody(error), tone: "error" }),
   });
 
   const header = (
     <ToolsPageHeader
-      title="Access profiles"
-      description="Decide which tools your agents can use. Build a profile once, then assign it to the agents that need it."
+      title={t("toolsAdmin.profiles.index.title")}
+      description={t("toolsAdmin.profiles.index.description")}
       actions={
         <>
           <Button variant="outline" onClick={() => setResolverOpen(true)}>
             <ShieldCheck className="mr-1.5 h-4 w-4" />
-            Check an agent's access
+            {t("toolsAdmin.profiles.index.checkAgentAccess")}
           </Button>
           <Button onClick={() => navigate(newProfileHref())}>
             <Plus className="mr-1.5 h-4 w-4" />
-            New profile
+            {t("toolsAdmin.profiles.index.newProfile")}
           </Button>
         </>
       }
@@ -142,9 +168,9 @@ export function ProfilesIndex({
     <Sheet open={resolverOpen} onOpenChange={setResolverOpen}>
       <SheetContent className="w-full gap-0 p-0 sm:max-w-xl">
         <SheetHeader className="border-b border-border">
-          <SheetTitle>Check an agent's access</SheetTitle>
+          <SheetTitle>{t("toolsAdmin.profiles.index.checkAgentAccess")}</SheetTitle>
           <SheetDescription>
-            See exactly which tools an agent can use right now, and which profile allows each one.
+            {t("toolsAdmin.profiles.index.checkAgentAccessDescription")}
           </SheetDescription>
         </SheetHeader>
         <div className="flex min-h-0 flex-1 flex-col p-4">
@@ -158,7 +184,7 @@ export function ProfilesIndex({
     return (
       <div className="space-y-5">
         {header}
-        <LoadingState label="Loading profiles…" />
+        <LoadingState label={t("toolsAdmin.profiles.index.loading")} />
       </div>
     );
   }
@@ -166,7 +192,17 @@ export function ProfilesIndex({
     return (
       <div className="space-y-5">
         {header}
-        <ErrorState error={profiles.error} onRetry={() => profiles.refetch()} />
+        <ErrorState
+          error={profiles.error}
+          onRetry={() => profiles.refetch()}
+          labels={{
+            forbidden: t("toolsAdmin.common.errors.forbidden"),
+            routeUnavailable: t("toolsAdmin.common.errors.routeUnavailable"),
+            generic: t("toolsAdmin.common.errors.generic"),
+            couldNotLoad: t("toolsAdmin.common.errors.couldNotLoad"),
+            retry: t("toolsAdmin.common.errors.retry"),
+          }}
+        />
       </div>
     );
   }
@@ -189,7 +225,7 @@ export function ProfilesIndex({
               statusFilter === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {key === "active" ? "Active" : "Archived"}
+            {key === "active" ? t("toolsAdmin.profiles.index.active") : t("toolsAdmin.profiles.index.archived")}
           </button>
         ))}
       </div>
@@ -197,7 +233,7 @@ export function ProfilesIndex({
       {rows.length === 0 ? (
         statusFilter === "archived" ? (
           <div className="rounded-lg border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
-            No archived profiles.
+            {t("toolsAdmin.profiles.index.noArchived")}
           </div>
         ) : (
           <EmptyTemplatePicker onPick={(key) => navigate(newProfileHref(key))} />
@@ -215,17 +251,17 @@ export function ProfilesIndex({
             </colgroup>
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-xs font-medium text-muted-foreground">
-                <th className="px-3 py-2 font-medium">Profile</th>
-                <th className="px-3 py-2 font-medium">Allows</th>
-                <th className="px-3 py-2 font-medium">Assigned to</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium">Updated</th>
+                <th className="px-3 py-2 font-medium">{t("toolsAdmin.profiles.index.profile")}</th>
+                <th className="px-3 py-2 font-medium">{t("toolsAdmin.profiles.index.allows")}</th>
+                <th className="px-3 py-2 font-medium">{t("toolsAdmin.profiles.index.assignedTo")}</th>
+                <th className="px-3 py-2 font-medium">{t("toolsAdmin.profiles.index.status")}</th>
+                <th className="px-3 py-2 font-medium">{t("toolsAdmin.profiles.index.updated")}</th>
                 <th className="w-10 px-3 py-2" />
               </tr>
             </thead>
             <tbody>
               {rows.map((profile) => {
-                const assigned = assignedLabel(profile.summary);
+                const assigned = localizedAssignedLabel(profile.summary);
                 const draft = isDraft(profile);
                 const open = () => navigate(draft ? `/apps/advanced/profiles/${profile.id}/edit` : `/apps/advanced/profiles/${profile.id}`);
                 return (
@@ -245,10 +281,10 @@ export function ProfilesIndex({
                     </td>
                     <td className="px-3 py-1.5 text-muted-foreground">
                       <span className="inline-flex items-center gap-2">
-                        <span>{allowsLabel(profile.summary)}</span>
+                        <span>{localizedAllowsLabel(profile.summary)}</span>
                         {(profile.newToolsPendingCount ?? 0) > 0 ? (
                           <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-200">
-                            {profile.newToolsPendingCount} new
+                            {t("toolsAdmin.profiles.index.newTools", { count: profile.newToolsPendingCount })}
                           </Badge>
                         ) : null}
                       </span>
@@ -257,7 +293,7 @@ export function ProfilesIndex({
                       {assigned.unassigned ? (
                         <span className="text-muted-foreground">
                           {assigned.text}
-                          <span className="ml-1 text-xs text-muted-foreground/70">— does not change access</span>
+                          <span className="ml-1 text-xs text-muted-foreground/70">{t("toolsAdmin.profiles.index.unassignedEffect")}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 text-foreground">
@@ -270,14 +306,14 @@ export function ProfilesIndex({
                     </td>
                     <td className="px-3 py-1.5">
                       <span className="inline-flex items-center gap-2">
-                        <Badge variant={statusVariant(profile.status)}>{STATUS_LABEL[profile.status]}</Badge>
+                        <Badge variant={statusVariant(profile.status)}>{profileStatusLabel(profile.status)}</Badge>
                         {draft ? (
                           <button
                             type="button"
                             onClick={open}
                             className="text-xs font-medium text-primary hover:underline"
                           >
-                            Resume
+                            {t("toolsAdmin.profiles.index.resume")}
                           </button>
                         ) : null}
                       </span>
@@ -338,31 +374,32 @@ function RowMenu({
   onRestore?: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Profile actions"
+          aria-label={t("toolsAdmin.profiles.index.actions")}
           className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 data-[state=open]:opacity-100"
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={onEdit}>Edit</DropdownMenuItem>
-        <DropdownMenuItem onSelect={onDuplicate}>Duplicate</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onEdit}>{t("toolsAdmin.common.edit")}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onDuplicate}>{t("toolsAdmin.common.duplicate")}</DropdownMenuItem>
         {onRestore ? (
           <DropdownMenuItem onSelect={onRestore}>
             <ArchiveRestore className="mr-1.5 h-4 w-4" />
-            Restore
+            {t("toolsAdmin.common.restore")}
           </DropdownMenuItem>
         ) : (
-          <DropdownMenuItem onSelect={onArchive}>Archive</DropdownMenuItem>
+          <DropdownMenuItem onSelect={onArchive}>{t("toolsAdmin.common.archive")}</DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onDelete} className="text-destructive focus:text-destructive">
-          Delete
+          {t("toolsAdmin.common.delete")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -371,12 +408,13 @@ function RowMenu({
 
 /** Empty state (AP2): the same five step-1 template cards the wizard opens with. */
 function EmptyTemplatePicker({ onPick }: { onPick: (key: TemplateKey) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-lg border border-dashed border-border p-6">
       <div className="mb-4 max-w-2xl">
-        <h3 className="text-base font-semibold text-foreground">Create your first access profile</h3>
+        <h3 className="text-base font-semibold text-foreground">{t("toolsAdmin.profiles.index.createFirst")}</h3>
         <p className="text-sm text-muted-foreground">
-          Pick a starting point. You can fine-tune exactly which tools it allows in the next step.
+          {t("toolsAdmin.profiles.index.emptyDescription")}
         </p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -390,8 +428,8 @@ function EmptyTemplatePicker({ onPick }: { onPick: (key: TemplateKey) => void })
               "hover:border-primary hover:bg-primary/5",
             )}
           >
-            <span className="text-sm font-medium text-foreground">{template.title}</span>
-            <span className="text-xs text-muted-foreground">{template.description}</span>
+            <span className="text-sm font-medium text-foreground">{t(`toolsAdmin.profiles.wizard.templates.${template.key}.title`)}</span>
+            <span className="text-xs text-muted-foreground">{t(`toolsAdmin.profiles.wizard.templates.${template.key}.description`)}</span>
           </button>
         ))}
       </div>

@@ -8,43 +8,8 @@ import {
 import type { AdapterEnvironmentTestResult } from "@paperclipai/shared";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 export type TestState = "idle" | "running" | "pass" | "fail";
-
-const copy = {
-  idle: {
-    title: "Test your agent",
-    description: "Check that your runtime and model can respond.",
-    action: "Run test",
-  },
-  running: {
-    title: "Testing connection",
-    description: "Checking the runtime and waiting for a model response…",
-    action: "Testing…",
-  },
-  pass: {
-    title: "Connection successful",
-    description: "Your runtime checks passed. Review the details below.",
-    action: "Test again",
-  },
-  warn: {
-    title: "Connection needs attention",
-    description: "Review the test details before running your agent.",
-    action: "Test again",
-  },
-  fail: {
-    title: "Couldn't connect",
-    description: "Check your model and provider connection, then try again.",
-    action: "Retry test",
-  },
-} as const;
-
-const prerequisiteCopy = {
-  idle: { title: "Check prerequisites", description: "Check instance settings and public connection configuration.", action: "Check setup" },
-  running: { title: "Checking prerequisites", description: "Checking instance settings and public connection configuration…", action: "Checking…" },
-  pass: { title: "Setup checks passed", description: "Review the setup details before assigning work.", action: "Check again" },
-  warn: { title: "Pairing required", description: "Create this agent, then pair it and verify event delivery.", action: "Check again" },
-  fail: { title: "Prerequisite check failed", description: "Review the setup details and retry.", action: "Retry check" },
-} as const;
 
 export function RuntimeTestCard({
   state,
@@ -61,7 +26,15 @@ export function RuntimeTestCard({
   disabled?: boolean;
   variant?: "connection" | "prerequisites";
 }) {
-  const content = (variant === "prerequisites" ? prerequisiteCopy : copy)[state];
+  const { t } = useTranslation();
+  const contentKey = variant === "prerequisites"
+    ? `agentSetup.runtimeTest.prerequisites.${state}`
+    : `agentSetup.runtimeTest.${state}`;
+  const content = {
+    title: t(`${contentKey}.title`),
+    description: t(`${contentKey}.description`),
+    action: t(`${contentKey}.action`),
+  };
   const Icon =
     state === "running"
       ? Loader2
@@ -72,7 +45,7 @@ export function RuntimeTestCard({
           : Play;
   return (
     <section
-      aria-label="Runtime test"
+      aria-label={t("agentSetup.runtimeTest.ariaLabel")}
       className="rounded-lg border border-border bg-card"
     >
       <div className="flex items-start gap-3 p-4 sm:items-center">
@@ -127,7 +100,7 @@ export function RuntimeTestCard({
               aria-hidden="true"
               className="size-3 transition-transform group-open:rotate-90"
             />
-            Test details
+            {t("agentSetup.runtimeTest.details")}
           </summary>
           <ul className="space-y-3 px-4 pb-4">
             {result.checks.map((check) => (

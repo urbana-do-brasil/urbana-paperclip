@@ -5,6 +5,7 @@ import type { LocalAiLoginStatus } from "@paperclipai/shared";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 
 // --- Mocks (hoisted so vi.mock factories can close over them) ----------------
 
@@ -324,7 +325,8 @@ function isArcPrimary(text: string): boolean {
 }
 
 describe("OnboardingWizard restore-gate (stale localStorage across accounts)", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     localHealth.get.mockResolvedValue({ deploymentMode: "authenticated" });
     managedApi.checkLocalLogin.mockReset().mockResolvedValue({
       status: "sign_in_required",
@@ -434,6 +436,36 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       return { root, renderTree };
     }
 
+    async function openStepFive(overrides: Record<string, unknown> = {}) {
+      mockCompany.companies = [{ id: "company-new", name: "Initech", issuePrefix: "INI" }];
+      mockCompany.loading = false;
+      mockCompaniesApi.list.mockResolvedValue(mockCompany.companies);
+      window.localStorage.setItem(
+        ONBOARDING_STORAGE_KEY,
+        JSON.stringify({
+          step: 5,
+          companyName: "Initech",
+          agentName: "Ana",
+          createdCompanyId: "company-new",
+          createdCompanyPrefix: "INI",
+          createdAgentId: "agent-1",
+          createdCompanyGoalId: "goal-1",
+          createdProjectId: "project-1",
+          ...overrides,
+        }),
+      );
+      const { root, queryClient } = render();
+      await act(async () => {
+        root.render(
+          <QueryClientProvider client={queryClient}>
+            <OnboardingWizard />
+          </QueryClientProvider>,
+        );
+      });
+      await flushReact();
+      return { root };
+    }
+
     async function clickByText(match: (text: string) => boolean) {
       const el = [...document.body.querySelectorAll("button")].find((b) =>
         match(b.getAttribute("aria-label")?.startsWith("Use ") ? b.getAttribute("aria-label")! : b.textContent?.trim() ?? ""),
@@ -443,6 +475,67 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       });
       await flushReact();
     }
+
+    it("renders the organization and first-agent setup in PT-BR without changing submitted names", async () => {
+      await i18n.changeLanguage("pt-BR");
+      mockCompaniesApi.create.mockResolvedValue({ id: "company-new", issuePrefix: "INI" });
+      const { root } = await openStepOne();
+
+      expect(document.body.textContent).toContain("Qual é o nome da sua organização?");
+      const organizationName = document.querySelector("#onboarding-company-name") as HTMLInputElement;
+      expect(organizationName.placeholder).toBe("ex.: Northwind Labs");
+      await clickByText((label) => label.startsWith("Continuar"));
+      expect(mockCompaniesApi.create).toHaveBeenCalledWith({ name: "Initech" });
+      expect(document.body.textContent).toContain("Crie seu primeiro agente");
+      const agentName = document.querySelector("#onboarding-agent-name") as HTMLInputElement;
+      expect(agentName.placeholder).toBe("ex.: Chefe de gabinete");
+
+      await act(async () => setControlledValue(agentName, "Ana"));
+      await flushReact();
+      await clickByText((label) => label.startsWith("Avançar"));
+      expect(document.body.textContent).toContain("Conecte um modelo");
+      expect(document.body.textContent).toContain("Assinatura");
+      const useApiKey = document.querySelector('[aria-label="Usar chave de API em vez disso"]') as HTMLButtonElement;
+      await act(async () => useApiKey.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+      expect(document.body.textContent).toContain("Chave de API");
+      expect(document.querySelector('[aria-label="Usar assinatura em vez disso"]')).not.toBeNull();
+
+      await act(async () => root.unmount());
+    });
+
+    it.each([
+      ["pt-BR", "Configuração inicial do Paperclip", "Começar"],
+      ["en", "Paperclip onboarding", "Get started"],
+    ])("uses the %s locale only when creating the initial task and preserves a saved task reference", async (locale, title, launchLabel) => {
+      await i18n.changeLanguage(locale);
+      mockIssuesApi.create.mockReset().mockResolvedValue({ identifier: "INI-1" });
+      const { root } = await openStepFive();
+
+      const launchButton = [...document.body.querySelectorAll("button")].find(
+        (button) => button.textContent?.trim() === launchLabel,
+      );
+      expect(launchButton).toBeTruthy();
+      await act(async () => launchButton!.click());
+      for (let i = 0; i < 6; i++) await flushReact();
+
+      expect(mockIssuesApi.create).toHaveBeenCalledWith(
+        "company-new",
+        expect.objectContaining({ title }),
+      );
+      await act(async () => root.unmount());
+
+      mockIssuesApi.create.mockReset();
+      const resumed = await openStepFive({ createdIssueRef: "INI-EXISTING" });
+      const resumedLaunchButton = [...document.body.querySelectorAll("button")].find(
+        (button) => button.textContent?.trim() === launchLabel,
+      );
+      expect(resumedLaunchButton).toBeTruthy();
+      await act(async () => resumedLaunchButton!.click());
+      for (let i = 0; i < 6; i++) await flushReact();
+
+      expect(mockIssuesApi.create).not.toHaveBeenCalled();
+      await act(async () => resumed.root.unmount());
+    });
 
     it("creates the organization on Continue and lands on the agent step, no mission", async () => {
       mockCompaniesApi.create.mockResolvedValue({ id: "company-new", issuePrefix: "INI" });
@@ -2267,7 +2360,7 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       // a hire here would create an agent with no credential to run on.
       expect(mockAgentsApi.hire).not.toHaveBeenCalled();
       expect(document.body.textContent).toContain(
-        "Sign in to Claude then come back and enter authorization code",
+        "Sign in to Claude then come back and enter the authorization code",
       );
 
       await act(async () => root.unmount());
@@ -3364,7 +3457,7 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       mockInstanceSettingsApi.get.mockResolvedValue({ defaultEnvironmentId: null });
       const { root } = await openStep4({ adapterType: "claude_local" });
       await pickSource(/Claude/);
-      expect(document.body.textContent).toContain("Sign in to Claude then come back and enter authorization code");
+      expect(document.body.textContent).toContain("Sign in to Claude then come back and enter the authorization code");
       expect(document.body.textContent).not.toContain("claude auth login");
       expect(document.body.textContent).not.toContain("No managed sandbox");
       expect(mockAgentsApi.startClaudeSetupTokenLogin).not.toHaveBeenCalled();
@@ -3416,7 +3509,7 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       // shows the login already running.
       expect(mockAgentsApi.startClaudeSetupTokenLogin).not.toHaveBeenCalled();
       expect(document.body.textContent).toContain(
-        "Sign in to Claude then come back and enter authorization code",
+        "Sign in to Claude then come back and enter the authorization code",
       );
 
       await act(async () => root.unmount());

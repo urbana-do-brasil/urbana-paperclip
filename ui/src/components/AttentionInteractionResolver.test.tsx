@@ -4,6 +4,7 @@ import { act, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { issuesApi } from "../api/issues";
 import { pendingRequestConfirmationInteraction } from "../fixtures/issueThreadInteractionFixtures";
 import { ThemeProvider } from "../context/ThemeContext";
@@ -25,7 +26,11 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it("refreshes a preparing approval automatically, then stops polling without accepting it", async () => {
+it.each([
+  ["en", "Preparing approval…"],
+  ["pt-BR", "Preparando a aprovação…"],
+])("refreshes a preparing approval automatically in %s, then stops polling without accepting it", async (locale, preparingLabel) => {
+  await i18n.changeLanguage(locale);
   vi.useFakeTimers();
   const interaction = pendingRequestConfirmationInteraction;
   vi.mocked(issuesApi.listInteractions)
@@ -50,11 +55,11 @@ it("refreshes a preparing approval automatically, then stops polling without acc
     await act(async () => { await vi.advanceTimersByTimeAsync(1); });
     const approve = () => container.querySelector<HTMLButtonElement>('[data-testid="confirmation-actions"] button')!;
     expect(approve().disabled).toBe(true);
-    expect(container.textContent).toContain("Preparing approval…");
+    expect(container.textContent).toContain(preparingLabel);
     await act(async () => { await vi.advanceTimersByTimeAsync(2_001); });
     expect(issuesApi.listInteractions).toHaveBeenCalledTimes(2);
     expect(approve().disabled).toBe(false);
-    expect(container.textContent).not.toContain("Preparing approval…");
+    expect(container.textContent).not.toContain(preparingLabel);
     await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
     expect(issuesApi.listInteractions).toHaveBeenCalledTimes(2);
     expect(issuesApi.acceptInteraction).not.toHaveBeenCalled();

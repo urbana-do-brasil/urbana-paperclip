@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { resolveDefaultContextPath } from "../config/home.js";
+import { isSupportedLocale, type SupportedLocale } from "@paperclipai/shared/localization";
 
 const DEFAULT_CONTEXT_BASENAME = "context.json";
 const DEFAULT_PROFILE = "default";
 
 export interface ClientContextProfile {
+  locale?: SupportedLocale;
   apiBase?: string;
   companyId?: string;
   persona?: "board" | "agent";
@@ -77,6 +79,7 @@ function normalizeProfile(value: unknown): ClientContextProfile {
     : undefined;
 
   return {
+    locale: isSupportedLocale(profile.locale) ? profile.locale : undefined,
     apiBase: toStringOrUndefined(profile.apiBase),
     companyId: toStringOrUndefined(profile.companyId),
     persona,
@@ -133,12 +136,52 @@ export function readContext(contextPath?: string): ClientContext {
   return normalizeContext(raw);
 }
 
+/** Inspect only the selected profile's locale; do not expose unrelated data. */
+export function readRawProfileLocale(contextPath?: string, profileName?: string): unknown {
+  const filePath = resolveContextPath(contextPath);
+  if (!fs.existsSync(filePath)) return undefined;
+  // JSON.parse can include fragments of malformed input in its error message.
+  // Contexts contain credential metadata, so the early help/error path must
+  // not print raw file contents or a potentially sensitive file path.
+  let raw: unknown;
+  try { raw = parseJson(filePath); }
+  catch { throw new Error("Não foi possível ler o contexto da CLI. / Could not read the CLI context."); }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const record = raw as Record<string, unknown>;
+  const name = profileName?.trim() || toStringOrUndefined(record.currentProfile) || DEFAULT_PROFILE;
+  const profiles = record.profiles;
+  if (!profiles || typeof profiles !== "object" || Array.isArray(profiles)) return undefined;
+  const profile = (profiles as Record<string, unknown>)[name];
+  return profile && typeof profile === "object" && !Array.isArray(profile)
+    ? (profile as Record<string, unknown>).locale : undefined;
+}
+
 export function writeContext(context: ClientContext, contextPath?: string): void {
   const filePath = resolveContextPath(contextPath);
   const dir = path.dirname(filePath);
   fs.mkdirSync(dir, { recursive: true });
 
   const normalized = normalizeContext(context);
+  // A bad value in another profile must not be silently erased when this
+  // profile is edited. It is rejected if selected, and can be repaired with
+  // an explicit --lang plus `context set --locale`.
+  if (fs.existsSync(filePath)) {
+    try {
+      const raw = parseJson(filePath);
+      const profiles = raw && typeof raw === "object" && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>).profiles : undefined;
+      if (profiles && typeof profiles === "object" && !Array.isArray(profiles)) {
+        for (const [name, profile] of Object.entries(normalized.profiles)) {
+          const old = (profiles as Record<string, unknown>)[name];
+          if (!old || typeof old !== "object" || Array.isArray(old)) continue;
+          const oldProfile = old as Record<string, unknown>;
+          if (Object.hasOwn(oldProfile, "locale") && !isSupportedLocale(oldProfile.locale) && profile.locale === undefined) {
+            (profile as Record<string, unknown>).locale = oldProfile.locale;
+          }
+        }
+      }
+    } catch { /* Replacing a malformed context remains possible via writeContext. */ }
+  }
   fs.writeFileSync(filePath, `${JSON.stringify(normalized, null, 2)}\n`, { mode: 0o600 });
 }
 
@@ -147,9 +190,14 @@ export function upsertProfile(
   patch: Partial<ClientContextProfile>,
   contextPath?: string,
 ): ClientContext {
+  if (patch.locale !== undefined && !isSupportedLocale(patch.locale)) {
+    throw new Error("Invalid locale. Use pt-BR or en.");
+  }
   const context = readContext(contextPath);
   const existing = context.profiles[profileName] ?? {};
   const merged: ClientContextProfile = { ...existing };
+
+  if (patch.locale !== undefined) merged.locale = patch.locale;
 
   if (patch.apiBase !== undefined) merged.apiBase = patch.apiBase;
   if (patch.companyId !== undefined) merged.companyId = patch.companyId;

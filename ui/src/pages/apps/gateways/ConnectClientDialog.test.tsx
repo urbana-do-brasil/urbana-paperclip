@@ -10,6 +10,7 @@ import type {
   ToolMcpGatewayWithTokens,
 } from "@paperclipai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n } from "@/i18n";
 import { ConnectClientDialog } from "./ConnectClientDialog";
 
 const copyTextMock = vi.hoisted(() => vi.fn());
@@ -133,7 +134,7 @@ function gateway(token: ToolMcpGatewayToken): ToolMcpGatewayWithTokens {
           },
         },
       },
-      notes: [],
+      notes: ["Place this under your MCP extension or editor MCP settings."],
     }],
   };
 }
@@ -142,7 +143,8 @@ describe("ConnectClientDialog", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     vi.clearAllMocks();
     copyTextMock.mockResolvedValue(undefined);
     container = document.createElement("div");
@@ -150,9 +152,37 @@ describe("ConnectClientDialog", () => {
     root = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     flushSync(() => root.unmount());
     container.remove();
+    await i18n.changeLanguage("en");
+  });
+
+  it("localizes client instructions while preserving the MCP configuration contract", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const persisted = storedToken();
+    const created = { ...persisted, token: "pcgw_FULL_SECRET" } satisfies ToolMcpGatewayTokenCreated;
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    flushSync(() => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <ConnectClientDialog gateway={gateway(persisted)} open onOpenChange={vi.fn()} createdTokens={[created]} onTokenCreated={vi.fn()} />
+        </QueryClientProvider>,
+      );
+    });
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    expect(container.textContent).toContain("Configurar clientes");
+    expect(container.textContent).toContain("Adicione esta configuração às opções da extensão MCP ou do editor.");
+    expect(container.textContent).toContain('"servers": {');
+    expect(container.textContent).toContain("Authorization");
+
+    const copyButton = [...container.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Copiar");
+    if (!copyButton) throw new Error("snippet copy button missing");
+    copyButton.click();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    expect(copyTextMock).toHaveBeenCalledWith(expect.stringContaining('"Authorization": "Bearer pcgw_FULL_SECRET"'));
   });
 
   it("copies a complete client snippet with the selected token and explains the gateway boundary", async () => {
@@ -175,7 +205,7 @@ describe("ConnectClientDialog", () => {
     });
     await new Promise((resolve) => window.setTimeout(resolve, 0));
 
-    expect(container.textContent).toContain("does not give it access to Paperclip or skills");
+    expect(container.textContent).toContain("does not give the tool access to Paperclip or skills");
     const copyButton = [...container.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Copy");
     if (!copyButton) throw new Error("snippet copy button missing");
     copyButton.click();

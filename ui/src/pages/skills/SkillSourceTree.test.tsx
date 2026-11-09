@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { act, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { SkillSourceTree, updateSkillTreeSelection } from './SkillSourceTree';
+import { i18n } from '@/i18n';
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 const candidates = [
   { path: 'SKILL.md', name: 'Root', description: 'Repository skill', error: null },
@@ -16,6 +17,7 @@ function changeSearch(host: HTMLElement, value: string) {
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 describe('skill source selection tree', () => {
+  beforeEach(async () => { await i18n.changeLanguage('en'); });
   it('toggles descendants independently of the root skill and other folders', () => {
     const all = new Set(candidates.map(skill => skill.path));
     const next = updateSkillTreeSelection(candidates, all, '.agents/one', false);
@@ -90,7 +92,7 @@ describe('skill source selection tree', () => {
       await act(async () => folder.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })));
       expect([...selection]).toEqual(['SKILL.md']);
       expect(exclusions).toEqual(['.agents/skills/review']);
-      const all = host.querySelector<HTMLInputElement>('[aria-label="Import folder Repository"]')!;
+      const all = host.querySelector<HTMLInputElement>('[aria-label="Select all skills in repository"]')!;
       expect(all.indeterminate).toBe(true);
       await act(async () => all.click());
       expect([...selection]).toEqual(compactCandidates.map(skill => skill.path));

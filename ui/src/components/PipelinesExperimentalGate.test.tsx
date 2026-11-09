@@ -88,4 +88,14 @@ describe("PipelinesExperimentalGate", () => {
     expect(container.querySelector('[data-testid="navigate"]')).toBeNull();
     expect(container.querySelector('[data-testid="pipeline-content"]')).toBeNull();
   });
+
+  it("fails closed and redirects when experimental settings cannot be loaded", async () => {
+    mockInstanceSettingsApi.getExperimental.mockRejectedValue(new Error("settings unavailable"));
+    await renderGate();
+
+    const navigate = container.querySelector('[data-testid="navigate"]');
+    expect(navigate?.getAttribute("data-to")).toBe("/dashboard");
+    expect(navigate?.getAttribute("data-replace")).toBe("true");
+    expect(container.querySelector('[data-testid="pipeline-content"]')).toBeNull();
+  });
 });

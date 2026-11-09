@@ -13,6 +13,7 @@ import {
   pruneRecentTasks,
 } from "@/lib/recent-tasks";
 import { queryKeys } from "@/lib/queryKeys";
+import { i18n } from "../i18n";
 
 const mockAuthApi = vi.hoisted(() => ({ getSession: vi.fn() }));
 const mockAgentsApi = vi.hoisted(() => ({ wakeup: vi.fn() }));
@@ -59,7 +60,8 @@ describe("SidebarRecentTasks", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     window.localStorage.clear();
     Object.values(mockAgentsApi).forEach((mock) => mock.mockReset());
     Object.values(mockIssuesApi).forEach((mock) => mock.mockReset());
@@ -260,6 +262,47 @@ describe("SidebarRecentTasks", () => {
     expect(menu?.textContent).toContain("Rename");
     expect(menu?.textContent).toContain("Archive");
     expect(menu?.textContent).toContain("Pause/Restart");
+  });
+
+  it("localizes recent-task actions and the rename dialog in PT-BR", async () => {
+    const issue = {
+      id: "issue-pt",
+      companyId: "company-1",
+      title: "Tarefa exemplo",
+      identifier: "PAP-PT",
+      status: "todo" as const,
+      hiddenAt: null,
+      updatedAt: new Date(1),
+    };
+    recordRecentTask(issue, "user-1");
+    mockIssuesApi.get.mockResolvedValue(issue);
+
+    await i18n.changeLanguage("pt-BR");
+    await render();
+    const actions = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Mais ações para Tarefa exemplo"]',
+    );
+    await act(async () => {
+      actions?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    const menu = document.body.querySelector('[data-slot="dropdown-menu-content"]');
+    expect(container.textContent).toContain("Tarefas recentes");
+    expect(menu?.textContent).toContain("Renomear");
+    expect(menu?.textContent).toContain("Arquivar");
+    expect(menu?.textContent).toContain("Pausar/Reiniciar");
+
+    await act(async () => {
+      menuItem("Renomear")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(document.body.textContent).toContain("Renomear tarefa");
+    expect(document.body.textContent).toContain("Escolha um nome curto e claro para esta tarefa.");
+    expect(document.body.querySelector('input[aria-label="Nome da tarefa"]')).not.toBeNull();
+    expect(document.body.textContent).toContain("Cancelar");
+    expect(document.body.textContent).toContain("Salvar");
   });
 
   it("keeps an idle Slack conversation in recent history and labels it Idle", async () => {

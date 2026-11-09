@@ -3,6 +3,7 @@
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { i18n } from "@/i18n";
 import { LockedIssueChip, isLockedIssueStub } from "./LockedIssueChip";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,15 +17,17 @@ describe("LockedIssueChip", () => {
   let container: HTMLDivElement;
   let root: Root | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     if (root) act(() => root?.unmount());
     container.remove();
+    await i18n.changeLanguage("pt-BR");
   });
 
   function renderChip(node: React.ReactNode) {
@@ -54,6 +57,14 @@ describe("LockedIssueChip", () => {
     renderChip(<LockedIssueChip identifier={null} />);
     const chip = container.querySelector('[data-testid="locked-issue-chip"]');
     expect(chip?.textContent).toContain("Private");
+  });
+
+  it("localizes the private relation fallback and accessible status", async () => {
+    await i18n.changeLanguage("pt-BR");
+    renderChip(<LockedIssueChip identifier={null} />);
+    const chip = container.querySelector('[data-testid="locked-issue-chip"]');
+    expect(chip?.textContent).toContain("Privada");
+    expect(chip?.getAttribute("aria-label")).toContain("tarefa privada");
   });
 
   it("uses a dashed, muted border (design-token classes)", () => {

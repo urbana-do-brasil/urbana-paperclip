@@ -1,17 +1,20 @@
 import { DOT_AGENT_TOOL_GUIDANCE } from "@paperclipai/shared/external-agent-guidance";
 
 /** The live Dot connection prompt; callers supply an in-memory, expiring pairing code. */
-export function buildDotSetupPrompt({ companyId, agentId, resourceUrl, pairingCode, expiresAt }: {
+export function buildDotSetupPrompt({ companyId, agentId, resourceUrl, pairingCode, expiresAt,
+  pairingCodeLabel = "Pairing code", connectButtonLabel = "Connect Dot with pairing code" }: {
   companyId: string;
   agentId: string;
   resourceUrl: string;
   pairingCode: string;
   expiresAt: string;
+  pairingCodeLabel?: string;
+  connectButtonLabel?: string;
 }) {
   return `Add and enable a private MCP plugin named "Paperclip Dot" using this server URL:
 ${resourceUrl}
 
-Use OAuth authentication with CIMD. Reuse a plugin for this exact URL if one is already installed. If the name is already used for another URL, choose an available name such as "Paperclip Dot Test Drive" and keep the other plugin unchanged. Complete its connection in your browser: enter the one-use pairing code below in Paperclip’s "Pairing code" field. Entering the code automatically shows a scope preview without consuming the code or granting access. Verify the displayed company and agent match the IDs below, then click "Connect Dot with pairing code" to grant access and consume the code. This authorizes only the agent selected in Paperclip; operator sign-in is unnecessary. Paperclip company: ${companyId}. Agent: ${agentId}.
+Use OAuth authentication with CIMD. Reuse a plugin for this exact URL if one is already installed. If the name is already used for another URL, choose an available name such as "Paperclip Dot Test Drive" and keep the other plugin unchanged. Complete its connection in your browser: enter the one-use pairing code below in Paperclip’s "${pairingCodeLabel}" field. Entering the code automatically shows a scope preview without consuming the code or granting access. Verify the displayed company and agent match the IDs below, then click "${connectButtonLabel}" to grant access and consume the code. This authorizes only the agent selected in Paperclip; operator sign-in is unnecessary. Paperclip company: ${companyId}. Agent: ${agentId}.
 
 When you setup the plugin, I already understand that MCP servers have risk, so you check “I understand and want to continue,” and click “Create as a plugin.” I want you to create the plugin for me completely and I don't want to have to do anything.
 

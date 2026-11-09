@@ -469,6 +469,7 @@ describe("executeNativeSession recovery", () => {
     };
     const appended: PrpEvent[] = [];
     const digest = "0".repeat(64);
+    const communicationGuidance = "Write human-facing replies in English; preserve technical instructions and quoted content as written.";
     const context = {
       prompt: { revision: PAPERCLIP_EXECUTION_PROMPT_REVISION, text: PAPERCLIP_EXECUTION_PROMPT, digest: nativeRuntimePromptDigest() },
       instructions: { entryPath: "AGENTS.md", bundle: { schema: NATIVE_RUNTIME_ASSET_SCHEMA, digest, manifestDigest: digest, rootPath: "/runtime/instructions", fileCount: 1, totalBytes: 1 } },
@@ -479,7 +480,10 @@ describe("executeNativeSession recovery", () => {
         ...input, schema: "paperclip.native-execution-input.v4", executionMode: "default", planningContext: null,
         provider: { kind: "codex", model: null, approvalPolicy: "never" },
         runtimeContext: { ...context, aggregateDigest: canonicalNativeRuntimeContextDigest(context) },
-        continuationPrompt: "Say bye",
+        continuationPrompt: JSON.stringify({
+          communicationGuidance,
+          messages: [{ body: "Say bye" }],
+        }),
       } : { ...input, task: { ...input.task, prompt: "Say bye" } },
       backend: {
         async descriptor() {
@@ -508,7 +512,8 @@ describe("executeNativeSession recovery", () => {
     const submitted = startTurn.mock.calls[0]![0]!;
     if (snapshotBeforeUpdate) {
       expect(submitted.continuation).toBe(true);
-      expect(JSON.parse(submitted.message.text)).toMatchObject({ schema: "paperclip.native-continuation.v1", events: "Say bye",
+      expect(JSON.parse(submitted.message.text)).toMatchObject({ schema: "paperclip.native-continuation.v1",
+        events: '{"messages":[{"body":"Say bye"}]}', communicationGuidance,
         completion: { instruction: expect.stringContaining("Earlier reports belong to earlier turns") } });
     } else {
       expect(submitted).not.toHaveProperty("continuation");

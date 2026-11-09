@@ -4,6 +4,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { i18n } from "@/i18n";
 import { TaskChatMarker } from "./TaskChatMarker";
 import { TaskChatThreadView } from "./TaskChatThreadView";
 
@@ -17,7 +18,8 @@ describe("TaskChatMarker", () => {
   let container: HTMLDivElement;
   let root: Root | null = null;
 
-  beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-01T12:05:00.000Z"));
     container = document.createElement("div");
@@ -25,11 +27,12 @@ describe("TaskChatMarker", () => {
     root = createRoot(container);
   });
 
-  afterEach(() => {
+afterEach(async () => {
     flushSync(() => root?.unmount());
     root = null;
     container.remove();
     vi.useRealTimers();
+  await i18n.changeLanguage("en");
   });
 
   it("renders a failed run as a timestamped disclosure without divider rules", () => {
@@ -166,5 +169,85 @@ describe("TaskChatMarker", () => {
     flushSync(() => retry.click());
     await Promise.resolve();
     expect(onRetryFailedRun).toHaveBeenCalledWith("run-1");
+  });
+
+  it("localizes retry, run links, and credential recovery controls in Brazilian Portuguese", async () => {
+    await i18n.changeLanguage("pt-BR");
+    flushSync(() =>
+      root!.render(
+        <ThemeProvider>
+          <TaskChatMarker
+            item={{
+              id: "run-1:failure",
+              kind: "marker",
+              variant: "interrupted",
+              label: "Run failed",
+              detail: "Falha preservada.",
+              collapsible: true,
+              runHref: "/agents/codex/runs/run-1",
+              planHref: "#document-plan",
+            }}
+            tryAgainPending
+            onTryAgain={() => {}}
+          />
+        </ThemeProvider>,
+      ),
+    );
+    expect(container.querySelector('[data-testid="task-chat-run-failed-try-again"]')?.textContent)
+      .toBe("Tentando novamente...");
+    const disclosure = container.querySelector<HTMLButtonElement>('button[aria-expanded="false"]')!;
+    flushSync(() => disclosure.click());
+    expect(container.querySelector('a[href="#document-plan"]')?.textContent).toBe("Ver plano salvo");
+    expect(container.querySelector('a[href="/agents/codex/runs/run-1"]')?.textContent).toBe("Ver execução");
+
+    flushSync(() =>
+      root!.render(
+        <ThemeProvider>
+          <TaskChatMarker
+            item={{
+              id: "credential-denied",
+              kind: "marker",
+              variant: "interrupted",
+              label: "Run failed",
+              credentialAccess: {
+                agentName: "Codex",
+                deniedUser: "you",
+                settingsHref: "/agents/codex/runtime",
+              },
+              runHref: "/agents/codex/runs/credential-denied",
+            }}
+          />
+        </ThemeProvider>,
+      ),
+    );
+    expect(container.textContent).toContain("Codex não pôde iniciar");
+    expect(container.textContent).toContain("uma credencial de IA");
+    expect(container.textContent).toContain("você não tem acesso");
+    expect(container.querySelector('a[href="/agents/codex/runtime"]')?.textContent)
+      .toBe("Alterar conexão de IA");
+    expect(container.querySelector('a[href="/agents/codex/runs/credential-denied"]')?.textContent)
+      .toBe("Ver execução");
+
+    flushSync(() =>
+      root!.render(
+        <ThemeProvider>
+          <TaskChatMarker
+            item={{
+              id: "credential-denied-defaults",
+              kind: "marker",
+              variant: "interrupted",
+              label: "Run failed",
+              credentialAccess: {
+                agentName: "This agent",
+                deniedUser: "the person this task runs for",
+                settingsHref: "/agents/codex/runtime",
+              },
+            }}
+          />
+        </ThemeProvider>,
+      ),
+    );
+    expect(container.textContent).toContain("Este agente não pôde iniciar");
+    expect(container.textContent).toContain("a pessoa responsável por esta tarefa");
   });
 });

@@ -12,6 +12,7 @@ import { Activity, ExternalLink, Loader2, Play, RotateCcw, Square } from "lucide
 import { Button } from "@/components/ui/button";
 import { useManagedSandboxOnly } from "@/hooks/useManagedSandboxOnly";
 import { cn } from "@/lib/utils";
+import { i18n, useTranslation } from "@/i18n";
 import { Badge } from "@/components/ui/badge";
 import { timeAgo } from "@/lib/timeAgo";
 import type {
@@ -43,6 +44,7 @@ export type WorkspaceRuntimeControlItem = {
   runtimeServiceId?: string | null;
   serviceIndex?: number | null;
   disabledReason?: string | null;
+  disabledReasonKey?: "jobMissingCommand" | "untrackedService" | null;
 };
 
 export type WorkspaceRuntimeControlSections = {
@@ -134,7 +136,8 @@ function buildJobItem(
     workspaceCommandId: command.id,
     runtimeServiceId: null,
     serviceIndex: null,
-    disabledReason: command.disabledReason ?? (!command.command ? "This job is missing a command." : null),
+    disabledReason: command.disabledReason,
+    disabledReasonKey: !command.disabledReason && !command.command ? "jobMissingCommand" : null,
   };
 }
 
@@ -184,7 +187,7 @@ export function buildWorkspaceRuntimeControlSections(input: {
       workspaceCommandId: null,
       runtimeServiceId: runtimeService.id,
       serviceIndex: runtimeService.configIndex ?? null,
-      disabledReason: "This runtime service no longer matches a configured workspace command.",
+      disabledReasonKey: "untrackedService" as const,
     }));
 
   return {
@@ -222,20 +225,21 @@ function isActiveStatusLabel(statusLabel: string) {
 function exposureFailureCopy(exposure: RuntimeExposureStatus | null) {
   if (exposure?.state === "failed") {
     return {
-      label: "HTTPS unavailable",
-      remediation: "Check the Tailscale broker and node HTTPS configuration.",
+      labelKey: "httpsUnavailable",
+      remediationKey: "checkHttpsConfiguration",
     };
   }
   if (exposure?.state === "cleanup_pending") {
     return {
-      label: "HTTPS cleanup pending",
-      remediation: "Restart the host broker before reusing this port.",
+      labelKey: "httpsCleanupPending",
+      remediationKey: "restartBrokerBeforeReuse",
     };
   }
   return null;
 }
 
 function ExposureFailureDetail({ exposure }: { exposure: RuntimeExposureStatus | null }) {
+  const { t } = useTranslation();
   const copy = exposureFailureCopy(exposure);
   if (!copy) return null;
   return (
@@ -244,10 +248,10 @@ function ExposureFailureDetail({ exposure }: { exposure: RuntimeExposureStatus |
         className="line-clamp-3 font-medium"
         title={exposure?.lastError ?? undefined}
       >
-        {copy.label}
+        {t(`taskDetail.workspace.runtime.exposure.${copy.labelKey}`)}
         {exposure?.lastError ? ` · ${exposure.lastError}` : ""}
       </div>
-      <div>{copy.remediation}</div>
+      <div>{t(`taskDetail.workspace.runtime.exposure.${copy.remediationKey}`)}</div>
     </div>
   );
 }
@@ -296,18 +300,10 @@ export function buildWorkspaceServiceControlEntries(input: {
     }
 
     const runtimeService = item.runtimeServiceId ? runtimeServicesById.get(item.runtimeServiceId) ?? null : null;
-    const failureDetail = state === "failed"
-      ? `Service failed${runtimeService?.stoppedAt ? ` · ${timeAgo(runtimeService.stoppedAt)}` : ""}`
+    const failureTimeAgo = state === "failed" && runtimeService?.stoppedAt
+      ? timeAgo(runtimeService.stoppedAt, i18n.language)
       : null;
     const exposure = runtimeService?.exposure ?? item.exposure;
-    const exposureFailure = exposureFailureCopy(exposure);
-    const exposureDetail = exposure?.state === "pending"
-      ? "Provisioning HTTPS…"
-      : exposure?.state === "ready"
-        ? "HTTPS ready"
-        : exposureFailure
-          ? `${exposureFailure.label} · ${exposureFailure.remediation}`
-          : null;
 
     return {
       key: item.key,
@@ -316,9 +312,9 @@ export function buildWorkspaceServiceControlEntries(input: {
       healthStatus: item.healthStatus,
       url: item.url,
       port: item.port,
-      failureDetail,
+      failureTimeAgo,
       exposureState: exposure?.state ?? null,
-      exposureDetail,
+      exposureError: exposure?.lastError ?? null,
       canStart: item.canStart,
     };
   });
@@ -390,6 +386,7 @@ function CommandActionButtons({
   square?: boolean;
   iconOnly?: boolean;
 }) {
+  const { t } = useTranslation();
   const actions: WorkspaceRuntimeAction[] =
     item.kind === "job"
       ? ["run"]
@@ -402,13 +399,7 @@ function CommandActionButtons({
       {actions.map((action) => {
         const request = buildRequest(item, action);
         const Icon = action === "stop" ? Square : action === "restart" ? RotateCcw : Play;
-        const label = action === "run"
-          ? "Run"
-          : action === "start"
-            ? "Start"
-            : action === "stop"
-              ? "Stop"
-              : "Restart";
+        const label = t(`taskDetail.workspace.runtime.${action}`);
         const showSpinner = isPending && requestMatchesPending(pendingRequest, request);
         const disabled =
           isPending
@@ -461,6 +452,7 @@ function CommandSection({
   square?: boolean;
   iconOnly?: boolean;
 }) {
+  const { t } = useTranslation();
   // Managed-sandbox-only policy: the working directory is a path on the
   // execution host, so the command rows drop it, and keep dropping it until the
   // policy is known. The URL, the port, and the command itself stay — they
@@ -485,9 +477,9 @@ function CommandSection({
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-1">
                     <div className="text-sm font-medium">{item.title}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.kind} · {item.statusLabel}
-                      {item.lifecycle ? ` · ${item.lifecycle}` : ""}
+                  <div className="text-xs text-muted-foreground">
+                      {t(`taskDetail.workspace.runtime.${item.kind}`)} · {t(`taskDetail.workspace.runtime.${item.statusLabel === "run once" ? "runOnce" : item.statusLabel}`)}
+                      {item.lifecycle ? ` · ${t(`taskDetail.workspace.runtime.lifecycle.${item.lifecycle}`)}` : ""}
                     </div>
                   </div>
                   <CommandActionButtons
@@ -506,10 +498,15 @@ function CommandSection({
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   ) : null}
-                  {item.port ? <div>Port {item.port}</div> : null}
+                  {item.port ? <div>{t("taskDetail.workspace.runtime.port", { port: item.port })}</div> : null}
                   {item.command ? <div className="break-all font-mono">{item.command}</div> : null}
                   {item.cwd && !hideHostPaths ? <div className="break-all font-mono">{item.cwd}</div> : null}
-                  {item.disabledReason ? <div>{item.disabledReason}</div> : null}
+                  {item.disabledReason || item.disabledReasonKey ? (
+                    <div>
+                      {item.disabledReason
+                        ?? t(`taskDetail.workspace.runtime.${item.disabledReasonKey}`)}
+                    </div>
+                  ) : null}
                 </div>
                 <ExposureFailureDetail exposure={item.exposure} />
                 {item.healthStatus && item.statusLabel !== "stopped" ? (
@@ -522,7 +519,7 @@ function CommandSection({
                           ? "border-destructive/30 bg-destructive/10 text-destructive"
                           : "border-border text-muted-foreground",
                     )}>
-                      {item.healthStatus}
+                      {t(`taskDetail.workspace.runtime.health.${item.healthStatus}`)}
                     </Badge>
                   </div>
                 ) : null}
@@ -540,14 +537,15 @@ export function WorkspaceRuntimeControls({
   items,
   isPending = false,
   pendingRequest = null,
-  serviceEmptyMessage = "No services are configured for this workspace.",
-  jobEmptyMessage = "No one-shot jobs are configured for this workspace.",
+  serviceEmptyMessage,
+  jobEmptyMessage,
   emptyMessage,
   disabledHint = null,
   onAction,
   className,
   square,
 }: WorkspaceRuntimeControlsProps) {
+  const { t } = useTranslation();
   const resolvedSections = sections ?? {
     services: (items ?? []).map((item) => ({
       ...item,
@@ -556,7 +554,11 @@ export function WorkspaceRuntimeControls({
     jobs: [],
     otherServices: [],
   };
-  const resolvedServiceEmptyMessage = emptyMessage ?? serviceEmptyMessage;
+  const resolvedServiceEmptyMessage = emptyMessage
+    ?? serviceEmptyMessage
+    ?? t("taskDetail.workspace.runtime.noServicesConfigured");
+  const resolvedJobEmptyMessage = jobEmptyMessage
+    ?? t("taskDetail.workspace.runtime.noJobsConfigured");
   const runningCount = [...resolvedSections.services, ...resolvedSections.otherServices].filter(
     (item) => item.statusLabel === "running" || item.statusLabel === "starting",
   ).length;
@@ -566,7 +568,7 @@ export function WorkspaceRuntimeControls({
     <div className={cn("space-y-4", className)}>
       <div className={cn("border border-border/70 bg-background p-3", square ? "rounded-none" : "rounded-xl")}>
         <div className="space-y-1">
-          <div className="text-xs font-medium uppercase tracking-(--tracking-eyebrow) text-muted-foreground">Workspace commands</div>
+          <div className="text-xs font-medium uppercase tracking-(--tracking-eyebrow) text-muted-foreground">{t("taskDetail.workspace.runtime.commandsHeading")}</div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline"
               className={cn(
@@ -577,12 +579,14 @@ export function WorkspaceRuntimeControls({
               )}
             >
               <Activity className="h-3.5 w-3.5" />
-              {runningCount > 0 ? `${runningCount} services running` : "No services running"}
+              {runningCount > 0
+                ? t("taskDetail.workspace.runtime.runningCount", { count: runningCount })
+                : t("taskDetail.workspace.runtime.noServicesRunning")}
             </Badge>
             <span className="text-xs text-muted-foreground">
               {resolvedSections.jobs.length > 0
-                ? `${resolvedSections.jobs.length} job${resolvedSections.jobs.length === 1 ? "" : "s"} available to run on demand.`
-                : "Each command can be controlled independently."}
+                ? t("taskDetail.workspace.runtime.jobsAvailable", { count: resolvedSections.jobs.length })
+                : t("taskDetail.workspace.runtime.independentCommands")}
             </span>
           </div>
           {visibleDisabledHint ? <p className="text-xs text-muted-foreground">{visibleDisabledHint}</p> : null}
@@ -590,8 +594,8 @@ export function WorkspaceRuntimeControls({
       </div>
 
       <CommandSection
-        title="Services"
-        description="Long-running commands that Paperclip can supervise for this workspace."
+        title={t("taskDetail.workspace.runtime.services")}
+        description={t("taskDetail.workspace.runtime.servicesDescription")}
         items={resolvedSections.services}
         emptyMessage={resolvedServiceEmptyMessage}
         disabledHint={visibleDisabledHint}
@@ -602,10 +606,10 @@ export function WorkspaceRuntimeControls({
       />
 
       <CommandSection
-        title="Jobs"
-        description="One-shot commands that run now and exit when they finish."
+        title={t("taskDetail.workspace.runtime.jobs")}
+        description={t("taskDetail.workspace.runtime.jobsDescription")}
         items={resolvedSections.jobs}
-        emptyMessage={jobEmptyMessage}
+        emptyMessage={resolvedJobEmptyMessage}
         isPending={isPending}
         pendingRequest={pendingRequest}
         onAction={onAction}
@@ -614,8 +618,8 @@ export function WorkspaceRuntimeControls({
 
       {resolvedSections.otherServices.length > 0 ? (
         <CommandSection
-          title="Untracked services"
-          description="Running services that no longer match the current workspace command config."
+          title={t("taskDetail.workspace.runtime.untrackedServices")}
+          description={t("taskDetail.workspace.runtime.untrackedServicesDescription")}
           items={resolvedSections.otherServices}
           emptyMessage=""
           isPending={isPending}

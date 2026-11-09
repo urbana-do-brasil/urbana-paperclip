@@ -13,6 +13,7 @@ import { statusBadge, statusBadgeDefault } from "../lib/status-colors";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/i18n";
 
 // -- Tree types --------------------------------------------------------------
 
@@ -248,6 +249,9 @@ export type FileTreeProps = {
   /** Rich labels reuse the tree's icons, spacing, focus, and selection controls. */
   renderLabel?: (node: FileTreeNode) => ReactNode;
   checkboxLabel?: (node: FileTreeNode) => string;
+  /** Localized accessible labels for folder disclosure controls. */
+  expandFolderLabel?: (node: FileTreeNode) => string;
+  collapseFolderLabel?: (node: FileTreeNode) => string;
   /** Override selection for package nodes; null leaves an aligned, non-selectable row. */
   getCheckboxState?: (node: FileTreeNode) => 'checked' | 'mixed' | 'unchecked' | null;
   renderNodeExtra?: (node: FileTreeNode) => ReactNode;
@@ -280,6 +284,8 @@ export function FileTree({
   renderFileExtra,
   renderLabel,
   checkboxLabel,
+  expandFolderLabel,
+  collapseFolderLabel,
   getCheckboxState,
   renderNodeExtra,
   visiblePaths,
@@ -291,8 +297,10 @@ export function FileTree({
   loading = false,
   error,
   empty,
-  ariaLabel = "Files",
+  ariaLabel,
 }: FileTreeProps) {
+  const { t } = useTranslation();
+  const treeAriaLabel = ariaLabel ?? t("fileTree.ariaLabel");
   const effectiveCheckedFiles = checkedFiles ?? new Set<string>();
   const visibleNodes = useMemo(
     () => flattenVisibleNodes(nodes, expandedDirs).filter(({ node }) => !visiblePaths || visiblePaths.has(node.path)),
@@ -357,7 +365,7 @@ export function FileTree({
 
   if (loading) {
     return (
-      <div aria-busy="true" aria-label={ariaLabel} role="tree" className="py-1">
+      <div aria-busy="true" aria-label={treeAriaLabel} role="tree" className="py-1">
         {[0, 1, 2, 3].map((row) => (
           <div key={row} className={cn("flex items-center gap-2 px-4", TREE_ROW_HEIGHT_CLASS)}>
             <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
@@ -370,7 +378,7 @@ export function FileTree({
 
   if (error) {
     return (
-      <div aria-label={ariaLabel} role="tree" className="p-3">
+      <div aria-label={treeAriaLabel} role="tree" className="p-3">
         <div
           role="treeitem"
           aria-level={1}
@@ -383,13 +391,13 @@ export function FileTree({
                 statusBadge.error ?? statusBadgeDefault,
               )}
             >
-              error
+              {t("fileTree.error")}
             </Badge>
             <span className="min-w-0 text-destructive">{error.message}</span>
           </div>
           {error.retry && (
             <Button type="button" size="xs" variant="outline" onClick={error.retry}>
-              Retry
+              {t("common.retry")}
             </Button>
           )}
         </div>
@@ -399,11 +407,11 @@ export function FileTree({
 
   if (visibleNodes.length === 0) {
     return (
-      <div aria-label={ariaLabel} role="tree" className="p-3">
+      <div aria-label={treeAriaLabel} role="tree" className="p-3">
         <div className="rounded-md border border-dashed border-border px-4 py-8 text-center">
-          <div className="text-sm font-medium">{empty?.title ?? "No files"}</div>
+          <div className="text-sm font-medium">{empty?.title ?? t("fileTree.emptyTitle")}</div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {empty?.description ?? "Files will appear here when they are available."}
+            {empty?.description ?? t("fileTree.emptyDescription")}
           </div>
         </div>
       </div>
@@ -411,7 +419,7 @@ export function FileTree({
   }
 
   return (
-    <div aria-label={ariaLabel} role="tree">
+    <div aria-label={treeAriaLabel} role="tree">
       {visibleNodes.map(({ node, depth }, index) => {
         const expanded = node.kind === "dir" && expandedDirs.has(node.path);
         const customCheck = getCheckboxState?.(node);
@@ -465,7 +473,7 @@ export function FileTree({
             {layout === "explorer" && (node.kind === "dir" ? (
               <button type="button" disabled={disabled} className="flex size-4 shrink-0 items-center justify-center rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
                 onClick={event => { event.stopPropagation(); onToggleDir(node.path); }}
-                aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}>
+                aria-label={expanded ? collapseFolderLabel?.(node) ?? `Collapse ${node.name}` : expandFolderLabel?.(node) ?? `Expand ${node.name}`}>
                 {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
               </button>
             ) : <span className="size-4 shrink-0" aria-hidden="true" />)}
@@ -522,7 +530,7 @@ export function FileTree({
                   event.stopPropagation();
                   onToggleDir(node.path);
                 }}
-                aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
+                aria-label={expanded ? collapseFolderLabel?.(node) ?? `Collapse ${node.name}` : expandFolderLabel?.(node) ?? `Expand ${node.name}`}
               >
                 {expanded ? (
                   <ChevronDown className="h-3.5 w-3.5" />

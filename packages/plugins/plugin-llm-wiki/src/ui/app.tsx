@@ -21,6 +21,14 @@ import {
 } from "@paperclipai/plugin-sdk/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type AnchorHTMLAttributes, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { readIngestOperationIssueId, uploadIssueAttachmentFile } from "./issue-attachments.js";
+import {
+  formatWikiRelativeTime,
+  formatWikiTimestamp,
+  resolveWikiLocale,
+  wikiMessage,
+  type WikiLocale,
+  type WikiMessageKey,
+} from "./messages.js";
 
 // ---------------------------------------------------------------------------
 // Shared design tokens — copied from the UX wireframe shared.css so the plugin
@@ -124,6 +132,8 @@ type ManagedProject = {
 type ManagedRoutine = {
   status: string;
   routineId?: string | null;
+  pluginKey?: string | null;
+  resourceKind?: string | null;
   resourceKey?: string | null;
   missingRefs?: Array<{ pluginKey?: string; resourceKind: string; resourceKey: string }>;
   defaultDrift?: {
@@ -163,6 +173,8 @@ type ManagedRoutinesListItemWithDrift = ManagedRoutinesListItem & {
 type ManagedSkill = {
   status: string;
   skillId?: string | null;
+  pluginKey?: string | null;
+  resourceKind?: string | null;
   resourceKey?: string | null;
   defaultDrift?: { changedFiles: string[] } | null;
   skill?: {
@@ -401,7 +413,7 @@ function Badge({ children, tone = "default", style }: { children: ReactNode; ton
   );
 }
 
-function HiddenOpBadge() {
+function HiddenOpBadge({ locale }: { locale: WikiLocale }) {
   return (
     <span style={{
       display: "inline-flex",
@@ -414,7 +426,7 @@ function HiddenOpBadge() {
       background: tokens.hiddenOpBg,
       color: tokens.hiddenOpFg,
       border: `1px solid ${tokens.hiddenOpBorder}`,
-    }}>📖 wiki task</span>
+    }}>{wikiMessage(locale, "wikiTaskBadge")}</span>
   );
 }
 
@@ -617,12 +629,12 @@ function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
 
 type AutosaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
 
-function AutosaveStatusLabel({ status, error }: { status: AutosaveStatus; error: string | null }) {
-  if (status === "saving") return <Tiny>Saving…</Tiny>;
-  if (status === "saved") return <Tiny>Saved</Tiny>;
-  if (status === "dirty") return <Tiny>Unsaved changes</Tiny>;
-  if (status === "error") return <Tiny style={{ color: "oklch(0.7 0.2 25)" }}>{error ?? "Autosave failed"}</Tiny>;
-  return <Tiny>Autosave on</Tiny>;
+function AutosaveStatusLabel({ status, error, locale }: { status: AutosaveStatus; error: string | null; locale: WikiLocale }) {
+  if (status === "saving") return <Tiny>{wikiMessage(locale, "autosaveSaving")}</Tiny>;
+  if (status === "saved") return <Tiny>{wikiMessage(locale, "autosaveSaved")}</Tiny>;
+  if (status === "dirty") return <Tiny>{wikiMessage(locale, "autosaveUnsavedChanges")}</Tiny>;
+  if (status === "error") return <Tiny style={{ color: "oklch(0.7 0.2 25)" }}>{error ?? wikiMessage(locale, "autosaveFailed")}</Tiny>;
+  return <Tiny>{wikiMessage(locale, "autosaveOn")}</Tiny>;
 }
 
 function AutosaveMarkdownEditor({
@@ -630,6 +642,7 @@ function AutosaveMarkdownEditor({
   placeholder,
   minHeight,
   resetKey,
+  locale,
   onSave,
   onStatusChange,
 }: {
@@ -637,6 +650,7 @@ function AutosaveMarkdownEditor({
   placeholder?: string;
   minHeight?: number;
   resetKey: string;
+  locale: WikiLocale;
   onSave: (value: string) => Promise<void>;
   onStatusChange?: (status: AutosaveStatus) => void;
 }) {
@@ -691,7 +705,7 @@ function AutosaveMarkdownEditor({
           min-height: ${minHeight ?? 260}px;
         }
       `}</style>
-      <AutosaveStatusLabel status={status} error={error} />
+      <AutosaveStatusLabel status={status} error={error} locale={locale} />
     </div>
   );
 }
@@ -1304,6 +1318,7 @@ const PencilIcon = makeLucideIcon(
 
 export function SidebarLink({ context }: PluginSidebarProps) {
   const hostNavigation = useHostNavigation();
+  const locale = resolveWikiLocale(context.locale);
   return (
     <a
       {...hostNavigation.linkProps("/wiki")}
@@ -1313,16 +1328,17 @@ export function SidebarLink({ context }: PluginSidebarProps) {
       <span aria-hidden="true" className="shrink-0">
         <BookOpenIcon />
       </span>
-      <span className="flex-1 truncate">Wiki</span>
+      <span className="flex-1 truncate">{wikiMessage(locale, "navWiki")}</span>
     </a>
   );
 }
 
 export function SettingsPage({ context }: PluginSettingsPageProps) {
   const isMobile = useIsMobileLayout();
+  const locale = resolveWikiLocale(context.locale);
   return (
     <main style={{ padding: isMobile ? 16 : 24, maxWidth: isMobile ? "none" : 1040, minWidth: 0, fontFamily: fontStack, color: tokens.fg }}>
-      <SettingsBody context={context} />
+      <SettingsBody context={context} locale={locale} />
     </main>
   );
 }
@@ -1338,17 +1354,24 @@ type SectionKey = "browse" | "ingest" | "query" | "lint" | "history" | "settings
 
 const SECTIONS: ReadonlyArray<{
   key: SectionKey;
-  label: string;
   Icon: (props: LucideIconProps) => ReactElement;
-  description: string;
 }> = [
-  { key: "browse", label: "Wiki", Icon: BookOpenIcon, description: "Open wiki pages and raw sources from the sidebar." },
-  { key: "query", label: "Ask", Icon: MessageSquareTextIcon, description: "Ask the Wiki Maintainer agent a cited question against the local wiki." },
-  { key: "ingest", label: "Add Content", Icon: PlusCircleIcon, description: "Capture a new source into the active space and queue an ingest operation." },
-  { key: "lint", label: "Lint", Icon: ListChecksIcon, description: "Run structural checks for orphan pages, missing backlinks, and stale provenance." },
-  { key: "history", label: "History", Icon: HistoryIcon, description: "Inspect recent LLM Wiki operation issues." },
-  { key: "settings", label: "Settings", Icon: SlidersHorizontalIcon, description: "Folder, agent, project, and routine configuration scoped to this company." },
+  { key: "browse", Icon: BookOpenIcon },
+  { key: "query", Icon: MessageSquareTextIcon },
+  { key: "ingest", Icon: PlusCircleIcon },
+  { key: "lint", Icon: ListChecksIcon },
+  { key: "history", Icon: HistoryIcon },
+  { key: "settings", Icon: SlidersHorizontalIcon },
 ];
+
+const SECTION_MESSAGE_KEYS: Readonly<Record<SectionKey, WikiMessageKey>> = {
+  browse: "navWiki",
+  query: "navAsk",
+  ingest: "navAddContent",
+  lint: "navLint",
+  history: "navHistory",
+  settings: "navSettings",
+};
 
 const TOP_TOOL_KEYS: ReadonlySet<SectionKey> = new Set<SectionKey>(["query", "ingest"]);
 const BOTTOM_TOOL_KEYS: ReadonlySet<SectionKey> = new Set<SectionKey>(["history", "settings"]);
@@ -1587,6 +1610,7 @@ function isEditableWikiPagePath(path: string): boolean {
 }
 
 export function WikiPage({ context }: PluginPageProps) {
+  const locale = resolveWikiLocale(context.locale);
   const { pathname, search } = useHostLocation();
   const isMobile = useIsMobileLayout();
   const section = useMemo(() => readSectionFromLocation(pathname, search), [pathname, search]);
@@ -1675,7 +1699,7 @@ export function WikiPage({ context }: PluginPageProps) {
   }, [isDragActive, resetDragState]);
 
   if (!context.companyId) {
-    return <main style={{ ...shellStyle, height: isMobile ? "auto" : "100%", minHeight: isMobile ? "auto" : 600 }}>Choose a company to open the LLM Wiki.</main>;
+    return <main style={{ ...shellStyle, height: isMobile ? "auto" : "100%", minHeight: isMobile ? "auto" : 600 }}>{wikiMessage(locale, "chooseCompany")}</main>;
   }
 
   return (
@@ -1690,30 +1714,31 @@ export function WikiPage({ context }: PluginPageProps) {
       <section style={{ flex: 1, minHeight: isMobile ? "auto" : 0, overflow: isMobile ? "visible" : "hidden", display: "flex" }}>
         {overview.error ? (
           <div style={{ padding: 24, flex: 1 }}>
-            <Callout tone="danger">LLM Wiki bridge error: {overview.error.message}</Callout>
+            <Callout tone="danger">{wikiMessage(locale, "bridgeError", { message: overview.error.message })}</Callout>
           </div>
         ) : !overview.data ? (
-          <div style={{ padding: 24, flex: 1, color: tokens.muted, fontSize: 13 }}>Loading wiki…</div>
+          <div style={{ padding: 24, flex: 1, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "loadingWiki")}</div>
         ) : !overview.data.folder.healthy ? (
-          <UnconfiguredFolder context={context} folder={overview.data.folder} refresh={overview.refresh} />
+          <UnconfiguredFolder context={context} folder={overview.data.folder} locale={locale} refresh={overview.refresh} />
         ) : section === "browse" ? (
-          <BrowseTab context={context} />
+          <BrowseTab context={context} locale={locale} />
         ) : section === "ingest" ? (
-          <IngestTab context={context} refreshOverview={overview.refresh} />
+          <IngestTab context={context} locale={locale} refreshOverview={overview.refresh} />
         ) : section === "query" ? (
-          <QueryTab context={context} overview={overview.data} />
+          <QueryTab context={context} locale={locale} overview={overview.data} />
         ) : section === "lint" ? (
-          <SettingsTab context={context} initialSection="lint" />
+          <SettingsTab context={context} locale={locale} initialSection="lint" />
         ) : section === "history" ? (
-          <HistoryTab context={context} overview={overview.data} />
+          <HistoryTab context={context} locale={locale} overview={overview.data} />
         ) : (
-          <SettingsTab context={context} initialSection={settingsSection} />
+          <SettingsTab context={context} locale={locale} initialSection={settingsSection} />
         )}
       </section>
-      {isDragActive ? <WikiPageDropOverlay onClose={resetDragState} /> : null}
+      {isDragActive ? <WikiPageDropOverlay locale={locale} onClose={resetDragState} /> : null}
       {isIngestModalOpen ? (
         <IngestFilesModal
           companyId={context.companyId}
+          locale={locale}
           files={stagedFiles}
           initialSpaceSlug={activeSpaceSlug}
           onAddFiles={stageFiles}
@@ -1743,7 +1768,7 @@ function isFileDrag(event: React.DragEvent<HTMLElement>): boolean {
   return Array.from(event.dataTransfer?.types ?? []).includes("Files");
 }
 
-function WikiPageDropOverlay({ onClose }: { onClose: () => void }) {
+function WikiPageDropOverlay({ locale, onClose }: { locale: WikiLocale; onClose: () => void }) {
   return (
     <div
       data-testid="llm-wiki-page-drop-overlay"
@@ -1761,8 +1786,8 @@ function WikiPageDropOverlay({ onClose }: { onClose: () => void }) {
     >
       <button
         type="button"
-        aria-label="Close ingest drop overlay"
-        title="Close"
+        aria-label={wikiMessage(locale, "closeIngestDropOverlay")}
+        title={wikiMessage(locale, "close")}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -1799,8 +1824,8 @@ function WikiPageDropOverlay({ onClose }: { onClose: () => void }) {
         <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: 8, background: tokens.pluginBg, color: tokens.pluginFg, marginBottom: 12 }}>
           <DownloadCloudIcon size={24} />
         </div>
-        <div style={{ fontSize: 18, fontWeight: 650, marginBottom: 6 }}>Drop to ingest into LLM Wiki</div>
-        <Tiny>Files will be staged for review before the wiki maintainer queues ingest operations.</Tiny>
+        <div style={{ fontSize: 18, fontWeight: 650, marginBottom: 6 }}>{wikiMessage(locale, "dropToIngestTitle")}</div>
+        <Tiny>{wikiMessage(locale, "dropToIngestDescription")}</Tiny>
       </div>
     </div>
   );
@@ -1808,6 +1833,7 @@ function WikiPageDropOverlay({ onClose }: { onClose: () => void }) {
 
 function IngestFilesModal({
   companyId,
+  locale,
   files,
   onAddFiles,
   onRemoveFile,
@@ -1816,6 +1842,7 @@ function IngestFilesModal({
   initialSpaceSlug,
 }: {
   companyId: string;
+  locale: WikiLocale;
   files: StagedIngestFile[];
   onAddFiles: (files: File[]) => void;
   onRemoveFile: (id: string) => void;
@@ -1881,13 +1908,19 @@ function IngestFilesModal({
       }
       const count = files.length;
       const spaceLabel = targetSpace?.displayName ?? targetSpaceSlug;
-      toast({ tone: "success", title: `Files queued for ingest into ${spaceLabel}`, body: `${count} ${count === 1 ? "file" : "files"} captured into raw sources and attached to ingest tasks.` });
+      toast({
+        tone: "success",
+        title: wikiMessage(locale, count === 1 ? "oneFileQueuedForIngest" : "manyFilesQueuedForIngest", { space: spaceLabel }),
+        body: wikiMessage(locale, count === 1 ? "oneFileCaptured" : "manyFilesCaptured", {
+          count: new Intl.NumberFormat(locale).format(count),
+        }),
+      });
       onIngested();
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setErrorMsg(message);
-      toast({ tone: "error", title: "File ingest failed", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "fileIngestFailed"), body: message });
     } finally {
       setBusy(false);
     }
@@ -1927,18 +1960,15 @@ function IngestFilesModal({
             <DownloadCloudIcon size={18} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 id="llm-wiki-ingest-modal-title" style={{ margin: 0, fontSize: 16, fontWeight: 650 }}>Ingest files into {targetSpace?.displayName ?? targetSpaceSlug}</h2>
-            <Tiny style={{ marginTop: 4 }}>
-              Review the staged files, switch the destination space if needed, then queue them as LLM
-              Wiki ingest operations. This is manual file ingest - Paperclip-derived distillation always
-              routes to the default space regardless of the destination picked here.
-            </Tiny>
+            <h2 id="llm-wiki-ingest-modal-title" style={{ margin: 0, fontSize: 16, fontWeight: 650 }}>{wikiMessage(locale, "ingestFilesTitle", { space: targetSpace?.displayName ?? targetSpaceSlug })}</h2>
+            <Tiny style={{ marginTop: 4 }}>{wikiMessage(locale, "ingestFilesDescription")}</Tiny>
           </div>
-          <Button size="sm" variant="ghost" onClick={requestClose} disabled={busy} title="Close ingest modal">Close</Button>
+          <Button size="sm" variant="ghost" onClick={requestClose} disabled={busy} title={wikiMessage(locale, "closeIngestModal")}>{wikiMessage(locale, "close")}</Button>
         </div>
         <div style={{ padding: 18, display: "grid", gap: 14 }}>
           <SpacePicker
             spaces={spaces}
+            locale={locale}
             activeSpaceSlug={targetSpaceSlug}
             loading={spacesQuery.loading}
             error={spacesQuery.error?.message ?? null}
@@ -1955,8 +1985,10 @@ function IngestFilesModal({
             }}
           />
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <Badge tone="running">{files.length} staged</Badge>
-            <Button size="sm" onClick={() => inputRef.current?.click()} disabled={busy}>Add files</Button>
+            <Badge tone="running">{wikiMessage(locale, files.length === 1 ? "oneStagedFile" : "manyStagedFiles", {
+              count: new Intl.NumberFormat(locale).format(files.length),
+            })}</Badge>
+            <Button size="sm" onClick={() => inputRef.current?.click()} disabled={busy}>{wikiMessage(locale, "addFiles")}</Button>
             <input
               ref={inputRef}
               type="file"
@@ -1970,30 +2002,31 @@ function IngestFilesModal({
           </div>
           <div style={{ border: `1px solid ${tokens.border}`, borderRadius: 8, overflow: "hidden" }}>
             {files.length === 0 ? (
-              <div style={{ padding: 16 }}><Tiny>No files staged.</Tiny></div>
+              <div style={{ padding: 16 }}><Tiny>{wikiMessage(locale, "noFilesStaged")}</Tiny></div>
             ) : files.map((item) => (
               <div key={item.id} style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 12px", borderBottom: `1px solid ${tokens.border}`, minWidth: 0 }}>
                 <div style={{ flex: "1 1 auto", minWidth: 0 }}>
                   <strong style={{ display: "block", fontSize: 13, overflowWrap: "anywhere" }}>{item.file.name}</strong>
-                  <Tiny>{formatFileSize(item.file.size)}{item.file.type ? ` · ${item.file.type}` : ""}</Tiny>
+                  <Tiny>{formatFileSize(item.file.size, locale)}{item.file.type ? ` · ${item.file.type}` : ""}</Tiny>
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => onRemoveFile(item.id)} disabled={busy}>Remove</Button>
+                <Button size="sm" variant="ghost" onClick={() => onRemoveFile(item.id)} disabled={busy}>{wikiMessage(locale, "removeFile")}</Button>
               </div>
             ))}
           </div>
           {errorMsg ? <Callout tone="danger">{errorMsg}</Callout> : null}
           <Callout>
-            Confirming captures each file into <Mono>{targetSpaceSlug}/raw/</Mono>, attaches the original file to the ingest task, and initiates a task for the Wiki Maintainer to process.
+            {wikiMessage(locale, "confirmFilesDescription", { path: `${targetSpaceSlug}/raw/` })}
           </Callout>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-            <Button variant="ghost" onClick={requestClose} disabled={busy}>Cancel</Button>
-            <Button variant="primary" onClick={confirm} disabled={files.length === 0} loading={busy}>Capture & ingest into {targetSpace?.displayName ?? targetSpaceSlug}</Button>
+            <Button variant="ghost" onClick={requestClose} disabled={busy}>{wikiMessage(locale, "cancel")}</Button>
+            <Button variant="primary" onClick={confirm} disabled={files.length === 0} loading={busy}>{wikiMessage(locale, "captureIngestInto", { space: targetSpace?.displayName ?? targetSpaceSlug })}</Button>
           </div>
         </div>
       </div>
       {createOpen ? (
         <CreateSpaceModal
           companyId={companyId}
+          locale={locale}
           existingSlugs={new Set(spaces.map((s) => s.slug))}
           onClose={() => setCreateOpen(false)}
           onCreated={(space) => {
@@ -2007,13 +2040,14 @@ function IngestFilesModal({
   );
 }
 
-function formatFileSize(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes < 0) return "Unknown size";
-  if (bytes < 1024) return `${bytes} B`;
+function formatFileSize(bytes: number, locale: WikiLocale): string {
+  const number = (value: number, maximumFractionDigits: number) => new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
+  if (!Number.isFinite(bytes) || bytes < 0) return wikiMessage(locale, "unknownFileSize");
+  if (bytes < 1024) return `${number(bytes, 0)} B`;
   const kib = bytes / 1024;
-  if (kib < 1024) return `${kib.toFixed(kib >= 10 ? 0 : 1)} KB`;
+  if (kib < 1024) return `${number(kib, kib >= 10 ? 0 : 1)} KB`;
   const mib = kib / 1024;
-  return `${mib.toFixed(mib >= 10 ? 0 : 1)} MB`;
+  return `${number(mib, mib >= 10 ? 0 : 1)} MB`;
 }
 
 // ---------------------------------------------------------------------------
@@ -2042,11 +2076,13 @@ const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 
 function CreateSpaceModal({
   companyId,
+  locale,
   existingSlugs,
   onClose,
   onCreated,
 }: {
   companyId: string;
+  locale: WikiLocale;
   existingSlugs: ReadonlySet<string>;
   onClose: () => void;
   onCreated: (space: WikiSpace) => void;
@@ -2072,9 +2108,9 @@ function CreateSpaceModal({
 
   const slugError = (() => {
     if (!effectiveSlug) return null;
-    if (effectiveSlug === DEFAULT_SPACE_SLUG) return "Slug 'default' is reserved.";
-    if (!SLUG_PATTERN.test(effectiveSlug)) return "Use 2-40 chars: lowercase letters, numbers, hyphens.";
-    if (existingSlugs.has(effectiveSlug)) return "A space with this slug already exists.";
+    if (effectiveSlug === DEFAULT_SPACE_SLUG) return wikiMessage(locale, "slugDefaultReserved");
+    if (!SLUG_PATTERN.test(effectiveSlug)) return wikiMessage(locale, "slugValidationHelp");
+    if (existingSlugs.has(effectiveSlug)) return wikiMessage(locale, "slugAlreadyExists");
     return null;
   })();
 
@@ -2092,12 +2128,12 @@ function CreateSpaceModal({
         folderMode,
         accessScope,
       }) as { status: "created"; space: WikiSpace };
-      toast({ tone: "success", title: "Space created", body: `${result.space.displayName} is ready for ingest.` });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceCreated"), body: wikiMessage(locale, "spaceCreatedBody", { name: result.space.displayName }) });
       onCreated(result.space);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMsg(msg);
-      toast({ tone: "error", title: "Could not create space", body: msg });
+      toast({ tone: "error", title: wikiMessage(locale, "spaceCreateFailed"), body: msg });
     } finally {
       setBusy(false);
     }
@@ -2141,18 +2177,15 @@ function CreateSpaceModal({
             <FolderIcon size={18} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 id="create-space-modal-title" style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>Create a shared space</h2>
+            <h2 id="create-space-modal-title" style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>{wikiMessage(locale, "createSharedSpaceTitle")}</h2>
             <Tiny style={{ marginTop: 4 }}>
-              Spaces partition wiki pages, sources, and manual ingest into separate slug-prefixed folders
-              under the wiki root. Paperclip distillation and event capture always write into the
-              default space and skip new spaces created here - per-space Paperclip routing is a later
-              phase.
+              {wikiMessage(locale, "createSpaceDescription")}
             </Tiny>
           </div>
-          <Button size="sm" variant="ghost" onClick={onClose} disabled={busy} title="Close">Close</Button>
+          <Button size="sm" variant="ghost" onClick={onClose} disabled={busy} title={wikiMessage(locale, "closeDialog")}>{wikiMessage(locale, "closeDialog")}</Button>
         </div>
         <div style={{ padding: 20, display: "grid", gap: 16 }}>
-          <FormField label="Display name">
+          <FormField label={wikiMessage(locale, "displayNameLabel")}>
             <TextInput
               value={displayName}
               autoFocus
@@ -2160,13 +2193,13 @@ function CreateSpaceModal({
                 setDisplayName(event.target.value);
                 if (!slugDirty) setSlug("");
               }}
-              placeholder="Team research"
+              placeholder={wikiMessage(locale, "spaceNamePlaceholder")}
               maxLength={120}
             />
           </FormField>
           <FormField
-            label="Slug"
-            help={slugError ?? `Stored as the URL segment and the on-disk folder. Defaults to ${slugify(displayName) || "auto-derived from display name"}.`}
+            label={wikiMessage(locale, "slugLabel")}
+            help={slugError ?? wikiMessage(locale, "storedAsFolderSlugHelp", { slug: slugify(displayName) || wikiMessage(locale, "autoDerivedFromDisplayName") })}
             tone={slugError ? "danger" : "muted"}
           >
             <TextInput
@@ -2179,57 +2212,57 @@ function CreateSpaceModal({
               style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
             />
           </FormField>
-          <FormField label="Type">
+          <FormField label={wikiMessage(locale, "typeLabel")}>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <SegmentedOption selected label="Folder" onClick={() => undefined} />
-              <SegmentedOption disabled label="Cloud" suffix="Coming soon" onClick={() => undefined} />
+              <SegmentedOption selected label={wikiMessage(locale, "folderType")} onClick={() => undefined} />
+              <SegmentedOption disabled label={wikiMessage(locale, "cloudType")} suffix={wikiMessage(locale, "comingSoon")} onClick={() => undefined} />
             </div>
           </FormField>
-          <FormField label="Folder source" help="New managed folders create a slug-scoped subfolder under your wiki root. Existing folders must already live under the same wiki root.">
+          <FormField label={wikiMessage(locale, "folderSourceLabel")} help={wikiMessage(locale, "folderSourceHelp")}>
             <div style={{ display: "grid", gap: 8 }}>
               <FolderModeRow
                 checked={folderMode === "managed_subfolder"}
                 onSelect={() => setFolderMode("managed_subfolder")}
-                label="New managed folder"
-                help={`Creates spaces/${previewName.replace(/\s+/g, "-").toLowerCase()}/ under the configured wiki root with the standard skeleton.`}
+                label={wikiMessage(locale, "newManagedFolder")}
+                help={wikiMessage(locale, "newManagedFolderHelp", { folder: `spaces/${previewName.replace(/\s+/g, "-").toLowerCase()}/` })}
               />
               <FolderModeRow
                 checked={folderMode === "existing_local_folder"}
                 onSelect={() => setFolderMode("existing_local_folder")}
-                label="Existing folder under wiki root"
-                help="Re-use a sub-folder you've already created inside the wiki root. The folder path is stored in the space settings."
+                label={wikiMessage(locale, "existingFolderUnderWikiRoot")}
+                help={wikiMessage(locale, "existingFolderHelp")}
               />
               <FolderModeRow
                 disabled
                 checked={false}
                 onSelect={() => undefined}
-                label="Existing absolute path"
-                help="Pending host capability — security review (PAP-3640) gates this until host-managed dynamic local-folder bindings ship."
-                suffix="Disabled"
+                label={wikiMessage(locale, "existingAbsolutePath")}
+                help={wikiMessage(locale, "absolutePathPendingReview")}
+                suffix={wikiMessage(locale, "disabled")}
               />
             </div>
           </FormField>
-          <FormField label="Access scope" help="Access scope is metadata only. It does not currently enforce who can read or write the space, and it does not change which Paperclip sources reach the space.">
+          <FormField label={wikiMessage(locale, "accessScopeLabel")} help={wikiMessage(locale, "accessScopeDescription")}>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 8 }}>
               <ScopeTile
                 selected={accessScope === "shared"}
                 onSelect={() => setAccessScope("shared")}
-                label="Shared"
-                help="Visible to everyone in this company."
+                label={wikiMessage(locale, "sharedScope")}
+                help={wikiMessage(locale, "sharedScopeHelp")}
               />
               <ScopeTile
                 selected={accessScope === "personal"}
                 onSelect={() => setAccessScope("personal")}
-                label="Personal"
-                help="Future scope — stored only."
-                tag="Future"
+                label={wikiMessage(locale, "personalScope")}
+                help={wikiMessage(locale, "futureScopeStoredOnly")}
+                tag={wikiMessage(locale, "future")}
               />
               <ScopeTile
                 selected={accessScope === "team"}
                 onSelect={() => setAccessScope("team")}
-                label="Team"
-                help="Future scope — stored only."
-                tag="Future"
+                label={wikiMessage(locale, "teamScope")}
+                help={wikiMessage(locale, "futureScopeStoredOnly")}
+                tag={wikiMessage(locale, "future")}
               />
             </div>
           </FormField>
@@ -2246,8 +2279,8 @@ function CreateSpaceModal({
           bottom: 0,
           background: tokens.card,
         }}>
-          <Button variant="ghost" onClick={onClose} disabled={busy} style={{ flex: isMobile ? 1 : undefined }}>Cancel</Button>
-          <Button variant="primary" onClick={submit} disabled={!canSubmit} loading={busy} style={{ flex: isMobile ? 1 : undefined }}>Create space</Button>
+          <Button variant="ghost" onClick={onClose} disabled={busy} style={{ flex: isMobile ? 1 : undefined }}>{wikiMessage(locale, "cancel")}</Button>
+          <Button variant="primary" onClick={submit} disabled={!canSubmit} loading={busy} style={{ flex: isMobile ? 1 : undefined }}>{wikiMessage(locale, "createSpaceAction")}</Button>
         </div>
       </div>
     </div>
@@ -2403,11 +2436,12 @@ function SpacePagesWarmup({ companyId, spaceSlug }: { companyId: string | null; 
 }
 
 export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
+  const locale = resolveWikiLocale(context.locale);
   const hostNavigation = useHostNavigation();
   const { pathname, search, state } = useHostLocation();
   const activeSection = useMemo(() => readSectionFromLocation(pathname, search), [pathname, search]);
   const activeSpaceSlug = useMemo(() => readActiveSpaceSlugFromLocation(pathname), [pathname]);
-  const companyName = context.companyPrefix ?? "Company";
+  const companyName = context.companyPrefix ?? wikiMessage(locale, "companyFallback");
   const spacesQuery = useSpaces(context.companyId);
   const spaces = useMemo(() => {
     const list = spacesQuery.data?.spaces ?? [];
@@ -2508,7 +2542,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
     });
   };
 
-  const renderToolLink = ({ key, label, Icon }: (typeof SECTIONS)[number]) => {
+  const renderToolLink = ({ key, Icon }: (typeof SECTIONS)[number]) => {
     const isLegacyLintSettingsActive = key === "settings" && activeSection === "lint";
     const isActive = key === activeSection || isLegacyLintSettingsActive;
     return (
@@ -2529,7 +2563,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         <span aria-hidden="true" className="shrink-0">
           <Icon />
         </span>
-        <span className="flex-1 truncate">{label}</span>
+        <span className="flex-1 truncate">{wikiMessage(locale, SECTION_MESSAGE_KEYS[key])}</span>
       </a>
     );
   };
@@ -2552,7 +2586,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         </a>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto border-t border-border px-3 py-3">
-        <nav aria-label="Wiki primary" className="mb-3">
+        <nav aria-label={wikiMessage(locale, "navPrimary")} className="mb-3">
           <div className="flex flex-col gap-0.5">
             {TOP_TOOL_SECTIONS.map(renderToolLink)}
           </div>
@@ -2560,14 +2594,14 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         <div className="mb-1 flex items-center gap-1 px-2 text-[11px] font-semibold uppercase tracking-normal text-muted-foreground" style={{ height: 24 }}>
           <span
             className="flex-1 truncate"
-            title="Destination spaces. Browsing and manual ingest happen in the active space; Paperclip distillation always writes into the default space in Phase 1."
+            title={wikiMessage(locale, "sharedSpacesDescription")}
           >
-            Shared Spaces
+            {wikiMessage(locale, "sharedSpaces")}
           </span>
           <button
             type="button"
-            aria-label="Create space"
-            title="Create space"
+            aria-label={wikiMessage(locale, "createSpace")}
+            title={wikiMessage(locale, "createSpace")}
             onClick={() => setCreateOpen(true)}
             style={{
               width: 22,
@@ -2587,11 +2621,11 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         </div>
         {spacesQuery.error ? (
           <div style={{ padding: "6px 8px", fontSize: 11, color: tokens.statusBlocked }}>
-            Failed to load spaces: {spacesQuery.error.message}
+            {wikiMessage(locale, "failedToLoadSpaces", { message: spacesQuery.error.message })}
           </div>
         ) : null}
         {spaces.length === 0 && spacesQuery.loading ? (
-          <Tiny style={{ padding: "6px 8px" }}>Loading spaces…</Tiny>
+          <Tiny style={{ padding: "6px 8px" }}>{wikiMessage(locale, "loadingSpaces")}</Tiny>
         ) : null}
         <div style={{ display: "flex", flexDirection: "column" }}>
           {spaces.map((space) => {
@@ -2636,6 +2670,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
                   }}
                   activeSpaceSlug={activeSpaceSlug}
                   companyId={context.companyId}
+                  locale={locale}
                 />
                 {showTree ? (
                   <div style={{ paddingLeft: 18, marginTop: 2, marginBottom: 6 }}>
@@ -2651,8 +2686,11 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
                       wrapLabels={false}
                       loading={pages.loading}
                       error={pages.error ? { message: pages.error.message } : null}
-                      empty={{ title: "No pages yet", description: "Add content to populate this space." }}
-                      ariaLabel={`Wiki pages in ${space.displayName}`}
+                      empty={{
+                        title: wikiMessage(locale, "noPages"),
+                        description: wikiMessage(locale, "addPagesToSpace"),
+                      }}
+                      ariaLabel={wikiMessage(locale, "pagesInSpace", { space: space.displayName })}
                     />
                   </div>
                 ) : null}
@@ -2662,7 +2700,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         </div>
       </div>
       <nav
-        aria-label="Wiki secondary"
+        aria-label={wikiMessage(locale, "navSecondary")}
         className="shrink-0 border-t border-border px-3 py-3"
       >
         <div className="flex flex-col gap-0.5">
@@ -2672,6 +2710,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
       {createOpen && context.companyId ? (
         <CreateSpaceModal
           companyId={context.companyId}
+          locale={locale}
           existingSlugs={new Set(spaces.map((s) => s.slug))}
           onClose={() => setCreateOpen(false)}
           onCreated={(space) => {
@@ -2697,6 +2736,7 @@ function SpaceRow({
   onArchived,
   activeSpaceSlug,
   companyId,
+  locale,
 }: {
   space: WikiSpace;
   active: boolean;
@@ -2709,6 +2749,7 @@ function SpaceRow({
   onArchived: (slug: string) => void;
   activeSpaceSlug: string;
   companyId: string | null;
+  locale: WikiLocale;
 }) {
   const [hover, setHover] = useState(false);
   const isDefault = space.slug === DEFAULT_SPACE_SLUG;
@@ -2717,7 +2758,7 @@ function SpaceRow({
       role="button"
       tabIndex={0}
       aria-expanded={expanded}
-      aria-label={`${expanded ? "Collapse" : active ? "Expand" : "Open"} ${space.displayName} space`}
+      aria-label={wikiMessage(locale, expanded ? "collapseSpace" : active ? "expandSpace" : "openSpace", { space: space.displayName })}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -2748,14 +2789,14 @@ function SpaceRow({
         {space.displayName}
       </span>
       {space.accessScope === "personal" ? (
-        <Badge tone="default" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>personal</Badge>
+        <Badge tone="default" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>{wikiMessage(locale, "personal")}</Badge>
       ) : space.accessScope === "team" ? (
-        <Badge tone="default" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>team</Badge>
+        <Badge tone="default" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>{wikiMessage(locale, "team")}</Badge>
       ) : null}
       <button
         type="button"
-        aria-label={`${space.displayName} space menu`}
-        title="Space menu"
+        aria-label={wikiMessage(locale, "spaceMenu", { space: space.displayName })}
+        title={wikiMessage(locale, "spaceMenuTitle")}
         onClick={(event) => {
           event.stopPropagation();
           onMenuToggle();
@@ -2786,6 +2827,7 @@ function SpaceRow({
           companyId={companyId}
           onClose={onMenuClose}
           onArchived={onArchived}
+          locale={locale}
         />
       ) : null}
     </div>
@@ -2800,6 +2842,7 @@ function SpaceRowMenu({
   companyId,
   onClose,
   onArchived,
+  locale,
 }: {
   space: WikiSpace;
   isDefault: boolean;
@@ -2808,6 +2851,7 @@ function SpaceRowMenu({
   companyId: string | null;
   onClose: () => void;
   onArchived: (slug: string) => void;
+  locale: WikiLocale;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const archive = usePluginAction("archive-space");
@@ -2834,16 +2878,16 @@ function SpaceRowMenu({
 
   const handleArchive = async () => {
     if (!companyId || isDefault || busy) return;
-    if (typeof window !== "undefined" && !window.confirm(`Archive ${space.displayName}? Pages remain on disk; you can restore later through the plugin API or by un-archiving from the database.`)) {
+    if (typeof window !== "undefined" && !window.confirm(wikiMessage(locale, "confirmArchiveSpace", { space: space.displayName }))) {
       return;
     }
     setBusy(true);
     try {
       await archive({ companyId, spaceSlug: space.slug });
-      toast({ tone: "success", title: "Space archived", body: `${space.displayName} hidden from sidebar.` });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceArchived"), body: wikiMessage(locale, "spaceHiddenFromSidebar", { space: space.displayName }) });
       onArchived(space.slug);
     } catch (err) {
-      toast({ tone: "error", title: "Archive failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "archiveFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -2854,10 +2898,10 @@ function SpaceRowMenu({
     setBusy(true);
     try {
       await bootstrap({ companyId, spaceSlug: space.slug });
-      toast({ tone: "success", title: "Space refreshed", body: `${space.displayName} index re-bootstrapped.` });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceRefreshed"), body: wikiMessage(locale, "spaceIndexRebuilt", { space: space.displayName }) });
       onClose();
     } catch (err) {
-      toast({ tone: "error", title: "Refresh failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "refreshFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -2882,7 +2926,7 @@ function SpaceRowMenu({
       }}
     >
       <SpaceMenuItem
-        label="Edit space"
+        label={wikiMessage(locale, "editSpace")}
         Icon={PencilIcon}
         onClick={() => {
           onClose();
@@ -2890,13 +2934,13 @@ function SpaceRowMenu({
         }}
       />
       <SpaceMenuItem
-        label="Refresh index"
+        label={wikiMessage(locale, "refreshIndex")}
         Icon={RefreshIcon}
         onClick={handleRefresh}
         disabled={busy}
       />
       <SpaceMenuItem
-        label="Open ingest"
+        label={wikiMessage(locale, "openIngest")}
         Icon={PlusCircleIcon}
         onClick={() => {
           onClose();
@@ -2905,7 +2949,7 @@ function SpaceRowMenu({
       />
       <SpaceMenuDivider />
       <SpaceMenuItem
-        label={isDefault ? "Archive space (default cannot be archived)" : "Archive space…"}
+        label={wikiMessage(locale, isDefault ? "archiveDefaultSpace" : "archiveSpace")}
         Icon={ArchiveIcon}
         onClick={handleArchive}
         disabled={isDefault || busy}
@@ -2985,7 +3029,7 @@ const shellStyle: CSSProperties = {
 // Pre-flight: prompt for folder before any tab can be useful.
 // ---------------------------------------------------------------------------
 
-function UnconfiguredFolder({ context, folder, refresh }: { context: { companyId: string | null }; folder?: FolderStatus; refresh: () => void }) {
+function UnconfiguredFolder({ context, folder, locale, refresh }: { context: { companyId: string | null }; folder?: FolderStatus; locale: WikiLocale; refresh: () => void }) {
   const bootstrap = usePluginAction("bootstrap-root");
   const toast = usePluginToast();
   const isMobile = useIsMobileLayout();
@@ -3005,12 +3049,18 @@ function UnconfiguredFolder({ context, folder, refresh }: { context: { companyId
     try {
       const result = await bootstrap({ companyId: context.companyId, path: path.trim() });
       const written = (result as { writtenFiles?: string[] }).writtenFiles ?? [];
-      toast({ tone: "success", title: "Wiki root configured", body: written.length ? `Created ${written.length} bootstrap file(s).` : "Existing files preserved." });
+      toast({
+        tone: "success",
+        title: wikiMessage(locale, "wikiRootConfiguredTitle"),
+        body: written.length
+          ? wikiMessage(locale, "bootstrapCreatedFiles", { count: written.length })
+          : wikiMessage(locale, "existingFilesPreserved"),
+      });
       refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setErrorMsg(message);
-      toast({ tone: "error", title: "Could not configure wiki root", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "wikiRootConfigureFailedTitle"), body: message });
     } finally {
       setBusy(false);
     }
@@ -3019,13 +3069,13 @@ function UnconfiguredFolder({ context, folder, refresh }: { context: { companyId
   return (
     <div style={{ flex: 1, padding: isMobile ? 16 : 28, display: "grid", placeItems: "start", overflow: isMobile ? "visible" : "auto", minWidth: 0 }}>
       <Card style={{ maxWidth: 720, width: "100%" }}>
-        <CardHeader title={configuredButUnhealthy ? "Repair wiki root folder" : "Choose a wiki root folder"} />
+        <CardHeader title={wikiMessage(locale, configuredButUnhealthy ? "repairWikiRootFolder" : "chooseWikiRootFolder")} />
         <CardBody>
           <Tiny style={{ marginBottom: 12 }}>
             {configuredButUnhealthy
-              ? "The configured wiki root is not ready. Update the path or repair it to recreate required baseline files."
-              : "Pick an absolute path on this machine. The plugin creates "}
-            {!configuredButUnhealthy ? <><Mono>raw/</Mono>, <Mono>wiki/</Mono>, <Mono>AGENTS.md</Mono>, <Mono>IDEA.md</Mono>, <Mono>wiki/index.md</Mono>, and <Mono>wiki/log.md</Mono> if they don't already exist.</> : null}
+              ? wikiMessage(locale, "wikiRootNotReady")
+              : `${wikiMessage(locale, "wikiRootChoosePath")} `}
+            {!configuredButUnhealthy ? <><Mono>raw/</Mono>, <Mono>wiki/</Mono>, <Mono>AGENTS.md</Mono>, <Mono>IDEA.md</Mono>, <Mono>wiki/index.md</Mono>, <Mono>wiki/log.md</Mono> {wikiMessage(locale, "wikiRootFilesExist")}</> : null}
           </Tiny>
           {folder?.problems?.length ? (
             <Callout tone="danger">
@@ -3039,17 +3089,18 @@ function UnconfiguredFolder({ context, folder, refresh }: { context: { companyId
             </Callout>
           ) : null}
           <div style={{ display: "grid", gap: 12 }}>
-            {folder ? <FolderHealthChecklist folder={folder} /> : null}
+            {folder ? <FolderHealthChecklist folder={folder} locale={locale} /> : null}
             <FolderPathPicker
+              locale={locale}
               value={path}
               onChange={setPath}
               onApply={submit}
-              applyLabel={configuredButUnhealthy ? "Repair & bootstrap" : "Configure & bootstrap"}
+              applyLabel={wikiMessage(locale, configuredButUnhealthy ? "repairAndBootstrap" : "configureAndBootstrap")}
               busy={busy}
               disabled={!path.trim()}
             />
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <Button variant="ghost" onClick={() => refresh()}>I already configured it</Button>
+              <Button variant="ghost" onClick={() => refresh()}>{wikiMessage(locale, "alreadyConfigured")}</Button>
             </div>
             {errorMsg ? <Callout tone="danger">{errorMsg}</Callout> : null}
           </div>
@@ -3212,7 +3263,7 @@ function expandedAncestors(path: string | null): string[] {
   return out;
 }
 
-function BrowseTab({ context }: { context: { companyId: string | null } }) {
+function BrowseTab({ context, locale }: { context: { companyId: string | null }; locale: WikiLocale }) {
   const { pathname, search } = useHostLocation();
   const activeSpaceSlug = useMemo(() => readActiveSpaceSlugFromLocation(pathname), [pathname]);
   const pages = usePages(context.companyId, { includeRaw: true, spaceSlug: activeSpaceSlug });
@@ -3223,17 +3274,17 @@ function BrowseTab({ context }: { context: { companyId: string | null } }) {
   return (
     <div style={{ flex: 1, minWidth: 0, overflow: isMobile ? "visible" : "auto" }}>
       {pages.loading && !selected ? (
-        <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>Loading pages…</div>
+        <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "loadingPages")}</div>
       ) : pages.error && !selected ? (
-        <div style={{ padding: isMobile ? 16 : 28 }}><Callout tone="danger">Failed to load pages: {pages.error.message}</Callout></div>
+        <div style={{ padding: isMobile ? 16 : 28 }}><Callout tone="danger">{wikiMessage(locale, "failedToLoadPages", { message: pages.error.message })}</Callout></div>
       ) : (
-        <PageDetail context={context} path={selected} spaceSlug={activeSpaceSlug} />
+        <PageDetail context={context} path={selected} spaceSlug={activeSpaceSlug} locale={locale} />
       )}
     </div>
   );
 }
 
-function PageDetail({ context, path, spaceSlug }: { context: { companyId: string | null }; path: string | null; spaceSlug?: string }) {
+function PageDetail({ context, path, spaceSlug, locale }: { context: { companyId: string | null }; path: string | null; spaceSlug?: string; locale: WikiLocale }) {
   const content = usePageContent(context.companyId, path, spaceSlug ?? null);
   const writePage = usePluginAction("write-page");
   const toast = usePluginToast();
@@ -3333,20 +3384,20 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
     if (typeof result.hash === "string") setSavedHash(result.hash);
   }, [context.companyId, content.data, editable, path, savedHash, writePage, spaceSlug]);
 
-  if (!path) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>Pick a page from the tree.</div>;
-  if (content.loading) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>Loading {path}…</div>;
+  if (!path) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "pickPage")}</div>;
+  if (content.loading) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "loadingPage", { path })}</div>;
   if (content.error && path.startsWith("raw/")) {
     return (
       <div style={{ padding: isMobile ? 16 : 28, display: "grid", gap: 12 }}>
         <Callout tone="warn">
-          The captured source <Mono>{path}</Mono> is indexed but no longer exists in the configured wiki folder. Refresh the wiki or re-ingest the source to restore it.
+          {wikiMessage(locale, "capturedSourcePrefix")} <Mono>{path}</Mono> {wikiMessage(locale, "capturedSourceSuffix")}
         </Callout>
         <Tiny>{content.error.message}</Tiny>
       </div>
     );
   }
-  if (content.error) return <div style={{ padding: isMobile ? 16 : 28 }}><Callout tone="danger">Failed to read {path}: {content.error.message}</Callout></div>;
-  if (!content.data) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>No content for {path}.</div>;
+  if (content.error) return <div style={{ padding: isMobile ? 16 : 28 }}><Callout tone="danger">{wikiMessage(locale, "failedToReadPage", { path, message: content.error.message })}</Callout></div>;
+  if (!content.data) return <div style={{ padding: isMobile ? 16 : 28, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "noContentForPage", { path })}</div>;
   const { contents, title, sourceRefs, updatedAt, hash } = content.data;
   const visibleFrontmatter = parsedMarkdown.frontmatter.filter((property) => property.key.toLowerCase() !== "title");
   const displayTitle = (BASELINE_FILES as readonly string[]).includes(path) ? basename(path) : title ?? basename(path);
@@ -3372,23 +3423,23 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             {isDistilledProjectPage ? (
-              <Button size="sm" variant="ghost" onClick={() => setProvenanceOpen(true)} title="Show source provenance and freshness">
-                <InfoIcon size={12} /> Provenance
+              <Button size="sm" variant="ghost" onClick={() => setProvenanceOpen(true)} title={wikiMessage(locale, "showProvenance")}>
+                <InfoIcon size={12} /> {wikiMessage(locale, "provenance")}
               </Button>
             ) : null}
             {editable && !editing ? (
-              <Button size="sm" onClick={() => { setSavedHash(hash); setEditing(true); }}>Edit page</Button>
+              <Button size="sm" onClick={() => { setSavedHash(hash); setEditing(true); }}>{wikiMessage(locale, "editPage")}</Button>
             ) : editable ? (
-              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); content.refresh(); }}>Done</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); content.refresh(); }}>{wikiMessage(locale, "done")}</Button>
             ) : (
-              <Badge>read-only source</Badge>
+              <Badge>{wikiMessage(locale, "readOnlySource")}</Badge>
             )}
           </div>
         </div>
-        <Tiny>Updated {updatedAt ? formatTime(updatedAt) : "—"}</Tiny>
+        <Tiny>{wikiMessage(locale, "updated", { time: formatWikiRelativeTime(updatedAt, locale) })}</Tiny>
       </header>
       {isDistilledProjectPage && path ? (
-        <FreshnessChip companyId={context.companyId} pagePath={path} companyPrefix={(context as { companyPrefix?: string | null }).companyPrefix ?? null} />
+        <FreshnessChip companyId={context.companyId} pagePath={path} companyPrefix={(context as { companyPrefix?: string | null }).companyPrefix ?? null} locale={locale} />
       ) : null}
       {editing ? (
         <>
@@ -3396,11 +3447,12 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
             key={`${path}:${hash}`}
             resetKey={`${path}:${hash}`}
             value={contents}
-            placeholder={`Edit ${path}`}
+            locale={locale}
+            placeholder={wikiMessage(locale, "editPagePlaceholder", { path })}
             minHeight={isMobile ? 260 : 420}
             onSave={async (nextContents) => {
               await savePageContents(nextContents);
-              toast({ tone: "success", title: `${path} saved` });
+              toast({ tone: "success", title: wikiMessage(locale, "savedPage", { path }) });
             }}
           />
         </>
@@ -3417,15 +3469,15 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
         >
           <div style={{ display: "grid", gap: isMobile ? 12 : 14, minWidth: 0 }}>
             <div ref={markdownBodyRef} style={{ minWidth: 0, fontSize: 13, lineHeight: 1.65 }}>
-              <FrontmatterProperties properties={visibleFrontmatter} />
+              <FrontmatterProperties properties={visibleFrontmatter} locale={locale} />
               <MarkdownBlock
                 content={parsedMarkdown.body}
                 enableWikiLinks
                 resolveWikiLinkHref={resolveWikiLinkHref}
               />
               {displaySourceRefs.length > 0 ? (
-                <section aria-label="Paperclip source refs" style={{ marginTop: 16, display: "grid", gap: 6 }}>
-                  <Tiny style={{ fontWeight: 650 }}>Paperclip source refs</Tiny>
+                <section aria-label={wikiMessage(locale, "paperclipSourceRefs")} style={{ marginTop: 16, display: "grid", gap: 6 }}>
+                  <Tiny style={{ fontWeight: 650 }}>{wikiMessage(locale, "paperclipSourceRefs")}</Tiny>
                   <ul style={{ margin: 0, paddingLeft: 18, color: tokens.muted, fontSize: 12, lineHeight: 1.5 }}>
                     {displaySourceRefs.map((ref) => (
                       <li key={ref.id}>{ref.label}</li>
@@ -3443,6 +3495,7 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
               onToggle={() => setTocOpen((current) => !current)}
               onHeadingClick={handleTocClick}
               mobile={isMobile}
+              locale={locale}
             />
           ) : null}
         </div>
@@ -3452,6 +3505,7 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
           companyId={context.companyId}
           pagePath={path}
           onClose={() => setProvenanceOpen(false)}
+          locale={locale}
         />
       ) : null}
     </article>
@@ -3478,6 +3532,7 @@ function OnThisPagePane({
   onToggle,
   onHeadingClick,
   mobile,
+  locale,
 }: {
   headings: WikiTocHeading[];
   activeHeadingId: string | null;
@@ -3485,6 +3540,7 @@ function OnThisPagePane({
   onToggle: () => void;
   onHeadingClick: (event: React.MouseEvent<HTMLAnchorElement>, id: string) => void;
   mobile: boolean;
+  locale: WikiLocale;
 }) {
   const contentId = "llm-wiki-on-this-page";
   const currentHeadingId = activeHeadingId ?? headings[0]?.id ?? null;
@@ -3548,7 +3604,7 @@ function OnThisPagePane({
   return (
     <aside
       ref={shellRef}
-      aria-label="On this page"
+      aria-label={wikiMessage(locale, "onThisPage")}
       style={{
         order: mobile ? -1 : 0,
         minWidth: 0,
@@ -3563,7 +3619,7 @@ function OnThisPagePane({
       }}>
         <button
           type="button"
-          aria-label={open ? "Collapse on this page" : "Expand on this page"}
+          aria-label={wikiMessage(locale, open ? "collapseOnThisPage" : "expandOnThisPage")}
           aria-expanded={open}
           aria-controls={contentId}
           onClick={onToggle}
@@ -3584,7 +3640,7 @@ function OnThisPagePane({
             textAlign: "left",
           }}
         >
-          {open ? <span>On this page</span> : null}
+          {open ? <span>{wikiMessage(locale, "onThisPage")}</span> : null}
           <span aria-hidden="true" style={{ color: tokens.muted, transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 120ms ease" }}>
             <ChevronLeftIcon size={13} />
           </span>
@@ -3621,13 +3677,13 @@ function OnThisPagePane({
   );
 }
 
-function FreshnessChip({ companyId, pagePath, companyPrefix }: { companyId: string | null; pagePath: string; companyPrefix: string | null }) {
+function FreshnessChip({ companyId, pagePath, companyPrefix, locale }: { companyId: string | null; pagePath: string; companyPrefix: string | null; locale: WikiLocale }) {
   const provenance = useDistillationProvenance(companyId, pagePath);
   const binding = provenance.data?.binding ?? null;
   const cursor = provenance.data?.cursor ?? null;
 
   if (provenance.loading && !provenance.data) {
-    return <FreshnessChipShell tone="info" icon={<ClockIcon size={14} />}>Checking distillation cursor…</FreshnessChipShell>;
+    return <FreshnessChipShell tone="info" icon={<ClockIcon size={14} />}>{wikiMessage(locale, "checkingDistillationCursor")}</FreshnessChipShell>;
   }
   if (!binding) return null;
 
@@ -3655,13 +3711,13 @@ function FreshnessChip({ companyId, pagePath, companyPrefix }: { companyId: stri
       tone={tone}
       icon={isFailed ? <AlertTriangleIcon size={14} /> : isRunning ? <ActivityIcon size={14} /> : <ClockIcon size={14} />}
     >
-      <span><strong>Current as of {lastEnd ? formatTimestamp(lastEnd) : "—"}.</strong>
-        {sourceCount ? ` ${sourceCount} sources in this window. ` : " "}
-        Cursor at <Mono>{lastEnd ?? "—"}</Mono>.
+      <span><strong>{wikiMessage(locale, "currentAsOf", { time: formatWikiTimestamp(lastEnd, locale) })}</strong>
+        {sourceCount ? ` ${wikiMessage(locale, sourceCount === 1 ? "oneSourceInWindow" : "manySourcesInWindow", { count: new Intl.NumberFormat(locale).format(sourceCount) })} ` : " "}
+        {wikiMessage(locale, "cursorAt")} <Mono>{lastEnd ?? "—"}</Mono>.
       </span>
       {projectLink ? (
         <a href={projectLink} style={{ marginLeft: 8, color: "inherit", textDecoration: "underline" }}>
-          Open Paperclip for live state →
+          {wikiMessage(locale, "openPaperclipLiveState")}
         </a>
       ) : null}
     </FreshnessChipShell>
@@ -3734,7 +3790,7 @@ function formatSourceRef(ref: Record<string, unknown> | string, fallbackIndex: n
   return title ? `${primary}${suffix} - ${title}` : `${primary}${suffix}`;
 }
 
-function ProvenanceDrawer({ companyId, pagePath, onClose }: { companyId: string | null; pagePath: string; onClose: () => void }) {
+function ProvenanceDrawer({ companyId, pagePath, onClose, locale }: { companyId: string | null; pagePath: string; onClose: () => void; locale: WikiLocale }) {
   const isMobile = useIsMobileLayout();
   const provenance = useDistillationProvenance(companyId, pagePath);
   const data = provenance.data;
@@ -3771,42 +3827,45 @@ function ProvenanceDrawer({ companyId, pagePath, onClose }: { companyId: string 
       >
         <div style={{ padding: "14px 18px", borderBottom: `1px solid ${tokens.border}`, display: "flex", alignItems: "center", gap: 10 }}>
           <InfoIcon size={16} />
-          <strong style={{ fontSize: 14, flex: 1 }}>Provenance</strong>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <strong style={{ fontSize: 14, flex: 1 }}>{wikiMessage(locale, "provenance")}</strong>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={wikiMessage(locale, "close")}>
             <XIcon size={14} />
           </Button>
         </div>
         <div style={{ overflow: "auto", flex: 1, padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
-          {provenance.loading && !data ? <Tiny>Loading provenance…</Tiny> : null}
-          {!binding && !provenance.loading ? <Callout>This page is not currently bound to a distillation cursor. It may be hand-authored or pre-distillation.</Callout> : null}
+          {provenance.loading && !data ? <Tiny>{wikiMessage(locale, "loadingProvenance")}</Tiny> : null}
+          {!binding && !provenance.loading ? <Callout>{wikiMessage(locale, "notBoundToCursor")}</Callout> : null}
           {binding ? (
             <Card>
               <CardBody padding={14}>
-                <PropRow label="Page path" value={<Mono>{binding.pagePath}</Mono>} />
-                <PropRow label="Source hash" value={<Mono>{binding.lastRunSourceHash?.slice(0, 16) ?? "—"}…</Mono>} />
-                <PropRow label="Cursor end" value={<Mono>{binding.lastRunSourceWindowEnd ? formatTimestamp(binding.lastRunSourceWindowEnd) : "—"}</Mono>} />
-                <PropRow label="Last run status" value={<Badge tone={runStatusTone(binding.lastRunStatus ?? "")}>{binding.lastRunStatus ?? "—"}</Badge>} />
-                <PropRow label="Project" value={binding.projectName ?? "—"} />
-                <PropRow label="Updated" value={formatTimestamp(binding.updatedAt)} />
+                <PropRow label={wikiMessage(locale, "pagePath")} value={<Mono>{binding.pagePath}</Mono>} />
+                <PropRow label={wikiMessage(locale, "sourceHash")} value={<Mono>{binding.lastRunSourceHash?.slice(0, 16) ?? "—"}…</Mono>} />
+                <PropRow label={wikiMessage(locale, "cursorEnd")} value={<Mono>{binding.lastRunSourceWindowEnd ? formatWikiTimestamp(binding.lastRunSourceWindowEnd, locale) : "—"}</Mono>} />
+                <PropRow label={wikiMessage(locale, "lastRunStatus")} value={<Badge tone={runStatusTone(binding.lastRunStatus ?? "")}>{wikiRunStatusLabel(locale, binding.lastRunStatus ?? "—")}</Badge>} />
+                <PropRow label={wikiMessage(locale, "project")} value={binding.projectName ?? "—"} />
+                <PropRow label={wikiMessage(locale, "updatedLabel")} value={formatWikiTimestamp(binding.updatedAt, locale)} />
               </CardBody>
             </Card>
           ) : null}
           {cursor ? (
             <Card>
-              <CardHeader title="Cursor" />
+              <CardHeader title={wikiMessage(locale, "cursor")} />
               <CardBody padding={14}>
-                <PropRow label="Scope" value={cursor.sourceScope} />
-                <PropRow label="Pending events" value={String(cursor.pendingEventCount)} />
-                <PropRow label="Last observed" value={formatTimestamp(cursor.lastObservedAt)} />
-                <PropRow label="Last processed" value={formatTimestamp(cursor.lastProcessedAt)} />
+                <PropRow label={wikiMessage(locale, "scope")} value={cursor.sourceScope} />
+                <PropRow label={wikiMessage(locale, "pendingEvents")} value={String(cursor.pendingEventCount)} />
+                <PropRow label={wikiMessage(locale, "lastObserved")} value={formatWikiTimestamp(cursor.lastObservedAt, locale)} />
+                <PropRow label={wikiMessage(locale, "lastProcessed")} value={formatWikiTimestamp(cursor.lastProcessedAt, locale)} />
               </CardBody>
             </Card>
           ) : null}
           {snapshot ? (
             <Card>
-              <CardHeader title="Sources in this window" />
+              <CardHeader title={wikiMessage(locale, "sourcesInWindow")} />
               <CardBody padding={14}>
-                <Tiny style={{ marginBottom: 8 }}>{snapshot.sourceRefs.length} ref{snapshot.sourceRefs.length === 1 ? "" : "s"}{snapshot.clipped ? " · clipped" : ""}</Tiny>
+                <Tiny style={{ marginBottom: 8 }}>
+                  {wikiMessage(locale, snapshot.sourceRefs.length === 1 ? "oneSourceRef" : "manySourceRefs", { count: new Intl.NumberFormat(locale).format(snapshot.sourceRefs.length) })}
+                  {snapshot.clipped ? ` · ${wikiMessage(locale, "clipped")}` : ""}
+                </Tiny>
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: tokens.muted, lineHeight: 1.5 }}>
                   {snapshot.sourceRefs.slice(0, 8).map((ref, index) => {
                     const obj = typeof ref === "object" && ref ? ref as Record<string, unknown> : null;
@@ -3822,22 +3881,22 @@ function ProvenanceDrawer({ companyId, pagePath, onClose }: { companyId: string 
                     );
                   })}
                 </ul>
-                {snapshot.sourceRefs.length > 8 ? <Tiny style={{ marginTop: 6 }}>{`+${snapshot.sourceRefs.length - 8} more`}</Tiny> : null}
+                {snapshot.sourceRefs.length > 8 ? <Tiny style={{ marginTop: 6 }}>{wikiMessage(locale, "moreSources", { count: new Intl.NumberFormat(locale).format(snapshot.sourceRefs.length - 8) })}</Tiny> : null}
               </CardBody>
             </Card>
           ) : null}
           {runs.length > 0 ? (
             <Card>
-              <CardHeader title="Operations affecting this page" />
+              <CardHeader title={wikiMessage(locale, "operationsAffectingPage")} />
               <CardBody padding={0}>
                 <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
                   {runs.slice(0, 8).map((run) => (
                     <li key={run.id} style={{ padding: "10px 14px", borderBottom: `1px solid ${tokens.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <Mono style={{ fontSize: 12 }}>{run.operationIssueIdentifier ?? `op-${run.id.slice(0, 6)}`}</Mono>
                       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                        <Tiny>{formatTimestamp(run.updatedAt)}</Tiny>
+                        <Tiny>{formatWikiTimestamp(run.updatedAt, locale)}</Tiny>
                         <Mono style={{ fontSize: 11 }}>{formatCostCents(run.costCents)}</Mono>
-                        <Badge tone={runStatusTone(run.status)}>{runStatusLabel(run.status)}</Badge>
+                        <Badge tone={runStatusTone(run.status)}>{wikiRunStatusLabel(locale, run.status)}</Badge>
                       </div>
                     </li>
                   ))}
@@ -3851,7 +3910,7 @@ function ProvenanceDrawer({ companyId, pagePath, onClose }: { companyId: string 
   );
 }
 
-function FrontmatterProperties({ properties }: { properties: WikiFrontmatterProperty[] }) {
+function FrontmatterProperties({ properties, locale }: { properties: WikiFrontmatterProperty[]; locale: WikiLocale }) {
   if (properties.length === 0) return null;
 
   return (
@@ -3873,7 +3932,7 @@ function FrontmatterProperties({ properties }: { properties: WikiFrontmatterProp
           marginBottom: 10,
         }}
       >
-        Properties
+        {wikiMessage(locale, "properties")}
       </summary>
       <dl style={{ display: "grid", gap: 8, margin: 0, maxWidth: 720 }}>
         {properties.map((property) => (
@@ -3975,7 +4034,7 @@ function formatTime(iso: string | null | undefined): string {
 // Ingest tab.
 // ---------------------------------------------------------------------------
 
-function IngestTab({ context, refreshOverview }: { context: { companyId: string | null }; refreshOverview: () => void }) {
+function IngestTab({ context, locale, refreshOverview }: { context: { companyId: string | null }; locale: WikiLocale; refreshOverview: () => void }) {
   const { pathname } = useHostLocation();
   const activeSpaceSlug = useMemo(() => readActiveSpaceSlugFromLocation(pathname), [pathname]);
   const spacesQuery = useSpaces(context.companyId);
@@ -4033,7 +4092,11 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
         contents,
       });
       const spaceLabel = activeSpace?.displayName ?? activeSpaceSlug;
-      toast({ tone: "success", title: `Source captured into ${spaceLabel}`, body: `Operation issue created. Check History to inspect.` });
+      toast({
+        tone: "success",
+        title: wikiMessage(locale, "sourceCapturedInto", { space: spaceLabel }),
+        body: wikiMessage(locale, "operationCreatedHistory"),
+      });
       setUrl("");
       setPasted("");
       setTitle("");
@@ -4041,7 +4104,7 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setErrorMsg(message);
-      toast({ tone: "error", title: "Ingest failed", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "ingestFailed"), body: message });
     } finally {
       setBusy(false);
     }
@@ -4056,14 +4119,15 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
         maxWidth: 920,
         minWidth: 0,
       }}>
-        <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: tokens.muted }}>Add Content</div>
-        <h2 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 650 }}>Capture into <span style={{ color: tokens.fg }}>{spaceLabel}</span></h2>
+        <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: tokens.muted }}>{wikiMessage(locale, "ingestTitle")}</div>
+        <h2 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 650 }}>{wikiMessage(locale, "captureInto", { space: spaceLabel })}</h2>
         <Tiny style={{ marginBottom: 18 }}>
-          Each capture queues an ingest operation scoped to <Mono>{activeSpaceSlug}</Mono>. Files land in that space's <Mono>raw/</Mono> folder and the Wiki Maintainer proposes a patch.
+          {wikiMessage(locale, "ingestDescription", { spaceSlug: activeSpaceSlug, rawPath: "raw/" })}
         </Tiny>
         <div style={{ display: "grid", gap: 14, marginBottom: 18 }}>
           <SpacePicker
             spaces={spaces}
+            locale={locale}
             activeSpaceSlug={activeSpaceSlug}
             loading={spacesQuery.loading}
             error={spacesQuery.error?.message ?? null}
@@ -4080,7 +4144,7 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
             }}
           />
           <div>
-            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 6 }}>Drop files anywhere on this page</label>
+            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 6 }}>{wikiMessage(locale, "dropFilesLabel")}</label>
             <div style={{
               minHeight: isMobile ? 180 : 230,
               border: `1.5px dashed ${tokens.pluginBorder}`,
@@ -4098,36 +4162,37 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
               <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, borderRadius: 8, background: tokens.card, color: tokens.pluginFg, border: `1px solid ${tokens.pluginBorder}` }}>
                 <DownloadCloudIcon size={24} />
               </div>
-              <div style={{ fontSize: 16, fontWeight: 650, color: tokens.fg }}>Drop source files here</div>
-              <Tiny>Review staged files before queueing maintainer tasks.</Tiny>
+              <div style={{ fontSize: 16, fontWeight: 650, color: tokens.fg }}>{wikiMessage(locale, "dropFilesLabel")}</div>
+              <Tiny>{wikiMessage(locale, "reviewStagedFiles")}</Tiny>
             </div>
           </div>
           <div data-testid="llm-wiki-ingest-manual-separator" aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: 12, color: tokens.muted, fontSize: 11, fontWeight: 650, textTransform: "uppercase", letterSpacing: "0.04em" }}>
             <span style={{ height: 1, flex: 1, background: tokens.border }} />
-            <span>or</span>
+            <span>{wikiMessage(locale, "or")}</span>
             <span style={{ height: 1, flex: 1, background: tokens.border }} />
           </div>
           <div>
-            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>Source title (optional)</label>
-            <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Karpathy LLM Wiki gist" />
+            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>{wikiMessage(locale, "sourceTitle")}</label>
+            <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder={wikiMessage(locale, "sourceTitlePlaceholder")} />
           </div>
           <div>
-            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>URL</label>
+            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>{wikiMessage(locale, "sourceUrl")}</label>
             <TextInput value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/article" />
           </div>
           <div>
-            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>Paste markdown / text</label>
-            <TextArea value={pasted} onChange={(e) => setPasted(e.target.value)} placeholder="Paste source content…" rows={8} />
+            <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>{wikiMessage(locale, "sourceContent")}</label>
+            <TextArea value={pasted} onChange={(e) => setPasted(e.target.value)} placeholder={wikiMessage(locale, "sourceContentPlaceholder")} rows={8} />
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <Button variant="primary" onClick={submit} disabled={!canSubmit} loading={busy}>+ Capture & ingest</Button>
+          <Button variant="primary" onClick={submit} disabled={!canSubmit} loading={busy}>{wikiMessage(locale, "captureAndIngest")}</Button>
         </div>
         {errorMsg ? <div style={{ marginTop: 14 }}><Callout tone="danger">{errorMsg}</Callout></div> : null}
       </div>
       {createOpen && context.companyId ? (
         <CreateSpaceModal
           companyId={context.companyId}
+          locale={locale}
           existingSlugs={new Set(spaces.map((s) => s.slug))}
           onClose={() => setCreateOpen(false)}
           onCreated={(space) => {
@@ -4143,6 +4208,7 @@ function IngestTab({ context, refreshOverview }: { context: { companyId: string 
 
 function SpacePicker({
   spaces,
+  locale,
   activeSpaceSlug,
   loading,
   error,
@@ -4153,6 +4219,7 @@ function SpacePicker({
   onCreate,
 }: {
   spaces: WikiSpace[];
+  locale: WikiLocale;
   activeSpaceSlug: string;
   loading: boolean;
   error: string | null;
@@ -4176,7 +4243,7 @@ function SpacePicker({
   }, [isOpen, onClose]);
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>Space</label>
+      <label style={{ fontSize: 11, color: tokens.muted, display: "block", marginBottom: 4 }}>{wikiMessage(locale, "spaceLabel")}</label>
       <button
         type="button"
         onClick={onToggle}
@@ -4206,7 +4273,7 @@ function SpacePicker({
         <ChevronDownIcon size={14} />
       </button>
       <div style={{ marginTop: 6, fontSize: 11, color: tokens.muted, lineHeight: 1.4 }}>
-        Defaults to the space you opened. Switching now re-routes the page so deep links carry the destination.
+        {wikiMessage(locale, "spacePickerHelp")}
       </div>
       {isOpen ? (
         <div
@@ -4227,7 +4294,7 @@ function SpacePicker({
           }}
         >
           {error ? <div style={{ padding: 10, fontSize: 12, color: tokens.statusBlocked }}>{error}</div> : null}
-          {loading ? <div style={{ padding: 10 }}><Tiny>Loading spaces…</Tiny></div> : null}
+          {loading ? <div style={{ padding: 10 }}><Tiny>{wikiMessage(locale, "loadingSpaces")}</Tiny></div> : null}
           {spaces.map((space) => (
             <button
               key={space.slug}
@@ -4278,7 +4345,7 @@ function SpacePicker({
             }}
           >
             <PlusIcon size={14} />
-            <span>New shared space…</span>
+            <span>{wikiMessage(locale, "newSharedSpace")}</span>
           </button>
         </div>
       ) : null}
@@ -4346,7 +4413,16 @@ type QueryStreamEvent = {
   answer?: string;
 };
 
-function QueryTab({ context, overview }: { context: { companyId: string | null }; overview: OverviewData }) {
+function queryStatusLabel(locale: WikiLocale, status: QueryThreadEntry["status"]): string {
+  switch (status) {
+    case "queued": return wikiMessage(locale, "queryQueued");
+    case "running": return wikiMessage(locale, "queryRunning");
+    case "done": return wikiMessage(locale, "queryDone");
+    case "error": return wikiMessage(locale, "queryError");
+  }
+}
+
+function QueryTab({ context, locale, overview }: { context: { companyId: string | null }; locale: WikiLocale; overview: OverviewData }) {
   const startQuery = usePluginAction("start-query");
   const fileAsPage = usePluginAction("file-as-page");
   const toast = usePluginToast();
@@ -4391,7 +4467,7 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
         return { ...entry, status: "done", answer: event.answer ?? entry.answer };
       }
       if (event.type === "query.error") {
-        return { ...entry, status: "error", errorMessage: event.message ?? "agent session error" };
+        return { ...entry, status: "error", errorMessage: event.message ?? wikiMessage(locale, "querySessionError") };
       }
       return entry;
     }));
@@ -4439,7 +4515,7 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
       setThread((prev) => prev.map((entry) =>
         entry.id === entryId ? { ...entry, status: "error", errorMessage: message } : entry,
       ));
-      toast({ tone: "error", title: "Ask failed", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "askFailed"), body: message });
     } finally {
       setBusy(false);
     }
@@ -4460,11 +4536,15 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
         answer,
         querySessionId: source?.querySessionId,
       });
-      toast({ tone: "success", title: "Answer filed", body: `Wrote ${filePath.trim()} and recorded a file-as-page task.` });
+      toast({
+        tone: "success",
+        title: wikiMessage(locale, "answerFiled"),
+        body: wikiMessage(locale, "answerFiledBody", { path: filePath.trim() }),
+      });
       setFileBody("");
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      toast({ tone: "error", title: "Could not file answer", body: message });
+      toast({ tone: "error", title: wikiMessage(locale, "couldNotFileAnswer"), body: message });
     } finally {
       setFiling(null);
     }
@@ -4474,17 +4554,15 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
     <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", flex: 1, minHeight: isMobile ? "auto" : 0, minWidth: 0 }}>
       <div style={{ flex: 1, padding: isMobile ? "16px" : "24px 28px", overflow: isMobile ? "visible" : "auto", minWidth: 0 }}>
         {thread.length === 0 ? (
-          <Callout>
-            Ask the wiki anything. Each question initiates a task assigned to the Wiki Maintainer. The answer streams below; you can promote useful answers into a wiki page.
-          </Callout>
+          <Callout>{wikiMessage(locale, "queryEmpty")}</Callout>
         ) : null}
         <div style={{ display: "grid", gap: 22, marginTop: 18 }}>
           {thread.map((entry) => (
             <div key={entry.id}>
-              <Tiny style={{ marginBottom: 4 }}>You · {formatTime(entry.createdAt)}</Tiny>
+              <Tiny style={{ marginBottom: 4 }}>{wikiMessage(locale, "queryUserTime", { time: formatWikiRelativeTime(entry.createdAt, locale) })}</Tiny>
               <div style={{ background: tokens.card, border: `1px solid ${tokens.border}`, padding: "10px 12px", borderRadius: 8, fontSize: 13 }}>{entry.prompt}</div>
               <Tiny style={{ marginTop: 8 }}>
-                Wiki Maintainer · {entry.status}
+                {wikiMessage(locale, "queryMaintainerStatus", { status: queryStatusLabel(locale, entry.status) })}
                 {entry.hiddenIssueIdentifier ? <> · <Mono>{entry.hiddenIssueIdentifier}</Mono></> : null}
               </Tiny>
               {entry.status === "error" ? (
@@ -4498,17 +4576,17 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
                   fontSize: 13,
                   lineHeight: 1.65,
                   color: tokens.fg,
-                }}>{entry.answer || (entry.status === "running" ? "Streaming…" : "")}</pre>
+                }}>{entry.answer || (entry.status === "running" ? wikiMessage(locale, "queryStreaming") : "")}</pre>
               )}
               {entry.answer.trim() && entry.status === "done" ? (
                 <div style={{ marginTop: 10, border: `1px dashed ${tokens.border}`, borderRadius: 8, padding: "10px 12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <strong style={{ fontSize: 13 }}>📑 File this answer as a wiki page?</strong>
-                    <Tiny style={{ marginLeft: isMobile ? 0 : "auto", width: isMobile ? "100%" : undefined }}>Path: <Mono>{filePath}</Mono></Tiny>
+                    <strong style={{ fontSize: 13 }}>📑 {wikiMessage(locale, "fileAnswerPrompt")}</strong>
+                    <Tiny style={{ marginLeft: isMobile ? 0 : "auto", width: isMobile ? "100%" : undefined }}>{wikiMessage(locale, "queryFilePath", { path: filePath })}</Tiny>
                   </div>
                   <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
                     <TextInput value={filePath} onChange={(e) => setFilePath(e.target.value)} style={{ maxWidth: isMobile ? "none" : 360 }} />
-                    <Button size="sm" variant="primary" onClick={() => fileAnswer(entry)} disabled={!filePath.trim()} loading={filing === entry.id}>Accept &amp; file</Button>
+                    <Button size="sm" variant="primary" onClick={() => fileAnswer(entry)} disabled={!filePath.trim()} loading={filing === entry.id}>{wikiMessage(locale, "acceptAndFile")}</Button>
                   </div>
                 </div>
               ) : null}
@@ -4516,12 +4594,12 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
           ))}
         </div>
         <div style={{ borderTop: `1px solid ${tokens.border}`, paddingTop: 14, marginTop: 22 }}>
-          <TextArea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ask the wiki…" rows={3} />
+          <TextArea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={wikiMessage(locale, "askWikiPlaceholder")} rows={3} />
           <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <Button variant="primary" size="sm" onClick={send} disabled={!prompt.trim()} loading={busy}>Send (⌘↵)</Button>
-            <Badge>Cite: wiki + raw</Badge>
-            <Badge>Max steps: 6</Badge>
-            <Tiny style={{ marginLeft: "auto" }}>Streamed via agent session · maintainer task</Tiny>
+            <Button variant="primary" size="sm" onClick={send} disabled={!prompt.trim()} loading={busy}>{wikiMessage(locale, "sendShortcut")}</Button>
+            <Badge>{wikiMessage(locale, "citeWikiAndRaw")}</Badge>
+            <Badge>{wikiMessage(locale, "maxSteps", { count: 6 })}</Badge>
+            <Tiny style={{ marginLeft: "auto" }}>{wikiMessage(locale, "streamedViaMaintainer")}</Tiny>
           </div>
         </div>
       </div>
@@ -4533,14 +4611,14 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
         overflow: isMobile ? "visible" : "auto",
         minWidth: 0,
       }}>
-        <Tiny style={{ marginBottom: 8 }}>SESSION</Tiny>
-        <PropRow label="Wiki" value={overview.wikiId} />
-        <PropRow label="Project" value={overview.managedProject.details?.name ?? overview.managedProject.status} />
-        <PropRow label="Agent" value={overview.managedAgent.details?.name ?? overview.managedAgent.status} />
-        <PropRow label="Operations" value={overview.operationCount} />
-        <PropRow label="Stream" value={stream.connected ? "live" : stream.connecting ? "connecting…" : "idle"} />
+        <Tiny style={{ marginBottom: 8 }}>{wikiMessage(locale, "session").toLocaleUpperCase(locale)}</Tiny>
+        <PropRow label={wikiMessage(locale, "navWiki")} value={overview.wikiId} />
+        <PropRow label={wikiMessage(locale, "projectLabel")} value={overview.managedProject.details?.name ?? overview.managedProject.status} />
+        <PropRow label={wikiMessage(locale, "agentLabel")} value={overview.managedAgent.details?.name ?? overview.managedAgent.status} />
+        <PropRow label={wikiMessage(locale, "operationsLabel")} value={overview.operationCount} />
+        <PropRow label={wikiMessage(locale, "streamLabel")} value={stream.connected ? wikiMessage(locale, "streamLive") : stream.connecting ? wikiMessage(locale, "streamConnecting") : wikiMessage(locale, "streamIdle")} />
         <Divider />
-        <Tiny style={{ marginBottom: 8 }}>ASK PROMPT</Tiny>
+        <Tiny style={{ marginBottom: 8 }}>{wikiMessage(locale, "askPrompt").toLocaleUpperCase(locale)}</Tiny>
         <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, monospace", fontSize: 12, color: tokens.muted }}>{overview.prompts.query}</pre>
       </aside>
     </div>
@@ -4551,37 +4629,37 @@ function QueryTab({ context, overview }: { context: { companyId: string | null }
 // Lint tab.
 // ---------------------------------------------------------------------------
 
-function LintTab({ context, overview, refreshOverview }: { context: { companyId: string | null }; overview: OverviewData; refreshOverview: () => void }) {
+function LintTab({ context, overview, refreshOverview, locale }: { context: { companyId: string | null }; overview: OverviewData; refreshOverview: () => void; locale: WikiLocale }) {
   const isMobile = useIsMobileLayout();
   return (
     <div style={{ flex: 1, minHeight: isMobile ? "auto" : 0, overflow: isMobile ? "visible" : "auto", padding: isMobile ? "16px" : "24px 28px", display: "grid", gap: isMobile ? 14 : 18, minWidth: 0 }}>
-      <LintPanelContent context={context} overview={overview} refreshOverview={refreshOverview} />
+      <LintPanelContent context={context} overview={overview} refreshOverview={refreshOverview} locale={locale} />
     </div>
   );
 }
 
-function SettingsLintPanel({ context }: { context: { companyId: string | null } }) {
+function SettingsLintPanel({ context, locale }: { context: { companyId: string | null }; locale: WikiLocale }) {
   const overview = useOverview(context.companyId);
 
   if (overview.error) {
-    return <SettingsPanel title="Lint" badge={<HiddenOpBadge />} description="Run structural checks for orphan pages, missing backlinks, and stale provenance.">
-      <Callout tone="danger">LLM Wiki bridge error: {overview.error.message}</Callout>
+    return <SettingsPanel title={wikiMessage(locale, "settingsLint")} badge={<HiddenOpBadge locale={locale} />} description={wikiMessage(locale, "lintPanelDescription")}>
+      <Callout tone="danger">{wikiMessage(locale, "bridgeError", { message: overview.error.message })}</Callout>
     </SettingsPanel>;
   }
 
   if (!overview.data) {
-    return <SettingsPanel title="Lint" badge={<HiddenOpBadge />} description="Run structural checks for orphan pages, missing backlinks, and stale provenance.">
-      <Tiny>Loading lint controls…</Tiny>
+    return <SettingsPanel title={wikiMessage(locale, "settingsLint")} badge={<HiddenOpBadge locale={locale} />} description={wikiMessage(locale, "lintPanelDescription")}>
+      <Tiny>{wikiMessage(locale, "lintLoading")}</Tiny>
     </SettingsPanel>;
   }
 
   return (
     <SettingsPanel
-      title="Lint"
-      badge={<HiddenOpBadge />}
-      description="Run structural checks for orphan pages, missing backlinks, and stale provenance."
+      title={wikiMessage(locale, "settingsLint")}
+      badge={<HiddenOpBadge locale={locale} />}
+      description={wikiMessage(locale, "lintPanelDescription")}
     >
-      <LintPanelContent context={context} overview={overview.data} refreshOverview={overview.refresh} showHeading={false} />
+      <LintPanelContent context={context} overview={overview.data} refreshOverview={overview.refresh} locale={locale} showHeading={false} />
     </SettingsPanel>
   );
 }
@@ -4590,11 +4668,13 @@ function LintPanelContent({
   context,
   overview,
   refreshOverview,
+  locale,
   showHeading = true,
 }: {
   context: { companyId: string | null };
   overview: OverviewData;
   refreshOverview: () => void;
+  locale: WikiLocale;
   showHeading?: boolean;
 }) {
   const create = usePluginAction("create-operation");
@@ -4616,11 +4696,11 @@ function LintPanelContent({
         title: `Run LLM Wiki lint · ${activeSpaceSlug}`,
         prompt: overview.prompts.lint,
       });
-      toast({ tone: "success", title: "Lint queued", body: "Lint runs as a Wiki Maintainer task. Findings will appear here once the run completes." });
+      toast({ tone: "success", title: wikiMessage(locale, "lintQueued"), body: wikiMessage(locale, "lintQueuedBody") });
       operations.refresh();
       refreshOverview();
     } catch (err) {
-      toast({ tone: "error", title: "Could not run lint", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "lintCouldNotRun"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -4634,23 +4714,23 @@ function LintPanelContent({
   return (
     <div style={{ display: "grid", gap: isMobile ? 14 : 18, minWidth: 0 }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        {showHeading ? <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Lint</h2> : null}
-        <Badge style={unfilledSurfaceStyle}>{recent.length} run{recent.length === 1 ? "" : "s"}</Badge>
-        <Button variant="primary" size="sm" onClick={runLint} loading={busy} style={{ marginLeft: isMobile ? 0 : "auto" }}>▶ Run lint now</Button>
+        {showHeading ? <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{wikiMessage(locale, "settingsLint")}</h2> : null}
+        <Badge style={unfilledSurfaceStyle}>{wikiMessage(locale, recent.length === 1 ? "lintRunCountOne" : "lintRunCountMany", { count: new Intl.NumberFormat(locale).format(recent.length) })}</Badge>
+        <Button variant="primary" size="sm" onClick={runLint} loading={busy} style={{ marginLeft: isMobile ? 0 : "auto" }}>{wikiMessage(locale, "lintRunNow")}</Button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-        <StatCard label="Findings" value={String(counts.total)} hint={latestDone ? `last run ${formatTime(latestDone.createdAt)}` : "no runs yet"} />
-        <StatCard label="Critical" value={String(counts.critical)} hint="contradictions / conflict" tone={counts.critical > 0 ? "danger" : undefined} />
-        <StatCard label="Orphans" value={String(counts.orphan)} hint="no inbound backlinks" />
-        <StatCard label="Stale" value={String(counts.stale)} hint="provenance > 30d" />
-        <StatCard label="Index drift" value={String(counts.index)} hint="wiki/index.md / wiki/log.md" />
+        <StatCard label={wikiMessage(locale, "lintFindings")} value={new Intl.NumberFormat(locale).format(counts.total)} hint={latestDone ? wikiMessage(locale, "lintLastRun", { time: formatWikiRelativeTime(latestDone.createdAt, locale) }) : wikiMessage(locale, "lintNoRunsYet")} />
+        <StatCard label={wikiMessage(locale, "lintCritical")} value={new Intl.NumberFormat(locale).format(counts.critical)} hint={wikiMessage(locale, "lintContradictionsConflict")} tone={counts.critical > 0 ? "danger" : undefined} />
+        <StatCard label={wikiMessage(locale, "lintOrphans")} value={new Intl.NumberFormat(locale).format(counts.orphan)} hint={wikiMessage(locale, "lintNoInboundBacklinks")} />
+        <StatCard label={wikiMessage(locale, "lintStale")} value={new Intl.NumberFormat(locale).format(counts.stale)} hint={wikiMessage(locale, "lintProvenanceOver30Days")} />
+        <StatCard label={wikiMessage(locale, "lintIndexDrift")} value={new Intl.NumberFormat(locale).format(counts.index)} hint={wikiMessage(locale, "lintIndexPaths")} />
       </div>
       <Card style={unfilledSurfaceStyle}>
-        <CardHeader title="Findings" badges={<HiddenOpBadge />} right={<Tiny>Lint runs as a Wiki Maintainer task. Critical findings can optionally open visible follow-up issues — toggle in Settings → Lint policy.</Tiny>} />
+        <CardHeader title={wikiMessage(locale, "lintFindings")} badges={<HiddenOpBadge locale={locale} />} right={<Tiny>{wikiMessage(locale, "lintTaskDescription")}</Tiny>} />
         <CardBody padding={0}>
           {findings.length === 0 ? (
             <div style={{ padding: 16, color: tokens.muted, fontSize: 13 }}>
-              {latestDone ? "Latest lint run reported no findings." : "No completed lint runs yet. Use ▶ Run lint now to start one."}
+              {latestDone ? wikiMessage(locale, "lintLatestNoFindings") : wikiMessage(locale, "lintNoCompletedRuns")}
             </div>
           ) : findings.map((f, idx) => {
             const severityTone: Tone = f.severity === "critical" ? "failed" : f.severity === "orphan" ? "paused" : "default";
@@ -4660,7 +4740,7 @@ function LintPanelContent({
                 primary={
                   <span>
                     <Badge tone={severityTone} style={severityTone === "default" ? unfilledSurfaceStyle : undefined}>
-                      {String(f.severity ?? "info")}
+                      {lintSeverityLabel(locale, String(f.severity ?? "info"))}
                     </Badge>
                     <span style={{ marginLeft: 8 }}>{String(f.message ?? f.title ?? "(no description)")}</span>
                   </span>
@@ -4672,20 +4752,46 @@ function LintPanelContent({
         </CardBody>
       </Card>
       <Card style={unfilledSurfaceStyle}>
-        <CardHeader title="Recent lint runs" />
+        <CardHeader title={wikiMessage(locale, "lintRecentRuns")} />
         <CardBody padding={0}>
-          {recent.length === 0 ? <div style={{ padding: 12, color: tokens.muted, fontSize: 13 }}>No lint runs yet.</div> : recent.map((op) => (
+          {recent.length === 0 ? <div style={{ padding: 12, color: tokens.muted, fontSize: 13 }}>{wikiMessage(locale, "lintNoRuns")}</div> : recent.map((op) => (
             <Row
               key={op.id}
-              primary={<><Mono>op-{op.id.slice(0, 6)}</Mono> {op.hiddenIssueTitle ?? "Wiki lint"}</>}
-              secondary={formatTime(op.createdAt)}
-              right={<Badge tone={statusTone(op.status)}>{op.status}</Badge>}
+              primary={<><Mono>op-{op.id.slice(0, 6)}</Mono> {op.hiddenIssueTitle ?? wikiMessage(locale, "lintOperationFallback")}</>}
+              secondary={formatWikiRelativeTime(op.createdAt, locale)}
+              right={<Badge tone={statusTone(op.status)}>{lintOperationStatusLabel(locale, op.status)}</Badge>}
             />
           ))}
         </CardBody>
       </Card>
     </div>
   );
+}
+
+function lintSeverityLabel(locale: WikiLocale, severity: string): string {
+  const messageKey: Partial<Record<string, WikiMessageKey>> = {
+    critical: "lintSeverityCritical",
+    orphan: "lintSeverityOrphan",
+    stale: "lintSeverityStale",
+    info: "lintSeverityInfo",
+  };
+  const key = messageKey[severity];
+  return key ? wikiMessage(locale, key) : severity;
+}
+
+function lintOperationStatusLabel(locale: WikiLocale, status: string): string {
+  const messageKey: Partial<Record<string, WikiMessageKey>> = {
+    todo: "lintStatusTodo",
+    queued: "lintStatusQueued",
+    in_progress: "lintStatusInProgress",
+    running: "lintStatusRunning",
+    blocked: "lintStatusBlocked",
+    failed: "lintStatusFailed",
+    paused: "lintStatusPaused",
+    done: "lintStatusDone",
+  };
+  const key = messageKey[status];
+  return key ? wikiMessage(locale, key) : status;
 }
 
 function StatCard({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "danger" | "warn" }) {
@@ -4739,32 +4845,53 @@ function runStatusTone(status: string): Tone {
   return "default";
 }
 
-function runStatusLabel(status: string): string {
+function runStatusLabel(locale: WikiLocale, status: string): string {
   switch (status) {
     case "review_required":
-      return "review required";
+      return wikiMessage(locale, "reviewRequired");
     case "refused_cost_cap":
-      return "cost capped";
+      return wikiMessage(locale, "costCapped");
     case "source_ready":
-      return "source ready";
+      return wikiMessage(locale, "sourceReady");
+    case "running":
+      return wikiMessage(locale, "runStatusRunning");
+    case "succeeded":
+    case "completed":
+    case "done":
+      return wikiMessage(locale, "runStatusSucceeded");
+    case "failed":
+    case "error":
+      return wikiMessage(locale, "runStatusFailed");
+    case "queued":
+      return wikiMessage(locale, "runStatusQueued");
+    case "paused":
+      return wikiMessage(locale, "runStatusPaused");
+    case "blocked":
+      return wikiMessage(locale, "runStatusBlocked");
+    case "todo":
+      return wikiMessage(locale, "runStatusTodo");
     default:
       return status.replace(/_/g, " ");
   }
 }
 
-function HistoryTab({ context, overview }: { context: { companyId: string | null; companyPrefix?: string | null }; overview: OverviewData }) {
+function wikiRunStatusLabel(locale: WikiLocale, status: string): string {
+  return runStatusLabel(locale, status);
+}
+
+function HistoryTab({ context, locale, overview }: { context: { companyId: string | null; companyPrefix?: string | null }; locale: WikiLocale; overview: OverviewData }) {
   const isMobile = useIsMobileLayout();
   const projectId = overview.managedProject.projectId;
   const originKindPrefix = `plugin:${PLUGIN_ID}:operation`;
 
   if (!context.companyId) {
-    return <div style={{ padding: isMobile ? 16 : 24, flex: 1 }}><Callout>Choose a company to view LLM Wiki history.</Callout></div>;
+    return <div style={{ padding: isMobile ? 16 : 24, flex: 1 }}><Callout>{wikiMessage(locale, "chooseCompanyForHistory")}</Callout></div>;
   }
 
   if (!projectId) {
     return (
       <div style={{ padding: isMobile ? 16 : 24, flex: 1 }}>
-        <Callout tone="warn">The LLM Wiki operations project is not resolved yet. Reconcile the managed project in Settings, then history will show its issues here.</Callout>
+        <Callout tone="warn">{wikiMessage(locale, "historyProjectUnresolved")}</Callout>
       </div>
     );
   }
@@ -4786,33 +4913,36 @@ function HistoryTab({ context, overview }: { context: { companyId: string | null
 // Settings (tab) and the standalone host SettingsPage share this body.
 // ---------------------------------------------------------------------------
 
-function SettingsTab({ context, initialSection = "root" }: { context: { companyId: string | null; companyPrefix?: string | null }; initialSection?: SettingsSectionKey }) {
+function SettingsTab({ context, locale, initialSection = "root" }: { context: { companyId: string | null; companyPrefix?: string | null }; locale: WikiLocale; initialSection?: SettingsSectionKey }) {
   const isMobile = useIsMobileLayout();
   return (
     <div style={{ flex: 1, minHeight: isMobile ? "auto" : 0, overflow: isMobile ? "visible" : "auto", padding: isMobile ? "16px" : "24px 28px", minWidth: 0 }}>
-      <SettingsBody context={context} initialSection={initialSection} />
+      <SettingsBody context={context} locale={locale} initialSection={initialSection} />
     </div>
   );
 }
 
-const ROUTINE_FALLBACKS: Record<string, { title: string; cron: string }> = {
-  "cursor-window-processing": { title: "Process LLM Wiki updates", cron: "0 */6 * * *" },
-  "nightly-wiki-lint": { title: "Run LLM Wiki lint", cron: "0 3 * * *" },
-  "index-refresh": { title: "Refresh LLM Wiki index", cron: "0 * * * *" },
+const ROUTINE_FALLBACKS: Record<string, { sourceTitle: string; titleKey: WikiMessageKey; cron: string }> = {
+  "cursor-window-processing": { sourceTitle: "Process LLM Wiki updates", titleKey: "setupRoutineCursorWindowTitle", cron: "0 */6 * * *" },
+  "nightly-wiki-lint": { sourceTitle: "Run LLM Wiki lint", titleKey: "setupRoutineNightlyLintTitle", cron: "0 3 * * *" },
+  "index-refresh": { sourceTitle: "Refresh LLM Wiki index", titleKey: "setupRoutineIndexRefreshTitle", cron: "0 * * * *" },
 };
 
-const MANAGED_SKILL_LABELS: Record<string, string> = {
-  "wiki-maintainer": "LLM Wiki Maintainer",
-  "wiki-ingest": "Wiki Ingest",
-  "wiki-query": "Wiki Query",
-  "wiki-lint": "Wiki Lint",
-  "paperclip-distill": "Paperclip Distill",
-  "index-refresh": "Index Refresh",
+const MANAGED_SKILL_LABELS: Record<string, { sourceName: string; messageKey: WikiMessageKey }> = {
+  "wiki-maintainer": { sourceName: "LLM Wiki Maintainer", messageKey: "setupSkillWikiMaintainerName" },
+  "wiki-ingest": { sourceName: "Wiki Ingest", messageKey: "setupSkillIngestName" },
+  "wiki-query": { sourceName: "Wiki Query", messageKey: "setupSkillQueryName" },
+  "wiki-lint": { sourceName: "Wiki Lint", messageKey: "setupSkillLintName" },
+  "paperclip-distill": { sourceName: "Paperclip Distill", messageKey: "setupSkillPaperclipDistillName" },
+  "index-refresh": { sourceName: "Index Refresh", messageKey: "setupSkillIndexRefreshName" },
 };
 
-function routineFallbackFor(routine: ManagedRoutine) {
-  const key = routine.resourceKey?.split(":").pop() ?? "";
-  return ROUTINE_FALLBACKS[key] ?? { title: routine.resourceKey ?? "Managed routine", cron: "—" };
+function routineFallbackFor(routine: ManagedRoutine, locale: WikiLocale) {
+  const key = routineResourceKey(routine);
+  const fallback = key ? ROUTINE_FALLBACKS[key] : undefined;
+  return key && fallback
+    ? { title: routineDisplayTitle(routine, key, locale), cron: fallback.cron }
+    : { title: routine.routine?.title ?? routine.details?.title ?? routine.resourceKey ?? wikiMessage(locale, "setupManagedRoutineLabel"), cron: "—" };
 }
 
 function managedRoutineStatus(routine: ManagedRoutine) {
@@ -4826,7 +4956,25 @@ type RoutineHealthItem = {
 };
 
 function routineResourceKey(routine: ManagedRoutine) {
-  return routine.resourceKey?.split(":").pop() ?? "";
+  if (routine.pluginKey !== PLUGIN_ID || routine.resourceKind !== "routine") return null;
+  const resourceKey = routine.resourceKey ?? "";
+  const ownedKey = Object.keys(ROUTINE_FALLBACKS).find((key) =>
+    resourceKey === key
+    || resourceKey === `plugin:${PLUGIN_ID}:${key}`
+    || resourceKey === `${PLUGIN_ID}:routine:${key}`,
+  );
+  return ownedKey ?? null;
+}
+
+function routineDisplayTitle(routine: ManagedRoutine | undefined, key: string, locale: WikiLocale) {
+  const fallback = ROUTINE_FALLBACKS[key];
+  if (!fallback) return routine?.routine?.title ?? routine?.details?.title ?? routine?.resourceKey ?? wikiMessage(locale, "setupManagedRoutineLabel");
+  const currentTitle = routine?.routine?.title ?? routine?.details?.title;
+  const isOwnedResource = !routine || routineResourceKey(routine) === key;
+  if (!isOwnedResource) return currentTitle ?? routine?.resourceKey ?? wikiMessage(locale, "setupManagedRoutineLabel");
+  return currentTitle && currentTitle !== fallback.sourceTitle
+    ? currentTitle
+    : wikiMessage(locale, fallback.titleKey);
 }
 
 function managedAgentIsReady(resource: ManagedAgent) {
@@ -4841,55 +4989,68 @@ function managedSkillIsReady(resource: ManagedSkill) {
   return resource.status !== "missing" && Boolean(resource.skillId);
 }
 
-function managedResourceKey(resourceKey?: string | null) {
-  return resourceKey?.split(":").pop() ?? "";
+function skillLabel(resource: ManagedSkill, locale: WikiLocale) {
+  const currentName = resource.details?.name ?? resource.skill?.name;
+  const declaredLabel = MANAGED_SKILL_LABELS[resource.resourceKey ?? ""];
+  const isOwnedSkill = resource.pluginKey === PLUGIN_ID && resource.resourceKind === "skill";
+  if (isOwnedSkill && declaredLabel && (!currentName || currentName === declaredLabel.sourceName)) {
+    return wikiMessage(locale, declaredLabel.messageKey);
+  }
+  return currentName ?? wikiMessage(locale, "setupManagedSkillLabel");
 }
 
-function skillLabel(resource: ManagedSkill) {
-  const declaredLabel = MANAGED_SKILL_LABELS[managedResourceKey(resource.resourceKey)];
-  return declaredLabel ?? resource.details?.name ?? resource.skill?.name ?? "Managed skill";
-}
-
-function buildAgentHealthItems(managedAgent: ManagedAgent): RoutineHealthItem[] {
-  const agentName = managedAgent.details?.name ?? "Wiki Maintainer";
+function buildAgentHealthItems(managedAgent: ManagedAgent, locale: WikiLocale): RoutineHealthItem[] {
+  const sourceName = "Wiki Maintainer";
+  const currentName = managedAgent.details?.name;
+  const isOwnedMaintainer = managedAgent.source === "managed"
+    && managedAgent.resourceKey === `${PLUGIN_ID}:agent:wiki-maintainer`;
+  const agentName = isOwnedMaintainer && (!currentName || currentName === sourceName)
+    ? wikiMessage(locale, "setupWikiMaintainerName")
+    : currentName ?? wikiMessage(locale, "setupManagedAgentLabel");
   return [{
     label: agentName,
     ok: managedAgentIsReady(managedAgent) && !managedAgent.defaultDrift?.changedFiles.length,
     detail: managedAgent.source === "managed"
       ? managedAgent.defaultDrift?.changedFiles.length
-        ? `The Wiki Maintainer instructions differ from the plugin default: ${managedAgent.defaultDrift.changedFiles.join(", ")}.`
-        : "The plugin-managed Wiki Maintainer exists with current default instructions."
-      : "The settings page is using a selected maintainer instead of the plugin-managed Wiki Maintainer.",
+        ? wikiMessage(locale, "setupAgentManagedDrift", { files: managedAgent.defaultDrift.changedFiles.join(", ") })
+        : wikiMessage(locale, "setupAgentManagedCurrent")
+      : wikiMessage(locale, "setupAgentSelected"),
   }];
 }
 
-function buildProjectHealthItems(managedProject: ManagedProject): RoutineHealthItem[] {
-  const projectName = managedProject.details?.name ?? "LLM Wiki";
+function buildProjectHealthItems(managedProject: ManagedProject, locale: WikiLocale): RoutineHealthItem[] {
+  const sourceName = "LLM Wiki";
+  const currentName = managedProject.details?.name;
+  const isOwnedProject = managedProject.source === "managed"
+    && managedProject.resourceKey === `${PLUGIN_ID}:project:llm-wiki`;
+  const projectName = isOwnedProject && (!currentName || currentName === sourceName)
+    ? wikiMessage(locale, "setupLLMWikiProjectName")
+    : currentName ?? wikiMessage(locale, "setupManagedProjectLabel");
   return [{
     label: projectName,
     ok: managedProjectIsReady(managedProject),
     detail: managedProject.source === "managed"
-      ? "The plugin-managed LLM Wiki project exists."
-      : "The settings page is using a selected project instead of the plugin-managed LLM Wiki project.",
+      ? wikiMessage(locale, "setupProjectManaged")
+      : wikiMessage(locale, "setupProjectSelected"),
   }];
 }
 
-function buildSkillHealthItems(skills: ManagedSkill[]): RoutineHealthItem[] {
+function buildSkillHealthItems(skills: ManagedSkill[], locale: WikiLocale): RoutineHealthItem[] {
   if (skills.length === 0) {
     return [{
-      label: "Managed skill",
+      label: wikiMessage(locale, "setupManagedSkillLabel"),
       ok: false,
-      detail: "No plugin-managed skills are installed in the company skill library.",
+      detail: wikiMessage(locale, "setupNoManagedSkills"),
     }];
   }
   return skills.map((skill) => ({
-    label: skillLabel(skill),
+    label: skillLabel(skill, locale),
     ok: managedSkillIsReady(skill) && !skill.defaultDrift?.changedFiles.length,
     detail: managedSkillIsReady(skill)
       ? skill.defaultDrift?.changedFiles.length
-        ? `${skillLabel(skill)} differs from the plugin default: ${skill.defaultDrift.changedFiles.join(", ")}.`
-        : `${skillLabel(skill)} is installed in the company skill library.`
-      : `${skillLabel(skill)} is not installed in the company skill library.`,
+        ? wikiMessage(locale, "setupSkillDrift", { name: skillLabel(skill, locale), files: skill.defaultDrift.changedFiles.join(", ") })
+        : wikiMessage(locale, "setupSkillInstalled", { name: skillLabel(skill, locale) })
+      : wikiMessage(locale, "setupSkillMissing", { name: skillLabel(skill, locale) }),
   }));
 }
 
@@ -4897,14 +5058,20 @@ function buildRoutineHealthItems(
   routines: ManagedRoutine[],
   managedAgent: ManagedAgent,
   managedProject: ManagedProject,
+  locale: WikiLocale,
 ): RoutineHealthItem[] {
-  const routineByKey = new Map(routines.map((routine) => [routineResourceKey(routine), routine]));
+  const routineByKey = new Map<string, ManagedRoutine>();
+  for (const routine of routines) {
+    const key = routineResourceKey(routine);
+    if (key) routineByKey.set(key, routine);
+  }
   const expectedAgentId = managedAgent.source === "managed" ? managedAgent.agentId ?? null : null;
   const expectedProjectId = managedProject.source === "managed" ? managedProject.projectId ?? null : null;
   const items: RoutineHealthItem[] = [];
 
   for (const [key, fallback] of Object.entries(ROUTINE_FALLBACKS)) {
     const routine = routineByKey.get(key);
+    const fallbackTitle = routineDisplayTitle(routine, key, locale);
     const routineAgentId = routine?.routine?.assigneeAgentId ?? null;
     const routineProjectId = routine?.routine?.projectId ?? null;
     const missingRefs = routine?.missingRefs ?? [];
@@ -4915,30 +5082,33 @@ function buildRoutineHealthItems(
     const missingProject = Boolean(expectedProjectId && !routineProjectId);
     const blockedByManagedResources = !expectedAgentId || !expectedProjectId;
     const ok = Boolean(routine && !missing && missingRefs.length === 0 && !wrongAgent && !wrongProject && !missingAgent && !missingProject && !blockedByManagedResources);
-    let detail = `${fallback.title} is installed with the Wiki Maintainer and LLM Wiki project.`;
+    let detail = wikiMessage(locale, "setupRoutineHealthy", { routine: fallbackTitle });
     if (missing) {
-      detail = `${fallback.title} is not installed.`;
+      detail = wikiMessage(locale, "setupRoutineMissing", { routine: fallbackTitle });
     } else if (missingRefs.length > 0) {
-      detail = `${fallback.title} cannot resolve ${missingRefs.map((ref) => `${ref.resourceKind}:${ref.resourceKey}`).join(", ")}.`;
+      detail = wikiMessage(locale, "setupRoutineUnresolved", {
+        routine: fallbackTitle,
+        refs: missingRefs.map((ref) => `${ref.resourceKind}:${ref.resourceKey}`).join(", "),
+      });
     } else if (blockedByManagedResources) {
-      detail = `${fallback.title} cannot be validated until the managed agent and project are restored.`;
+      detail = wikiMessage(locale, "setupRoutineBlocked", { routine: fallbackTitle });
     } else if (wrongAgent || missingAgent) {
-      detail = `${fallback.title} is not assigned to the Wiki Maintainer.`;
+      detail = wikiMessage(locale, "setupRoutineWrongAgent", { routine: fallbackTitle });
     } else if (wrongProject || missingProject) {
-      detail = `${fallback.title} is not attached to the LLM Wiki project.`;
+      detail = wikiMessage(locale, "setupRoutineWrongProject", { routine: fallbackTitle });
     }
-    items.push({ label: fallback.title, ok, detail });
+    items.push({ label: fallbackTitle, ok, detail });
   }
 
   return items;
 }
 
-function RoutineHealthChecklist({ items }: { items: RoutineHealthItem[] }) {
+function RoutineHealthChecklist({ items, locale }: { items: RoutineHealthItem[]; locale: WikiLocale }) {
   return (
     <ManagedResourceHealthChecklist
       items={items}
-      ariaLabel="Wiki routines health checklist"
-      heading="Routine health"
+      ariaLabel={wikiMessage(locale, "setupRoutineHealthChecklist")}
+      heading={wikiMessage(locale, "setupRoutineHealthHeading")}
     />
   );
 }
@@ -4996,12 +5166,12 @@ function ManagedResourceHealthChecklist({
   );
 }
 
-function SkillHealthChecklist({ items }: { items: RoutineHealthItem[] }) {
+function SkillHealthChecklist({ items, locale }: { items: RoutineHealthItem[]; locale: WikiLocale }) {
   return (
     <ManagedResourceHealthChecklist
       items={items}
-      ariaLabel="Wiki skills health checklist"
-      heading="Skill health"
+      ariaLabel={wikiMessage(locale, "setupSkillHealthChecklist")}
+      heading={wikiMessage(locale, "setupSkillHealthHeading")}
     />
   );
 }
@@ -5021,12 +5191,38 @@ const SETTINGS_SECTIONS: ReadonlyArray<{
   { key: "events", label: "Ingestion Settings", description: "Paperclip event capture into the default space (issues, comments, documents)." },
 ];
 
+function settingsSectionLabel(locale: WikiLocale, key: SettingsSectionKey): string {
+  const messageKey: Record<SettingsSectionKey, WikiMessageKey> = {
+    root: "settingsSetup",
+    spaces: "settingsSpaces",
+    distillation: "settingsDistillation",
+    routines: "settingsRoutines",
+    lint: "settingsLint",
+    events: "settingsEvents",
+  };
+  return wikiMessage(locale, messageKey[key]);
+}
+
+function settingsSectionDescription(locale: WikiLocale, key: SettingsSectionKey): string {
+  const messageKey: Partial<Record<SettingsSectionKey, WikiMessageKey>> = {
+    spaces: "settingsSpacesDescription",
+    distillation: "settingsDistillationDescription",
+    routines: "settingsRoutinesDescription",
+    lint: "settingsLintDescription",
+    events: "settingsEventsDescription",
+  };
+  const selectedKey = messageKey[key];
+  return selectedKey ? wikiMessage(locale, selectedKey) : "";
+}
+
 function SettingsSectionButton({
   section,
+  locale,
   active,
   onSelect,
 }: {
   section: (typeof SETTINGS_SECTIONS)[number];
+  locale: WikiLocale;
   active: boolean;
   onSelect: () => void;
 }) {
@@ -5049,9 +5245,9 @@ function SettingsSectionButton({
         fontFamily: fontStack,
       }}
     >
-      <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>{section.label}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>{settingsSectionLabel(locale, section.key)}</span>
       {section.description ? (
-        <span style={{ fontSize: 11, lineHeight: 1.35, overflowWrap: "anywhere" }}>{section.description}</span>
+        <span style={{ fontSize: 11, lineHeight: 1.35, overflowWrap: "anywhere" }}>{settingsSectionDescription(locale, section.key)}</span>
       ) : null}
     </button>
   );
@@ -5099,22 +5295,10 @@ const PATH_PLATFORM_LABELS: Record<PathPlatform, string> = {
   linux: "Linux",
 };
 
-const PATH_PLATFORM_STEPS: Record<PathPlatform, string[]> = {
-  mac: [
-    "Open Finder and navigate to the folder.",
-    "Control-click the folder.",
-    "Hold Option, choose Copy as Pathname, then paste it here.",
-  ],
-  windows: [
-    "Open File Explorer and navigate to the folder.",
-    "Click the address bar to reveal the full path.",
-    "Copy the path and paste it here.",
-  ],
-  linux: [
-    "Open a terminal in the directory.",
-    "Run pwd to print the full path.",
-    "Copy the output and paste it here.",
-  ],
+const PATH_PLATFORM_STEP_KEYS: Record<PathPlatform, readonly WikiMessageKey[]> = {
+  mac: ["pathStepMac1", "pathStepMac2", "pathStepMac3"],
+  windows: ["pathStepWindows1", "pathStepWindows2", "pathStepWindows3"],
+  linux: ["pathStepLinux1", "pathStepLinux2", "pathStepLinux3"],
 };
 
 function detectPathPlatform(): PathPlatform {
@@ -5125,7 +5309,7 @@ function detectPathPlatform(): PathPlatform {
   return "mac";
 }
 
-function PathInstructionsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function PathInstructionsDialog({ open, onClose, locale }: { open: boolean; onClose: () => void; locale: WikiLocale }) {
   const [platform, setPlatform] = useState<PathPlatform>(detectPathPlatform);
 
   useEffect(() => {
@@ -5172,10 +5356,10 @@ function PathInstructionsDialog({ open, onClose }: { open: boolean; onClose: () 
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
           <div style={{ display: "grid", gap: 4 }}>
-            <h3 id="wiki-path-help-title" style={{ margin: 0, fontSize: 15, fontWeight: 650 }}>Get a full folder path</h3>
-            <Tiny>Paste an absolute path such as <Mono>/Users/you/company-wiki</Mono>.</Tiny>
+            <h3 id="wiki-path-help-title" style={{ margin: 0, fontSize: 15, fontWeight: 650 }}>{wikiMessage(locale, "pathHelpTitle")}</h3>
+            <Tiny>{wikiMessage(locale, "pathHelpDescription", { path: "/Users/you/company-wiki" })}</Tiny>
           </div>
-          <Button size="sm" variant="ghost" onClick={onClose} title="Close path help">Close</Button>
+          <Button size="sm" variant="ghost" onClick={onClose} title={wikiMessage(locale, "pathHelpClose")}>{wikiMessage(locale, "closeDialog")}</Button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, border: `1px solid ${tokens.border}`, borderRadius: 7, padding: 3 }}>
           {(Object.keys(PATH_PLATFORM_LABELS) as PathPlatform[]).map((key) => (
@@ -5199,7 +5383,7 @@ function PathInstructionsDialog({ open, onClose }: { open: boolean; onClose: () 
           ))}
         </div>
         <ol style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 8, fontSize: 13, lineHeight: 1.45 }}>
-          {PATH_PLATFORM_STEPS[platform].map((step) => <li key={step}>{step}</li>)}
+          {PATH_PLATFORM_STEP_KEYS[platform].map((key) => <li key={key}>{wikiMessage(locale, key)}</li>)}
         </ol>
       </div>
     </div>
@@ -5207,6 +5391,7 @@ function PathInstructionsDialog({ open, onClose }: { open: boolean; onClose: () 
 }
 
 function FolderPathPicker({
+  locale,
   value,
   onChange,
   onApply,
@@ -5215,6 +5400,7 @@ function FolderPathPicker({
   disabled,
   onRefresh,
 }: {
+  locale: WikiLocale;
   value: string;
   onChange: (value: string) => void;
   onApply: () => void;
@@ -5248,8 +5434,8 @@ function FolderPathPicker({
           <FolderOpenIcon />
         </span>
         <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
-          <span style={{ fontSize: 13, fontWeight: 650 }}>Local wiki folder</span>
-          <Tiny>Absolute path on this machine</Tiny>
+          <span style={{ fontSize: 13, fontWeight: 650 }}>{wikiMessage(locale, "localWikiFolder")}</span>
+          <Tiny>{wikiMessage(locale, "absolutePathOnMachine")}</Tiny>
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, padding: 12, alignItems: "center", flexWrap: "wrap" }}>
@@ -5259,11 +5445,11 @@ function FolderPathPicker({
           placeholder="/absolute/path/to/wiki-root"
           style={{ flex: "1 1 320px", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}
         />
-        <Button size="sm" onClick={() => setHelpOpen(true)}><FolderOpenIcon size={13} /> Choose</Button>
+        <Button size="sm" onClick={() => setHelpOpen(true)}><FolderOpenIcon size={13} /> {wikiMessage(locale, "chooseFolder")}</Button>
         <Button variant="primary" size="sm" onClick={onApply} loading={busy} disabled={disabled || !value.trim()}>{applyLabel}</Button>
-        {onRefresh ? <Button size="sm" variant="ghost" onClick={onRefresh}>Run health check</Button> : null}
+        {onRefresh ? <Button size="sm" variant="ghost" onClick={onRefresh}>{wikiMessage(locale, "runHealthCheck")}</Button> : null}
       </div>
-      <PathInstructionsDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <PathInstructionsDialog open={helpOpen} onClose={() => setHelpOpen(false)} locale={locale} />
     </div>
   );
 }
@@ -5273,21 +5459,21 @@ type FolderHealthItem = {
   ok: boolean;
 };
 
-function folderHealthItems(folder: FolderStatus): FolderHealthItem[] {
+function folderHealthItems(folder: FolderStatus, locale: WikiLocale): FolderHealthItem[] {
   return [
-    { label: "Path configured", ok: folder.configured },
-    { label: "Readable", ok: folder.readable },
-    { label: folder.access === "readWrite" ? "Writable" : "Read-only access", ok: folder.access === "read" || folder.writable },
-    { label: "Baseline files", ok: folder.missingFiles.length === 0 },
-    { label: "Wiki folders", ok: folder.missingDirectories.length === 0 },
+    { label: wikiMessage(locale, "folderPathConfigured"), ok: folder.configured },
+    { label: wikiMessage(locale, "folderReadable"), ok: folder.readable },
+    { label: wikiMessage(locale, folder.access === "readWrite" ? "folderWritable" : "folderReadOnly"), ok: folder.access === "read" || folder.writable },
+    { label: wikiMessage(locale, "folderBaselineFiles"), ok: folder.missingFiles.length === 0 },
+    { label: wikiMessage(locale, "wikiFolders"), ok: folder.missingDirectories.length === 0 },
   ];
 }
 
-function FolderHealthChecklist({ folder }: { folder: FolderStatus }) {
-  const items = folderHealthItems(folder);
+function FolderHealthChecklist({ folder, locale }: { folder: FolderStatus; locale: WikiLocale }) {
+  const items = folderHealthItems(folder, locale);
   return (
-    <div style={{ display: "grid", gap: 8 }} aria-label="Wiki root health checklist">
-      <div style={{ fontSize: 12, fontWeight: 650, color: tokens.muted }}>Health check</div>
+    <div style={{ display: "grid", gap: 8 }} aria-label={wikiMessage(locale, "wikiRootHealthChecklist")}>
+      <div style={{ fontSize: 12, fontWeight: 650, color: tokens.muted }}>{wikiMessage(locale, "folderHealthCheck")}</div>
       <div role="list" style={{ position: "relative", display: "grid", gap: 0, padding: "2px 0" }}>
         {items.length > 1 ? (
           <span
@@ -5331,18 +5517,41 @@ function FolderHealthChecklist({ folder }: { folder: FolderStatus }) {
 type MaintainerAgentOption = SettingsData["agentOptions"][number];
 type ProjectOption = SettingsData["projectOptions"][number];
 
-function agentStatusLabel(status?: string | null) {
-  if (!status) return "unknown";
-  return status.replace(/_/g, " ");
+function managedStatusLabel(locale: WikiLocale, status?: string | null) {
+  if (!status) return wikiMessage(locale, "setupStatusUnknown");
+  const messageKey: Partial<Record<string, WikiMessageKey>> = {
+    unknown: "setupStatusUnknown",
+    idle: "setupStatusIdle",
+    active: "setupStatusActive",
+    paused: "setupStatusPaused",
+    pending_approval: "setupStatusPendingApproval",
+    running: "setupStatusRunning",
+    in_progress: "setupStatusInProgress",
+    blocked: "setupStatusBlocked",
+    done: "setupStatusDone",
+    completed: "setupStatusDone",
+    failed: "setupStatusFailed",
+    error: "setupStatusError",
+    created: "setupStatusCreated",
+    resolved: "setupStatusResolved",
+    missing: "setupStatusMissing",
+    missing_refs: "setupStatusMissingRefs",
+    archived: "setupStatusArchived",
+  };
+  const key = messageKey[status];
+  return key ? wikiMessage(locale, key) : status.replace(/_/g, " ");
 }
 
-function projectStatusLabel(status?: string | null) {
-  if (!status) return "unknown";
-  return status.replace(/_/g, " ");
+function agentStatusLabel(locale: WikiLocale, status?: string | null) {
+  return managedStatusLabel(locale, status);
 }
 
-function adapterTypeLabel(adapterType?: string | null) {
-  if (!adapterType) return "unknown adapter";
+function projectStatusLabel(locale: WikiLocale, status?: string | null) {
+  return managedStatusLabel(locale, status);
+}
+
+function adapterTypeLabel(adapterType: string | null | undefined, locale: WikiLocale) {
+  if (!adapterType) return wikiMessage(locale, "setupUnknownAdapter");
   return adapterType.replace(/_/g, " ");
 }
 
@@ -5375,7 +5584,7 @@ function AgentAvatar({ agent, size = 30 }: { agent: Pick<MaintainerAgentOption, 
   );
 }
 
-function AgentOptionLabel({ agent, muted = false }: { agent: MaintainerAgentOption; muted?: boolean }) {
+function AgentOptionLabel({ agent, locale, muted = false }: { agent: MaintainerAgentOption; locale: WikiLocale; muted?: boolean }) {
   return (
     <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
       <AgentAvatar agent={agent} />
@@ -5384,7 +5593,7 @@ function AgentOptionLabel({ agent, muted = false }: { agent: MaintainerAgentOpti
           {agent.name}
         </span>
         <span style={{ fontSize: 11, color: tokens.muted, textTransform: "capitalize" }}>
-          {agentStatusLabel(agent.status)} · {adapterTypeLabel(agent.adapterType)}
+          {agentStatusLabel(locale, agent.status)} · {adapterTypeLabel(agent.adapterType, locale)}
         </span>
       </span>
     </span>
@@ -5393,9 +5602,11 @@ function AgentOptionLabel({ agent, muted = false }: { agent: MaintainerAgentOpti
 
 function MaintainerAgentLink({
   agent,
+  locale,
   hrefProps,
 }: {
   agent: MaintainerAgentOption;
+  locale: WikiLocale;
   hrefProps?: Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "style">;
 }) {
   return (
@@ -5413,14 +5624,18 @@ function MaintainerAgentLink({
       <AgentAvatar agent={agent} />
       <span style={{ display: "grid", gap: 1, minWidth: 0, textAlign: "left" }}>
         <span style={{ fontSize: 13, fontWeight: 650, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          Resolve agent wiki maintainer
+          {wikiMessage(locale, "setupResolveAgentLabel")}
         </span>
         <span style={{ fontSize: 11, color: tokens.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {agent.name} · {agentStatusLabel(agent.status)} · {adapterTypeLabel(agent.adapterType)}
+          {agent.name} · {agentStatusLabel(locale, agent.status)} · {adapterTypeLabel(agent.adapterType, locale)}
         </span>
       </span>
     </a>
   );
+}
+
+function formatDistillationCount(count: number, locale: WikiLocale): string {
+  return new Intl.NumberFormat(locale).format(count);
 }
 
 // ---------------------------------------------------------------------------
@@ -5430,7 +5645,7 @@ function MaintainerAgentLink({
 // existing managed-routine and plugin-action endpoints.
 // ---------------------------------------------------------------------------
 
-function DistillationSettingsPanel({ context, settings }: { context: { companyId: string | null }; settings: SettingsData }) {
+function DistillationSettingsPanel({ context, settings, locale }: { context: { companyId: string | null }; settings: SettingsData; locale: WikiLocale }) {
   const overview = useDistillationOverview(context.companyId);
   const distillNow = usePluginAction("distill-paperclip-now");
   const enableActiveProjects = usePluginAction("enable-paperclip-distillation-active-projects");
@@ -5443,6 +5658,10 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
   const counts = data?.counts ?? { cursors: 0, runningRuns: 0, failedRuns24h: 0, reviewRequired: 0 };
   const isConfigured = cursors.length > 0;
   const autoApplyRestriction = settings.distillationPolicy?.autoApplyRestriction ?? null;
+  const publicDeploymentRestriction = autoApplyRestriction === wikiMessage("en", "distillationPublicDeploymentRestriction")
+    && settings.distillationPolicy?.autoApplyAllowed === false
+    && settings.distillationPolicy.deploymentMode === "authenticated"
+    && settings.distillationPolicy.deploymentExposure === "public";
 
   const projectsCovered = useMemo(() => {
     const set = new Set<string>();
@@ -5455,7 +5674,7 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
   async function runDistillNow() {
     if (!context.companyId) return;
     if (cursors.length === 0) {
-      toast({ tone: "warn", title: "Distill now needs at least one cursor" });
+      toast({ tone: "warn", title: wikiMessage(locale, "distillationNeedsCursor") });
       return;
     }
     setBusy("distill-now");
@@ -5466,12 +5685,12 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
       });
       toast({
         tone: "success",
-        title: "Distill now queued",
-        body: "Wiki Maintainer will scan changed projects in the company and write into the default wiki space.",
+        title: wikiMessage(locale, "distillationNowQueued"),
+        body: wikiMessage(locale, "distillationNowQueuedBody"),
       });
       overview.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Distill now failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "distillationNowFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(null);
     }
@@ -5487,14 +5706,14 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
       const count = result.selectedProjects?.length ?? 0;
       toast({
         tone: count > 0 ? "success" : "warn",
-        title: count > 0 ? "Distillation enabled" : "No active projects found",
+        title: count > 0 ? wikiMessage(locale, "distillationEnabled") : wikiMessage(locale, "distillationNoActiveProjects"),
         body: count > 0
-          ? `${count} active project${count === 1 ? "" : "s"} added to the distillation cursor set.`
-          : "Create or resume a project, then enable distillation again.",
+          ? wikiMessage(locale, count === 1 ? "distillationProjectsAdded" : "distillationProjectsAddedMany", { count: formatDistillationCount(count, locale) })
+          : wikiMessage(locale, "distillationEnableProjectsHelp"),
       });
       overview.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Enable distillation failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "distillationEnableFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(null);
     }
@@ -5504,7 +5723,7 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
     if (!context.companyId || cursors.length === 0) return;
     const target = cursors.find((cursor) => cursor.projectId) ?? cursors[0];
     if (!target.projectId && !target.rootIssueId) {
-      toast({ tone: "warn", title: "Backfill needs a project or root issue scope" });
+      toast({ tone: "warn", title: wikiMessage(locale, "distillationBackfillNeedsScope") });
       return;
     }
     setBusy("backfill");
@@ -5514,17 +5733,30 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
         projectId: target.projectId ?? undefined,
         rootIssueId: target.rootIssueId ?? undefined,
       });
-      toast({ tone: "success", title: "Backfill queued", body: target.projectName ?? target.rootIssueIdentifier ?? "Selected scope" });
+      toast({ tone: "success", title: wikiMessage(locale, "distillationBackfillQueued"), body: target.projectName ?? target.rootIssueIdentifier ?? wikiMessage(locale, "distillationSelectedScope") });
       overview.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Backfill failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "distillationBackfillFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(null);
     }
   }
 
   if (overview.loading && !data) {
-    return <Tiny>Loading distillation overview…</Tiny>;
+    return <Tiny>{wikiMessage(locale, "distillationOverviewLoading")}</Tiny>;
+  }
+
+  if (overview.error) {
+    return (
+      <div style={{ display: "grid", justifyItems: "start", gap: 8 }}>
+        <Callout tone="danger">
+          {wikiMessage(locale, "distillationOverviewFailed")} {overview.error.message}
+        </Callout>
+        <Button variant="ghost" size="sm" onClick={() => overview.refresh()}>
+          <RefreshIcon size={12} /> {wikiMessage(locale, "distillationRefresh")}
+        </Button>
+      </div>
+    );
   }
 
   if (!isConfigured) {
@@ -5535,48 +5767,44 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12 }}>
               <SparklesIcon size={36} />
               <div>
-                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>Distillation is off</h3>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>{wikiMessage(locale, "distillationOff")}</h3>
                 <Tiny style={{ marginTop: 6, fontSize: 13, color: tokens.fg, lineHeight: 1.55, maxWidth: 540 }}>
-                  When enabled, the Wiki Maintainer reads Paperclip issues, comments, and documents for this
-                  company and keeps <Mono>wiki/projects/&lt;slug&gt;/standup.md</Mono> plus <Mono>wiki/projects/&lt;slug&gt;/index.md</Mono> pages in the
-                  <strong> default wiki space</strong>. Pages stay marked stale until a cursor window succeeds -
-                  they never imply live state.
+                  {wikiMessage(locale, "distillationOffDescriptionPrefix")} <Mono>wiki/projects/&lt;slug&gt;/standup.md</Mono> {wikiMessage(locale, "distillationOffDescriptionJoin")} <Mono>wiki/projects/&lt;slug&gt;/index.md</Mono> {wikiMessage(locale, "distillationOffDescriptionMiddle")} <strong>{wikiMessage(locale, "distillationOffDescriptionDefault")}</strong>. {wikiMessage(locale, "distillationOffDescriptionSuffix")}
                 </Tiny>
                 <Tiny style={{ marginTop: 6, fontSize: 13, color: tokens.fg, lineHeight: 1.55, maxWidth: 540 }}>
-                  Other spaces do not receive Paperclip-derived pages yet. They stay on manual and raw-file
-                  ingest until per-space Paperclip ingestion profiles ship.
+                  {wikiMessage(locale, "distillationOtherSpacesWarning")}
                 </Tiny>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <Button variant="primary" size="md" onClick={enableForActiveProjects} loading={busy === "enable-active-projects"}>
-                  <SparklesIcon size={14} /> Enable for active projects
+                  <SparklesIcon size={14} /> {wikiMessage(locale, "distillationEnableActiveProjects")}
                 </Button>
-                <Button variant="default" size="md" onClick={() => overview.refresh()}>Configure manually</Button>
+                <Button variant="default" size="md" onClick={() => overview.refresh()}>{wikiMessage(locale, "distillationConfigureManually")}</Button>
               </div>
-              <Tiny>Suggested defaults: 3 active projects in the default space · all-section auto-apply where allowed · routines paused for 24h.</Tiny>
+              <Tiny>{wikiMessage(locale, "distillationSuggestedDefaults")}</Tiny>
             </div>
           </CardBody>
         </Card>
 
         <div style={{ display: "grid", gap: 12, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
           <Card>
-            <CardHeader title="What gets created" />
+            <CardHeader title={wikiMessage(locale, "distillationWhatGetsCreated")} />
             <CardBody padding={14}>
               <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: tokens.muted, lineHeight: 1.5 }}>
-                <li>Project overviews at <Mono>wiki/projects/&lt;slug&gt;/index.md</Mono></li>
-                <li>Executive standups at <Mono>wiki/projects/&lt;slug&gt;/standup.md</Mono></li>
-                <li>Decisions and history under <Mono>wiki/projects/&lt;slug&gt;/</Mono></li>
-                <li>Source bundles cached under <Mono>raw/distill/</Mono></li>
+                <li>{wikiMessage(locale, "distillationProjectOverviews")} <Mono>wiki/projects/&lt;slug&gt;/index.md</Mono></li>
+                <li>{wikiMessage(locale, "distillationExecutiveStandups")} <Mono>wiki/projects/&lt;slug&gt;/standup.md</Mono></li>
+                <li>{wikiMessage(locale, "distillationDecisionsHistory")} <Mono>wiki/projects/&lt;slug&gt;/</Mono></li>
+                <li>{wikiMessage(locale, "distillationSourceBundlesCached")} <Mono>raw/distill/</Mono></li>
               </ul>
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="What it never does" />
+            <CardHeader title={wikiMessage(locale, "distillationWhatNeverHappens")} />
             <CardBody padding={14}>
               <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: tokens.muted, lineHeight: 1.5 }}>
-                <li>Read across companies — strict per-company isolation.</li>
-                <li>Re-distill its own plugin operation issues.</li>
-                <li>Auto-apply patches when source hashes drift.</li>
+                <li>{wikiMessage(locale, "distillationNeverCrossCompanies")}</li>
+                <li>{wikiMessage(locale, "distillationNeverReadOwnOperations")}</li>
+                <li>{wikiMessage(locale, "distillationNeverApplyDriftedPatches")}</li>
               </ul>
             </CardBody>
           </Card>
@@ -5589,81 +5817,83 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
     <div style={{ display: "grid", gap: 16, minWidth: 0 }}>
       {autoApplyRestriction ? (
         <Callout tone="warn">
-          {autoApplyRestriction} The plugin ignores auto-apply requests from config and manual distill actions on this instance.
+          {publicDeploymentRestriction ? wikiMessage(locale, "distillationPublicDeploymentRestriction") : autoApplyRestriction} {wikiMessage(locale, "distillationAutoApplyRestrictionSuffix")}
         </Callout>
       ) : null}
       <Callout>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <InfoIcon size={16} />
-            <strong style={{ fontSize: 13 }}>Active for {projectsCovered} project{projectsCovered === 1 ? "" : "s"} · {counts.cursors} cursor{counts.cursors === 1 ? "" : "s"} catching up · default space</strong>
+            <strong style={{ fontSize: 13 }}>{wikiMessage(locale, "distillationActiveSummary", {
+              projects: wikiMessage(locale, projectsCovered === 1 ? "distillationProjectOne" : "distillationProjectMany", { count: formatDistillationCount(projectsCovered, locale) }),
+              cursors: wikiMessage(locale, counts.cursors === 1 ? "distillationCursorOne" : "distillationCursorMany", { count: formatDistillationCount(counts.cursors, locale) }),
+            })}</strong>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <Button variant="ghost" size="sm" onClick={() => overview.refresh()}><RefreshIcon size={12} /> Refresh</Button>
-            <Button variant="primary" size="sm" onClick={runDistillNow} loading={busy === "distill-now"}><SparklesIcon size={12} /> Distill now</Button>
+            <Button variant="ghost" size="sm" onClick={() => overview.refresh()}><RefreshIcon size={12} /> {wikiMessage(locale, "distillationRefresh")}</Button>
+            <Button variant="primary" size="sm" onClick={runDistillNow} loading={busy === "distill-now"}><SparklesIcon size={12} /> {wikiMessage(locale, "distillationNow")}</Button>
           </div>
         </div>
         <Tiny style={{ marginTop: 6 }}>
-          Distillation runs on the assigned Wiki Maintainer agent and writes only into the default space.
+          {wikiMessage(locale, "distillationAgentWritesDefault")}
         </Tiny>
       </Callout>
 
       <Card>
-        <CardHeader title="Source filters" />
+        <CardHeader title={wikiMessage(locale, "distillationSourceFilters")} />
         <CardBody padding={14}>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
             <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 6 }}>
-              <legend style={{ fontSize: 12, color: tokens.muted, marginBottom: 4 }}>Issue scope</legend>
-              <CheckboxRow label="Active projects" defaultChecked help="Cursors are created for projects with recent activity." />
-              <CheckboxRow label="Root issues marked distillable" defaultChecked />
-              <CheckboxRow label="All company issues" help="May create large source windows." />
+              <legend style={{ fontSize: 12, color: tokens.muted, marginBottom: 4 }}>{wikiMessage(locale, "distillationIssueScope")}</legend>
+              <CheckboxRow label={wikiMessage(locale, "distillationActiveProjects")} defaultChecked help={wikiMessage(locale, "distillationActiveProjectsHelp")} />
+              <CheckboxRow label={wikiMessage(locale, "distillationRootIssues")} defaultChecked />
+              <CheckboxRow label={wikiMessage(locale, "distillationAllCompanyIssues")} help={wikiMessage(locale, "distillationLargeWindowsWarning")} />
               <Tiny>
-                These filters narrow the Paperclip source scope. The destination is always the default
-                wiki space in Phase 1.
+                {wikiMessage(locale, "distillationScopeDescription")}
               </Tiny>
-              <Tiny>Plugin-operation issues are always excluded to prevent feedback loops.</Tiny>
+              <Tiny>{wikiMessage(locale, "distillationPluginIssuesExcluded")}</Tiny>
             </fieldset>
             <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 6 }}>
-              <legend style={{ fontSize: 12, color: tokens.muted, marginBottom: 4 }}>Source kinds</legend>
-              <CheckboxRow label="Issue title + description" defaultChecked locked />
-              <CheckboxRow label="Comments (ranked, clipped)" defaultChecked />
-              <CheckboxRow label="Documents (plan, spec, report)" defaultChecked />
-              <CheckboxRow label="Work products / attachments" suffix="coming soon" />
-              <Tiny>Heartbeats and hidden documents are never included.</Tiny>
+              <legend style={{ fontSize: 12, color: tokens.muted, marginBottom: 4 }}>{wikiMessage(locale, "distillationSourceKinds")}</legend>
+              <CheckboxRow label={wikiMessage(locale, "distillationIssueTitleDescription")} defaultChecked locked />
+              <CheckboxRow label={wikiMessage(locale, "distillationRankedComments")} defaultChecked />
+              <CheckboxRow label={wikiMessage(locale, "distillationDocuments")} defaultChecked />
+              <CheckboxRow label={wikiMessage(locale, "distillationWorkProductsAttachments")} suffix={wikiMessage(locale, "distillationComingSoon")} />
+              <Tiny>{wikiMessage(locale, "distillationExcludedSourceKinds")}</Tiny>
             </fieldset>
           </div>
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Cursor windows" />
+        <CardHeader title={wikiMessage(locale, "distillationCursorWindows")} />
         <CardBody padding={14}>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
-            <SettingField label="Max source characters per project" hint="Source bundles above this size are clipped and the page warns 'source clipped'.">
+            <SettingField label={wikiMessage(locale, "distillationMaxSourceCharacters")} hint={wikiMessage(locale, "distillationMaxSourceCharactersHelp")}>
               <TextInput defaultValue="48000" />
             </SettingField>
-            <SettingField label="Min source age before processing" hint="Debounces a hot project so a flurry of comments collapses into one cursor window.">
-              <SelectInput defaultValue="15" options={[["5", "5 min"], ["15", "15 min"], ["30", "30 min"], ["60", "1 hour"]]} />
+            <SettingField label={wikiMessage(locale, "distillationMinSourceAge")} hint={wikiMessage(locale, "distillationMinSourceAgeHelp")}>
+              <SelectInput defaultValue="15" options={[["5", wikiMessage(locale, "distillationMinuteMany", { count: 5 })], ["15", wikiMessage(locale, "distillationMinuteMany", { count: 15 })], ["30", wikiMessage(locale, "distillationMinuteMany", { count: 30 })], ["60", wikiMessage(locale, "distillationHourOne", { count: 1 })]]} />
             </SettingField>
-            <SettingField label="Max cursor windows per routine run" hint="Routine runs that hit this cap split the remainder into the next routine fire.">
+            <SettingField label={wikiMessage(locale, "distillationMaxWindowsPerRoutine")} hint={wikiMessage(locale, "distillationMaxWindowsPerRoutineHelp")}>
               <TextInput defaultValue="6" />
             </SettingField>
-            <SettingField label="Stale window threshold" hint="After this, project pages render a 'Stale' badge until a successful run advances the cursor.">
-              <SelectInput defaultValue="72" options={[["24", "24 h"], ["48", "48 h"], ["72", "72 h"], ["168", "7 days"]]} />
+            <SettingField label={wikiMessage(locale, "distillationStaleWindowThreshold")} hint={wikiMessage(locale, "distillationStaleWindowHelp")}>
+              <SelectInput defaultValue="72" options={[["24", wikiMessage(locale, "distillationHourMany", { count: 24 })], ["48", wikiMessage(locale, "distillationHourMany", { count: 48 })], ["72", wikiMessage(locale, "distillationHourMany", { count: 72 })], ["168", wikiMessage(locale, "distillationDayMany", { count: 7 })]]} />
             </SettingField>
           </div>
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Agent execution" />
+        <CardHeader title={wikiMessage(locale, "distillationAgentExecution")} />
         <CardBody padding={14}>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
-            <SettingField label="Assigned maintainer" hint="Model selection comes from the agent adapter and its runtime config. The plugin does not choose Claude/Codex/Gemini models here.">
+            <SettingField label={wikiMessage(locale, "distillationAssignedMaintainer")} hint={wikiMessage(locale, "distillationAssignedMaintainerHelp")}>
               <div style={{ minHeight: 34, display: "flex", alignItems: "center", border: `1px solid ${tokens.border}`, borderRadius: 6, padding: "6px 10px", fontSize: 13 }}>
                 {settings.managedAgent.details
-                  ? `${settings.managedAgent.details.name} · ${adapterTypeLabel(settings.managedAgent.details.adapterType)}`
-                  : "No maintainer agent resolved"}
+                  ? `${settings.managedAgent.details.name} · ${adapterTypeLabel(settings.managedAgent.details.adapterType, locale)}`
+                  : wikiMessage(locale, "distillationNoMaintainer")}
               </div>
             </SettingField>
           </div>
@@ -5671,43 +5901,43 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
       </Card>
 
       <Card>
-        <CardHeader title="Auto-apply policy" />
+        <CardHeader title={wikiMessage(locale, "distillationAutoApplyPolicy")} />
         <CardBody padding={14}>
           <div style={{ display: "grid", gap: 8 }}>
-            <RadioRow name="autoapply" value="never" label="Never — every patch goes to review-required." />
-            <RadioRow name="autoapply" value="status" label="Executive-status sections only — standup, current direction, and risks." />
-            <RadioRow name="autoapply" value="all" label="All sections — apply when source hash matches and confidence ≥ 0.8 (default)." defaultChecked />
-            <Tiny>Stale-hash collisions always fall through to review, regardless of policy.</Tiny>
+            <RadioRow name="autoapply" value="never" label={wikiMessage(locale, "distillationAutoApplyNever")} />
+            <RadioRow name="autoapply" value="status" label={wikiMessage(locale, "distillationAutoApplyStatus")} />
+            <RadioRow name="autoapply" value="all" label={wikiMessage(locale, "distillationAutoApplyAll")} defaultChecked />
+            <Tiny>{wikiMessage(locale, "distillationStaleHashWarning")}</Tiny>
           </div>
         </CardBody>
       </Card>
 
       <Card>
         <CardHeader
-          title="Backfill"
-          right={<Button variant="default" size="sm" onClick={runBackfill} loading={busy === "backfill"}>Queue backfill</Button>}
+          title={wikiMessage(locale, "distillationBackfill")}
+          right={<Button variant="default" size="sm" onClick={runBackfill} loading={busy === "backfill"}>{wikiMessage(locale, "distillationQueueBackfill")}</Button>}
         />
         <CardBody padding={14}>
-          <Tiny style={{ marginBottom: 6 }}>Backfills replay a bounded source window for a single scope so newly-enabled projects can catch up to fresh state.</Tiny>
+          <Tiny style={{ marginBottom: 6 }}>{wikiMessage(locale, "distillationBackfillDescription")}</Tiny>
           <div style={{ display: "grid", gap: 8, fontSize: 13 }}>
-            <PropRow label="Default scope" value={cursors.find((c) => c.projectName)?.projectName ?? cursors[0]?.scopeKey ?? "—"} />
-            <PropRow label="Cursors active" value={String(counts.cursors)} />
-            <PropRow label="Runs in flight" value={String(counts.runningRuns)} />
-            <PropRow label="Failed (24h)" value={String(counts.failedRuns24h)} />
-            <PropRow label="Review queue" value={String(counts.reviewRequired)} />
+            <PropRow label={wikiMessage(locale, "distillationDefaultScope")} value={cursors.find((c) => c.projectName)?.projectName ?? cursors[0]?.scopeKey ?? "—"} />
+            <PropRow label={wikiMessage(locale, "distillationCursorsActive")} value={formatDistillationCount(counts.cursors, locale)} />
+            <PropRow label={wikiMessage(locale, "distillationRunsInFlight")} value={formatDistillationCount(counts.runningRuns, locale)} />
+            <PropRow label={wikiMessage(locale, "distillationFailed24Hours")} value={formatDistillationCount(counts.failedRuns24h, locale)} />
+            <PropRow label={wikiMessage(locale, "distillationReviewQueue")} value={formatDistillationCount(counts.reviewRequired, locale)} />
           </div>
         </CardBody>
       </Card>
 
       <Tiny>
-        Active cursors:&nbsp;
+        {wikiMessage(locale, "distillationActiveCursors")}&nbsp;
         {cursors.slice(0, 6).map((cursor, idx) => (
           <span key={cursor.id}>
             {idx > 0 ? " · " : ""}
             {cursor.projectName ?? cursor.rootIssueIdentifier ?? cursor.scopeKey}
           </span>
         ))}
-        {cursors.length > 6 ? <span>{` +${cursors.length - 6} more`}</span> : null}
+        {cursors.length > 6 ? <span>{` ${wikiMessage(locale, "distillationMoreCursors", { count: formatDistillationCount(cursors.length - 6, locale) })}`}</span> : null}
       </Tiny>
     </div>
   );
@@ -5785,7 +6015,7 @@ function SelectInput({ defaultValue, options }: { defaultValue: string; options:
   );
 }
 
-function SettingsBody({ context, initialSection = "root" }: { context: { companyId: string | null; companyPrefix?: string | null }; initialSection?: SettingsSectionKey }) {
+function SettingsBody({ context, locale, initialSection = "root" }: { context: { companyId: string | null; companyPrefix?: string | null }; locale: WikiLocale; initialSection?: SettingsSectionKey }) {
   const settings = useSettings(context.companyId);
   const hostNavigation = useHostNavigation();
   const { pathname } = useHostLocation();
@@ -5831,10 +6061,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     setActiveSettingsSection(initialSection);
   }, [initialSection]);
 
-  if (!context.companyId) return <Callout>Choose a company to view LLM Wiki settings.</Callout>;
-  if (settings.loading) return <Tiny>Loading settings…</Tiny>;
+  if (!context.companyId) return <Callout>{wikiMessage(locale, "settingsChooseCompany")}</Callout>;
+  if (settings.loading) return <Tiny>{wikiMessage(locale, "settingsLoading")}</Tiny>;
   if (settings.error) return <Callout tone="danger">{settings.error.message}</Callout>;
-  if (!settings.data) return <Tiny>No settings available.</Tiny>;
+  if (!settings.data) return <Tiny>{wikiMessage(locale, "settingsUnavailable")}</Tiny>;
 
   const data = settings.data;
   const maintainerFallbackAgent: MaintainerAgentOption | null = data.managedAgent.agentId
@@ -5868,27 +6098,27 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     ? `/projects/${data.managedProject.projectId}`
     : null;
   const managedRoutines = data.managedRoutines ?? (data.managedRoutine ? [data.managedRoutine] : []);
-  const agentHealthItems = buildAgentHealthItems(data.managedAgent);
+  const agentHealthItems = buildAgentHealthItems(data.managedAgent, locale);
   const agentHealthWarnings = agentHealthItems.filter((item) => !item.ok);
-  const routineHealthItems = buildRoutineHealthItems(managedRoutines, data.managedAgent, data.managedProject);
+  const routineHealthItems = buildRoutineHealthItems(managedRoutines, data.managedAgent, data.managedProject, locale);
   const routineHealthWarnings = routineHealthItems.filter((item) => !item.ok);
-  const projectHealthItems = buildProjectHealthItems(data.managedProject);
+  const projectHealthItems = buildProjectHealthItems(data.managedProject, locale);
   const projectHealthWarnings = projectHealthItems.filter((item) => !item.ok);
   const managedSkills = data.managedSkills ?? [];
-  const skillHealthItems = buildSkillHealthItems(managedSkills);
+  const skillHealthItems = buildSkillHealthItems(managedSkills, locale);
   const skillHealthWarnings = skillHealthItems.filter((item) => !item.ok);
   const configurationErrors = [
-    ...(!data.folder.healthy ? ["Wiki root folder"] : []),
-    ...(agentHealthWarnings.length > 0 ? ["Managed agents"] : []),
-    ...(skillHealthWarnings.length > 0 ? ["Managed skills"] : []),
-    ...(projectHealthWarnings.length > 0 ? ["Managed projects"] : []),
-    ...(routineHealthWarnings.length > 0 ? ["Managed routines"] : []),
+    ...(!data.folder.healthy ? ["settingsWikiRootFolder" as const] : []),
+    ...(agentHealthWarnings.length > 0 ? ["settingsManagedAgents" as const] : []),
+    ...(skillHealthWarnings.length > 0 ? ["settingsManagedSkills" as const] : []),
+    ...(projectHealthWarnings.length > 0 ? ["settingsManagedProjects" as const] : []),
+    ...(routineHealthWarnings.length > 0 ? ["settingsManagedRoutines" as const] : []),
   ];
   const hasConfigurationErrors = configurationErrors.length > 0;
   const projectFallbackOption: ProjectOption | null = data.managedProject.projectId
     ? {
         id: data.managedProject.projectId,
-        name: data.managedProject.details?.name ?? "Current project",
+        name: data.managedProject.details?.name ?? wikiMessage(locale, "setupCurrentProject"),
         status: data.managedProject.details?.status ?? data.managedProject.status,
         color: data.managedProject.details?.color ?? null,
       }
@@ -5900,14 +6130,17 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
   const currentProjectOption = projectOptions.find((project) => project.id === effectiveSelectedProjectId) ?? projectFallbackOption;
   const currentEventPolicy = eventPolicy ?? data.eventIngestion;
   const managedRoutineItems: ManagedRoutinesListItemWithDrift[] = managedRoutines.map((routine) => {
-    const fallback = routineFallbackFor(routine);
+    const fallback = routineFallbackFor(routine, locale);
+    const ownedRoutineKey = routineResourceKey(routine);
     const key = routine.resourceKey ?? routine.routineId ?? fallback.title;
     const status = managedRoutineStatus(routine);
     const assigneeAgentId = routine.routine?.assigneeAgentId ?? routine.details?.assigneeAgentId ?? null;
 
     return {
       key,
-      title: routine.routine?.title ?? routine.details?.title ?? fallback.title,
+      title: ownedRoutineKey
+        ? routineDisplayTitle(routine, ownedRoutineKey, locale)
+        : routine.routine?.title ?? routine.details?.title ?? fallback.title,
       status: status === "missing" || status === "missing_refs" ? "paused" : status,
       routineId: routine.routineId ?? routine.routine?.id ?? null,
       href: routine.routineId ? `/routines/${routine.routineId}` : null,
@@ -5944,10 +6177,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     setFolderBusy(true);
     try {
       await bootstrap({ companyId: context.companyId, path: folderPath.trim() });
-      toast({ tone: "success", title: "Folder updated" });
+      toast({ tone: "success", title: wikiMessage(locale, "folderUpdated") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Folder update failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "folderUpdateFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setFolderBusy(false);
     }
@@ -5959,10 +6192,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     setAgentBusy(true);
     try {
       await selectAgent({ companyId: context.companyId, agentId });
-      toast({ tone: "success", title: "Maintainer agent selected" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupAgentSelectedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Agent selection failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupAgentSelectFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setAgentBusy(false);
     }
@@ -5974,10 +6207,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     setProjectBusy(true);
     try {
       await selectProject({ companyId: context.companyId, projectId });
-      toast({ tone: "success", title: "Project selected" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupProjectSelectedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Project selection failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupProjectSelectFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setProjectBusy(false);
     }
@@ -5989,10 +6222,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     try {
       const next = await updateEventIngestion({ companyId: context.companyId, ...eventPolicy }) as EventIngestionSettings;
       setEventPolicy(next);
-      toast({ tone: "success", title: "Event ingestion controls saved" });
+      toast({ tone: "success", title: wikiMessage(locale, "eventIngestionSaved") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Could not save event controls", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "eventIngestionSaveFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setEventPolicyBusy(false);
     }
@@ -6003,10 +6236,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     setRoutineRepairBusy(true);
     try {
       await reconcileRoutines({ companyId: context.companyId });
-      toast({ tone: "success", title: "Routines fixed" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupRoutinesFixedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Routine repair failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupRoutineRepairFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setRoutineRepairBusy(false);
     }
@@ -6017,10 +6250,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     setSkillBusy(true);
     try {
       await resetSkills({ companyId: context.companyId });
-      toast({ tone: "success", title: "Skills synced" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupSkillsSyncedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Skill sync failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupSkillsSyncFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setSkillBusy(false);
     }
@@ -6029,7 +6262,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
   async function fixAllConfigurationErrors() {
     if (!context.companyId || !hasConfigurationErrors) return;
     const confirmed = typeof window === "undefined" || window.confirm(
-      "Fix all detected LLM Wiki configuration errors? This may recreate missing wiki baseline files and restore plugin-managed agents, projects, routines, and skills to their current defaults.",
+      wikiMessage(locale, "confirmFixAllConfigurationErrors"),
     );
     if (!confirmed) return;
 
@@ -6038,7 +6271,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
       if (!data.folder.healthy) {
         const path = folderPath.trim() || data.folder.path?.trim() || "";
         if (!path && !data.folder.configured) {
-          throw new Error("Choose a wiki root folder path before fixing all configuration errors.");
+          throw new Error(wikiMessage(locale, "chooseFolderBeforeFix"));
         }
         await bootstrap(path ? { companyId: context.companyId, path } : { companyId: context.companyId });
       }
@@ -6071,10 +6304,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
         await reconcileRoutines({ companyId: context.companyId });
       }
 
-      toast({ tone: "success", title: "Configuration errors fixed" });
+      toast({ tone: "success", title: wikiMessage(locale, "configurationErrorsFixed") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Fix all failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "fixAllFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setAllRepairBusy(false);
     }
@@ -6083,16 +6316,20 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
   async function toggleManagedRoutine(routine: ManagedRoutinesListItem, enabled: boolean) {
     if (!context.companyId || !routine.resourceKey) return;
     if (!enabled && !routine.assigneeAgentId) {
-      toast({ tone: "warn", title: "Default agent required", body: "Set a default maintainer before enabling this routine." });
+      toast({
+        tone: "warn",
+        title: wikiMessage(locale, "setupRoutineDefaultAgentRequired"),
+        body: wikiMessage(locale, "setupRoutineAssignDefaultAgent"),
+      });
       return;
     }
     setRoutineBusyKey(`status:${routine.key}`);
     try {
       await updateRoutineStatus({ companyId: context.companyId, routineKey: routine.resourceKey, status: enabled ? "paused" : "active" });
-      toast({ tone: "success", title: enabled ? "Routine paused" : "Routine enabled" });
+      toast({ tone: "success", title: wikiMessage(locale, enabled ? "setupRoutinePausedToast" : "setupRoutineEnabledToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Routine update failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupRoutineUpdateFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setRoutineBusyKey(null);
     }
@@ -6103,7 +6340,11 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
     const assigneeAgentId = routine.assigneeAgentId ?? data.managedAgent.agentId ?? null;
     const projectId = routine.projectId ?? data.managedProject.projectId ?? null;
     if (!assigneeAgentId) {
-      toast({ tone: "warn", title: "Default agent required", body: "Set a default maintainer before running this routine." });
+      toast({
+        tone: "warn",
+        title: wikiMessage(locale, "setupRoutineDefaultAgentRequired"),
+        body: wikiMessage(locale, "setupRoutineRunDefaultAgent"),
+      });
       return;
     }
 
@@ -6115,10 +6356,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
         assigneeAgentId,
         projectId,
       });
-      toast({ tone: "success", title: "Routine run started" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupRoutineRunStartedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Routine run failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupRoutineRunFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setRoutineBusyKey(null);
     }
@@ -6127,9 +6368,9 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
   async function resetManagedRoutineToDefaults(routine: ManagedRoutinesListItem) {
     if (!context.companyId || !routine.resourceKey) return;
     const changedFields = (routine as ManagedRoutinesListItemWithDrift).defaultDrift?.changedFields ?? [];
-    const fieldList = changedFields.length > 0 ? changedFields.join(", ") : "managed defaults";
+    const fieldList = changedFields.length > 0 ? changedFields.join(", ") : wikiMessage(locale, "setupRoutineResetFallback");
     const confirmed = typeof window === "undefined" || window.confirm(
-      `Update "${routine.title}" to the current LLM Wiki plugin defaults? This replaces ${fieldList}. Cancel to keep the current custom routine text.`,
+      wikiMessage(locale, "setupConfirmRoutineReset", { title: routine.title, fields: fieldList }),
     );
     if (!confirmed) return;
 
@@ -6143,10 +6384,10 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
         assigneeAgentId,
         projectId,
       });
-      toast({ tone: "success", title: "Routine defaults updated" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupRoutineDefaultsUpdatedToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Routine reset failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupRoutineResetFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setRoutineBusyKey(null);
     }
@@ -6155,19 +6396,19 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
   async function resetManagedAgentToDefaults() {
     if (!context.companyId) return;
     const changedFiles = agentDefaultDrift?.changedFiles ?? [];
-    const fileList = changedFiles.length > 0 ? changedFiles.join(", ") : "managed instructions and defaults";
+    const fileList = changedFiles.length > 0 ? changedFiles.join(", ") : wikiMessage(locale, "setupAgentResetFallback");
     const confirmed = typeof window === "undefined" || window.confirm(
-      `Update the Wiki Maintainer to the current LLM Wiki plugin defaults? This replaces ${fileList}. Cancel to keep the current custom instructions.`,
+      wikiMessage(locale, "setupConfirmAgentReset", { files: fileList }),
     );
     if (!confirmed) return;
 
     setAgentBusy(true);
     try {
       await resetAgent({ companyId: context.companyId });
-      toast({ tone: "success", title: "Agent reset to plugin defaults" });
+      toast({ tone: "success", title: wikiMessage(locale, "setupAgentResetToast") });
       settings.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Reset failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "setupAgentResetFailedToast"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setAgentBusy(false);
     }
@@ -6192,7 +6433,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
         paddingRight: isMobile ? 0 : 16,
         paddingBottom: isMobile ? 12 : 0,
       }}>
-        <nav aria-label="LLM Wiki settings sections" style={{
+        <nav aria-label={wikiMessage(locale, "settingsSectionsAria")} style={{
           display: "flex",
           flexDirection: isMobile ? "row" : "column",
           gap: 4,
@@ -6203,6 +6444,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
             <div key={section.key} style={{ minWidth: isMobile ? 190 : 0 }}>
               <SettingsSectionButton
                 section={section}
+                locale={locale}
                 active={activeSettingsSection === section.key}
                 onSelect={() => {
                   setActiveSettingsSection(section.key);
@@ -6220,13 +6462,15 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
             <Callout tone="warn">
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
-                  <strong>configuration errors detected, fix them all?</strong>
+                  <strong>{wikiMessage(locale, "configurationErrorsDetected")}</strong>
                   <Tiny>
-                    {configurationErrors.join(", ")} {configurationErrors.length === 1 ? "needs" : "need"} attention.
+                    {wikiMessage(locale, configurationErrors.length === 1 ? "configurationErrorsNeedAttentionOne" : "configurationErrorsNeedAttentionMany", {
+                      items: configurationErrors.map((key) => wikiMessage(locale, key)).join(", "),
+                    })}
                   </Tiny>
                 </div>
                 <Button size="sm" variant="primary" onClick={fixAllConfigurationErrors} loading={allRepairBusy}>
-                  Fix them all
+                  {wikiMessage(locale, "fixAllConfigurationErrors")}
                 </Button>
               </div>
             </Callout>
@@ -6234,35 +6478,36 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
         ) : null}
         {activeSettingsSection === "root" ? (
           <section style={{ display: "grid", gap: 22, minWidth: 0 }}>
-            <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 22, fontWeight: 700 }}>Setup</h1>
-            <SetupSection title="Base Folder">
+            <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 22, fontWeight: 700 }}>{settingsSectionLabel(locale, "root")}</h1>
+            <SetupSection title={wikiMessage(locale, "settingsBaseFolder")}>
               <div style={{ display: "grid", gap: 12 }}>
                 <FolderPathPicker
+                  locale={locale}
                   value={folderPath}
                   onChange={setFolderPath}
                   onApply={changeFolder}
-                  applyLabel="Apply path"
+                  applyLabel={wikiMessage(locale, "settingsApplyPath")}
                   busy={folderBusy}
                   disabled={!folderPath.trim()}
                   onRefresh={() => settings.refresh()}
                 />
-                <FolderHealthChecklist folder={data.folder} />
+                <FolderHealthChecklist folder={data.folder} locale={locale} />
                 {data.folder.problems.length > 0 ? (
-                  <Callout tone="warn">{data.folder.problems.length} folder issue(s): {data.folder.problems.map((p) => p.message).join("; ")}</Callout>
+                  <Callout tone="warn">{wikiMessage(locale, data.folder.problems.length === 1 ? "folderIssuesOne" : "folderIssuesMany", { count: data.folder.problems.length })} {data.folder.problems.map((p) => p.message).join("; ")}</Callout>
                 ) : null}
               </div>
             </SetupSection>
-            <SetupSection title="Managed Agents" separated>
+            <SetupSection title={wikiMessage(locale, "setupManagedAgentsSection")} separated>
               <div style={{ display: "grid", gap: 14, maxWidth: isMobile ? "none" : 620, minWidth: 0 }}>
                 <ManagedResourceHealthChecklist
                   items={agentHealthItems}
-                  ariaLabel="Wiki agents health checklist"
-                  heading="Agent health"
+                  ariaLabel={wikiMessage(locale, "setupAgentHealthChecklist")}
+                  heading={wikiMessage(locale, "setupAgentHealthHeading")}
                 />
                 {agentHealthWarnings.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div>{agentHealthWarnings.length} agent issue(s) need attention.</div>
+                      <div>{wikiMessage(locale, agentHealthWarnings.length === 1 ? "setupAgentIssuesOne" : "setupAgentIssuesMany", { count: agentHealthWarnings.length })}</div>
                       <ul style={{ margin: 0, paddingLeft: 18 }}>
                         {agentHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                       </ul>
@@ -6270,7 +6515,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
                   </Callout>
                 ) : null}
                 <div style={{ display: "grid", gap: 8 }}>
-                  <label style={{ fontSize: 12, color: tokens.muted }}>Maintainer</label>
+                  <label style={{ fontSize: 12, color: tokens.muted }}>{wikiMessage(locale, "setupMaintainerField")}</label>
                   <fieldset
                     disabled={agentBusy}
                     style={{ border: 0, margin: 0, minWidth: 0, padding: 0 }}
@@ -6279,31 +6524,31 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
                       companyId={context.companyId}
                       value={effectiveSelectedAgentId ? `agent:${effectiveSelectedAgentId}` : ""}
                       includeUsers={false}
-                      placeholder="Select maintainer"
-                      noneLabel="No maintainer"
-                      searchPlaceholder="Search agents..."
-                      emptyMessage="No agents found."
+                      placeholder={wikiMessage(locale, "setupSelectMaintainer")}
+                      noneLabel={wikiMessage(locale, "setupNoMaintainer")}
+                      searchPlaceholder={wikiMessage(locale, "setupSearchAgents")}
+                      emptyMessage={wikiMessage(locale, "setupNoAgentsFound")}
                       onChange={(_value, selection) => {
                         setSelectedAgentId(selection.assigneeAgentId ?? "");
                       }}
                     />
                   </fieldset>
                   <Tiny>
-                    Adapter: {adapterTypeLabel(currentMaintainerAgent?.adapterType ?? data.managedAgent.details?.adapterType ?? null)}
+                    {wikiMessage(locale, "setupAdapterPrefix")} {adapterTypeLabel(currentMaintainerAgent?.adapterType ?? data.managedAgent.details?.adapterType ?? null, locale)}
                   </Tiny>
                   {maintainerPendingApproval ? (
                     <Callout tone="warn">
-                      The Wiki Maintainer is pending approval. Approve the agent before relying on wiki ingest, query, lint, or scheduled maintenance tasks.
+                      {wikiMessage(locale, "setupPendingApproval")}
                     </Callout>
                   ) : null}
                   {showMaintainerWarning ? (
                     <Callout tone="warn">
-                      This is not the Paperclip-provided Wiki Maintainer. Plugin operations and routines may miss the recommended wiki role, tools, and default instructions.
+                      {wikiMessage(locale, "setupNonDefaultMaintainer")}
                     </Callout>
                   ) : null}
                   {agentDefaultDrift?.changedFiles.length ? (
                     <Callout tone="warn">
-                      Wiki Maintainer instruction defaults changed: {agentDefaultDrift.changedFiles.join(", ")}. Reset only if you want to replace current custom instructions with the plugin template.
+                      {wikiMessage(locale, "setupAgentInstructionDrift", { files: agentDefaultDrift.changedFiles.join(", ") })}
                     </Callout>
                   ) : null}
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -6314,63 +6559,63 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
                       loading={agentBusy}
                       disabled={!effectiveSelectedAgentId || effectiveSelectedAgentId === data.managedAgent.agentId}
                     >
-                      Save maintainer
+                      {wikiMessage(locale, "setupSaveMaintainer")}
                     </Button>
-                    {agentLink ? <Button size="sm" onClick={() => hostNavigation.navigate(agentLink)}>Open agent ↗</Button> : null}
+                    {agentLink ? <Button size="sm" onClick={() => hostNavigation.navigate(agentLink)}>{wikiMessage(locale, "setupOpenAgent")}</Button> : null}
                     <Button size="sm" variant="ghost" onClick={async () => {
                       if (!context.companyId) return;
                       setAgentBusy(true);
                       try {
                         await reconcileAgent({ companyId: context.companyId });
-                        toast({ tone: "success", title: "Agent reconciled" });
+                        toast({ tone: "success", title: wikiMessage(locale, "setupAgentReconciledToast") });
                         settings.refresh();
                       } catch (err) {
-                        toast({ tone: "error", title: "Reconcile failed", body: err instanceof Error ? err.message : String(err) });
+                        toast({ tone: "error", title: wikiMessage(locale, "setupAgentRepairFailedToast"), body: err instanceof Error ? err.message : String(err) });
                       } finally {
                         setAgentBusy(false);
                       }
-                    }} loading={agentBusy}>Repair</Button>
-                    <Button size="sm" variant="ghost" onClick={resetManagedAgentToDefaults} loading={agentBusy}>Reset to defaults</Button>
+                    }} loading={agentBusy}>{wikiMessage(locale, "setupRepair")}</Button>
+                    <Button size="sm" variant="ghost" onClick={resetManagedAgentToDefaults} loading={agentBusy}>{wikiMessage(locale, "setupResetToDefaults")}</Button>
                   </div>
                 </div>
               </div>
             </SetupSection>
-            <SetupSection title="Managed Skills" separated>
+            <SetupSection title={wikiMessage(locale, "setupManagedSkillsSection")} separated>
               <div style={{ display: "grid", gap: 12, maxWidth: isMobile ? "none" : 620, minWidth: 0 }}>
-                <SkillHealthChecklist items={skillHealthItems} />
+                <SkillHealthChecklist items={skillHealthItems} locale={locale} />
                 {skillHealthWarnings.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div>{skillHealthWarnings.length} skill issue(s) need attention.</div>
+                      <div>{wikiMessage(locale, skillHealthWarnings.length === 1 ? "setupSkillIssuesOne" : "setupSkillIssuesMany", { count: skillHealthWarnings.length })}</div>
                       <ul style={{ margin: 0, paddingLeft: 18 }}>
                         {skillHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                       </ul>
                       <div>
-                        <Button size="sm" variant="primary" onClick={resyncManagedSkills} loading={skillBusy}>Re-sync skills</Button>
+                        <Button size="sm" variant="primary" onClick={resyncManagedSkills} loading={skillBusy}>{wikiMessage(locale, "setupResyncSkills")}</Button>
                       </div>
                     </div>
                   </Callout>
                 ) : (
                   <Callout>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                      <span>LLM Wiki skills are installed in the company skill library.</span>
-                      <Button size="sm" variant="ghost" onClick={resyncManagedSkills} loading={skillBusy}>Re-sync skills</Button>
+                      <span>{wikiMessage(locale, "setupSkillsInstalled")}</span>
+                      <Button size="sm" variant="ghost" onClick={resyncManagedSkills} loading={skillBusy}>{wikiMessage(locale, "setupResyncSkills")}</Button>
                     </div>
                   </Callout>
                 )}
               </div>
             </SetupSection>
-            <SetupSection title="Managed Projects" separated>
+            <SetupSection title={wikiMessage(locale, "setupManagedProjectsSection")} separated>
               <div style={{ display: "grid", gap: 10, maxWidth: isMobile ? "none" : 620, minWidth: 0 }}>
                 <ManagedResourceHealthChecklist
                   items={projectHealthItems}
-                  ariaLabel="Wiki projects health checklist"
-                  heading="Project health"
+                  ariaLabel={wikiMessage(locale, "setupProjectHealthChecklist")}
+                  heading={wikiMessage(locale, "setupProjectHealthHeading")}
                 />
                 {projectHealthWarnings.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div>{projectHealthWarnings.length} project issue(s) need attention.</div>
+                      <div>{wikiMessage(locale, projectHealthWarnings.length === 1 ? "setupProjectIssuesOne" : "setupProjectIssuesMany", { count: projectHealthWarnings.length })}</div>
                       <ul style={{ margin: 0, paddingLeft: 18 }}>
                         {projectHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                       </ul>
@@ -6378,7 +6623,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
                   </Callout>
                 ) : null}
                 <div style={{ display: "grid", gap: 8 }}>
-                  <label style={{ fontSize: 12, color: tokens.muted }}>Use existing project</label>
+                  <label style={{ fontSize: 12, color: tokens.muted }}>{wikiMessage(locale, "setupUseExistingProject")}</label>
                   <fieldset
                     disabled={projectBusy}
                     style={{ border: 0, margin: 0, minWidth: 0, padding: 0 }}
@@ -6387,98 +6632,96 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
                       companyId={context.companyId}
                       value={effectiveSelectedProjectId}
                       includeArchived
-                      placeholder="Project"
-                      noneLabel="No project"
-                      searchPlaceholder="Search projects..."
-                      emptyMessage="No projects found."
+                      placeholder={wikiMessage(locale, "setupProjectPlaceholder")}
+                      noneLabel={wikiMessage(locale, "setupNoProject")}
+                      searchPlaceholder={wikiMessage(locale, "setupSearchProjects")}
+                      emptyMessage={wikiMessage(locale, "setupNoProjectsFound")}
                       onChange={setSelectedProjectId}
                     />
                   </fieldset>
                   <Tiny>
-                    Status: {projectStatusLabel(currentProjectOption?.status ?? data.managedProject.details?.status ?? data.managedProject.status)}
+                    {wikiMessage(locale, "setupStatusPrefix")} {projectStatusLabel(locale, currentProjectOption?.status ?? data.managedProject.details?.status ?? data.managedProject.status)}
                   </Tiny>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <Button size="sm" variant="primary" onClick={chooseProject} loading={projectBusy} disabled={!effectiveSelectedProjectId}>Save project</Button>
-                    {projectLink ? <Button size="sm" onClick={() => hostNavigation.navigate(projectLink)}>Open project ↗</Button> : null}
+                    <Button size="sm" variant="primary" onClick={chooseProject} loading={projectBusy} disabled={!effectiveSelectedProjectId}>{wikiMessage(locale, "setupSaveProject")}</Button>
+                    {projectLink ? <Button size="sm" onClick={() => hostNavigation.navigate(projectLink)}>{wikiMessage(locale, "setupOpenProject")}</Button> : null}
                     <Button size="sm" variant="ghost" onClick={async () => {
                       if (!context.companyId) return;
                       setProjectBusy(true);
                       try {
                         await reconcileProject({ companyId: context.companyId });
-                        toast({ tone: "success", title: "Project reconciled" });
+                        toast({ tone: "success", title: wikiMessage(locale, "setupProjectReconciledToast") });
                         settings.refresh();
                       } catch (err) {
-                        toast({ tone: "error", title: "Reconcile failed", body: err instanceof Error ? err.message : String(err) });
+                        toast({ tone: "error", title: wikiMessage(locale, "setupProjectRepairFailedToast"), body: err instanceof Error ? err.message : String(err) });
                       } finally {
                         setProjectBusy(false);
                       }
-                    }} loading={projectBusy}>Repair / reconcile</Button>
+                    }} loading={projectBusy}>{wikiMessage(locale, "setupRepairReconcileProject")}</Button>
                     <Button size="sm" variant="ghost" onClick={async () => {
                       if (!context.companyId) return;
                       setProjectBusy(true);
                       try {
                         await resetProject({ companyId: context.companyId });
-                        toast({ tone: "success", title: "Project reset to plugin defaults" });
+                        toast({ tone: "success", title: wikiMessage(locale, "setupProjectResetToast") });
                         settings.refresh();
                       } catch (err) {
-                        toast({ tone: "error", title: "Reset failed", body: err instanceof Error ? err.message : String(err) });
+                        toast({ tone: "error", title: wikiMessage(locale, "setupProjectResetFailedToast"), body: err instanceof Error ? err.message : String(err) });
                       } finally {
                         setProjectBusy(false);
                       }
-                    }} loading={projectBusy}>↺ Reset to plugin defaults</Button>
+                    }} loading={projectBusy}>{wikiMessage(locale, "setupResetProject")}</Button>
                   </div>
                 </div>
               </div>
             </SetupSection>
-            <SetupSection title="Managed Routines" separated>
+            <SetupSection title={wikiMessage(locale, "setupManagedRoutinesSection")} separated>
               <div style={{ display: "grid", gap: 12, maxWidth: isMobile ? "none" : 620, minWidth: 0 }}>
-                <RoutineHealthChecklist items={routineHealthItems} />
+                <RoutineHealthChecklist items={routineHealthItems} locale={locale} />
                 {routineHealthWarnings.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div>{routineHealthWarnings.length} routine issue(s) need attention.</div>
+                      <div>{wikiMessage(locale, routineHealthWarnings.length === 1 ? "setupRoutineIssuesOne" : "setupRoutineIssuesMany", { count: routineHealthWarnings.length })}</div>
                       <ul style={{ margin: 0, paddingLeft: 18 }}>
                         {routineHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                       </ul>
                       <div>
-                        <Button size="sm" variant="primary" onClick={repairManagedRoutines} loading={routineRepairBusy}>Fix routines</Button>
+                        <Button size="sm" variant="primary" onClick={repairManagedRoutines} loading={routineRepairBusy}>{wikiMessage(locale, "setupFixRoutines")}</Button>
                       </div>
                     </div>
                   </Callout>
                 ) : routineDefaultDriftItems.length > 0 ? (
                   <Callout tone="warn">
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                      <span>{routineDefaultDriftItems.length} routine default update{routineDefaultDriftItems.length === 1 ? "" : "s"} available.</span>
+                      <span>{wikiMessage(locale, routineDefaultDriftItems.length === 1 ? "setupRoutineDriftOne" : "setupRoutineDriftMany", { count: routineDefaultDriftItems.length })}</span>
                       <Button size="sm" variant="primary" onClick={() => {
                         setActiveSettingsSection("routines");
                         hostNavigation.navigate(buildSettingsSectionHref("routines", activeSpaceSlug));
-                      }}>Review defaults</Button>
+                      }}>{wikiMessage(locale, "setupReviewDefaults")}</Button>
                     </div>
                   </Callout>
                 ) : (
-                  <Tiny>Managed routines are installed with the Wiki Maintainer and LLM Wiki project.</Tiny>
+                  <Tiny>{wikiMessage(locale, "setupUseManagedRoutineInfo")}</Tiny>
                 )}
               </div>
             </SetupSection>
           </section>
         ) : activeSettingsSection === "distillation" ? (
           <SettingsPanel
-            title="Distillation"
-            badge={<Badge tone="default">Default space only</Badge>}
-            description="Read Paperclip issues, comments, and documents for this company and write project pages into the default wiki space. Assets/attachments and work products stay metadata-only in Phase 5 and are excluded from source-text extraction. Other spaces cannot be selected as a destination yet - that lands with per-space Paperclip ingestion profiles."
+            title={wikiMessage(locale, "distillationPanelTitle")}
+            badge={<Badge tone="default">{wikiMessage(locale, "distillationDefaultSpaceOnly")}</Badge>}
+            description={wikiMessage(locale, "distillationPanelDescription")}
           >
-            <DistillationSettingsPanel context={context} settings={data} />
+            <DistillationSettingsPanel context={context} settings={data} locale={locale} />
           </SettingsPanel>
         ) : activeSettingsSection === "routines" ? (
-          <SettingsPanel title="Managed Routines" description={activeSettingsConfig.description}>
+          <SettingsPanel title={settingsSectionLabel(locale, "routines")} description={settingsSectionDescription(locale, activeSettingsConfig.key)}>
           <div style={{ display: "grid", gap: 12 }}>
             {routineDefaultDriftItems.length > 0 ? (
               <Callout tone="warn">
                 <div style={{ display: "grid", gap: 6 }}>
-                  <strong>Routine defaults changed.</strong>
-                  <span>
-                    Review rows marked with changed defaults. Reset a row to update it to the current LLM Wiki instructions, or leave it unchanged to keep custom routine text.
-                  </span>
+                  <strong>{wikiMessage(locale, "setupRoutineDefaultsChanged")}</strong>
+                  <span>{wikiMessage(locale, "setupReviewRoutineDefaultsHelp")}</span>
                 </div>
               </Callout>
             ) : null}
@@ -6486,19 +6729,19 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
               <Callout tone="warn">
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                   <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
-                    <strong>Routine setup needs repair.</strong>
+                    <strong>{wikiMessage(locale, "setupRoutineNeedsRepair")}</strong>
                     <ul style={{ margin: 0, paddingLeft: 18 }}>
                       {routineHealthWarnings.map((item) => <li key={item.label}>{item.detail}</li>)}
                     </ul>
                   </div>
-                  <Button size="sm" variant="primary" onClick={repairManagedRoutines} loading={routineRepairBusy}>Fix routines</Button>
+                  <Button size="sm" variant="primary" onClick={repairManagedRoutines} loading={routineRepairBusy}>{wikiMessage(locale, "setupFixRoutines")}</Button>
                 </div>
               </Callout>
             ) : (
               <Callout>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                  <span>Managed routines are installed with the Wiki Maintainer and LLM Wiki project.</span>
-                  <Button size="sm" disabled>Routines valid</Button>
+                  <span>{wikiMessage(locale, "setupRoutineHealthyCallout")}</span>
+                  <Button size="sm" disabled>{wikiMessage(locale, "setupRoutinesValid")}</Button>
                 </div>
               </Callout>
             )}
@@ -6507,6 +6750,18 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
               agents={maintainerAgentOptions}
               projects={projectOptions}
               pluginDisplayName="LLM Wiki"
+              emptyMessage={wikiMessage(locale, "setupRoutineListEmpty")}
+              labels={{
+                configure: wikiMessage(locale, "setupRoutineConfigure"),
+                managedBy: wikiMessage(locale, "setupRoutineManagedBy", { name: "{name}" }),
+                schedule: wikiMessage(locale, "setupRoutineSchedule"),
+                missingRefs: wikiMessage(locale, "setupRoutineMissingPrefix"),
+                defaultsCanBeRepaired: wikiMessage(locale, "setupRoutineDefaultsRepairable"),
+                reconciling: wikiMessage(locale, "setupRoutineReconciling"),
+                reconcile: wikiMessage(locale, "setupRoutineReconcile"),
+                resetting: wikiMessage(locale, "setupRoutineResetting"),
+                reset: wikiMessage(locale, "setupRoutineReset"),
+              }}
               runningRoutineKey={routineBusyKeyFor("run")}
               statusMutationRoutineKey={routineBusyKeyFor("status")}
               resettingRoutineKey={routineBusyKeyFor("reset")}
@@ -6517,17 +6772,17 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
           </div>
           </SettingsPanel>
         ) : activeSettingsSection === "lint" ? (
-          <SettingsLintPanel context={context} />
+          <SettingsLintPanel context={context} locale={locale} />
         ) : activeSettingsSection === "spaces" ? (
-          <SpacesSettingsPanel context={context} description={activeSettingsConfig.description} />
+          <SpacesSettingsPanel context={context} locale={locale} description={settingsSectionDescription(locale, "spaces")} />
         ) : activeSettingsSection === "events" ? (
           <SettingsPanel
-            title="Paperclip event ingestion"
-            badge={<Badge tone={currentEventPolicy.enabled ? "running" : "default"}>{currentEventPolicy.enabled ? "enabled" : "off by default"}</Badge>}
-            description={activeSettingsConfig.description}
+            title={wikiMessage(locale, "eventIngestionTitle")}
+            badge={<Badge tone={currentEventPolicy.enabled ? "running" : "default"}>{wikiMessage(locale, currentEventPolicy.enabled ? "eventIngestionEnabled" : "eventIngestionOffByDefault")}</Badge>}
+            description={settingsSectionDescription(locale, activeSettingsConfig.key)}
           >
           <Tiny style={{ marginBottom: 10 }}>
-            Company-scoped Paperclip events can advance default-space cursors. Enable only the first-party text sources this wiki should observe for default-space distillation.
+            {wikiMessage(locale, "eventIngestionDescription")}
           </Tiny>
           <div style={{ display: "grid", gap: 10 }}>
             <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
@@ -6536,13 +6791,13 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
                 checked={currentEventPolicy.enabled}
                 onChange={(event) => setEventPolicy({ ...currentEventPolicy, enabled: event.currentTarget.checked })}
               />
-              Enable event ingestion for this company
+              {wikiMessage(locale, "eventIngestionEnableForCompany")}
             </label>
             <div style={{ display: "grid", gap: 8, paddingLeft: isMobile ? 0 : 22 }}>
               {([
-                ["issues", "Issues", "Capture issue title and description when issue events fire."],
-                ["comments", "Comments", "Capture comment body when comment-created events fire."],
-                ["documents", "Documents", "Capture document body when document-created or document-updated events fire."],
+                ["issues", "eventIngestionIssues", "eventIngestionIssuesHelp"],
+                ["comments", "eventIngestionComments", "eventIngestionCommentsHelp"],
+                ["documents", "eventIngestionDocuments", "eventIngestionDocumentsHelp"],
               ] as const).map(([key, label, help]) => (
                 <label key={key} style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 8, rowGap: 2, alignItems: "start", fontSize: 13 }}>
                   <input
@@ -6554,14 +6809,14 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
                     })}
                   />
                   <span>
-                    {label}
-                    <Tiny style={{ display: "block" }}>{help}</Tiny>
+                    {wikiMessage(locale, label)}
+                    <Tiny style={{ display: "block" }}>{wikiMessage(locale, help)}</Tiny>
                   </span>
                 </label>
               ))}
             </div>
             <div style={{ display: "grid", gap: 6, maxWidth: isMobile ? "none" : 220 }}>
-              <label style={{ fontSize: 12, color: tokens.muted }}>Max characters per captured event</label>
+              <label style={{ fontSize: 12, color: tokens.muted }}>{wikiMessage(locale, "eventIngestionMaxCharacters")}</label>
               <TextInput
                 value={String(currentEventPolicy.maxCharacters)}
                 onChange={(event) => {
@@ -6571,11 +6826,11 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
               />
             </div>
             <Callout tone="warn">
-              Event ingestion records selected Paperclip issue, comment, and document activity for the default wiki space. Assets/attachments and work products are excluded here: Phase 5 allows metadata-only references later, not blob reads or linked-content fetches. It never reads across companies or creates non-default space cursors.
+              {wikiMessage(locale, "eventIngestionPolicyWarning")}
             </Callout>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <Button size="sm" variant="primary" onClick={saveEventPolicy} loading={eventPolicyBusy}>Save controls</Button>
-              <Button size="sm" variant="ghost" onClick={() => setEventPolicy(data.eventIngestion)}>Revert</Button>
+              <Button size="sm" variant="primary" onClick={saveEventPolicy} loading={eventPolicyBusy}>{wikiMessage(locale, "eventIngestionSave")}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setEventPolicy(data.eventIngestion)}>{wikiMessage(locale, "eventIngestionRevert")}</Button>
             </div>
           </div>
           </SettingsPanel>
@@ -6590,7 +6845,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
 // Reachable via /wiki/settings/spaces or /wiki/settings/spaces/<slug>.
 // ---------------------------------------------------------------------------
 
-function SpacesSettingsPanel({ context, description }: { context: { companyId: string | null; companyPrefix?: string | null }; description: string }) {
+function SpacesSettingsPanel({ context, locale, description }: { context: { companyId: string | null; companyPrefix?: string | null }; locale: WikiLocale; description: string }) {
   const { pathname } = useHostLocation();
   const hostNavigation = useHostNavigation();
   const activeSpaceSlug = useMemo(() => readActiveSpaceSlugFromLocation(pathname), [pathname]);
@@ -6609,7 +6864,7 @@ function SpacesSettingsPanel({ context, description }: { context: { companyId: s
   }, [editingSlug, spaces, activeSpaceSlug]);
 
   return (
-    <SettingsPanel title="Shared spaces" description={description}>
+    <SettingsPanel title={wikiMessage(locale, "sharedSpaces")} description={description}>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "220px 1fr", gap: 18, alignItems: "flex-start" }}>
         <aside style={{ display: "grid", gap: 4, minWidth: 0 }}>
           {spaces.map((space) => {
@@ -6658,15 +6913,16 @@ function SpacesSettingsPanel({ context, description }: { context: { companyId: s
             }}
           >
             <PlusIcon size={14} />
-            Add space…
+            {wikiMessage(locale, "addSpace")}
           </button>
         </aside>
         <div style={{ minWidth: 0, display: "grid", gap: 14 }}>
-          {spacesQuery.loading && spaces.length === 0 ? <Tiny>Loading spaces…</Tiny> : null}
-          {spacesQuery.error ? <Callout tone="danger">Failed to load spaces: {spacesQuery.error.message}</Callout> : null}
+          {spacesQuery.loading && spaces.length === 0 ? <Tiny>{wikiMessage(locale, "loadingSpaces")}</Tiny> : null}
+          {spacesQuery.error ? <Callout tone="danger">{wikiMessage(locale, "failedToLoadSpaces", { message: spacesQuery.error.message })}</Callout> : null}
           {focusedSpace ? (
             <SpaceEditCard
               space={focusedSpace}
+              locale={locale}
               companyId={context.companyId}
               isOnlySpace={spaces.length === 1}
               refresh={spacesQuery.refresh}
@@ -6675,12 +6931,13 @@ function SpacesSettingsPanel({ context, description }: { context: { companyId: s
               }}
             />
           ) : (
-            <Callout>Pick a space from the list, or create one with the “Add space…” button.</Callout>
+            <Callout>{wikiMessage(locale, "noSpaceSelected")}</Callout>
           )}
         </div>
       </div>
       {createOpen && context.companyId ? (
         <CreateSpaceModal
+          locale={locale}
           companyId={context.companyId}
           existingSlugs={new Set(spaces.map((s) => s.slug))}
           onClose={() => setCreateOpen(false)}
@@ -6695,14 +6952,34 @@ function SpacesSettingsPanel({ context, description }: { context: { companyId: s
   );
 }
 
+function spaceStatusLabel(locale: WikiLocale, status: string): string {
+  if (status === "active") return wikiMessage(locale, "activeSpaceStatus");
+  if (status === "archived") return wikiMessage(locale, "archivedSpaceStatus");
+  return status;
+}
+
+function spaceTypeLabel(locale: WikiLocale, spaceType: string): string {
+  if (spaceType === "managed") return wikiMessage(locale, "managedSpaceType");
+  return spaceType;
+}
+
+function spaceAccessScopeLabel(locale: WikiLocale, accessScope: string): string {
+  if (accessScope === "shared") return wikiMessage(locale, "sharedAccessScope");
+  if (accessScope === "team") return wikiMessage(locale, "teamAccessScope");
+  if (accessScope === "personal") return wikiMessage(locale, "personalAccessScope");
+  return accessScope;
+}
+
 function SpaceEditCard({
   space,
+  locale,
   companyId,
   isOnlySpace,
   refresh,
   onArchived,
 }: {
   space: WikiSpace;
+  locale: WikiLocale;
   companyId: string | null;
   isOnlySpace: boolean;
   refresh: () => void;
@@ -6727,9 +7004,9 @@ function SpaceEditCard({
   const relativeRoot = folderStatusQuery.data?.relativeRoot ?? "";
   const settingsRecord = (space.settings ?? {}) as Record<string, unknown>;
   const folderModeLabel = space.folderMode === "managed_subfolder"
-    ? "New managed folder (under wiki root)"
+    ? wikiMessage(locale, "newManagedFolder")
     : space.folderMode === "existing_local_folder"
-      ? "Existing folder under wiki root"
+      ? wikiMessage(locale, "existingFolderUnderWikiRoot")
       : space.folderMode;
 
   async function saveName() {
@@ -6737,10 +7014,10 @@ function SpaceEditCard({
     setBusy(true);
     try {
       await updateSpace({ companyId, spaceSlug: space.slug, displayName: displayName.trim() });
-      toast({ tone: "success", title: "Display name updated" });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceNameUpdated") });
       refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Update failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "spaceUpdateFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -6751,10 +7028,10 @@ function SpaceEditCard({
     setFolderBusy(true);
     try {
       await bootstrapSpace({ companyId, spaceSlug: space.slug });
-      toast({ tone: "success", title: "Baseline restored", body: `Re-created the standard skeleton for ${space.displayName}.` });
+      toast({ tone: "success", title: wikiMessage(locale, "baselineRestored"), body: wikiMessage(locale, "baselineRestoredBody", { name: space.displayName }) });
       folderStatusQuery.refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Bootstrap failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "bootstrapFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setFolderBusy(false);
     }
@@ -6762,17 +7039,17 @@ function SpaceEditCard({
 
   async function archive() {
     if (!companyId || isDefault || isOnlySpace || archiveBusy) return;
-    if (typeof window !== "undefined" && !window.confirm(`Archive ${space.displayName}? Pages stay on disk; you can restore later through the plugin API or by un-archiving from the database.`)) {
+    if (typeof window !== "undefined" && !window.confirm(wikiMessage(locale, "archiveConfirmation", { space: space.displayName }))) {
       return;
     }
     setArchiveBusy(true);
     try {
       await archiveSpace({ companyId, spaceSlug: space.slug });
-      toast({ tone: "success", title: "Space archived", body: `${space.displayName} hidden from the sidebar.` });
+      toast({ tone: "success", title: wikiMessage(locale, "spaceArchived"), body: wikiMessage(locale, "archiveSuccessBody", { space: space.displayName }) });
       refresh();
       onArchived();
     } catch (err) {
-      toast({ tone: "error", title: "Archive failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "archiveFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setArchiveBusy(false);
     }
@@ -6787,81 +7064,79 @@ function SpaceEditCard({
               <FolderIcon size={16} />
               <span>{space.displayName}</span>
               <Badge tone="default" style={{ fontSize: 10 }}>{space.slug}</Badge>
-              <Badge tone={space.status === "active" ? "running" : "default"} style={{ fontSize: 10 }}>{space.status}</Badge>
+              <Badge tone={space.status === "active" ? "running" : "default"} style={{ fontSize: 10 }}>{spaceStatusLabel(locale, space.status)}</Badge>
             </span>
           }
           right={
             <span style={{ fontSize: 11, color: tokens.muted }}>
-              {space.spaceType} · {space.accessScope}
+              {spaceTypeLabel(locale, space.spaceType)} · {spaceAccessScopeLabel(locale, space.accessScope)}
             </span>
           }
         />
         <CardBody>
           <Tiny>
-            Stored under <Mono>{relativeRoot || (isDefault ? "(wiki root)" : `spaces/${space.slug}/`)}</Mono> within the configured wiki root.
+            {wikiMessage(locale, "spaceStoredUnder", { path: relativeRoot || (isDefault ? wikiMessage(locale, "wikiRootPath") : `spaces/${space.slug}/`) })}
           </Tiny>
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Identity" />
+        <CardHeader title={wikiMessage(locale, "identity")} />
         <CardBody>
           <div style={{ display: "grid", gap: 12 }}>
-            <FormField label="Display name">
+            <FormField label={wikiMessage(locale, "displayNameLabel")}>
               <TextInput value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={120} />
             </FormField>
-            <FormField label="Slug" help="Slug is locked once a space has indexed pages. Contact platform team to migrate.">
+            <FormField label={wikiMessage(locale, "slugLabel")} help={wikiMessage(locale, "spaceSlugLockedHelp")}>
               <TextInput value={space.slug} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", opacity: 0.7 }} />
             </FormField>
-            <FormField label="Type" help="(Cloud connectors coming soon)">
-              <TextInput value={space.spaceType === "managed" ? "Folder" : space.spaceType} disabled style={{ opacity: 0.7 }} />
+            <FormField label={wikiMessage(locale, "typeLabel")} help={`(${wikiMessage(locale, "cloudConnectorsComingSoon")})`}>
+              <TextInput value={spaceTypeLabel(locale, space.spaceType)} disabled style={{ opacity: 0.7 }} />
             </FormField>
             <div>
-              <Button variant="primary" size="sm" onClick={saveName} disabled={busy || displayName.trim() === space.displayName} loading={busy}>Save name</Button>
+              <Button variant="primary" size="sm" onClick={saveName} disabled={busy || displayName.trim() === space.displayName} loading={busy}>{wikiMessage(locale, "saveName")}</Button>
             </div>
           </div>
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Folder source & health" />
+        <CardHeader title={wikiMessage(locale, "folderSourceHealth")} />
         <CardBody>
           <div style={{ display: "grid", gap: 12 }}>
-            <FormField label="Mode">
+            <FormField label={wikiMessage(locale, "modeLabel")}>
               <TextInput value={folderModeLabel} disabled style={{ opacity: 0.7 }} />
             </FormField>
-            <FormField label="Path">
-              <TextInput value={folder?.path ?? folder?.realPath ?? relativeRoot ?? "(unconfigured)"} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", opacity: 0.7 }} />
+            <FormField label={wikiMessage(locale, "pathLabel")}>
+              <TextInput value={folder?.path ?? folder?.realPath ?? relativeRoot ?? wikiMessage(locale, "unconfiguredPath")} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", opacity: 0.7 }} />
             </FormField>
-            {folderStatusQuery.loading ? <Tiny>Loading folder status…</Tiny> : null}
+            {folderStatusQuery.loading ? <Tiny>{wikiMessage(locale, "loadingFolderStatus")}</Tiny> : null}
             {folderStatusQuery.error ? <Callout tone="danger">{folderStatusQuery.error.message}</Callout> : null}
-            {folder ? <SpaceFolderHealthChecklist folder={folder} /> : null}
+            {folder ? <SpaceFolderHealthChecklist folder={folder} locale={locale} /> : null}
             <div>
-              <Button size="sm" onClick={recreateBaseline} loading={folderBusy}>Recreate baseline</Button>
+              <Button size="sm" onClick={recreateBaseline} loading={folderBusy}>{wikiMessage(locale, "recreateBaseline")}</Button>
             </div>
           </div>
         </CardBody>
       </Card>
 
-      <PaperclipIngestionSpaceCard companyId={companyId} space={space} refresh={refresh} />
+      <PaperclipIngestionSpaceCard companyId={companyId} space={space} locale={locale} refresh={refresh} />
 
       <Card style={{ opacity: 0.56 }}>
-        <CardHeader title="Access" />
+        <CardHeader title={wikiMessage(locale, "accessLabel")} />
         <CardBody>
           <div aria-disabled="true" style={{ display: "grid", gap: 10 }}>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <Badge tone="default" style={{ fontSize: 10 }}>{space.accessScope}</Badge>
-              <Badge tone="default" style={{ fontSize: 10 }}>Coming soon</Badge>
+              <Badge tone="default" style={{ fontSize: 10 }}>{spaceAccessScopeLabel(locale, space.accessScope)}</Badge>
+              <Badge tone="default" style={{ fontSize: 10 }}>{wikiMessage(locale, "comingSoon")}</Badge>
             </div>
             <Tiny>
-              Access scope is stored as metadata only. <Mono>shared</Mono>, <Mono>team</Mono>, and{" "}
-              <Mono>personal</Mono> are saved on the space record but do not currently enforce
-              read/write permissions, and they do not change which Paperclip sources reach this space.
+              {wikiMessage(locale, "accessScopeMetadataOnly")}
             </Tiny>
-            <FormField label="Owner user id">
+            <FormField label={wikiMessage(locale, "ownerUserId")}>
               <TextInput value={(settingsRecord.ownerUserHint as string | undefined) ?? space.ownerUserId ?? ""} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }} />
             </FormField>
-            <FormField label="Owner team key">
+            <FormField label={wikiMessage(locale, "ownerTeamKey")}>
               <TextInput value={space.teamKey ?? ""} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }} />
             </FormField>
           </div>
@@ -6870,16 +7145,16 @@ function SpaceEditCard({
 
       <Card style={{ borderColor: "oklch(0.5 0.18 25)" }}>
         <CardHeader
-          title={<span style={{ color: "oklch(0.78 0.18 25)" }}>Danger zone</span>}
+          title={<span style={{ color: "oklch(0.78 0.18 25)" }}>{wikiMessage(locale, "dangerZone")}</span>}
         />
         <CardBody>
           <div style={{ display: "grid", gap: 8 }}>
             <Tiny>
               {isDefault
-                ? "The default space cannot be archived because new operations and tools fall back to it."
+                ? wikiMessage(locale, "defaultSpaceArchiveReason")
                 : isOnlySpace
-                  ? "This is the only space in the company. Create another before archiving this one."
-                  : "Archiving hides the space from the sidebar and pauses scheduled lint/index. Pages remain on disk."}
+                  ? wikiMessage(locale, "onlySpaceArchiveReason")
+                  : wikiMessage(locale, "archiveSpaceReason")}
             </Tiny>
             <div>
               <Button
@@ -6888,9 +7163,9 @@ function SpaceEditCard({
                 onClick={archive}
                 disabled={isDefault || isOnlySpace || archiveBusy}
                 loading={archiveBusy}
-                title={isDefault ? "Default space cannot be archived" : isOnlySpace ? "At least one space must remain" : undefined}
+                title={isDefault ? wikiMessage(locale, "defaultSpaceCannotArchive") : isOnlySpace ? wikiMessage(locale, "oneSpaceMustRemain") : undefined}
               >
-                Archive this space
+                {wikiMessage(locale, "archiveThisSpace")}
               </Button>
             </div>
           </div>
@@ -6900,16 +7175,20 @@ function SpaceEditCard({
   );
 }
 
-function paperclipIngestionStateBadge(data: PaperclipIngestionProfileData | null): { tone: Tone; label: string } {
-  if (!data) return { tone: "default", label: "Loading" };
-  if (data.effectiveState === "policy_blocked") return { tone: "blocked", label: "Locked" };
-  if (data.effectiveState === "pending_approval") return { tone: "queued", label: "Pending approval" };
-  if (data.effectiveState === "enabled_no_scopes") return { tone: "failed", label: "Misconfigured" };
-  if (data.effectiveState === "enabled") return { tone: "running", label: `On · ${data.profile.sourceScopes.length} source${data.profile.sourceScopes.length === 1 ? "" : "s"}` };
-  return { tone: "default", label: data.historicalPageCount > 0 ? `Off · ${data.historicalPageCount} historical pages` : "Off" };
+function paperclipIngestionStateBadge(data: PaperclipIngestionProfileData | null, locale: WikiLocale): { tone: Tone; label: string } {
+  if (!data) return { tone: "default", label: wikiMessage(locale, "profileLoadingState") };
+  if (data.effectiveState === "policy_blocked") return { tone: "blocked", label: wikiMessage(locale, "profileLockedState") };
+  if (data.effectiveState === "pending_approval") return { tone: "queued", label: wikiMessage(locale, "profilePendingApproval") };
+  if (data.effectiveState === "enabled_no_scopes") return { tone: "failed", label: wikiMessage(locale, "profileMisconfigured") };
+  if (data.effectiveState === "enabled") {
+    const sourceCount = data.profile.sourceScopes.length;
+    const sourceLabel = wikiMessage(locale, sourceCount === 1 ? "sourcesOne" : "sourcesMany", { count: sourceCount });
+    return { tone: "running", label: wikiMessage(locale, "profileOn", { sources: sourceLabel }) };
+  }
+  return { tone: "default", label: wikiMessage(locale, "profileOff") };
 }
 
-function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId: string | null; space: WikiSpace; refresh: () => void }) {
+function PaperclipIngestionSpaceCard({ companyId, space, locale, refresh }: { companyId: string | null; space: WikiSpace; locale: WikiLocale; refresh: () => void }) {
   const profileQuery = usePaperclipIngestionProfile(companyId, space.slug);
   const updateProfile = usePluginAction("update-paperclip-ingestion-profile");
   const toast = usePluginToast();
@@ -6921,7 +7200,7 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
     setDraft(data?.profile ?? null);
   }, [data?.space.slug, data?.profile]);
 
-  const badge = paperclipIngestionStateBadge(data);
+  const badge = paperclipIngestionStateBadge(data, locale);
   const locked = data?.effectiveState === "policy_blocked";
   const sourceScope = draft?.sourceScopes[0];
   const activeProjectLimit = sourceScope?.kind === "active_projects" ? sourceScope.limit : 3;
@@ -6952,11 +7231,11 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
     setBusy(true);
     try {
       await updateProfile({ companyId, spaceSlug: space.slug, profile: draft });
-      toast({ tone: "success", title: "Paperclip ingestion profile saved", body: `${space.displayName} will use the selected Paperclip sources.` });
+      toast({ tone: "success", title: wikiMessage(locale, "profileSaved"), body: wikiMessage(locale, "profileSavedBody", { space: space.displayName }) });
       profileQuery.refresh();
       refresh();
     } catch (err) {
-      toast({ tone: "error", title: "Profile save failed", body: err instanceof Error ? err.message : String(err) });
+      toast({ tone: "error", title: wikiMessage(locale, "profileSaveFailed"), body: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }
@@ -6970,24 +7249,24 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
       />
       <CardBody>
         <div style={{ display: "grid", gap: 12 }}>
-          {profileQuery.loading && !data ? <Tiny>Loading Paperclip ingestion profile…</Tiny> : null}
+          {profileQuery.loading && !data ? <Tiny>{wikiMessage(locale, "profileLoading")}</Tiny> : null}
           {profileQuery.error ? <Callout tone="danger">{profileQuery.error.message}</Callout> : null}
           {locked ? (
             <Callout tone="warn">
-              Locked — host permissions pending. Paperclip ingestion stays disabled on team and personal spaces until LLM Wiki enforces read/write permissions for non-shared spaces.
+              {wikiMessage(locale, "profileLockedMessage")}
             </Callout>
           ) : null}
           {data && data.historicalPageCount > 0 && data.effectiveState === "disabled" ? (
-            <Callout>
-              Off · {data.historicalPageCount} historical Paperclip page{data.historicalPageCount === 1 ? "" : "s"} still in this space. Disabling stops new observations but does not delete prior wiki pages.
-            </Callout>
+            <Callout>{wikiMessage(locale, "profileOffHistoricalPages", {
+              pages: wikiMessage(locale, data.historicalPageCount === 1 ? "historicalPagesOne" : "historicalPagesMany", { count: data.historicalPageCount }),
+            })}</Callout>
           ) : null}
           {data && data.overlapCount > 0 ? (
-            <Callout>
-              {data.overlapCount} source overlap{data.overlapCount === 1 ? "" : "s"} with another enabled space. Duplicate destinations are allowed, but they are explicit.
-            </Callout>
+            <Callout>{wikiMessage(locale, "profileSourceOverlap", {
+              overlaps: wikiMessage(locale, data.overlapCount === 1 ? "overlapOne" : "overlapMany", { count: data.overlapCount }),
+            })}</Callout>
           ) : null}
-          {emptyScopes ? <Callout tone="warn">Pick at least one source scope before saving.</Callout> : null}
+          {emptyScopes ? <Callout tone="warn">{wikiMessage(locale, "pickSourceScope")}</Callout> : null}
           {draft ? (
             <>
               <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13 }}>
@@ -7003,28 +7282,28 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
                   })}
                 />
                 <span>
-                  Enable Paperclip ingestion for this destination space
-                  <Tiny style={{ display: "block" }}>Future Paperclip issue, comment, and document events can advance cursors in {space.displayName}. Existing pages are preserved when this is turned off.</Tiny>
+                  {wikiMessage(locale, "enablePaperclipIngestion")}
+                  <Tiny style={{ display: "block" }}>{wikiMessage(locale, "enablePaperclipIngestionHelp", { space: space.displayName })}</Tiny>
                 </span>
               </label>
               <div style={{ display: "grid", gap: 8 }}>
-                <strong style={{ fontSize: 13 }}>Source scope</strong>
+                <strong style={{ fontSize: 13 }}>{wikiMessage(locale, "sourceScope")}</strong>
                 <label style={{ display: "grid", gap: 6, maxWidth: 260 }}>
-                  <Tiny>Recently active projects (auto)</Tiny>
+                  <Tiny>{wikiMessage(locale, "recentlyActiveProjectsAuto")}</Tiny>
                   <TextInput
                     value={String(activeProjectLimit)}
                     disabled={locked || busy}
                     onChange={(event) => setActiveProjectsLimit(Number(event.currentTarget.value))}
                   />
                 </label>
-                <Tiny>Specific projects, issue trees, and company-wide ingestion use the same profile API; this first editor keeps the default auto-scope path visible and capped.</Tiny>
+                <Tiny>{wikiMessage(locale, "sourceScopeEditorHelp")}</Tiny>
               </div>
               <div style={{ display: "grid", gap: 8 }}>
-                <strong style={{ fontSize: 13 }}>Source kinds</strong>
+                <strong style={{ fontSize: 13 }}>{wikiMessage(locale, "sourceKinds")}</strong>
                 {([
-                  ["issues", "Issues"],
-                  ["comments", "Comments"],
-                  ["documents", "Documents"],
+                  ["issues", "issues"],
+                  ["comments", "comments"],
+                  ["documents", "documents"],
                 ] as const).map(([key, label]) => (
                   <label key={key} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
                     <input
@@ -7033,21 +7312,24 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
                       disabled={locked || busy}
                       onChange={(event) => setSourceKind(key, event.currentTarget.checked)}
                     />
-                    {label}
+                    {wikiMessage(locale, label)}
                   </label>
                 ))}
-                <Tiny>Attachments — locked, metadata only; no file contents. Future extraction needs separate review.</Tiny>
-                <Tiny>Work products — locked, metadata only; no artifact contents.</Tiny>
+                <Tiny>{wikiMessage(locale, "attachmentsLocked")}</Tiny>
+                <Tiny>{wikiMessage(locale, "workProductsLocked")}</Tiny>
               </div>
               <div style={{ display: "grid", gap: 8 }}>
-                <strong style={{ fontSize: 13 }}>Caps</strong>
+                <strong style={{ fontSize: 13 }}>{wikiMessage(locale, "caps")}</strong>
                 <Tiny>
-                  Defaults: {draft.cursor.maxWindowCharacters.toLocaleString()} chars/window · {draft.cursor.maxCharactersPerSource.toLocaleString()} chars/source.
+                  {wikiMessage(locale, "profileCapsDefault", {
+                    window: draft.cursor.maxWindowCharacters.toLocaleString(locale),
+                    source: draft.cursor.maxCharactersPerSource.toLocaleString(locale),
+                  })}
                 </Tiny>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <Button size="sm" variant="primary" onClick={save} loading={busy} disabled={!canSave || emptyScopes}>Save Paperclip profile</Button>
-                <Button size="sm" variant="ghost" onClick={() => setDraft(data?.profile ?? null)} disabled={busy}>Revert</Button>
+                <Button size="sm" variant="primary" onClick={save} loading={busy} disabled={!canSave || emptyScopes}>{wikiMessage(locale, "savePaperclipProfile")}</Button>
+                <Button size="sm" variant="ghost" onClick={() => setDraft(data?.profile ?? null)} disabled={busy}>{wikiMessage(locale, "revertChanges")}</Button>
               </div>
             </>
           ) : null}
@@ -7057,24 +7339,24 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
   );
 }
 
-function SpaceFolderHealthChecklist({ folder }: { folder: FolderStatus }) {
+function SpaceFolderHealthChecklist({ folder, locale }: { folder: FolderStatus; locale: WikiLocale }) {
   const items = [
-    { key: "readable", label: "Folder readable", ok: folder.readable },
-    { key: "writable", label: "Folder writable", ok: folder.writable },
+    { key: "readable", label: wikiMessage(locale, "spaceFolderReadable"), ok: folder.readable },
+    { key: "writable", label: wikiMessage(locale, "spaceFolderWritable"), ok: folder.writable },
     ...folder.requiredDirectories.map((dir) => ({
       key: `dir-${dir}`,
-      label: `${dir}/ present`,
+      label: wikiMessage(locale, "folderPresent", { name: `${dir}/` }),
       ok: !folder.missingDirectories.includes(dir),
     })),
     ...folder.requiredFiles.map((file) => ({
       key: `file-${file}`,
-      label: `${file} present`,
+      label: wikiMessage(locale, "folderPresent", { name: file }),
       ok: !folder.missingFiles.includes(file),
     })),
   ];
 
   return (
-    <div role="list" aria-label="Space folder health checklist" style={{ position: "relative", display: "grid", gap: 0, padding: "2px 0" }}>
+    <div role="list" aria-label={wikiMessage(locale, "spaceFolderHealthChecklist")} style={{ position: "relative", display: "grid", gap: 0, padding: "2px 0" }}>
       {items.length > 1 ? (
         <span
           aria-hidden

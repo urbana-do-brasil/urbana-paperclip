@@ -5,12 +5,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
+import { i18n } from "@/i18n";
+import { AGENTMAIL_API_KEYS_URL } from "@/features/connections/AgentMailApiKeyField";
 import { EmailEndpointSetup } from "./EmailEndpointSetup";
 
 const mocks = vi.hoisted(() => ({ companyId: "company" as string | null, listAgents: vi.fn(), connect: vi.fn(), credentials: vi.fn(), control: vi.fn(), inspectNew: vi.fn(), inspect: vi.fn(), checkAddress: vi.fn(), setup: vi.fn(), listInboxes: vi.fn(), listConnections: vi.fn(), getConnection: vi.fn(), putInstalls: vi.fn() }));
 vi.mock("@/lib/router", async () => import("react-router-dom"));
 vi.mock("@/context/CompanyContext", () => ({ useCompany: () => ({ selectedCompanyId: mocks.companyId }) }));
-vi.mock("@/components/chat/ChatSetupNavigation", () => ({ ChatSetupNavigation: () => null }));
+vi.mock("@/components/chat/ChatSetupNavigation", () => ({
+  ChatSetupNavigation: ({ labels }: { labels: string[] }) => <nav aria-label="email setup steps">
+    {labels.map(label => <span key={label}>{label}</span>)}
+  </nav>,
+}));
 vi.mock("@/api/agents", () => ({ agentsApi: { list: mocks.listAgents } }));
 vi.mock("@/api/tools", () => ({ toolsApi: { putConnectionInstalls: mocks.putInstalls, listConnections: mocks.listConnections, getConnection: mocks.getConnection } }));
 vi.mock("@/api/email", () => ({ emailApi: { credentials: mocks.credentials, control: mocks.control, inspect: mocks.inspectNew, connect: mocks.connect, inspectSaved: mocks.inspect, checkAddress: mocks.checkAddress, setup: mocks.setup, list: mocks.listInboxes } }));
@@ -18,7 +24,8 @@ vi.mock("@/api/email", () => ({ emailApi: { credentials: mocks.credentials, cont
 let container: HTMLDivElement;
 let root: Root;
 let client: QueryClient;
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   vi.resetAllMocks();
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   mocks.companyId = "company";
@@ -70,6 +77,85 @@ async function fill(selector: string, value: string) {
 }
 
 describe("AgentMail two-step setup", () => {
+  it.each([
+    ["en", "Give an agent an email address", "API key", "Paste your AgentMail API key", "Get an AgentMail API key", "Continue", "Ralph’s email address", "Advanced options", "Create email address", "Your agent’s email is ready", "Email settings", "Anyone can email an unrestricted inbox", "Set up allowlists"],
+    ["pt-BR", "Dê um endereço de e-mail a um agente", "Chave de API", "Cole sua chave de API do AgentMail", "Obtenha uma chave de API do AgentMail", "Continuar", "Endereço de e-mail de Ralph", "Opções avançadas", "Criar endereço de e-mail", "O e-mail do seu agente está pronto", "Configurações de e-mail", "Qualquer pessoa pode enviar e-mails para uma caixa de entrada sem restrições", "Configurar listas de permissões"],
+  ])("localizes AgentMail setup in %s while preserving the credential, address, URL, and setup request", async (locale, setupHeading, keyLabel, keyPlaceholder, getKeyLabel, continueLabel, addressHeading, advancedLabel, createLabel, successHeading, settingsLabel, safetyHeading, allowlistLabel) => {
+    await i18n.changeLanguage(locale);
+    const apiKey = "  organization-test-key  ";
+    const address = "billing-ops@agentmail.to";
+    mocks.credentials.mockResolvedValue([{
+      id: "saved-account",
+      label: "External AgentMail account",
+      scope: "organization",
+      createdAt: "2026-09-30T14:00:00Z",
+    }]);
+    mocks.setup.mockResolvedValue({ id: "endpoint", address });
+    await mount(false);
+
+    expect(container.querySelector("h1")?.textContent).toBe(setupHeading);
+    expect([...container.querySelectorAll('[aria-label="email setup steps"] span')].map(item => item.textContent))
+      .toEqual(locale === "en" ? ["Agent", "Email address"] : ["Agente", "Endereço de e-mail"]);
+    expect(container.textContent).toContain(keyLabel);
+    const credentialsSelect = container.querySelector<HTMLSelectElement>("select")!;
+    await vi.waitFor(() => expect(credentialsSelect.value).toBe("saved-account"));
+    expect(credentialsSelect.options[0]?.textContent).toContain("External AgentMail account");
+    expect(credentialsSelect.options[0]?.textContent).toContain(locale === "en" ? "saved" : "salva em");
+    await act(async () => {
+      credentialsSelect.value = "";
+      credentialsSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await vi.waitFor(() => expect(container.querySelector('input[type="password"]')).not.toBeNull());
+    const keyInput = container.querySelector<HTMLInputElement>('input[type="password"]')!;
+    expect(keyInput.placeholder).toBe(keyPlaceholder);
+    expect(container.querySelector(`a[href="${AGENTMAIL_API_KEYS_URL}"]`)?.textContent).toContain(getKeyLabel);
+    const draftKey = "paperclip.agentmail-setup:company:new:ralph";
+    const requestId = JSON.parse(sessionStorage.getItem(draftKey)!).requestId as string;
+    await fill('input[type="password"]', apiKey);
+    expect(sessionStorage.getItem(draftKey)).not.toContain(apiKey.trim());
+    await click(continueLabel);
+    await vi.waitFor(() => expect(mocks.connect).toHaveBeenCalled());
+    expect(mocks.connect).toHaveBeenCalledWith("company", {
+      apiKey: "organization-test-key",
+      grantKind: "organization",
+      allAgents: false,
+      agentIds: ["ralph"],
+      idempotencyKey: requestId,
+    });
+    await vi.waitFor(() => expect(container.querySelector<HTMLInputElement>("#email-name")).not.toBeNull());
+    expect(container.querySelector("h1")?.textContent).toBe(setupHeading);
+    expect(container.textContent).toContain(addressHeading);
+    expect(container.querySelector('a[href="https://docs.agentmail.to/custom-domains"]')).not.toBeNull();
+    expect(container.textContent).toContain(safetyHeading);
+    expect(container.querySelector('a[href="https://console.agentmail.to"]')?.textContent).toContain("AgentMail");
+    expect(container.querySelector('a[href="https://docs.agentmail.to/knowledge-base/allowlists-blocklists"]')?.textContent).toContain(allowlistLabel);
+
+    const summary = [...container.querySelectorAll("summary")].find(item => item.textContent === advancedLabel)!;
+    await act(async () => summary.click());
+    const mode = container.querySelector<HTMLSelectElement>("#email-mode")!;
+    await act(async () => {
+      mode.value = "webhook";
+      mode.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await fill("#email-name", "billing-ops");
+    await vi.waitFor(() => expect(button(createLabel).disabled).toBe(false));
+    expect(container.textContent).not.toContain(apiKey.trim());
+    expect(sessionStorage.getItem(draftKey)).not.toContain(apiKey.trim());
+    await click(createLabel);
+    await vi.waitFor(() => expect(mocks.setup).toHaveBeenCalledWith("company", {
+      assignedAgentId: "ralph",
+      credentialConnectionId: "account",
+      username: "billing-ops",
+      domain: "agentmail.to",
+      receiveMode: "webhook",
+      idempotencyKey: requestId,
+    }));
+    await vi.waitFor(() => expect(container.querySelector("h1")?.textContent).toBe(successHeading));
+    expect(container.textContent).toContain(address);
+    await click(settingsLabel);
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe("/apps/chat/endpoint/settings");
+  });
+
   it("starts a fresh catalog connection without adopting a previous draft's key or email step", async () => {
     sessionStorage.setItem("paperclip.agentmail-setup:company:new:ralph", JSON.stringify({
       connectionId: "old-inbox-key", step: 1, agentId: "ralph", requestId: crypto.randomUUID(),

@@ -1,3 +1,8 @@
+---
+title: "Pipelines Tutorial: Release to Published Content"
+summary: "CLI/API walkthrough of a 12-step release-to-content flow"
+---
+
 # Pipelines Tutorial: Release to Published Content
 
 This walkthrough is the CLI/API version of the 12-step release-to-content worked example. It uses three linked pipelines:
@@ -630,11 +635,14 @@ Look for `children_terminal` followed by the auto `transitioned` event.
 Run the same flow end to end:
 
 ```sh
+PAPERCLIP_SMOKE_DISPOSABLE=1 \
 PAPERCLIP_API_URL=http://localhost:3100 \
 PAPERCLIP_COMPANY_ID=<company-id> \
 PAPERCLIP_API_KEY=<token> \
 pnpm smoke:pipelines-tutorial
 ```
+
+Run this only against a throwaway instance and company. The smoke creates pipelines, cases, a routine, and an issue; the API has no cleanup endpoint for these records. The explicit disposable-instance flag makes the script refuse to run by default. Do not set it for a shared or production instance.
 
 The smoke asserts:
 

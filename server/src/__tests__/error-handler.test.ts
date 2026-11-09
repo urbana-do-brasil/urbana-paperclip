@@ -245,9 +245,33 @@ describe("errorHandler", () => {
     expect(res.json).toHaveBeenCalledWith({
       error: "Validation error",
       details: [issue],
+      messageKey: "validation",
     });
     expect(res.err).toBeUndefined();
     expect(res.__errorContext).toBeUndefined();
+  });
+
+  it("adds an allowlisted message identity without changing the previous error contract", () => {
+    const req = makeReq();
+    const res = makeRes() as any;
+    const err = new HttpError(409, "Original diagnostic", { code: "example", existing: "unchanged" }, { key: "retry_after_seconds", params: { seconds: 5 } });
+    errorHandler(err, req, res, vi.fn());
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Original diagnostic", code: "example", details: { code: "example", existing: "unchanged" },
+      messageKey: "retry_after_seconds", messageParams: { seconds: 5 },
+    });
+  });
+
+  it("does not add metadata or echo credentials on a sensitive provider failure", () => {
+    const req = { ...makeReq(), method: "POST", originalUrl: "/api/chat-endpoints/endpoint-1/setup", body: { token: "sensitive-canary" } } as unknown as Request;
+    const res = makeRes() as any;
+    const err = new HttpError(403, "Provider rejected sensitive-canary", { reason: "sensitive-canary" }, { key: "locale_user_required" });
+    errorHandler(err, req, res, vi.fn());
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ error: "Provider rejected [REDACTED]", details: { reason: "[REDACTED]" } });
+    expect(JSON.stringify(res.json.mock.calls)).not.toContain("sensitive-canary");
+    expect(JSON.stringify(res.json.mock.calls)).not.toContain("messageKey");
   });
 
   it("removes submitted credentials from setup Zod issue prose", () => {

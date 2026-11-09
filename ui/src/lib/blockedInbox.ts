@@ -4,6 +4,9 @@ import type {
   IssueBlockedInboxReason,
   IssueBlockedInboxSeverity,
 } from "@paperclipai/shared";
+import type { TFunction } from "i18next";
+
+export type BlockedInboxTranslator = TFunction;
 
 export type BlockedReasonVariant =
   | "needs_decision"
@@ -74,12 +77,18 @@ export function blockedReasonVariant(reason: IssueBlockedInboxReason): BlockedRe
   return VARIANT_BY_REASON[reason] ?? "needs_attention";
 }
 
-export function blockedReasonLabel(reason: IssueBlockedInboxReason): string {
-  return REASON_LABELS[reason] ?? "Stopped";
+export function blockedReasonLabel(reason: IssueBlockedInboxReason, t?: BlockedInboxTranslator): string {
+  const fallback = REASON_LABELS[reason] ?? "Stopped";
+  return t
+    ? t(`inbox.blocked.reasons.${reason}`, { defaultValue: fallback })
+    : fallback;
 }
 
-export function blockedVariantLabel(variant: BlockedReasonVariant): string {
-  return BLOCKED_VARIANT_LABELS[variant];
+export function blockedVariantLabel(variant: BlockedReasonVariant, t?: BlockedInboxTranslator): string {
+  const fallback = BLOCKED_VARIANT_LABELS[variant];
+  return t
+    ? t(`inbox.blocked.groups.${variant}`, { defaultValue: fallback })
+    : fallback;
 }
 
 export function blockedSeverityRank(severity: IssueBlockedInboxSeverity): number {
@@ -215,7 +224,11 @@ export function groupBlockedInboxRows(
   return groups;
 }
 
-export function blockedRowMatchesSearch(row: BlockedInboxIssueRow, query: string): boolean {
+export function blockedRowMatchesSearch(
+  row: BlockedInboxIssueRow,
+  query: string,
+  localizedLabels: readonly string[] = [],
+): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
   const haystack = [
@@ -229,6 +242,7 @@ export function blockedRowMatchesSearch(row: BlockedInboxIssueRow, query: string
     row.attention.leafIssue?.title ?? "",
     row.attention.recoveryIssue?.identifier ?? "",
     row.attention.recoveryIssue?.title ?? "",
+    ...localizedLabels,
   ]
     .join(" ")
     .toLowerCase();
@@ -248,28 +262,32 @@ export function blockedBadgeTone(rows: readonly BlockedInboxIssueRow[]): Blocked
   return "muted";
 }
 
-export function formatStoppedAge(stoppedSinceAt: string | null, now: number = Date.now()): string {
-  if (!stoppedSinceAt) return "stopped";
+export function formatStoppedAge(
+  stoppedSinceAt: string | null,
+  now: number = Date.now(),
+  t?: BlockedInboxTranslator,
+): string {
+  if (!stoppedSinceAt) return t?.("inbox.blocked.age.unknown", { defaultValue: "stopped" }) ?? "stopped";
   const then = new Date(stoppedSinceAt).getTime();
-  if (!Number.isFinite(then)) return "stopped";
+  if (!Number.isFinite(then)) return t?.("inbox.blocked.age.unknown", { defaultValue: "stopped" }) ?? "stopped";
   const seconds = Math.max(0, Math.round((now - then) / 1000));
-  if (seconds < 60) return "stopped just now";
+  if (seconds < 60) return t?.("inbox.blocked.age.justNow", { defaultValue: "stopped just now" }) ?? "stopped just now";
   if (seconds < 3600) {
-    const m = Math.floor(seconds / 60);
-    return `stopped ${m}m`;
+    const count = Math.floor(seconds / 60);
+    return t?.("inbox.blocked.age.minutes", { count, defaultValue: `stopped ${count}m` }) ?? `stopped ${count}m`;
   }
   if (seconds < 86_400) {
-    const h = Math.floor(seconds / 3600);
-    return `stopped ${h}h`;
+    const count = Math.floor(seconds / 3600);
+    return t?.("inbox.blocked.age.hours", { count, defaultValue: `stopped ${count}h` }) ?? `stopped ${count}h`;
   }
   if (seconds < 86_400 * 7) {
-    const d = Math.floor(seconds / 86_400);
-    return `stopped ${d}d`;
+    const count = Math.floor(seconds / 86_400);
+    return t?.("inbox.blocked.age.days", { count, defaultValue: `stopped ${count}d` }) ?? `stopped ${count}d`;
   }
   if (seconds < 86_400 * 30) {
-    const w = Math.floor(seconds / (86_400 * 7));
-    return `stopped ${w}w`;
+    const count = Math.floor(seconds / (86_400 * 7));
+    return t?.("inbox.blocked.age.weeks", { count, defaultValue: `stopped ${count}w` }) ?? `stopped ${count}w`;
   }
-  const mo = Math.floor(seconds / (86_400 * 30));
-  return `stopped ${mo}mo`;
+  const count = Math.floor(seconds / (86_400 * 30));
+  return t?.("inbox.blocked.age.months", { count, defaultValue: `stopped ${count}mo` }) ?? `stopped ${count}mo`;
 }

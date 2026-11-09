@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PasteConfigTab } from "./PasteConfigTab";
 import { MCP_CONFIG_HELP_PROMPT } from "@paperclipai/shared";
+import { i18n } from "@/i18n";
 
 const toolsApiMock = vi.hoisted(() => ({
   importMcpJson: vi.fn(),
@@ -31,9 +32,9 @@ async function flushReact() {
   });
 }
 
-function helpTrigger(): HTMLButtonElement {
+function helpTrigger(label = "Get help creating an MCP config"): HTMLButtonElement {
   const button = Array.from(document.body.querySelectorAll("button")).find(
-    (candidate) => candidate.getAttribute("aria-label") === "Get help creating an MCP config",
+    (candidate) => candidate.getAttribute("aria-label") === label,
   );
   if (!button) throw new Error("help trigger not found");
   return button as HTMLButtonElement;
@@ -58,15 +59,17 @@ describe("Paste a config — MCP config help", () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot> | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = null;
     copyTextToClipboardMock.mockResolvedValue(undefined);
   });
 
-  afterEach(() => {
-    act(() => root?.unmount());
+  afterEach(async () => {
+    await act(async () => root?.unmount());
+    await i18n.changeLanguage("en");
     root = null;
     container.remove();
     document.body.innerHTML = "";
@@ -89,9 +92,9 @@ describe("Paste a config — MCP config help", () => {
     return nextRoot;
   }
 
-  async function openHelp() {
+  async function openHelp(label?: string) {
     await act(async () => {
-      helpTrigger().dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      helpTrigger(label).dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     await flushReact();
   }
@@ -119,6 +122,19 @@ describe("Paste a config — MCP config help", () => {
     // The prompt has an associated label, so a screen reader announces what the
     // focused field is.
     expect(document.body.querySelector('label[for="mcp-config-help-prompt"]')).toBeTruthy();
+  });
+
+  it("localizes the help prompt while preserving the MCP JSON contract", async () => {
+    await i18n.changeLanguage("pt-BR");
+    await render();
+    await openHelp("Ajuda para criar uma configuração MCP");
+
+    const textarea = promptTextarea();
+    expect(document.body.textContent).toContain("Peça a um agente uma configuração MCP");
+    expect(textarea?.value).toContain("Quero conectar um servidor MCP");
+    expect(textarea?.value).toContain('"mcpServers"');
+    expect(textarea?.value).toContain('"Authorization"');
+    expect(textarea?.value).toContain("<YOUR_API_KEY>");
   });
 
   it("copies the prompt and confirms it", async () => {

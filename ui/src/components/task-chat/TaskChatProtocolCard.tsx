@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { MarkdownBody } from "@/components/MarkdownBody";
+import { useTranslation } from "@/i18n";
 import type { MentionOption } from "@/components/MarkdownEditor";
 import { WorkspaceFileLink } from "@/components/WorkspaceFileLink";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,11 @@ import type {
 import { QuestionForm, QuestionResponseSummary } from "./QuestionForm";
 import { TaskChatComposerTakeoverHeader } from "./TaskChatComposerTakeoverContext";
 import { RichWorkProductCard } from "./RichWorkProductCard";
+import {
+  providerActivityDetailLabel,
+  providerActivityStatusLabel,
+  type TaskChatActivityTranslator,
+} from "./task-chat-activity-presentation";
 
 export interface TaskChatProtocolCardProps {
   item: TaskChatProtocolItem;
@@ -134,6 +140,7 @@ function CardShell({
   title,
   status,
   summary,
+  statusLabel,
   children,
   testId,
   presentation = "timeline",
@@ -142,6 +149,7 @@ function CardShell({
   title: string;
   status: string | null;
   summary?: string;
+  statusLabel?: string;
   children?: React.ReactNode;
   testId: string;
   presentation?: "timeline" | "takeover";
@@ -155,12 +163,13 @@ function CardShell({
       {status && status !== "pending" ? (
         <span
           className={cn(
-            "inline-flex shrink-0 items-center gap-1 text-xs capitalize",
+            "inline-flex shrink-0 items-center gap-1 text-xs",
+            statusLabel === undefined && "capitalize",
             statusTone(status),
           )}
         >
           <StatusIcon status={status} className="h-3.5 w-3.5" />
-          {status.replaceAll("_", " ")}
+          {statusLabel ?? status.replaceAll("_", " ")}
         </span>
       ) : null}
     </div>
@@ -209,12 +218,13 @@ function CardShell({
             {status ? (
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 text-xs capitalize",
+                  "inline-flex items-center gap-1 text-xs",
+                  statusLabel === undefined && "capitalize",
                   statusTone(status),
                 )}
               >
                 <StatusIcon status={status} className="h-3.5 w-3.5" />
-                {status.replaceAll("_", " ")}
+                {statusLabel ?? status.replaceAll("_", " ")}
               </span>
             ) : null}
           </div>
@@ -230,10 +240,10 @@ function CardShell({
   );
 }
 
-function PlanSteps({ steps }: { steps: TaskChatProtocolStep[] }) {
+function PlanSteps({ steps, translate }: { steps: TaskChatProtocolStep[]; translate?: TaskChatActivityTranslator }) {
   if (steps.length === 0) return null;
   return (
-    <ol className="flex flex-col gap-1.5" aria-label="Plan steps">
+    <ol className="flex flex-col gap-1.5" aria-label={translate?.("taskDetail.chatTranscript.providerActivity.experimental.cards.planSteps") ?? "Plan steps"}>
       {steps.map((step) => (
         <li key={step.id} className="flex items-start gap-2 text-sm">
           <StatusIcon status={step.status} className="mt-0.5 shrink-0" />
@@ -257,23 +267,27 @@ function ProviderActivityCard({
 }: {
   item: TaskChatProviderActivityItem;
 }) {
+  const { t } = useTranslation();
+  const translate: TaskChatActivityTranslator = (key, options) => t(key, options);
   const Icon = FAMILY_ICON[item.family];
   const hasDetails =
     item.details.length > 0 ||
     item.links.length > 0 ||
     item.children.length > 0 ||
-    Boolean(item.output);
+    Boolean(item.output) ||
+    Boolean(item.outputTruncated);
   return (
     <CardShell
       icon={Icon}
       title={item.title}
       status={item.status}
+      statusLabel={translate ? providerActivityStatusLabel(item.status, translate) : undefined}
       summary={item.summary}
       testId={`task-chat-provider-${item.family}`}
     >
-      {item.steps.length > 0 ? <PlanSteps steps={item.steps} /> : null}
+      {item.steps.length > 0 ? <PlanSteps steps={item.steps} translate={translate} /> : null}
       {item.children.length > 0 ? (
-        <ul className="flex flex-col gap-2" aria-label="Delegated agents">
+        <ul className="flex flex-col gap-2" aria-label={t("taskDetail.chatTranscript.providerActivity.experimental.cards.delegatedAgents")}>
           {item.children.map((child) => (
             <li
               key={child.id}
@@ -284,11 +298,12 @@ function ProviderActivityCard({
                 <strong className="font-medium">{child.title}</strong>
                 <span
                   className={cn(
-                    "ml-auto text-xs capitalize",
+                    "ml-auto text-xs",
+                    !translate && "capitalize",
                     statusTone(child.status),
                   )}
                 >
-                  {child.status}
+                  {translate ? providerActivityStatusLabel(child.status, translate) : child.status}
                 </span>
               </div>
               {child.metadata ? (
@@ -306,7 +321,7 @@ function ProviderActivityCard({
         </ul>
       ) : null}
       {item.links.length > 0 ? (
-        <ul className="flex flex-col gap-2" aria-label="Research sources">
+        <ul className="flex flex-col gap-2" aria-label={t("taskDetail.chatTranscript.providerActivity.experimental.cards.researchSources")}>
           {item.links.map((link) => (
             <li key={link.href}>
               <a
@@ -336,8 +351,8 @@ function ProviderActivityCard({
               "mt-2",
           )}
         >
-          <summary className="flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-muted-foreground">
-            <ChevronDown aria-hidden className="h-3.5 w-3.5" /> Details
+            <summary className="flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-muted-foreground">
+            <ChevronDown aria-hidden className="h-3.5 w-3.5" /> {t("taskDetail.chatTranscript.providerActivity.experimental.cards.details")}
           </summary>
           {item.details.length > 0 ? (
             <dl className="mt-2 flex min-w-0 flex-col gap-1.5 text-xs">
@@ -346,7 +361,7 @@ function ProviderActivityCard({
                   key={`${detail.label}:${detail.value}`}
                   className="grid min-w-0 grid-cols-1 gap-0.5 sm:grid-cols-(--gtc-task-chat-details) sm:gap-3"
                 >
-                  <dt className="text-muted-foreground">{detail.label}</dt>
+                  <dt className="text-muted-foreground">{providerActivityDetailLabel(detail.label, translate)}</dt>
                   <dd
                     className={cn(
                       "min-w-0 break-words text-foreground",
@@ -366,7 +381,7 @@ function ProviderActivityCard({
           ) : null}
           {item.outputTruncated ? (
             <p className="mt-1 text-xs text-muted-foreground">
-              Output truncated to 8 KiB.
+              {t("taskDetail.chatTranscript.providerActivity.experimental.cards.outputTruncated")}
             </p>
           ) : null}
         </details>

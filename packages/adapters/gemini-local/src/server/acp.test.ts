@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AdapterExecutionContext, AdapterInvocationMeta } from "@paperclipai/adapter-utils";
 import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
+import { createCommunicationLocalePromptFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
 
 // Every test in this file needs a real teardown, so the mock below delegates
 // to the actual factory by default. Only the wiring test further down reads
@@ -793,4 +794,73 @@ describe("gemini_local ACP lane", () => {
       ]),
     );
   });
+
+  it.each([
+    ["auto", "pt-BR"],
+    ["auto", "en"],
+    ["acp", "pt-BR"],
+    ["acp", "en"],
+  ] as const)(
+    "transports %s locale guidance through fresh and resumed Gemini ACP turns (%s)",
+    async (engine, locale) => {
+      const root = await makeTempRoot("paperclip-gemini-acp-locale-");
+      setNodeVersion("v24.11.0");
+      expect(resolveGeminiExecutionEngine({ engine })).toEqual({
+        engine: "acp",
+        explicit: engine === "acp",
+      });
+
+      const runtimes: FakeRuntime[] = [];
+      const execute = createGeminiAcpExecutor({
+        createRuntime: (options: FakeRuntimeOptions) => {
+          const runtime = new FakeRuntime(options);
+          runtimes.push(runtime);
+          return runtime as never;
+        },
+      });
+      const base = buildContext(root);
+      const config = { ...base.config, engine };
+      const context = {
+        ...createCommunicationLocalePromptFixture(locale),
+        issueId: "issue-1",
+        paperclipWorkspace: { cwd: root, source: "project_workspace", workspaceId: "workspace-1" },
+      };
+
+      const fresh = await execute(buildContext(root, { config, context }));
+      const resumed = await execute(buildContext(root, {
+        config,
+        context,
+        runtime: {
+          sessionId: fresh.sessionId ?? null,
+          sessionParams: fresh.sessionParams ?? null,
+          sessionDisplayId: fresh.sessionDisplayId ?? null,
+          taskKey: "PAP-1",
+        },
+      }));
+      const freshPrompt = String(runtimes[0]?.startInputs[0]?.text ?? "");
+      const resumedPrompt = String(runtimes[1]?.startInputs[0]?.text ?? "");
+      const directive = locale === "pt-BR"
+        ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+        : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+
+      expect(fresh.exitCode).toBe(0);
+      expect(resumed.exitCode).toBe(0);
+      expect(runtimes[1]?.ensureInputs[0]?.resumeSessionId).toBe("acp-1");
+      for (const prompt of [freshPrompt, resumedPrompt]) {
+        expect(prompt).toContain("## Human communication language");
+        expect(prompt).toContain(directive);
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+      }
+      if (locale === "pt-BR") {
+        expect(freshPrompt).toContain("Do not switch these interactions to English.");
+        expect(freshPrompt).not.toContain("ASD-STE100 Simplified Technical English");
+      } else {
+        expect(freshPrompt).toContain("ASD-STE100 Simplified Technical English");
+      }
+      expect(freshPrompt).toContain("Saved agent instruction: keep `handoff_mode=SAFE` unchanged.");
+      expect(resumedPrompt).not.toContain("Saved agent instruction: keep `handoff_mode=SAFE` unchanged.");
+    },
+  );
 });

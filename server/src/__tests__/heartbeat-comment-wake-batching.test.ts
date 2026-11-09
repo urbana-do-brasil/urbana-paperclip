@@ -488,7 +488,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
     expect(runs[0]?.id).toBe(runId);
   });
 
-  it("batches deferred comment wakes and forwards the ordered batch to the next run", async () => {
+  it("preserves separate human comment receipts and forwards them in order", async () => {
     const gateway = await createControlledGatewayServer();
     const companyId = randomUUID();
     const agentId = randomUUID();
@@ -642,81 +642,40 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
         return Boolean(deferred);
       });
 
-      const deferredWake = await db
-        .select()
-        .from(agentWakeupRequests)
-        .where(
-          and(
-            eq(agentWakeupRequests.companyId, companyId),
-            eq(agentWakeupRequests.agentId, agentId),
-            eq(agentWakeupRequests.status, "deferred_issue_execution"),
-          ),
-        )
-        .then((rows) => rows[0] ?? null);
-
-      const deferredContext = (
-        deferredWake?.payload as Record<string, unknown> | null
-      )?._paperclipWakeContext as Record<string, unknown> | undefined;
-      expect(deferredContext?.wakeCommentIds).toEqual([
-        comment2.id,
-        comment3.id,
-      ]);
+      const deferredWakes = await db.select().from(agentWakeupRequests).where(and(
+        eq(agentWakeupRequests.companyId, companyId), eq(agentWakeupRequests.agentId, agentId),
+        eq(agentWakeupRequests.status, "deferred_issue_execution"),
+      ));
+      const deferredCommentIds = deferredWakes.flatMap((wake) => {
+        const context = (wake.payload as Record<string, unknown>)?._paperclipWakeContext as Record<string, unknown>;
+        return (context?.wakeCommentIds ?? []) as string[];
+      });
+      expect(deferredCommentIds).toHaveLength(2);
+      expect(deferredCommentIds).toEqual(expect.arrayContaining([comment2.id, comment3.id]));
 
       gateway.releaseFirstWait();
-
-      await waitFor(() => gateway.getAgentPayloads().length === 2);
-      const secondPayload = gateway.getAgentPayloads()[1] ?? {};
-      const secondRunId =
-        typeof secondPayload.idempotencyKey === "string"
-          ? secondPayload.idempotencyKey
-          : null;
-      if (!secondRunId) {
-        throw new Error(
-          "Expected forwarded gateway payload to include an idempotencyKey run id",
-        );
-      }
-
+      await waitFor(() => gateway.getAgentPayloads().length >= 3, 90_000);
+      const [, secondPayload, thirdPayload] = gateway.getAgentPayloads();
+      const secondWake = await readGatewayWakePayload(secondPayload!);
+      const thirdWake = await readGatewayWakePayload(thirdPayload!);
+      expect(secondWake).toMatchObject({ commentIds: [comment2.id], latestCommentId: comment2.id });
+      expect(thirdWake).toMatchObject({ commentIds: [comment3.id], latestCommentId: comment3.id });
+      expect(String(secondPayload!.message ?? "")).toContain("Second comment");
+      expect(String(thirdPayload!.message ?? "")).toContain("Third comment");
+      expect(secondPayload!.paperclip).toBeUndefined();
+      expect(thirdPayload!.paperclip).toBeUndefined();
+      expect(String(secondPayload!.message ?? "")).toContain("First comment");
+      const secondRunId = secondPayload?.idempotencyKey;
+      const thirdRunId = thirdPayload?.idempotencyKey;
+      expect(typeof secondRunId).toBe("string");
+      expect(typeof thirdRunId).toBe("string");
+      expect(thirdRunId).not.toBe(secondRunId);
       await waitFor(async () => {
-        const runs = await db
-          .select()
-          .from(heartbeatRuns)
-          .where(eq(heartbeatRuns.agentId, agentId));
-        const statusesByRunId = new Map(
-          runs.map((run) => [run.id, run.status]),
-        );
-        return (
-          statusesByRunId.get(firstRun!.id) === "succeeded" &&
-          statusesByRunId.get(secondRunId) === "succeeded"
-        );
+        const runs = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.agentId, agentId));
+        return [firstRun!.id, secondRunId, thirdRunId].every((id) =>
+          runs.some((run) => run.id === id && run.status === "succeeded"));
       }, 90_000);
 
-      const promotedRun = await db
-        .select({ contextSnapshot: heartbeatRuns.contextSnapshot })
-        .from(heartbeatRuns)
-        .where(eq(heartbeatRuns.id, secondRunId))
-        .then((rows) => rows[0]);
-      const promotedTaskMarkdown = String(
-        (promotedRun.contextSnapshot as Record<string, unknown> | null)
-          ?.paperclipTaskMarkdown ?? "",
-      );
-      expect(promotedTaskMarkdown).toContain(
-        "Pending wake comments (oldest to newest):",
-      );
-      expect(promotedTaskMarkdown.indexOf("Second comment")).toBeLessThan(
-        promotedTaskMarkdown.indexOf("Third comment"),
-      );
-      expect(promotedTaskMarkdown).not.toContain("First comment");
-
-      expect(secondPayload.paperclip).toBeUndefined();
-      const secondWake = await readGatewayWakePayload(secondPayload);
-      expect(secondWake).toMatchObject({
-        commentIds: [comment2.id, comment3.id],
-        latestCommentId: comment3.id,
-      });
-      expect(String(secondPayload.message ?? "")).toContain("Second comment");
-      expect(String(secondPayload.message ?? "")).toContain("Third comment");
-      // A fresh gateway request receives full context; the wake delta stays bounded above.
-      expect(String(secondPayload.message ?? "")).toContain("First comment");
     } finally {
       gateway.releaseFirstWait();
       await gateway.close();

@@ -26,6 +26,7 @@ import {
 } from "../install-store.js";
 import { resolveCliVersion } from "../version.js";
 import { systemdServiceName } from "../services/service-manager.js";
+import { setCliLocale } from "../localization/index.js";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -33,6 +34,7 @@ describe("managed install commands", () => {
   let root: string;
 
   beforeEach(() => {
+    setCliLocale("en");
     root = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-install-command-"));
     process.env = {
       ...ORIGINAL_ENV,
@@ -47,6 +49,7 @@ describe("managed install commands", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    setCliLocale("pt-BR");
     process.env = { ...ORIGINAL_ENV };
     fs.rmSync(root, { recursive: true, force: true });
   });
@@ -231,7 +234,10 @@ describe("managed install commands", () => {
       throw new Error(`Unexpected command: ${file} ${args.join(" ")}`);
     });
 
+    setCliLocale("pt-BR");
     await installCommand({}, { runCommand, now: () => new Date("2026-07-22T18:00:00.000Z") });
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Resolvendo paperclipai@latest"));
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Instalando paperclipai@2026.720.0"));
 
     const paths = resolveInstallStorePaths();
     const manifest = readInstallManifest(paths);
@@ -254,6 +260,7 @@ describe("managed install commands", () => {
     const uninstallService = vi.fn(async () => {
       expect(fs.existsSync(paths.shimPath)).toBe(true);
     });
+    setCliLocale("en");
     await uninstallCommand({
       detectServiceManager: vi.fn(async () => ({
         supported: true as const,
@@ -265,6 +272,7 @@ describe("managed install commands", () => {
     });
 
     expect(uninstallService).toHaveBeenCalledOnce();
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Removed the managed Paperclip CLI install."));
     expect(fs.existsSync(paths.cliRoot)).toBe(false);
     expect(fs.existsSync(paths.shimPath)).toBe(false);
     expect(fs.readFileSync(userData, "utf8")).toBe("keep");

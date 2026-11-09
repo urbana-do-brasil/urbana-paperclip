@@ -1,5 +1,6 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { History } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { PageTabBar } from "@/components/PageTabBar";
 import { Tabs } from "@/components/ui/tabs";
@@ -20,6 +21,7 @@ import {
 
 export function AuditHub({ section }: { section: AuditSection }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -38,14 +40,21 @@ export function AuditHub({ section }: { section: AuditSection }) {
     "cost.",
     "company.",
   ].includes(actionParam ?? "") ? actionParam! : "__all";
+  const sectionItems = useMemo(
+    () => AUDIT_SECTIONS.map((item) => ({
+      ...item,
+      label: t(`auditHub.sections.${item.value}`),
+    })),
+    [t],
+  );
 
   useEffect(() => {
-    const current = AUDIT_SECTIONS.find((candidate) => candidate.value === section);
+    const current = sectionItems.find((candidate) => candidate.value === section);
     setBreadcrumbs([
-      { label: "Audit", href: section === "activity" ? undefined : "/activity" },
+      { label: t("auditHub.title"), href: section === "activity" ? undefined : "/activity" },
       ...(section === "activity" || !current ? [] : [{ label: current.label }]),
     ]);
-  }, [section, setBreadcrumbs]);
+  }, [section, sectionItems, setBreadcrumbs, t]);
 
   const handleModeChange = useCallback(
     (next: AuditFeedMode) => {
@@ -78,13 +87,13 @@ export function AuditHub({ section }: { section: AuditSection }) {
   );
 
   if (!selectedCompanyId) {
-    return <EmptyState icon={History} message="Select an organization to view Audit." />;
+    return <EmptyState icon={History} message={t("auditHub.selectOrganization")} />;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Audit</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">{t("auditHub.title")}</h1>
       </div>
 
       <Tabs
@@ -94,7 +103,13 @@ export function AuditHub({ section }: { section: AuditSection }) {
           navigate(auditSectionHref(next, scope));
         }}
       >
-        <PageTabBar items={AUDIT_SECTIONS} value={section} align="start" />
+        <PageTabBar
+          items={sectionItems}
+          value={section}
+          onValueChange={(value) => navigate(auditSectionHref(value as AuditSection, scope))}
+          align="start"
+          ariaLabel={t("auditHub.pageSection")}
+        />
       </Tabs>
 
       {section === "activity" && routineId ? (

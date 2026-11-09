@@ -5,6 +5,8 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UserProfileResponse } from "@paperclipai/shared";
+import { i18n } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/locales";
 import { queryKeys } from "../lib/queryKeys";
 import { UserProfile } from "./UserProfile";
 
@@ -101,7 +103,8 @@ const EDIT_PROFILE_HREF = "/company/settings/instance/profile";
 describe("UserProfile", () => {
   let container: HTMLDivElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     container = document.createElement("div");
     document.body.appendChild(container);
     mockUseParams.mockReturnValue({ userSlug: "jane-example" });
@@ -116,14 +119,15 @@ describe("UserProfile", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     container.remove();
     document.body.innerHTML = "";
     vi.clearAllMocks();
+    await i18n.changeLanguage(DEFAULT_LOCALE);
   });
 
-  async function render(profile: UserProfileResponse, hiddenSettings: string[] = []) {
-    mockUserProfilesApi.get.mockResolvedValue(profile);
+  async function render(profile?: UserProfileResponse, hiddenSettings: string[] = []) {
+    if (profile) mockUserProfilesApi.get.mockResolvedValue(profile);
     const root = createRoot(container);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     queryClient.setQueryData(queryKeys.health, {
@@ -173,5 +177,57 @@ describe("UserProfile", () => {
     expect(container.querySelector(`a[href="${EDIT_PROFILE_HREF}"]`)).toBeNull();
 
     await act(async () => root.unmount());
+  });
+
+  it("localizes the public profile while preserving identity and edit access", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const root = await render(profileFor("user-1"));
+
+    expect(container.textContent).toContain("Jane Example");
+    expect(container.textContent).toContain("@jane-example");
+    expect(container.textContent).toContain("jane@example.com");
+    expect(container.textContent).toContain("Proprietário");
+    expect(container.textContent).toContain("Ativo");
+    expect(container.textContent).toContain("Últimos 7 dias");
+    expect(container.textContent).toContain("Últimos 14 dias");
+    expect(container.textContent).toContain("Tarefas recentes");
+    expect(container.textContent).toContain("Nenhuma tarefa acessada até agora.");
+    expect(container.textContent).toContain("Nenhuma ação direta do usuário foi registrada até agora.");
+    expect(container.textContent).toContain("Uso por agente");
+    expect(container.textContent).toContain("Ainda não há uso de tokens associado a tarefas.");
+    expect(container.textContent).toContain("Uso por provedor");
+    expect(container.textContent).toContain("Ainda não há uso atribuído a provedores.");
+    const editLink = container.querySelector<HTMLAnchorElement>(`a[href="${EDIT_PROFILE_HREF}"]`);
+    expect(editLink?.textContent).toContain("Editar perfil");
+    expect(mockSetBreadcrumbs).toHaveBeenCalledWith([
+      { label: "Usuários" },
+      { label: "Jane Example" },
+    ]);
+
+    await act(async () => root.unmount());
+  });
+
+  it("localizes known activity verbs and profile failure states", async () => {
+    await i18n.changeLanguage("pt-BR");
+    const profile = profileFor("user-2");
+    profile.recentActivity = [{
+      id: "activity-1",
+      action: "agent.created",
+      entityType: "agent",
+      entityId: "agent-123456789012",
+      details: null,
+      createdAt: new Date("2026-01-06T00:00:00Z"),
+    }];
+    const root = await render(profile);
+
+    expect(container.textContent).toContain("criou");
+    expect(container.textContent).toContain("Agente · agent-123456");
+    await act(async () => root.unmount());
+
+    mockUserProfilesApi.get.mockRejectedValueOnce(new Error("sensitive internal failure"));
+    const failureRoot = await render();
+    expect(container.textContent).toContain("Perfil de usuário não encontrado nesta organização.");
+    expect(container.textContent).not.toContain("sensitive internal failure");
+    await act(async () => failureRoot.unmount());
   });
 });

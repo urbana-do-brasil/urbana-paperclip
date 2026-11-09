@@ -44,6 +44,7 @@
     "release:bootstrap-package": "node scripts/bootstrap-npm-package.mjs",
     "check:tokens": "node scripts/check-forbidden-tokens.mjs",
     "check:token-gates": "node scripts/check-token-gates.mjs && node scripts/sync-agent-palette-tokens.mjs --check && node scripts/sync-cliplab-character.mjs --check",
+    "check:localization": "node scripts/check-localized-catalog-json.mjs && node scripts/check-localized-help.mjs && node scripts/check-localization-coverage-index.mjs && node scripts/check-localized-source-literals.mjs && node --test scripts/__tests__/check-localized-catalog-json.test.mjs scripts/__tests__/check-localized-help.test.mjs scripts/__tests__/check-localization-coverage-index.test.mjs scripts/__tests__/check-localized-source-literals.test.mjs scripts/__tests__/localized-cli-json-contract.test.mjs && NO_COLOR=1 FORCE_COLOR=0 pnpm exec vitest run ui/src/i18n/locale-validation.test.ts cli/src/__tests__/*-localization.test.ts cli/src/__tests__/localized-admin-help.test.ts cli/src/__tests__/locale.test.ts cli/src/__tests__/locale-packaged.test.ts cli/src/__tests__/locale-api-error.integration.test.ts cli/src/__tests__/email-structured-contract.test.ts --testTimeout 15000",
     "check:node-version": "node scripts/check-node-version-policy.mjs",
     "check:no-git-push": "node scripts/check-no-git-push.mjs",
     "check:module-boundaries": "node scripts/check-module-boundaries.mjs",

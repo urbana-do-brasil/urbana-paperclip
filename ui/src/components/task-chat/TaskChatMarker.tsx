@@ -6,6 +6,7 @@ import type { TaskChatMarkerItem } from "./task-chat-model";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/router";
 import { timeAgo } from "@/lib/timeAgo";
+import { useTranslation } from "@/i18n";
 
 const VARIANT_ICON = {
   session_start: CircleDot,
@@ -30,6 +31,7 @@ export function TaskChatMarker({
   const [open, setOpen] = useState(false);
   const detailsId = useId();
   const streamlined = useStreamlinedTaskChatPresentation();
+  const { t } = useTranslation();
   const Icon = item.tone === "neutral" ? Square : VARIANT_ICON[item.variant];
   const interrupted = item.variant === "interrupted" && item.tone !== "neutral";
   const relative = item.createdAtIso ? timeAgo(item.createdAtIso) : undefined;
@@ -42,21 +44,37 @@ export function TaskChatMarker({
 
   if (item.credentialAccess) {
     const { agentName, credentialName, deniedUser, settingsHref } = item.credentialAccess;
+    const visibleAgentName = agentName === "This agent"
+      ? t("taskDetail.chatTranscript.execution.credentialAgentFallback")
+      : agentName;
+    const visibleDeniedUser = deniedUser === "the person this task runs for"
+      ? t("taskDetail.chatTranscript.execution.credentialResponsibleUser")
+      : deniedUser;
+    const credential = credentialName || t("taskDetail.chatTranscript.execution.credentialFallback");
+    const userIsCurrent = deniedUser === "you";
     return (
       <div role="alert" data-testid="task-chat-credential-access-notice"
         className="tc-enter-marker flex w-full items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
         <KeyRound className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden />
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <p className="font-semibold text-destructive">{agentName} couldn’t start</p>
+          <p className="font-semibold text-destructive">
+            {t("taskDetail.chatTranscript.execution.credentialCouldNotStart", { agentName: visibleAgentName })}
+          </p>
           <p className="break-words font-medium text-foreground">
-            {agentName} is configured to use {credentialName || "an AI credential"}, but {deniedUser === "you" ? "you don’t" : `${deniedUser} doesn’t`} have access to that credential.
+            {userIsCurrent
+              ? t("taskDetail.chatTranscript.execution.credentialDeniedCurrentUser", { agentName: visibleAgentName, credential })
+              : t("taskDetail.chatTranscript.execution.credentialDeniedOtherUser", { agentName: visibleAgentName, credential, deniedUser: visibleDeniedUser })}
           </p>
           <p className="text-muted-foreground">
-            Choose an AI connection {deniedUser === "you" ? "you can" : `${deniedUser} can`} use, or ask an administrator to update {agentName}’s connection. Then try again.
+            {userIsCurrent
+              ? t("taskDetail.chatTranscript.execution.credentialChooseForCurrentUser", { agentName: visibleAgentName })
+              : t("taskDetail.chatTranscript.execution.credentialChooseForOtherUser", { agentName: visibleAgentName, deniedUser: visibleDeniedUser })}
           </p>
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <Button asChild variant="outline" size="sm"><Link to={settingsHref}>Change AI connection</Link></Button>
-            {item.runHref && <Button asChild variant="ghost" size="sm"><Link to={item.runHref}>View run</Link></Button>}
+            <Button asChild variant="outline" size="sm">
+              <Link to={settingsHref}>{t("taskDetail.chatTranscript.execution.changeAiConnection")}</Link>
+            </Button>
+            {item.runHref && <Button asChild variant="ghost" size="sm"><Link to={item.runHref}>{t("taskDetail.chatTranscript.viewRun")}</Link></Button>}
           </div>
         </div>
       </div>
@@ -105,7 +123,9 @@ export function TaskChatMarker({
               disabled={tryAgainPending}
               data-testid="task-chat-run-failed-try-again"
             >
-              {tryAgainPending ? "Trying again..." : "Try again"}
+              {tryAgainPending
+                ? t("taskDetail.chatTranscript.execution.tryingAgain")
+                : t("taskDetail.chatTranscript.execution.tryAgain")}
             </Button>
           ) : null}
         </div>
@@ -124,12 +144,12 @@ export function TaskChatMarker({
               <div className="flex items-center justify-end gap-2 border-t border-border/70 bg-background/50 px-3 py-2 dark:bg-background/30">
                 {item.planHref ? (
                   <Button asChild variant="ghost" size="xs">
-                    <Link to={item.planHref}>View saved plan</Link>
+                    <Link to={item.planHref}>{t("taskDetail.chatTranscript.execution.viewSavedPlan")}</Link>
                   </Button>
                 ) : null}
                 {item.runHref ? (
                   <Button asChild variant="ghost" size="xs">
-                    <Link to={item.runHref}>View run</Link>
+                    <Link to={item.runHref}>{t("taskDetail.chatTranscript.viewRun")}</Link>
                   </Button>
                 ) : null}
                 {onTryAgain ? (
@@ -140,7 +160,9 @@ export function TaskChatMarker({
                     disabled={tryAgainPending}
                     data-testid="task-chat-run-failed-try-again"
                   >
-                    {tryAgainPending ? "Trying again..." : "Try again"}
+                    {tryAgainPending
+                      ? t("taskDetail.chatTranscript.execution.tryingAgain")
+                      : t("taskDetail.chatTranscript.execution.tryAgain")}
                   </Button>
                 ) : null}
               </div>
@@ -185,7 +207,9 @@ export function TaskChatMarker({
             disabled={tryAgainPending}
             data-testid="task-chat-run-failed-try-again"
           >
-            {tryAgainPending ? "Trying again..." : "Try again"}
+            {tryAgainPending
+              ? t("taskDetail.chatTranscript.execution.tryingAgain")
+              : t("taskDetail.chatTranscript.execution.tryAgain")}
           </Button>
         ) : null}
       </span>

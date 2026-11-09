@@ -14,6 +14,7 @@ import { useHiddenSettings } from "@/hooks/useHiddenSettings";
 import { getWorktreeInstanceId, isWorktreeRuntime } from "../lib/worktree-branding";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { queryKeys } from "../lib/queryKeys";
+import { useTranslation } from "@/i18n";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,10 @@ type WorktreeRunExecutionDisplayState =
   | { kind: "off" }
   | { kind: "armed"; activatedAt: string }
   | { kind: "fail_closed"; reason: "missing_cutoff" | "missing_instance_id" | "instance_mismatch" };
+
+type ExperimentalSettingsActionError =
+  | { message: string }
+  | { key: "instanceExperimental.updateFailedFallback" };
 
 /**
  * Mirror of the server's `resolveWorktreeRunExecutionActivation` fail-closed
@@ -61,10 +66,11 @@ function formatActivationTimestamp(iso: string): string {
 const SHOW_CONFERENCE_ROOM_EXPERIMENTAL_SETTING = false;
 
 function ManagedByCloudBadge() {
+  const { t } = useTranslation();
   return (
     <Badge variant="outline" className="text-muted-foreground">
       <Lock aria-hidden="true" />
-      Managed by Paperclip Cloud
+      {t("instanceExperimental.managedByCloud")}
     </Badge>
   );
 }
@@ -120,10 +126,11 @@ function ExperimentalToggleCard({
 }
 
 export function InstanceExperimentalSettings() {
+  const { t } = useTranslation();
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
   const { hidden: hiddenSettings } = useHiddenSettings();
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<ExperimentalSettingsActionError | null>(null);
 
   useEffect(() => {
     setBreadcrumbs([
@@ -173,12 +180,14 @@ export function InstanceExperimentalSettings() {
       if (context?.previousSettings) {
         queryClient.setQueryData(queryKeys.instance.experimentalSettings, context.previousSettings);
       }
-      setActionError(error instanceof Error ? error.message : "Failed to update experimental settings.");
+      setActionError(error instanceof Error
+        ? { message: error.message }
+        : { key: "instanceExperimental.updateFailedFallback" });
     },
   });
 
   if (experimentalQuery.isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading experimental settings...</div>;
+    return <div className="text-sm text-muted-foreground">{t("instanceExperimental.loading")}</div>;
   }
 
   if (experimentalQuery.error) {
@@ -186,7 +195,7 @@ export function InstanceExperimentalSettings() {
       <div className="text-sm text-destructive">
         {experimentalQuery.error instanceof Error
           ? experimentalQuery.error.message
-          : "Failed to load experimental settings."}
+          : t("instanceExperimental.loadFailedFallback")}
       </div>
     );
   }
@@ -280,7 +289,7 @@ export function InstanceExperimentalSettings() {
 
       {actionError && (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {actionError}
+          {"key" in actionError ? t(actionError.key) : actionError.message}
         </div>
       )}
 
@@ -520,9 +529,9 @@ export function InstanceExperimentalSettings() {
         />
 
         <ExperimentalToggleCard
-          title="Status Cards"
-          description="Enable the experimental shared status-card board and its gated API. Existing card data is kept when this is disabled."
-          footnote="Enabling Status Cards also enables Summaries."
+          title={t("instanceExperimental.statusCards.title")}
+          description={t("instanceExperimental.statusCards.description")}
+          footnote={t("instanceExperimental.statusCards.footnote")}
           checked={enableStatusCards}
           onCheckedChange={(checked) =>
             toggleMutation.mutate(
@@ -534,7 +543,7 @@ export function InstanceExperimentalSettings() {
           disabled={toggleMutation.isPending || statusCardsBlockedByManagedSummaries}
           settingKey="enableStatusCards"
           managed={managedKeys.enableStatusCards}
-          ariaLabel="Toggle status cards experimental setting"
+          ariaLabel={t("instanceExperimental.statusCards.ariaLabel")}
         />
 
         <ExperimentalToggleCard
@@ -550,9 +559,9 @@ export function InstanceExperimentalSettings() {
         />
 
         <ExperimentalToggleCard
-          title="Summaries"
-          description="Show Summarizer-generated status slots on project and workspace pages, with on-demand refresh and revision history. Existing summary data is kept when this is disabled."
-          footnote="Status Cards requires Summaries. Disabling Summaries also disables Status Cards."
+          title={t("instanceExperimental.summaries.title")}
+          description={t("instanceExperimental.summaries.description")}
+          footnote={t("instanceExperimental.summaries.footnote")}
           checked={enableSummaries}
           onCheckedChange={(checked) =>
             toggleMutation.mutate(
@@ -564,7 +573,7 @@ export function InstanceExperimentalSettings() {
           disabled={toggleMutation.isPending || summariesRequiredByManagedStatusCards}
           settingKey="enableSummaries"
           managed={managedKeys.enableSummaries}
-          ariaLabel="Toggle summaries experimental setting"
+          ariaLabel={t("instanceExperimental.summaries.ariaLabel")}
         />
 
         {enableIsolatedWorkspaces && (

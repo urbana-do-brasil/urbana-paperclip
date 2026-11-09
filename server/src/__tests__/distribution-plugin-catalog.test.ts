@@ -21,7 +21,9 @@ function fixture() {
 }
 describe("image-owned plugin catalogs", () => {
   it("preserves images without a distribution catalog", () => {
-    expect(readDistributionPluginCatalog("/nonexistent/catalog", BUNDLED_PLUGIN_CATALOG)).toEqual([]);
+    const root = realpathSync(mkdtempSync(path.join(os.tmpdir(), "distribution-plugin-absent-")));
+    roots.push(root);
+    expect(readDistributionPluginCatalog(path.join(root, "missing"), BUNDLED_PLUGIN_CATALOG)).toEqual([]);
   });
   it("resolves selected private bundles alongside built-ins after verifying their bytes", () => {
     const { root, localPath } = fixture();

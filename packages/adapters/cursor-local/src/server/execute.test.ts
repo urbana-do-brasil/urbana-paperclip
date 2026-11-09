@@ -6,7 +6,10 @@ import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/executio
 import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
 import { SANDBOX_INSTALL_COMMAND } from "../index.js";
 import { execute } from "./execute.js";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import {
+  createCommunicationLocalePromptFixture,
+  createPromptContextFixture,
+} from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
 
 type PrepareCursorSandboxCommandInput = {
   runId: string;
@@ -441,21 +444,92 @@ printf '%s\\n' '{"type":"result","subtype":"success","session_id":"cursor-sessio
     }
   });
 
-  it("rebuilds the full assignment after an unknown-session resume", async () => {
-    setPrepareCursorSandboxCommand.mockReset();
-    setPrepareCursorSandboxCommand.mockImplementation(async (input) => ({
-      command: input.command,
-      env: input.env,
-      remoteSystemHomeDir: null,
-      addedPathEntry: null,
-      preferredCommandPath: null,
-    }));
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-resume-"));
-    const workspace = path.join(root, "workspace");
-    const commandPath = path.join(root, "agent.sh");
-    const capturePath = path.join(root, "prompts.txt");
-    await fs.mkdir(workspace, { recursive: true });
-    await fs.writeFile(commandPath, `#!/bin/sh
+  it.each(["pt-BR", "en"] as const)(
+    "includes the locale on a first Cursor CLI run without a saved session (%s)",
+    async (locale) => {
+      setPrepareCursorSandboxCommand.mockReset().mockImplementation(async (input) => ({
+        command: input.command,
+        env: input.env,
+        remoteSystemHomeDir: null,
+        addedPathEntry: null,
+        preferredCommandPath: null,
+      }));
+      const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-first-locale-"));
+      const workspace = path.join(root, "workspace");
+      const commandPath = path.join(root, "agent.sh");
+      await fs.mkdir(workspace, { recursive: true });
+      await fs.writeFile(commandPath, buildFakeAgentScript(root), "utf8");
+      await fs.chmod(commandPath, 0o755);
+
+      try {
+        const metas: Array<{ commandArgs?: string[]; prompt?: string }> = [];
+        const result = await execute({
+          runId: `run-cursor-first-locale-${locale}`,
+          agent: {
+            id: "agent-1",
+            companyId: "company-1",
+            name: "Cursor Coder",
+            adapterType: "cursor",
+            adapterConfig: {},
+          },
+          runtime: {
+            sessionId: null,
+            sessionParams: null,
+            sessionDisplayId: null,
+            taskKey: null,
+          },
+          config: {
+            command: commandPath,
+            cwd: workspace,
+            promptTemplate: "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.",
+          },
+          context: createCommunicationLocalePromptFixture(locale),
+          onLog: async () => {},
+          onMeta: async (meta) => { metas.push(meta); },
+        });
+
+        expect(result.exitCode).toBe(0);
+        expect(metas).toHaveLength(1);
+        expect(metas[0]?.commandArgs).not.toContain("--resume");
+        const prompt = await fs.readFile(path.join(root, "prompt.txt"), "utf8");
+        expect(prompt).toBe(metas[0]?.prompt);
+        expect(prompt).toContain("## Human communication language");
+        expect(prompt).toContain(locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        expect(prompt).toContain("Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.");
+        if (locale === "pt-BR") {
+          expect(prompt).toContain("Do not switch these interactions to English.");
+          expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+        }
+      } finally {
+        await fs.rm(root, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it.each(["pt-BR", "en"] as const)(
+    "rebuilds the assignment and keeps communication locale at the Cursor CLI boundary (%s)",
+    async (locale) => {
+      setPrepareCursorSandboxCommand.mockReset();
+      setPrepareCursorSandboxCommand.mockImplementation(async (input) => ({
+        command: input.command,
+        env: input.env,
+        remoteSystemHomeDir: null,
+        addedPathEntry: null,
+        preferredCommandPath: null,
+      }));
+      const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-resume-"));
+      const workspace = path.join(root, "workspace");
+      const commandPath = path.join(root, "agent.sh");
+      const capturePath = path.join(root, "prompts.txt");
+      await fs.mkdir(workspace, { recursive: true });
+      await fs.writeFile(commandPath, `#!/bin/sh
 count_file=${JSON.stringify(path.join(root, "count"))}
 count=$(cat "$count_file" 2>/dev/null || printf '0')
 count=$((count + 1))
@@ -469,25 +543,127 @@ fi
 printf '%s\\n' '{"type":"system","subtype":"init","session_id":"cursor-session-fresh-2","model":"auto"}'
 printf '%s\\n' '{"type":"result","subtype":"success","session_id":"cursor-session-fresh-2","result":"ok"}'
 `);
-    await fs.chmod(commandPath, 0o755);
+      await fs.chmod(commandPath, 0o755);
 
-    try {
-      const result = await execute({
-        runId: "run-cursor-resume-fallback",
-        agent: { id: "agent-1", companyId: "company-1", name: "Cursor Coder", adapterType: "cursor", adapterConfig: {} },
-        runtime: { sessionId: "cursor-session-old", sessionParams: null, sessionDisplayId: null, taskKey: null },
-        config: { command: commandPath, cwd: workspace, promptTemplate: "Follow the paperclip heartbeat." },
-        context: createPromptContextFixture(),
-        authToken: "run-jwt-token",
-        onLog: async () => {},
-      });
+      try {
+        const result = await execute({
+          runId: "run-cursor-resume-fallback",
+          agent: {
+            id: "agent-1",
+            companyId: "company-1",
+            name: "Cursor Coder",
+            adapterType: "cursor",
+            adapterConfig: {},
+          },
+          runtime: {
+            sessionId: "cursor-session-old",
+            sessionParams: null,
+            sessionDisplayId: null,
+            taskKey: null,
+          },
+          config: {
+            command: commandPath,
+            cwd: workspace,
+            promptTemplate: "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.",
+          },
+          context: createCommunicationLocalePromptFixture(locale),
+          onLog: async () => {},
+        });
 
-      expect(result.exitCode).toBe(0);
-      const prompts = await fs.readFile(capturePath, "utf8");
-      expect(prompts).toContain("## Compact assignment");
-      expect(prompts).toContain("## Owned assignment");
-    } finally {
-      await fs.rm(root, { recursive: true, force: true });
-    }
-  });
+        expect(result.exitCode).toBe(0);
+        const promptCapture = await fs.readFile(capturePath, "utf8");
+        const prompts = promptCapture.split(/\n--- prompt \d+ ---\n/).slice(1);
+        const languageDirective = locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.";
+        expect(prompts).toHaveLength(2);
+        for (const prompt of prompts) {
+          expect(prompt).toContain("## Human communication language");
+          expect(prompt).toContain(languageDirective);
+          expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+          expect(prompt).toContain("`X-Trace-Mode: RAW`");
+          expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        }
+        expect(prompts[0]).toContain("## Compact assignment");
+        expect(prompts[1]).toContain("## Owned assignment");
+        expect(prompts[0]).not.toContain("Configured agent instruction:");
+        expect(prompts[1]).toContain(
+          "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.",
+        );
+        if (locale === "pt-BR") {
+          expect(prompts[0]).toContain("Do not switch these interactions to English.");
+          expect(prompts[0]).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompts[0]).toContain("ASD-STE100 Simplified Technical English");
+        }
+      } finally {
+        await fs.rm(root, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it.each(["pt-BR", "en"] as const)(
+    "keeps the current communication locale in a stable resumed Cursor CLI prompt (%s)",
+    async (locale) => {
+      setPrepareCursorSandboxCommand.mockReset().mockImplementation(async (input) => ({
+        command: input.command,
+        env: input.env,
+        remoteSystemHomeDir: null,
+        addedPathEntry: null,
+        preferredCommandPath: null,
+      }));
+      const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-stable-resume-"));
+      const workspace = path.join(root, "workspace");
+      const commandPath = path.join(root, "agent.sh");
+      await fs.mkdir(workspace, { recursive: true });
+      await fs.writeFile(commandPath, buildFakeAgentScript(root), "utf8");
+      await fs.chmod(commandPath, 0o755);
+
+      try {
+        const metas: Array<{ commandArgs?: string[]; prompt?: string }> = [];
+        const result = await execute({
+          runId: `run-cursor-stable-resume-${locale}`,
+          agent: {
+            id: "agent-1",
+            companyId: "company-1",
+            name: "Cursor Coder",
+            adapterType: "cursor",
+            adapterConfig: {},
+          },
+          runtime: {
+            sessionId: "cursor-session-existing",
+            sessionParams: null,
+            sessionDisplayId: "cursor-session-existing",
+            taskKey: null,
+          },
+          config: {
+            command: commandPath,
+            cwd: workspace,
+            promptTemplate: "Configured agent instruction: preserve `response_mode=json` and token `TASK_PENDING`.",
+          },
+          context: createCommunicationLocalePromptFixture(locale),
+          onLog: async () => {},
+          onMeta: async (meta) => { metas.push(meta); },
+        });
+
+        expect(result.exitCode).toBe(0);
+        expect(metas[0]?.commandArgs).toContain("--resume");
+        const prompt = await fs.readFile(path.join(root, "prompt.txt"), "utf8");
+        expect(prompt).toBe(metas[0]?.prompt);
+        expect(prompt).toContain(locale === "pt-BR"
+          ? "Write human-facing replies, comments, questions, confirmations, and options in Brazilian Portuguese (pt-BR)."
+          : "Write human-facing replies, comments, questions, confirmations, and options in English.");
+        expect(prompt).toContain("`curl --fail --silent https://example.invalid/health`");
+        expect(prompt).toContain("`X-Trace-Mode: RAW`");
+        expect(prompt).toContain("`WAITING_FOR_REVIEW`");
+        if (locale === "pt-BR") {
+          expect(prompt).not.toContain("ASD-STE100 Simplified Technical English");
+        } else {
+          expect(prompt).toContain("ASD-STE100 Simplified Technical English");
+        }
+      } finally {
+        await fs.rm(root, { recursive: true, force: true });
+      }
+    },
+  );
 });
