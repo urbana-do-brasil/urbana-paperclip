@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as prompts from "@clack/prompts";
 import { configure } from "../commands/configure.js";
+import { setCliLocale } from "../localization/index.js";
 import { readConfig } from "../config/store.js";
 
 vi.mock("@clack/prompts", () => ({
@@ -34,6 +35,7 @@ let originalStdinIsTTY: boolean | undefined;
 let originalStdoutIsTTY: boolean | undefined;
 
 beforeEach(() => {
+  setCliLocale("en");
   originalStdinIsTTY = process.stdin.isTTY;
   originalStdoutIsTTY = process.stdout.isTTY;
   Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: true });
@@ -43,6 +45,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setCliLocale("pt-BR");
   Object.defineProperty(process.stdin, "isTTY", {
     configurable: true,
     value: originalStdinIsTTY,
