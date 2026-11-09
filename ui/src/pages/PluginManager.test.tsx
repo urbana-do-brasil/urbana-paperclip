@@ -135,7 +135,7 @@ describe("PluginManager localization", () => {
     expect(container.textContent).toContain("Carregando plugins...");
     resolvePlugins([]);
     await flushReact();
-    expect(container.textContent).toContain("Gerenciador de plugins");
+    await vi.waitFor(() => expect(container.textContent).toContain("Gerenciador de plugins"));
   });
 
   it("localizes installed and bundled plugin load failures", async () => {
